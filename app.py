@@ -37,7 +37,7 @@ db.init_app(app)
 
 socketio = SocketIO(
     app,
-    async_mode="eventlet",
+    async_mode="threading",
     cors_allowed_origins="*",
     manage_session=False,
 )
@@ -109,7 +109,7 @@ def health():
     return {
         "status": "ok",
         "app": "Ambition TCG",
-        "version": "beta-prod-0.1",
+        "version": "beta-prod-0.2",
         "environment": app.config["ENVIRONMENT"],
     }
 
@@ -147,7 +147,6 @@ def register():
         db.session.commit()
 
         token = serializer.dumps(email, salt="email-confirm")
-
         verification_url = url_for("confirm_email", token=token, _external=True)
 
         print("\n--- AMBITION VERIFICATION LINK ---")

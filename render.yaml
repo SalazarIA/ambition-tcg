@@ -1,10 +1,11 @@
+cat > render.yaml <<'EOF'
 services:
   - type: web
     name: ambition-tcg
     env: python
     plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:app
+    startCommand: gunicorn -w 1 --threads 100 --bind 0.0.0.0:$PORT app:app
     healthCheckPath: /health
     envVars:
       - key: ENVIRONMENT
@@ -25,3 +26,4 @@ services:
 databases:
   - name: ambition-tcg-db
     plan: starter
+EOF
