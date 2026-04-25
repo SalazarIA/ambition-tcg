@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ambition TCG</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambition">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div id="network-status-banner" class="network-banner online">Online</div>
+
+    <main class="page app-shell">
+        <section class="panel home-panel mobile-panel">
+            <div class="app-logo">A</div>
+
+            <h1>Ambition TCG</h1>
+            <p class="subtitle">Elemental card combat beta</p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash">{{ messages[0] }}</div>
+                {% endif %}
+            {% endwith %}
+
+            {% if user %}
+                <div class="profile-card app-profile">
+                    <div>
+                        <h2>{{ user.username }}</h2>
+                        <p>Coins: <strong>{{ user.coins }}</strong></p>
+                        <p>Wins: <strong>{{ user.wins }}</strong> | Losses: <strong>{{ user.losses }}</strong></p>
+                    </div>
+                </div>
+
+                <div class="menu-grid app-menu-grid">
+                    <a href="{{ url_for('arena') }}" class="menu-card primary-menu-card">
+                        <strong>Arena</strong>
+                        <span>Online duel</span>
+                    </a>
+
+                    <a href="{{ url_for('collection') }}" class="menu-card">
+                        <strong>Collection</strong>
+                        <span>Owned cards</span>
+                    </a>
+
+                    <a href="{{ url_for('deck_builder') }}" class="menu-card">
+                        <strong>Deck Builder</strong>
+                        <span>Build deck</span>
+                    </a>
+
+                    <a href="{{ url_for('shop') }}" class="menu-card">
+                        <strong>Shop</strong>
+                        <span>Open boosters</span>
+                    </a>
+                </div>
+
+                <div class="actions">
+                    <button id="install-app-btn" class="btn install-btn" type="button">Install App</button>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+                </div>
+
+                <nav class="mobile-bottom-nav">
+                    <a href="{{ url_for('index') }}" class="active">Home</a>
+                    <a href="{{ url_for('arena') }}">Arena</a>
+                    <a href="{{ url_for('deck_builder') }}">Deck</a>
+                    <a href="{{ url_for('shop') }}">Shop</a>
+                </nav>
+            {% else %}
+                <div class="guest-card">
+                    <p>Entre para testar a beta online do Ambition TCG.</p>
+                </div>
+
+                <div class="actions">
+                    <a href="{{ url_for('login') }}" class="btn">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-secondary">Create Account</a>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>

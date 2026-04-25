@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Arena - Ambition TCG</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambition">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body class="arena-body">
+    <div id="network-status-banner" class="network-banner online">Online</div>
+
+    <main id="arena" class="mobile-arena">
+        <header class="arena-header mobile-arena-header">
+            <div>
+                <h1>Ambition Arena</h1>
+                <p>Round <span id="round">1</span></p>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Leave</a>
+        </header>
+
+        <section class="mobile-hp-row">
+            <div class="compact-player-card enemy-compact">
+                <span id="enemy-name">Searching...</span>
+                <strong id="enemy-hp">4000</strong>
+                <small>Enemy HP</small>
+            </div>
+
+            <div class="round-orb">
+                <span>R</span>
+                <strong id="round-mobile">1</strong>
+            </div>
+
+            <div class="compact-player-card my-compact">
+                <span>{{ user.username }}</span>
+                <strong id="my-hp">4000</strong>
+                <small>Your HP</small>
+            </div>
+        </section>
+
+        <section class="mobile-counts">
+            <div>Enemy hand: <strong id="enemy-hand-count">0</strong></div>
+            <div>Enemy deck: <strong id="enemy-deck-count">0</strong></div>
+            <div>Enemy grave: <strong id="enemy-graveyard-count">0</strong></div>
+        </section>
+
+        <section class="board enemy-board mobile-board">
+            <div class="zone mobile-zone" id="enemy-st-zone">
+                <span>Enemy Spell/Trap</span>
+            </div>
+
+            <div class="zone mobile-zone" id="enemy-monster-zone">
+                <span>Enemy Monster</span>
+            </div>
+        </section>
+
+        <section id="battle-log" class="mobile-battle-log"></section>
+
+        <section class="controls sticky-controls">
+            <button id="btn-ready" class="btn full-btn" onclick="declareReady()">Ready for Battle</button>
+        </section>
+
+        <section class="board my-board mobile-board">
+            <div class="zone mobile-zone" id="my-monster-zone">
+                <span>My Monster</span>
+            </div>
+
+            <div class="zone mobile-zone" id="my-st-zone">
+                <span>My Spell/Trap</span>
+            </div>
+        </section>
+
+        <section class="mobile-counts">
+            <div>My deck: <strong id="my-deck-count">0</strong></div>
+            <div>My grave: <strong id="my-graveyard-count">0</strong></div>
+        </section>
+
+        <section class="mobile-hand-section">
+            <h3 class="hand-title">Your Hand</h3>
+            <div id="my-hand" class="mobile-hand"></div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

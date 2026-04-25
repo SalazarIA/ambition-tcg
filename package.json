@@ -1,0 +1,33 @@
+{
+  "name": "ambition-tcg-mobile",
+  "version": "0.1.0",
+  "description": "Ambition TCG beta mobile wrapper for Android and iOS using Capacitor.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "flask": "python app.py",
+    "cap:init": "npx cap init",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync": "npx cap sync",
+    "cap:copy": "npx cap copy",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios",
+    "cap:run:android": "npx cap run android",
+    "cap:run:ios": "npx cap run ios",
+    "mobile:android": "npx cap sync android && npx cap open android",
+    "mobile:ios": "npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/keyboard": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0"
+  },
+  "devDependencies": {}
+}
