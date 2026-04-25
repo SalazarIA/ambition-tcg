@@ -7,21 +7,23 @@ db = SQLAlchemy()
 
 
 class User(db.Model):
+    __tablename__ = "users"
+
     id = db.Column(db.Integer, primary_key=True)
 
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
 
     password_hash = db.Column(db.String(256), nullable=False)
-    is_verified = db.Column(db.Boolean, default=False)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
 
-    coins = db.Column(db.Integer, default=1000)
+    coins = db.Column(db.Integer, default=1000, nullable=False)
 
     deck_json = db.Column(db.Text, nullable=False)
     collection_json = db.Column(db.Text, nullable=False)
 
-    wins = db.Column(db.Integer, default=0)
-    losses = db.Column(db.Integer, default=0)
+    wins = db.Column(db.Integer, default=0, nullable=False)
+    losses = db.Column(db.Integer, default=0, nullable=False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -39,3 +41,6 @@ class User(db.Model):
 
     def check_password(self, password):
         return pbkdf2_sha256.verify(password, self.password_hash)
+
+    def __repr__(self):
+        return f"<User {self.username}>"

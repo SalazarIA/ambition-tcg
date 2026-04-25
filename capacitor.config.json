@@ -4,8 +4,8 @@
   "webDir": "static",
   "bundledWebRuntime": false,
   "server": {
-    "url": "http://192.168.0.11:8080",
-    "cleartext": true
+    "url": "https://ambition-tcg.onrender.com",
+    "cleartext": false
   },
   "plugins": {
     "SplashScreen": {
@@ -30,9 +30,9 @@
     }
   },
   "android": {
-    "allowMixedContent": true,
+    "allowMixedContent": false,
     "captureInput": true,
-    "webContentsDebuggingEnabled": true
+    "webContentsDebuggingEnabled": false
   },
   "ios": {
     "contentInset": "automatic",

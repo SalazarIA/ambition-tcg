@@ -1,9 +1,11 @@
 import json
+import os
 import random
 
 import itsdangerous
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO, join_room
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
 from game.battle import resolve_battle
@@ -18,15 +20,26 @@ from game.deck import (
 )
 from models import User, db
 
+
 app = Flask(__name__)
 app.config.from_object(Config)
+
+app.wsgi_app = ProxyFix(
+    app.wsgi_app,
+    x_for=1,
+    x_proto=1,
+    x_host=1,
+    x_port=1,
+    x_prefix=1,
+)
 
 db.init_app(app)
 
 socketio = SocketIO(
     app,
-    async_mode="threading",
+    async_mode="eventlet",
     cors_allowed_origins="*",
+    manage_session=False,
 )
 
 serializer = itsdangerous.URLSafeTimedSerializer(app.config["SECRET_KEY"])
@@ -36,8 +49,12 @@ player_rooms = {}
 waiting_player = None
 
 
-with app.app_context():
-    db.create_all()
+def create_database_tables():
+    with app.app_context():
+        db.create_all()
+
+
+create_database_tables()
 
 
 def current_user():
@@ -92,7 +109,8 @@ def health():
     return {
         "status": "ok",
         "app": "Ambition TCG",
-        "version": "beta-mobile-0.1",
+        "version": "beta-prod-0.1",
+        "environment": app.config["ENVIRONMENT"],
     }
 
 
@@ -105,6 +123,10 @@ def register():
 
         if not username or not email or not password:
             flash("Fill all fields.")
+            return redirect("/register")
+
+        if len(password) < 6:
+            flash("Password must have at least 6 characters.")
             return redirect("/register")
 
         if User.query.filter_by(email=email).first():
@@ -126,11 +148,13 @@ def register():
 
         token = serializer.dumps(email, salt="email-confirm")
 
+        verification_url = url_for("confirm_email", token=token, _external=True)
+
         print("\n--- AMBITION VERIFICATION LINK ---")
-        print(url_for("confirm_email", token=token, _external=True))
+        print(verification_url)
         print("----------------------------------\n")
 
-        flash("Registered. Check your VS Code terminal for the verification link.")
+        flash("Registered. Check your server terminal/logs for the verification link.")
         return redirect("/login")
 
     return render_template("register.html")
@@ -165,7 +189,7 @@ def login():
             return redirect("/login")
 
         if not user.is_verified:
-            flash("Verify your email first. Check the terminal link.")
+            flash("Verify your email first. Check the verification link in server logs.")
             return redirect("/login")
 
         session["user_id"] = user.id
@@ -581,10 +605,12 @@ def handle_disconnect():
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+
     socketio.run(
         app,
-        debug=True,
+        debug=app.config["DEBUG_MODE"],
         host="0.0.0.0",
-        port=8080,
+        port=port,
         allow_unsafe_werkzeug=True,
     )

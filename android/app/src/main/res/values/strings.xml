@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ambition TCG</string>
+    <string name="title_activity_main">Ambition TCG</string>
+    <string name="package_name">com.elementra.ambitiontcg</string>
+    <string name="custom_url_scheme">com.elementra.ambitiontcg</string>
+</resources>
