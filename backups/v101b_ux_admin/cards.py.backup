@@ -1,0 +1,734 @@
+import random
+
+
+ELEMENTS = ["Fire", "Water", "Earth", "Plant"]
+
+RARITIES = ["Common", "Uncommon"]
+
+MONSTER_EFFECTS = [
+    "None",
+    "HealOnSummon",
+    "BurnOnSummon",
+    "DrawOnSummon",
+    "ShieldOnSummon",
+    "BoostSelf",
+    "WeakenEnemy",
+    "Piercing",
+]
+
+SPELL_EFFECTS = [
+    "Heal",
+    "Boost",
+    "Drain",
+    "Draw",
+    "Shield",
+    "Burn",
+    "Weaken",
+]
+
+TRAP_EFFECTS = [
+    "Counter",
+    "Weaken",
+    "Shield",
+    "Burn",
+    "Heal",
+]
+
+
+ELEMENT_NAMES = {
+    "Fire": [
+        "Draco Magma",
+        "Fenix Infernal",
+        "Cavaleiro Igneo",
+        "Golem Incandescente",
+        "Behemoth de Lava",
+        "Salamandra Rubra",
+        "Imp de Chama",
+        "Urso de Lava",
+        "Escorpiao Vulcanico",
+        "Serpente Ardente",
+        "Lobo Flamejante",
+        "Touro de Cinzas",
+        "Dragontocha",
+        "Guardiao da Fornalha",
+        "Leao Vulcanico",
+        "Colosso Ardente",
+        "Espadachim de Brasa",
+        "Mago da Fumaca",
+        "Arqueiro de Fagulhas",
+        "Elemental de Chamas",
+        "Gigante do Crater",
+        "Cobra de Enxofre",
+        "Cacador da Cinza",
+        "Arauto do Incendio",
+        "Sentinela Ignea",
+        "Fera do Sol",
+        "Cervo de Labareda",
+        "Mastim Infernal",
+        "Cavaleiro da Caldeira",
+        "Guardiao do Rubi",
+        "Dragao da Fuligem",
+        "Morcego de Brasa",
+        "Falcao de Fogo",
+        "Demonio da Forja",
+        "Lamina Escarlate",
+        "Tigre Solar",
+        "Basilisco Incandescente",
+        "Minerador Vulcanico",
+        "Guerreiro da Tocha",
+        "Mago Piroclastico",
+        "Serafim Flamejante",
+        "Ciclope de Lava",
+        "Vulto Ardente",
+        "Cervo Vulcanico",
+        "Raptor da Fornalha",
+        "Fera Carmesim",
+        "Arconte da Chama",
+        "Soldado de Magma",
+        "Avatar do Incendio",
+        "Rei da Cratera",
+    ],
+    "Water": [
+        "Guardiao das Mares",
+        "Serpente Abissal",
+        "Oraculo das Mares",
+        "Leviata Azul",
+        "Tritao Guerreiro",
+        "Sereia Lunar",
+        "Tartaruga Coralina",
+        "Cavaleiro da Maré",
+        "Dragao de Gelo",
+        "Mago das Correntes",
+        "Fera do Abismo",
+        "Tubarão de Cristal",
+        "Arqueiro das Ondas",
+        "Elemental de Agua",
+        "Ninfa da Chuva",
+        "Polvo Ancestral",
+        "Peixe-Espada Real",
+        "Cobra Marinha",
+        "Sentinela do Recife",
+        "Guardiao da Perola",
+        "Falcao da Neblina",
+        "Baleia Celeste",
+        "Cavaleiro do Oceano",
+        "Mago da Geada",
+        "Arauto da Tempestade",
+        "Hidra Azul",
+        "Caranguejo Titanico",
+        "Espadachim das Mares",
+        "Rainha da Maré",
+        "Lobo da Nevoa",
+        "Cervo Glacial",
+        "Cavalo-Marinho Arcano",
+        "Druida da Chuva",
+        "Dragao da Correnteza",
+        "Sirena Abissal",
+        "Vigia do Porto",
+        "Orca de Guerra",
+        "Espinho de Coral",
+        "Cacador de Naufragios",
+        "Monge da Cascata",
+        "Avatar das Ondas",
+        "Sombra Submersa",
+        "Tita da Geleira",
+        "Guerreiro do Lago",
+        "Basilisco da Maré",
+        "Entidade Aquatica",
+        "Colosso do Recife",
+        "Serafim Azul",
+        "Campeao da Profundezas",
+        "Rei Abissal",
+    ],
+    "Earth": [
+        "Tita de Pedra",
+        "Colosso Ancestral",
+        "Sentinela Rochoso",
+        "Golem de Granito",
+        "Guardiao da Montanha",
+        "Minotauro de Ferro",
+        "Cavaleiro de Argila",
+        "Basilisco Terrestre",
+        "Rinoceronte de Rocha",
+        "Druida Mineral",
+        "Mago do Cristal",
+        "Serpente de Areia",
+        "Elemental de Terra",
+        "Urso de Pedra",
+        "Arqueiro do Vale",
+        "Ciclope Montanhoso",
+        "Dragao de Obsidiana",
+        "Leao Dourado",
+        "Cobra de Granito",
+        "Vulto do Deserto",
+        "Mastodonte Antigo",
+        "Sentinela de Quartzo",
+        "Fera da Caverna",
+        "Touro de Basalto",
+        "Guardiao do Onix",
+        "Escorpiao de Areia",
+        "Monge da Montanha",
+        "Ferreiro Ancestral",
+        "Guerreiro de Bronze",
+        "Colosso de Marmore",
+        "Raptor Rochoso",
+        "Javali de Pedra",
+        "Cervo de Argila",
+        "Avatar da Terra",
+        "Arauto do Terremoto",
+        "Minerador Arcano",
+        "Cavaleiro do Topazio",
+        "Muralha Viva",
+        "Gigante do Vale",
+        "Guardiao do Templo",
+        "Besouro de Aco",
+        "Lobo de Barro",
+        "Cacador da Rocha",
+        "Tita do Abismo Seco",
+        "Arconte de Pedra",
+        "Demonio Mineral",
+        "Falcao do Penhasco",
+        "Serafim Dourado",
+        "Campeao do Deserto",
+        "Rei da Montanha",
+    ],
+    "Plant": [
+        "Druida das Raizes",
+        "Lobo Espinheiro",
+        "Ent Florido",
+        "Guardiao da Floresta",
+        "Fada do Bosque",
+        "Cervo Esmeralda",
+        "Serpente Venenosa",
+        "Tigre Musgo",
+        "Mago das Folhas",
+        "Arqueiro Silvestre",
+        "Elemental de Planta",
+        "Ent Anciao",
+        "Rosa Carnivora",
+        "Cavaleiro Verdejante",
+        "Fera do Cipó",
+        "Guardiao da Semente",
+        "Vulto da Selva",
+        "Lamina de Espinhos",
+        "Oraculo das Flores",
+        "Basilisco Verde",
+        "Urso da Floresta",
+        "Abelha Gigante",
+        "Ninfa das Raizes",
+        "Druida do Carvalho",
+        "Dragao Floral",
+        "Cobra de Hera",
+        "Sentinela do Jardim",
+        "Touro do Bosque",
+        "Leao de Musgo",
+        "Mastim Silvestre",
+        "Cacador da Selva",
+        "Arconte Natural",
+        "Falcao das Copas",
+        "Golem de Vinhas",
+        "Avatar da Primavera",
+        "Serafim Verde",
+        "Monge da Clareira",
+        "Espadachim Herbal",
+        "Cavaleiro da Seiva",
+        "Raptor de Cipó",
+        "Tita das Raizes",
+        "Besouro Folhoso",
+        "Guardiao do Pomar",
+        "Rainha das Flores",
+        "Colosso Verde",
+        "Espinho Ancestral",
+        "Fera Esmeralda",
+        "Campeao da Selva",
+        "Arauto da Germinacao",
+        "Rei do Bosque",
+    ],
+}
+
+
+SPELL_NAMES = [
+    "Chama Vital",
+    "Surto Elemental",
+    "Drenar Energia",
+    "Bencao da Terra",
+    "Fonte de Cura",
+    "Impulso Arcano",
+    "Escudo Mistico",
+    "Labareda Global",
+    "Fluxo de Mana",
+    "Explosao Astral",
+    "Cura Profunda",
+    "Furia Elemental",
+    "Livro dos Antigos",
+    "Ritual de Poder",
+    "Barreira Celeste",
+    "Sopro de Energia",
+    "Marca do Campeao",
+    "Corrente Vital",
+    "Estouro Magico",
+    "Foco de Combate",
+    "Chamado do Destino",
+    "Pulso de Cristal",
+    "Selo de Reforco",
+    "Ordem Arcana",
+    "Ruptura Sombria",
+    "Vontade Primordial",
+    "Ciclo da Vida",
+    "Pacto de Forca",
+    "Alvorada Mistica",
+    "Onda Suprema",
+]
+
+
+TRAP_NAMES = [
+    "Armadilha de Cinzas",
+    "Raizes Aprisionadoras",
+    "Muralha Rochosa",
+    "Selo Reativo",
+    "Contra-Ataque Arcano",
+    "Lamina Oculta",
+    "Armadilha de Mana",
+    "Barreira Repentina",
+    "Vinculo Sombrio",
+    "Espinhos Secretos",
+    "Reflexo Instavel",
+    "Marca Defensiva",
+    "Explosao Oculta",
+    "Campo Distorcido",
+    "Corrente de Pedra",
+    "Fenda Elemental",
+    "Velo da Floresta",
+    "Armadilha da Maré",
+    "Sombra Protetora",
+    "Punicao Global",
+]
+
+
+def rarity_for_index(index):
+    if index % 4 == 0:
+        return "Uncommon"
+
+    return "Common"
+
+
+def monster_effect_for_index(index):
+    if index <= 43:
+        return {
+            "effect": "None",
+            "value": 0,
+            "description": "No effect."
+        }
+
+    effects = [
+        {
+            "effect": "HealOnSummon",
+            "value": 250,
+            "description": "When summoned, restores 250 HP."
+        },
+        {
+            "effect": "BurnOnSummon",
+            "value": 200,
+            "description": "When summoned, deals 200 damage to the enemy."
+        },
+        {
+            "effect": "DrawOnSummon",
+            "value": 1,
+            "description": "When summoned, draws 1 card."
+        },
+        {
+            "effect": "ShieldOnSummon",
+            "value": 300,
+            "description": "When summoned, gains 300 shield this round."
+        },
+        {
+            "effect": "BoostSelf",
+            "value": 300,
+            "description": "When summoned, gains 300 power this round."
+        },
+        {
+            "effect": "WeakenEnemy",
+            "value": 250,
+            "description": "When summoned, weakens enemy monster by 250."
+        },
+        {
+            "effect": "Piercing",
+            "value": 200,
+            "description": "If this monster wins combat, deals 200 extra damage."
+        },
+    ]
+
+    return effects[(index - 44) % len(effects)]
+
+
+def element_power_base(element):
+    if element == "Fire":
+        return 1150
+
+    if element == "Water":
+        return 1050
+
+    if element == "Earth":
+        return 1200
+
+    if element == "Plant":
+        return 1000
+
+    return 1000
+
+
+def generate_monsters():
+    monsters = []
+
+    for element in ELEMENTS:
+        names = ELEMENT_NAMES[element]
+
+        for index in range(1, 51):
+            rarity = rarity_for_index(index)
+            effect_data = monster_effect_for_index(index)
+
+            base = element_power_base(element)
+            scaling = index * 17
+
+            if rarity == "Uncommon":
+                scaling += 120
+
+            if effect_data["effect"] != "None":
+                scaling -= 80
+
+            power = base + scaling
+
+            card_id = f"{element.lower()}_{index:03d}"
+
+            monsters.append({
+                "id": card_id,
+                "type": "Monster",
+                "name": names[index - 1],
+                "element": element,
+                "power": power,
+                "rarity": rarity,
+                "effect": effect_data["effect"],
+                "value": effect_data["value"],
+                "image": f"cards/{element.lower()}/{card_id}.png",
+                "description": effect_data["description"],
+            })
+
+    return monsters
+
+
+def spell_effect_for_index(index):
+    effects = [
+        {
+            "effect": "Heal",
+            "value": 500,
+            "description": "Restore 500 HP."
+        },
+        {
+            "effect": "Boost",
+            "value": 400,
+            "description": "Increase your monster power by 400 this round."
+        },
+        {
+            "effect": "Drain",
+            "value": 300,
+            "description": "Deal 300 damage and recover 300 HP."
+        },
+        {
+            "effect": "Draw",
+            "value": 2,
+            "description": "Draw 2 cards."
+        },
+        {
+            "effect": "Shield",
+            "value": 600,
+            "description": "Gain 600 shield this round."
+        },
+        {
+            "effect": "Burn",
+            "value": 400,
+            "description": "Deal 400 damage to the enemy."
+        },
+        {
+            "effect": "Weaken",
+            "value": 350,
+            "description": "Reduce enemy monster power by 350 this round."
+        },
+    ]
+
+    return effects[(index - 1) % len(effects)]
+
+
+def generate_spells():
+    spells = []
+
+    for index in range(1, 31):
+        effect_data = spell_effect_for_index(index)
+        rarity = "Uncommon" if index % 5 == 0 else "Common"
+
+        card_id = f"spell_{index:03d}"
+
+        spells.append({
+            "id": card_id,
+            "type": "Spell",
+            "name": SPELL_NAMES[index - 1],
+            "element": "Global",
+            "power": 0,
+            "rarity": rarity,
+            "effect": effect_data["effect"],
+            "value": effect_data["value"],
+            "image": f"cards/spells/{card_id}.png",
+            "description": effect_data["description"],
+        })
+
+    return spells
+
+
+def trap_effect_for_index(index):
+    effects = [
+        {
+            "effect": "Counter",
+            "value": 350,
+            "description": "Deal 350 damage to the enemy when battle resolves."
+        },
+        {
+            "effect": "Weaken",
+            "value": 400,
+            "description": "Reduce enemy monster power by 400 this round."
+        },
+        {
+            "effect": "Shield",
+            "value": 700,
+            "description": "Gain 700 shield this round."
+        },
+        {
+            "effect": "Burn",
+            "value": 300,
+            "description": "Deal 300 damage to the enemy."
+        },
+        {
+            "effect": "Heal",
+            "value": 350,
+            "description": "Restore 350 HP."
+        },
+    ]
+
+    return effects[(index - 1) % len(effects)]
+
+
+def generate_traps():
+    traps = []
+
+    for index in range(1, 21):
+        effect_data = trap_effect_for_index(index)
+        rarity = "Uncommon" if index % 5 == 0 else "Common"
+
+        card_id = f"trap_{index:03d}"
+
+        traps.append({
+            "id": card_id,
+            "type": "Trap",
+            "name": TRAP_NAMES[index - 1],
+            "element": "Global",
+            "power": 0,
+            "rarity": rarity,
+            "effect": effect_data["effect"],
+            "value": effect_data["value"],
+            "image": f"cards/traps/{card_id}.png",
+            "description": effect_data["description"],
+        })
+
+    return traps
+
+
+MONSTERS = generate_monsters()
+SPELLS = generate_spells()
+TRAPS = generate_traps()
+
+CARD_CATALOG = MONSTERS + SPELLS + TRAPS
+
+
+def get_card_by_id(card_id):
+    for card in CARD_CATALOG:
+        if card["id"] == card_id:
+            return card.copy()
+
+    return None
+
+
+def get_cards_by_type(card_type):
+    return [card.copy() for card in CARD_CATALOG if card["type"] == card_type]
+
+
+def get_cards_by_element(element):
+    return [card.copy() for card in CARD_CATALOG if card["element"] == element]
+
+
+def get_cards_by_rarity(rarity):
+    return [card.copy() for card in CARD_CATALOG if card["rarity"] == rarity]
+
+
+def get_all_cards():
+    return [card.copy() for card in CARD_CATALOG]
+
+
+def get_monsters():
+    return [card.copy() for card in MONSTERS]
+
+
+def get_spells():
+    return [card.copy() for card in SPELLS]
+
+
+def get_traps():
+    return [card.copy() for card in TRAPS]
+
+
+def card_sort_key(card):
+    rarity_order = {
+        "Common": 1,
+        "Uncommon": 2,
+    }
+
+    type_order = {
+        "Monster": 1,
+        "Spell": 2,
+        "Trap": 3,
+    }
+
+    element_order = {
+        "Fire": 1,
+        "Water": 2,
+        "Earth": 3,
+        "Plant": 4,
+        "Global": 5,
+    }
+
+    return (
+        type_order.get(card.get("type"), 99),
+        element_order.get(card.get("element"), 99),
+        rarity_order.get(card.get("rarity"), 99),
+        card.get("name", ""),
+    )
+
+
+def beta_catalog_stats():
+    return {
+        "total_cards": len(CARD_CATALOG),
+        "monsters": len(MONSTERS),
+        "spells": len(SPELLS),
+        "traps": len(TRAPS),
+        "fire_monsters": len([c for c in MONSTERS if c["element"] == "Fire"]),
+        "water_monsters": len([c for c in MONSTERS if c["element"] == "Water"]),
+        "earth_monsters": len([c for c in MONSTERS if c["element"] == "Earth"]),
+        "plant_monsters": len([c for c in MONSTERS if c["element"] == "Plant"]),
+        "effect_monsters": len([c for c in MONSTERS if c["effect"] != "None"]),
+        "common_cards": len([c for c in CARD_CATALOG if c["rarity"] == "Common"]),
+        "uncommon_cards": len([c for c in CARD_CATALOG if c["rarity"] == "Uncommon"]),
+    }
+
+# === AMBITION BETA COST SYSTEM ===
+
+def calculate_card_cost(card):
+    card_type = card.get("type")
+    rarity = card.get("rarity")
+    power = int(card.get("power", 0))
+    effect = card.get("effect", "None")
+
+    if card_type == "Monster":
+        if power <= 1100:
+            cost = 1
+        elif power <= 1350:
+            cost = 2
+        else:
+            cost = 3
+
+        if rarity == "Uncommon":
+            cost += 1
+
+        if effect != "None":
+            cost += 1
+
+        return max(1, min(cost, 5))
+
+    if card_type == "Spell":
+        if effect in ["Draw", "Drain", "Shield"]:
+            return 3
+
+        if effect in ["Boost", "Burn", "Weaken"]:
+            return 2
+
+        return 1
+
+    if card_type == "Trap":
+        if effect in ["Counter", "Shield", "Weaken"]:
+            return 3
+
+        return 2
+
+    return 1
+
+
+def apply_card_costs():
+    for card in CARD_CATALOG:
+        card["cost"] = calculate_card_cost(card)
+
+
+apply_card_costs()
+
+
+
+SIGIL_BY_ELEMENT = {
+    "Fire": "Fury",
+    "Water": "Insight",
+    "Earth": "Resolve",
+    "Plant": "Harmony",
+    "Global": "Ruin",
+}
+
+ROLE_BY_EFFECT = {
+    "Burn": "Aggressor",
+    "BurnOnSummon": "Aggressor",
+    "Piercing": "Aggressor",
+    "Boost": "Finisher",
+    "Shield": "Defender",
+    "Heal": "Defender",
+    "Counter": "Defender",
+    "Weaken": "Controller",
+    "Draw": "Controller",
+    "Drain": "Balancer",
+    "None": "Balancer",
+}
+
+
+def infer_card_sigil(card):
+    if card.get("type") != "Monster":
+        return "Global"
+
+    return SIGIL_BY_ELEMENT.get(card.get("element", "Global"), "Fury")
+
+
+def infer_card_role(card):
+    effect = card.get("effect", "None")
+
+    if card.get("type") == "Monster":
+        if int(card.get("power", 0)) >= 1500:
+            return "Finisher"
+
+        if int(card.get("cost", 1)) <= 2 and effect in ["Burn", "Piercing", "BurnOnSummon"]:
+            return "Aggressor"
+
+    return ROLE_BY_EFFECT.get(effect, "Balancer")
+
+
+def enrich_card_identity(card):
+    if "sigil" not in card:
+        card["sigil"] = infer_card_sigil(card)
+
+    if "role" not in card:
+        card["role"] = infer_card_role(card)
+
+    return card
+
+
+for _card in CARD_CATALOG:
+    enrich_card_identity(_card)

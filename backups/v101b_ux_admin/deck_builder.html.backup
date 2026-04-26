@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deck Builder - Ambition TCG</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambition">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page deck-builder-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Deck Builder</h1>
+                <p>Beta deck: exactly 30 cards — 21 monsters, 6 spells, 3 traps.</p>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-list">
+                    {% for message in messages %}
+                        <div class="flash">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="deck-status mobile-deck-status sticky-deck-overview">
+            <h2>Deck Status</h2>
+
+            <div class="deck-progress-shell">
+                <div class="deck-progress-label">
+                    <span>Total</span>
+                    <strong><span id="live-total-count">{{ deck_analysis.stats.total }}</span>/30</strong>
+                </div>
+                <div class="deck-progress-bar">
+                    <div id="live-total-bar" class="deck-progress-fill" style="width: {{ (deck_analysis.stats.total / 30 * 100) if deck_analysis.stats.total <= 30 else 100 }}%;"></div>
+                </div>
+            </div>
+
+            <div class="menu-grid deck-live-grid">
+                <div class="menu-card">
+                    <strong><span id="live-monster-count">{{ deck_analysis.stats.monsters }}</span>/21</strong>
+                    <span>Monsters</span>
+                </div>
+
+                <div class="menu-card">
+                    <strong><span id="live-spell-count">{{ deck_analysis.stats.spells }}</span>/6</strong>
+                    <span>Spells</span>
+                </div>
+
+                <div class="menu-card">
+                    <strong><span id="live-trap-count">{{ deck_analysis.stats.traps }}</span>/3</strong>
+                    <span>Traps</span>
+                </div>
+
+                <div class="menu-card">
+                    <strong id="live-average-cost">{{ deck_analysis.energy.average_cost }}</strong>
+                    <span>Average Cost</span>
+                </div>
+            </div>
+
+            <div id="live-deck-message" class="deck-live-message">
+                Build exactly 30 cards.
+            </div>
+
+            {% if deck_validation_errors %}
+                <div class="danger-box" style="margin-top: 16px;">
+                    {% for error in deck_validation_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="success-box" style="margin-top: 16px;">
+                    <p>Deck is valid for beta.</p>
+                </div>
+            {% endif %}
+
+            {% if deck_analysis.warnings %}
+                <div class="flash" style="margin-top: 16px;">
+                    {% for warning in deck_analysis.warnings %}
+                        <p>{{ warning }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="deck-status">
+            <h2>Quick Actions</h2>
+
+            <div class="actions">
+                <form method="POST" action="{{ url_for('auto_build_deck') }}">
+                    <button type="submit" class="btn">Auto Build Beta Deck</button>
+                </form>
+
+                <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary">How to Play</a>
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <h2>Energy Curve</h2>
+
+            <div class="deck-list">
+                <div class="deck-line"><span>Cost 1</span><strong>{{ deck_analysis.energy.curve[1] }}</strong></div>
+                <div class="deck-line"><span>Cost 2</span><strong>{{ deck_analysis.energy.curve[2] }}</strong></div>
+                <div class="deck-line"><span>Cost 3</span><strong>{{ deck_analysis.energy.curve[3] }}</strong></div>
+                <div class="deck-line"><span>Cost 4</span><strong>{{ deck_analysis.energy.curve[4] }}</strong></div>
+                <div class="deck-line"><span>Cost 5</span><strong>{{ deck_analysis.energy.curve[5] }}</strong></div>
+                <div class="deck-line"><span>Cost 6+</span><strong>{{ deck_analysis.energy.curve["6+"] }}</strong></div>
+            </div>
+        </section>
+
+        <section class="mobile-filter-panel enhanced-builder-filters">
+            <input id="builder-search" type="search" placeholder="Search card..." oninput="filterBuilderCards()">
+
+            <select id="builder-type-filter" onchange="filterBuilderCards()">
+                <option value="">All types</option>
+                <option value="Monster">Monster</option>
+                <option value="Spell">Spell</option>
+                <option value="Trap">Trap</option>
+            </select>
+
+            <select id="builder-element-filter" onchange="filterBuilderCards()">
+                <option value="">All elements</option>
+                <option value="Fire">Fire</option>
+                <option value="Water">Water</option>
+                <option value="Earth">Earth</option>
+                <option value="Plant">Plant</option>
+                <option value="Global">Global</option>
+            </select>
+
+            <select id="builder-cost-filter" onchange="filterBuilderCards()">
+                <option value="">All costs</option>
+                <option value="1">Cost 1</option>
+                <option value="2">Cost 2</option>
+                <option value="3">Cost 3</option>
+                <option value="4">Cost 4</option>
+                <option value="5">Cost 5</option>
+            </select>
+
+            <select id="builder-rarity-filter" onchange="filterBuilderCards()">
+                <option value="">All rarities</option>
+                <option value="Common">Common</option>
+                <option value="Uncommon">Uncommon</option>
+            </select>
+        </section>
+
+        <form method="POST" id="deck-form">
+            <section class="builder-layout mobile-card-grid">
+                {% for card in collection_cards %}
+                    {% if card.owned > 0 %}
+                        <article
+                            class="builder-card image-card {{ card.type|lower }} {{ card.rarity|lower }}"
+                            data-card-id="{{ card.id }}"
+                            data-name="{{ card.name }}"
+                            data-type="{{ card.type }}"
+                            data-element="{{ card.element }}"
+                            data-cost="{{ card.cost }}"
+                            data-rarity="{{ card.rarity }}"
+                            data-owned="{{ card.owned }}"
+                            data-selected="{{ deck_ids.count(card.id) }}"
+                        >
+                            <div class="image-card-frame">
+                                <header class="image-card-header">
+                                    <h4>{{ card.name }}</h4>
+                                    <span>{{ card.rarity }}</span>
+                                </header>
+
+                                <div class="image-card-art">
+                                    <img
+                                        src="{{ url_for('static', filename='img/' + card.image) }}"
+                                        alt="{{ card.name }}"
+                                        onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/cards/placeholders/card_placeholder.svg') }}';"
+                                    >
+                                </div>
+
+                                <div class="image-card-meta">
+                                    <span>{{ card.element }}</span>
+                                    <span>{{ card.type }}</span>
+                                </div>
+
+                                <div class="image-card-effect">
+                                    <p>{{ card.description }}</p>
+                                </div>
+
+                                <footer class="image-card-footer">
+                                    <span>COST {{ card.cost }}</span>
+                                    {% if card.type == "Monster" %}
+                                        <strong>POWER {{ card.power }}</strong>
+                                    {% else %}
+                                        <strong>VALUE {{ card.value }}</strong>
+                                    {% endif %}
+                                </footer>
+                            </div>
+
+                            <div class="deck-card-controls">
+                                <button type="button" class="deck-step-btn" onclick="removeCardFromDeck('{{ card.id }}')">−</button>
+
+                                <div class="deck-card-count">
+                                    <strong id="count-{{ card.id }}">{{ deck_ids.count(card.id) }}</strong>
+                                    <span>/ {{ card.owned }}</span>
+                                </div>
+
+                                <button type="button" class="deck-step-btn" onclick="addCardToDeck('{{ card.id }}')">+</button>
+                            </div>
+
+                            <div id="inputs-{{ card.id }}" class="hidden-card-inputs">
+                                {% for n in range(deck_ids.count(card.id)) %}
+                                    <input type="hidden" name="deck_cards" value="{{ card.id }}">
+                                {% endfor %}
+                            </div>
+                        </article>
+                    {% endif %}
+                {% endfor %}
+            </section>
+
+            <div class="save-deck-bar mobile-save-bar">
+                <div class="deck-counter">
+                    Selected: <strong id="selected-count">0</strong> / 30
+                </div>
+
+                <button type="submit" class="btn full-btn">Save Deck</button>
+            </div>
+        </form>
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('arena') }}">Arena</a>
+            <a href="{{ url_for('deck_builder') }}" class="active">Deck</a>
+            <a href="{{ url_for('shop') }}">Shop</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/deck_builder.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
+</body>
+</html>

@@ -154,19 +154,6 @@ function pulseElement(elementId, className) {
     }, 550);
 }
 
-
-function cardIdentityBadges(card) {
-    const sigil = card.sigil || "Global";
-    const role = card.role || "Balancer";
-
-    return `
-        <div class="card-identity-row">
-            <span class="sigil-pill sigil-${sigil.toLowerCase()}">${sigil}</span>
-            <span class="role-pill role-${role.toLowerCase()}">${role}</span>
-        </div>
-    `;
-}
-
 function renderCard(card, index = -1, hidden = false, setCard = false) {
     if (hidden) {
         return `
@@ -332,10 +319,6 @@ function classifyLog(message) {
 
     if (lower.includes("advantage")) {
         playElementalImpact(message);
-    }
-
-    if (lower.includes("sigil")) {
-        return "log-sigil";
     }
 
     if (lower.includes("ambition") || lower.includes("overreach") || lower.includes("unleashed")) {

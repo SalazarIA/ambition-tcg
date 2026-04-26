@@ -86,18 +86,6 @@
         </section>
 
         <section class="deck-status">
-            <h2>Sigil Metrics</h2>
-
-            <div class="deck-list">
-                <div class="deck-line"><span>Fury triggered</span><strong>{{ sigil_metrics.Fury }}</strong></div>
-                <div class="deck-line"><span>Resolve triggered</span><strong>{{ sigil_metrics.Resolve }}</strong></div>
-                <div class="deck-line"><span>Insight triggered</span><strong>{{ sigil_metrics.Insight }}</strong></div>
-                <div class="deck-line"><span>Ruin triggered</span><strong>{{ sigil_metrics.Ruin }}</strong></div>
-                <div class="deck-line"><span>Harmony triggered</span><strong>{{ sigil_metrics.Harmony }}</strong></div>
-            </div>
-        </section>
-
-        <section class="deck-status">
             <h2>Recent Feedback</h2>
 
             {% if recent_feedbacks %}

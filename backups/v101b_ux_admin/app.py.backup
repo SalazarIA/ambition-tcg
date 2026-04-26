@@ -32,7 +32,6 @@ from game.matchmaking import generate_private_room_code, is_valid_room_code, nor
 from game.bot import create_bot_player, bot_play_turn
 from game.rewards import apply_match_rewards
 from game.match_utils import safe_user_id, player_display_name, get_match_result_label
-from game.card_view import enrich_cards_for_view
 from game.state import create_player_state, normalize_intent
 
 
@@ -461,14 +460,6 @@ def admin_dashboard():
         "Overreach": 0,
     }
 
-    sigil_metrics = {
-        "Fury": 0,
-        "Resolve": 0,
-        "Insight": 0,
-        "Ruin": 0,
-        "Harmony": 0,
-    }
-
     for match in all_matches:
         logs = []
 
@@ -494,10 +485,6 @@ def admin_dashboard():
 
             if "Overreach" in line:
                 intent_metrics["Overreach"] += 1
-
-            for sigil_name in sigil_metrics.keys():
-                if f"{sigil_name} Sigil" in line:
-                    sigil_metrics[sigil_name] += 1
 
     top_cards = (
         CardStat.query
@@ -531,7 +518,6 @@ def admin_dashboard():
         open_feedbacks=open_feedbacks,
         total_boosters=total_boosters,
         intent_metrics=intent_metrics,
-        sigil_metrics=sigil_metrics,
         average_rounds=average_rounds,
         total_wins=total_wins,
         total_losses=total_losses,
@@ -817,7 +803,6 @@ def collection():
     collection_ids = load_card_ids(user.collection_json)
     cards = collection_summary(collection_ids)
     cards = sorted(cards, key=card_sort_key)
-    cards = enrich_cards_for_view(cards)
 
     return render_template("collection.html", user=user, cards=cards)
 
@@ -943,9 +928,6 @@ def deck_builder():
 
     collection_cards = sorted(collection_summary(collection_ids), key=card_sort_key)
     current_deck = sorted(deck_summary(deck_ids), key=card_sort_key)
-
-    collection_cards = enrich_cards_for_view(collection_cards)
-    current_deck = enrich_cards_for_view(current_deck)
 
     deck_validation_errors = validate_deck(deck_ids, collection_ids)
     deck_analysis = full_deck_analysis(deck_ids)
