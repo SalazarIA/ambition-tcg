@@ -783,6 +783,18 @@ def reset_password(token):
     return render_template("reset_password.html")
 
 
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":

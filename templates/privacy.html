@@ -2,46 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Privacy Policy - Ambitionz</title>
+    <title>Privacy - Ambitionz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Ambition">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="format-detection" content="telephone=no">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <meta name="theme-color" content="#070711">
 </head>
 <body>
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Privacy Policy</h1>
-                <p>Ambitionz beta</p>
+                <h1>Privacy</h1>
+                <p>Ambitionz beta privacy notice</p>
             </div>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
         <section class="deck-status">
             <h2>Data Collected</h2>
-            <p>Ambitionz stores account data such as username, email, password hash, cards, match history, feedback reports and gameplay statistics.</p>
-        </section>
+            <p>Ambitionz stores account information such as username, email, password hash, match data, game progression and feedback reports.</p>
 
-        <section class="deck-status">
-            <h2>Purpose</h2>
-            <p>Data is used to operate accounts, save game progress, improve balance, review feedback and maintain beta stability.</p>
-        </section>
+            <h2>Email</h2>
+            <p>Email is used for account verification and password reset.</p>
 
-        <section class="deck-status">
-            <h2>Passwords</h2>
-            <p>Passwords are stored as hashes. The application does not store plain-text passwords.</p>
-        </section>
-
-        <section class="deck-status">
-            <h2>Contact</h2>
-            <p>During beta, privacy or account removal requests should be sent directly to the project owner.</p>
+            <h2>Beta Data</h2>
+            <p>During beta, test data may be reset to improve stability, balance and development quality.</p>
         </section>
     </main>
 </body>
