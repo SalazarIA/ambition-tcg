@@ -28,14 +28,24 @@ def send_email(to_email, subject, body):
     password = current_app.config.get("SMTP_PASSWORD")
     use_tls = current_app.config.get("SMTP_USE_TLS", True)
 
-    with smtplib.SMTP(host, port, timeout=20) as server:
-        if use_tls:
-            server.starttls()
+    try:
+        with smtplib.SMTP(host, port, timeout=20) as server:
+            if use_tls:
+                server.starttls()
 
-        server.login(username, password)
-        server.send_message(msg)
+            server.login(username, password)
+            server.send_message(msg)
 
-    return True
+        return True
+
+    except Exception as error:
+        print("\n--- AMBITION SMTP ERROR ---")
+        print(type(error).__name__, error)
+        print("To:", to_email)
+        print("Subject:", subject)
+        print(body)
+        print("----------------------------\n")
+        return False
 
 
 def send_verification_email(user, verification_url):
