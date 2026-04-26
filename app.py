@@ -847,14 +847,30 @@ def admin_test_email():
         flash("Email is required.")
         return redirect("/admin/dev-tools")
 
-    sent = send_smtp_test_email(email)
+    try:
+        sent = send_smtp_test_email(email)
 
-    if sent:
-        flash("SMTP test email sent.")
-        log_system_event("info", "email", f"SMTP test sent to {email}", user_id=user.id)
-    else:
-        flash("SMTP test failed. Check Render logs.")
-        log_system_event("error", "email", f"SMTP test failed to {email}", user_id=user.id)
+        if sent:
+            flash("SMTP test email sent.")
+            try:
+                log_system_event("info", "email", f"SMTP test sent to {email}", user_id=user.id)
+            except Exception as log_error:
+                print("LOG ERROR AFTER SMTP SUCCESS:", log_error)
+        else:
+            flash("SMTP test failed. Check Render logs.")
+            try:
+                log_system_event("error", "email", f"SMTP test failed to {email}", user_id=user.id)
+            except Exception as log_error:
+                print("LOG ERROR AFTER SMTP FAILURE:", log_error)
+
+    except Exception as error:
+        print("--- ADMIN SMTP TEST ROUTE ERROR ---")
+        print("Error type:", type(error).__name__)
+        print("Error:", error)
+        print("Destination:", email)
+        print("-----------------------------------")
+
+        flash(f"SMTP test crashed: {type(error).__name__}. Check Render logs.")
 
     return redirect("/admin/dev-tools")
 
