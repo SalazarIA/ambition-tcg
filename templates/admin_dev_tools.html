@@ -15,7 +15,7 @@
                 <h1>Dev Tools</h1>
                 <p>Production stabilization tools</p>
             </div>
-            <a href="{{ url_for('admin') }}" class="btn btn-secondary small-btn">Back</a>
+            <a href="/admin" class="btn btn-secondary small-btn">Back</a>
         </header>
 
         {% with messages = get_flashed_messages() %}
@@ -28,7 +28,7 @@
             <h2>SMTP Test</h2>
             <p>Send a real test email through the configured SMTP provider.</p>
 
-            <form method="POST" action="{{ url_for('admin_test_email') }}" class="form mobile-form">
+            <form method="POST" action="/admin/test-email" class="form mobile-form">
                 <input type="email" name="email" placeholder="Destination email" required>
                 <button type="submit" class="btn full-btn">Send Test Email</button>
             </form>
@@ -38,7 +38,7 @@
             <h2>Reset Test Users</h2>
             <p>This deletes all non-admin users and related test data. Admin accounts stay alive.</p>
 
-            <form method="POST" action="{{ url_for('admin_reset_test_users') }}">
+            <form method="POST" action="/admin/reset-test-users">
                 <button type="submit" class="btn btn-danger full-btn">Delete Non-Admin Users</button>
             </form>
         </section>
@@ -47,7 +47,7 @@
             <h2>Clear Gameplay Data</h2>
             <p>This clears matches, feedback, card stats, invites and logs. Users stay alive.</p>
 
-            <form method="POST" action="{{ url_for('admin_clear_gameplay_data') }}">
+            <form method="POST" action="/admin/clear-gameplay-data">
                 <button type="submit" class="btn btn-danger full-btn">Clear Gameplay Data</button>
             </form>
         </section>
