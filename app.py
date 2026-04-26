@@ -32,6 +32,7 @@ from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
 from game.state import create_player_state, set_player_intent
 from game.matchmaking import generate_private_room_code, is_valid_room_code, normalize_room_code
+from game.bot_ai import bot_choose_play
 from game.bot import create_bot_player, bot_play_turn
 from game.rewards import apply_match_rewards
 from game.match_utils import safe_user_id, player_display_name, get_match_result_label
@@ -1698,20 +1699,14 @@ def declare_ready():
         enemy_key = "p2" if player_key == "p1" else "p1"
         enemy = match[enemy_key]
 
-        if not enemy.get("field_m") and enemy.get("hand"):
-            for idx, card in enumerate(list(enemy["hand"])):
-                if card.get("type") == "Monster":
-                    enemy["field_m"] = enemy["hand"].pop(idx)
-                    break
+        bot_result = bot_choose_play(enemy, player, difficulty=match.get("bot_difficulty", "normal"))
+        emit_log(room_id, f"Ambitionz Bot chose {bot_result['intent']} intent.")
 
-        if not enemy.get("field_st") and enemy.get("hand"):
-            for idx, card in enumerate(list(enemy["hand"])):
-                if card.get("type") in ["Spell", "Trap"]:
-                    enemy["field_st"] = enemy["hand"].pop(idx)
-                    break
+        if bot_result.get("monster"):
+            emit_log(room_id, f"Ambitionz Bot set a monster: {bot_result['monster'].get('name', 'Unknown')}.")
 
-        enemy["ready"] = True
-        emit_log(room_id, "Ambitionz Bot is ready.")
+        if bot_result.get("spell_or_trap"):
+            emit_log(room_id, "Ambitionz Bot set a spell/trap.")
 
     emit_log(room_id, f"{player['name']} is ready.")
     emit_state(room_id)
