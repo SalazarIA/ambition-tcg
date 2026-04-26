@@ -1,17 +1,19 @@
 {
   "name": "Ambition TCG",
   "short_name": "Ambition",
-  "description": "Fast elemental online TCG built around risk, Ambition and tactical duels.",
+  "description": "Elemental online trading card game beta.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#070711",
   "theme_color": "#8e44ad",
+  "categories": ["games", "entertainment"],
+  "lang": "en",
   "icons": [
     {
       "src": "/static/icons/icon.svg",
-      "sizes": "1024x1024",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }

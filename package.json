@@ -25,7 +25,11 @@
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
-    "dist:all": "electron-builder --mac --win --linux"
+    "dist:all": "electron-builder --mac --win --linux",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:copy": "npx cap copy android",
+    "android:studio": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",

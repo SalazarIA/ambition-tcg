@@ -1,43 +1,49 @@
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 
 BASE_DIR = Path(__file__).resolve().parent
-
-load_dotenv(BASE_DIR / ".env")
-
-
-def normalize_database_url(database_url):
-    if not database_url:
-        return f"sqlite:///{BASE_DIR / 'instance' / 'database.db'}"
-
-    if database_url.startswith("postgres://"):
-        return database_url.replace("postgres://", "postgresql://", 1)
-
-    return database_url
+INSTANCE_DIR = BASE_DIR / "instance"
+INSTANCE_DIR.mkdir(exist_ok=True)
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "ambition_dev_secret_key_change_later")
-
-    DATABASE_URL = normalize_database_url(os.environ.get("DATABASE_URL"))
-
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-this")
 
     ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
     DEBUG_MODE = os.environ.get("DEBUG_MODE", "false").lower() == "true"
 
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1:8080")
 
-    SESSION_COOKIE_NAME = "ambition_session"
+    raw_database_url = os.environ.get("DATABASE_URL")
+
+    if raw_database_url:
+        SQLALCHEMY_DATABASE_URI = raw_database_url
+    else:
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'database.db'}"
+
+    if SQLALCHEMY_DATABASE_URI == "sqlite:///instance/database.db":
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'database.db'}"
+
+    if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
+            "postgres://",
+            "postgresql://",
+            1,
+        )
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", "Lax")
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        "pool_recycle": 280,
-    }
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
+
+    MAX_CONTENT_LENGTH = 2 * 1024 * 1024
+
+    WTF_CSRF_ENABLED = False
+
+    LOGIN_ATTEMPT_LIMIT = int(os.environ.get("LOGIN_ATTEMPT_LIMIT", "8"))
+    FEEDBACK_DAILY_LIMIT = int(os.environ.get("FEEDBACK_DAILY_LIMIT", "10"))

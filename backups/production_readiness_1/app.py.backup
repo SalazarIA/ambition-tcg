@@ -60,7 +60,6 @@ active_matches = {}
 player_rooms = {}
 waiting_player = None
 private_waiting_rooms = {}
-login_attempts = {}
 
 
 def create_database_tables():
@@ -641,12 +640,6 @@ def feedback():
             flash("Title and message are required.")
             return redirect("/feedback")
 
-        existing_feedback_count = FeedbackReport.query.filter_by(user_id=user.id).count()
-
-        if existing_feedback_count >= app.config.get("FEEDBACK_DAILY_LIMIT", 10) * 100:
-            flash("Feedback limit reached.")
-            return redirect("/")
-
         report = FeedbackReport(
             user_id=user.id,
             username=user.username,
@@ -676,18 +669,6 @@ def training():
         return auth_redirect
 
     return redirect(url_for("arena", mode="bot"))
-
-
-
-
-@app.route("/terms")
-def terms():
-    return render_template("terms.html", user=current_user())
-
-
-@app.route("/privacy")
-def privacy():
-    return render_template("privacy.html", user=current_user())
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -759,17 +740,9 @@ def login():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
 
-        attempt_key = f"{request.remote_addr}:{email}"
-        attempts = login_attempts.get(attempt_key, 0)
-
-        if attempts >= app.config.get("LOGIN_ATTEMPT_LIMIT", 8):
-            flash("Too many login attempts. Try again later.")
-            return redirect("/login")
-
         user = User.query.filter_by(email=email).first()
 
         if not user or not user.check_password(password):
-            login_attempts[attempt_key] = attempts + 1
             flash("Invalid login.")
             return redirect("/login")
 
@@ -777,7 +750,6 @@ def login():
             flash("Verify your email first. Check the verification link in server logs.")
             return redirect("/login")
 
-        login_attempts.pop(attempt_key, None)
         session["user_id"] = user.id
         return redirect("/")
 

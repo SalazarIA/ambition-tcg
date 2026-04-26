@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Privacy Policy - Ambition TCG</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Privacy Policy</h1>
+                <p>Ambition TCG beta</p>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        <section class="deck-status">
+            <h2>Data Collected</h2>
+            <p>Ambition TCG stores account data such as username, email, password hash, cards, match history, feedback reports and gameplay statistics.</p>
+        </section>
+
+        <section class="deck-status">
+            <h2>Purpose</h2>
+            <p>Data is used to operate accounts, save game progress, improve balance, review feedback and maintain beta stability.</p>
+        </section>
+
+        <section class="deck-status">
+            <h2>Passwords</h2>
+            <p>Passwords are stored as hashes. The application does not store plain-text passwords.</p>
+        </section>
+
+        <section class="deck-status">
+            <h2>Contact</h2>
+            <p>During beta, privacy or account removal requests should be sent directly to the project owner.</p>
+        </section>
+    </main>
+</body>
+</html>
