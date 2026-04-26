@@ -379,27 +379,54 @@ class SystemLog(db.Model):
 
 
 
+
 def ensure_liveops_schema(app):
-    """Lightweight schema updater for beta development."""
+    """V1.02 lightweight production-safe schema updater."""
     from sqlalchemy import inspect, text as sql_text
 
     with app.app_context():
-        inspector = inspect(db.engine)
-
-        def add_column_if_missing(table_name, column_name, ddl):
-            existing_columns = [col["name"] for col in inspector.get_columns(table_name)]
-
-            if column_name not in existing_columns:
-                with db.engine.begin() as connection:
-                    connection.execute(sql_text(f"ALTER TABLE {table_name} ADD COLUMN {ddl}"))
-
-        if "users" in inspector.get_table_names():
-            add_column_if_missing("users", "account_status", "account_status VARCHAR(40) DEFAULT 'unverified' NOT NULL")
-            add_column_if_missing("users", "is_tester", "is_tester BOOLEAN DEFAULT false NOT NULL")
-            add_column_if_missing("users", "last_login_at", "last_login_at DATETIME")
-            add_column_if_missing("users", "verified_at", "verified_at DATETIME")
-            add_column_if_missing("users", "login_count", "login_count INTEGER DEFAULT 0 NOT NULL")
-            add_column_if_missing("users", "has_completed_onboarding", "has_completed_onboarding BOOLEAN DEFAULT false NOT NULL")
-            add_column_if_missing("users", "first_training_completed", "first_training_completed BOOLEAN DEFAULT false NOT NULL")
-
         db.create_all()
+
+        inspector = inspect(db.engine)
+        table_names = inspector.get_table_names()
+
+        if "users" not in table_names:
+            return
+
+        dialect = db.engine.dialect.name
+
+        if dialect == "postgresql":
+            commands = [
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(40) DEFAULT 'active' NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_tester BOOLEAN DEFAULT false NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0 NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS has_completed_onboarding BOOLEAN DEFAULT false NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS first_training_completed BOOLEAN DEFAULT false NOT NULL",
+                "UPDATE users SET account_status = 'active' WHERE is_verified = true AND (account_status IS NULL OR account_status = 'unverified')",
+                "UPDATE users SET account_status = 'unverified' WHERE is_verified = false AND account_status IS NULL",
+            ]
+
+            with db.engine.begin() as connection:
+                for command in commands:
+                    connection.execute(sql_text(command))
+
+            return
+
+        existing_columns = [col["name"] for col in inspector.get_columns("users")]
+
+        sqlite_columns = {
+            "account_status": "account_status VARCHAR(40) DEFAULT 'active' NOT NULL",
+            "is_tester": "is_tester BOOLEAN DEFAULT false NOT NULL",
+            "last_login_at": "last_login_at DATETIME",
+            "verified_at": "verified_at DATETIME",
+            "login_count": "login_count INTEGER DEFAULT 0 NOT NULL",
+            "has_completed_onboarding": "has_completed_onboarding BOOLEAN DEFAULT false NOT NULL",
+            "first_training_completed": "first_training_completed BOOLEAN DEFAULT false NOT NULL",
+        }
+
+        with db.engine.begin() as connection:
+            for column_name, ddl in sqlite_columns.items():
+                if column_name not in existing_columns:
+                    connection.execute(sql_text(f"ALTER TABLE users ADD COLUMN {ddl}"))
