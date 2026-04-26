@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>System Health</h1>
+                <p>Live Ops monitor</p>
+            </div>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        <section class="deck-status">
+            <h2>Status</h2>
+            <div class="deck-list">
+                <div class="deck-line"><span>Version</span><strong>{{ app_version }}</strong></div>
+                <div class="deck-line"><span>Environment</span><strong>{{ environment }}</strong></div>
+                <div class="deck-line"><span>Database</span><strong>{{ "OK" if db_ok else "ERROR" }}</strong></div>
+                <div class="deck-line"><span>SMTP</span><strong>{{ "ACTIVE" if smtp_enabled else "INACTIVE" }}</strong></div>
+                <div class="deck-line"><span>Total Users</span><strong>{{ total_users }}</strong></div>
+                <div class="deck-line"><span>Verified Users</span><strong>{{ verified_users }}</strong></div>
+                <div class="deck-line"><span>Total Matches</span><strong>{{ total_matches }}</strong></div>
+                <div class="deck-line"><span>Open Feedbacks</span><strong>{{ open_feedbacks }}</strong></div>
+            </div>
+
+            {% if db_error %}
+                <div class="flash">{{ db_error }}</div>
+            {% endif %}
+        </section>
+
+        <section class="deck-status">
+            <h2>Recent System Logs</h2>
+            <div class="deck-list">
+                {% for log in recent_logs %}
+                    <div class="deck-line">
+                        <span>{{ log.level }} / {{ log.category }} — {{ log.message }}</span>
+                        <strong>{{ log.created_at }}</strong>
+                    </div>
+                {% else %}
+                    <p class="subtitle">No logs yet.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>

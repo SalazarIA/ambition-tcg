@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Privacy - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Privacy</h1>
+                <p>Ambitionz beta privacy notice</p>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        <section class="deck-status">
+            <h2>Data Collected</h2>
+            <p>Ambitionz stores account information such as username, email, password hash, match data, game progression and feedback reports.</p>
+
+            <h2>Email</h2>
+            <p>Email is used for account verification and password reset.</p>
+
+            <h2>Beta Data</h2>
+            <p>During beta, test data may be reset to improve stability, balance and development quality.</p>
+        </section>
+    </main>
+</body>
+</html>

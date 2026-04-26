@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Match History - Ambitionz</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Match History</h1>
+                <p>Your latest recorded duels</p>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        {% if matches %}
+            {% for match in matches %}
+                <section class="deck-status">
+                    <h2>
+                        {{ match.player1_name }} vs {{ match.player2_name }}
+                    </h2>
+
+                    <p>
+                        Result:
+                        <strong>
+                            {% if match.winner_id == user.id %}
+                                Victory
+                            {% elif match.winner_id == None %}
+                                Draw
+                            {% else %}
+                                Defeat
+                            {% endif %}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Winner:
+                        <strong>
+                            {{ match.winner_name if match.winner_name else "Draw" }}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Final HP:
+                        <strong>{{ match.player1_final_hp }}</strong>
+                        /
+                        <strong>{{ match.player2_final_hp }}</strong>
+                    </p>
+
+                    <p>
+                        Total rounds:
+                        <strong>{{ match.total_rounds }}</strong>
+                    </p>
+
+                    <details>
+                        <summary>Battle Log</summary>
+
+                        <div class="deck-list" style="margin-top: 12px;">
+                            {% for log in json.loads(match.battle_log_json) %}
+                                <div class="deck-line">
+                                    <span>{{ log }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </section>
+            {% endfor %}
+        {% else %}
+            <section class="deck-status">
+                <p class="subtitle">No matches recorded yet.</p>
+            </section>
+        {% endif %}
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('arena') }}">Arena</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('shop') }}">Shop</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
+</body>
+</html>
