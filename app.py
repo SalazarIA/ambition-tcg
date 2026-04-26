@@ -917,8 +917,11 @@ def login():
 
         session["user_id"] = user.id
 
-        if not user.has_completed_onboarding:
-            return redirect("/welcome")
+        try:
+            if not getattr(user, "has_completed_onboarding", False):
+                return redirect("/welcome")
+        except Exception as error:
+            print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
 
         return redirect("/")
 
@@ -1843,6 +1846,23 @@ def match_history():
         matches = []
 
     return render_template("match_history.html", user=current_user(), matches=matches)
+
+
+
+
+
+@app.route("/welcome")
+def welcome():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    try:
+        return render_template("welcome.html", user=current_user())
+    except Exception as error:
+        print("WELCOME RENDER ERROR:", type(error).__name__, error)
+        return redirect("/")
 
 
 
