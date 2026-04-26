@@ -1731,142 +1731,7 @@ def handle_disconnect():
 
 
 
-# =========================================================
-# AMBITIONZ V1.02.2 — ROUTE SAFETY NET
-# =========================================================
 
-def _safe_render(template_name, **context):
-    try:
-        return render_template(template_name, **context)
-    except Exception as error:
-        print(f"SAFE RENDER ERROR for {template_name}: {type(error).__name__}: {error}")
-        return f"<h1>Ambitionz</h1><p>Template unavailable: {template_name}</p>", 200
-
-
-@app.route("/how-to-play")
-def how_to_play():
-    return _safe_render("how_to_play.html")
-
-
-@app.route("/terms")
-def terms():
-    return _safe_render("terms.html")
-
-
-@app.route("/privacy")
-def privacy():
-    return _safe_render("privacy.html")
-
-
-@app.route("/ranking")
-def ranking():
-    try:
-        users = (
-            User.query
-            .filter_by(is_verified=True)
-            .order_by(User.wins.desc(), User.level.desc(), User.xp.desc())
-            .limit(100)
-            .all()
-        )
-    except Exception as error:
-        print("Ranking query failed:", error)
-        users = []
-
-    return _safe_render("ranking.html", users=users)
-
-
-@app.route("/resend-verification", methods=["GET", "POST"])
-def resend_verification():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            flash("If this email exists, a verification link will be sent.")
-            return redirect("/resend-verification")
-
-        if user.is_verified:
-            flash("This account is already verified. You can login.")
-            return redirect("/login")
-
-        token = serializer.dumps(user.email, salt="email-confirm")
-        verification_url = url_for("confirm_email", token=token, _external=True)
-
-        sent = send_verification_email(user, verification_url)
-
-        if sent:
-            flash("Verification email sent.")
-        else:
-            flash("SMTP failed or is not configured. Check server logs.")
-
-        try:
-            log_system_event(
-                level="info",
-                category="email",
-                message="Verification email requested",
-                user_id=getattr(user, "id", None),
-            )
-        except Exception as error:
-            print("Resend verification log failed:", error)
-
-        return redirect("/login")
-
-    return _safe_render("resend_verification.html")
-
-
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            flash("If this email exists, a password reset link will be sent.")
-            return redirect("/forgot-password")
-
-        token = serializer.dumps(user.email, salt="password-reset")
-        reset_url = url_for("reset_password", token=token, _external=True)
-
-        sent = send_password_reset_email(user, reset_url)
-
-        if sent:
-            flash("Password reset email sent.")
-        else:
-            flash("SMTP failed or is not configured. Check server logs.")
-
-        try:
-            log_system_event("info", "email", "Password reset requested", user_id=getattr(user, "id", None))
-        except Exception as error:
-            print("Password reset log failed:", error)
-
-        return redirect("/login")
-
-    return _safe_render("forgot_password.html")
-
-
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
-def reset_password(token):
-    try:
-        email = serializer.loads(token, salt="password-reset", max_age=3600)
-    except Exception:
-        return "Password reset link expired."
-
-    user = User.query.filter_by(email=email).first_or_404()
-
-    if request.method == "POST":
-        password = request.form.get("password", "").strip()
-
-        if len(password) < 6:
-            flash("Password must have at least 6 characters.")
-            return redirect(request.url)
-
-        user.set_password(password)
-        db.session.commit()
-
-        flash("Password updated. You can login now.")
-        return redirect("/login")
-
-    return _safe_render("reset_password.html")
 
 
 @app.route("/training")
@@ -1876,204 +1741,109 @@ def training():
     if auth_redirect:
         return auth_redirect
 
-    # Temporary stable bridge: keeps Training link alive.
-    # Full bot training engine remains in arena/socket flow.
+    return render_template("arena.html", user=current_user(), training_mode=True)
+
+
+
+
+
+@app.route("/admin")
+def admin():
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
     try:
-        return render_template("arena.html", user=current_user(), training_mode=True)
+        total_users = User.query.count()
+        verified_users = User.query.filter_by(is_verified=True).count()
     except Exception as error:
-        print("Training render failed:", type(error).__name__, error)
-        flash("Training is temporarily routed to Arena.")
-        return redirect("/arena")
+        print("Admin dashboard query failed:", error)
+        total_users = 0
+        verified_users = 0
+
+    return render_template(
+        "admin.html",
+        user=current_user(),
+        total_users=total_users,
+        verified_users=verified_users,
+        total_matches=0,
+        open_feedbacks=0,
+        intent_metrics={
+            "Strike": 0,
+            "Guard": 0,
+            "Focus": 0,
+            "Unleash": 0,
+            "Overreach": 0,
+        },
+        sigil_metrics={
+            "Fury": 0,
+            "Resolve": 0,
+            "Insight": 0,
+            "Ruin": 0,
+            "Harmony": 0,
+        },
+        recent_feedback=[],
+    )
 
 
-@app.route("/profile")
-def profile():
+
+@app.route("/complete-onboarding", methods=["POST"])
+def complete_onboarding():
     auth_redirect = login_required_redirect()
 
     if auth_redirect:
         return auth_redirect
 
-    return _safe_render("profile.html", user=current_user())
+    user = current_user()
+
+    if user:
+        try:
+            user.has_completed_onboarding = True
+            db.session.commit()
+        except Exception as error:
+            print("Complete onboarding failed:", error)
+            db.session.rollback()
+
+    return redirect("/training")
 
 
-@app.route("/feedback", methods=["GET", "POST"])
-def feedback():
+
+@app.route("/missions/claim/<int:mission_id>", methods=["POST"])
+def claim_user_mission(mission_id):
     auth_redirect = login_required_redirect()
 
     if auth_redirect:
         return auth_redirect
 
-    if request.method == "POST":
-        flash("Feedback received.")
-        return redirect("/")
-
-    return _safe_render("feedback.html", user=current_user())
+    flash("Mission rewards are being stabilized for beta.")
+    return redirect("/missions")
 
 
-@app.route("/missions")
-def missions():
+
+@app.route("/match-history")
+def match_history():
     auth_redirect = login_required_redirect()
 
     if auth_redirect:
         return auth_redirect
 
-    return _safe_render("missions.html", user=current_user())
-
-
-@app.route("/admin/dev-tools")
-def admin_dev_tools():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
+    matches = []
 
     try:
-        users = User.query.order_by(User.id.asc()).all()
+        if "MatchHistory" in globals():
+            matches = (
+                MatchHistory.query
+                .order_by(MatchHistory.id.desc())
+                .limit(50)
+                .all()
+            )
     except Exception as error:
-        print("Admin dev tools users query failed:", error)
-        users = []
+        print("Match history query failed:", error)
+        matches = []
 
-    return _safe_render("admin_dev_tools.html", user=current_user(), users=users)
+    return render_template("match_history.html", user=current_user(), matches=matches)
 
-
-@app.route("/admin/test-email", methods=["POST"])
-def admin_test_email():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    email = request.form.get("email", "").strip().lower()
-
-    if not email:
-        flash("Email is required.")
-        return redirect("/admin/dev-tools")
-
-    try:
-        sent = send_smtp_test_email(email)
-
-        if sent:
-            flash("SMTP test email sent.")
-        else:
-            flash("SMTP test failed. Check Render logs.")
-
-    except Exception as error:
-        print("--- ADMIN SMTP TEST ROUTE ERROR ---")
-        print("Error type:", type(error).__name__)
-        print("Error:", error)
-        print("Destination:", email)
-        print("-----------------------------------")
-        flash(f"SMTP test crashed: {type(error).__name__}. Check Render logs.")
-
-    return redirect("/admin/dev-tools")
-
-
-def _existing_tables():
-    try:
-        return set(sql_inspect(db.engine).get_table_names())
-    except Exception as error:
-        print("Table inspection failed:", type(error).__name__, error)
-        return set()
-
-
-def _delete_table_if_exists(connection, table_name):
-    try:
-        if table_name not in _existing_tables():
-            print(f"Cleanup skipped, missing table: {table_name}")
-            return False
-
-        connection.execute(sql_text(f'DELETE FROM "{table_name}"'))
-        print(f"Cleanup OK: {table_name}")
-        return True
-
-    except Exception as error:
-        print(f"Cleanup ERROR on {table_name}: {type(error).__name__}: {error}")
-        return False
-
-
-@app.route("/admin/clear-gameplay-data", methods=["POST"])
-def admin_clear_gameplay_data():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    tables = [
-        "user_missions",
-        "system_logs",
-        "feedback_reports",
-        "feedback_report",
-        "booster_history",
-        "booster_histories",
-        "match_history",
-        "match_histories",
-        "card_stats",
-        "beta_invites",
-    ]
-
-    cleared = []
-
-    try:
-        with db.engine.begin() as connection:
-            for table in tables:
-                if _delete_table_if_exists(connection, table):
-                    cleared.append(table)
-
-        flash(f"Gameplay data cleared. Tables cleared: {len(cleared)}.")
-
-    except Exception as error:
-        print("--- ADMIN CLEAR GAMEPLAY DATA ERROR ---")
-        print("Error type:", type(error).__name__)
-        print("Error:", error)
-        print("---------------------------------------")
-        flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
-
-    return redirect("/admin/dev-tools")
-
-
-@app.route("/admin/reset-test-users", methods=["POST"])
-def admin_reset_test_users():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    dependency_tables = [
-        "user_missions",
-        "system_logs",
-        "feedback_reports",
-        "feedback_report",
-        "booster_history",
-        "booster_histories",
-        "match_history",
-        "match_histories",
-        "card_stats",
-        "beta_invites",
-    ]
-
-    deleted_users = 0
-
-    try:
-        with db.engine.begin() as connection:
-            for table in dependency_tables:
-                _delete_table_if_exists(connection, table)
-
-            if "users" in _existing_tables():
-                result = connection.execute(
-                    sql_text('DELETE FROM "users" WHERE COALESCE(is_admin, false) = false')
-                )
-                deleted_users = result.rowcount or 0
-
-        flash(f"Cleanup complete. Deleted non-admin users: {deleted_users}.")
-
-    except Exception as error:
-        print("--- ADMIN RESET TEST USERS ERROR ---")
-        print("Error type:", type(error).__name__)
-        print("Error:", error)
-        print("------------------------------------")
-        flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
-
-    return redirect("/admin/dev-tools")
 
 
 if __name__ == "__main__":
