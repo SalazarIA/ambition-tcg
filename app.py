@@ -144,6 +144,53 @@ def login_required_redirect():
     return None
 
 
+
+
+def dev_tools_enabled():
+    return bool(app.config.get("DEV_TOOLS_ENABLED", False))
+
+
+def dev_tools_required_redirect():
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    if not dev_tools_enabled():
+        flash("Dev Tools are disabled in this environment.")
+        return redirect("/admin")
+
+    return None
+
+
+def danger_confirmation_matches():
+    expected = app.config.get("ADMIN_DANGER_CONFIRMATION", "RESET AMBITIONZ")
+    received = request.form.get("confirmation", "").strip()
+
+    return received == expected
+
+
+def require_danger_confirmation_or_redirect():
+    if danger_confirmation_matches():
+        return None
+
+    flash("Danger confirmation failed. Type the exact confirmation phrase.")
+    return redirect("/admin/dev-tools")
+
+
+def admin_audit(message, level="warning", category="admin"):
+    try:
+        user = current_user()
+        log_system_event(
+            level,
+            category,
+            message,
+            user_id=getattr(user, "id", None),
+        )
+    except Exception as error:
+        print("ADMIN AUDIT LOG FAILED:", type(error).__name__, error)
+
+
 def admin_required_redirect():
     auth_redirect = login_required_redirect()
 
@@ -214,6 +261,13 @@ def cleanup_non_admin_users():
     """Clear test data and delete only non-admin users, safely handling FK tables."""
     cleared = []
 
+    confirmation_redirect = require_danger_confirmation_or_redirect()
+
+    if confirmation_redirect:
+        return confirmation_redirect
+
+    admin_audit("Reset non-admin users requested")
+
     dependency_tables = [
         "user_missions",
         "system_logs",
@@ -278,7 +332,7 @@ def safe_admin_user_id():
 
 @app.route("/admin/dev-tools")
 def admin_dev_tools():
-    auth_redirect = admin_required_redirect()
+    auth_redirect = dev_tools_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -291,7 +345,7 @@ def admin_dev_tools():
 
 @app.route("/admin/test-email", methods=["POST"])
 def admin_test_email():
-    auth_redirect = admin_required_redirect()
+    auth_redirect = dev_tools_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -333,10 +387,18 @@ def admin_test_email():
 
 @app.route("/admin/reset-test-users", methods=["POST"])
 def admin_reset_test_users():
-    auth_redirect = admin_required_redirect()
+    auth_redirect = dev_tools_required_redirect()
 
     if auth_redirect:
         return auth_redirect
+
+    confirmation_redirect = require_danger_confirmation_or_redirect()
+
+    if confirmation_redirect:
+        return confirmation_redirect
+
+    admin_audit("Reset non-admin users requested")
+
 
     user = current_user()
 
@@ -368,10 +430,18 @@ def admin_reset_test_users():
 
 @app.route("/admin/clear-gameplay-data", methods=["POST"])
 def admin_clear_gameplay_data():
-    auth_redirect = admin_required_redirect()
+    auth_redirect = dev_tools_required_redirect()
 
     if auth_redirect:
         return auth_redirect
+
+    confirmation_redirect = require_danger_confirmation_or_redirect()
+
+    if confirmation_redirect:
+        return confirmation_redirect
+
+    admin_audit("Clear gameplay data requested")
+
 
     user = current_user()
 

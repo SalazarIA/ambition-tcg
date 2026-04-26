@@ -13,9 +13,9 @@
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Dev Tools</h1>
-                <p>Production stabilization tools</p>
+                <p>Danger-zone tools for beta stabilization</p>
             </div>
-            <a href="/admin" class="btn btn-secondary small-btn">Back</a>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
         {% with messages = get_flashed_messages() %}
@@ -25,7 +25,15 @@
         {% endwith %}
 
         <section class="deck-status">
+            <h2>Safety Gate</h2>
+            <p>Danger actions require the exact phrase below:</p>
+            <div class="flash subtle-flash"><strong>RESET AMBITIONZ</strong></div>
+        </section>
+
+        <section class="deck-status">
             <h2>SMTP Test</h2>
+            <p>Send a real email through production SMTP.</p>
+
             <form method="POST" action="/admin/test-email" class="form mobile-form">
                 <input type="email" name="email" placeholder="Destination email" required>
                 <button type="submit" class="btn full-btn">Send Test Email</button>
@@ -35,7 +43,9 @@
         <section class="deck-status danger-zone">
             <h2>Delete Non-Admin Users</h2>
             <p>Deletes test users and dependent gameplay records. Admin accounts stay alive.</p>
-            <form method="POST" action="/admin/reset-test-users">
+
+            <form method="POST" action="/admin/reset-test-users" class="form mobile-form">
+                <input type="text" name="confirmation" placeholder="Type RESET AMBITIONZ" required>
                 <button type="submit" class="btn btn-danger full-btn">Delete Non-Admin Users</button>
             </form>
         </section>
@@ -43,18 +53,21 @@
         <section class="deck-status danger-zone">
             <h2>Clear Gameplay Data</h2>
             <p>Clears gameplay, feedback, invites, logs and mission progress. Users stay alive.</p>
-            <form method="POST" action="/admin/clear-gameplay-data">
+
+            <form method="POST" action="/admin/clear-gameplay-data" class="form mobile-form">
+                <input type="text" name="confirmation" placeholder="Type RESET AMBITIONZ" required>
                 <button type="submit" class="btn btn-danger full-btn">Clear Gameplay Data</button>
             </form>
         </section>
 
         <section class="deck-status">
             <h2>Current Users</h2>
+
             <div class="deck-list">
                 {% for target in users %}
                     <div class="deck-line">
                         <span>{{ target.id }} — {{ target.username }} — {{ target.email }}</span>
-                        <strong>admin={{ target.is_admin }} / verified={{ target.is_verified }} / {{ target.account_status }}</strong>
+                        <strong>admin={{ target.is_admin }} / tester={{ target.is_tester }} / verified={{ target.is_verified }} / {{ target.account_status }}</strong>
                     </div>
                 {% else %}
                     <p class="subtitle">No users found.</p>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Users - Ambitionz</title>
+    <title>Users - Ambitionz Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
@@ -13,39 +13,62 @@
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Users</h1>
-                <p>Beta account control</p>
+                <p>Admin user control panel</p>
             </div>
             <a href="{{ url_for('admin') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
         <section class="deck-status">
+            <h2>Accounts</h2>
+
             <div class="deck-list">
                 {% for target in users %}
                     <div class="admin-user-card">
                         <div>
                             <strong>{{ target.username }}</strong>
-                            <span>{{ target.email }}</span>
-                            <small>
-                                status={{ target.account_status }}
-                                verified={{ target.is_verified }}
-                                tester={{ target.is_tester }}
-                                admin={{ target.is_admin }}
-                                level={{ target.level if target.level is defined else "-" }}
-                                coins={{ target.coins }}
-                            </small>
+                            <p class="subtitle">{{ target.email }}</p>
+                            <p class="subtitle">
+                                ID {{ target.id }}
+                                · verified={{ target.is_verified }}
+                                · admin={{ target.is_admin }}
+                                · tester={{ target.is_tester }}
+                                · status={{ target.account_status }}
+                                · W {{ target.wins }} / L {{ target.losses }}
+                            </p>
                         </div>
 
-                        <div class="admin-actions">
-                            <form method="POST" action="{{ url_for('admin_verify_user', user_id=target.id) }}"><button class="btn btn-secondary small-btn">Verify</button></form>
-                            <form method="POST" action="{{ url_for('admin_toggle_tester', user_id=target.id) }}"><button class="btn btn-secondary small-btn">Tester</button></form>
-                            <form method="POST" action="{{ url_for('admin_toggle_admin', user_id=target.id) }}"><button class="btn btn-secondary small-btn">Admin</button></form>
+                        <div class="admin-user-actions">
+                            <form method="POST" action="{{ url_for('admin_verify_user', user_id=target.id) }}">
+                                <button class="btn small-btn" type="submit">Verify</button>
+                            </form>
+
+                            <form method="POST" action="{{ url_for('admin_toggle_tester', user_id=target.id) }}">
+                                <button class="btn btn-secondary small-btn" type="submit">Tester</button>
+                            </form>
+
+                            <form method="POST" action="{{ url_for('admin_toggle_admin', user_id=target.id) }}">
+                                <button class="btn btn-secondary small-btn" type="submit">Admin</button>
+                            </form>
+
                             {% if target.account_status == "banned" %}
-                                <form method="POST" action="{{ url_for('admin_unban_user', user_id=target.id) }}"><button class="btn small-btn">Unban</button></form>
+                                <form method="POST" action="{{ url_for('admin_unban_user', user_id=target.id) }}">
+                                    <button class="btn small-btn" type="submit">Unban</button>
+                                </form>
                             {% else %}
-                                <form method="POST" action="{{ url_for('admin_ban_user', user_id=target.id) }}"><button class="btn btn-danger small-btn">Ban</button></form>
+                                <form method="POST" action="{{ url_for('admin_ban_user', user_id=target.id) }}">
+                                    <button class="btn btn-danger small-btn" type="submit">Ban</button>
+                                </form>
                             {% endif %}
                         </div>
                     </div>
+                {% else %}
+                    <p class="subtitle">No users found.</p>
                 {% endfor %}
             </div>
         </section>

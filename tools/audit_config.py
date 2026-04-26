@@ -72,6 +72,11 @@ def audit_config(app):
         if app.config.get("SMTP_USERNAME") != app.config.get("MAIL_FROM"):
             warnings.append("SMTP_USERNAME and MAIL_FROM are different. Gmail usually requires them to match.")
 
+    print("DEV_TOOLS_ENABLED:", bool(app.config.get("DEV_TOOLS_ENABLED", False)))
+
+    if is_production and app.config.get("DEV_TOOLS_ENABLED", False):
+        warnings.append("DEV_TOOLS_ENABLED is active in production. Use only during controlled beta operations.")
+
     if warnings:
         print("CONFIG WARNINGS:")
         for warning in warnings:

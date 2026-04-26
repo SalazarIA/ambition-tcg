@@ -82,3 +82,8 @@ class Config:
     @classmethod
     def smtp_enabled(cls):
         return bool(cls.SMTP_HOST and cls.SMTP_USERNAME and cls.SMTP_PASSWORD and cls.MAIL_FROM)
+
+
+# Ambitionz security/admin controls
+DEV_TOOLS_ENABLED = os.environ.get("DEV_TOOLS_ENABLED", "false").lower() == "true"
+ADMIN_DANGER_CONFIRMATION = os.environ.get("ADMIN_DANGER_CONFIRMATION", "RESET AMBITIONZ")

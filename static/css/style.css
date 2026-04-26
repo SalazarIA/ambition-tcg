@@ -3230,3 +3230,60 @@ textarea {
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================================
+   AMBITIONZ V1.03.1 — ADMIN HARDENING
+   ========================================================= */
+
+.admin-user-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(216,199,255,0.12);
+}
+
+.admin-user-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.btn-danger {
+    background: rgba(231, 76, 60, 0.18) !important;
+    border-color: rgba(231, 76, 60, 0.40) !important;
+    color: #ffd5d0 !important;
+}
+
+.subtle-flash {
+    opacity: 0.9;
+}
+
+@media (max-width: 760px) {
+    .admin-user-card {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-user-actions {
+        justify-content: flex-start;
+    }
+}
+
+.legal-text {
+    display: grid;
+    gap: 12px;
+}
+
+.legal-text h2 {
+    color: #fff;
+    margin-top: 12px;
+}
+
+.legal-text p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.55;
+}
