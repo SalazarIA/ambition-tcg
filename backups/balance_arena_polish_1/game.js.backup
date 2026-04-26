@@ -351,41 +351,6 @@ function addLog(message) {
     log.scrollTop = log.scrollHeight;
 
     playEventSound(message);
-    triggerBattleImpact(message);
-}
-
-
-function triggerBattleImpact(message) {
-    const lower = String(message || "").toLowerCase();
-
-    if (lower.includes("damage") || lower.includes("defeated") || lower.includes("attacked directly")) {
-        document.body.classList.add("screen-hit");
-
-        setTimeout(() => {
-            document.body.classList.remove("screen-hit");
-        }, 280);
-    }
-
-    if (lower.includes("unleashed ambition") || lower.includes("ambition unleash")) {
-        document.body.classList.add("screen-ambition");
-
-        setTimeout(() => {
-            document.body.classList.remove("screen-ambition");
-        }, 520);
-    }
-
-    if (lower.includes("overreach")) {
-        document.body.classList.add("screen-overreach");
-
-        setTimeout(() => {
-            document.body.classList.remove("screen-overreach");
-        }, 620);
-    }
-
-    if (lower.includes("advantage")) {
-        pulseElement("enemy-monster-zone", "zone-element-pulse");
-        pulseElement("my-monster-zone", "zone-element-pulse");
-    }
 }
 
 function updateArenaStep(data) {

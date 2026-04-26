@@ -1,4 +1,4 @@
-from game.state import (
+from game.balance import (
     AMBITION_MAX,
     AMBITION_UNLEASH_COST,
     AMBITION_UNLEASH_POWER_BONUS,
