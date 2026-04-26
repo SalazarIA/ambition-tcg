@@ -26,6 +26,7 @@ from game.deck import (
 )
 from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, db, ensure_database_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
+from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.email_service import send_verification_email, send_password_reset_email, send_smtp_test_email, is_smtp_configured
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
@@ -397,24 +398,9 @@ def admin_reset_test_users():
     if confirmation_redirect:
         return confirmation_redirect
 
-    admin_audit("Reset non-admin users requested")
-
-
-    user = current_user()
-
     try:
-        result = cleanup_non_admin_users()
-
-        try:
-            log_system_event(
-                "warning",
-                "admin",
-                f"Reset non-admin users. Deleted users: {result['deleted_users']}",
-                user_id=safe_admin_user_id(),
-            )
-        except Exception as log_error:
-            print("System log failed after reset:", log_error)
-
+        result = delete_non_admin_users(db)
+        admin_audit(f"Reset non-admin users. Deleted users: {result['deleted_users']}")
         flash(f"Cleanup complete. Deleted non-admin users: {result['deleted_users']}.")
 
     except Exception as error:
@@ -422,7 +408,6 @@ def admin_reset_test_users():
         print("Error type:", type(error).__name__)
         print("Error:", error)
         print("------------------------------------")
-
         flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
 
     return redirect("/admin/dev-tools")
@@ -440,32 +425,16 @@ def admin_clear_gameplay_data():
     if confirmation_redirect:
         return confirmation_redirect
 
-    admin_audit("Clear gameplay data requested")
-
-
-    user = current_user()
-
     try:
-        cleared = cleanup_gameplay_tables()
-
-        try:
-            log_system_event(
-                "warning",
-                "admin",
-                f"Gameplay data cleared. Tables: {', '.join(cleared)}",
-                user_id=safe_admin_user_id(),
-            )
-        except Exception as log_error:
-            print("System log failed after gameplay cleanup:", log_error)
-
-        flash(f"Gameplay data cleared. Tables cleared: {len(cleared)}.")
+        result = clear_gameplay_data(db)
+        admin_audit(f"Gameplay data cleared. Tables: {result['cleared_tables']}")
+        flash(f"Gameplay data cleared. Tables cleared: {result['cleared_count']}.")
 
     except Exception as error:
         print("--- ADMIN CLEAR GAMEPLAY DATA ERROR ---")
         print("Error type:", type(error).__name__)
         print("Error:", error)
         print("---------------------------------------")
-
         flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
 
     return redirect("/admin/dev-tools")

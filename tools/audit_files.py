@@ -16,6 +16,10 @@ REQUIRED_FILES = [
     "static/css/style.css",
     "static/js/game.js",
     "static/js/card_ui_v103.js",
+    "static/js/ambitionz_dom.js",
+    "services/admin/cleanup_service.py",
+    "services/security/admin_security.py",
+    "services/database/schema_tools.py",
     "static/manifest.webmanifest",
 ]
 
