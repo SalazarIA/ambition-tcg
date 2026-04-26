@@ -7,6 +7,29 @@ INSTANCE_DIR = BASE_DIR / "instance"
 INSTANCE_DIR.mkdir(exist_ok=True)
 
 
+def clean_database_url(raw_url):
+    if not raw_url:
+        return None
+
+    url = str(raw_url).strip().strip('"').strip("'")
+
+    invalid_values = {
+        "",
+        "<postgresql internal database url>",
+        "<postgres internal database url>",
+        "postgresql internal database url",
+        "postgres internal database url",
+    }
+
+    if url.lower() in invalid_values:
+        return None
+
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    return url
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-this")
 
@@ -15,22 +38,12 @@ class Config:
 
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1:8080")
 
-    raw_database_url = os.environ.get("DATABASE_URL")
+    raw_database_url = clean_database_url(os.environ.get("DATABASE_URL"))
 
     if raw_database_url:
         SQLALCHEMY_DATABASE_URI = raw_database_url
     else:
         SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'database.db'}"
-
-    if SQLALCHEMY_DATABASE_URI == "sqlite:///instance/database.db":
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'database.db'}"
-
-    if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
-        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
-            "postgres://",
-            "postgresql://",
-            1,
-        )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
