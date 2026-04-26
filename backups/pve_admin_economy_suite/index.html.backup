@@ -46,7 +46,6 @@
 
                     <div class="actions">
                         <a href="{{ url_for('arena') }}" class="btn">Random Match</a>
-                        <a href="{{ url_for('training') }}" class="btn btn-secondary">Training vs Bot</a>
 
                         <form method="POST" action="{{ url_for('create_private_room') }}">
                             <button type="submit" class="btn btn-secondary">Create Private Room</button>
@@ -108,11 +107,6 @@
                     <a href="{{ url_for('shop') }}" class="menu-card">
                         <strong>Shop</strong>
                         <span>Open boosters</span>
-                    </a>
-
-                    <a href="{{ url_for('booster_history') }}" class="menu-card">
-                        <strong>Booster History</strong>
-                        <span>Past pack openings</span>
                     </a>
 
                     <a href="{{ url_for('feedback') }}" class="menu-card">

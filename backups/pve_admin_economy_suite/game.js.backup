@@ -66,20 +66,6 @@ function playTone(frequency = 440, duration = 0.08, volume = 0.04) {
     }
 }
 
-function playElementalImpact(message) {
-    const lower = String(message || "").toLowerCase();
-
-    if (lower.includes("fire")) {
-        playTone(620, 0.07, 0.04);
-    } else if (lower.includes("water")) {
-        playTone(360, 0.09, 0.04);
-    } else if (lower.includes("earth")) {
-        playTone(220, 0.09, 0.04);
-    } else if (lower.includes("plant")) {
-        playTone(480, 0.08, 0.04);
-    }
-}
-
 function playEventSound(message) {
     const lower = String(message || "").toLowerCase();
 
@@ -286,10 +272,6 @@ function classifyLog(message) {
         return "log-advantage";
     }
 
-    if (lower.includes("advantage")) {
-        playElementalImpact(message);
-    }
-
     if (lower.includes("ambition") || lower.includes("overreach") || lower.includes("unleashed")) {
         return "log-ambition";
     }
@@ -450,9 +432,6 @@ socket.on("connect", () => {
     if (mode === "private" && code) {
         addLog(`Joining private room ${code}...`);
         socket.emit("join_private_room", { code });
-    } else if (mode === "bot") {
-        addLog("Starting training match against bot...");
-        socket.emit("join_bot_match");
     } else {
         socket.emit("join_queue");
     }

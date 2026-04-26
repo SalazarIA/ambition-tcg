@@ -272,31 +272,3 @@ class FeedbackReport(db.Model):
 
     def __repr__(self):
         return f"<FeedbackReport {self.category} {self.title}>"
-
-
-
-class BoosterHistory(db.Model):
-    __tablename__ = "booster_history"
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    username = db.Column(db.String(80), nullable=False)
-
-    cost = db.Column(db.Integer, default=0, nullable=False)
-    cards_json = db.Column(db.Text, nullable=False, default="[]")
-
-    common_count = db.Column(db.Integer, default=0, nullable=False)
-    uncommon_count = db.Column(db.Integer, default=0, nullable=False)
-
-    created_at = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-        index=True,
-    )
-
-    user = db.relationship("User")
-
-    def __repr__(self):
-        return f"<BoosterHistory {self.username} {self.created_at}>"

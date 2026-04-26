@@ -22,7 +22,6 @@
                 <p>Coins: <strong>{{ user.coins }}</strong></p>
             </div>
 
-            <a href="{{ url_for('booster_history') }}" class="btn btn-secondary small-btn">Booster History</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 

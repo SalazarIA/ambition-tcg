@@ -57,11 +57,6 @@
                 </div>
 
                 <div class="menu-card">
-                    <strong>{{ total_boosters }}</strong>
-                    <span>Total Boosters</span>
-                </div>
-
-                <div class="menu-card">
                     <strong>{{ total_wins }}</strong>
                     <span>Total Wins</span>
                 </div>
@@ -70,18 +65,6 @@
                     <strong>{{ total_losses }}</strong>
                     <span>Total Losses</span>
                 </div>
-            </div>
-        </section>
-
-        <section class="deck-status">
-            <h2>Intent Metrics</h2>
-
-            <div class="deck-list">
-                <div class="deck-line"><span>Strike used</span><strong>{{ intent_metrics.Strike }}</strong></div>
-                <div class="deck-line"><span>Guard used</span><strong>{{ intent_metrics.Guard }}</strong></div>
-                <div class="deck-line"><span>Focus used</span><strong>{{ intent_metrics.Focus }}</strong></div>
-                <div class="deck-line"><span>Unleash used</span><strong>{{ intent_metrics.Unleash }}</strong></div>
-                <div class="deck-line"><span>Overreach triggered</span><strong>{{ intent_metrics.Overreach }}</strong></div>
             </div>
         </section>
 

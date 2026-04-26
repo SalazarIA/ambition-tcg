@@ -1778,29 +1778,3 @@ h1 {
         text-align: center;
     }
 }
-
-/* =========================================================
-   PVE / ADMIN 3 / BOOSTER 2.0
-   ========================================================= */
-
-.home-beta-actions .actions {
-    flex-wrap: wrap;
-}
-
-.game-over-card h1 {
-    background: linear-gradient(135deg, #ffffff, #d8c7ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.deck-status h2 {
-    letter-spacing: 0.2px;
-}
-
-.booster-odds-box {
-    margin: 12px 0;
-    padding: 12px;
-    border-radius: 14px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-}
