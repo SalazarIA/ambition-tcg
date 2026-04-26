@@ -1,645 +1,210 @@
-const socket = io();
+const socket = io({
+    transports: ["websocket", "polling"],
+});
 
-let audioUnlocked = false;
+let latestState = null;
+let selectedIntent = "Strike";
 
-function unlockAudioOnce() {
-    if (audioUnlocked) {
-        return;
-    }
+const $ = (id) => document.getElementById(id);
 
-    try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        const audioContext = new AudioContextClass();
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
+function logLine(message) {
+    const log = $("battle-log");
 
-        gain.gain.value = 0.001;
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.01);
+    if (!log) return;
 
-        audioUnlocked = true;
-    } catch (error) {
-        audioUnlocked = false;
+    const div = document.createElement("div");
+    div.className = "log-line";
+    div.textContent = message;
+
+    log.prepend(div);
+}
+
+function setText(id, value) {
+    const element = $(id);
+
+    if (element) {
+        element.textContent = value;
     }
 }
 
-document.addEventListener("touchstart", unlockAudioOnce, { once: true });
-document.addEventListener("click", unlockAudioOnce, { once: true });
-
-let lastMyHp = null;
-let lastEnemyHp = null;
-let currentEnergy = 0;
-
-function escapeHtml(value) {
-    if (value === null || value === undefined) {
-        return "";
-    }
-
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-function getElementIcon(element) {
-    const icons = {
-        Fire: "🔥",
-        Water: "💧",
-        Earth: "🪨",
-        Plant: "🌿",
-        Global: "◇",
-        Neutral: "◇",
-        Dark: "☾"
-    };
-
-    return icons[element] || "◇";
-}
-
-function getCardImageUrl(card) {
-    if (!card || !card.image) {
-        return "/static/img/cards/placeholders/card_placeholder.svg";
-    }
-
-    return `/static/img/${card.image}`;
-}
-
-function playTone(frequency = 440, duration = 0.08, volume = 0.04) {
-    try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        const audioContext = new AudioContextClass();
-
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-
-        oscillator.frequency.value = frequency;
-        oscillator.type = "sine";
-
-        gain.gain.value = volume;
-
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-
-        oscillator.start();
-
-        setTimeout(() => {
-            oscillator.stop();
-            audioContext.close();
-        }, duration * 1000);
-    } catch (error) {
-        // Audio may be blocked by browser autoplay rules.
-    }
-}
-
-function playElementalImpact(message) {
-    const lower = String(message || "").toLowerCase();
-
-    if (lower.includes("fire")) {
-        playTone(620, 0.07, 0.04);
-    } else if (lower.includes("water")) {
-        playTone(360, 0.09, 0.04);
-    } else if (lower.includes("earth")) {
-        playTone(220, 0.09, 0.04);
-    } else if (lower.includes("plant")) {
-        playTone(480, 0.08, 0.04);
-    }
-}
-
-function playEventSound(message) {
-    const lower = String(message || "").toLowerCase();
-
-    if (lower.includes("victory") || lower.includes("win")) {
-        playTone(740, 0.12, 0.05);
-        setTimeout(() => playTone(980, 0.12, 0.05), 120);
-        return;
-    }
-
-    if (lower.includes("damage") || lower.includes("defeated") || lower.includes("attacked")) {
-        playTone(180, 0.08, 0.045);
-        return;
-    }
-
-    if (lower.includes("unleashed") || lower.includes("ambition")) {
-        playTone(520, 0.09, 0.045);
-        setTimeout(() => playTone(780, 0.09, 0.045), 90);
-        return;
-    }
-
-    if (lower.includes("overreach")) {
-        playTone(120, 0.15, 0.05);
-        return;
-    }
-
-    if (lower.includes("set a monster") || lower.includes("set a spell")) {
-        playTone(420, 0.06, 0.035);
-    }
-}
-
-function pulseElement(elementId, className) {
-    const el = document.getElementById(elementId);
-
-    if (!el) {
-        return;
-    }
-
-    el.classList.remove(className);
-    void el.offsetWidth;
-    el.classList.add(className);
-
-    setTimeout(() => {
-        el.classList.remove(className);
-    }, 550);
-}
-
-
-function cardIdentityBadges(card) {
-    const sigil = card.sigil || "Global";
-    const role = card.role || "Balancer";
-
-    return `
-        <div class="card-identity-row">
-            <span class="sigil-pill sigil-${sigil.toLowerCase()}">${sigil}</span>
-            <span class="role-pill role-${role.toLowerCase()}">${role}</span>
-        </div>
-    `;
-}
-
-function renderCard(card, index = -1, hidden = false, setCard = false) {
-    if (hidden) {
-        return `
-            <div class="card card-back">
-                <div class="card-back-inner">
-                    <div class="card-back-logo">A</div>
-                    <p>Hidden Monster</p>
-                </div>
-            </div>
-        `;
-    }
-
-    if (setCard) {
-        return `
-            <div class="card card-set">
-                <div class="card-back-inner">
-                    <div class="card-back-logo">?</div>
-                    <p>Set Card</p>
-                </div>
-            </div>
-        `;
+function renderCard(card, options = {}) {
+    if (window.AmbitionzCardUI && window.AmbitionzCardUI.cardFrameHtml) {
+        return window.AmbitionzCardUI.cardFrameHtml(card, options);
     }
 
     if (!card) {
-        return "";
+        return `<div class="empty-slot-v103">${options.emptyText || "Empty"}</div>`;
     }
 
-    const type = escapeHtml(card.type);
-    const rarity = escapeHtml(card.rarity);
-    const name = escapeHtml(card.name);
-    const element = escapeHtml(card.element || "Global");
-    const description = escapeHtml(card.description || card.effect || "None");
-    const power = Number(card.power || 0);
-    const value = Number(card.value || 0);
-    const cost = Number(card.cost || 1);
-    const img = escapeHtml(getCardImageUrl(card));
-
-    const canPlay = index < 0 || cost <= currentEnergy;
-    const playableClass = canPlay ? "playable-card" : "locked-energy-card";
-    const clickable = index >= 0 && canPlay ? `onclick="playToField(${index})"` : "";
-
-    const statValue = type === "Monster" ? power : value;
-    const statLabel = type === "Monster" ? "POWER" : "VALUE";
-
     return `
-        <article class="card image-card ${type.toLowerCase()} ${rarity.toLowerCase()} ${playableClass}" ${clickable}>
-            <div class="image-card-frame">
-                <header class="image-card-header">
-                    <h4>${name}</h4>
-                    <span>${rarity}</span>
-                </header>
-
-                <div class="image-card-art">
-                    <img
-                        src="${img}"
-                        alt="${name}"
-                        loading="lazy"
-                        onerror="this.onerror=null; this.src='/static/img/cards/placeholders/card_placeholder.svg';"
-                    >
-                </div>
-
-                <div class="image-card-meta">
-                    <span>${getElementIcon(element)} ${element}</span>
-                    <span>${type}</span>
-                </div>
-
-                <div class="image-card-effect">
-                    <p>${description}</p>
-                </div>
-
-                <footer class="image-card-footer">
-                    <span>COST ${cost}</span>
-                    <strong>${statLabel}: ${statValue}</strong>
-                </footer>
-            </div>
+        <article class="collection-card">
+            <strong>${card.name || "Card"}</strong>
+            <p>${card.type || ""} / ${card.element || ""}</p>
+            <p>${card.effect || ""}</p>
         </article>
     `;
 }
 
-function playToField(index) {
-    socket.emit("play_to_field", { index });
-    pulseElement("my-hand", "soft-pulse");
-}
+function updateHud(state) {
+    setText("round-label", state.round || 1);
+    setText("phase-label", state.phase || (state.resolving ? "Resolve Phase" : "Set Phase"));
 
-function chooseIntent(intent) {
-    unlockAudioOnce();
-    socket.emit("choose_intent", { intent });
-}
-
-function toggleUnleash() {
-    unlockAudioOnce();
-    socket.emit("toggle_unleash");
-}
-
-function copyPrivateRoomCode() {
-    const codeEl = document.getElementById("private-room-code");
-
-    if (!codeEl) {
-        return;
+    if (state.me) {
+        setText("my-name", state.me.name || "Player");
+        setText("my-hp", state.me.hp ?? 4000);
+        setText("my-deck", state.me.deck_count ?? 0);
+        setText("my-gy", state.me.graveyard_count ?? 0);
+        setText("my-ready", state.me.ready ? "Yes" : "No");
     }
 
-    const code = codeEl.textContent.trim();
-
-    navigator.clipboard.writeText(code).then(() => {
-        addLog(`Private room code copied: ${code}`);
-    }).catch(() => {
-        addLog(`Private room code: ${code}`);
-    });
+    if (state.enemy) {
+        setText("enemy-name", state.enemy.name || "Opponent");
+        setText("enemy-hp", state.enemy.hp ?? 4000);
+        setText("enemy-deck", state.enemy.deck_count ?? 0);
+        setText("enemy-hand", state.enemy.hand_count ?? 0);
+        setText("enemy-ready", state.enemy.ready ? "Yes" : "No");
+    }
 }
 
-function updateIntentButtons(data) {
-    const intent = data.me.intent || "Strike";
+function renderField(state) {
+    const myMonster = $("my-monster-slot");
+    const myST = $("my-st-slot");
+    const enemyMonster = $("enemy-monster-slot");
+    const enemyST = $("enemy-st-slot");
 
-    ["Strike", "Guard", "Focus"].forEach((name) => {
-        const button = document.getElementById(`intent-${name.toLowerCase()}`);
+    if (myMonster) {
+        myMonster.innerHTML = renderCard(state.me?.field_m, { emptyText: "Empty Monster Zone" });
+    }
 
-        if (!button) {
-            return;
-        }
+    if (myST) {
+        myST.innerHTML = renderCard(state.me?.field_st, { emptyText: "Empty Spell/Trap Zone" });
+    }
 
-        button.classList.toggle("active", intent === name);
-        button.disabled = data.me.ready || data.resolving;
-    });
-
-    const unleashButton = document.getElementById("btn-unleash");
-
-    if (unleashButton) {
-        const hasEnoughAmbition = Number(data.me.ambition || 0) >= 5;
-        const hasMonster = Boolean(data.me.field_m);
-
-        unleashButton.disabled = data.me.ready || data.resolving || !hasEnoughAmbition || !hasMonster;
-
-        if (data.me.wants_unleash) {
-            unleashButton.textContent = "Ambition Unleash Prepared";
-            unleashButton.classList.add("active-unleash");
+    if (enemyMonster) {
+        if (state.enemy?.field_m_rev) {
+            enemyMonster.innerHTML = renderCard(state.enemy.field_m_rev, { emptyText: "Hidden" });
         } else {
-            unleashButton.textContent = "Unleash Ambition — Cost 5";
-            unleashButton.classList.remove("active-unleash");
+            enemyMonster.innerHTML = `<div class="empty-slot-v103">${state.enemy?.field_m_status || "Hidden"}</div>`;
         }
     }
+
+    if (enemyST) {
+        enemyST.innerHTML = `<div class="empty-slot-v103">${state.enemy?.field_st_status || "Empty"}</div>`;
+    }
 }
 
-function declareReady() {
-    unlockAudioOnce();
-    socket.emit("declare_ready");
-    pulseElement("btn-ready", "button-pulse");
-}
+function renderHand(state) {
+    const hand = $("hand");
 
-function classifyLog(message) {
-    const lower = String(message || "").toLowerCase();
+    if (!hand) return;
 
-    if (lower.includes("damage") || lower.includes("defeated") || lower.includes("attacked")) {
-        return "log-damage";
-    }
+    hand.innerHTML = "";
 
-    if (lower.includes("healed") || lower.includes("restored") || lower.includes("shield")) {
-        return "log-heal";
-    }
+    const cards = state.me?.hand || [];
 
-    if (lower.includes("advantage") || lower.includes("+300")) {
-        return "log-advantage";
-    }
-
-    if (lower.includes("advantage")) {
-        playElementalImpact(message);
-    }
-
-    if (lower.includes("sigil")) {
-        return "log-sigil";
-    }
-
-    if (lower.includes("ambition") || lower.includes("overreach") || lower.includes("unleashed")) {
-        return "log-ambition";
-    }
-
-    if (lower.includes("energy") || lower.includes("cost")) {
-        return "log-energy";
-    }
-
-    if (lower.includes("round")) {
-        return "log-round";
-    }
-
-    return "log-default";
-}
-
-function addLog(message) {
-    const log = document.getElementById("battle-log");
-
-    if (!log) {
+    if (!cards.length) {
+        hand.innerHTML = `<div class="empty-slot-v103">No cards in hand</div>`;
         return;
     }
 
-    const line = document.createElement("p");
-    line.className = classifyLog(message);
-    line.textContent = `> ${message}`;
+    cards.forEach((card, index) => {
+        const wrapper = document.createElement("button");
+        wrapper.type = "button";
+        wrapper.className = "arena-hand-card";
+        wrapper.innerHTML = renderCard(card);
+        wrapper.addEventListener("click", () => {
+            socket.emit("play_to_field", { index });
+        });
 
-    log.appendChild(line);
-    log.scrollTop = log.scrollHeight;
-
-    playEventSound(message);
-    triggerBattleImpact(message);
+        hand.appendChild(wrapper);
+    });
 }
 
+function renderState(state) {
+    latestState = state;
 
-function triggerBattleImpact(message) {
-    const lower = String(message || "").toLowerCase();
+    updateHud(state);
+    renderField(state);
+    renderHand(state);
+}
 
-    if (lower.includes("damage") || lower.includes("defeated") || lower.includes("attacked directly")) {
-        document.body.classList.add("screen-hit");
+function setQueueStatus(message) {
+    const status = $("queue-status");
 
-        setTimeout(() => {
-            document.body.classList.remove("screen-hit");
-        }, 280);
-    }
-
-    if (lower.includes("unleashed ambition") || lower.includes("ambition unleash")) {
-        document.body.classList.add("screen-ambition");
-
-        setTimeout(() => {
-            document.body.classList.remove("screen-ambition");
-        }, 520);
-    }
-
-    if (lower.includes("overreach")) {
-        document.body.classList.add("screen-overreach");
-
-        setTimeout(() => {
-            document.body.classList.remove("screen-overreach");
-        }, 620);
-    }
-
-    if (lower.includes("advantage")) {
-        pulseElement("enemy-monster-zone", "zone-element-pulse");
-        pulseElement("my-monster-zone", "zone-element-pulse");
+    if (status) {
+        status.textContent = message;
     }
 }
 
-function updateArenaStep(data) {
-    const el = document.getElementById("arena-step-text");
+function setIntent(intent) {
+    selectedIntent = intent;
 
-    if (!el) {
-        return;
-    }
+    document.querySelectorAll(".intent-btn-v103").forEach((button) => {
+        button.classList.toggle("active", button.dataset.intent === intent);
+    });
 
-    if (data.resolving) {
-        el.textContent = "Battle is resolving. Watch the reveal, elemental bonuses and damage log.";
-        return;
-    }
-
-    if (data.me.ready) {
-        el.textContent = "You are ready. Waiting for opponent.";
-        return;
-    }
-
-    if (!data.me.field_m && !data.me.field_st) {
-        el.textContent = "Choose a monster first. Then set a spell/trap if you have enough energy.";
-        return;
-    }
-
-    if (data.me.field_m && !data.me.field_st) {
-        el.textContent = "Monster selected. You may set a spell/trap or press Ready.";
-        return;
-    }
-
-    el.textContent = "Cards selected. Press Ready to enter Battle Phase.";
+    socket.emit("set_intent", { intent });
+    logLine(`Intent selected: ${intent}`);
 }
 
-function pulseZonesOnReveal(data) {
-    if (data.resolving || data.enemy.field_m_status === "REVEALED") {
-        pulseElement("enemy-monster-zone", "zone-reveal-pulse");
-        pulseElement("my-monster-zone", "zone-reveal-pulse");
-    }
-}
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".intent-btn-v103").forEach((button) => {
+        button.addEventListener("click", () => setIntent(button.dataset.intent));
+    });
 
+    const joinButton = $("join-queue-btn");
 
-function setText(id, value) {
-    const el = document.getElementById(id);
-
-    if (el) {
-        el.textContent = value;
-    }
-}
-
-function syncRound(data) {
-    const round = String(data.round);
-
-    setText("round", round);
-    setText("round-mobile", round);
-    setText("phase-label", data.phase || "Set Phase");
-}
-
-function updateEnergy(data) {
-    currentEnergy = Number(data.me.energy || 0);
-
-    setText("my-energy", `${data.me.energy}/${data.me.max_energy}`);
-    setText("enemy-energy", `${data.enemy.energy}/${data.enemy.max_energy}`);
-}
-
-function updateHpWithFeedback(data) {
-    const myHp = Number(data.me.hp);
-    const enemyHp = Number(data.enemy.hp);
-
-    setText("my-hp", myHp);
-    setText("enemy-hp", enemyHp);
-
-    if (lastMyHp !== null && myHp < lastMyHp) {
-        pulseElement("my-hp", "damage-pulse");
+    if (joinButton) {
+        joinButton.addEventListener("click", () => {
+            setQueueStatus(window.AMBITIONZ_TRAINING_MODE ? "Starting training..." : "Searching for opponent...");
+            socket.emit(window.AMBITIONZ_TRAINING_MODE ? "join_training" : "join_queue");
+        });
     }
 
-    if (lastEnemyHp !== null && enemyHp < lastEnemyHp) {
-        pulseElement("enemy-hp", "damage-pulse");
+    const readyButton = $("ready-btn");
+
+    if (readyButton) {
+        readyButton.addEventListener("click", () => {
+            socket.emit("declare_ready");
+        });
     }
 
-    if (lastMyHp !== null && myHp > lastMyHp) {
-        pulseElement("my-hp", "heal-pulse");
-    }
-
-    if (lastEnemyHp !== null && enemyHp > lastEnemyHp) {
-        pulseElement("enemy-hp", "heal-pulse");
-    }
-
-    lastMyHp = myHp;
-    lastEnemyHp = enemyHp;
-}
-
-
-function updateAmbition(data) {
-    const myAmbition = Number(data.me.ambition || 0);
-    const enemyAmbition = Number(data.enemy.ambition || 0);
-
-    const myText = document.getElementById("my-ambition-text");
-    const enemyText = document.getElementById("enemy-ambition-text");
-    const myFill = document.getElementById("my-ambition-fill");
-    const enemyFill = document.getElementById("enemy-ambition-fill");
-
-    if (myText) {
-        myText.textContent = `${myAmbition}/10`;
-    }
-
-    if (enemyText) {
-        enemyText.textContent = `${enemyAmbition}/10`;
-    }
-
-    if (myFill) {
-        myFill.style.width = `${Math.min(100, myAmbition * 10)}%`;
-        myFill.classList.toggle("ready", myAmbition >= 5);
-        myFill.classList.toggle("danger", myAmbition >= 9);
-    }
-
-    if (enemyFill) {
-        enemyFill.style.width = `${Math.min(100, enemyAmbition * 10)}%`;
-        enemyFill.classList.toggle("ready", enemyAmbition >= 5);
-        enemyFill.classList.toggle("danger", enemyAmbition >= 9);
-    }
-}
+    setIntent(selectedIntent);
+});
 
 socket.on("connect", () => {
-    addLog("Connected to server.");
+    setQueueStatus("Connected.");
+    logLine("Connected to Ambitionz server.");
+});
 
-    const mode = window.AMBITION_MATCH_MODE || "random";
-    const code = window.AMBITION_PRIVATE_CODE || "";
-
-    if (mode === "private" && code) {
-        addLog(`Joining private room ${code}...`);
-        socket.emit("join_private_room", { code });
-    } else if (mode === "bot") {
-        addLog("Starting training match against bot...");
-        socket.emit("join_bot_match");
-    } else {
-        socket.emit("join_queue");
-    }
+socket.on("disconnect", () => {
+    setQueueStatus("Disconnected.");
+    logLine("Disconnected from server.");
 });
 
 socket.on("queue_status", (data) => {
-    addLog(data.msg);
+    setQueueStatus(data.msg || "Queue updated.");
 });
 
 socket.on("match_found", (data) => {
-    addLog(data.msg);
+    setQueueStatus(data.msg || "Match found.");
+    logLine(data.msg || "Match found.");
+});
+
+socket.on("game_state_update", (state) => {
+    renderState(state);
 });
 
 socket.on("battle_log", (data) => {
-    addLog(data.msg);
+    logLine(data.msg || "Battle event.");
 });
-
-socket.on("game_state_update", (data) => {
-    syncRound(data);
-    updateHpWithFeedback(data);
-    updateEnergy(data);
-    updateAmbition(data);
-    updateIntentButtons(data);
-    updateArenaStep(data);
-    pulseZonesOnReveal(data);
-
-    setText("enemy-name", data.enemy.name);
-
-    setText("my-deck-count", data.me.deck_count);
-    setText("enemy-deck-count", data.enemy.deck_count);
-
-    setText("my-graveyard-count", data.me.graveyard_count);
-    setText("enemy-graveyard-count", data.enemy.graveyard_count);
-
-    setText("enemy-hand-count", data.enemy.hand_count);
-
-    document.getElementById("my-hand").innerHTML = data.me.hand
-        .map((card, index) => renderCard(card, index))
-        .join("");
-
-    document.getElementById("my-monster-zone").innerHTML = data.me.field_m
-        ? renderCard(data.me.field_m)
-        : "<span>My Monster</span>";
-
-    document.getElementById("my-st-zone").innerHTML = data.me.field_st
-        ? renderCard(data.me.field_st)
-        : "<span>My Spell/Trap</span>";
-
-    if (data.enemy.field_m_status === "HIDDEN") {
-        document.getElementById("enemy-monster-zone").innerHTML = renderCard(null, -1, true);
-    } else if (data.enemy.field_m_status === "REVEALED") {
-        document.getElementById("enemy-monster-zone").innerHTML = renderCard(data.enemy.field_m_rev);
-    } else {
-        document.getElementById("enemy-monster-zone").innerHTML = "<span>Enemy Monster</span>";
-    }
-
-    if (data.enemy.field_st_status === "SET") {
-        document.getElementById("enemy-st-zone").innerHTML = renderCard(null, -1, false, true);
-    } else {
-        document.getElementById("enemy-st-zone").innerHTML = "<span>Enemy Spell/Trap</span>";
-    }
-
-    const btn = document.getElementById("btn-ready");
-
-    btn.disabled = data.me.ready || data.resolving;
-    btn.textContent = data.me.ready ? "Waiting opponent..." : "Ready for Battle";
-});
-
-function showGameOverOverlay(result) {
-    const overlay = document.createElement("div");
-    overlay.className = "game-over-overlay";
-
-    let title = "Draw";
-    let subtitle = "The duel ended without a winner.";
-
-    if (result === "WIN") {
-        title = "Victory";
-        subtitle = "You earned rewards. Ambition prevailed.";
-        playTone(740, 0.12, 0.05);
-        setTimeout(() => playTone(980, 0.12, 0.05), 120);
-    }
-
-    if (result === "LOSE") {
-        title = "Defeat";
-        subtitle = "Review your deck, intent and Ambition timing.";
-        playTone(160, 0.16, 0.05);
-    }
-
-    overlay.innerHTML = `
-        <div class="game-over-card">
-            <h1>${title}</h1>
-            <p>${subtitle}</p>
-            <button class="btn full-btn" onclick="window.location.href='/'">Return Home</button>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-}
 
 socket.on("game_over", (data) => {
-    showGameOverOverlay(data.result);
+    logLine(`Game Over: ${data.result}`);
+    setQueueStatus(`Game Over: ${data.result}`);
 });
 
 socket.on("opponent_left", (data) => {
-    alert(data.msg);
-    window.location.href = "/";
+    logLine(data.msg || "Opponent left.");
+    setQueueStatus(data.msg || "Opponent left.");
 });

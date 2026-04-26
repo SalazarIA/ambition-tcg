@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Collection - Ambitionz</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#070711">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambition">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Collection</h1>
+                <p>Your cards, Sigils and strategic roles</p>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        <section class="deck-status deck-filter-panel">
+            <h2>Filters</h2>
+
+            <div class="deck-filter-grid">
+                <input id="collection-search" type="text" placeholder="Search card..." oninput="filterCollectionCards()">
+
+                <select id="filter-type" onchange="filterCollectionCards()">
+                    <option value="">All Types</option>
+                    <option value="Monster">Monster</option>
+                    <option value="Spell">Spell</option>
+                    <option value="Trap">Trap</option>
+                </select>
+
+                <select id="filter-sigil" onchange="filterCollectionCards()">
+                    <option value="">All Sigils</option>
+                    <option value="Fury">Fury</option>
+                    <option value="Resolve">Resolve</option>
+                    <option value="Insight">Insight</option>
+                    <option value="Ruin">Ruin</option>
+                    <option value="Harmony">Harmony</option>
+                    <option value="Global">Global</option>
+                </select>
+
+                <select id="filter-role" onchange="filterCollectionCards()">
+                    <option value="">All Roles</option>
+                    <option value="Aggressor">Aggressor</option>
+                    <option value="Defender">Defender</option>
+                    <option value="Controller">Controller</option>
+                    <option value="Balancer">Balancer</option>
+                    <option value="Finisher">Finisher</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="card-grid deck-builder-grid">
+            {% for card in cards %}
+                <article
+                    class="collection-card"
+                    data-name="{{ card.name|lower }}"
+                    data-type="{{ card.type }}"
+                    data-sigil="{{ card.sigil }}"
+                    data-role="{{ card.role }}"
+                >
+                    <div class="card-shell">
+                        <div class="card-topline">
+                            <strong>{{ card.name }}</strong>
+                            <span>x{{ card.count }}</span>
+                        </div>
+
+                        <div class="card-meta-row">
+                            <span>{{ card.type }}</span>
+                            <span>{{ card.element }}</span>
+                            <span>{{ card.rarity }}</span>
+                        </div>
+
+                        <div class="card-identity-row">
+                            <span class="sigil-pill {{ card.sigil_css }}" title="{{ card.sigil_description }}">{{ card.sigil }}</span>
+                            <span class="role-pill {{ card.role_css }}">{{ card.role }}</span>
+                        </div>
+
+                        {% if card.type == "Monster" %}
+                            <div class="card-power">Power {{ card.power }}</div>
+                        {% endif %}
+
+                        <p class="card-effect">{{ card.effect }}</p>
+                    </div>
+                </article>
+            {% endfor %}
+        </section>
+    </main>
+
+    <script>
+        function filterCollectionCards() {
+            const search = document.getElementById("collection-search").value.toLowerCase();
+            const type = document.getElementById("filter-type").value;
+            const sigil = document.getElementById("filter-sigil").value;
+            const role = document.getElementById("filter-role").value;
+
+            document.querySelectorAll(".collection-card").forEach((card) => {
+                const matchesSearch = !search || card.dataset.name.includes(search);
+                const matchesType = !type || card.dataset.type === type;
+                const matchesSigil = !sigil || card.dataset.sigil === sigil;
+                const matchesRole = !role || card.dataset.role === role;
+
+                card.style.display = (
+                    matchesSearch &&
+                    matchesType &&
+                    matchesSigil &&
+                    matchesRole
+                ) ? "" : "none";
+            });
+        }
+    </script>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>

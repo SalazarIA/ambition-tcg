@@ -661,7 +661,7 @@ def health():
     return {
         "status": "ok",
         "app": "Ambitionz",
-        "version": "Ambitionz V1.03",
+        "version": "Ambitionz V1.02.1",
         "environment": app.config["ENVIRONMENT"],
     }
 
@@ -1315,63 +1315,6 @@ def end_match(room_id, winner_key):
 
     active_matches.pop(room_id, None)
 
-
-@socketio.on("join_training")
-def handle_join_training():
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return
-
-    user = db.session.get(User, user_id)
-
-    if not user:
-        return
-
-    sid = request.sid
-
-    if sid in player_rooms:
-        return
-
-    try:
-        player_object = create_player_object(user, sid)
-
-        bot_user = type("BotUser", (), {})()
-        bot_user.id = 0
-        bot_user.username = "Ambitionz Bot"
-        bot_user.deck_json = user.deck_json
-
-        bot_object = create_player_object(bot_user, f"bot_{sid}")
-        bot_object["name"] = "Ambitionz Bot"
-        bot_object["sid"] = f"bot_{sid}"
-
-        room_id = f"training_{sid}"
-
-        join_room(room_id, sid=sid)
-
-        active_matches[room_id] = {
-            "p1": player_object,
-            "p2": bot_object,
-            "round": 1,
-            "phase": "Set Phase",
-            "resolving": False,
-            "logs": [],
-            "training": True,
-        }
-
-        player_rooms[sid] = room_id
-
-        socketio.emit("match_found", {"msg": "Training started against Ambitionz Bot."}, to=sid)
-        emit_log(room_id, "Training started. Choose an Intent, set cards, then press Ready.")
-        emit_state(room_id)
-
-    except Exception as error:
-        print("TRAINING START ERROR:", type(error).__name__, error)
-        socketio.emit("queue_status", {"msg": "Training failed to start. Check your deck."}, to=sid)
-
-
-
-
 @socketio.on("join_queue")
 def handle_join_queue():
     global waiting_player
@@ -1638,25 +1581,6 @@ def declare_ready():
 
     player = match[player_key]
     player["ready"] = True
-
-    if match.get("training"):
-        enemy_key = "p2" if player_key == "p1" else "p1"
-        enemy = match[enemy_key]
-
-        if not enemy.get("field_m") and enemy.get("hand"):
-            for idx, card in enumerate(list(enemy["hand"])):
-                if card.get("type") == "Monster":
-                    enemy["field_m"] = enemy["hand"].pop(idx)
-                    break
-
-        if not enemy.get("field_st") and enemy.get("hand"):
-            for idx, card in enumerate(list(enemy["hand"])):
-                if card.get("type") in ["Spell", "Trap"]:
-                    enemy["field_st"] = enemy["hand"].pop(idx)
-                    break
-
-        enemy["ready"] = True
-        emit_log(room_id, "Ambitionz Bot is ready.")
 
     emit_log(room_id, f"{player['name']} is ready.")
     emit_state(room_id)
