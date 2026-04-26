@@ -1,5 +1,5 @@
 from game.deck import draw_card
-from game.engine import add_ambition, resolve_manual_unleash
+from game.engine import add_ambition, unleash_ambition_if_possible
 from game.rules import (
     apply_damage,
     apply_spell,
@@ -12,50 +12,7 @@ from game.rules import (
     piercing_bonus_damage,
     reset_player_energy,
 )
-from game.state import get_intent_rule, reset_round_flags
-
-
-def apply_intent_damage_modifier(defender, damage, logs):
-    rule = get_intent_rule(defender)
-
-    reduction = int(rule.get("damage_reduction", 0))
-
-    if reduction > 0 and damage > 0:
-        blocked = min(reduction, damage)
-        damage -= blocked
-        logs.append(f"{defender['name']} used Guard and reduced incoming damage by {blocked}.")
-
-    return max(0, damage)
-
-
-def apply_strike_loss_penalty(defender, damage, logs):
-    rule = get_intent_rule(defender)
-
-    extra = int(rule.get("lose_extra_damage", 0))
-
-    if extra > 0 and damage > 0:
-        damage += extra
-        logs.append(f"{defender['name']} used Strike but lost the clash: +{extra} extra damage received.")
-
-    return damage
-
-
-def strike_win_bonus(player, logs):
-    rule = get_intent_rule(player)
-    bonus = int(rule.get("win_power_bonus", 0))
-
-    if bonus > 0:
-        logs.append(f"{player['name']} used Strike: +{bonus} power if winning the clash.")
-
-    return bonus
-
-
-def apply_focus_survival(player, logs):
-    rule = get_intent_rule(player)
-    ambition_gain = int(rule.get("survive_ambition", 0))
-
-    if ambition_gain > 0 and player["hp"] > 0:
-        add_ambition(player, ambition_gain, "survived while using Focus", logs)
+from game.state import reset_round_flags
 
 
 def resolve_battle(match):
@@ -69,9 +26,10 @@ def resolve_battle(match):
     p1["shield"] = 0
     p2["shield"] = 0
 
+    reset_round_flags(p1)
+    reset_round_flags(p2)
+
     logs.append(f"Round {match['round']} entered Battle Phase.")
-    logs.append(f"{p1['name']} chose {p1.get('intent', 'Strike')} intent.")
-    logs.append(f"{p2['name']} chose {p2.get('intent', 'Strike')} intent.")
 
     if p1.get("field_m"):
         logs.extend(apply_summon_effect(p1, p2, p1["field_m"]))
@@ -94,8 +52,8 @@ def resolve_battle(match):
     p1_monster = p1.get("field_m")
     p2_monster = p2.get("field_m")
 
-    p1_ambition_bonus = resolve_manual_unleash(p1, logs)
-    p2_ambition_bonus = resolve_manual_unleash(p2, logs)
+    p1_ambition_bonus = unleash_ambition_if_possible(p1, logs)
+    p2_ambition_bonus = unleash_ambition_if_possible(p2, logs)
 
     if p1_monster and p2_monster:
         p1_advantage_log = elemental_log(p1_monster, p2_monster, p1["name"])
@@ -112,9 +70,6 @@ def resolve_battle(match):
         p1_power = calculate_final_power(p1_monster, p2_monster) + p1_ambition_bonus
         p2_power = calculate_final_power(p2_monster, p1_monster) + p2_ambition_bonus
 
-        p1_power += strike_win_bonus(p1, logs)
-        p2_power += strike_win_bonus(p2, logs)
-
         logs.append(f"{p1['name']} revealed {p1_monster['name']} with {p1_power} final power.")
         logs.append(f"{p2['name']} revealed {p2_monster['name']} with {p2_power} final power.")
 
@@ -125,9 +80,6 @@ def resolve_battle(match):
 
             if pierce > 0:
                 logs.append(f"{p1_monster['name']} triggered Piercing: +{pierce} damage.")
-
-            raw_damage = apply_strike_loss_penalty(p2, raw_damage, logs)
-            raw_damage = apply_intent_damage_modifier(p2, raw_damage, logs)
 
             final_damage = apply_damage(p2, raw_damage)
             add_ambition(p1, 1, "caused battle damage", logs)
@@ -145,9 +97,6 @@ def resolve_battle(match):
             if pierce > 0:
                 logs.append(f"{p2_monster['name']} triggered Piercing: +{pierce} damage.")
 
-            raw_damage = apply_strike_loss_penalty(p1, raw_damage, logs)
-            raw_damage = apply_intent_damage_modifier(p1, raw_damage, logs)
-
             final_damage = apply_damage(p1, raw_damage)
             add_ambition(p2, 1, "caused battle damage", logs)
 
@@ -164,9 +113,6 @@ def resolve_battle(match):
         raw_damage += piercing_bonus_damage(p1_monster)
         raw_damage += p1_ambition_bonus
 
-        raw_damage = apply_strike_loss_penalty(p2, raw_damage, logs)
-        raw_damage = apply_intent_damage_modifier(p2, raw_damage, logs)
-
         final_damage = apply_damage(p2, raw_damage)
 
         add_ambition(p1, 2, "attacked directly", logs)
@@ -177,9 +123,6 @@ def resolve_battle(match):
         raw_damage += piercing_bonus_damage(p2_monster)
         raw_damage += p2_ambition_bonus
 
-        raw_damage = apply_strike_loss_penalty(p1, raw_damage, logs)
-        raw_damage = apply_intent_damage_modifier(p1, raw_damage, logs)
-
         final_damage = apply_damage(p1, raw_damage)
 
         add_ambition(p2, 2, "attacked directly", logs)
@@ -187,9 +130,6 @@ def resolve_battle(match):
 
     else:
         logs.append("No monsters were played. Round ended with no battle damage.")
-
-    apply_focus_survival(p1, logs)
-    apply_focus_survival(p2, logs)
 
     p1["graveyard"].extend([card for card in [p1.get("field_m"), p1.get("field_st")] if card])
     p2["graveyard"].extend([card for card in [p2.get("field_m"), p2.get("field_st")] if card])
@@ -218,9 +158,6 @@ def resolve_battle(match):
     match["round"] += 1
     match["phase"] = "Set Phase"
     match["resolving"] = False
-
-    reset_round_flags(p1)
-    reset_round_flags(p2)
 
     reset_player_energy(p1, match["round"])
     reset_player_energy(p2, match["round"])

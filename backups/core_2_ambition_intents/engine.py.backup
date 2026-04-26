@@ -43,41 +43,25 @@ def spend_ambition(player, amount):
 
 
 def can_unleash_ambition(player):
-    return int(player.get("ambition", 0)) >= AMBITION_UNLEASH_COST and bool(player.get("field_m"))
+    return int(player.get("ambition", 0)) >= AMBITION_UNLEASH_COST
 
 
-def request_unleash(player):
-    if can_unleash_ambition(player):
-        player["wants_unleash"] = True
-        return True
-
-    player["wants_unleash"] = False
-    return False
-
-
-def cancel_unleash(player):
-    player["wants_unleash"] = False
-
-
-def resolve_manual_unleash(player, logs=None):
-    if not player.get("wants_unleash"):
+def unleash_ambition_if_possible(player, logs=None):
+    if not can_unleash_ambition(player):
         return 0
 
-    if not can_unleash_ambition(player):
-        player["wants_unleash"] = False
+    if not player.get("field_m"):
         return 0
 
     if player.get("ambition_unleashed"):
         return 0
 
     spend_ambition(player, AMBITION_UNLEASH_COST)
-
     player["ambition_unleashed"] = True
-    player["wants_unleash"] = False
 
     if logs is not None:
         logs.append(
-            f"{player['name']} unleashed Ambition manually: {player['field_m']['name']} gains +{AMBITION_UNLEASH_POWER_BONUS} power this battle."
+            f"{player['name']} unleashed Ambition: {player['field_m']['name']} gains +{AMBITION_UNLEASH_POWER_BONUS} power this battle."
         )
 
     return AMBITION_UNLEASH_POWER_BONUS

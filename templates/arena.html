@@ -31,17 +31,17 @@
 
         <section class="arena-tip-panel">
             <strong>Turn Guide</strong>
-            <span id="arena-step-text">Play 1 monster and optionally 1 spell/trap if you have enough energy. Then press Ready.</span>
+            <span id="arena-step-text">Choose an Intent, play your cards, optionally prepare Ambition Unleash, then press Ready.</span>
         </section>
 
         <details class="arena-rules-panel">
             <summary>Quick Rules</summary>
             <div class="quick-rules-grid">
-                <div><strong>Deck</strong><span>30 cards: 21 monsters, 6 spells, 3 traps</span></div>
-                <div><strong>Energy</strong><span>Cards cost energy. Energy grows each round up to 6.</span></div>
-                <div><strong>Ambition</strong><span>Aggressive plays build Ambition. At 5, your monster can unleash +200 power.</span></div>
-                <div><strong>Overreach</strong><span>If Ambition exceeds 10, you suffer 300 damage and reset to 7.</span></div>
-                <div><strong>Battle</strong><span>Higher final power deals damage equal to the difference.</span></div>
+                <div><strong>Strike</strong><span>+200 power if you win. If you lose, take +100 extra damage.</span></div>
+                <div><strong>Guard</strong><span>Reduce incoming damage by 300 this round.</span></div>
+                <div><strong>Focus</strong><span>If you survive this round, gain +2 Ambition.</span></div>
+                <div><strong>Unleash</strong><span>Spend 5 Ambition to give your monster +300 power this battle.</span></div>
+                <div><strong>Overreach</strong><span>If Ambition exceeds 10, take 300 damage and reset to 7.</span></div>
                 <div><strong>Elements</strong><span>Fire &gt; Plant &gt; Earth &gt; Water &gt; Fire. Advantage gives +300 power.</span></div>
             </div>
         </details>
@@ -53,91 +53,98 @@
                 <small>Enemy HP</small>
             </div>
 
-            <div class="round-orb">
-                <span>R</span>
-                <strong id="round-mobile">1</strong>
-            </div>
+            <div class="round
+cd /Users/lucassilverio/Desktop/Ambition
+source .venv/bin/activate
 
-            <div class="compact-player-card my-compact">
-                <span>{{ user.username }}</span>
-                <strong id="my-hp">4000</strong>
-                <small>Your HP</small>
-            </div>
-        </section>
+cat > game/state.py <<'EOF'
+AMBITION_MAX = 10
+AMBITION_UNLEASH_COST = 5
+AMBITION_UNLEASH_POWER_BONUS = 300
+OVERREACH_PENALTY_DAMAGE = 300
+OVERREACH_RESET_VALUE = 7
 
-        <section class="mobile-counts energy-counts">
-            <div>Your Energy: <strong id="my-energy">0/0</strong></div>
-            <div>Enemy Energy: <strong id="enemy-energy">0/0</strong></div>
-        </section>
+VALID_INTENTS = ["Strike", "Guard", "Focus"]
 
-        <section class="ambition-row">
-            <div class="ambition-box">
-                <div class="ambition-label">
-                    <span>Your Ambition</span>
-                    <strong id="my-ambition-text">0/10</strong>
-                </div>
-                <div class="ambition-bar">
-                    <div id="my-ambition-fill" class="ambition-fill"></div>
-                </div>
-            </div>
+INTENT_RULES = {
+    "Strike": {
+        "label": "Strike",
+        "description": "+200 power if you win the clash. If you lose, receive +100 extra damage.",
+        "win_power_bonus": 200,
+        "lose_extra_damage": 100,
+        "damage_reduction": 0,
+        "survive_ambition": 0,
+    },
+    "Guard": {
+        "label": "Guard",
+        "description": "Reduce received damage by 300 this round.",
+        "win_power_bonus": 0,
+        "lose_extra_damage": 0,
+        "damage_reduction": 300,
+        "survive_ambition": 0,
+    },
+    "Focus": {
+        "label": "Focus",
+        "description": "If you survive the round, gain +2 Ambition.",
+        "win_power_bonus": 0,
+        "lose_extra_damage": 0,
+        "damage_reduction": 0,
+        "survive_ambition": 2,
+    },
+}
 
-            <div class="ambition-box">
-                <div class="ambition-label">
-                    <span>Enemy Ambition</span>
-                    <strong id="enemy-ambition-text">0/10</strong>
-                </div>
-                <div class="ambition-bar">
-                    <div id="enemy-ambition-fill" class="ambition-fill enemy"></div>
-                </div>
-            </div>
-        </section>
 
-        <section class="mobile-counts">
-            <div>Enemy hand: <strong id="enemy-hand-count">0</strong></div>
-            <div>Enemy deck: <strong id="enemy-deck-count">0</strong></div>
-            <div>Enemy grave: <strong id="enemy-graveyard-count">0</strong></div>
-        </section>
+def create_player_state(user, sid, deck, hand):
+    return {
+        "sid": sid,
+        "user_id": user.id,
+        "name": user.username,
+        "hp": 4000,
+        "deck": deck,
+        "hand": hand,
+        "graveyard": [],
+        "field_m": None,
+        "field_st": None,
+        "ready": False,
+        "shield": 0,
+        "energy": 0,
+        "max_energy": 0,
+        "ambition": 0,
+        "wants_unleash": False,
+        "ambition_unleashed": False,
+        "overreach_count": 0,
+        "intent": "Strike",
+    }
 
-        <section class="board enemy-board mobile-board">
-            <div class="zone mobile-zone cinematic-zone" id="enemy-st-zone">
-                <span>Enemy Spell/Trap</span>
-            </div>
 
-            <div class="zone mobile-zone cinematic-zone" id="enemy-monster-zone">
-                <span>Enemy Monster</span>
-            </div>
-        </section>
+def create_match_state(player_one, player_two):
+    return {
+        "p1": player_one,
+        "p2": player_two,
+        "round": 1,
+        "phase": "Set Phase",
+        "resolving": False,
+        "logs": [],
+    }
 
-        <section id="battle-log" class="mobile-battle-log enhanced-battle-log"></section>
 
-        <section class="controls sticky-controls">
-            <button id="btn-ready" class="btn full-btn" onclick="declareReady()">Ready for Battle</button>
-        </section>
+def normalize_intent(intent):
+    if intent not in VALID_INTENTS:
+        return "Strike"
 
-        <section class="board my-board mobile-board">
-            <div class="zone mobile-zone cinematic-zone" id="my-monster-zone">
-                <span>My Monster</span>
-            </div>
+    return intent
 
-            <div class="zone mobile-zone cinematic-zone" id="my-st-zone">
-                <span>My Spell/Trap</span>
-            </div>
-        </section>
 
-        <section class="mobile-counts">
-            <div>My deck: <strong id="my-deck-count">0</strong></div>
-            <div>My grave: <strong id="my-graveyard-count">0</strong></div>
-        </section>
+def set_player_intent(player, intent):
+    player["intent"] = normalize_intent(intent)
 
-        <section class="mobile-hand-section">
-            <h3 class="hand-title">Your Hand</h3>
-            <p class="arena-helper">Playable cards glow. Build Ambition with aggressive plays, but avoid Overreach.</p>
-            <div id="my-hand" class="mobile-hand"></div>
-        </section>
-    </main>
 
-    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
-</body>
-</html>
+def reset_round_flags(player):
+    player["ambition_unleashed"] = False
+    player["wants_unleash"] = False
+    player["intent"] = "Strike"
+
+
+def get_intent_rule(player):
+    intent = normalize_intent(player.get("intent", "Strike"))
+    return INTENT_RULES[intent]

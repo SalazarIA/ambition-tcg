@@ -139,46 +139,6 @@ function playToField(index) {
     pulseElement("my-hand", "soft-pulse");
 }
 
-function chooseIntent(intent) {
-    socket.emit("choose_intent", { intent });
-}
-
-function toggleUnleash() {
-    socket.emit("toggle_unleash");
-}
-
-function updateIntentButtons(data) {
-    const intent = data.me.intent || "Strike";
-
-    ["Strike", "Guard", "Focus"].forEach((name) => {
-        const button = document.getElementById(`intent-${name.toLowerCase()}`);
-
-        if (!button) {
-            return;
-        }
-
-        button.classList.toggle("active", intent === name);
-        button.disabled = data.me.ready || data.resolving;
-    });
-
-    const unleashButton = document.getElementById("btn-unleash");
-
-    if (unleashButton) {
-        const hasEnoughAmbition = Number(data.me.ambition || 0) >= 5;
-        const hasMonster = Boolean(data.me.field_m);
-
-        unleashButton.disabled = data.me.ready || data.resolving || !hasEnoughAmbition || !hasMonster;
-
-        if (data.me.wants_unleash) {
-            unleashButton.textContent = "Ambition Unleash Prepared";
-            unleashButton.classList.add("active-unleash");
-        } else {
-            unleashButton.textContent = "Unleash Ambition — Cost 5";
-            unleashButton.classList.remove("active-unleash");
-        }
-    }
-}
-
 function declareReady() {
     socket.emit("declare_ready");
     pulseElement("btn-ready", "button-pulse");
@@ -370,7 +330,6 @@ socket.on("game_state_update", (data) => {
     updateHpWithFeedback(data);
     updateEnergy(data);
     updateAmbition(data);
-    updateIntentButtons(data);
     updateArenaStep(data);
     pulseZonesOnReveal(data);
 
