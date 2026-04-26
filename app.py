@@ -193,6 +193,11 @@ def cleanup_gameplay_tables():
         "match_histories",
         "card_stats",
         "beta_invites",
+        "sessions",
+        "password_reset_tokens",
+        "mission_progress",
+        "missions",
+        "user_missions",
     ]
 
     cleared = []
@@ -206,15 +211,37 @@ def cleanup_gameplay_tables():
 
 
 def cleanup_non_admin_users():
-    """Clear test data and delete only non-admin users."""
-    cleared = cleanup_gameplay_tables()
+    """Clear test data and delete only non-admin users, safely handling FK tables."""
+    cleared = []
+
+    dependency_tables = [
+        "user_missions",
+        "system_logs",
+        "feedback_reports",
+        "feedback_report",
+        "booster_history",
+        "booster_histories",
+        "match_history",
+        "match_histories",
+        "card_stats",
+        "beta_invites",
+    ]
+
     deleted_users = 0
 
     with db.engine.begin() as connection:
         existing_tables = get_existing_table_names()
 
+        for table in dependency_tables:
+            if table in existing_tables:
+                try:
+                    connection.execute(sql_text(f'DELETE FROM "{table}"'))
+                    cleared.append(table)
+                    print(f"Cleanup OK: {table}")
+                except Exception as error:
+                    print(f"Cleanup ERROR on {table}: {type(error).__name__}: {error}")
+
         if "users" not in existing_tables:
-            print("Users table does not exist. Nothing to delete.")
             return {
                 "cleared_tables": cleared,
                 "deleted_users": 0,
@@ -227,13 +254,17 @@ def cleanup_non_admin_users():
             deleted_users = result.rowcount or 0
             print(f"Deleted non-admin users: {deleted_users}")
         except Exception as error:
-            print(f"Delete non-admin users ERROR: {type(error).__name__}: {error}")
+            print("--- DELETE NON ADMIN USERS ERROR ---")
+            print("Error type:", type(error).__name__)
+            print("Error:", error)
+            print("------------------------------------")
             raise
 
     return {
         "cleared_tables": cleared,
         "deleted_users": deleted_users,
     }
+
 
 
 def safe_admin_user_id():
@@ -615,6 +646,141 @@ def admin_feedback_update(report_id):
         log_system_event("info", "feedback", f"Feedback status updated: {report.title}", user_id=safe_admin_user_id())
 
     return redirect("/admin/feedback")
+
+
+
+@app.route("/")
+def index():
+    user = current_user()
+    return render_template("index.html", user=user)
+
+
+
+@app.route("/health")
+def health():
+    return {
+        "status": "ok",
+        "app": "Ambitionz",
+        "version": "Ambitionz V1.02.1",
+        "environment": app.config["ENVIRONMENT"],
+    }
+
+
+
+@app.route("/resend-verification", methods=["GET", "POST"])
+def resend_verification():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            flash("If this email exists, a verification link will be sent.")
+            return redirect("/resend-verification")
+
+        if user.is_verified:
+            flash("This account is already verified. You can login.")
+            return redirect("/login")
+
+        token = serializer.dumps(user.email, salt="email-confirm")
+        verification_url = url_for("confirm_email", token=token, _external=True)
+
+        sent = send_verification_email(user, verification_url)
+
+        if sent:
+            flash("Verification email sent.")
+        else:
+            flash("SMTP failed or is not configured. Check server logs.")
+
+        try:
+            log_system_event(
+                level="info",
+                category="email",
+                message="Verification email requested",
+                user_id=getattr(user, "id", None),
+            )
+        except Exception as error:
+            print("Resend verification log failed:", error)
+
+        return redirect("/login")
+
+    return render_template("resend_verification.html")
+
+
+
+@app.route("/ranking")
+def ranking():
+    users = (
+        User.query
+        .filter_by(is_verified=True)
+        .order_by(User.wins.desc(), User.level.desc(), User.xp.desc())
+        .limit(100)
+        .all()
+    )
+
+    return render_template("ranking.html", users=users)
+
+
+
+@app.route("/how-to-play")
+def how_to_play():
+    return render_template("how_to_play.html")
+
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            flash("If this email exists, a password reset link will be sent.")
+            return redirect("/forgot-password")
+
+        token = serializer.dumps(user.email, salt="password-reset")
+        reset_url = url_for("reset_password", token=token, _external=True)
+
+        sent = send_password_reset_email(user, reset_url)
+
+        if sent:
+            flash("Password reset email sent.")
+        else:
+            flash("SMTP failed or is not configured. Check server logs.")
+
+        try:
+            log_system_event("info", "email", "Password reset requested", user_id=getattr(user, "id", None))
+        except Exception as error:
+            print("Password reset log failed:", error)
+
+        return redirect("/login")
+
+    return render_template("forgot_password.html")
+
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    try:
+        email = serializer.loads(token, salt="password-reset", max_age=3600)
+    except Exception:
+        return "Password reset link expired."
+
+    user = User.query.filter_by(email=email).first_or_404()
+
+    if request.method == "POST":
+        password = request.form.get("password", "").strip()
+
+        if len(password) < 6:
+            flash("Password must have at least 6 characters.")
+            return redirect(request.url)
+
+        user.set_password(password)
+        db.session.commit()
+
+        flash("Password updated. You can login now.")
+        return redirect("/login")
+
+    return render_template("reset_password.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
