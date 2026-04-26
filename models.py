@@ -395,11 +395,11 @@ def ensure_liveops_schema(app):
 
         if "users" in inspector.get_table_names():
             add_column_if_missing("users", "account_status", "account_status VARCHAR(40) DEFAULT 'unverified' NOT NULL")
-            add_column_if_missing("users", "is_tester", "is_tester BOOLEAN DEFAULT 0 NOT NULL")
+            add_column_if_missing("users", "is_tester", "is_tester BOOLEAN DEFAULT false NOT NULL")
             add_column_if_missing("users", "last_login_at", "last_login_at DATETIME")
             add_column_if_missing("users", "verified_at", "verified_at DATETIME")
             add_column_if_missing("users", "login_count", "login_count INTEGER DEFAULT 0 NOT NULL")
-            add_column_if_missing("users", "has_completed_onboarding", "has_completed_onboarding BOOLEAN DEFAULT 0 NOT NULL")
-            add_column_if_missing("users", "first_training_completed", "first_training_completed BOOLEAN DEFAULT 0 NOT NULL")
+            add_column_if_missing("users", "has_completed_onboarding", "has_completed_onboarding BOOLEAN DEFAULT false NOT NULL")
+            add_column_if_missing("users", "first_training_completed", "first_training_completed BOOLEAN DEFAULT false NOT NULL")
 
         db.create_all()
