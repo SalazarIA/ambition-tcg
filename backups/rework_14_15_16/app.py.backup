@@ -1,8 +1,6 @@
 import json
 import os
 import random
-import secrets
-from datetime import datetime, timedelta, timezone
 
 import itsdangerous
 from flask import Flask, flash, redirect, render_template, request, session, url_for
@@ -22,9 +20,7 @@ from game.deck import (
     full_deck_analysis,
     create_starter_deck_from_collection,
 )
-from models import CardStat, MatchHistory, User, db, ensure_database_schema
-from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
-from services.email_service import send_password_reset_email, send_verification_email
+from models import CardStat, MatchHistory, User, db
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 
 
@@ -59,7 +55,6 @@ waiting_player = None
 def create_database_tables():
     with app.app_context():
         db.create_all()
-        ensure_database_schema()
 
 
 create_database_tables()
@@ -70,22 +65,6 @@ def current_user():
         return None
 
     return db.session.get(User, session["user_id"])
-
-
-
-def admin_required_redirect():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    if not user or not user.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    return None
 
 
 def login_required_redirect():
@@ -247,10 +226,6 @@ def update_card_stats_after_match(match, winner_key):
 @app.route("/")
 def index():
     user = current_user()
-
-    if user:
-        ensure_daily_missions(user)
-
     return render_template("index.html", user=user)
 
 
@@ -264,7 +239,7 @@ def health():
     return {
         "status": "ok",
         "app": "Ambition TCG",
-        "version": "beta-progression-admin-auth-0.5",
+        "version": "beta-core-data-0.4",
         "environment": app.config["ENVIRONMENT"],
     }
 
@@ -387,150 +362,6 @@ def match_history():
     )
 
 
-
-
-@app.route("/missions")
-def missions():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    missions_list = ensure_daily_missions(user)
-
-    return render_template(
-        "missions.html",
-        user=user,
-        missions=missions_list,
-    )
-
-
-@app.route("/claim-mission/<int:mission_id>", methods=["POST"])
-def claim_user_mission(mission_id):
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    success, message = claim_mission(user, mission_id)
-    flash(message)
-
-    return redirect("/missions")
-
-
-@app.route("/admin")
-def admin_dashboard():
-    admin_redirect = admin_required_redirect()
-
-    if admin_redirect:
-        return admin_redirect
-
-    total_users = User.query.count()
-    total_matches = MatchHistory.query.count()
-    total_cards_tracked = CardStat.query.count()
-
-    top_cards = (
-        CardStat.query
-        .order_by(CardStat.times_played.desc(), CardStat.wins_when_played.desc())
-        .limit(10)
-        .all()
-    )
-
-    best_cards = (
-        CardStat.query
-        .filter(CardStat.times_played >= 1)
-        .order_by(CardStat.wins_when_played.desc(), CardStat.times_played.desc())
-        .limit(10)
-        .all()
-    )
-
-    recent_matches = (
-        MatchHistory.query
-        .order_by(MatchHistory.created_at.desc())
-        .limit(10)
-        .all()
-    )
-
-    return render_template(
-        "admin.html",
-        user=current_user(),
-        total_users=total_users,
-        total_matches=total_matches,
-        total_cards_tracked=total_cards_tracked,
-        top_cards=top_cards,
-        best_cards=best_cards,
-        recent_matches=recent_matches,
-    )
-
-
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        user = User.query.filter_by(email=email).first()
-
-        if user:
-            token = secrets.token_urlsafe(48)
-            user.reset_token = token
-            user.reset_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=2)
-            db.session.commit()
-
-            reset_url = url_for("reset_password", token=token, _external=True)
-            send_password_reset_email(user.email, reset_url)
-
-            print("\n--- AMBITION PASSWORD RESET LINK ---")
-            print(reset_url)
-            print("------------------------------------\n")
-
-        flash("If this email exists, a reset link has been sent.")
-        return redirect("/login")
-
-    return render_template("forgot_password.html")
-
-
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
-def reset_password(token):
-    user = User.query.filter_by(reset_token=token).first()
-
-    if not user:
-        flash("Invalid reset link.")
-        return redirect("/login")
-
-    expires_at = user.reset_token_expires_at
-
-    if expires_at and expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-
-    if expires_at and expires_at < datetime.now(timezone.utc):
-        flash("Reset link expired.")
-        return redirect("/forgot-password")
-
-    if request.method == "POST":
-        password = request.form.get("password", "").strip()
-        password_confirm = request.form.get("password_confirm", "").strip()
-
-        if len(password) < 6:
-            flash("Password must have at least 6 characters.")
-            return redirect(request.path)
-
-        if password != password_confirm:
-            flash("Passwords do not match.")
-            return redirect(request.path)
-
-        user.set_password(password)
-        user.reset_token = None
-        user.reset_token_expires_at = None
-
-        db.session.commit()
-
-        flash("Password changed. You can login now.")
-        return redirect("/login")
-
-    return render_template("reset_password.html")
-
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -566,13 +397,11 @@ def register():
         token = serializer.dumps(email, salt="email-confirm")
         verification_url = url_for("confirm_email", token=token, _external=True)
 
-        send_verification_email(email, verification_url)
-
         print("\n--- AMBITION VERIFICATION LINK ---")
         print(verification_url)
         print("----------------------------------\n")
 
-        flash("Registered. Check your email for the verification link. If email is not configured, check server logs.")
+        flash("Registered. Check your server terminal/logs for the verification link.")
         return redirect("/login")
 
     return render_template("register.html")
@@ -664,7 +493,6 @@ def shop():
             collection_ids.append(card["id"])
 
         user.collection_json = json.dumps(collection_ids)
-        increment_mission(user, "open_1_booster", 1)
         db.session.commit()
 
     return render_template("shop.html", user=user, pulled_cards=pulled_cards)
@@ -880,16 +708,9 @@ def end_match(room_id, winner_key):
         if winner_user:
             winner_user.wins += 1
             winner_user.coins += 150
-            award_xp(winner_user, 80)
-            increment_mission(winner_user, "play_1_match", 1)
-            increment_mission(winner_user, "play_3_matches", 1)
-            increment_mission(winner_user, "win_1_match", 1)
 
         if loser_user:
             loser_user.losses += 1
-            award_xp(loser_user, 35)
-            increment_mission(loser_user, "play_1_match", 1)
-            increment_mission(loser_user, "play_3_matches", 1)
 
         db.session.commit()
 

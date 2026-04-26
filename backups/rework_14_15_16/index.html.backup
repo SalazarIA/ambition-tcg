@@ -37,7 +37,6 @@
                         <p>Coins: <strong>{{ user.coins }}</strong></p>
                         <p>Wins: <strong>{{ user.wins }}</strong> | Losses: <strong>{{ user.losses }}</strong></p>
                         <p>Win Rate: <strong>{{ user.win_rate }}%</strong></p>
-                        <p>Level: <strong>{{ user.level }}</strong> | XP: <strong>{{ user.xp }}/{{ user.next_level_xp }}</strong></p>
                     </div>
                 </div>
 
@@ -55,11 +54,6 @@
                     <a href="{{ url_for('profile') }}" class="menu-card">
                         <strong>Profile</strong>
                         <span>Stats and recent matches</span>
-                    </a>
-
-                    <a href="{{ url_for('missions') }}" class="menu-card">
-                        <strong>Missions</strong>
-                        <span>Daily XP and coin rewards</span>
                     </a>
 
                     <a href="{{ url_for('ranking') }}" class="menu-card">
@@ -91,13 +85,6 @@
                         <strong>Shop</strong>
                         <span>Open boosters</span>
                     </a>
-
-                    {% if user.is_admin %}
-                        <a href="{{ url_for('admin_dashboard') }}" class="menu-card">
-                            <strong>Admin</strong>
-                            <span>Balance dashboard</span>
-                        </a>
-                    {% endif %}
                 </div>
 
                 <div class="actions">
