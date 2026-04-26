@@ -36,6 +36,7 @@
                         <h2>{{ user.username }}</h2>
                         <p>Coins: <strong>{{ user.coins }}</strong></p>
                         <p>Wins: <strong>{{ user.wins }}</strong> | Losses: <strong>{{ user.losses }}</strong></p>
+                        <p>Win Rate: <strong>{{ user.win_rate }}%</strong></p>
                     </div>
                 </div>
 
@@ -43,6 +44,21 @@
                     <a href="{{ url_for('arena') }}" class="menu-card primary-menu-card">
                         <strong>Arena</strong>
                         <span>Online duel</span>
+                    </a>
+
+                    <a href="{{ url_for('profile') }}" class="menu-card">
+                        <strong>Profile</strong>
+                        <span>Stats and recent matches</span>
+                    </a>
+
+                    <a href="{{ url_for('ranking') }}" class="menu-card">
+                        <strong>Ranking</strong>
+                        <span>Top duelists</span>
+                    </a>
+
+                    <a href="{{ url_for('match_history') }}" class="menu-card">
+                        <strong>History</strong>
+                        <span>Your battle records</span>
                     </a>
 
                     <a href="{{ url_for('collection') }}" class="menu-card">
@@ -80,11 +96,13 @@
                 <div class="actions">
                     <a href="{{ url_for('login') }}" class="btn">Login</a>
                     <a href="{{ url_for('register') }}" class="btn btn-secondary">Create Account</a>
+                    <a href="{{ url_for('ranking') }}" class="btn btn-secondary">View Ranking</a>
                 </div>
             {% endif %}
         </section>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
 </body>
 </html>

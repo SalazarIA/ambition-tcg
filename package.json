@@ -1,33 +1,75 @@
 {
-  "name": "ambition-tcg-mobile",
+  "name": "ambition-tcg",
   "version": "0.1.0",
-  "description": "Ambition TCG beta mobile wrapper for Android and iOS using Capacitor.",
+  "description": "Ambition TCG beta client wrappers for Android, iOS and Desktop.",
   "private": true,
   "type": "module",
+  "main": "desktop/main.cjs",
+  "author": "Lucas Silverio",
+  "license": "UNLICENSED",
   "scripts": {
     "flask": "python app.py",
-    "cap:init": "npx cap init",
-    "cap:add:android": "npx cap add android",
-    "cap:add:ios": "npx cap add ios",
     "cap:sync": "npx cap sync",
     "cap:copy": "npx cap copy",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync:android": "npx cap sync android",
+    "cap:sync:ios": "npx cap sync ios",
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios",
-    "cap:run:android": "npx cap run android",
-    "cap:run:ios": "npx cap run ios",
-    "mobile:android": "npx cap sync android && npx cap open android",
-    "mobile:ios": "npx cap sync ios && npx cap open ios"
+    "android": "npx cap sync android && npx cap open android",
+    "ios": "npx cap sync ios && npx cap open ios",
+    "desktop": "electron .",
+    "desktop:prod": "AMBITION_DESKTOP_URL=https://ambition-tcg-1.onrender.com electron .",
+    "desktop:local": "AMBITION_DESKTOP_URL=http://127.0.0.1:8080 electron .",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "dist:all": "electron-builder --mac --win --linux"
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
-    "@capacitor/cli": "^7.0.0",
-    "@capacitor/core": "^7.0.0",
-    "@capacitor/ios": "^7.0.0",
     "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
     "@capacitor/haptics": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
     "@capacitor/keyboard": "^7.0.0",
-    "@capacitor/status-bar": "^7.0.0",
-    "@capacitor/splash-screen": "^7.0.0"
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.elementra.ambitiontcg",
+    "productName": "Ambition TCG",
+    "copyright": "Copyright © 2026 Lucas Silverio",
+    "directories": {
+      "output": "release",
+      "buildResources": "desktop/assets"
+    },
+    "files": [
+      "desktop/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game"
+    }
+  }
 }

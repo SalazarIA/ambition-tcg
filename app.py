@@ -18,7 +18,7 @@ from game.deck import (
     load_card_ids,
     validate_deck,
 )
-from models import User, db
+from models import MatchHistory, User, db
 
 
 app = Flask(__name__)
@@ -93,6 +93,64 @@ def booster_pull():
     return random.choice(pool).copy()
 
 
+def parse_battle_logs(match):
+    logs = match.get("logs", [])
+
+    if not isinstance(logs, list):
+        return []
+
+    clean_logs = []
+
+    for item in logs[-80:]:
+        clean_logs.append(str(item)[:500])
+
+    return clean_logs
+
+
+def save_match_history(room_id, winner_key):
+    match = active_matches.get(room_id)
+
+    if not match:
+        return
+
+    p1 = match["p1"]
+    p2 = match["p2"]
+
+    winner_id = None
+    winner_name = None
+    result = "DRAW"
+
+    if winner_key == "p1":
+        winner_id = p1["user_id"]
+        winner_name = p1["name"]
+        result = "P1_WIN"
+
+    elif winner_key == "p2":
+        winner_id = p2["user_id"]
+        winner_name = p2["name"]
+        result = "P2_WIN"
+
+    elif winner_key == "DRAW":
+        result = "DRAW"
+
+    history = MatchHistory(
+        player1_id=p1["user_id"],
+        player2_id=p2["user_id"],
+        winner_id=winner_id,
+        player1_name=p1["name"],
+        player2_name=p2["name"],
+        winner_name=winner_name,
+        result=result,
+        player1_final_hp=int(p1.get("hp", 0)),
+        player2_final_hp=int(p2.get("hp", 0)),
+        total_rounds=max(0, int(match.get("round", 1)) - 1),
+        battle_log_json=json.dumps(parse_battle_logs(match)),
+    )
+
+    db.session.add(history)
+    db.session.commit()
+
+
 @app.route("/")
 def index():
     user = current_user()
@@ -109,9 +167,93 @@ def health():
     return {
         "status": "ok",
         "app": "Ambition TCG",
-        "version": "beta-prod-0.2",
+        "version": "beta-profile-0.3",
         "environment": app.config["ENVIRONMENT"],
     }
+
+
+@app.route("/profile")
+def profile():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    recent_matches = (
+        MatchHistory.query
+        .filter(
+            (MatchHistory.player1_id == user.id)
+            | (MatchHistory.player2_id == user.id)
+        )
+        .order_by(MatchHistory.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    collection_ids = load_card_ids(user.collection_json)
+    deck_ids = load_card_ids(user.deck_json)
+
+    owned_cards = len(collection_ids)
+    deck_size = len(deck_ids)
+
+    return render_template(
+        "profile.html",
+        user=user,
+        recent_matches=recent_matches,
+        owned_cards=owned_cards,
+        deck_size=deck_size,
+    )
+
+
+@app.route("/ranking")
+def ranking():
+    users = (
+        User.query
+        .order_by(
+            User.wins.desc(),
+            User.losses.asc(),
+            User.coins.desc(),
+            User.username.asc(),
+        )
+        .limit(100)
+        .all()
+    )
+
+    return render_template(
+        "ranking.html",
+        user=current_user(),
+        users=users,
+    )
+
+
+@app.route("/match-history")
+def match_history():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    matches = (
+        MatchHistory.query
+        .filter(
+            (MatchHistory.player1_id == user.id)
+            | (MatchHistory.player2_id == user.id)
+        )
+        .order_by(MatchHistory.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    return render_template(
+        "match_history.html",
+        user=user,
+        matches=matches,
+        json=json,
+    )
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -321,6 +463,12 @@ def find_player_key(match, sid):
 
 
 def emit_log(room_id, message):
+    match = active_matches.get(room_id)
+
+    if match is not None:
+        match.setdefault("logs", [])
+        match["logs"].append(str(message))
+
     socketio.emit("battle_log", {"msg": message}, to=room_id)
 
 
@@ -402,6 +550,8 @@ def end_match(room_id, winner_key):
     p1 = match["p1"]
     p2 = match["p2"]
 
+    save_match_history(room_id, winner_key)
+
     if winner_key == "DRAW":
         socketio.emit("game_over", {"result": "DRAW"}, to=p1["sid"])
         socketio.emit("game_over", {"result": "DRAW"}, to=p2["sid"])
@@ -470,6 +620,7 @@ def handle_join_queue():
         "p2": player_object,
         "round": 1,
         "resolving": False,
+        "logs": [],
     }
 
     player_rooms[waiting_player["sid"]] = room_id
