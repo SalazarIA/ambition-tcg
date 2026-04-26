@@ -35,7 +35,6 @@
                 <button type="submit" class="btn full-btn">Login</button>
             </form>
 
-            <a href="{{ url_for('resend_verification') }}" class="text-link">Resend verification email</a>
             <a href="{{ url_for('register') }}" class="text-link">Create account</a>
             <br>
             <a href="{{ url_for('forgot_password') }}" class="text-link">Forgot password?</a>

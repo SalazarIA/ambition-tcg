@@ -29,6 +29,7 @@ def clean_database_url(raw_url):
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
 
+    # Corrige SQLite relativo problemático no Flask-SQLAlchemy
     if url in {
         "sqlite:///instance/database.db",
         "sqlite://instance/database.db",
@@ -69,16 +70,3 @@ class Config:
 
     LOGIN_ATTEMPT_LIMIT = int(os.environ.get("LOGIN_ATTEMPT_LIMIT", "8"))
     FEEDBACK_DAILY_LIMIT = int(os.environ.get("FEEDBACK_DAILY_LIMIT", "10"))
-
-    BETA_INVITE_REQUIRED = os.environ.get("BETA_INVITE_REQUIRED", "false").lower() == "true"
-
-    SMTP_HOST = os.environ.get("SMTP_HOST", "")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-    SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
-    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-    SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
-    MAIL_FROM = os.environ.get("MAIL_FROM", SMTP_USERNAME or "no-reply@ambition-tcg.local")
-
-    @classmethod
-    def smtp_enabled(cls):
-        return bool(cls.SMTP_HOST and cls.SMTP_USERNAME and cls.SMTP_PASSWORD and cls.MAIL_FROM)

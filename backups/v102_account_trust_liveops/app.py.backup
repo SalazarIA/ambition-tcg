@@ -2,7 +2,7 @@ import json
 import os
 import random
 import secrets
-from datetime import datetime, timezone, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 import itsdangerous
 from flask import Flask, flash, redirect, render_template, request, session, url_for
@@ -22,7 +22,7 @@ from game.deck import (
     full_deck_analysis,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, db, ensure_database_schema
+from models import BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, db, ensure_database_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.email_service import send_password_reset_email, send_verification_email
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
@@ -69,56 +69,10 @@ login_attempts = {}
 def create_database_tables():
     with app.app_context():
         db.create_all()
+        ensure_database_schema()
 
 
 create_database_tables()
-
-
-def log_system_event(level="info", category="system", message="", details=None, user_id=None):
-    try:
-        payload = None
-
-        if details is not None:
-            payload = json.dumps(details, ensure_ascii=False)
-
-        log = SystemLog(
-            level=level,
-            category=category,
-            message=str(message)[:255],
-            details_json=payload,
-            user_id=user_id,
-        )
-
-        db.session.add(log)
-        db.session.commit()
-    except Exception as error:
-        print("SYSTEM LOG ERROR:", error)
-
-
-def generate_invite_code():
-    return secrets.token_hex(4).upper()
-
-
-def account_can_login(user):
-    if not user:
-        return False, "Invalid account."
-
-    if getattr(user, "account_status", "active") in ["banned", "disabled"]:
-        return False, "Account is not allowed to login."
-
-    return True, ""
-
-
-def mark_user_verified(user):
-    user.is_verified = True
-    user.account_status = "active"
-    user.verified_at = datetime.now(timezone.utc)
-
-
-def get_public_base_url():
-    return app.config.get("PUBLIC_BASE_URL", request.url_root.rstrip("/"))
-
-
 
 
 def current_user():
@@ -632,7 +586,6 @@ def reset_password(token):
 
     if request.method == "POST":
         password = request.form.get("password", "").strip()
-        invite_code = request.form.get("invite_code", "").strip().upper()
         password_confirm = request.form.get("password_confirm", "").strip()
 
         if len(password) < 6:
@@ -753,324 +706,12 @@ def privacy():
     return render_template("privacy.html", user=current_user())
 
 
-
-
-@app.route("/resend-verification", methods=["GET", "POST"])
-def resend_verification():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            flash("If this email exists, a verification link will be sent.")
-            return redirect("/resend-verification")
-
-        if user.is_verified:
-            flash("This account is already verified. You can login.")
-            return redirect("/login")
-
-        token = serializer.dumps(user.email, salt="email-confirm")
-        verification_url = url_for("confirm_email", token=token, _external=True)
-
-        sent = send_verification_email(user, verification_url)
-
-        if sent:
-            flash("Verification email sent.")
-        else:
-            flash("SMTP is not configured. Verification link was printed in server logs.")
-
-        log_system_event(
-            level="info",
-            category="email",
-            message="Verification email requested",
-            user_id=user.id,
-        )
-
-        return redirect("/login")
-
-    return render_template("resend_verification.html")
-
-
-@app.route("/welcome")
-def welcome():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    return render_template("welcome.html", user=user)
-
-
-@app.route("/complete-onboarding", methods=["POST"])
-def complete_onboarding():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    user.has_completed_onboarding = True
-    db.session.commit()
-
-    return redirect(url_for("training"))
-
-
-@app.route("/admin/system")
-def admin_system():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    if not user or not user.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    db_ok = True
-    db_error = None
-
-    try:
-        User.query.first()
-    except Exception as error:
-        db_ok = False
-        db_error = str(error)
-
-    return render_template(
-        "admin_system.html",
-        user=user,
-        smtp_enabled=is_smtp_configured(),
-        db_ok=db_ok,
-        db_error=db_error,
-        app_version="Ambition TCG V1.02",
-        environment=app.config.get("ENVIRONMENT"),
-        total_users=User.query.count(),
-        verified_users=User.query.filter_by(is_verified=True).count(),
-        total_matches=MatchHistory.query.count(),
-        open_feedbacks=FeedbackReport.query.filter_by(status="open").count(),
-        recent_logs=SystemLog.query.order_by(SystemLog.created_at.desc()).limit(20).all(),
-    )
-
-
-@app.route("/admin/users")
-def admin_users():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    if not user or not user.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    users = User.query.order_by(User.id.desc()).limit(200).all()
-
-    return render_template("admin_users.html", user=user, users=users)
-
-
-@app.route("/admin/users/<int:user_id>/toggle-admin", methods=["POST"])
-def admin_toggle_admin(user_id):
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    current = current_user()
-
-    if not current or not current.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    target = db.session.get(User, user_id)
-
-    if target:
-        target.is_admin = not target.is_admin
-        db.session.commit()
-        log_system_event("warning", "admin", f"Admin toggled for {target.email}", user_id=current.id)
-
-    return redirect("/admin/users")
-
-
-@app.route("/admin/users/<int:user_id>/toggle-tester", methods=["POST"])
-def admin_toggle_tester(user_id):
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    current = current_user()
-
-    if not current or not current.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    target = db.session.get(User, user_id)
-
-    if target:
-        target.is_tester = not target.is_tester
-        db.session.commit()
-        log_system_event("info", "admin", f"Tester toggled for {target.email}", user_id=current.id)
-
-    return redirect("/admin/users")
-
-
-@app.route("/admin/users/<int:user_id>/verify", methods=["POST"])
-def admin_verify_user(user_id):
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    current = current_user()
-
-    if not current or not current.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    target = db.session.get(User, user_id)
-
-    if target:
-        mark_user_verified(target)
-        db.session.commit()
-        log_system_event("info", "admin", f"User verified manually: {target.email}", user_id=current.id)
-
-    return redirect("/admin/users")
-
-
-@app.route("/admin/users/<int:user_id>/ban", methods=["POST"])
-def admin_ban_user(user_id):
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    current = current_user()
-
-    if not current or not current.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    target = db.session.get(User, user_id)
-
-    if target:
-        target.account_status = "banned"
-        db.session.commit()
-        log_system_event("warning", "admin", f"User banned: {target.email}", user_id=current.id)
-
-    return redirect("/admin/users")
-
-
-@app.route("/admin/users/<int:user_id>/unban", methods=["POST"])
-def admin_unban_user(user_id):
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    current = current_user()
-
-    if not current or not current.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    target = db.session.get(User, user_id)
-
-    if target:
-        target.account_status = "active" if target.is_verified else "unverified"
-        db.session.commit()
-        log_system_event("info", "admin", f"User unbanned: {target.email}", user_id=current.id)
-
-    return redirect("/admin/users")
-
-
-@app.route("/admin/invites", methods=["GET", "POST"])
-def admin_invites():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    if not user or not user.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    if request.method == "POST":
-        max_uses = int(request.form.get("max_uses", "1") or 1)
-        code = request.form.get("code", "").strip().upper() or generate_invite_code()
-
-        invite = BetaInvite(
-            code=code,
-            created_by_user_id=user.id,
-            max_uses=max_uses,
-            used_count=0,
-            is_active=True,
-        )
-
-        db.session.add(invite)
-        db.session.commit()
-
-        log_system_event("info", "admin", f"Beta invite created: {code}", user_id=user.id)
-        flash("Invite created.")
-        return redirect("/admin/invites")
-
-    invites = BetaInvite.query.order_by(BetaInvite.created_at.desc()).limit(100).all()
-    return render_template("admin_invites.html", user=user, invites=invites)
-
-
-@app.route("/admin/feedback")
-def admin_feedback():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    if not user or not user.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    reports = FeedbackReport.query.order_by(FeedbackReport.created_at.desc()).limit(200).all()
-    return render_template("admin_feedback.html", user=user, reports=reports)
-
-
-@app.route("/admin/feedback/<int:report_id>/update", methods=["POST"])
-def admin_feedback_update(report_id):
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    if not user or not user.is_admin:
-        flash("Admin access required.")
-        return redirect("/")
-
-    report = db.session.get(FeedbackReport, report_id)
-
-    if report:
-        report.status = request.form.get("status", report.status)
-        db.session.commit()
-        log_system_event("info", "feedback", f"Feedback status updated: {report.title}", user_id=user.id)
-
-    return redirect("/admin/feedback")
-
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
-        invite_code = request.form.get("invite_code", "").strip().upper()
 
         if not username or not email or not password:
             flash("Fill all fields.")
@@ -1079,19 +720,6 @@ def register():
         if len(password) < 6:
             flash("Password must have at least 6 characters.")
             return redirect("/register")
-
-        invite = None
-
-        if app.config.get("BETA_INVITE_REQUIRED"):
-            if not invite_code:
-                flash("Beta invite code is required.")
-                return redirect("/register")
-
-            invite = BetaInvite.query.filter_by(code=invite_code).first()
-
-            if not invite or not invite.can_be_used():
-                flash("Invalid or expired invite code.")
-                return redirect("/register")
 
         if User.query.filter_by(email=email).first():
             flash("Email already exists.")
@@ -1104,16 +732,10 @@ def register():
         new_user = User(
             username=username,
             email=email,
-            account_status="unverified",
-            is_tester=True if invite else False,
         )
         new_user.set_password(password)
 
         db.session.add(new_user)
-
-        if invite:
-            invite.used_count += 1
-
         db.session.commit()
 
         token = serializer.dumps(email, salt="email-confirm")
@@ -1139,7 +761,7 @@ def confirm_email(token):
         return "Verification link expired."
 
     user = User.query.filter_by(email=email).first_or_404()
-    mark_user_verified(user)
+    user.is_verified = True
 
     db.session.commit()
 
@@ -1152,7 +774,6 @@ def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
-        invite_code = request.form.get("invite_code", "").strip().upper()
 
         attempt_key = f"{request.remote_addr}:{email}"
         attempts = login_attempts.get(attempt_key, 0)
@@ -1168,27 +789,12 @@ def login():
             flash("Invalid login.")
             return redirect("/login")
 
-        can_login, login_message = account_can_login(user)
-
-        if not can_login:
-            flash(login_message)
+        if not user.is_verified:
+            flash("Verify your email first. Check the verification link in server logs.")
             return redirect("/login")
 
-        if not user.is_verified:
-            flash("Verify your email first. You can resend the verification email below.")
-            return redirect("/resend-verification")
-
         login_attempts.pop(attempt_key, None)
-
-        user.last_login_at = datetime.now(timezone.utc)
-        user.login_count = int(user.login_count or 0) + 1
-        db.session.commit()
-
         session["user_id"] = user.id
-
-        if not user.has_completed_onboarding:
-            return redirect("/welcome")
-
         return redirect("/")
 
     return render_template("login.html")

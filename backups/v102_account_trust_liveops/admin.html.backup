@@ -23,16 +23,6 @@
         </header>
 
         <section class="deck-status">
-            <h2>Live Ops</h2>
-            <div class="menu-grid">
-                <a class="menu-card" href="{{ url_for('admin_system') }}"><strong>System</strong><span>Health, SMTP and logs</span></a>
-                <a class="menu-card" href="{{ url_for('admin_users') }}"><strong>Users</strong><span>Accounts and beta status</span></a>
-                <a class="menu-card" href="{{ url_for('admin_invites') }}"><strong>Invites</strong><span>Beta access codes</span></a>
-                <a class="menu-card" href="{{ url_for('admin_feedback') }}"><strong>Feedback Ops</strong><span>Reports pipeline</span></a>
-            </div>
-        </section>
-
-        <section class="deck-status">
             <h2>Overview</h2>
 
             <div class="menu-grid">

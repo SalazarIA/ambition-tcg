@@ -1,77 +1,73 @@
-import os
 import smtplib
 from email.message import EmailMessage
+from flask import current_app
 
 
-def email_configured():
-    required = [
-        "SMTP_HOST",
-        "SMTP_PORT",
-        "SMTP_USERNAME",
-        "SMTP_PASSWORD",
-        "MAIL_FROM",
-    ]
-
-    return all(os.environ.get(key) for key in required)
+def is_smtp_configured():
+    return current_app.config.get("SMTP_HOST") and current_app.config.get("SMTP_USERNAME") and current_app.config.get("SMTP_PASSWORD")
 
 
 def send_email(to_email, subject, body):
-    if not email_configured():
-        print("\n--- EMAIL SERVICE NOT CONFIGURED ---")
+    if not is_smtp_configured():
+        print("\n--- AMBITION EMAIL FALLBACK ---")
         print("To:", to_email)
         print("Subject:", subject)
         print(body)
-        print("------------------------------------\n")
+        print("-------------------------------\n")
         return False
 
-    smtp_host = os.environ["SMTP_HOST"]
-    smtp_port = int(os.environ["SMTP_PORT"])
-    smtp_username = os.environ["SMTP_USERNAME"]
-    smtp_password = os.environ["SMTP_PASSWORD"]
-    mail_from = os.environ["MAIL_FROM"]
-    use_tls = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
+    msg = EmailMessage()
+    msg["From"] = current_app.config.get("MAIL_FROM")
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.set_content(body)
 
-    message = EmailMessage()
-    message["From"] = mail_from
-    message["To"] = to_email
-    message["Subject"] = subject
-    message.set_content(body)
+    host = current_app.config.get("SMTP_HOST")
+    port = int(current_app.config.get("SMTP_PORT", 587))
+    username = current_app.config.get("SMTP_USERNAME")
+    password = current_app.config.get("SMTP_PASSWORD")
+    use_tls = current_app.config.get("SMTP_USE_TLS", True)
 
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
+    with smtplib.SMTP(host, port, timeout=20) as server:
         if use_tls:
             server.starttls()
 
-        server.login(smtp_username, smtp_password)
-        server.send_message(message)
+        server.login(username, password)
+        server.send_message(msg)
 
     return True
 
 
-def send_verification_email(to_email, verification_url):
-    subject = "Verify your Ambition TCG account"
+def send_verification_email(user, verification_url):
+    subject = "Confirm your Ambition TCG account"
 
-    body = f"""Welcome to Ambition TCG.
+    body = f"""Welcome to Ambition TCG, {user.username}.
 
-Verify your account using the link below:
+Confirm your account using the link below:
 
 {verification_url}
 
-If you did not create this account, ignore this message.
+This link expires for security reasons.
+
+Ambition TCG
+Risk. Elements. Overreach.
 """
 
-    return send_email(to_email, subject, body)
+    return send_email(user.email, subject, body)
 
 
-def send_password_reset_email(to_email, reset_url):
+def send_password_reset_email(user, reset_url):
     subject = "Reset your Ambition TCG password"
 
-    body = f"""You requested a password reset for Ambition TCG.
+    body = f"""Hi {user.username}.
 
-Reset your password using the link below:
+Use the link below to reset your Ambition TCG password:
 
 {reset_url}
 
-This link expires soon. If you did not request this, ignore this message.
+If you did not request this, ignore this email.
+
+Ambition TCG
 """
 
-    return send_email(to_email, subject, body)
+    return send_email(user.email, subject, body)
