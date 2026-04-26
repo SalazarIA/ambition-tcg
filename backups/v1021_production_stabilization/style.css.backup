@@ -2661,19 +2661,3 @@ textarea {
 .welcome-panel {
     text-align: center;
 }
-
-/* =========================================================
-   AMBITIONZ V1.02.1 — PRODUCTION STABILIZATION
-   ========================================================= */
-
-.danger-zone {
-    border-color: rgba(231, 76, 60, 0.28) !important;
-}
-
-.danger-zone h2 {
-    color: #ffd5d0;
-}
-
-.danger-zone p {
-    color: #e8b7b2;
-}

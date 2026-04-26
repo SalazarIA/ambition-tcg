@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dev Tools - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Dev Tools</h1>
+                <p>Production stabilization tools</p>
+            </div>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="deck-status">
+            <h2>SMTP Test</h2>
+            <p>Send a real test email through the configured SMTP provider.</p>
+
+            <form method="POST" action="{{ url_for('admin_test_email') }}" class="form mobile-form">
+                <input type="email" name="email" placeholder="Destination email" required>
+                <button type="submit" class="btn full-btn">Send Test Email</button>
+            </form>
+        </section>
+
+        <section class="deck-status danger-zone">
+            <h2>Reset Test Users</h2>
+            <p>This deletes all non-admin users and related test data. Admin accounts stay alive.</p>
+
+            <form method="POST" action="{{ url_for('admin_reset_test_users') }}">
+                <button type="submit" class="btn btn-danger full-btn">Delete Non-Admin Users</button>
+            </form>
+        </section>
+
+        <section class="deck-status danger-zone">
+            <h2>Clear Gameplay Data</h2>
+            <p>This clears matches, feedback, card stats, invites and logs. Users stay alive.</p>
+
+            <form method="POST" action="{{ url_for('admin_clear_gameplay_data') }}">
+                <button type="submit" class="btn btn-danger full-btn">Clear Gameplay Data</button>
+            </form>
+        </section>
+
+        <section class="deck-status">
+            <h2>Current Users</h2>
+
+            <div class="deck-list">
+                {% for target in users %}
+                    <div class="deck-line">
+                        <span>{{ target.id }} — {{ target.username }} — {{ target.email }}</span>
+                        <strong>admin={{ target.is_admin }} / verified={{ target.is_verified }} / {{ target.account_status }}</strong>
+                    </div>
+                {% else %}
+                    <p class="subtitle">No users found.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>

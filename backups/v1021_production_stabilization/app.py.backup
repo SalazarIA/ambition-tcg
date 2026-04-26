@@ -8,7 +8,6 @@ import itsdangerous
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO, join_room
 from werkzeug.middleware.proxy_fix import ProxyFix
-from sqlalchemy import text as sql_text
 
 from config import Config
 from game.battle import resolve_battle
@@ -816,114 +815,6 @@ def complete_onboarding():
     db.session.commit()
 
     return redirect(url_for("training"))
-
-
-
-
-@app.route("/admin/dev-tools")
-def admin_dev_tools():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    users = User.query.order_by(User.id.asc()).all()
-
-    return render_template("admin_dev_tools.html", user=user, users=users)
-
-
-@app.route("/admin/test-email", methods=["POST"])
-def admin_test_email():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    email = request.form.get("email", "").strip().lower()
-
-    if not email:
-        flash("Email is required.")
-        return redirect("/admin/dev-tools")
-
-    sent = send_smtp_test_email(email)
-
-    if sent:
-        flash("SMTP test email sent.")
-        log_system_event("info", "email", f"SMTP test sent to {email}", user_id=user.id)
-    else:
-        flash("SMTP test failed. Check Render logs.")
-        log_system_event("error", "email", f"SMTP test failed to {email}", user_id=user.id)
-
-    return redirect("/admin/dev-tools")
-
-
-@app.route("/admin/reset-test-users", methods=["POST"])
-def admin_reset_test_users():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    tables_to_clear = [
-        "system_logs",
-        "feedback_reports",
-        "booster_history",
-        "match_history",
-        "card_stats",
-        "beta_invites",
-    ]
-
-    with db.engine.begin() as connection:
-        for table in tables_to_clear:
-            try:
-                connection.execute(sql_text(f"DELETE FROM {table}"))
-            except Exception as error:
-                print("Reset ignored:", table, error)
-
-        connection.execute(
-            sql_text("DELETE FROM users WHERE is_admin = false")
-        )
-
-    log_system_event("warning", "admin", "Non-admin users reset by admin", user_id=user.id)
-    flash("Non-admin users and test data deleted.")
-
-    return redirect("/admin/dev-tools")
-
-
-@app.route("/admin/clear-gameplay-data", methods=["POST"])
-def admin_clear_gameplay_data():
-    auth_redirect = admin_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-
-    tables_to_clear = [
-        "system_logs",
-        "feedback_reports",
-        "booster_history",
-        "match_history",
-        "card_stats",
-        "beta_invites",
-    ]
-
-    with db.engine.begin() as connection:
-        for table in tables_to_clear:
-            try:
-                connection.execute(sql_text(f"DELETE FROM {table}"))
-            except Exception as error:
-                print("Clear ignored:", table, error)
-
-    log_system_event("warning", "admin", "Gameplay data cleared by admin", user_id=user.id)
-    flash("Gameplay data cleared. Users were preserved.")
-
-    return redirect("/admin/dev-tools")
-
 
 
 @app.route("/admin/system")
