@@ -1,0 +1,35 @@
+from pathlib import Path
+
+
+REQUIRED_FILES = [
+    "app.py",
+    "models.py",
+    "config.py",
+    "services/email_service.py",
+    "templates/index.html",
+    "templates/login.html",
+    "templates/register.html",
+    "templates/arena.html",
+    "templates/admin_dev_tools.html",
+    "templates/terms.html",
+    "templates/privacy.html",
+    "static/css/style.css",
+    "static/js/game.js",
+    "static/js/card_ui_v103.js",
+    "static/manifest.webmanifest",
+]
+
+
+def audit_files():
+    errors = []
+
+    for file_path in REQUIRED_FILES:
+        path = Path(file_path)
+
+        if not path.exists():
+            errors.append(f"Missing required file: {file_path}")
+            print("FILE MISSING:", file_path)
+        else:
+            print("FILE OK:", file_path)
+
+    return errors
