@@ -35,43 +35,39 @@
             {% endif %}
         {% endwith %}
 
-        <section class="deck-status mobile-deck-status sticky-deck-overview">
+        <section class="deck-status mobile-deck-status">
             <h2>Deck Status</h2>
 
-            <div class="deck-progress-shell">
-                <div class="deck-progress-label">
-                    <span>Total</span>
-                    <strong><span id="live-total-count">{{ deck_analysis.stats.total }}</span>/30</strong>
-                </div>
-                <div class="deck-progress-bar">
-                    <div id="live-total-bar" class="deck-progress-fill" style="width: {{ (deck_analysis.stats.total / 30 * 100) if deck_analysis.stats.total <= 30 else 100 }}%;"></div>
-                </div>
-            </div>
-
-            <div class="menu-grid deck-live-grid">
+            <div class="menu-grid">
                 <div class="menu-card">
-                    <strong><span id="live-monster-count">{{ deck_analysis.stats.monsters }}</span>/21</strong>
+                    <strong>{{ deck_analysis.stats.total }}/30</strong>
+                    <span>Total Cards</span>
+                </div>
+
+                <div class="menu-card">
+                    <strong>{{ deck_analysis.stats.monsters }}/21</strong>
                     <span>Monsters</span>
                 </div>
 
                 <div class="menu-card">
-                    <strong><span id="live-spell-count">{{ deck_analysis.stats.spells }}</span>/6</strong>
+                    <strong>{{ deck_analysis.stats.spells }}/6</strong>
                     <span>Spells</span>
                 </div>
 
                 <div class="menu-card">
-                    <strong><span id="live-trap-count">{{ deck_analysis.stats.traps }}</span>/3</strong>
+                    <strong>{{ deck_analysis.stats.traps }}/3</strong>
                     <span>Traps</span>
                 </div>
 
                 <div class="menu-card">
-                    <strong id="live-average-cost">{{ deck_analysis.energy.average_cost }}</strong>
+                    <strong>{{ deck_analysis.energy.average_cost }}</strong>
                     <span>Average Cost</span>
                 </div>
-            </div>
 
-            <div id="live-deck-message" class="deck-live-message">
-                Build exactly 30 cards.
+                <div class="menu-card">
+                    <strong>{{ deck_analysis.energy.curve[1] + deck_analysis.energy.curve[2] }}</strong>
+                    <span>Early Cards Cost 1-2</span>
+                </div>
             </div>
 
             {% if deck_validation_errors %}
@@ -96,18 +92,6 @@
         </section>
 
         <section class="deck-status">
-            <h2>Quick Actions</h2>
-
-            <div class="actions">
-                <form method="POST" action="{{ url_for('auto_build_deck') }}">
-                    <button type="submit" class="btn">Auto Build Beta Deck</button>
-                </form>
-
-                <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary">How to Play</a>
-            </div>
-        </section>
-
-        <section class="deck-status">
             <h2>Energy Curve</h2>
 
             <div class="deck-list">
@@ -120,7 +104,33 @@
             </div>
         </section>
 
-        <section class="mobile-filter-panel enhanced-builder-filters">
+        <section class="deck-status">
+            <h2>Element Distribution</h2>
+
+            <div class="deck-list">
+                {% for element, amount in deck_analysis.elements.items() %}
+                    <div class="deck-line">
+                        <span>{{ element }}</span>
+                        <strong>{{ amount }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <h2>Current Deck</h2>
+
+            <div class="deck-list compact-deck-list">
+                {% for card in current_deck %}
+                    <div class="deck-line">
+                        <span>{{ card.name }}</span>
+                        <strong>x{{ card.amount }} — Cost {{ card.cost }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="mobile-filter-panel">
             <input id="builder-search" type="search" placeholder="Search card..." oninput="filterBuilderCards()">
 
             <select id="builder-type-filter" onchange="filterBuilderCards()">
@@ -138,37 +148,17 @@
                 <option value="Plant">Plant</option>
                 <option value="Global">Global</option>
             </select>
-
-            <select id="builder-cost-filter" onchange="filterBuilderCards()">
-                <option value="">All costs</option>
-                <option value="1">Cost 1</option>
-                <option value="2">Cost 2</option>
-                <option value="3">Cost 3</option>
-                <option value="4">Cost 4</option>
-                <option value="5">Cost 5</option>
-            </select>
-
-            <select id="builder-rarity-filter" onchange="filterBuilderCards()">
-                <option value="">All rarities</option>
-                <option value="Common">Common</option>
-                <option value="Uncommon">Uncommon</option>
-            </select>
         </section>
 
-        <form method="POST" id="deck-form">
+        <form method="POST">
             <section class="builder-layout mobile-card-grid">
                 {% for card in collection_cards %}
                     {% if card.owned > 0 %}
                         <article
                             class="builder-card image-card {{ card.type|lower }} {{ card.rarity|lower }}"
-                            data-card-id="{{ card.id }}"
                             data-name="{{ card.name }}"
                             data-type="{{ card.type }}"
                             data-element="{{ card.element }}"
-                            data-cost="{{ card.cost }}"
-                            data-rarity="{{ card.rarity }}"
-                            data-owned="{{ card.owned }}"
-                            data-selected="{{ deck_ids.count(card.id) }}"
                         >
                             <div class="image-card-frame">
                                 <header class="image-card-header">
@@ -203,20 +193,18 @@
                                 </footer>
                             </div>
 
-                            <div class="deck-card-controls">
-                                <button type="button" class="deck-step-btn" onclick="removeCardFromDeck('{{ card.id }}')">−</button>
-
-                                <div class="deck-card-count">
-                                    <strong id="count-{{ card.id }}">{{ deck_ids.count(card.id) }}</strong>
-                                    <span>/ {{ card.owned }}</span>
-                                </div>
-
-                                <button type="button" class="deck-step-btn" onclick="addCardToDeck('{{ card.id }}')">+</button>
-                            </div>
-
-                            <div id="inputs-{{ card.id }}" class="hidden-card-inputs">
-                                {% for n in range(deck_ids.count(card.id)) %}
-                                    <input type="hidden" name="deck_cards" value="{{ card.id }}">
+                            <div class="copy-select">
+                                {% for n in range(card.owned) %}
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            name="deck_cards"
+                                            value="{{ card.id }}"
+                                            onchange="updateDeckCounter()"
+                                            {% if card.id in deck_ids and loop.index <= deck_ids.count(card.id) %}checked{% endif %}
+                                        >
+                                        Copy {{ loop.index }}
+                                    </label>
                                 {% endfor %}
                             </div>
                         </article>
@@ -241,7 +229,33 @@
         </nav>
     </main>
 
-    <script src="{{ url_for('static', filename='js/deck_builder.js') }}"></script>
+    <script>
+        function filterBuilderCards() {
+            const search = document.getElementById("builder-search").value.toLowerCase();
+            const type = document.getElementById("builder-type-filter").value;
+            const element = document.getElementById("builder-element-filter").value;
+
+            document.querySelectorAll(".builder-card").forEach((card) => {
+                const cardName = card.dataset.name.toLowerCase();
+                const cardType = card.dataset.type;
+                const cardElement = card.dataset.element;
+
+                const matchesSearch = cardName.includes(search);
+                const matchesType = !type || cardType === type;
+                const matchesElement = !element || cardElement === element;
+
+                card.style.display = matchesSearch && matchesType && matchesElement ? "" : "none";
+            });
+        }
+
+        function updateDeckCounter() {
+            const count = document.querySelectorAll('input[name="deck_cards"]:checked').length;
+            document.getElementById("selected-count").textContent = count;
+        }
+
+        document.addEventListener("DOMContentLoaded", updateDeckCounter);
+    </script>
+
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
 </body>

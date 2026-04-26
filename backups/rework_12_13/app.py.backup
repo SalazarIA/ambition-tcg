@@ -18,7 +18,6 @@ from game.deck import (
     load_card_ids,
     validate_deck,
     full_deck_analysis,
-    create_starter_deck_from_collection,
 )
 from models import CardStat, MatchHistory, User, db
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
@@ -496,25 +495,6 @@ def shop():
         db.session.commit()
 
     return render_template("shop.html", user=user, pulled_cards=pulled_cards)
-
-
-
-
-@app.route("/auto-build-deck", methods=["POST"])
-def auto_build_deck():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    collection_ids = load_card_ids(user.collection_json)
-
-    user.deck_json = create_starter_deck_from_collection(collection_ids)
-    db.session.commit()
-
-    flash("Auto deck created with beta structure: 21 monsters, 6 spells, 3 traps.")
-    return redirect("/deck-builder")
 
 
 @app.route("/deck-builder", methods=["GET", "POST"])

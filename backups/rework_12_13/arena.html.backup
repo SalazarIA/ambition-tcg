@@ -29,21 +29,6 @@
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Leave</a>
         </header>
 
-        <section class="arena-tip-panel">
-            <strong>Turn Guide</strong>
-            <span id="arena-step-text">Play 1 monster and optionally 1 spell/trap if you have enough energy. Then press Ready.</span>
-        </section>
-
-        <details class="arena-rules-panel">
-            <summary>Quick Rules</summary>
-            <div class="quick-rules-grid">
-                <div><strong>Deck</strong><span>30 cards: 21 monsters, 6 spells, 3 traps</span></div>
-                <div><strong>Energy</strong><span>Cards cost energy. Energy grows each round up to 6.</span></div>
-                <div><strong>Battle</strong><span>Higher final power deals damage equal to the difference.</span></div>
-                <div><strong>Elements</strong><span>Fire &gt; Plant &gt; Earth &gt; Water &gt; Fire. Advantage gives +300 power.</span></div>
-            </div>
-        </details>
-
         <section class="mobile-hp-row">
             <div class="compact-player-card enemy-compact">
                 <span id="enemy-name">Searching...</span>
@@ -63,7 +48,7 @@
             </div>
         </section>
 
-        <section class="mobile-counts energy-counts">
+        <section class="mobile-counts">
             <div>Your Energy: <strong id="my-energy">0/0</strong></div>
             <div>Enemy Energy: <strong id="enemy-energy">0/0</strong></div>
         </section>
@@ -75,27 +60,27 @@
         </section>
 
         <section class="board enemy-board mobile-board">
-            <div class="zone mobile-zone cinematic-zone" id="enemy-st-zone">
+            <div class="zone mobile-zone" id="enemy-st-zone">
                 <span>Enemy Spell/Trap</span>
             </div>
 
-            <div class="zone mobile-zone cinematic-zone" id="enemy-monster-zone">
+            <div class="zone mobile-zone" id="enemy-monster-zone">
                 <span>Enemy Monster</span>
             </div>
         </section>
 
-        <section id="battle-log" class="mobile-battle-log enhanced-battle-log"></section>
+        <section id="battle-log" class="mobile-battle-log"></section>
 
         <section class="controls sticky-controls">
             <button id="btn-ready" class="btn full-btn" onclick="declareReady()">Ready for Battle</button>
         </section>
 
         <section class="board my-board mobile-board">
-            <div class="zone mobile-zone cinematic-zone" id="my-monster-zone">
+            <div class="zone mobile-zone" id="my-monster-zone">
                 <span>My Monster</span>
             </div>
 
-            <div class="zone mobile-zone cinematic-zone" id="my-st-zone">
+            <div class="zone mobile-zone" id="my-st-zone">
                 <span>My Spell/Trap</span>
             </div>
         </section>
@@ -107,7 +92,7 @@
 
         <section class="mobile-hand-section">
             <h3 class="hand-title">Your Hand</h3>
-            <p class="arena-helper">Playable cards glow. Cards with cost higher than your energy are locked.</p>
+            <p class="arena-helper">Cards with cost higher than your current energy are locked this round.</p>
             <div id="my-hand" class="mobile-hand"></div>
         </section>
     </main>
