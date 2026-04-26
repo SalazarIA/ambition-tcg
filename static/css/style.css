@@ -3287,3 +3287,20 @@ textarea {
     color: var(--az-muted, #bfb3d3);
     line-height: 1.55;
 }
+
+/* Admin clickable cards fix */
+.clickable-menu-card,
+a.menu-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+.clickable-menu-card:hover,
+a.menu-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(216,199,255,0.35);
+}
