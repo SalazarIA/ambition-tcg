@@ -9,7 +9,7 @@ def is_smtp_configured():
 
 def send_email(to_email, subject, body):
     if not is_smtp_configured():
-        print("\n--- AMBITION EMAIL FALLBACK ---")
+        print("\n--- AMBITIONZ EMAIL FALLBACK ---")
         print("To:", to_email)
         print("Subject:", subject)
         print(body)
@@ -39,7 +39,7 @@ def send_email(to_email, subject, body):
         return True
 
     except Exception as error:
-        print("\n--- AMBITION SMTP ERROR ---")
+        print("\n--- AMBITIONZ SMTP ERROR ---")
         print(type(error).__name__, error)
         print("To:", to_email)
         print("Subject:", subject)
@@ -49,9 +49,9 @@ def send_email(to_email, subject, body):
 
 
 def send_verification_email(user, verification_url):
-    subject = "Confirm your Ambition TCG account"
+    subject = "Confirm your Ambitionz account"
 
-    body = f"""Welcome to Ambition TCG, {user.username}.
+    body = f"""Welcome to Ambitionz, {user.username}.
 
 Confirm your account using the link below:
 
@@ -59,7 +59,7 @@ Confirm your account using the link below:
 
 This link expires for security reasons.
 
-Ambition TCG
+Ambitionz
 Risk. Elements. Overreach.
 """
 
@@ -67,17 +67,17 @@ Risk. Elements. Overreach.
 
 
 def send_password_reset_email(user, reset_url):
-    subject = "Reset your Ambition TCG password"
+    subject = "Reset your Ambitionz password"
 
     body = f"""Hi {user.username}.
 
-Use the link below to reset your Ambition TCG password:
+Use the link below to reset your Ambitionz password:
 
 {reset_url}
 
 If you did not request this, ignore this email.
 
-Ambition TCG
+Ambitionz
 """
 
     return send_email(user.email, subject, body)

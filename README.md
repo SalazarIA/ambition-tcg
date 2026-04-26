@@ -1,6 +1,6 @@
-# Ambition TCG
+# Ambitionz
 
-Ambition TCG é um protótipo beta de TCG online com combate elemental, coleção, deck builder, boosters, arena 1v1 e preparação para Android, iOS e Steam/Desktop.
+Ambitionz é um protótipo beta de TCG online com combate elemental, coleção, deck builder, boosters, arena 1v1 e preparação para Android, iOS e Steam/Desktop.
 
 ## Stack
 

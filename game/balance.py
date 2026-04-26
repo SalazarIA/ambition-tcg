@@ -1,5 +1,5 @@
 """
-Ambition TCG V1.01A — Central Balance File
+Ambitionz V1.01A — Central Balance File
 
 All relevant gameplay numbers should live here.
 """

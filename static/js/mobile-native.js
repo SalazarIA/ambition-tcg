@@ -1,5 +1,5 @@
 /*
-Ambition TCG mobile native bridge placeholder.
+Ambitionz mobile native bridge placeholder.
 Used by Capacitor/PWA builds. Safe no-op for browser.
 */
 export {};

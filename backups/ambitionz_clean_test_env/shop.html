@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shop - Ambition TCG</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambition">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Booster Shop</h1>
+                <p>Coins: <strong>{{ user.coins }}</strong></p>
+            </div>
+
+            <a href="{{ url_for('booster_history') }}" class="btn btn-secondary small-btn">Booster History</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="shop-panel mobile-shop-panel">
+            <div class="booster-pack">
+                <div class="booster-logo">A</div>
+                <h2>Elemental Booster</h2>
+                <p>Contains 5 Common/Uncommon beta cards.</p>
+                <p>Cost: <strong>300 coins</strong></p>
+            </div>
+
+            <form method="POST">
+                <button type="submit" class="btn full-btn">Open Booster</button>
+            </form>
+        </section>
+
+        {% if pulled_cards %}
+            <h2 class="section-title">Cards Pulled</h2>
+
+            <section class="card-grid mobile-card-grid">
+                {% for card in pulled_cards %}
+                    <article class="collection-card image-card {{ card.type|lower }} {{ card.rarity|lower }}">
+                        <div class="image-card-frame">
+                            <header class="image-card-header">
+                                <h4>{{ card.name }}</h4>
+                                <span>{{ card.rarity }}</span>
+                            </header>
+
+                            <div class="image-card-art">
+                                <img
+                                    src="{{ url_for('static', filename='img/' + card.image) }}"
+                                    alt="{{ card.name }}"
+                                    onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/cards/placeholders/card_placeholder.svg') }}';"
+                                >
+                            </div>
+
+                            <div class="image-card-meta">
+                                <span>{{ card.element }}</span>
+                                <span>{{ card.type }}</span>
+                            </div>
+
+                            <div class="image-card-effect">
+                                <p>{{ card.description }}</p>
+                            </div>
+
+                            <footer class="image-card-footer">
+                                {% if card.type == "Monster" %}
+                                    <span>POWER</span>
+                                    <strong>{{ card.power }}</strong>
+                                {% else %}
+                                    <span>VALUE</span>
+                                    <strong>{{ card.value }}</strong>
+                                {% endif %}
+                            </footer>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('arena') }}">Arena</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('shop') }}" class="active">Shop</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>

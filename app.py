@@ -319,7 +319,7 @@ def offline():
 def health():
     return {
         "status": "ok",
-        "app": "Ambition TCG",
+        "app": "Ambitionz",
         "version": "beta-ambition-intents-0.7",
         "environment": app.config["ENVIRONMENT"],
     }
@@ -603,7 +603,7 @@ def forgot_password():
             reset_url = url_for("reset_password", token=token, _external=True)
             send_password_reset_email(user.email, reset_url)
 
-            print("\n--- AMBITION PASSWORD RESET LINK ---")
+            print("\n--- AMBITIONZ PASSWORD RESET LINK ---")
             print(reset_url)
             print("------------------------------------\n")
 
@@ -723,7 +723,7 @@ def feedback():
         db.session.add(report)
         db.session.commit()
 
-        flash("Feedback sent. Thank you for testing Ambition TCG.")
+        flash("Feedback sent. Thank you for testing Ambitionz.")
         return redirect("/")
 
     return render_template("feedback.html", user=user)
@@ -845,7 +845,7 @@ def admin_system():
         smtp_enabled=is_smtp_configured(),
         db_ok=db_ok,
         db_error=db_error,
-        app_version="Ambition TCG V1.02",
+        app_version="Ambitionz V1.02",
         environment=app.config.get("ENVIRONMENT"),
         total_users=User.query.count(),
         verified_users=User.query.filter_by(is_verified=True).count(),
@@ -1121,7 +1121,7 @@ def register():
 
         send_verification_email(new_user, verification_url)
 
-        print("\n--- AMBITION VERIFICATION LINK ---")
+        print("\n--- AMBITIONZ VERIFICATION LINK ---")
         print(verification_url)
         print("----------------------------------\n")
 

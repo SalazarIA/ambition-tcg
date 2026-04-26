@@ -1,7 +1,7 @@
 {
   "name": "ambition-tcg",
   "version": "0.1.0",
-  "description": "Ambition TCG beta client wrappers for Android, iOS and Desktop.",
+  "description": "Ambitionz beta client wrappers for Android, iOS and Desktop.",
   "private": true,
   "type": "module",
   "main": "desktop/main.cjs",
@@ -48,7 +48,7 @@
   },
   "build": {
     "appId": "com.elementra.ambitiontcg",
-    "productName": "Ambition TCG",
+    "productName": "Ambitionz",
     "copyright": "Copyright © 2026 Lucas Silverio",
     "directories": {
       "output": "release",
