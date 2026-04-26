@@ -1119,7 +1119,7 @@ def register():
         token = serializer.dumps(email, salt="email-confirm")
         verification_url = url_for("confirm_email", token=token, _external=True)
 
-        send_verification_email(email, verification_url)
+        send_verification_email(new_user, verification_url)
 
         print("\n--- AMBITION VERIFICATION LINK ---")
         print(verification_url)
