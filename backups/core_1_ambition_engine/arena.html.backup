@@ -39,8 +39,6 @@
             <div class="quick-rules-grid">
                 <div><strong>Deck</strong><span>30 cards: 21 monsters, 6 spells, 3 traps</span></div>
                 <div><strong>Energy</strong><span>Cards cost energy. Energy grows each round up to 6.</span></div>
-                <div><strong>Ambition</strong><span>Aggressive plays build Ambition. At 5, your monster can unleash +200 power.</span></div>
-                <div><strong>Overreach</strong><span>If Ambition exceeds 10, you suffer 300 damage and reset to 7.</span></div>
                 <div><strong>Battle</strong><span>Higher final power deals damage equal to the difference.</span></div>
                 <div><strong>Elements</strong><span>Fire &gt; Plant &gt; Earth &gt; Water &gt; Fire. Advantage gives +300 power.</span></div>
             </div>
@@ -68,28 +66,6 @@
         <section class="mobile-counts energy-counts">
             <div>Your Energy: <strong id="my-energy">0/0</strong></div>
             <div>Enemy Energy: <strong id="enemy-energy">0/0</strong></div>
-        </section>
-
-        <section class="ambition-row">
-            <div class="ambition-box">
-                <div class="ambition-label">
-                    <span>Your Ambition</span>
-                    <strong id="my-ambition-text">0/10</strong>
-                </div>
-                <div class="ambition-bar">
-                    <div id="my-ambition-fill" class="ambition-fill"></div>
-                </div>
-            </div>
-
-            <div class="ambition-box">
-                <div class="ambition-label">
-                    <span>Enemy Ambition</span>
-                    <strong id="enemy-ambition-text">0/10</strong>
-                </div>
-                <div class="ambition-bar">
-                    <div id="enemy-ambition-fill" class="ambition-fill enemy"></div>
-                </div>
-            </div>
         </section>
 
         <section class="mobile-counts">
@@ -131,7 +107,7 @@
 
         <section class="mobile-hand-section">
             <h3 class="hand-title">Your Hand</h3>
-            <p class="arena-helper">Playable cards glow. Build Ambition with aggressive plays, but avoid Overreach.</p>
+            <p class="arena-helper">Playable cards glow. Cards with cost higher than your energy are locked.</p>
             <div id="my-hand" class="mobile-hand"></div>
         </section>
     </main>

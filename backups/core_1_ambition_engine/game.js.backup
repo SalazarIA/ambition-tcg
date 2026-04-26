@@ -159,10 +159,6 @@ function classifyLog(message) {
         return "log-advantage";
     }
 
-    if (lower.includes("ambition") || lower.includes("overreach") || lower.includes("unleashed")) {
-        return "log-ambition";
-    }
-
     if (lower.includes("energy") || lower.includes("cost")) {
         return "log-energy";
     }
@@ -277,37 +273,6 @@ function updateHpWithFeedback(data) {
     lastEnemyHp = enemyHp;
 }
 
-
-function updateAmbition(data) {
-    const myAmbition = Number(data.me.ambition || 0);
-    const enemyAmbition = Number(data.enemy.ambition || 0);
-
-    const myText = document.getElementById("my-ambition-text");
-    const enemyText = document.getElementById("enemy-ambition-text");
-    const myFill = document.getElementById("my-ambition-fill");
-    const enemyFill = document.getElementById("enemy-ambition-fill");
-
-    if (myText) {
-        myText.textContent = `${myAmbition}/10`;
-    }
-
-    if (enemyText) {
-        enemyText.textContent = `${enemyAmbition}/10`;
-    }
-
-    if (myFill) {
-        myFill.style.width = `${Math.min(100, myAmbition * 10)}%`;
-        myFill.classList.toggle("ready", myAmbition >= 5);
-        myFill.classList.toggle("danger", myAmbition >= 9);
-    }
-
-    if (enemyFill) {
-        enemyFill.style.width = `${Math.min(100, enemyAmbition * 10)}%`;
-        enemyFill.classList.toggle("ready", enemyAmbition >= 5);
-        enemyFill.classList.toggle("danger", enemyAmbition >= 9);
-    }
-}
-
 socket.on("connect", () => {
     addLog("Connected to server.");
     socket.emit("join_queue");
@@ -329,7 +294,6 @@ socket.on("game_state_update", (data) => {
     syncRound(data);
     updateHpWithFeedback(data);
     updateEnergy(data);
-    updateAmbition(data);
     updateArenaStep(data);
     pulseZonesOnReveal(data);
 
