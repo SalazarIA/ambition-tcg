@@ -40,6 +40,9 @@ def clean_database_url(raw_url):
 
 
 class Config:
+
+    DEV_TOOLS_ENABLED = os.environ.get("DEV_TOOLS_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+    ADMIN_DANGER_CONFIRMATION = os.environ.get("ADMIN_DANGER_CONFIRMATION", "RESET AMBITIONZ")
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-this")
 
     ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")

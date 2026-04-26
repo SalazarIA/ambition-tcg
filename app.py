@@ -151,6 +151,22 @@ def dev_tools_enabled():
     return bool(app.config.get("DEV_TOOLS_ENABLED", False))
 
 
+def dev_tools_enabled():
+    config_value = app.config.get("DEV_TOOLS_ENABLED", False)
+    env_value = os.environ.get("DEV_TOOLS_ENABLED", "")
+
+    if isinstance(config_value, bool) and config_value:
+        return True
+
+    if str(config_value).strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+
+    if str(env_value).strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+
+    return False
+
+
 def dev_tools_required_redirect():
     auth_redirect = admin_required_redirect()
 
