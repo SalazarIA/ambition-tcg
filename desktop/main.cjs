@@ -1,7 +1,7 @@
 const { app, BrowserWindow, shell, Menu, nativeImage } = require("electron");
 const path = require("path");
 
-const DEFAULT_GAME_URL = "https://ambition-tcg-1.onrender.com";
+const DEFAULT_GAME_URL = "https://ambition-tcg.onrender.com";
 
 const GAME_URL = process.env.AMBITION_DESKTOP_URL || DEFAULT_GAME_URL;
 

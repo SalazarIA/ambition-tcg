@@ -5,7 +5,10 @@ from game.rules import (
     apply_summon_effect,
     apply_trap,
     calculate_final_power,
+    elemental_log,
+    energy_for_round,
     piercing_bonus_damage,
+    reset_player_energy,
 )
 
 
@@ -15,11 +18,12 @@ def resolve_battle(match):
 
     logs = []
     match["resolving"] = True
+    match["phase"] = "Battle Phase"
 
     p1["shield"] = 0
     p2["shield"] = 0
 
-    logs.append(f"Round {match['round']} started.")
+    logs.append(f"Round {match['round']} entered Battle Phase.")
 
     if p1.get("field_m"):
         logs.extend(apply_summon_effect(p1, p2, p1["field_m"]))
@@ -43,15 +47,28 @@ def resolve_battle(match):
     p2_monster = p2.get("field_m")
 
     if p1_monster and p2_monster:
+        p1_advantage_log = elemental_log(p1_monster, p2_monster, p1["name"])
+        p2_advantage_log = elemental_log(p2_monster, p1_monster, p2["name"])
+
+        if p1_advantage_log:
+            logs.append(p1_advantage_log)
+
+        if p2_advantage_log:
+            logs.append(p2_advantage_log)
+
         p1_power = calculate_final_power(p1_monster, p2_monster)
         p2_power = calculate_final_power(p2_monster, p1_monster)
 
-        logs.append(f"{p1['name']} revealed {p1_monster['name']} with {p1_power} power.")
-        logs.append(f"{p2['name']} revealed {p2_monster['name']} with {p2_power} power.")
+        logs.append(f"{p1['name']} revealed {p1_monster['name']} with {p1_power} final power.")
+        logs.append(f"{p2['name']} revealed {p2_monster['name']} with {p2_power} final power.")
 
         if p1_power > p2_power:
             raw_damage = p1_power - p2_power
-            raw_damage += piercing_bonus_damage(p1_monster)
+            pierce = piercing_bonus_damage(p1_monster)
+            raw_damage += pierce
+
+            if pierce > 0:
+                logs.append(f"{p1_monster['name']} triggered Piercing: +{pierce} damage.")
 
             final_damage = apply_damage(p2, raw_damage)
 
@@ -59,14 +76,18 @@ def resolve_battle(match):
 
         elif p2_power > p1_power:
             raw_damage = p2_power - p1_power
-            raw_damage += piercing_bonus_damage(p2_monster)
+            pierce = piercing_bonus_damage(p2_monster)
+            raw_damage += pierce
+
+            if pierce > 0:
+                logs.append(f"{p2_monster['name']} triggered Piercing: +{pierce} damage.")
 
             final_damage = apply_damage(p1, raw_damage)
 
             logs.append(f"{p2_monster['name']} defeated {p1_monster['name']}. {p1['name']} took {final_damage} damage.")
 
         else:
-            logs.append("Both monsters had equal power. No damage was dealt.")
+            logs.append("Both monsters had equal final power. No battle damage was dealt.")
 
     elif p1_monster and not p2_monster:
         raw_damage = p1_monster.get("power", 0)
@@ -102,17 +123,23 @@ def resolve_battle(match):
     p2_draw = draw_card(p2)
 
     if p1_draw:
-        logs.append(f"{p1['name']} drew 1 card.")
+        logs.append(f"{p1['name']} drew 1 card for the next round.")
     else:
         logs.append(f"{p1['name']} had no cards to draw and took fatigue damage.")
 
     if p2_draw:
-        logs.append(f"{p2['name']} drew 1 card.")
+        logs.append(f"{p2['name']} drew 1 card for the next round.")
     else:
         logs.append(f"{p2['name']} had no cards to draw and took fatigue damage.")
 
     match["round"] += 1
+    match["phase"] = "Set Phase"
     match["resolving"] = False
+
+    reset_player_energy(p1, match["round"])
+    reset_player_energy(p2, match["round"])
+
+    logs.append(f"Round {match['round']} started. Each player has {energy_for_round(match['round'])} energy.")
 
     winner = None
 

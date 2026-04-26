@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
 from game.battle import resolve_battle
-from game.cards import CARD_CATALOG, card_sort_key, get_card_by_id
+from game.cards import CARD_CATALOG, card_sort_key
 from game.deck import (
     build_playable_deck,
     collection_summary,
@@ -17,9 +17,8 @@ from game.deck import (
     draw_starting_hand,
     load_card_ids,
     validate_deck,
-    full_deck_analysis,
 )
-from models import CardStat, MatchHistory, User, db
+from models import MatchHistory, User, db
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 
 
@@ -153,75 +152,6 @@ def save_match_history(room_id, winner_key):
     db.session.commit()
 
 
-
-def get_or_create_card_stat(card):
-    stat = CardStat.query.filter_by(card_id=card["id"]).first()
-
-    if stat:
-        return stat
-
-    stat = CardStat(
-        card_id=card["id"],
-        card_name=card.get("name", card["id"]),
-        card_type=card.get("type", "Unknown"),
-        element=card.get("element", "Global"),
-        rarity=card.get("rarity", "Common"),
-    )
-
-    db.session.add(stat)
-    return stat
-
-
-def collect_played_cards(player):
-    played_cards = []
-
-    for card in player.get("graveyard", []):
-        if card:
-            played_cards.append(card)
-
-    for card in [player.get("field_m"), player.get("field_st")]:
-        if card:
-            played_cards.append(card)
-
-    unique_cards = {}
-
-    for card in played_cards:
-        card_id = card.get("id")
-
-        if card_id:
-            unique_cards[card_id] = card
-
-    return list(unique_cards.values())
-
-
-def update_card_stats_after_match(match, winner_key):
-    p1_cards = collect_played_cards(match["p1"])
-    p2_cards = collect_played_cards(match["p2"])
-
-    for card in p1_cards:
-        stat = get_or_create_card_stat(card)
-        stat.games_seen += 1
-        stat.times_played += 1
-
-        if winner_key == "p1":
-            stat.wins_when_played += 1
-        elif winner_key == "p2":
-            stat.losses_when_played += 1
-        else:
-            stat.draws_when_played += 1
-
-    for card in p2_cards:
-        stat = get_or_create_card_stat(card)
-        stat.games_seen += 1
-        stat.times_played += 1
-
-        if winner_key == "p2":
-            stat.wins_when_played += 1
-        elif winner_key == "p1":
-            stat.losses_when_played += 1
-        else:
-            stat.draws_when_played += 1
-
 @app.route("/")
 def index():
     user = current_user()
@@ -238,43 +168,9 @@ def health():
     return {
         "status": "ok",
         "app": "Ambition TCG",
-        "version": "beta-core-data-0.4",
+        "version": "beta-profile-0.3",
         "environment": app.config["ENVIRONMENT"],
     }
-
-
-@app.route("/how-to-play")
-def how_to_play():
-    return render_template("how_to_play.html", user=current_user())
-
-
-@app.route("/card-stats")
-def card_stats():
-    stats = (
-        CardStat.query
-        .order_by(
-            CardStat.times_played.desc(),
-            CardStat.wins_when_played.desc(),
-            CardStat.card_name.asc(),
-        )
-        .limit(150)
-        .all()
-    )
-
-    enriched_stats = []
-
-    for stat in stats:
-        card = get_card_by_id(stat.card_id)
-        enriched_stats.append({
-            "stat": stat,
-            "card": card,
-        })
-
-    return render_template(
-        "card_stats.html",
-        user=current_user(),
-        enriched_stats=enriched_stats,
-    )
 
 
 @app.route("/profile")
@@ -527,7 +423,6 @@ def deck_builder():
     current_deck = sorted(deck_summary(deck_ids), key=card_sort_key)
 
     deck_validation_errors = validate_deck(deck_ids, collection_ids)
-    deck_analysis = full_deck_analysis(deck_ids)
 
     return render_template(
         "deck_builder.html",
@@ -536,7 +431,6 @@ def deck_builder():
         current_deck=current_deck,
         deck_ids=deck_ids,
         deck_validation_errors=deck_validation_errors,
-        deck_analysis=deck_analysis,
     )
 
 

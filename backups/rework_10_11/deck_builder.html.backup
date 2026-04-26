@@ -19,7 +19,7 @@
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Deck Builder</h1>
-                <p>Beta deck: exactly 30 cards — 21 monsters, 6 spells, 3 traps.</p>
+                <p>30 to 40 cards. Beta target: 70% monsters, 20% spells, 10% traps.</p>
             </div>
 
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
@@ -36,95 +36,25 @@
         {% endwith %}
 
         <section class="deck-status mobile-deck-status">
-            <h2>Deck Status</h2>
-
-            <div class="menu-grid">
-                <div class="menu-card">
-                    <strong>{{ deck_analysis.stats.total }}/30</strong>
-                    <span>Total Cards</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ deck_analysis.stats.monsters }}/21</strong>
-                    <span>Monsters</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ deck_analysis.stats.spells }}/6</strong>
-                    <span>Spells</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ deck_analysis.stats.traps }}/3</strong>
-                    <span>Traps</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ deck_analysis.energy.average_cost }}</strong>
-                    <span>Average Cost</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ deck_analysis.energy.curve[1] + deck_analysis.energy.curve[2] }}</strong>
-                    <span>Early Cards Cost 1-2</span>
-                </div>
-            </div>
+            <h2>Current Deck</h2>
 
             {% if deck_validation_errors %}
-                <div class="danger-box" style="margin-top: 16px;">
+                <div class="danger-box">
                     {% for error in deck_validation_errors %}
                         <p>{{ error }}</p>
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="success-box" style="margin-top: 16px;">
-                    <p>Deck is valid for beta.</p>
+                <div class="success-box">
+                    <p>Deck is valid.</p>
                 </div>
             {% endif %}
-
-            {% if deck_analysis.warnings %}
-                <div class="flash" style="margin-top: 16px;">
-                    {% for warning in deck_analysis.warnings %}
-                        <p>{{ warning }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </section>
-
-        <section class="deck-status">
-            <h2>Energy Curve</h2>
-
-            <div class="deck-list">
-                <div class="deck-line"><span>Cost 1</span><strong>{{ deck_analysis.energy.curve[1] }}</strong></div>
-                <div class="deck-line"><span>Cost 2</span><strong>{{ deck_analysis.energy.curve[2] }}</strong></div>
-                <div class="deck-line"><span>Cost 3</span><strong>{{ deck_analysis.energy.curve[3] }}</strong></div>
-                <div class="deck-line"><span>Cost 4</span><strong>{{ deck_analysis.energy.curve[4] }}</strong></div>
-                <div class="deck-line"><span>Cost 5</span><strong>{{ deck_analysis.energy.curve[5] }}</strong></div>
-                <div class="deck-line"><span>Cost 6+</span><strong>{{ deck_analysis.energy.curve["6+"] }}</strong></div>
-            </div>
-        </section>
-
-        <section class="deck-status">
-            <h2>Element Distribution</h2>
-
-            <div class="deck-list">
-                {% for element, amount in deck_analysis.elements.items() %}
-                    <div class="deck-line">
-                        <span>{{ element }}</span>
-                        <strong>{{ amount }}</strong>
-                    </div>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section class="deck-status">
-            <h2>Current Deck</h2>
 
             <div class="deck-list compact-deck-list">
                 {% for card in current_deck %}
                     <div class="deck-line">
                         <span>{{ card.name }}</span>
-                        <strong>x{{ card.amount }} — Cost {{ card.cost }}</strong>
+                        <strong>x{{ card.amount }}</strong>
                     </div>
                 {% endfor %}
             </div>
@@ -184,11 +114,12 @@
                                 </div>
 
                                 <footer class="image-card-footer">
-                                    <span>COST {{ card.cost }}</span>
                                     {% if card.type == "Monster" %}
-                                        <strong>POWER {{ card.power }}</strong>
+                                        <span>POWER</span>
+                                        <strong>{{ card.power }}</strong>
                                     {% else %}
-                                        <strong>VALUE {{ card.value }}</strong>
+                                        <span>VALUE</span>
+                                        <strong>{{ card.value }}</strong>
                                     {% endif %}
                                 </footer>
                             </div>
@@ -214,7 +145,7 @@
 
             <div class="save-deck-bar mobile-save-bar">
                 <div class="deck-counter">
-                    Selected: <strong id="selected-count">0</strong> / 30
+                    Selected: <strong id="selected-count">0</strong>
                 </div>
 
                 <button type="submit" class="btn full-btn">Save Deck</button>
@@ -257,6 +188,5 @@
     </script>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
 </body>
 </html>

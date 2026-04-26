@@ -625,3 +625,52 @@ def beta_catalog_stats():
         "common_cards": len([c for c in CARD_CATALOG if c["rarity"] == "Common"]),
         "uncommon_cards": len([c for c in CARD_CATALOG if c["rarity"] == "Uncommon"]),
     }
+
+# === AMBITION BETA COST SYSTEM ===
+
+def calculate_card_cost(card):
+    card_type = card.get("type")
+    rarity = card.get("rarity")
+    power = int(card.get("power", 0))
+    effect = card.get("effect", "None")
+
+    if card_type == "Monster":
+        if power <= 1100:
+            cost = 1
+        elif power <= 1350:
+            cost = 2
+        else:
+            cost = 3
+
+        if rarity == "Uncommon":
+            cost += 1
+
+        if effect != "None":
+            cost += 1
+
+        return max(1, min(cost, 5))
+
+    if card_type == "Spell":
+        if effect in ["Draw", "Drain", "Shield"]:
+            return 3
+
+        if effect in ["Boost", "Burn", "Weaken"]:
+            return 2
+
+        return 1
+
+    if card_type == "Trap":
+        if effect in ["Counter", "Shield", "Weaken"]:
+            return 3
+
+        return 2
+
+    return 1
+
+
+def apply_card_costs():
+    for card in CARD_CATALOG:
+        card["cost"] = calculate_card_cost(card)
+
+
+apply_card_costs()

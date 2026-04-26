@@ -20,7 +20,7 @@
     "android": "npx cap sync android && npx cap open android",
     "ios": "npx cap sync ios && npx cap open ios",
     "desktop": "electron .",
-    "desktop:prod": "AMBITION_DESKTOP_URL=https://ambition-tcg-1.onrender.com electron .",
+    "desktop:prod": "AMBITION_DESKTOP_URL=https://ambition-tcg.onrender.com electron .",
     "desktop:local": "AMBITION_DESKTOP_URL=http://127.0.0.1:8080 electron .",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",

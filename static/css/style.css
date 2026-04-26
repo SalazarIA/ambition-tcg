@@ -1210,3 +1210,88 @@ h1 {
         font-size: 24px;
     }
 }
+/* =========================================================
+   REWORK 9 — ENERGY / CORE MECHANICS
+   ========================================================= */
+
+.arena-helper {
+    text-align: center;
+    color: #aaa;
+    font-size: 12px;
+    margin-top: -4px;
+    margin-bottom: 8px;
+}
+
+.playable-card {
+    cursor: pointer;
+}
+
+.locked-energy-card {
+    opacity: 0.42;
+    filter: grayscale(0.8);
+    cursor: not-allowed !important;
+}
+
+.locked-energy-card::after {
+    content: "LOW ENERGY";
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%) rotate(-12deg);
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(231, 76, 60, 0.88);
+    color: white;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    z-index: 20;
+    pointer-events: none;
+}
+
+#phase-label {
+    color: #c084fc;
+    font-weight: 800;
+}
+
+#my-energy,
+#enemy-energy {
+    color: #d8c7ff;
+}
+
+/* =========================================================
+   REWORK 10/11 — TUTORIAL + BALANCE DATA
+   ========================================================= */
+
+.deck-status details {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.deck-status summary {
+    cursor: pointer;
+    font-weight: 800;
+    color: #d8c7ff;
+}
+
+.deck-line strong {
+    text-align: right;
+}
+
+.deck-counter {
+    font-weight: 800;
+}
+
+@media (max-width: 820px) {
+    .deck-line {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .deck-line strong {
+        text-align: left;
+    }
+}

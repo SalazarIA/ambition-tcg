@@ -23,7 +23,7 @@
         <header class="arena-header mobile-arena-header">
             <div>
                 <h1>Ambition Arena</h1>
-                <p>Round <span id="round">1</span></p>
+                <p>Round <span id="round">1</span> — <span id="phase-label">Set Phase</span></p>
             </div>
 
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Leave</a>
@@ -46,6 +46,11 @@
                 <strong id="my-hp">4000</strong>
                 <small>Your HP</small>
             </div>
+        </section>
+
+        <section class="mobile-counts">
+            <div>Your Energy: <strong id="my-energy">0/0</strong></div>
+            <div>Enemy Energy: <strong id="enemy-energy">0/0</strong></div>
         </section>
 
         <section class="mobile-counts">
@@ -87,11 +92,13 @@
 
         <section class="mobile-hand-section">
             <h3 class="hand-title">Your Hand</h3>
+            <p class="arena-helper">Cards with cost higher than your current energy are locked this round.</p>
             <div id="my-hand" class="mobile-hand"></div>
         </section>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
 </body>
 </html>

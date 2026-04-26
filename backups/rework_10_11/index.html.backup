@@ -46,11 +46,6 @@
                         <span>Online duel</span>
                     </a>
 
-                    <a href="{{ url_for('how_to_play') }}" class="menu-card">
-                        <strong>How to Play</strong>
-                        <span>Rules and elemental advantage</span>
-                    </a>
-
                     <a href="{{ url_for('profile') }}" class="menu-card">
                         <strong>Profile</strong>
                         <span>Stats and recent matches</span>
@@ -59,11 +54,6 @@
                     <a href="{{ url_for('ranking') }}" class="menu-card">
                         <strong>Ranking</strong>
                         <span>Top duelists</span>
-                    </a>
-
-                    <a href="{{ url_for('card_stats') }}" class="menu-card">
-                        <strong>Card Stats</strong>
-                        <span>Balance and usage data</span>
                     </a>
 
                     <a href="{{ url_for('match_history') }}" class="menu-card">
@@ -107,7 +97,6 @@
                     <a href="{{ url_for('login') }}" class="btn">Login</a>
                     <a href="{{ url_for('register') }}" class="btn btn-secondary">Create Account</a>
                     <a href="{{ url_for('ranking') }}" class="btn btn-secondary">View Ranking</a>
-                    <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary">Learn Rules</a>
                 </div>
             {% endif %}
         </section>

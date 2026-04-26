@@ -2,6 +2,7 @@ const socket = io();
 
 let lastMyHp = null;
 let lastEnemyHp = null;
+let currentEnergy = 0;
 
 function escapeHtml(value) {
     if (value === null || value === undefined) {
@@ -46,9 +47,7 @@ function pulseElement(elementId, className) {
     }
 
     el.classList.remove(className);
-
     void el.offsetWidth;
-
     el.classList.add(className);
 
     setTimeout(() => {
@@ -90,15 +89,18 @@ function renderCard(card, index = -1, hidden = false, setCard = false) {
     const description = escapeHtml(card.description || card.effect || "None");
     const power = Number(card.power || 0);
     const value = Number(card.value || 0);
+    const cost = Number(card.cost || 1);
     const img = escapeHtml(getCardImageUrl(card));
 
-    const clickable = index >= 0 ? `onclick="playToField(${index})"` : "";
+    const canPlay = index < 0 || cost <= currentEnergy;
+    const playableClass = canPlay ? "playable-card" : "locked-energy-card";
+    const clickable = index >= 0 && canPlay ? `onclick="playToField(${index})"` : "";
 
     const statValue = type === "Monster" ? power : value;
     const statLabel = type === "Monster" ? "POWER" : "VALUE";
 
     return `
-        <article class="card image-card ${type.toLowerCase()} ${rarity.toLowerCase()}" ${clickable}>
+        <article class="card image-card ${type.toLowerCase()} ${rarity.toLowerCase()} ${playableClass}" ${clickable}>
             <div class="image-card-frame">
                 <header class="image-card-header">
                     <h4>${name}</h4>
@@ -124,8 +126,8 @@ function renderCard(card, index = -1, hidden = false, setCard = false) {
                 </div>
 
                 <footer class="image-card-footer">
-                    <span>${statLabel}</span>
-                    <strong>${statValue}</strong>
+                    <span>COST ${cost}</span>
+                    <strong>${statLabel}: ${statValue}</strong>
                 </footer>
             </div>
         </article>
@@ -155,35 +157,35 @@ function addLog(message) {
     log.scrollTop = log.scrollHeight;
 }
 
+function setText(id, value) {
+    const el = document.getElementById(id);
+
+    if (el) {
+        el.textContent = value;
+    }
+}
+
 function syncRound(data) {
     const round = String(data.round);
 
-    const desktopRound = document.getElementById("round");
-    const mobileRound = document.getElementById("round-mobile");
+    setText("round", round);
+    setText("round-mobile", round);
+    setText("phase-label", data.phase || "Set Phase");
+}
 
-    if (desktopRound) {
-        desktopRound.textContent = round;
-    }
+function updateEnergy(data) {
+    currentEnergy = Number(data.me.energy || 0);
 
-    if (mobileRound) {
-        mobileRound.textContent = round;
-    }
+    setText("my-energy", `${data.me.energy}/${data.me.max_energy}`);
+    setText("enemy-energy", `${data.enemy.energy}/${data.enemy.max_energy}`);
 }
 
 function updateHpWithFeedback(data) {
     const myHp = Number(data.me.hp);
     const enemyHp = Number(data.enemy.hp);
 
-    const myHpEl = document.getElementById("my-hp");
-    const enemyHpEl = document.getElementById("enemy-hp");
-
-    if (myHpEl) {
-        myHpEl.textContent = myHp;
-    }
-
-    if (enemyHpEl) {
-        enemyHpEl.textContent = enemyHp;
-    }
+    setText("my-hp", myHp);
+    setText("enemy-hp", enemyHp);
 
     if (lastMyHp !== null && myHp < lastMyHp) {
         pulseElement("my-hp", "damage-pulse");
@@ -225,20 +227,17 @@ socket.on("battle_log", (data) => {
 socket.on("game_state_update", (data) => {
     syncRound(data);
     updateHpWithFeedback(data);
+    updateEnergy(data);
 
-    const enemyName = document.getElementById("enemy-name");
+    setText("enemy-name", data.enemy.name);
 
-    if (enemyName) {
-        enemyName.textContent = data.enemy.name;
-    }
+    setText("my-deck-count", data.me.deck_count);
+    setText("enemy-deck-count", data.enemy.deck_count);
 
-    document.getElementById("my-deck-count").textContent = data.me.deck_count;
-    document.getElementById("enemy-deck-count").textContent = data.enemy.deck_count;
+    setText("my-graveyard-count", data.me.graveyard_count);
+    setText("enemy-graveyard-count", data.enemy.graveyard_count);
 
-    document.getElementById("my-graveyard-count").textContent = data.me.graveyard_count;
-    document.getElementById("enemy-graveyard-count").textContent = data.enemy.graveyard_count;
-
-    document.getElementById("enemy-hand-count").textContent = data.enemy.hand_count;
+    setText("enemy-hand-count", data.enemy.hand_count);
 
     document.getElementById("my-hand").innerHTML = data.me.hand
         .map((card, index) => renderCard(card, index))
