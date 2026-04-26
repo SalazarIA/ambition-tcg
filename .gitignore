@@ -36,3 +36,5 @@ android/app/build/
 ios/Pods/
 ios/App/build/
 ios/App/xcuserdata/
+# Local safety backups
+backups/
