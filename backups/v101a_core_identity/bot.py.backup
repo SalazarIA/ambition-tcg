@@ -46,24 +46,15 @@ def choose_bot_intent(bot):
     hand = bot.get("hand", [])
 
     has_monster = any(card.get("type") == "Monster" for card in hand)
-    has_fury = any(card.get("sigil") == "Fury" for card in hand)
-    has_resolve = any(card.get("sigil") == "Resolve" for card in hand)
-    has_insight = any(card.get("sigil") == "Insight" for card in hand)
 
     if hp <= 1600:
-        if has_resolve:
-            return "Guard"
-        return random.choices(["Guard", "Focus"], weights=[75, 25], k=1)[0]
+        return "Guard"
 
     if ambition >= 5 and has_monster:
-        if has_fury:
-            return "Strike"
-        return random.choices(["Strike", "Focus"], weights=[75, 25], k=1)[0]
+        return "Strike"
 
     if len(hand) <= 2:
-        if has_insight:
-            return "Focus"
-        return random.choices(["Focus", "Guard"], weights=[70, 30], k=1)[0]
+        return "Focus"
 
     return random.choices(
         ["Strike", "Guard", "Focus"],
@@ -79,9 +70,6 @@ def card_score_for_bot(card, bot):
     cost = int(card.get("cost", 1))
     power = int(card.get("power", 0))
     effect = card.get("effect", "None")
-    role = card.get("role", "Balancer")
-    sigil = card.get("sigil", "Fury")
-    intent = bot.get("intent", "Strike")
 
     if not can_pay_cost(bot, card):
         return -9999
@@ -93,27 +81,6 @@ def card_score_for_bot(card, bot):
 
         if effect != "None":
             score += 120
-
-        if role == "Finisher":
-            score += 120
-
-        if role == "Aggressor" and intent == "Strike":
-            score += 140
-
-        if role == "Defender" and intent == "Guard":
-            score += 140
-
-        if role == "Controller" and intent == "Focus":
-            score += 120
-
-        if sigil == "Fury" and intent == "Strike":
-            score += 180
-
-        if sigil == "Resolve" and intent == "Guard":
-            score += 180
-
-        if sigil == "Insight" and intent == "Focus":
-            score += 180
 
         if cost >= 3:
             score += 80
@@ -128,18 +95,12 @@ def card_score_for_bot(card, bot):
         if effect == "Heal" and bot.get("hp", 4000) <= 2500:
             score += 220
 
-        if role == "Controller" and intent == "Focus":
-            score += 80
-
     elif card_type == "Trap":
         score += 560
         score -= cost * 30
 
         if effect in ["Counter", "Shield", "Weaken"]:
             score += 140
-
-        if role == "Defender" and intent == "Guard":
-            score += 120
 
     return score
 
@@ -182,9 +143,7 @@ def play_card_from_hand(bot, index, match_logs):
         bot["field_m"] = bot["hand"].pop(index)
         register_card_played_for_ambition(bot, card, match_logs)
 
-        match_logs.append(
-            f"{bot['name']} set a monster: {card['name']} [{card.get('sigil', 'Fury')} / {card.get('role', 'Balancer')}]."
-        )
+        match_logs.append(f"{bot['name']} set a monster: {card['name']}.")
         return True
 
     if card_type in ["Spell", "Trap"]:
@@ -217,7 +176,7 @@ def bot_play_turn(bot, match_logs):
     play_card_from_hand(bot, spell_trap_index, match_logs)
 
     if int(bot.get("ambition", 0)) >= 5 and bot.get("field_m"):
-        if random.random() <= 0.72:
+        if random.random() <= 0.7:
             request_unleash(bot)
             match_logs.append(f"{bot['name']} prepared Ambition Unleash.")
 

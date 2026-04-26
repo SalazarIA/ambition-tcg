@@ -12,12 +12,6 @@ from game.rules import (
     piercing_bonus_damage,
     reset_player_energy,
 )
-from game.sigils import (
-    apply_sigil_ambition_bonus,
-    calculate_sigil_damage_bonus,
-    calculate_sigil_damage_reduction,
-    calculate_sigil_power_bonus,
-)
 from game.state import get_intent_rule, reset_round_flags
 
 
@@ -64,25 +58,6 @@ def apply_focus_survival(player, logs):
         add_ambition(player, ambition_gain, "stayed composed with Focus", logs)
 
 
-def apply_damage_package(attacker, defender, attacker_monster, defender_monster, raw_damage, logs):
-    raw_damage += calculate_sigil_damage_bonus(attacker, attacker_monster, defender_monster, logs)
-
-    raw_damage = apply_strike_loss_penalty(defender, raw_damage, logs)
-    raw_damage = apply_intent_damage_modifier(defender, raw_damage, logs)
-
-    sigil_reduction = calculate_sigil_damage_reduction(
-        defender,
-        defender_monster,
-        attacker_monster,
-        raw_damage,
-        logs,
-    )
-
-    raw_damage = max(0, raw_damage - sigil_reduction)
-
-    return apply_damage(defender, raw_damage)
-
-
 def resolve_battle(match):
     p1 = match["p1"]
     p2 = match["p2"]
@@ -122,12 +97,6 @@ def resolve_battle(match):
     p1_ambition_bonus = resolve_manual_unleash(p1, logs)
     p2_ambition_bonus = resolve_manual_unleash(p2, logs)
 
-    if p1_monster:
-        apply_sigil_ambition_bonus(p1, p1_monster, p2_monster, logs)
-
-    if p2_monster:
-        apply_sigil_ambition_bonus(p2, p2_monster, p1_monster, logs)
-
     if p1_monster and p2_monster:
         p1_advantage_log = elemental_log(p1_monster, p2_monster, p1["name"])
         p2_advantage_log = elemental_log(p2_monster, p1_monster, p2["name"])
@@ -140,17 +109,11 @@ def resolve_battle(match):
             logs.append(p2_advantage_log)
             add_ambition(p2, 1, "won elemental reading", logs)
 
-        p1_power = calculate_final_power(p1_monster, p2_monster)
-        p2_power = calculate_final_power(p2_monster, p1_monster)
-
-        p1_power += p1_ambition_bonus
-        p2_power += p2_ambition_bonus
+        p1_power = calculate_final_power(p1_monster, p2_monster) + p1_ambition_bonus
+        p2_power = calculate_final_power(p2_monster, p1_monster) + p2_ambition_bonus
 
         p1_power += strike_win_bonus(p1, logs)
         p2_power += strike_win_bonus(p2, logs)
-
-        p1_power += calculate_sigil_power_bonus(p1, p1_monster, p2_monster, logs)
-        p2_power += calculate_sigil_power_bonus(p2, p2_monster, p1_monster, logs)
 
         logs.append(f"{p1['name']} revealed {p1_monster['name']} with {p1_power} final power.")
         logs.append(f"{p2['name']} revealed {p2_monster['name']} with {p2_power} final power.")
@@ -163,15 +126,10 @@ def resolve_battle(match):
             if pierce > 0:
                 logs.append(f"{p1_monster['name']} triggered Piercing: +{pierce} damage.")
 
-            final_damage = apply_damage_package(
-                p1,
-                p2,
-                p1_monster,
-                p2_monster,
-                raw_damage,
-                logs,
-            )
+            raw_damage = apply_strike_loss_penalty(p2, raw_damage, logs)
+            raw_damage = apply_intent_damage_modifier(p2, raw_damage, logs)
 
+            final_damage = apply_damage(p2, raw_damage)
             add_ambition(p1, 1, "caused battle damage", logs)
 
             if has_elemental_advantage(p1_monster.get("element"), p2_monster.get("element")):
@@ -187,15 +145,10 @@ def resolve_battle(match):
             if pierce > 0:
                 logs.append(f"{p2_monster['name']} triggered Piercing: +{pierce} damage.")
 
-            final_damage = apply_damage_package(
-                p2,
-                p1,
-                p2_monster,
-                p1_monster,
-                raw_damage,
-                logs,
-            )
+            raw_damage = apply_strike_loss_penalty(p1, raw_damage, logs)
+            raw_damage = apply_intent_damage_modifier(p1, raw_damage, logs)
 
+            final_damage = apply_damage(p1, raw_damage)
             add_ambition(p2, 1, "caused battle damage", logs)
 
             if has_elemental_advantage(p2_monster.get("element"), p1_monster.get("element")):
@@ -210,17 +163,11 @@ def resolve_battle(match):
         raw_damage = p1_monster.get("power", 0)
         raw_damage += piercing_bonus_damage(p1_monster)
         raw_damage += p1_ambition_bonus
-        raw_damage += calculate_sigil_power_bonus(p1, p1_monster, None, logs)
-        raw_damage += calculate_sigil_damage_bonus(p1, p1_monster, None, logs)
 
-        final_damage = apply_damage_package(
-            p1,
-            p2,
-            p1_monster,
-            None,
-            raw_damage,
-            logs,
-        )
+        raw_damage = apply_strike_loss_penalty(p2, raw_damage, logs)
+        raw_damage = apply_intent_damage_modifier(p2, raw_damage, logs)
+
+        final_damage = apply_damage(p2, raw_damage)
 
         add_ambition(p1, 2, "attacked directly", logs)
         logs.append(f"{p1['name']} attacked directly with {p1_monster['name']}. {p2['name']} took {final_damage} damage.")
@@ -229,17 +176,11 @@ def resolve_battle(match):
         raw_damage = p2_monster.get("power", 0)
         raw_damage += piercing_bonus_damage(p2_monster)
         raw_damage += p2_ambition_bonus
-        raw_damage += calculate_sigil_power_bonus(p2, p2_monster, None, logs)
-        raw_damage += calculate_sigil_damage_bonus(p2, p2_monster, None, logs)
 
-        final_damage = apply_damage_package(
-            p2,
-            p1,
-            p2_monster,
-            None,
-            raw_damage,
-            logs,
-        )
+        raw_damage = apply_strike_loss_penalty(p1, raw_damage, logs)
+        raw_damage = apply_intent_damage_modifier(p1, raw_damage, logs)
+
+        final_damage = apply_damage(p1, raw_damage)
 
         add_ambition(p2, 2, "attacked directly", logs)
         logs.append(f"{p2['name']} attacked directly with {p2_monster['name']}. {p1['name']} took {final_damage} damage.")

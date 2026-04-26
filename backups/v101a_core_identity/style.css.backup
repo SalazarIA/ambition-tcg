@@ -2377,35 +2377,3 @@ textarea {
         box-shadow: 0 0 26px rgba(243, 156, 18, 0.45);
     }
 }
-
-/* =========================================================
-   AMBITION TCG V1.01A — CORE IDENTITY
-   ========================================================= */
-
-.sigil-pill,
-.role-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 0.3px;
-    border: 1px solid rgba(216, 199, 255, 0.20);
-    background: rgba(216, 199, 255, 0.10);
-    color: #eadfff;
-}
-
-.log-ambition,
-.log-advantage {
-    border-left: 3px solid rgba(216, 199, 255, 0.55);
-}
-
-.enhanced-battle-log p {
-    word-break: break-word;
-}
-
-.deck-status p {
-    line-height: 1.55;
-}
