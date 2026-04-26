@@ -10,7 +10,7 @@ INTENT_RULES = {
     "Strike": {
         "label": "Strike",
         "description": "+200 power if you win the clash. If you lose, receive +100 extra damage.",
-        "win_power_bonus": 200,
+        "win_power_bonus": 150,
         "lose_extra_damage": 100,
         "damage_reduction": 0,
         "survive_ambition": 0,
@@ -20,7 +20,7 @@ INTENT_RULES = {
         "description": "Reduce received damage by 300 this round.",
         "win_power_bonus": 0,
         "lose_extra_damage": 0,
-        "damage_reduction": 300,
+        "damage_reduction": 350,
         "survive_ambition": 0,
     },
     "Focus": {

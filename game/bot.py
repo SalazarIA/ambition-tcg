@@ -1,8 +1,8 @@
 import random
 
 from game.deck import build_playable_deck, draw_starting_hand
-from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash
+from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.state import create_player_state, set_player_intent
 
 
@@ -12,102 +12,171 @@ BOT_NAMES = [
     "Kael",
     "Orion",
     "Vega",
+    "Selene",
+    "Mira",
 ]
 
 
-def create_bot_user_stub():
-    class BotUser:
-        id = -999
-        username = random.choice(BOT_NAMES)
-
-    return BotUser()
+class BotUser:
+    id = -999
+    username = "Bot"
 
 
 def create_bot_player(deck_json):
-    user = create_bot_user_stub()
+    user = BotUser()
+    user.username = random.choice(BOT_NAMES)
+
     deck = build_playable_deck(deck_json)
     hand = draw_starting_hand(deck, 5)
 
-    player = create_player_state(user, "BOT_SID", deck, hand)
-    player["is_bot"] = True
-    player["name"] = f"Bot {user.username}"
+    bot = create_player_state(user, "BOT_SID", deck, hand)
 
-    reset_player_energy(player, 1)
+    bot["is_bot"] = True
+    bot["name"] = f"Bot {user.username}"
+    bot["difficulty"] = "training"
 
-    return player
+    reset_player_energy(bot, 1)
+
+    return bot
 
 
 def choose_bot_intent(bot):
     hp = int(bot.get("hp", 4000))
     ambition = int(bot.get("ambition", 0))
-
-    if hp <= 1800:
-        return "Guard"
-
-    if ambition >= 4:
-        return "Strike"
-
-    return random.choice(["Strike", "Guard", "Focus"])
-
-
-def bot_choose_card_indexes(bot):
     hand = bot.get("hand", [])
 
-    monster_indexes = []
-    spell_trap_indexes = []
+    has_monster = any(card.get("type") == "Monster" for card in hand)
 
-    for index, card in enumerate(hand):
-        if not can_pay_cost(bot, card):
+    if hp <= 1600:
+        return "Guard"
+
+    if ambition >= 5 and has_monster:
+        return "Strike"
+
+    if len(hand) <= 2:
+        return "Focus"
+
+    return random.choices(
+        ["Strike", "Guard", "Focus"],
+        weights=[45, 30, 25],
+        k=1,
+    )[0]
+
+
+def card_score_for_bot(card, bot):
+    score = 0
+
+    card_type = card.get("type")
+    cost = int(card.get("cost", 1))
+    power = int(card.get("power", 0))
+    effect = card.get("effect", "None")
+
+    if not can_pay_cost(bot, card):
+        return -9999
+
+    if card_type == "Monster":
+        score += 1000
+        score += power
+        score -= cost * 40
+
+        if effect != "None":
+            score += 120
+
+        if cost >= 3:
+            score += 80
+
+    elif card_type == "Spell":
+        score += 650
+        score -= cost * 35
+
+        if effect in ["Burn", "Drain", "Boost", "Draw"]:
+            score += 160
+
+        if effect == "Heal" and bot.get("hp", 4000) <= 2500:
+            score += 220
+
+    elif card_type == "Trap":
+        score += 560
+        score -= cost * 30
+
+        if effect in ["Counter", "Shield", "Weaken"]:
+            score += 140
+
+    return score
+
+
+def choose_best_card_index(bot, allowed_types):
+    best_index = None
+    best_score = -99999
+
+    for index, card in enumerate(bot.get("hand", [])):
+        if card.get("type") not in allowed_types:
             continue
 
-        if card.get("type") == "Monster" and bot.get("field_m") is None:
-            monster_indexes.append(index)
+        score = card_score_for_bot(card, bot)
 
-        if card.get("type") in ["Spell", "Trap"] and bot.get("field_st") is None:
-            spell_trap_indexes.append(index)
+        if score > best_score:
+            best_score = score
+            best_index = index
 
-    selected = []
+    return best_index
 
-    if monster_indexes:
-        selected.append(random.choice(monster_indexes))
 
-    if spell_trap_indexes:
-        selected.append(random.choice(spell_trap_indexes))
+def play_card_from_hand(bot, index, match_logs):
+    if index is None:
+        return False
 
-    return sorted(selected, reverse=True)
+    if index < 0 or index >= len(bot.get("hand", [])):
+        return False
+
+    card = bot["hand"][index]
+    card_type = card.get("type")
+
+    if not can_pay_cost(bot, card):
+        return False
+
+    if card_type == "Monster":
+        if bot.get("field_m") is not None:
+            return False
+
+        pay_card_cost(bot, card)
+        bot["field_m"] = bot["hand"].pop(index)
+        register_card_played_for_ambition(bot, card, match_logs)
+
+        match_logs.append(f"{bot['name']} set a monster: {card['name']}.")
+        return True
+
+    if card_type in ["Spell", "Trap"]:
+        if bot.get("field_st") is not None:
+            return False
+
+        pay_card_cost(bot, card)
+        bot["field_st"] = bot["hand"].pop(index)
+        register_card_played_for_ambition(bot, card, match_logs)
+
+        match_logs.append(f"{bot['name']} set a spell/trap: {card['name']}.")
+        return True
+
+    return False
 
 
 def bot_play_turn(bot, match_logs):
+    if bot.get("ready"):
+        return
+
     intent = choose_bot_intent(bot)
     set_player_intent(bot, intent)
 
     match_logs.append(f"{bot['name']} selected {intent} intent.")
 
-    indexes = bot_choose_card_indexes(bot)
+    monster_index = choose_best_card_index(bot, ["Monster"])
+    play_card_from_hand(bot, monster_index, match_logs)
 
-    for index in indexes:
-        if index < 0 or index >= len(bot["hand"]):
-            continue
-
-        card = bot["hand"][index]
-
-        if not can_pay_cost(bot, card):
-            continue
-
-        if card.get("type") == "Monster" and bot.get("field_m") is None:
-            pay_card_cost(bot, card)
-            bot["field_m"] = bot["hand"].pop(index)
-            register_card_played_for_ambition(bot, card, match_logs)
-            match_logs.append(f"{bot['name']} set a monster: {card['name']}.")
-
-        elif card.get("type") in ["Spell", "Trap"] and bot.get("field_st") is None:
-            pay_card_cost(bot, card)
-            bot["field_st"] = bot["hand"].pop(index)
-            register_card_played_for_ambition(bot, card, match_logs)
-            match_logs.append(f"{bot['name']} set a spell/trap: {card['name']}.")
+    spell_trap_index = choose_best_card_index(bot, ["Spell", "Trap"])
+    play_card_from_hand(bot, spell_trap_index, match_logs)
 
     if int(bot.get("ambition", 0)) >= 5 and bot.get("field_m"):
-        if random.random() < 0.65:
+        if random.random() <= 0.7:
             request_unleash(bot)
             match_logs.append(f"{bot['name']} prepared Ambition Unleash.")
 

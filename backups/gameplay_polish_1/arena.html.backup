@@ -41,7 +41,7 @@
 
         <section class="arena-tip-panel compact-tip-panel">
             <strong>Turn Guide</strong>
-            <span id="arena-step-text">Set your cards, choose Intent, prepare Unleash if available, then press Ready.</span>
+            <span id="arena-step-text">Play 1 monster and optionally 1 spell/trap. Choose Intent. Then press Ready.</span>
         </section>
 
         <details class="arena-rules-panel compact-rules-panel">
@@ -119,17 +119,17 @@
                 <div class="intent-buttons">
                     <button type="button" id="intent-strike" class="intent-btn active" onclick="chooseIntent('Strike')">
                         <strong>Strike</strong>
-                        <span>+150 if win</span>
+                        <span>Power risk</span>
                     </button>
 
                     <button type="button" id="intent-guard" class="intent-btn" onclick="chooseIntent('Guard')">
                         <strong>Guard</strong>
-                        <span>-350 damage</span>
+                        <span>Reduce damage</span>
                     </button>
 
                     <button type="button" id="intent-focus" class="intent-btn" onclick="chooseIntent('Focus')">
                         <strong>Focus</strong>
-                        <span>+2 if survive</span>
+                        <span>Gain Ambition</span>
                     </button>
                 </div>
 

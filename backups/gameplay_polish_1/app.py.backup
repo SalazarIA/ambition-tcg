@@ -1005,9 +1005,6 @@ def emit_state(room_id):
         player = match[player_key]
         enemy = match[enemy_key]
 
-        if player.get("is_bot"):
-            continue
-
         enemy_monster_status = "EMPTY"
 
         if enemy.get("field_m"):
@@ -1100,30 +1097,17 @@ def end_match(room_id, winner_key):
         winner_user = db.session.get(User, winner["user_id"])
         loser_user = db.session.get(User, loser["user_id"])
 
-        is_bot_match = bool(match.get("is_bot_match"))
-
         if winner_user:
             winner_user.wins += 1
-
-            if is_bot_match:
-                winner_user.coins += 60
-                award_xp(winner_user, 30)
-            else:
-                winner_user.coins += 150
-                award_xp(winner_user, 80)
-
+            winner_user.coins += 150
+            award_xp(winner_user, 80)
             increment_mission(winner_user, "play_1_match", 1)
             increment_mission(winner_user, "play_3_matches", 1)
             increment_mission(winner_user, "win_1_match", 1)
 
         if loser_user:
             loser_user.losses += 1
-
-            if is_bot_match:
-                award_xp(loser_user, 15)
-            else:
-                award_xp(loser_user, 35)
-
+            award_xp(loser_user, 35)
             increment_mission(loser_user, "play_1_match", 1)
             increment_mission(loser_user, "play_3_matches", 1)
 
@@ -1436,8 +1420,6 @@ def declare_ready():
     if match["p1"]["ready"] and match["p2"]["ready"]:
         battle_result = resolve_battle(match)
 
-        match.setdefault("logs", []).extend(battle_result["logs"])
-
         for log_message in battle_result["logs"]:
             emit_log(room_id, log_message)
 
@@ -1473,8 +1455,6 @@ def handle_join_bot_match():
 
     room_id = f"bot_{current_sid}"
 
-    join_room(room_id, sid=current_sid)
-
     active_matches[room_id] = {
         "p1": player_object,
         "p2": bot_object,
@@ -1490,7 +1470,6 @@ def handle_join_bot_match():
     socketio.emit("match_found", {"msg": "Training match started against bot."}, to=current_sid)
 
     emit_log(room_id, "Training match started.")
-    emit_log(room_id, f"Opponent: {bot_object['name']}.")
     emit_state(room_id)
 
 
