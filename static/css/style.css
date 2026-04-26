@@ -3304,3 +3304,34 @@ a.menu-card:hover {
     transform: translateY(-2px);
     border-color: rgba(216,199,255,0.35);
 }
+
+/* =========================================================
+   AMBITIONZ V1.04 — TRAINING TUTORIAL FLOW
+   ========================================================= */
+
+.training-difficulty-box {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.training-difficulty-box label {
+    color: var(--az-muted, #bfb3d3);
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.training-difficulty-box select {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(216,199,255,0.18);
+    background: rgba(255,255,255,0.07);
+    color: #fff;
+    padding: 0 12px;
+    font-weight: 900;
+}
+
+.training-difficulty-box option {
+    color: #111;
+}

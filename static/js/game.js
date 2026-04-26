@@ -147,8 +147,16 @@ function bootArenaControls() {
 
     DOM.onClick("join-queue-btn", () => {
         const trainingMode = Boolean(window.AMBITIONZ_TRAINING_MODE);
-        setQueueStatus(trainingMode ? "Starting training..." : "Searching for opponent...");
-        socket.emit(trainingMode ? "join_training" : "join_queue");
+        const difficultySelect = DOM.byId("bot-difficulty");
+        const difficulty = difficultySelect ? difficultySelect.value : "normal";
+
+        setQueueStatus(trainingMode ? `Starting ${difficulty} training...` : "Searching for opponent...");
+
+        if (trainingMode) {
+            socket.emit("join_training", { difficulty });
+        } else {
+            socket.emit("join_queue");
+        }
     });
 
     DOM.onClick("ready-btn", () => {

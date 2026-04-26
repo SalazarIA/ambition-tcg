@@ -717,7 +717,7 @@ def health():
     return {
         "status": "ok",
         "app": "Ambitionz",
-        "version": "Ambitionz V1.03",
+        "version": "Ambitionz V1.04",
         "environment": app.config["ENVIRONMENT"],
     }
 
@@ -1373,7 +1373,7 @@ def end_match(room_id, winner_key):
 
 
 @socketio.on("join_training")
-def handle_join_training():
+def handle_join_training(data=None):
     user_id = session.get("user_id")
 
     if not user_id:

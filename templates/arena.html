@@ -113,11 +113,22 @@
                 {% if training_mode %}
                     <section class="training-coach-panel">
                         <h3>Training Coach</h3>
+
                         <div class="training-step">
-                            <p><strong>1.</strong> Choose an Intent.</p>
+                            <p><strong>Goal:</strong> Learn the loop before fighting real players.</p>
+                            <p><strong>1.</strong> Choose an Intent: Strike, Guard, Focus or Overreach.</p>
                             <p><strong>2.</strong> Set one Monster and optionally one Spell/Trap.</p>
-                            <p><strong>3.</strong> Click Ready.</p>
-                            <p><strong>Tip:</strong> Overreach rewards bold plays, but punishes reckless ones.</p>
+                            <p><strong>3.</strong> Click Ready and read the Battle Log.</p>
+                            <p><strong>Tip:</strong> Overreach is strongest when you already have pressure.</p>
+                        </div>
+
+                        <div class="training-difficulty-box">
+                            <label for="bot-difficulty">Bot Difficulty</label>
+                            <select id="bot-difficulty">
+                                <option value="easy">Easy</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="hard">Hard</option>
+                            </select>
                         </div>
                     </section>
                 {% endif %}
