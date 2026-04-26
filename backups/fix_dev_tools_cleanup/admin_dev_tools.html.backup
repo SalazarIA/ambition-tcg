@@ -36,7 +36,7 @@
 
         <section class="deck-status danger-zone">
             <h2>Reset Test Users</h2>
-            <p>This deletes all non-admin users and related test data. Admin accounts stay alive. If something fails, the page will show an error instead of crashing.</p>
+            <p>This deletes all non-admin users and related test data. Admin accounts stay alive.</p>
 
             <form method="POST" action="/admin/reset-test-users">
                 <button type="submit" class="btn btn-danger full-btn">Delete Non-Admin Users</button>
@@ -45,7 +45,7 @@
 
         <section class="deck-status danger-zone">
             <h2>Clear Gameplay Data</h2>
-            <p>This clears matches, feedback, card stats, invites and logs. Users stay alive. Safe cleanup mode is enabled.</p>
+            <p>This clears matches, feedback, card stats, invites and logs. Users stay alive.</p>
 
             <form method="POST" action="/admin/clear-gameplay-data">
                 <button type="submit" class="btn btn-danger full-btn">Clear Gameplay Data</button>

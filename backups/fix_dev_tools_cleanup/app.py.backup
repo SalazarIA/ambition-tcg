@@ -9,7 +9,6 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_socketio import SocketIO, join_room
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sqlalchemy import text as sql_text
-from sqlalchemy import inspect as sql_inspect
 
 from config import Config
 from game.battle import resolve_battle
@@ -131,6 +130,21 @@ def current_user():
 
 
 
+def admin_required_redirect():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    if not user or not user.is_admin:
+        flash("Admin access required.")
+        return redirect("/")
+
+    return None
+
+
 def login_required_redirect():
     if "user_id" not in session:
         return redirect("/login")
@@ -144,105 +158,666 @@ def login_required_redirect():
     return None
 
 
-def admin_required_redirect():
-    auth_redirect = login_required_redirect()
+def booster_pull():
+    roll = random.random()
+
+    if roll < 0.78:
+        rarity = "Common"
+    else:
+        rarity = "Uncommon"
+
+    pool = [card for card in CARD_CATALOG if card["rarity"] == rarity]
+
+    if not pool:
+        pool = CARD_CATALOG
+
+    return random.choice(pool).copy()
 
 
-def get_existing_table_names():
-    try:
-        inspector = sql_inspect(db.engine)
-        return set(inspector.get_table_names())
-    except Exception as error:
-        print("Table inspection failed:", type(error).__name__, error)
-        return set()
+def parse_battle_logs(match):
+    logs = match.get("logs", [])
+
+    if not isinstance(logs, list):
+        return []
+
+    clean_logs = []
+
+    for item in logs[-80:]:
+        clean_logs.append(str(item)[:500])
+
+    return clean_logs
 
 
-def safe_delete_table_rows(connection, table_name, where_clause=None, params=None):
-    """Delete rows from a table only if it exists. Works on SQLite and PostgreSQL."""
-    try:
-        existing_tables = get_existing_table_names()
+def save_match_history(room_id, winner_key):
+    match = active_matches.get(room_id)
 
-        if table_name not in existing_tables:
-            print(f"Cleanup skipped; table does not exist: {table_name}")
-            return False
+    if not match:
+        return
 
-        if where_clause:
-            query = f'DELETE FROM "{table_name}" WHERE {where_clause}'
-            connection.execute(sql_text(query), params or {})
+    p1 = match["p1"]
+    p2 = match["p2"]
+
+    winner_id = None
+    winner_name = None
+    result = "DRAW"
+
+    if winner_key == "p1":
+        winner_id = p1["user_id"]
+        winner_name = p1["name"]
+        result = "P1_WIN"
+
+    elif winner_key == "p2":
+        winner_id = p2["user_id"]
+        winner_name = p2["name"]
+        result = "P2_WIN"
+
+    elif winner_key == "DRAW":
+        result = "DRAW"
+
+    history = MatchHistory(
+        player1_id=p1["user_id"],
+        player2_id=p2["user_id"],
+        winner_id=winner_id,
+        player1_name=p1["name"],
+        player2_name=p2["name"],
+        winner_name=winner_name,
+        result=result,
+        player1_final_hp=int(p1.get("hp", 0)),
+        player2_final_hp=int(p2.get("hp", 0)),
+        total_rounds=max(0, int(match.get("round", 1)) - 1),
+        battle_log_json=json.dumps(parse_battle_logs(match)),
+    )
+
+    db.session.add(history)
+    db.session.commit()
+
+
+
+def get_or_create_card_stat(card):
+    stat = CardStat.query.filter_by(card_id=card["id"]).first()
+
+    if stat:
+        return stat
+
+    stat = CardStat(
+        card_id=card["id"],
+        card_name=card.get("name", card["id"]),
+        card_type=card.get("type", "Unknown"),
+        element=card.get("element", "Global"),
+        rarity=card.get("rarity", "Common"),
+    )
+
+    db.session.add(stat)
+    return stat
+
+
+def collect_played_cards(player):
+    played_cards = []
+
+    for card in player.get("graveyard", []):
+        if card:
+            played_cards.append(card)
+
+    for card in [player.get("field_m"), player.get("field_st")]:
+        if card:
+            played_cards.append(card)
+
+    unique_cards = {}
+
+    for card in played_cards:
+        card_id = card.get("id")
+
+        if card_id:
+            unique_cards[card_id] = card
+
+    return list(unique_cards.values())
+
+
+def update_card_stats_after_match(match, winner_key):
+    p1_cards = collect_played_cards(match["p1"])
+    p2_cards = collect_played_cards(match["p2"])
+
+    for card in p1_cards:
+        stat = get_or_create_card_stat(card)
+        stat.games_seen += 1
+        stat.times_played += 1
+
+        if winner_key == "p1":
+            stat.wins_when_played += 1
+        elif winner_key == "p2":
+            stat.losses_when_played += 1
         else:
-            query = f'DELETE FROM "{table_name}"'
-            connection.execute(sql_text(query))
+            stat.draws_when_played += 1
 
-        print(f"Cleanup OK: {table_name}")
-        return True
+    for card in p2_cards:
+        stat = get_or_create_card_stat(card)
+        stat.games_seen += 1
+        stat.times_played += 1
 
-    except Exception as error:
-        print(f"Cleanup ERROR on {table_name}: {type(error).__name__}: {error}")
-        return False
+        if winner_key == "p2":
+            stat.wins_when_played += 1
+        elif winner_key == "p1":
+            stat.losses_when_played += 1
+        else:
+            stat.draws_when_played += 1
 
+@app.route("/")
+def index():
+    user = current_user()
 
-def cleanup_gameplay_tables():
-    """Clear operational/gameplay tables while preserving users."""
-    tables = [
-        "system_logs",
-        "feedback_reports",
-        "feedback_report",
-        "booster_history",
-        "booster_histories",
-        "match_history",
-        "match_histories",
-        "card_stats",
-        "beta_invites",
-    ]
+    if user:
+        ensure_daily_missions(user)
 
-    cleared = []
-
-    with db.engine.begin() as connection:
-        for table in tables:
-            if safe_delete_table_rows(connection, table):
-                cleared.append(table)
-
-    return cleared
+    return render_template("index.html", user=user)
 
 
-def cleanup_non_admin_users():
-    """Clear test data and delete only non-admin users."""
-    cleared = cleanup_gameplay_tables()
-    deleted_users = 0
+@app.route("/offline")
+def offline():
+    return render_template("offline.html")
 
-    with db.engine.begin() as connection:
-        existing_tables = get_existing_table_names()
 
-        if "users" not in existing_tables:
-            print("Users table does not exist. Nothing to delete.")
-            return {
-                "cleared_tables": cleared,
-                "deleted_users": 0,
-            }
-
-        try:
-            result = connection.execute(
-                sql_text('DELETE FROM "users" WHERE COALESCE(is_admin, false) = false')
-            )
-            deleted_users = result.rowcount or 0
-            print(f"Deleted non-admin users: {deleted_users}")
-        except Exception as error:
-            print(f"Delete non-admin users ERROR: {type(error).__name__}: {error}")
-            raise
-
+@app.route("/health")
+def health():
     return {
-        "cleared_tables": cleared,
-        "deleted_users": deleted_users,
+        "status": "ok",
+        "app": "Ambitionz",
+        "version": "beta-ambition-intents-0.7",
+        "environment": app.config["ENVIRONMENT"],
     }
 
 
-def safe_admin_user_id():
+@app.route("/how-to-play")
+def how_to_play():
+    return render_template("how_to_play.html", user=current_user())
+
+
+@app.route("/card-stats")
+def card_stats():
+    stats = (
+        CardStat.query
+        .order_by(
+            CardStat.times_played.desc(),
+            CardStat.wins_when_played.desc(),
+            CardStat.card_name.asc(),
+        )
+        .limit(150)
+        .all()
+    )
+
+    enriched_stats = []
+
+    for stat in stats:
+        card = get_card_by_id(stat.card_id)
+        enriched_stats.append({
+            "stat": stat,
+            "card": card,
+        })
+
+    return render_template(
+        "card_stats.html",
+        user=current_user(),
+        enriched_stats=enriched_stats,
+    )
+
+
+@app.route("/profile")
+def profile():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
     user = current_user()
 
-    if not user:
-        return None
+    recent_matches = (
+        MatchHistory.query
+        .filter(
+            (MatchHistory.player1_id == user.id)
+            | (MatchHistory.player2_id == user.id)
+        )
+        .order_by(MatchHistory.created_at.desc())
+        .limit(10)
+        .all()
+    )
 
-    return getattr(user, "id", None)
+    collection_ids = load_card_ids(user.collection_json)
+    deck_ids = load_card_ids(user.deck_json)
+
+    owned_cards = len(collection_ids)
+    deck_size = len(deck_ids)
+
+    return render_template(
+        "profile.html",
+        user=user,
+        recent_matches=recent_matches,
+        owned_cards=owned_cards,
+        deck_size=deck_size,
+    )
+
+
+@app.route("/ranking")
+def ranking():
+    users = (
+        User.query
+        .order_by(
+            User.wins.desc(),
+            User.losses.asc(),
+            User.coins.desc(),
+            User.username.asc(),
+        )
+        .limit(100)
+        .all()
+    )
+
+    return render_template(
+        "ranking.html",
+        user=current_user(),
+        users=users,
+    )
+
+
+@app.route("/match-history")
+def match_history():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    matches = (
+        MatchHistory.query
+        .filter(
+            (MatchHistory.player1_id == user.id)
+            | (MatchHistory.player2_id == user.id)
+        )
+        .order_by(MatchHistory.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    return render_template(
+        "match_history.html",
+        user=user,
+        matches=matches,
+        json=json,
+    )
+
+
+
+
+@app.route("/missions")
+def missions():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    missions_list = ensure_daily_missions(user)
+
+    return render_template(
+        "missions.html",
+        user=user,
+        missions=missions_list,
+    )
+
+
+@app.route("/claim-mission/<int:mission_id>", methods=["POST"])
+def claim_user_mission(mission_id):
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    success, message = claim_mission(user, mission_id)
+    flash(message)
+
+    return redirect("/missions")
+
+
+@app.route("/admin")
+def admin_dashboard():
+    admin_redirect = admin_required_redirect()
+
+    if admin_redirect:
+        return admin_redirect
+
+    total_users = User.query.count()
+    total_matches = MatchHistory.query.count()
+    total_cards_tracked = CardStat.query.count()
+    total_feedbacks = FeedbackReport.query.count()
+    open_feedbacks = FeedbackReport.query.filter_by(status="open").count()
+    total_boosters = BoosterHistory.query.count()
+
+    all_matches = MatchHistory.query.all()
+    average_rounds = 0
+
+    if all_matches:
+        average_rounds = round(sum(match.total_rounds for match in all_matches) / len(all_matches), 2)
+
+    total_wins = sum(user.wins for user in User.query.all())
+    total_losses = sum(user.losses for user in User.query.all())
+
+    intent_metrics = {
+        "Strike": 0,
+        "Guard": 0,
+        "Focus": 0,
+        "Unleash": 0,
+        "Overreach": 0,
+    }
+
+    sigil_metrics = {
+        "Fury": 0,
+        "Resolve": 0,
+        "Insight": 0,
+        "Ruin": 0,
+        "Harmony": 0,
+    }
+
+    for match in all_matches:
+        logs = []
+
+        try:
+            logs = json.loads(match.battle_log_json or "[]")
+        except Exception:
+            logs = []
+
+        for log_line in logs:
+            line = str(log_line)
+
+            if " chose Strike intent" in line or "selected Strike intent" in line:
+                intent_metrics["Strike"] += 1
+
+            if " chose Guard intent" in line or "selected Guard intent" in line:
+                intent_metrics["Guard"] += 1
+
+            if " chose Focus intent" in line or "selected Focus intent" in line:
+                intent_metrics["Focus"] += 1
+
+            if "unleashed Ambition" in line or "Ambition Unleash" in line:
+                intent_metrics["Unleash"] += 1
+
+            if "Overreach" in line:
+                intent_metrics["Overreach"] += 1
+
+            for sigil_name in sigil_metrics.keys():
+                if f"{sigil_name} Sigil" in line:
+                    sigil_metrics[sigil_name] += 1
+
+    top_cards = (
+        CardStat.query
+        .order_by(CardStat.times_played.desc(), CardStat.wins_when_played.desc())
+        .limit(10)
+        .all()
+    )
+
+    best_cards = (
+        CardStat.query
+        .filter(CardStat.times_played >= 1)
+        .order_by(CardStat.wins_when_played.desc(), CardStat.times_played.desc())
+        .limit(10)
+        .all()
+    )
+
+    recent_matches = (
+        MatchHistory.query
+        .order_by(MatchHistory.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    return render_template(
+        "admin.html",
+        user=current_user(),
+        total_users=total_users,
+        total_matches=total_matches,
+        total_cards_tracked=total_cards_tracked,
+        total_feedbacks=total_feedbacks,
+        open_feedbacks=open_feedbacks,
+        total_boosters=total_boosters,
+        intent_metrics=intent_metrics,
+        sigil_metrics=sigil_metrics,
+        average_rounds=average_rounds,
+        total_wins=total_wins,
+        total_losses=total_losses,
+        top_cards=top_cards,
+        best_cards=best_cards,
+        recent_matches=recent_matches,
+        recent_feedbacks=FeedbackReport.query.order_by(FeedbackReport.created_at.desc()).limit(10).all(),
+    )
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            token = secrets.token_urlsafe(48)
+            user.reset_token = token
+            user.reset_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=2)
+            db.session.commit()
+
+            reset_url = url_for("reset_password", token=token, _external=True)
+            send_password_reset_email(user.email, reset_url)
+
+            print("\n--- AMBITIONZ PASSWORD RESET LINK ---")
+            print(reset_url)
+            print("------------------------------------\n")
+
+        flash("If this email exists, a reset link has been sent.")
+        return redirect("/login")
+
+    return render_template("forgot_password.html")
+
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    user = User.query.filter_by(reset_token=token).first()
+
+    if not user:
+        flash("Invalid reset link.")
+        return redirect("/login")
+
+    expires_at = user.reset_token_expires_at
+
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at and expires_at < datetime.now(timezone.utc):
+        flash("Reset link expired.")
+        return redirect("/forgot-password")
+
+    if request.method == "POST":
+        password = request.form.get("password", "").strip()
+        invite_code = request.form.get("invite_code", "").strip().upper()
+        password_confirm = request.form.get("password_confirm", "").strip()
+
+        if len(password) < 6:
+            flash("Password must have at least 6 characters.")
+            return redirect(request.path)
+
+        if password != password_confirm:
+            flash("Passwords do not match.")
+            return redirect(request.path)
+
+        user.set_password(password)
+        user.reset_token = None
+        user.reset_token_expires_at = None
+
+        db.session.commit()
+
+        flash("Password changed. You can login now.")
+        return redirect("/login")
+
+    return render_template("reset_password.html")
+
+
+
+
+@app.route("/create-private-room", methods=["POST"])
+def create_private_room():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    code = generate_private_room_code(set(private_waiting_rooms.keys()))
+    return redirect(url_for("arena", mode="private", code=code))
+
+
+@app.route("/join-private-room", methods=["POST"])
+def join_private_room_page():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    code = normalize_room_code(request.form.get("room_code", ""))
+
+    if not is_valid_room_code(code):
+        flash("Invalid room code.")
+        return redirect("/")
+
+    return redirect(url_for("arena", mode="private", code=code))
+
+
+@app.route("/feedback", methods=["GET", "POST"])
+def feedback():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    if request.method == "POST":
+        category = request.form.get("category", "general").strip()
+        severity = request.form.get("severity", "normal").strip()
+        title = request.form.get("title", "").strip()
+        message = request.form.get("message", "").strip()
+        page_url = request.form.get("page_url", "").strip()
+
+        if not title or not message:
+            flash("Title and message are required.")
+            return redirect("/feedback")
+
+        existing_feedback_count = FeedbackReport.query.filter_by(user_id=user.id).count()
+
+        if existing_feedback_count >= app.config.get("FEEDBACK_DAILY_LIMIT", 10) * 100:
+            flash("Feedback limit reached.")
+            return redirect("/")
+
+        report = FeedbackReport(
+            user_id=user.id,
+            username=user.username,
+            category=category,
+            severity=severity,
+            title=title,
+            message=message,
+            page_url=page_url,
+        )
+
+        db.session.add(report)
+        db.session.commit()
+
+        flash("Feedback sent. Thank you for testing Ambitionz.")
+        return redirect("/")
+
+    return render_template("feedback.html", user=user)
+
+
+
+
+@app.route("/training")
+def training():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    return redirect(url_for("arena", mode="bot"))
+
+
+
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html", user=current_user())
+
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html", user=current_user())
+
+
+
+
+@app.route("/resend-verification", methods=["GET", "POST"])
+def resend_verification():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            flash("If this email exists, a verification link will be sent.")
+            return redirect("/resend-verification")
+
+        if user.is_verified:
+            flash("This account is already verified. You can login.")
+            return redirect("/login")
+
+        token = serializer.dumps(user.email, salt="email-confirm")
+        verification_url = url_for("confirm_email", token=token, _external=True)
+
+        sent = send_verification_email(user, verification_url)
+
+        if sent:
+            flash("Verification email sent.")
+        else:
+            flash("SMTP is not configured. Verification link was printed in server logs.")
+
+        log_system_event(
+            level="info",
+            category="email",
+            message="Verification email requested",
+            user_id=user.id,
+        )
+
+        return redirect("/login")
+
+    return render_template("resend_verification.html")
+
+
+@app.route("/welcome")
+def welcome():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    return render_template("welcome.html", user=user)
+
+
+@app.route("/complete-onboarding", methods=["POST"])
+def complete_onboarding():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    user.has_completed_onboarding = True
+    db.session.commit()
+
+    return redirect(url_for("training"))
+
+
 
 
 @app.route("/admin/dev-tools")
@@ -278,13 +853,13 @@ def admin_test_email():
         if sent:
             flash("SMTP test email sent.")
             try:
-                log_system_event("info", "email", f"SMTP test sent to {email}", user_id=safe_admin_user_id())
+                log_system_event("info", "email", f"SMTP test sent to {email}", user_id=user.id)
             except Exception as log_error:
                 print("LOG ERROR AFTER SMTP SUCCESS:", log_error)
         else:
             flash("SMTP test failed. Check Render logs.")
             try:
-                log_system_event("error", "email", f"SMTP test failed to {email}", user_id=safe_admin_user_id())
+                log_system_event("error", "email", f"SMTP test failed to {email}", user_id=user.id)
             except Exception as log_error:
                 print("LOG ERROR AFTER SMTP FAILURE:", log_error)
 
@@ -309,28 +884,28 @@ def admin_reset_test_users():
 
     user = current_user()
 
-    try:
-        result = cleanup_non_admin_users()
+    tables_to_clear = [
+        "system_logs",
+        "feedback_reports",
+        "booster_history",
+        "match_history",
+        "card_stats",
+        "beta_invites",
+    ]
 
-        try:
-            log_system_event(
-                "warning",
-                "admin",
-                f"Reset non-admin users. Deleted users: {result['deleted_users']}",
-                user_id=safe_admin_user_id(),
-            )
-        except Exception as log_error:
-            print("System log failed after reset:", log_error)
+    with db.engine.begin() as connection:
+        for table in tables_to_clear:
+            try:
+                connection.execute(sql_text(f"DELETE FROM {table}"))
+            except Exception as error:
+                print("Reset ignored:", table, error)
 
-        flash(f"Cleanup complete. Deleted non-admin users: {result['deleted_users']}.")
+        connection.execute(
+            sql_text("DELETE FROM users WHERE is_admin = false")
+        )
 
-    except Exception as error:
-        print("--- ADMIN RESET TEST USERS ERROR ---")
-        print("Error type:", type(error).__name__)
-        print("Error:", error)
-        print("------------------------------------")
-
-        flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
+    log_system_event("warning", "admin", "Non-admin users reset by admin", user_id=user.id)
+    flash("Non-admin users and test data deleted.")
 
     return redirect("/admin/dev-tools")
 
@@ -344,30 +919,27 @@ def admin_clear_gameplay_data():
 
     user = current_user()
 
-    try:
-        cleared = cleanup_gameplay_tables()
+    tables_to_clear = [
+        "system_logs",
+        "feedback_reports",
+        "booster_history",
+        "match_history",
+        "card_stats",
+        "beta_invites",
+    ]
 
-        try:
-            log_system_event(
-                "warning",
-                "admin",
-                f"Gameplay data cleared. Tables: {', '.join(cleared)}",
-                user_id=safe_admin_user_id(),
-            )
-        except Exception as log_error:
-            print("System log failed after gameplay cleanup:", log_error)
+    with db.engine.begin() as connection:
+        for table in tables_to_clear:
+            try:
+                connection.execute(sql_text(f"DELETE FROM {table}"))
+            except Exception as error:
+                print("Clear ignored:", table, error)
 
-        flash(f"Gameplay data cleared. Tables cleared: {len(cleared)}.")
-
-    except Exception as error:
-        print("--- ADMIN CLEAR GAMEPLAY DATA ERROR ---")
-        print("Error type:", type(error).__name__)
-        print("Error:", error)
-        print("---------------------------------------")
-
-        flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
+    log_system_event("warning", "admin", "Gameplay data cleared by admin", user_id=user.id)
+    flash("Gameplay data cleared. Users were preserved.")
 
     return redirect("/admin/dev-tools")
+
 
 
 @app.route("/admin/system")
@@ -560,7 +1132,7 @@ def admin_invites():
 
         invite = BetaInvite(
             code=code,
-            created_by_user_id=safe_admin_user_id(),
+            created_by_user_id=user.id,
             max_uses=max_uses,
             used_count=0,
             is_active=True,
@@ -569,7 +1141,7 @@ def admin_invites():
         db.session.add(invite)
         db.session.commit()
 
-        log_system_event("info", "admin", f"Beta invite created: {code}", user_id=safe_admin_user_id())
+        log_system_event("info", "admin", f"Beta invite created: {code}", user_id=user.id)
         flash("Invite created.")
         return redirect("/admin/invites")
 
@@ -612,7 +1184,7 @@ def admin_feedback_update(report_id):
     if report:
         report.status = request.form.get("status", report.status)
         db.session.commit()
-        log_system_event("info", "feedback", f"Feedback status updated: {report.title}", user_id=safe_admin_user_id())
+        log_system_event("info", "feedback", f"Feedback status updated: {report.title}", user_id=user.id)
 
     return redirect("/admin/feedback")
 
@@ -799,7 +1371,7 @@ def shop():
         uncommon_count = len([card for card in pulled_cards if card.get("rarity") == "Uncommon"])
 
         history = BoosterHistory(
-            user_id=safe_admin_user_id(),
+            user_id=user.id,
             username=user.username,
             cost=pack_cost,
             cards_json=json.dumps(pulled_cards),
@@ -848,7 +1420,7 @@ def booster_history():
 
     histories = (
         BoosterHistory.query
-        .filter_by(user_id=safe_admin_user_id())
+        .filter_by(user_id=user.id)
         .order_by(BoosterHistory.created_at.desc())
         .limit(30)
         .all()
