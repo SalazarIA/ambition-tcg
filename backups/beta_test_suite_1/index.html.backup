@@ -41,23 +41,6 @@
                     </div>
                 </div>
 
-                <section class="deck-status home-beta-actions">
-                    <h2>Play Beta</h2>
-
-                    <div class="actions">
-                        <a href="{{ url_for('arena') }}" class="btn">Random Match</a>
-
-                        <form method="POST" action="{{ url_for('create_private_room') }}">
-                            <button type="submit" class="btn btn-secondary">Create Private Room</button>
-                        </form>
-                    </div>
-
-                    <form method="POST" action="{{ url_for('join_private_room_page') }}" class="private-room-form">
-                        <input type="text" name="room_code" placeholder="Enter room code" maxlength="5" required>
-                        <button type="submit" class="btn btn-secondary">Join Room</button>
-                    </form>
-                </section>
-
                 <div class="menu-grid app-menu-grid">
                     <a href="{{ url_for('arena') }}" class="menu-card primary-menu-card">
                         <strong>Arena</strong>
@@ -107,11 +90,6 @@
                     <a href="{{ url_for('shop') }}" class="menu-card">
                         <strong>Shop</strong>
                         <span>Open boosters</span>
-                    </a>
-
-                    <a href="{{ url_for('feedback') }}" class="menu-card">
-                        <strong>Feedback</strong>
-                        <span>Report bugs or suggestions</span>
                     </a>
 
                     {% if user.is_admin %}

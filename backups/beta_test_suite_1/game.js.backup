@@ -39,63 +39,6 @@ function getCardImageUrl(card) {
     return `/static/img/${card.image}`;
 }
 
-function playTone(frequency = 440, duration = 0.08, volume = 0.04) {
-    try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        const audioContext = new AudioContextClass();
-
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-
-        oscillator.frequency.value = frequency;
-        oscillator.type = "sine";
-
-        gain.gain.value = volume;
-
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-
-        oscillator.start();
-
-        setTimeout(() => {
-            oscillator.stop();
-            audioContext.close();
-        }, duration * 1000);
-    } catch (error) {
-        // Audio may be blocked by browser autoplay rules.
-    }
-}
-
-function playEventSound(message) {
-    const lower = String(message || "").toLowerCase();
-
-    if (lower.includes("victory") || lower.includes("win")) {
-        playTone(740, 0.12, 0.05);
-        setTimeout(() => playTone(980, 0.12, 0.05), 120);
-        return;
-    }
-
-    if (lower.includes("damage") || lower.includes("defeated") || lower.includes("attacked")) {
-        playTone(180, 0.08, 0.045);
-        return;
-    }
-
-    if (lower.includes("unleashed") || lower.includes("ambition")) {
-        playTone(520, 0.09, 0.045);
-        setTimeout(() => playTone(780, 0.09, 0.045), 90);
-        return;
-    }
-
-    if (lower.includes("overreach")) {
-        playTone(120, 0.15, 0.05);
-        return;
-    }
-
-    if (lower.includes("set a monster") || lower.includes("set a spell")) {
-        playTone(420, 0.06, 0.035);
-    }
-}
-
 function pulseElement(elementId, className) {
     const el = document.getElementById(elementId);
 
@@ -204,22 +147,6 @@ function toggleUnleash() {
     socket.emit("toggle_unleash");
 }
 
-function copyPrivateRoomCode() {
-    const codeEl = document.getElementById("private-room-code");
-
-    if (!codeEl) {
-        return;
-    }
-
-    const code = codeEl.textContent.trim();
-
-    navigator.clipboard.writeText(code).then(() => {
-        addLog(`Private room code copied: ${code}`);
-    }).catch(() => {
-        addLog(`Private room code: ${code}`);
-    });
-}
-
 function updateIntentButtons(data) {
     const intent = data.me.intent || "Strike";
 
@@ -300,8 +227,6 @@ function addLog(message) {
 
     log.appendChild(line);
     log.scrollTop = log.scrollHeight;
-
-    playEventSound(message);
 }
 
 function updateArenaStep(data) {
@@ -425,16 +350,7 @@ function updateAmbition(data) {
 
 socket.on("connect", () => {
     addLog("Connected to server.");
-
-    const mode = window.AMBITION_MATCH_MODE || "random";
-    const code = window.AMBITION_PRIVATE_CODE || "";
-
-    if (mode === "private" && code) {
-        addLog(`Joining private room ${code}...`);
-        socket.emit("join_private_room", { code });
-    } else {
-        socket.emit("join_queue");
-    }
+    socket.emit("join_queue");
 });
 
 socket.on("queue_status", (data) => {
@@ -500,39 +416,16 @@ socket.on("game_state_update", (data) => {
     btn.textContent = data.me.ready ? "Waiting opponent..." : "Ready for Battle";
 });
 
-function showGameOverOverlay(result) {
-    const overlay = document.createElement("div");
-    overlay.className = "game-over-overlay";
-
-    let title = "Draw";
-    let subtitle = "The duel ended without a winner.";
-
-    if (result === "WIN") {
-        title = "Victory";
-        subtitle = "You earned rewards. Ambition prevailed.";
-        playTone(740, 0.12, 0.05);
-        setTimeout(() => playTone(980, 0.12, 0.05), 120);
-    }
-
-    if (result === "LOSE") {
-        title = "Defeat";
-        subtitle = "Review your deck, intent and Ambition timing.";
-        playTone(160, 0.16, 0.05);
-    }
-
-    overlay.innerHTML = `
-        <div class="game-over-card">
-            <h1>${title}</h1>
-            <p>${subtitle}</p>
-            <button class="btn full-btn" onclick="window.location.href='/'">Return Home</button>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-}
-
 socket.on("game_over", (data) => {
-    showGameOverOverlay(data.result);
+    if (data.result === "WIN") {
+        alert("Victory. You earned 150 coins.");
+    } else if (data.result === "LOSE") {
+        alert("Defeat.");
+    } else {
+        alert("Draw.");
+    }
+
+    window.location.href = "/";
 });
 
 socket.on("opponent_left", (data) => {

@@ -16,7 +16,7 @@
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Admin Panel</h1>
-                <p>Beta monitoring, balance and tester feedback</p>
+                <p>Balance and beta monitoring</p>
             </div>
 
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
@@ -37,58 +37,10 @@
                 </div>
 
                 <div class="menu-card">
-                    <strong>{{ average_rounds }}</strong>
-                    <span>Avg. Rounds</span>
-                </div>
-
-                <div class="menu-card">
                     <strong>{{ total_cards_tracked }}</strong>
                     <span>Tracked Cards</span>
                 </div>
-
-                <div class="menu-card">
-                    <strong>{{ total_feedbacks }}</strong>
-                    <span>Total Feedbacks</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ open_feedbacks }}</strong>
-                    <span>Open Feedbacks</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ total_wins }}</strong>
-                    <span>Total Wins</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ total_losses }}</strong>
-                    <span>Total Losses</span>
-                </div>
             </div>
-        </section>
-
-        <section class="deck-status">
-            <h2>Recent Feedback</h2>
-
-            {% if recent_feedbacks %}
-                <div class="deck-list">
-                    {% for report in recent_feedbacks %}
-                        <div class="deck-line">
-                            <span>
-                                {{ report.category }} / {{ report.severity }}
-                                —
-                                {{ report.title }}
-                                —
-                                {{ report.username if report.username else "Unknown" }}
-                            </span>
-                            <strong>{{ report.status }}</strong>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="subtitle">No feedback yet.</p>
-            {% endif %}
         </section>
 
         <section class="deck-status">

@@ -241,34 +241,3 @@ def ensure_database_schema():
                 connection.execute(text(statement))
             except Exception:
                 pass
-
-
-
-class FeedbackReport(db.Model):
-    __tablename__ = "feedback_reports"
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
-    username = db.Column(db.String(80), nullable=True)
-
-    category = db.Column(db.String(60), nullable=False, default="general")
-    severity = db.Column(db.String(40), nullable=False, default="normal")
-
-    title = db.Column(db.String(160), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-
-    page_url = db.Column(db.String(255), nullable=True)
-    status = db.Column(db.String(40), nullable=False, default="open")
-
-    created_at = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-        index=True,
-    )
-
-    user = db.relationship("User")
-
-    def __repr__(self):
-        return f"<FeedbackReport {self.category} {self.title}>"
