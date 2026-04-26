@@ -26,7 +26,8 @@ from models import CardStat, MatchHistory, User, db, ensure_database_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.email_service import send_password_reset_email, send_verification_email
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
-from game.engine import register_card_played_for_ambition, request_unleash_ambition, set_player_intent
+from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
+from game.state import create_player_state, set_player_intent
 from game.state import create_player_state, normalize_intent
 
 
@@ -1002,7 +1003,7 @@ def toggle_unleash():
     if player["ready"]:
         return
 
-    success, message = request_unleash_ambition(player, match.setdefault("logs", []))
+    success, message = request_unleash(player, match.setdefault("logs", []))
 
     socketio.emit("battle_log", {"msg": message}, to=request.sid)
     emit_state(room_id)

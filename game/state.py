@@ -4,51 +4,34 @@ AMBITION_UNLEASH_POWER_BONUS = 300
 OVERREACH_PENALTY_DAMAGE = 300
 OVERREACH_RESET_VALUE = 7
 
-INTENT_STRIKE = "Strike"
-INTENT_GUARD = "Guard"
-INTENT_FOCUS = "Focus"
-
-DEFAULT_INTENT = INTENT_STRIKE
-
-VALID_INTENTS = {
-    INTENT_STRIKE,
-    INTENT_GUARD,
-    INTENT_FOCUS,
-}
+VALID_INTENTS = ["Strike", "Guard", "Focus"]
 
 INTENT_RULES = {
-    INTENT_STRIKE: {
+    "Strike": {
         "label": "Strike",
-        "description": "+200 power if you win combat. If you lose, take +100 extra damage.",
+        "description": "+200 power if you win the clash. If you lose, receive +100 extra damage.",
         "win_power_bonus": 200,
-        "loss_extra_damage": 100,
+        "lose_extra_damage": 100,
         "damage_reduction": 0,
-        "survive_ambition_gain": 0,
+        "survive_ambition": 0,
     },
-    INTENT_GUARD: {
+    "Guard": {
         "label": "Guard",
-        "description": "Reduce incoming damage by 300 this round.",
+        "description": "Reduce received damage by 300 this round.",
         "win_power_bonus": 0,
-        "loss_extra_damage": 0,
+        "lose_extra_damage": 0,
         "damage_reduction": 300,
-        "survive_ambition_gain": 0,
+        "survive_ambition": 0,
     },
-    INTENT_FOCUS: {
+    "Focus": {
         "label": "Focus",
-        "description": "If you survive this round, gain +2 Ambition.",
+        "description": "If you survive the round, gain +2 Ambition.",
         "win_power_bonus": 0,
-        "loss_extra_damage": 0,
+        "lose_extra_damage": 0,
         "damage_reduction": 0,
-        "survive_ambition_gain": 2,
+        "survive_ambition": 2,
     },
 }
-
-
-def normalize_intent(intent):
-    if intent in VALID_INTENTS:
-        return intent
-
-    return DEFAULT_INTENT
 
 
 def create_player_state(user, sid, deck, hand):
@@ -67,10 +50,10 @@ def create_player_state(user, sid, deck, hand):
         "energy": 0,
         "max_energy": 0,
         "ambition": 0,
-        "ambition_unleashed": False,
         "wants_unleash": False,
+        "ambition_unleashed": False,
         "overreach_count": 0,
-        "intent": DEFAULT_INTENT,
+        "intent": "Strike",
     }
 
 
@@ -85,7 +68,23 @@ def create_match_state(player_one, player_two):
     }
 
 
+def normalize_intent(intent):
+    if intent not in VALID_INTENTS:
+        return "Strike"
+
+    return intent
+
+
+def set_player_intent(player, intent):
+    player["intent"] = normalize_intent(intent)
+
+
+def get_intent_rule(player):
+    intent = normalize_intent(player.get("intent", "Strike"))
+    return INTENT_RULES[intent]
+
+
 def reset_round_flags(player):
     player["ambition_unleashed"] = False
     player["wants_unleash"] = False
-    player["intent"] = DEFAULT_INTENT
+    player["intent"] = "Strike"
