@@ -1,99 +1,81 @@
-let deferredInstallPrompt = null;
+(function () {
+    let deferredPrompt = null;
 
-function isStandaloneMode() {
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-}
+    const banner = document.getElementById("network-status-banner");
 
-function setupInstallPrompt() {
-    const installButton = document.getElementById("install-app-btn");
-
-    if (!installButton) {
-        return;
-    }
-
-    if (isStandaloneMode()) {
-        installButton.style.display = "none";
-        return;
-    }
-
-    window.addEventListener("beforeinstallprompt", (event) => {
-        event.preventDefault();
-        deferredInstallPrompt = event;
-        installButton.style.display = "inline-flex";
-    });
-
-    installButton.addEventListener("click", async () => {
-        if (!deferredInstallPrompt) {
-            alert("No Android, use o menu do navegador e toque em 'Adicionar à tela inicial'. No iPhone, use Compartilhar > Adicionar à Tela de Início.");
+    function setNetworkStatus() {
+        if (!banner) {
             return;
         }
 
-        deferredInstallPrompt.prompt();
-
-        const result = await deferredInstallPrompt.userChoice;
-
-        if (result.outcome === "accepted") {
-            installButton.style.display = "none";
-        }
-
-        deferredInstallPrompt = null;
-    });
-}
-
-function registerServiceWorker() {
-    if (!("serviceWorker" in navigator)) {
-        return;
-    }
-
-    window.addEventListener("load", async () => {
-        try {
-            await navigator.serviceWorker.register("/static/js/service-worker.js");
-            console.log("Ambition service worker registered.");
-        } catch (error) {
-            console.warn("Service worker registration failed:", error);
-        }
-    });
-}
-
-function setupMobileViewportClass() {
-    const setMode = () => {
-        if (window.innerWidth <= 820) {
-            document.body.classList.add("mobile-mode");
-        } else {
-            document.body.classList.remove("mobile-mode");
-        }
-    };
-
-    setMode();
-    window.addEventListener("resize", setMode);
-}
-
-function setupNetworkStatus() {
-    const banner = document.getElementById("network-status-banner");
-
-    if (!banner) {
-        return;
-    }
-
-    const update = () => {
         if (navigator.onLine) {
             banner.textContent = "Online";
-            banner.className = "network-banner online";
+            banner.classList.remove("offline");
+            banner.classList.add("online");
         } else {
-            banner.textContent = "Offline mode";
-            banner.className = "network-banner offline";
+            banner.textContent = "Offline";
+            banner.classList.remove("online");
+            banner.classList.add("offline");
+        }
+    }
+
+    window.addEventListener("online", setNetworkStatus);
+    window.addEventListener("offline", setNetworkStatus);
+    setNetworkStatus();
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        deferredPrompt = event;
+
+        const installButton = document.getElementById("install-app-btn");
+
+        if (installButton) {
+            installButton.style.display = "inline-flex";
+        }
+    });
+
+    window.installAmbitionPWA = async function () {
+        if (!deferredPrompt) {
+            alert("On iPhone, install through Safari: Share > Add to Home Screen.");
+            return;
+        }
+
+        deferredPrompt.prompt();
+
+        try {
+            await deferredPrompt.userChoice;
+        } finally {
+            deferredPrompt = null;
         }
     };
 
-    window.addEventListener("online", update);
-    window.addEventListener("offline", update);
+    document.addEventListener("DOMContentLoaded", function () {
+        const installButton = document.getElementById("install-app-btn");
 
-    update();
-}
+        if (installButton) {
+            installButton.addEventListener("click", window.installAmbitionPWA);
+        }
 
-document.addEventListener("DOMContentLoaded", () => {
-    setupInstallPrompt();
-    setupMobileViewportClass();
-    setupNetworkStatus();
-    registerServiceWorker();
-});
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (
+            navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1
+        );
+
+        const isStandalone =
+            window.navigator.standalone === true ||
+            window.matchMedia("(display-mode: standalone)").matches;
+
+        const iosTip = document.getElementById("ios-install-tip");
+
+        if (iosTip && isIOS && !isStandalone) {
+            iosTip.style.display = "block";
+        }
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/static/js/service-worker.js").catch(function () {
+                // Silent fail during local or restricted environments.
+            });
+        });
+    }
+})();

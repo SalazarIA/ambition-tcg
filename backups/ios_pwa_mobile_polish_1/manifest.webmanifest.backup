@@ -7,9 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#070711",
-  "theme_color": "#070711",
-  "categories": ["games", "entertainment"],
-  "lang": "en",
+  "theme_color": "#8e44ad",
   "icons": [
     {
       "src": "/static/icons/icon.svg",

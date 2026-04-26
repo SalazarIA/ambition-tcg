@@ -1,33 +1,36 @@
-const CACHE_NAME = "ambition-tcg-beta-v1";
+const CACHE_NAME = "ambition-tcg-pwa-v1";
 
-const STATIC_ASSETS = [
+const CORE_ASSETS = [
     "/",
     "/offline",
     "/static/css/style.css",
-    "/static/js/pwa.js",
-    "/static/js/game.js",
-    "/static/manifest.webmanifest",
     "/static/icons/icon.svg",
     "/static/img/cards/placeholders/card_placeholder.svg"
 ];
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", function (event) {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS);
+        caches.open(CACHE_NAME).then(function (cache) {
+            return cache.addAll(CORE_ASSETS).catch(function () {
+                return Promise.resolve();
+            });
         })
     );
 
     self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
+self.addEventListener("activate", function (event) {
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
+        caches.keys().then(function (keys) {
             return Promise.all(
-                cacheNames
-                    .filter((cacheName) => cacheName !== CACHE_NAME)
-                    .map((cacheName) => caches.delete(cacheName))
+                keys
+                    .filter(function (key) {
+                        return key !== CACHE_NAME;
+                    })
+                    .map(function (key) {
+                        return caches.delete(key);
+                    })
             );
         })
     );
@@ -35,45 +38,16 @@ self.addEventListener("activate", (event) => {
     self.clients.claim();
 });
 
-self.addEventListener("fetch", (event) => {
-    const request = event.request;
-
-    if (request.method !== "GET") {
-        return;
-    }
-
-    const url = new URL(request.url);
-
-    if (url.pathname.includes("/socket.io/")) {
+self.addEventListener("fetch", function (event) {
+    if (event.request.method !== "GET") {
         return;
     }
 
     event.respondWith(
-        fetch(request)
-            .then((response) => {
-                const responseClone = response.clone();
-
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(request, responseClone);
-                });
-
-                return response;
-            })
-            .catch(async () => {
-                const cachedResponse = await caches.match(request);
-
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-
-                if (request.headers.get("accept")?.includes("text/html")) {
-                    return caches.match("/offline");
-                }
-
-                return new Response("Offline", {
-                    status: 503,
-                    statusText: "Offline"
-                });
-            })
+        fetch(event.request).catch(function () {
+            return caches.match(event.request).then(function (cachedResponse) {
+                return cachedResponse || caches.match("/offline");
+            });
+        })
     );
 });

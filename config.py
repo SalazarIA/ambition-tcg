@@ -4,7 +4,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
-INSTANCE_DIR.mkdir(exist_ok=True)
+INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
+
+LOCAL_SQLITE_PATH = INSTANCE_DIR / "database.db"
 
 
 def clean_database_url(raw_url):
@@ -27,6 +29,14 @@ def clean_database_url(raw_url):
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
 
+    # Corrige SQLite relativo problemático no Flask-SQLAlchemy
+    if url in {
+        "sqlite:///instance/database.db",
+        "sqlite://instance/database.db",
+        "sqlite:///./instance/database.db",
+    }:
+        return f"sqlite:///{LOCAL_SQLITE_PATH}"
+
     return url
 
 
@@ -38,12 +48,12 @@ class Config:
 
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1:8080")
 
-    raw_database_url = clean_database_url(os.environ.get("DATABASE_URL"))
+    cleaned_database_url = clean_database_url(os.environ.get("DATABASE_URL"))
 
-    if raw_database_url:
-        SQLALCHEMY_DATABASE_URI = raw_database_url
+    if cleaned_database_url:
+        SQLALCHEMY_DATABASE_URI = cleaned_database_url
     else:
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{INSTANCE_DIR / 'database.db'}"
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{LOCAL_SQLITE_PATH}"
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

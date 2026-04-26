@@ -18,16 +18,11 @@
     <div id="network-status-banner" class="network-banner online">Online</div>
 
     <main class="page app-shell">
-        <section class="panel home-panel mobile-panel mobile-home-hero">
+        <section class="panel home-panel mobile-panel">
             <div class="app-logo">A</div>
 
             <h1>Ambition TCG</h1>
             <p class="subtitle">Elemental card combat beta</p>
-
-            <div id="ios-install-tip" class="ios-install-tip" style="display: none;">
-                <strong>Install on iPhone</strong>
-                <span>Open in Safari, tap Share, then Add to Home Screen.</span>
-            </div>
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
