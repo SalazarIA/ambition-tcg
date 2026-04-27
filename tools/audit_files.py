@@ -33,6 +33,8 @@ REQUIRED_FILES = [
     "sockets/__init__.py",
     "sockets/game_socket.py",
     "docs/DATABASE_MIGRATIONS.md",
+    "game/card_identity.py",
+    "tools/card_identity_report.py",
     "static/manifest.webmanifest",
 ]
 
