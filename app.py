@@ -27,6 +27,8 @@ from game.deck import (
 from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, db, ensure_database_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
+from services.battle_summary import build_match_summary_lines
+from services.reward_tuning import reward_line
 from services.match_telemetry import record_match_telemetry
 from services.email_service import send_verification_email, send_password_reset_email, send_smtp_test_email, is_smtp_configured
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
@@ -327,10 +329,10 @@ def cleanup_non_admin_users():
             deleted_users = result.rowcount or 0
             print(f"Deleted non-admin users: {deleted_users}")
         except Exception as error:
-            print("--- DELETE NON ADMIN USERS ERROR ---")
+            print("\n--- DELETE NON ADMIN USERS ERROR ---")
             print("Error type:", type(error).__name__)
             print("Error:", error)
-            print("------------------------------------")
+            print("\n------------------------------------\n")
             raise
 
     return {
@@ -393,11 +395,11 @@ def admin_test_email():
                 print("LOG ERROR AFTER SMTP FAILURE:", log_error)
 
     except Exception as error:
-        print("--- ADMIN SMTP TEST ROUTE ERROR ---")
+        print("\n--- ADMIN SMTP TEST ROUTE ERROR ---")
         print("Error type:", type(error).__name__)
         print("Error:", error)
         print("Destination:", email)
-        print("-----------------------------------")
+        print("\n-----------------------------------\n")
 
         flash(f"SMTP test crashed: {type(error).__name__}. Check Render logs.")
 
@@ -422,10 +424,10 @@ def admin_reset_test_users():
         flash(f"Cleanup complete. Deleted non-admin users: {result['deleted_users']}.")
 
     except Exception as error:
-        print("--- ADMIN RESET TEST USERS ERROR ---")
+        print("\n--- ADMIN RESET TEST USERS ERROR ---")
         print("Error type:", type(error).__name__)
         print("Error:", error)
-        print("------------------------------------")
+        print("\n------------------------------------\n")
         flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
 
     return redirect("/admin/dev-tools")
@@ -449,10 +451,10 @@ def admin_clear_gameplay_data():
         flash(f"Gameplay data cleared. Tables cleared: {result['cleared_count']}.")
 
     except Exception as error:
-        print("--- ADMIN CLEAR GAMEPLAY DATA ERROR ---")
+        print("\n--- ADMIN CLEAR GAMEPLAY DATA ERROR ---")
         print("Error type:", type(error).__name__)
         print("Error:", error)
-        print("---------------------------------------")
+        print("\n---------------------------------------\n")
         flash(f"Cleanup failed: {type(error).__name__}. Check Render logs.")
 
     return redirect("/admin/dev-tools")
@@ -718,7 +720,7 @@ def health():
     return {
         "status": "ok",
         "app": "Ambitionz",
-        "version": "Ambitionz V1.04",
+        "version": "Ambitionz V1.05",
         "environment": app.config["ENVIRONMENT"],
     }
 
@@ -1277,6 +1279,30 @@ def create_player_object(user, sid):
     reset_player_energy(player, 1)
 
     return player
+
+
+
+def emit_v105_match_end_summary(room_id, match, winner_key):
+    try:
+        for line in build_match_summary_lines(match, winner_key):
+            emit_log(room_id, line)
+
+        mode = "training" if match.get("training") else "pvp"
+        difficulty = match.get("bot_difficulty")
+
+        if winner_key == "DRAW":
+            emit_log(room_id, reward_line("Both players", mode, "draw", difficulty))
+            return
+
+        loser_key = "p2" if winner_key == "p1" else "p1"
+        winner = match.get(winner_key, {})
+        loser = match.get(loser_key, {})
+
+        emit_log(room_id, reward_line(winner.get("name", "Winner"), mode, "win", difficulty))
+        emit_log(room_id, reward_line(loser.get("name", "Loser"), mode, "loss", difficulty))
+
+    except Exception as error:
+        print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
 
 
 def end_match(room_id, winner_key):

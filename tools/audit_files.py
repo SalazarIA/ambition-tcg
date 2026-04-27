@@ -22,6 +22,9 @@ REQUIRED_FILES = [
     "services/database/schema_tools.py",
     "services/match_telemetry.py",
     "tools/match_telemetry_report.py",
+    "services/battle_summary.py",
+    "services/reward_tuning.py",
+    "tools/rewards_report.py",
     "static/manifest.webmanifest",
 ]
 

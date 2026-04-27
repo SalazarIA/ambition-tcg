@@ -46,3 +46,18 @@ def apply_match_rewards(user, is_bot_match, did_win, award_xp_function):
     award_xp_function(user, rewards["xp"])
 
     return rewards
+
+
+# =========================================================
+# AMBITIONZ V1.05 — REWARD BASELINE
+# =========================================================
+
+V105_REWARD_BASELINE = {
+    "pvp_win": {"coins": 80, "xp": 120},
+    "pvp_loss": {"coins": 25, "xp": 45},
+    "pvp_draw": {"coins": 40, "xp": 70},
+    "training_win": {"coins": 35, "xp": 70},
+    "training_loss": {"coins": 15, "xp": 35},
+    "training_draw": {"coins": 20, "xp": 45},
+}
+
