@@ -73,14 +73,17 @@ CARD_TYPE_IDENTITY = {
 }
 
 
+def normalized(value, fallback="Global"):
+    value = str(value or fallback).strip()
+    return value if value else fallback
+
+
 def build_card_lore(card):
     name = card.get("name", "Unknown Card")
-    element = card.get("element", "Global")
-    sigil = card.get("sigil", "Global")
-    card_type = card.get("type", "Card")
+    element = normalized(card.get("element"))
+    card_type = normalized(card.get("type"), "Card")
 
     element_data = ELEMENT_ARCHETYPES.get(element, ELEMENT_ARCHETYPES["Global"])
-    sigil_data = SIGIL_ARCHETYPES.get(sigil, SIGIL_ARCHETYPES["Global"])
 
     if card_type == "Monster":
         return f"{name} carries {element.lower()} ambition: {element_data['lore_template']}"
@@ -95,18 +98,31 @@ def build_card_lore(card):
 
 
 def identity_for_card(card):
-    element = card.get("element", "Global")
-    sigil = card.get("sigil", "Global")
-    card_type = card.get("type", "Card")
+    element = normalized(card.get("element"))
+    sigil = normalized(card.get("sigil"))
+    card_type = normalized(card.get("type"), "Card")
 
     element_data = ELEMENT_ARCHETYPES.get(element, ELEMENT_ARCHETYPES["Global"])
-    sigil_data = SIGIL_ARCHETYPES.get(sigil, SIGIL_ARCHETYPES["Global"])
+    sigil_data = SIGIL_ARCHETYPES.get(sigil)
+
+    # Regra principal:
+    # - Sigil é a personalidade dominante da carta.
+    # - Elemento define fantasia/lore e fallback.
+    # - Magias/armadilhas Global/Global ficam como Ambition Core.
+    if sigil_data:
+        archetype = sigil_data["archetype"]
+        identity_role = sigil_data["identity_role"]
+        tactical_hint = sigil_data["tactical_hint"]
+    else:
+        archetype = element_data["archetype"]
+        identity_role = element_data["identity_role"]
+        tactical_hint = element_data["tactical_hint"]
 
     return {
-        "archetype": sigil_data.get("archetype") or element_data.get("archetype"),
-        "identity_role": sigil_data.get("identity_role") or element_data.get("identity_role"),
+        "archetype": archetype,
+        "identity_role": identity_role,
         "lore": build_card_lore(card),
-        "tactical_hint": sigil_data.get("tactical_hint") or element_data.get("tactical_hint"),
+        "tactical_hint": tactical_hint,
         "type_identity": CARD_TYPE_IDENTITY.get(card_type, "Flexible card identity."),
     }
 
@@ -115,10 +131,10 @@ def apply_identity_to_catalog(card_catalog):
     for card in card_catalog:
         identity = identity_for_card(card)
 
-        card.setdefault("archetype", identity["archetype"])
-        card.setdefault("identity_role", identity["identity_role"])
-        card.setdefault("lore", identity["lore"])
-        card.setdefault("tactical_hint", identity["tactical_hint"])
-        card.setdefault("type_identity", identity["type_identity"])
+        card["archetype"] = identity["archetype"]
+        card["identity_role"] = identity["identity_role"]
+        card["lore"] = identity["lore"]
+        card["tactical_hint"] = identity["tactical_hint"]
+        card["type_identity"] = identity["type_identity"]
 
     return card_catalog

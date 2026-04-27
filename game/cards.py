@@ -548,7 +548,6 @@ TRAPS = generate_traps()
 CARD_CATALOG = MONSTERS + SPELLS + TRAPS
 
 
-CARD_CATALOG = apply_identity_to_catalog(CARD_CATALOG)
 
 def get_card_by_id(card_id):
     for card in CARD_CATALOG:
@@ -735,3 +734,12 @@ def enrich_card_identity(card):
 
 for _card in CARD_CATALOG:
     enrich_card_identity(_card)
+
+
+# =========================================================
+# AMBITIONZ V1.09 — FINAL CARD IDENTITY APPLICATION
+# =========================================================
+
+CARD_CATALOG = apply_identity_to_catalog(CARD_CATALOG)
+CARD_INDEX = {card["id"]: card for card in CARD_CATALOG}
+
