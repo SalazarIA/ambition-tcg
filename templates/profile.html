@@ -5,12 +5,10 @@
     <title>Profile - Ambitionz</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Ambition">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="format-detection" content="telephone=no">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambitionz">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
@@ -21,92 +19,196 @@
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Profile</h1>
-                <p>{{ user.username }} statistics</p>
+                <p>Account identity and player progress</p>
             </div>
 
+            <a href="{{ url_for('ranking') }}" class="btn btn-secondary small-btn">Ranking</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
-        <section class="deck-status">
-            <h2>{{ user.username }}</h2>
+        <section class="profile-hero-v117">
+            <div class="profile-avatar-v117">
+                <span>{{ identity.avatar_letter }}</span>
+            </div>
 
-            <div class="menu-grid">
-                <div class="menu-card">
-                    <strong>{{ user.wins }}</strong>
-                    <span>Wins</span>
+            <div class="profile-main-v117">
+                <span class="progression-kicker">Player Identity</span>
+                <h2>{{ user.username }}</h2>
+                <p>
+                    {{ identity.title }} profile. Track your record, level, rewards and recent battles.
+                    Future cosmetics can attach here: avatars, titles, frames and arena skins.
+                </p>
+
+                <div class="profile-badge-row-v117">
+                    <span>{{ profile_stats.beta_tier }}</span>
+                    <span>Lv {{ profile_stats.level }}</span>
+                    {% if identity.is_tester %}
+                        <span>Beta Tester</span>
+                    {% endif %}
+                    {% if identity.is_verified %}
+                        <span>Verified</span>
+                    {% else %}
+                        <span>{{ identity.status }}</span>
+                    {% endif %}
                 </div>
+            </div>
 
-                <div class="menu-card">
-                    <strong>{{ user.losses }}</strong>
-                    <span>Losses</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ user.win_rate }}%</strong>
-                    <span>Win Rate</span>
-                </div>
-
-                <div class="menu-card">
-                    <strong>{{ user.coins }}</strong>
+            <aside class="profile-wallet-v117">
+                <div>
                     <span>Coins</span>
+                    <strong>{{ profile_stats.coins }}</strong>
                 </div>
-
-                <div class="menu-card">
-                    <strong>{{ owned_cards }}</strong>
-                    <span>Owned Card Copies</span>
+                <div>
+                    <span>XP</span>
+                    <strong>{{ profile_stats.xp }}/{{ profile_stats.next_level_xp }}</strong>
                 </div>
+            </aside>
+        </section>
 
-                <div class="menu-card">
-                    <strong>{{ deck_size }}</strong>
-                    <span>Current Deck Size</span>
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Account Progress</span>
+                    <h2>Level Progress</h2>
+                </div>
+                <a href="{{ url_for('progression') }}" class="btn btn-secondary small-btn">Progression Hub</a>
+            </div>
+
+            <div class="deck-progress-shell">
+                <div class="deck-progress-label">
+                    <span>Level {{ profile_stats.level }}</span>
+                    <strong>{{ profile_stats.level_progress_percent }}%</strong>
+                </div>
+                <div class="deck-progress-bar">
+                    <div class="deck-progress-fill" style="width: {{ profile_stats.level_progress_percent }}%;"></div>
                 </div>
             </div>
         </section>
 
-        <section class="deck-status">
-            <h2>Recent Matches</h2>
-
-            {% if recent_matches %}
-                <div class="deck-list">
-                    {% for match in recent_matches %}
-                        <div class="deck-line">
-                            <span>
-                                {{ match.player1_name }} vs {{ match.player2_name }}
-                                —
-                                {% if match.winner_id == user.id %}
-                                    Victory
-                                {% elif match.winner_id == None %}
-                                    Draw
-                                {% else %}
-                                    Defeat
-                                {% endif %}
-                            </span>
-
-                            <strong>
-                                Round {{ match.total_rounds }}
-                            </strong>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="subtitle">No matches recorded yet.</p>
-            {% endif %}
+        <section class="profile-stat-grid-v117">
+            <article>
+                <span>Record</span>
+                <strong>{{ profile_stats.wins }}W / {{ profile_stats.losses }}L</strong>
+            </article>
+            <article>
+                <span>Total Matches</span>
+                <strong>{{ profile_stats.total_matches }}</strong>
+            </article>
+            <article>
+                <span>Winrate</span>
+                <strong>{{ profile_stats.winrate }}%</strong>
+            </article>
+            <article>
+                <span>Beta Tier</span>
+                <strong>{{ profile_stats.beta_tier }}</strong>
+            </article>
         </section>
 
-        <div class="actions">
-            <a href="{{ url_for('ranking') }}" class="btn">View Ranking</a>
-            <a href="{{ url_for('match_history') }}" class="btn btn-secondary">Match History</a>
-        </div>
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Quick Actions</span>
+                    <h2>Next move</h2>
+                </div>
+            </div>
+
+            <div class="menu-grid">
+                <a class="menu-card clickable-menu-card" href="{{ url_for('training') }}">
+                    <strong>Play Training</strong>
+                    <span>Earn XP, coins and mission progress.</span>
+                </a>
+
+                <a class="menu-card clickable-menu-card" href="{{ url_for('deck_builder') }}">
+                    <strong>Deck Builder</strong>
+                    <span>Improve your 30-card beta deck.</span>
+                </a>
+
+                <a class="menu-card clickable-menu-card" href="{{ url_for('shop') }}">
+                    <strong>Booster Shop</strong>
+                    <span>Open Element and Sigil packs.</span>
+                </a>
+
+                <a class="menu-card clickable-menu-card" href="{{ url_for('missions') }}">
+                    <strong>Missions</strong>
+                    <span>Claim XP and coin rewards.</span>
+                </a>
+
+                <a class="menu-card clickable-menu-card" href="{{ url_for('match_history') }}">
+                    <strong>Match History</strong>
+                    <span>Review recent battles.</span>
+                </a>
+
+                <a class="menu-card clickable-menu-card" href="{{ url_for('ranking') }}">
+                    <strong>Ranking</strong>
+                    <span>Compare your beta climb.</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Recent Battles</span>
+                    <h2>Last matches</h2>
+                </div>
+                <a href="{{ url_for('match_history') }}" class="btn btn-secondary small-btn">Full History</a>
+            </div>
+
+            <div class="match-history-list-v116">
+                {% for match in recent_matches %}
+                    <article class="match-card-v116">
+                        <div>
+                            <span class="progression-kicker">Match #{{ match.id }}</span>
+                            <h3>{{ match.player1_name }} vs {{ match.player2_name }}</h3>
+                            <p>
+                                Winner:
+                                <strong>
+                                    {% if match.winner_name %}
+                                        {{ match.winner_name }}
+                                    {% else %}
+                                        Draw
+                                    {% endif %}
+                                </strong>
+                            </p>
+                        </div>
+
+                        <div class="match-card-stats-v116">
+                            <div>
+                                <span>Result</span>
+                                <strong>{{ match.result }}</strong>
+                            </div>
+                            <div>
+                                <span>Rounds</span>
+                                <strong>{{ match.total_rounds }}</strong>
+                            </div>
+                            <div>
+                                <span>P1 HP</span>
+                                <strong>{{ match.player1_final_hp }}</strong>
+                            </div>
+                            <div>
+                                <span>P2 HP</span>
+                                <strong>{{ match.player2_final_hp }}</strong>
+                            </div>
+                        </div>
+
+                        <footer>
+                            <span>{{ match.created_at }}</span>
+                        </footer>
+                    </article>
+                {% else %}
+                    <p class="subtitle">No profile matches recorded yet.</p>
+                {% endfor %}
+            </div>
+        </section>
 
         <nav class="mobile-bottom-nav">
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('arena') }}">Arena</a>
+            <a href="{{ url_for('training') }}">Play</a>
             <a href="{{ url_for('deck_builder') }}">Deck</a>
-            <a href="{{ url_for('shop') }}">Shop</a>
+            <a href="{{ url_for('profile') }}" class="active">Profile</a>
         </nav>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
 </body>
 </html>

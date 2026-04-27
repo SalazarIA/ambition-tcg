@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1034, 'max': 2056, 'avg': 1569.0, 'median': 1611}
+- Monster summary: {'count': 21, 'min': 1203, 'max': 1938, 'avg': 1521.1, 'median': 1442}
 
 ### Starter Type Distribution
 
@@ -50,22 +50,22 @@
 
 - Global: 9
 - Fire: 6
-- Earth: 5
 - Water: 5
+- Earth: 5
 - Plant: 5
 
 ### Starter Sigil Distribution
 
 - Global: 9
 - Fury: 6
-- Resolve: 5
 - Insight: 5
+- Resolve: 5
 - Harmony: 5
 
 ### Starter Rarity Distribution
 
-- Common: 25
-- Uncommon: 5
+- Common: 20
+- Uncommon: 10
 
 
 ## Catalog Outliers
@@ -79,4 +79,4 @@
 
 ## Starter Deck Outliers
 
-- **Lobo Espinheiro** `plant_002` score=1034.0 cost=1 power=1034 reasons=high power per cost
+- No major starter deck outliers detected.

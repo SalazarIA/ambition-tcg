@@ -29,6 +29,7 @@
                 <div class="hero-actions">
                     {% if user %}
                         <a href="{{ url_for('training') }}" class="btn">Play Training</a>
+                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">Profile</a>
                         <a href="{{ url_for('progression') }}" class="btn btn-secondary">Progression</a>
                         <a href="{{ url_for('arena') }}" class="btn btn-secondary">Arena</a>
                     {% else %}
@@ -138,6 +139,11 @@
 
             <div class="menu-grid">
                 {% if user %}
+                    <a class="menu-card clickable-menu-card" href="{{ url_for('profile') }}">
+                        <strong>Profile</strong>
+                        <span>View your player identity, stats and recent battles.</span>
+                    </a>
+
                     <a class="menu-card clickable-menu-card" href="{{ url_for('progression') }}">
                         <strong>Progression</strong>
                         <span>Track XP, missions, boosters and next steps.</span>

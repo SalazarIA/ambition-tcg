@@ -770,6 +770,78 @@ def resend_verification():
 
 
 
+
+@app.route("/profile")
+def profile():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    total_matches = int(user.wins or 0) + int(user.losses or 0)
+    winrate = 0
+
+    if total_matches > 0:
+        winrate = round((int(user.wins or 0) / total_matches) * 100, 1)
+
+    if int(user.wins or 0) >= 10 and winrate >= 65:
+        beta_tier = "Champion"
+    elif int(user.wins or 0) >= 5 and winrate >= 55:
+        beta_tier = "Contender"
+    elif total_matches >= 3:
+        beta_tier = "Climber"
+    else:
+        beta_tier = "Unranked"
+
+    recent_matches = []
+
+    try:
+        recent_matches = (
+            MatchHistory.query
+            .filter(
+                (MatchHistory.player1_id == user.id) |
+                (MatchHistory.player2_id == user.id)
+            )
+            .order_by(MatchHistory.id.desc())
+            .limit(5)
+            .all()
+        )
+    except Exception as error:
+        print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+        recent_matches = []
+
+    profile_stats = {
+        "total_matches": total_matches,
+        "wins": int(user.wins or 0),
+        "losses": int(user.losses or 0),
+        "winrate": winrate,
+        "beta_tier": beta_tier,
+        "level": int(user.level or 1),
+        "xp": int(user.xp or 0),
+        "next_level_xp": user.next_level_xp,
+        "level_progress_percent": user.level_progress_percent,
+        "coins": int(user.coins or 0),
+    }
+
+    identity = {
+        "title": beta_tier,
+        "avatar_letter": (user.username or "A")[0].upper(),
+        "status": getattr(user, "account_status", "beta"),
+        "is_tester": bool(getattr(user, "is_tester", False)),
+        "is_verified": bool(getattr(user, "is_verified", False)),
+    }
+
+    return render_template(
+        "profile.html",
+        user=user,
+        profile_stats=profile_stats,
+        identity=identity,
+        recent_matches=recent_matches,
+    )
+
+
 @app.route("/ranking")
 def ranking():
     users = (

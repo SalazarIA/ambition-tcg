@@ -13,6 +13,7 @@ REQUIRED_FILES = [
     "templates/admin_dev_tools.html",
     "templates/terms.html",
     "templates/privacy.html",
+    "templates/profile.html",
     "static/css/style.css",
     "static/js/game.js",
     "static/js/card_ui_v103.js",
