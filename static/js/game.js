@@ -1,3 +1,54 @@
+
+function showPostMatchSummary(data) {
+    const modal = document.getElementById("post-match-modal");
+
+    if (!modal) {
+        return;
+    }
+
+    const result = data?.result || "UNKNOWN";
+    const rewards = data?.rewards || {};
+    const viewer = data?.viewer || {};
+    const opponent = data?.opponent || {};
+    const summary = data?.summary || {};
+
+    const title = summary.title || result;
+    const message = summary.message || "Match finished.";
+
+    DOM.setText("post-match-title", title);
+    DOM.setText("post-match-message", message);
+    DOM.setText("post-match-viewer-hp", String(viewer.hp ?? 0));
+    DOM.setText("post-match-opponent-hp", String(opponent.hp ?? 0));
+    DOM.setText("post-match-rounds", String(data?.rounds ?? 0));
+    DOM.setText("post-match-coins", `+${rewards.coins ?? 0}`);
+    DOM.setText("post-match-xp", `+${rewards.xp ?? 0}`);
+
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+}
+
+function closePostMatchSummary() {
+    const modal = document.getElementById("post-match-modal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const playAgain = document.getElementById("post-match-play-again");
+
+    if (playAgain) {
+        playAgain.addEventListener("click", () => {
+            closePostMatchSummary();
+            window.location.reload();
+        });
+    }
+});
+
 const socket = io({
     transports: ["websocket", "polling"],
 });
@@ -198,6 +249,12 @@ socket.on("battle_log", (data) => {
 socket.on("game_over", (data) => {
     logLine(`Game Over: ${data?.result || "Unknown"}`);
     setQueueStatus(`Game Over: ${data?.result || "Unknown"}`);
+});
+
+socket.on("post_match_summary", (data) => {
+    const title = data?.summary?.title || data?.result || "Match Complete";
+    logLine(`Post Match: ${title}`);
+    showPostMatchSummary(data);
 });
 
 socket.on("opponent_left", (data) => {

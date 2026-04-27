@@ -1307,6 +1307,80 @@ def emit_v105_match_end_summary(room_id, match, winner_key):
         print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
 
 
+
+def build_v107_post_match_payload(match, viewer_key, result, rewards):
+    try:
+        p1 = match.get("p1", {})
+        p2 = match.get("p2", {})
+
+        opponent_key = "p2" if viewer_key == "p1" else "p1"
+        viewer = match.get(viewer_key, {})
+        opponent = match.get(opponent_key, {})
+
+        return {
+            "result": result,
+            "mode": "training" if match.get("training") else "pvp",
+            "bot_difficulty": match.get("bot_difficulty"),
+            "rounds": int(match.get("round", 1) or 1),
+            "rewards": rewards or {"coins": 0, "xp": 0},
+            "viewer": {
+                "name": player_display_name(viewer),
+                "hp": max(0, int(viewer.get("hp", 0) or 0)),
+            },
+            "opponent": {
+                "name": player_display_name(opponent),
+                "hp": max(0, int(opponent.get("hp", 0) or 0)),
+            },
+            "players": {
+                "p1": {
+                    "name": player_display_name(p1),
+                    "hp": max(0, int(p1.get("hp", 0) or 0)),
+                },
+                "p2": {
+                    "name": player_display_name(p2),
+                    "hp": max(0, int(p2.get("hp", 0) or 0)),
+                },
+            },
+            "summary": {
+                "title": "Victory" if result == "WIN" else "Defeat" if result == "LOSE" else "Draw",
+                "message": "You won the duel." if result == "WIN" else "You were defeated." if result == "LOSE" else "The duel ended in a draw.",
+            },
+        }
+    except Exception as error:
+        print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+        return {
+            "result": result,
+            "mode": "training" if match.get("training") else "pvp",
+            "rounds": int(match.get("round", 1) or 1),
+            "rewards": rewards or {"coins": 0, "xp": 0},
+            "summary": {
+                "title": result,
+                "message": "Match finished.",
+            },
+        }
+
+
+def emit_v107_post_match_summary(match, viewer_key, result, rewards):
+    try:
+        viewer = match.get(viewer_key, {})
+
+        if viewer.get("is_bot"):
+            return
+
+        sid = viewer.get("sid")
+
+        if not sid:
+            return
+
+        socketio.emit(
+            "post_match_summary",
+            build_v107_post_match_payload(match, viewer_key, result, rewards),
+            to=sid,
+        )
+    except Exception as error:
+        print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+
+
 def end_match(room_id, winner_key):
     match = active_matches.get(room_id)
 
@@ -1328,6 +1402,11 @@ def end_match(room_id, winner_key):
         winner_name = None
         result = "DRAW"
 
+        emit_v107_post_match_summary(match, "p1", "DRAW", {"coins": 0, "xp": 0})
+
+        if not p2.get("is_bot"):
+            emit_v107_post_match_summary(match, "p2", "DRAW", {"coins": 0, "xp": 0})
+
     else:
         loser_key = "p2" if winner_key == "p1" else "p1"
 
@@ -1348,10 +1427,12 @@ def end_match(room_id, winner_key):
         loser_user = db.session.get(User, safe_user_id(loser)) if safe_user_id(loser) else None
 
         is_bot_match = bool(match.get("is_bot_match"))
+        winner_rewards = {"coins": 0, "xp": 0}
+        loser_rewards = {"coins": 0, "xp": 0}
 
         if winner_user:
             winner_user.wins += 1
-            apply_match_rewards(
+            winner_rewards = apply_match_rewards(
                 winner_user,
                 is_bot_match=is_bot_match,
                 did_win=True,
@@ -1364,7 +1445,7 @@ def end_match(room_id, winner_key):
 
         if loser_user:
             loser_user.losses += 1
-            apply_match_rewards(
+            loser_rewards = apply_match_rewards(
                 loser_user,
                 is_bot_match=is_bot_match,
                 did_win=False,
@@ -1373,6 +1454,9 @@ def end_match(room_id, winner_key):
 
             increment_mission(loser_user, "play_1_match", 1)
             increment_mission(loser_user, "play_3_matches", 1)
+
+        emit_v107_post_match_summary(match, winner_key, "WIN", winner_rewards)
+        emit_v107_post_match_summary(match, loser_key, "LOSE", loser_rewards)
 
     history = MatchHistory(
         player1_id=safe_user_id(p1),

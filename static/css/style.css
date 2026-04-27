@@ -3335,3 +3335,112 @@ a.menu-card:hover {
 .training-difficulty-box option {
     color: #111;
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.07 — POST MATCH EXPERIENCE
+   ========================================================= */
+
+.post-match-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background: rgba(5, 2, 12, 0.78);
+    backdrop-filter: blur(10px);
+}
+
+.post-match-overlay.hidden {
+    display: none;
+}
+
+.post-match-card {
+    width: min(560px, 100%);
+    border-radius: 28px;
+    border: 1px solid rgba(216,199,255,0.24);
+    background:
+        radial-gradient(circle at top left, rgba(138, 92, 246, 0.26), transparent 34%),
+        linear-gradient(145deg, rgba(22, 14, 42, 0.98), rgba(7, 5, 16, 0.98));
+    box-shadow: 0 28px 90px rgba(0,0,0,0.55);
+    padding: 28px;
+    color: #fff;
+}
+
+.post-match-kicker {
+    color: #d8c7ff;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.post-match-card h2 {
+    margin: 0;
+    font-size: clamp(30px, 7vw, 52px);
+    line-height: 0.95;
+}
+
+.post-match-card p {
+    margin: 12px 0 0;
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.5;
+}
+
+.post-match-stats,
+.post-match-rewards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.post-match-rewards {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.post-match-stats div,
+.post-match-rewards div {
+    border-radius: 18px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.06);
+    padding: 14px;
+}
+
+.post-match-stats span,
+.post-match-rewards span {
+    display: block;
+    color: var(--az-muted, #bfb3d3);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.post-match-stats strong,
+.post-match-rewards strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 24px;
+}
+
+.post-match-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+@media (max-width: 680px) {
+    .post-match-card {
+        padding: 22px;
+    }
+
+    .post-match-stats,
+    .post-match-rewards,
+    .post-match-actions {
+        grid-template-columns: 1fr;
+    }
+}

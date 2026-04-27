@@ -161,6 +161,48 @@
         </section>
     </main>
 
+
+    <div id="post-match-modal" class="post-match-overlay hidden" aria-hidden="true">
+        <section class="post-match-card">
+            <div class="post-match-kicker">Match Complete</div>
+            <h2 id="post-match-title">Result</h2>
+            <p id="post-match-message">The duel has ended.</p>
+
+            <div class="post-match-stats">
+                <div>
+                    <span>Your HP</span>
+                    <strong id="post-match-viewer-hp">0</strong>
+                </div>
+                <div>
+                    <span>Opponent HP</span>
+                    <strong id="post-match-opponent-hp">0</strong>
+                </div>
+                <div>
+                    <span>Rounds</span>
+                    <strong id="post-match-rounds">0</strong>
+                </div>
+            </div>
+
+            <div class="post-match-rewards">
+                <div>
+                    <span>Coins</span>
+                    <strong id="post-match-coins">+0</strong>
+                </div>
+                <div>
+                    <span>XP</span>
+                    <strong id="post-match-xp">+0</strong>
+                </div>
+            </div>
+
+            <div class="post-match-actions">
+                <button id="post-match-play-again" class="btn" type="button">Play Again</button>
+                <a class="btn btn-secondary" href="{{ url_for('deck_builder') }}">Edit Deck</a>
+                <a class="btn btn-secondary" href="{{ url_for('collection') }}">Collection</a>
+            </div>
+        </section>
+    </div>
+
+
     <script>
         window.AMBITIONZ_TRAINING_MODE = {{ "true" if training_mode else "false" }};
     </script>
