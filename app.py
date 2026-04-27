@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta, timezone
 import itsdangerous
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO, join_room
+from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sqlalchemy import text as sql_text
 from sqlalchemy import inspect as sql_inspect
@@ -56,6 +57,7 @@ app.wsgi_app = ProxyFix(
 )
 
 db.init_app(app)
+migrate = Migrate(app, db)
 
 socketio = SocketIO(
     app,

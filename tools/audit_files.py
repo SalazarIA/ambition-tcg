@@ -32,6 +32,7 @@ REQUIRED_FILES = [
     "routes/game.py",
     "sockets/__init__.py",
     "sockets/game_socket.py",
+    "docs/DATABASE_MIGRATIONS.md",
     "static/manifest.webmanifest",
 ]
 
