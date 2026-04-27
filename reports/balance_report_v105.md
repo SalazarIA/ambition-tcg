@@ -1,4 +1,4 @@
-# Ambitionz V1.05 Balance Report
+# Ambitionz V1.08 Balance Report
 
 ## Catalog Summary
 
@@ -35,32 +35,48 @@
 
 ## Starter/Beta Deck Summary
 
-- Starter deck IDs: 0
-- Starter deck cards found: 0
+- Starter deck IDs: 30
+- Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'median': 0}
+- Monster summary: {'count': 21, 'min': 1084, 'max': 1897, 'avg': 1592.0, 'median': 1592}
 
 ### Starter Type Distribution
 
-- None
+- Monster: 21
+- Spell: 6
+- Trap: 3
 
 ### Starter Element Distribution
 
-- None
+- Global: 9
+- Fire: 6
+- Plant: 5
+- Earth: 5
+- Water: 5
 
 ### Starter Sigil Distribution
 
-- None
+- Global: 9
+- Fury: 6
+- Harmony: 5
+- Resolve: 5
+- Insight: 5
 
 ### Starter Rarity Distribution
 
-- None
+- Common: 24
+- Uncommon: 6
 
 
 ## Catalog Outliers
 
-- No major outliers detected.
+- **Fada do Bosque** `plant_005` score=1085.0 cost=1 power=1085 sigil=Harmony rarity=Common reasons=high power per cost
+- **Serpente Abissal** `water_002` score=1084.0 cost=1 power=1084 sigil=Insight rarity=Common reasons=high power per cost
+- **Guardiao das Mares** `water_001` score=1067.0 cost=1 power=1067 sigil=Insight rarity=Common reasons=high power per cost
+- **Ent Florido** `plant_003` score=1051.0 cost=1 power=1051 sigil=Harmony rarity=Common reasons=high power per cost
+- **Lobo Espinheiro** `plant_002` score=1034.0 cost=1 power=1034 sigil=Harmony rarity=Common reasons=high power per cost
+- **Druida das Raizes** `plant_001` score=1017.0 cost=1 power=1017 sigil=Harmony rarity=Common reasons=high power per cost
 
 ## Starter Deck Outliers
 
-- No major starter deck outliers detected.
+- **Serpente Abissal** `water_002` score=1084.0 cost=1 power=1084 reasons=high power per cost

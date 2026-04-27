@@ -28,9 +28,41 @@ DECK_RULES = {
 }
 
 
-STARTER_COLLECTION_MONSTERS_PER_ELEMENT = 18
-STARTER_COLLECTION_SPELLS = 12
-STARTER_COLLECTION_TRAPS = 8
+# =========================================================
+# AMBITIONZ V1.08 — RANDOM STARTER DECK RULES
+# =========================================================
+
+STARTER_DECK_MONSTER_RATIO = 0.70
+STARTER_DECK_SPELL_RATIO = 0.20
+STARTER_DECK_TRAP_RATIO = 0.10
+
+
+def get_fixed_starter_deck_ids():
+    """Compatibility helper for reports.
+
+    The starter deck is intentionally generated from the beta starter rules.
+    It returns one valid 30-card sample deck:
+    - 21 monsters
+    - 6 spells
+    - 3 traps
+    - monsters distributed across Fire, Water, Earth and Plant
+    """
+    return load_card_ids(create_starter_deck())
+
+
+def get_fixed_starter_collection_ids():
+    """Compatibility helper for reports and tools."""
+    return load_card_ids(create_starter_collection())
+
+
+def validate_fixed_starter_deck_catalog():
+    missing = []
+
+    for card_id in get_fixed_starter_deck_ids():
+        if not get_card_by_id(card_id):
+            missing.append(card_id)
+
+    return missing
 
 
 def load_card_ids(json_text):
@@ -116,15 +148,16 @@ def create_starter_deck_from_collection(collection_ids):
 
     deck_ids = []
 
-    monsters_by_element = {}
+    valid_elements = ["Fire", "Water", "Earth", "Plant"]
+    monsters_by_element = {
+        element: [card for card in monsters if card["element"] == element]
+        for element in valid_elements
+    }
 
-    for element in ELEMENTS:
-        monsters_by_element[element] = [card for card in monsters if card["element"] == element]
+    base_per_element = STARTER_MONSTER_COUNT // len(valid_elements)
+    remainder = STARTER_MONSTER_COUNT % len(valid_elements)
 
-    base_per_element = STARTER_MONSTER_COUNT // len(ELEMENTS)
-    remainder = STARTER_MONSTER_COUNT % len(ELEMENTS)
-
-    for index, element in enumerate(ELEMENTS):
+    for index, element in enumerate(valid_elements):
         amount = base_per_element
 
         if index < remainder:

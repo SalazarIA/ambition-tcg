@@ -1,15 +1,13 @@
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 import statistics
 import sys
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-
-
-VALID_ELEMENTS = ["Fire", "Water", "Earth", "Plant", "Global", "Neutral"]
-VALID_SIGILS = ["Fury", "Resolve", "Insight", "Ruin", "Harmony", "Global", "None"]
-VALID_RARITIES = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+from game.cards import CARD_CATALOG, get_card_by_id
+from game.deck import get_fixed_starter_deck_ids
 
 
 def safe_int(value, default=0):
@@ -19,45 +17,22 @@ def safe_int(value, default=0):
         return default
 
 
-def get_cards():
-    from game.cards import CARD_CATALOG
-    return list(CARD_CATALOG)
+def card_score(card):
+    card_type = card.get("type")
+
+    if card_type != "Monster":
+        return 0
+
+    power = safe_int(card.get("power"))
+    cost = max(1, safe_int(card.get("cost"), 1))
+
+    return round(power / cost, 2)
 
 
-def get_beta_deck_cards():
-    cards = get_cards()
-
-    try:
-        from game.deck import STARTER_DECK_IDS
-        starter_ids = list(STARTER_DECK_IDS)
-    except Exception:
-        starter_ids = []
-
-    by_id = {card.get("id"): card for card in cards}
-
-    deck_cards = []
-    missing_ids = []
-
-    for card_id in starter_ids:
-        card = by_id.get(card_id)
-
-        if card:
-            deck_cards.append(card)
-        else:
-            missing_ids.append(card_id)
-
-    return deck_cards, starter_ids, missing_ids
-
-
-def summarize_distribution(cards, field):
-    return Counter(str(card.get(field, "Unknown")) for card in cards)
-
-
-def summarize_monster_power(cards):
+def summarize_monsters(cards):
     monsters = [card for card in cards if card.get("type") == "Monster"]
-    powers = [safe_int(card.get("power")) for card in monsters]
 
-    if not powers:
+    if not monsters:
         return {
             "count": 0,
             "min": 0,
@@ -66,90 +41,15 @@ def summarize_monster_power(cards):
             "median": 0,
         }
 
+    powers = [safe_int(card.get("power")) for card in monsters]
+
     return {
-        "count": len(powers),
+        "count": len(monsters),
         "min": min(powers),
         "max": max(powers),
-        "avg": round(sum(powers) / len(powers), 2),
-        "median": round(statistics.median(powers), 2),
+        "avg": round(sum(powers) / len(powers), 1),
+        "median": round(statistics.median(powers), 1),
     }
-
-
-def expected_power_for_cost(cost):
-    # Baseline inicial para o beta.
-    # Não é regra final; serve para detectar outliers.
-    return 650 + (safe_int(cost) * 280)
-
-
-def score_card_balance(card):
-    card_type = card.get("type")
-    cost = safe_int(card.get("cost"))
-    power = safe_int(card.get("power"))
-    sigil = str(card.get("sigil", "Global"))
-    rarity = str(card.get("rarity", "Common"))
-
-    score = 0
-    reasons = []
-
-    if cost < 0:
-        score += 100
-        reasons.append("negative cost")
-
-    if cost > 8:
-        score += 20
-        reasons.append("high cost")
-
-    if card_type == "Monster":
-        expected = expected_power_for_cost(cost)
-        diff = power - expected
-
-        if diff > 700:
-            score += 45
-            reasons.append(f"power too high for cost (+{diff})")
-        elif diff > 450:
-            score += 25
-            reasons.append(f"power above curve (+{diff})")
-        elif diff < -700:
-            score += 30
-            reasons.append(f"power too low for cost ({diff})")
-
-        if power <= 0:
-            score += 100
-            reasons.append("monster with no power")
-
-    if sigil == "Fury" and card_type == "Monster":
-        score += 5
-
-    if sigil == "Ruin":
-        score += 8
-
-    if rarity in {"Epic", "Legendary"}:
-        score -= 5
-
-    return max(score, 0), reasons
-
-
-def find_outliers(cards):
-    outliers = []
-
-    for card in cards:
-        score, reasons = score_card_balance(card)
-
-        if score >= 25:
-            outliers.append({
-                "id": card.get("id"),
-                "name": card.get("name"),
-                "type": card.get("type"),
-                "element": card.get("element"),
-                "cost": card.get("cost"),
-                "power": card.get("power"),
-                "sigil": card.get("sigil"),
-                "rarity": card.get("rarity"),
-                "score": score,
-                "reasons": reasons,
-            })
-
-    return sorted(outliers, key=lambda item: item["score"], reverse=True)
 
 
 def format_counter(counter):
@@ -164,49 +64,108 @@ def format_counter(counter):
     return "\n".join(lines) + "\n"
 
 
+def find_outliers(cards):
+    outliers = []
+
+    for card in cards:
+        if card.get("type") != "Monster":
+            continue
+
+        score = card_score(card)
+        cost = safe_int(card.get("cost"))
+        power = safe_int(card.get("power"))
+        reasons = []
+
+        if cost <= 1 and power >= 1300:
+            reasons.append("low-cost high-power")
+
+        if cost <= 2 and power >= 1500:
+            reasons.append("aggressive stat spike")
+
+        if cost >= 5 and power <= 1600:
+            reasons.append("expensive low-power")
+
+        if score >= 700:
+            reasons.append("high power per cost")
+
+        if reasons:
+            outliers.append(
+                {
+                    "id": card.get("id"),
+                    "name": card.get("name"),
+                    "type": card.get("type"),
+                    "element": card.get("element"),
+                    "sigil": card.get("sigil"),
+                    "rarity": card.get("rarity"),
+                    "cost": cost,
+                    "power": power,
+                    "score": score,
+                    "reasons": reasons,
+                }
+            )
+
+    return sorted(outliers, key=lambda item: item["score"], reverse=True)
+
+
+def cards_from_ids(card_ids):
+    cards = []
+
+    for card_id in card_ids:
+        card = get_card_by_id(card_id)
+
+        if card:
+            cards.append(card)
+
+    return cards
+
+
 def generate_report():
-    cards = get_cards()
-    deck_cards, starter_ids, missing_ids = get_beta_deck_cards()
+    cards = list(CARD_CATALOG)
+    starter_deck_ids = get_fixed_starter_deck_ids()
+    starter_cards = cards_from_ids(starter_deck_ids)
 
-    all_type_dist = summarize_distribution(cards, "type")
-    all_element_dist = summarize_distribution(cards, "element")
-    all_sigil_dist = summarize_distribution(cards, "sigil")
-    all_rarity_dist = summarize_distribution(cards, "rarity")
-    all_power_summary = summarize_monster_power(cards)
+    missing_starter_ids = [
+        card_id for card_id in starter_deck_ids if not get_card_by_id(card_id)
+    ]
 
-    deck_type_dist = summarize_distribution(deck_cards, "type")
-    deck_element_dist = summarize_distribution(deck_cards, "element")
-    deck_sigil_dist = summarize_distribution(deck_cards, "sigil")
-    deck_rarity_dist = summarize_distribution(deck_cards, "rarity")
-    deck_power_summary = summarize_monster_power(deck_cards)
+    type_dist = Counter(card.get("type", "Unknown") for card in cards)
+    element_dist = Counter(card.get("element", "Unknown") for card in cards)
+    sigil_dist = Counter(card.get("sigil", "Unknown") for card in cards)
+    rarity_dist = Counter(card.get("rarity", "Unknown") for card in cards)
+
+    deck_type_dist = Counter(card.get("type", "Unknown") for card in starter_cards)
+    deck_element_dist = Counter(card.get("element", "Unknown") for card in starter_cards)
+    deck_sigil_dist = Counter(card.get("sigil", "Unknown") for card in starter_cards)
+    deck_rarity_dist = Counter(card.get("rarity", "Unknown") for card in starter_cards)
 
     outliers = find_outliers(cards)
-    deck_outliers = find_outliers(deck_cards)
+    deck_outliers = find_outliers(starter_cards)
 
     report = []
 
-    report.append("# Ambitionz V1.05 Balance Report\n")
+    report.append("# Ambitionz V1.08 Balance Report\n")
+
     report.append("## Catalog Summary\n")
     report.append(f"- Total cards: {len(cards)}")
-    report.append(f"- Monster summary: {all_power_summary}\n")
+    report.append(f"- Monster summary: {summarize_monsters(cards)}\n")
 
     report.append("### Type Distribution\n")
-    report.append(format_counter(all_type_dist))
+    report.append(format_counter(type_dist))
 
     report.append("### Element Distribution\n")
-    report.append(format_counter(all_element_dist))
+    report.append(format_counter(element_dist))
 
     report.append("### Sigil Distribution\n")
-    report.append(format_counter(all_sigil_dist))
+    report.append(format_counter(sigil_dist))
 
     report.append("### Rarity Distribution\n")
-    report.append(format_counter(all_rarity_dist))
+    report.append(format_counter(rarity_dist))
 
     report.append("\n## Starter/Beta Deck Summary\n")
-    report.append(f"- Starter deck IDs: {len(starter_ids)}")
-    report.append(f"- Starter deck cards found: {len(deck_cards)}")
-    report.append(f"- Missing starter IDs: {missing_ids}")
-    report.append(f"- Monster summary: {deck_power_summary}\n")
+    report.append(f"- Starter deck IDs: {len(starter_deck_ids)}")
+    report.append(f"- Starter deck cards found: {len(starter_cards)}")
+    report.append(f"- Missing starter IDs: {missing_starter_ids}")
+    report.append(f"- Monster summary: {summarize_monsters(starter_cards)}\n")
 
     report.append("### Starter Type Distribution\n")
     report.append(format_counter(deck_type_dist))
