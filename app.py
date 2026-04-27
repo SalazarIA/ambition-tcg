@@ -2670,6 +2670,18 @@ def admin_balance():
         return redirect("/admin/reports")
 
 
+
+
+@app.route("/beta-launch")
+def beta_launch():
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    return render_template("beta_launch.html", user=current_user())
+
+
 @app.route("/admin")
 def admin():
     auth_redirect = admin_required_redirect()
