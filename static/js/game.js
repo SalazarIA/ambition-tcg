@@ -1,4 +1,85 @@
 
+// =========================================================
+// AMBITIONZ V1.12 — BATTLE UI POLISH + OVERREACH FEEDBACK
+// =========================================================
+
+function setElementClass(id, className, enabled) {
+    const el = DOM.byId(id);
+
+    if (!el) {
+        return;
+    }
+
+    el.classList.toggle(className, Boolean(enabled));
+}
+
+function setBodyBattleState(state) {
+    const body = document.body;
+
+    if (!body) {
+        return;
+    }
+
+    const me = state?.me || {};
+    const enemy = state?.enemy || {};
+    const phase = String(state?.phase || "").toLowerCase();
+
+    body.classList.toggle("battle-active-v112", Boolean(state));
+    body.classList.toggle("battle-resolving-v112", Boolean(state?.resolving) || phase.includes("resolve"));
+    body.classList.toggle("battle-ready-v112", Boolean(me.ready));
+    body.classList.toggle("enemy-ready-v112", Boolean(enemy.ready));
+}
+
+function updateReadyVisuals(state) {
+    const me = state?.me || {};
+    const enemy = state?.enemy || {};
+
+    setElementClass("my-ready", "ready-pill-v112", Boolean(me.ready));
+    setElementClass("enemy-ready", "ready-pill-v112", Boolean(enemy.ready));
+    setElementClass("ready-btn", "ready-btn-active-v112", Boolean(me.ready));
+}
+
+function updateIntentVisuals() {
+    const overreachActive = selectedIntent === "Overreach";
+
+    document.body.classList.toggle("overreach-armed-v112", overreachActive);
+
+    DOM.qsa(".intent-btn-v103").forEach((button) => {
+        const isOverreach = button.dataset.intent === "Overreach";
+        button.classList.toggle("overreach-btn-v112", isOverreach);
+        button.classList.toggle("overreach-active-v112", isOverreach && overreachActive);
+    });
+
+    const status = DOM.byId("queue-status");
+
+    if (status) {
+        status.classList.toggle("overreach-status-v112", overreachActive);
+    }
+}
+
+function normalizeBattleLogMessage(message) {
+    const text = String(message || "Battle event.");
+
+    if (text.toLowerCase().includes("overreach")) {
+        return "⚠ OVERREACH: " + text;
+    }
+
+    if (text.toLowerCase().includes("ready")) {
+        return "READY: " + text;
+    }
+
+    if (text.toLowerCase().includes("damage")) {
+        return "DAMAGE: " + text;
+    }
+
+    if (text.toLowerCase().includes("heal")) {
+        return "HEAL: " + text;
+    }
+
+    return text;
+}
+
+
 function showPostMatchSummary(data) {
     const modal = document.getElementById("post-match-modal");
 
@@ -82,7 +163,7 @@ const DOM = window.AmbitionzDOM || {
 };
 
 function logLine(message) {
-    DOM.appendLog("battle-log", message || "Battle event.");
+    DOM.appendLog("battle-log", normalizeBattleLogMessage(message));
 }
 
 function renderCard(card, options = {}) {
@@ -174,6 +255,9 @@ function renderState(state) {
     updateHud(latestState);
     renderField(latestState);
     renderHand(latestState);
+    setBodyBattleState(latestState);
+    updateReadyVisuals(latestState);
+    updateIntentVisuals();
 }
 
 function setQueueStatus(message) {
@@ -187,8 +271,16 @@ function setIntent(intent) {
         button.classList.toggle("active", button.dataset.intent === selectedIntent);
     });
 
+    updateIntentVisuals();
+
     socket.emit("set_intent", { intent: selectedIntent });
-    logLine(`Intent selected: ${selectedIntent}`);
+
+    if (selectedIntent === "Overreach") {
+        setQueueStatus("Overreach armed: high pressure, high risk.");
+        logLine("Overreach selected. Commit only when the reward is worth the exposure.");
+    } else {
+        logLine(`Intent selected: ${selectedIntent}`);
+    }
 }
 
 function bootArenaControls() {
@@ -212,6 +304,8 @@ function bootArenaControls() {
 
     DOM.onClick("ready-btn", () => {
         socket.emit("declare_ready");
+        setQueueStatus("Ready declared. Waiting for battle resolution.");
+        logLine("Ready declared.");
     });
 
     setIntent(selectedIntent);
@@ -234,6 +328,7 @@ socket.on("queue_status", (data) => {
 });
 
 socket.on("match_found", (data) => {
+    document.body.classList.remove("overreach-armed-v112");
     setQueueStatus(data?.msg || "Match found.");
     logLine(data?.msg || "Match found.");
 });

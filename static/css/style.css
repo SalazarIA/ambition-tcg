@@ -3979,3 +3979,140 @@ a.menu-card:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.12 — BATTLE UI POLISH + OVERREACH FEEDBACK
+   ========================================================= */
+
+.battle-active-v112 .arena-shell-v103 {
+    box-shadow: 0 0 0 1px rgba(216,199,255,0.08), 0 28px 90px rgba(0,0,0,0.28);
+}
+
+.battle-resolving-v112 .arena-round-panel {
+    border-color: rgba(255, 210, 120, 0.38);
+    background:
+        radial-gradient(circle at top, rgba(255, 210, 120, 0.16), transparent 40%),
+        rgba(255,255,255,0.055);
+}
+
+.ready-pill-v112 {
+    color: #c7ffdf !important;
+    text-shadow: 0 0 14px rgba(80, 255, 150, 0.45);
+}
+
+.ready-btn-active-v112 {
+    border-color: rgba(80, 255, 150, 0.35) !important;
+    background: rgba(80, 255, 150, 0.12) !important;
+    color: #dcffe9 !important;
+}
+
+.intent-btn-v103 {
+    position: relative;
+    overflow: hidden;
+}
+
+.intent-btn-v103::after {
+    content: "";
+    position: absolute;
+    inset: auto 12px 8px 12px;
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(216,199,255,0.0);
+    transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.intent-btn-v103.active::after {
+    background: rgba(216,199,255,0.68);
+    box-shadow: 0 0 18px rgba(216,199,255,0.38);
+}
+
+.overreach-btn-v112 {
+    border-color: rgba(255, 116, 92, 0.24) !important;
+}
+
+.overreach-btn-v112::before {
+    content: "RISK";
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 9px;
+    font-weight: 1000;
+    letter-spacing: 0.08em;
+    color: rgba(255, 200, 190, 0.78);
+}
+
+.overreach-active-v112,
+.overreach-armed-v112 .overreach-btn-v112 {
+    border-color: rgba(255, 116, 92, 0.58) !important;
+    background:
+        radial-gradient(circle at top left, rgba(255, 116, 92, 0.22), transparent 45%),
+        rgba(255,255,255,0.07) !important;
+    box-shadow: 0 0 24px rgba(255, 116, 92, 0.16);
+}
+
+.overreach-armed-v112 .arena-round-panel {
+    border-color: rgba(255, 116, 92, 0.34);
+}
+
+.overreach-status-v112 {
+    border-color: rgba(255, 116, 92, 0.32) !important;
+    background: rgba(255, 116, 92, 0.10) !important;
+    color: #ffe1db !important;
+}
+
+.overreach-warning-v112 {
+    display: none;
+    margin: 10px 0 0;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 116, 92, 0.22);
+    background: rgba(255, 116, 92, 0.08);
+    color: #ffd8d0;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.overreach-armed-v112 .overreach-warning-v112 {
+    display: block;
+}
+
+.battle-log-v103 .log-line:first-child,
+.battle-log-v103 div:first-child,
+.battle-log-v103 p:first-child {
+    border-color: rgba(216,199,255,0.22);
+    background: rgba(255,255,255,0.075);
+}
+
+.battle-log-v103 .log-line,
+.battle-log-v103 div,
+.battle-log-v103 p {
+    border-left: 3px solid rgba(216,199,255,0.18);
+}
+
+.battle-log-v103 .log-line:nth-child(1) {
+    animation: battleLogPulseV112 420ms ease-out;
+}
+
+@keyframes battleLogPulseV112 {
+    from {
+        transform: translateY(-3px);
+        opacity: 0.35;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.arena-player-panel {
+    transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.battle-ready-v112 .arena-player-panel:not(.enemy) {
+    border-color: rgba(80, 255, 150, 0.24);
+}
+
+.enemy-ready-v112 .arena-player-panel.enemy {
+    border-color: rgba(80, 255, 150, 0.24);
+}
