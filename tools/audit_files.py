@@ -40,6 +40,8 @@ REQUIRED_FILES = [
     "game/card_identity_applied.py",
     "tools/applied_card_identity_report.py",
     "templates/progression.html",
+    "templates/admin_reports.html",
+    "templates/admin_balance.html",
     "static/manifest.webmanifest",
 ]
 

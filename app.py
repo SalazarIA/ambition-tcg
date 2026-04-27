@@ -2007,6 +2007,120 @@ def training():
 
 
 
+@app.route("/admin/reports")
+def admin_reports():
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    reports = [
+        {
+            "title": "Balance Report",
+            "description": "Catalog distribution, starter deck summary and outlier detection.",
+            "endpoint": "admin_balance",
+            "cta": "Open Balance",
+            "status": "Active",
+        },
+        {
+            "title": "System Health",
+            "description": "Environment, database, SMTP, users, matches and logs.",
+            "endpoint": "admin_system",
+            "cta": "Open System",
+            "status": "Active",
+        },
+        {
+            "title": "Feedback Ops",
+            "description": "Tester feedback and beta report pipeline.",
+            "endpoint": "admin_feedback",
+            "cta": "Open Feedback",
+            "status": "Active",
+        },
+        {
+            "title": "User Ops",
+            "description": "Users, tester status, verification and account actions.",
+            "endpoint": "admin_users",
+            "cta": "Open Users",
+            "status": "Active",
+        },
+        {
+            "title": "Dev Tools",
+            "description": "SMTP test, cleanup tools and dangerous beta operations.",
+            "endpoint": "admin_dev_tools",
+            "cta": "Open Tools",
+            "status": "Restricted",
+        },
+    ]
+
+    return render_template(
+        "admin_reports.html",
+        user=current_user(),
+        reports=reports,
+    )
+
+
+@app.route("/admin/balance")
+def admin_balance():
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    try:
+        from collections import Counter
+        from game.cards import CARD_CATALOG
+        from game.deck import get_fixed_starter_deck_ids
+        from tools.balance_report import cards_from_ids, find_outliers, summarize_monsters
+
+        cards = list(CARD_CATALOG)
+        starter_ids = get_fixed_starter_deck_ids()
+        starter_cards = cards_from_ids(starter_ids)
+
+        type_dist = Counter(card.get("type", "Unknown") for card in cards)
+        element_dist = Counter(card.get("element", "Unknown") for card in cards)
+        sigil_dist = Counter(card.get("sigil", "Unknown") for card in cards)
+        rarity_dist = Counter(card.get("rarity", "Unknown") for card in cards)
+
+        starter_type_dist = Counter(card.get("type", "Unknown") for card in starter_cards)
+        starter_element_dist = Counter(card.get("element", "Unknown") for card in starter_cards)
+        starter_sigil_dist = Counter(card.get("sigil", "Unknown") for card in starter_cards)
+        starter_rarity_dist = Counter(card.get("rarity", "Unknown") for card in starter_cards)
+
+        outliers = find_outliers(cards)[:12]
+        starter_outliers = find_outliers(starter_cards)
+
+        missing_starter_ids = [
+            card_id for card_id in starter_ids
+            if not any(card.get("id") == card_id for card in starter_cards)
+        ]
+
+        return render_template(
+            "admin_balance.html",
+            user=current_user(),
+            total_cards=len(cards),
+            monster_summary=summarize_monsters(cards),
+            starter_total=len(starter_ids),
+            starter_found=len(starter_cards),
+            missing_starter_ids=missing_starter_ids,
+            starter_monster_summary=summarize_monsters(starter_cards),
+            type_dist=type_dist,
+            element_dist=element_dist,
+            sigil_dist=sigil_dist,
+            rarity_dist=rarity_dist,
+            starter_type_dist=starter_type_dist,
+            starter_element_dist=starter_element_dist,
+            starter_sigil_dist=starter_sigil_dist,
+            starter_rarity_dist=starter_rarity_dist,
+            outliers=outliers,
+            starter_outliers=starter_outliers,
+        )
+
+    except Exception as error:
+        print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+        flash("Could not load balance dashboard. Check server logs.")
+        return redirect("/admin/reports")
+
+
 @app.route("/admin")
 def admin():
     auth_redirect = admin_required_redirect()

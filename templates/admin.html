@@ -29,6 +29,16 @@
             <h2>Live Ops</h2>
 
             <div class="menu-grid">
+                <a class="menu-card clickable-menu-card" href="{{ url_for('admin_reports') }}">
+                    <strong>Reports Hub</strong>
+                    <span>Balance, telemetry and live ops reports</span>
+                </a>
+
+                <a class="menu-card clickable-menu-card" href="{{ url_for('admin_balance') }}">
+                    <strong>Balance</strong>
+                    <span>Catalog and starter deck health</span>
+                </a>
+
                 <a class="menu-card clickable-menu-card" href="{{ url_for('admin_system') }}">
                     <strong>System</strong>
                     <span>Health, SMTP and logs</span>

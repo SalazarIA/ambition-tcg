@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Reports - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Admin Reports</h1>
+                <p>Operational intelligence for Ambitionz beta.</p>
+            </div>
+
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="admin-report-hero">
+            <span class="progression-kicker">Live Ops</span>
+            <h2>Reports Hub</h2>
+            <p>
+                Centralized dashboards for balance, system health, users, feedback and controlled beta operations.
+            </p>
+        </section>
+
+        <section class="admin-report-grid">
+            {% for report in reports %}
+                <article class="admin-report-card">
+                    <div>
+                        <span class="admin-report-status">{{ report.status }}</span>
+                        <h3>{{ report.title }}</h3>
+                        <p>{{ report.description }}</p>
+                    </div>
+
+                    <a href="{{ url_for(report.endpoint) }}" class="btn btn-secondary full-btn">{{ report.cta }}</a>
+                </article>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>
