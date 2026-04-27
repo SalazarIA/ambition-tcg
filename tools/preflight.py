@@ -16,6 +16,7 @@ from tools.balance_report import generate_report, main as generate_balance_repor
 from tools.match_telemetry_report import generate_report as generate_match_telemetry_report
 from tools.rewards_report import main as generate_rewards_report_file
 from tools.card_identity_report import main as generate_card_identity_report_file
+from tools.progression_loop_report import main as generate_progression_loop_report_file
 
 
 def run_section(title, func):
@@ -52,6 +53,7 @@ def main():
     all_errors += run_section("MATCH TELEMETRY REPORT", lambda: [] if generate_match_telemetry_report() else ["Match telemetry report failed"])
     all_errors += run_section("REWARDS REPORT", lambda: [] if generate_rewards_report_file() is None else [])
     all_errors += run_section("CARD IDENTITY REPORT", lambda: [] if generate_card_identity_report_file() is None else [])
+    all_errors += run_section("PROGRESSION LOOP REPORT", lambda: [] if generate_progression_loop_report_file() is None else [])
 
     print("\\n" + "=" * 72)
     print("AMBITIONZ PREFLIGHT RESULT")

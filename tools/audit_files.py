@@ -35,6 +35,8 @@ REQUIRED_FILES = [
     "docs/DATABASE_MIGRATIONS.md",
     "game/card_identity.py",
     "tools/card_identity_report.py",
+    "game/progression_loop.py",
+    "tools/progression_loop_report.py",
     "static/manifest.webmanifest",
 ]
 
