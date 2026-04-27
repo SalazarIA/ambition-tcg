@@ -25,6 +25,13 @@ REQUIRED_FILES = [
     "services/battle_summary.py",
     "services/reward_tuning.py",
     "tools/rewards_report.py",
+    "routes/__init__.py",
+    "routes/public.py",
+    "routes/auth.py",
+    "routes/admin.py",
+    "routes/game.py",
+    "sockets/__init__.py",
+    "sockets/game_socket.py",
     "static/manifest.webmanifest",
 ]
 
