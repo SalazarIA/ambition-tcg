@@ -104,6 +104,78 @@
             </article>
         </section>
 
+
+        <section class="deck-status profile-cosmetics-v118">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Cosmetics Foundation</span>
+                    <h2>Equipped Identity Slots</h2>
+                </div>
+                <span class="profile-cosmetic-note-v118">Visual only</span>
+            </div>
+
+            <div class="profile-cosmetic-grid-v118">
+                {% for slot in cosmetics.slots %}
+                    <article class="profile-cosmetic-slot-v118">
+                        <span>{{ slot.label }}</span>
+                        <strong>{{ slot.value }}</strong>
+                        <p>{{ slot.description }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="deck-status profile-cosmetics-v118">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Future Inventory</span>
+                    <h2>Cosmetic Collection Base</h2>
+                </div>
+            </div>
+
+            <div class="profile-cosmetic-inventory-v118">
+                <article>
+                    <h3>Titles</h3>
+                    {% for item in cosmetics.inventory.titles %}
+                        <div class="deck-line">
+                            <span>{{ item.name }}</span>
+                            <strong>{{ item.rarity }}</strong>
+                        </div>
+                    {% endfor %}
+                </article>
+
+                <article>
+                    <h3>Avatar Frames</h3>
+                    {% for item in cosmetics.inventory.avatar_frames %}
+                        <div class="deck-line">
+                            <span>{{ item.name }}</span>
+                            <strong>{{ item.rarity }}</strong>
+                        </div>
+                    {% endfor %}
+                </article>
+
+                <article>
+                    <h3>Card Backs</h3>
+                    {% for item in cosmetics.inventory.card_backs %}
+                        <div class="deck-line">
+                            <span>{{ item.name }}</span>
+                            <strong>{{ item.rarity }}</strong>
+                        </div>
+                    {% endfor %}
+                </article>
+
+                <article>
+                    <h3>Arena Skins</h3>
+                    {% for item in cosmetics.inventory.arena_skins %}
+                        <div class="deck-line">
+                            <span>{{ item.name }}</span>
+                            <strong>{{ item.rarity }}</strong>
+                        </div>
+                    {% endfor %}
+                </article>
+            </div>
+        </section>
+
         <section class="deck-status">
             <div class="section-title-row">
                 <div>

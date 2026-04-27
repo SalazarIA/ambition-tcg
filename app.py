@@ -771,6 +771,134 @@ def resend_verification():
 
 
 
+
+# =========================================================
+# AMBITIONZ V1.18 — COSMETIC INVENTORY FOUNDATION
+# =========================================================
+
+COSMETIC_CATALOG_V118 = {
+    "titles": [
+        {
+            "id": "beta_climber",
+            "name": "Beta Climber",
+            "rarity": "Common",
+            "unlock": "Default beta title.",
+        },
+        {
+            "id": "arena_spark",
+            "name": "Arena Spark",
+            "rarity": "Common",
+            "unlock": "Play early beta matches.",
+        },
+        {
+            "id": "overreach_tactician",
+            "name": "Overreach Tactician",
+            "rarity": "Uncommon",
+            "unlock": "Future reward for Overreach mastery.",
+        },
+    ],
+    "avatar_frames": [
+        {
+            "id": "plain_beta_frame",
+            "name": "Plain Beta Frame",
+            "rarity": "Common",
+            "unlock": "Default profile frame.",
+        },
+        {
+            "id": "violet_founder_frame",
+            "name": "Violet Founder Frame",
+            "rarity": "Uncommon",
+            "unlock": "Future founder cosmetic.",
+        },
+    ],
+    "card_backs": [
+        {
+            "id": "default_ambition_back",
+            "name": "Default Ambition Back",
+            "rarity": "Common",
+            "unlock": "Default card back.",
+        },
+        {
+            "id": "sigil_mark_back",
+            "name": "Sigil Mark Back",
+            "rarity": "Uncommon",
+            "unlock": "Future Sigil progression reward.",
+        },
+    ],
+    "arena_skins": [
+        {
+            "id": "beta_arena",
+            "name": "Beta Arena",
+            "rarity": "Common",
+            "unlock": "Default arena skin.",
+        },
+        {
+            "id": "void_table",
+            "name": "Void Table",
+            "rarity": "Uncommon",
+            "unlock": "Future season reward.",
+        },
+    ],
+}
+
+
+def get_cosmetic_foundation_for_user(user, profile_stats=None):
+    if not user:
+        return {
+            "equipped": {},
+            "inventory": {},
+            "slots": [],
+        }
+
+    beta_tier = "Unranked"
+
+    if profile_stats:
+        beta_tier = profile_stats.get("beta_tier", "Unranked")
+
+    equipped = {
+        "title": beta_tier if beta_tier != "Unranked" else "Beta Climber",
+        "avatar_frame": "Plain Beta Frame",
+        "card_back": "Default Ambition Back",
+        "arena_skin": "Beta Arena",
+    }
+
+    inventory = {
+        "titles": COSMETIC_CATALOG_V118["titles"],
+        "avatar_frames": COSMETIC_CATALOG_V118["avatar_frames"],
+        "card_backs": COSMETIC_CATALOG_V118["card_backs"],
+        "arena_skins": COSMETIC_CATALOG_V118["arena_skins"],
+    }
+
+    slots = [
+        {
+            "label": "Title",
+            "value": equipped["title"],
+            "description": "Shown on your profile and future ranking cards.",
+        },
+        {
+            "label": "Avatar Frame",
+            "value": equipped["avatar_frame"],
+            "description": "Visual border around your player identity.",
+        },
+        {
+            "label": "Card Back",
+            "value": equipped["card_back"],
+            "description": "Future cosmetic for cards in hand and deck.",
+        },
+        {
+            "label": "Arena Skin",
+            "value": equipped["arena_skin"],
+            "description": "Future visual theme for the match table.",
+        },
+    ]
+
+    return {
+        "equipped": equipped,
+        "inventory": inventory,
+        "slots": slots,
+    }
+
+
 @app.route("/profile")
 def profile():
     auth_redirect = login_required_redirect()
@@ -833,11 +961,14 @@ def profile():
         "is_verified": bool(getattr(user, "is_verified", False)),
     }
 
+    cosmetics = get_cosmetic_foundation_for_user(user, profile_stats)
+
     return render_template(
         "profile.html",
         user=user,
         profile_stats=profile_stats,
         identity=identity,
+        cosmetics=cosmetics,
         recent_matches=recent_matches,
     )
 
