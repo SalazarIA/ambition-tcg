@@ -1455,6 +1455,9 @@ def end_match(room_id, winner_key):
             increment_mission(winner_user, "play_3_matches", 1)
             increment_mission(winner_user, "win_1_match", 1)
 
+            if is_bot_match:
+                increment_mission(winner_user, "win_1_training", 1)
+
         if loser_user:
             loser_user.losses += 1
             loser_rewards = apply_match_rewards(
@@ -1762,6 +1765,12 @@ def choose_intent(data):
     intent = data.get("intent", "Strike")
     set_player_intent(player, intent)
 
+    if intent == "Overreach":
+        user = current_user()
+
+        if user:
+            increment_mission(user, "use_overreach_1", 1)
+
     emit_log(room_id, f"{player['name']} selected {player['intent']} intent.")
     emit_state(room_id)
 
@@ -1826,11 +1835,17 @@ def declare_ready():
     player = match[player_key]
     player["ready"] = True
 
+    user = current_user()
+
+    if user:
+        increment_mission(user, "declare_ready_1", 1)
+
     if match.get("training"):
         enemy_key = "p2" if player_key == "p1" else "p1"
         enemy = match[enemy_key]
 
         bot_result = bot_choose_play(enemy, player, difficulty=match.get("bot_difficulty", "normal"))
+        emit_log(room_id, f"Ambitionz Bot difficulty: {bot_result.get('profile', match.get('bot_difficulty', 'normal'))}.")
         emit_log(room_id, f"Ambitionz Bot chose {bot_result['intent']} intent.")
 
         if bot_result.get("monster"):

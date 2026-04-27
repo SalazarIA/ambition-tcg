@@ -4116,3 +4116,43 @@ a.menu-card:hover {
 .enemy-ready-v112 .arena-player-panel.enemy {
     border-color: rgba(80, 255, 150, 0.24);
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.13 — BOT TRAINING 2.0 + TUTORIAL MISSIONS
+   ========================================================= */
+
+.training-difficulty-box select {
+    box-shadow: 0 0 0 1px rgba(216,199,255,0.08);
+}
+
+.training-difficulty-box::after {
+    content: "Easy teaches basics • Normal balances decisions • Hard pressures mistakes";
+    display: block;
+    color: var(--az-muted, #bfb3d3);
+    font-size: 11px;
+    line-height: 1.35;
+    margin-top: 4px;
+    opacity: 0.84;
+}
+
+.mission-card-v113 {
+    position: relative;
+}
+
+.mission-card-v113 h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mission-card-v113 h2::before {
+    content: "◆";
+    color: #d8c7ff;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.mission-card-v113 form .btn {
+    box-shadow: 0 0 24px rgba(142, 68, 173, 0.16);
+}

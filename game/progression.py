@@ -36,6 +36,38 @@ MISSION_DEFINITIONS = [
         "xp_reward": 60,
         "coin_reward": 60,
     },
+    {
+        "key": "play_1_training",
+        "title": "Training Grounds",
+        "description": "Play 1 training match.",
+        "target": 1,
+        "xp_reward": 35,
+        "coin_reward": 60,
+    },
+    {
+        "key": "win_1_training",
+        "title": "Beat the Bot",
+        "description": "Win 1 training match.",
+        "target": 1,
+        "xp_reward": 80,
+        "coin_reward": 120,
+    },
+    {
+        "key": "use_overreach_1",
+        "title": "Calculated Risk",
+        "description": "Select Overreach 1 time.",
+        "target": 1,
+        "xp_reward": 60,
+        "coin_reward": 90,
+    },
+    {
+        "key": "declare_ready_1",
+        "title": "Commit the Turn",
+        "description": "Declare Ready 1 time.",
+        "target": 1,
+        "xp_reward": 30,
+        "coin_reward": 50,
+    },
 ]
 
 
