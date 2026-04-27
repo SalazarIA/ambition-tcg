@@ -13,6 +13,7 @@ from tools.audit_cards import audit_cards
 from tools.audit_database import audit_database
 from tools.audit_config import audit_config
 from tools.balance_report import generate_report, main as generate_balance_report_file
+from tools.match_telemetry_report import generate_report as generate_match_telemetry_report
 
 
 def run_section(title, func):
@@ -46,6 +47,7 @@ def main():
     all_errors += run_section("TEMPLATE ENDPOINTS", lambda: audit_template_endpoints(app))
     all_errors += run_section("CARDS", audit_cards)
     all_errors += run_section("BALANCE REPORT", lambda: [] if generate_balance_report_file() is None else [])
+    all_errors += run_section("MATCH TELEMETRY REPORT", lambda: [] if generate_match_telemetry_report() else ["Match telemetry report failed"])
 
     print("\n" + "=" * 72)
     print("AMBITIONZ PREFLIGHT RESULT")

@@ -430,3 +430,22 @@ def ensure_liveops_schema(app):
             for column_name, ddl in sqlite_columns.items():
                 if column_name not in existing_columns:
                     connection.execute(sql_text(f"ALTER TABLE users ADD COLUMN {ddl}"))
+
+
+
+class MatchTelemetry(db.Model):
+    __tablename__ = "match_telemetry"
+
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.String(180), nullable=True)
+    mode = db.Column(db.String(40), nullable=False, default="pvp")
+    winner_user_id = db.Column(db.Integer, nullable=True)
+    loser_user_id = db.Column(db.Integer, nullable=True)
+    winner_name = db.Column(db.String(120), nullable=True)
+    loser_name = db.Column(db.String(120), nullable=True)
+    rounds = db.Column(db.Integer, nullable=False, default=0)
+    winner_hp = db.Column(db.Integer, nullable=False, default=0)
+    loser_hp = db.Column(db.Integer, nullable=False, default=0)
+    bot_difficulty = db.Column(db.String(40), nullable=True)
+    ending_reason = db.Column(db.String(120), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

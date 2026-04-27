@@ -27,6 +27,7 @@ from game.deck import (
 from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, db, ensure_database_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
+from services.match_telemetry import record_match_telemetry
 from services.email_service import send_verification_email, send_password_reset_email, send_smtp_test_email, is_smtp_configured
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
@@ -1360,6 +1361,12 @@ def end_match(room_id, winner_key):
     )
 
     db.session.add(history)
+    if winner_key == "DRAW":
+        record_match_telemetry(room_id, match, "p1", "p2", ending_reason="draw")
+    else:
+        loser_key = "p2" if winner_key == "p1" else "p1"
+        record_match_telemetry(room_id, match, winner_key, loser_key, ending_reason="completed")
+
     update_card_stats_after_match(match, winner_key)
 
     db.session.commit()

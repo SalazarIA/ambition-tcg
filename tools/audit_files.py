@@ -20,6 +20,8 @@ REQUIRED_FILES = [
     "services/admin/cleanup_service.py",
     "services/security/admin_security.py",
     "services/database/schema_tools.py",
+    "services/match_telemetry.py",
+    "tools/match_telemetry_report.py",
     "static/manifest.webmanifest",
 ]
 
