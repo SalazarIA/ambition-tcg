@@ -5061,3 +5061,188 @@ a.menu-card:hover {
         border-radius: 24px;
     }
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.20 — FEEDBACK COLLECTION 2.0
+   ========================================================= */
+
+.feedback-hero-v120,
+.admin-feedback-hero-v120 {
+    border-radius: 28px;
+    border: 1px solid rgba(216,199,255,0.16);
+    background:
+        radial-gradient(circle at top left, rgba(142,68,173,0.20), transparent 34%),
+        rgba(255,255,255,0.045);
+    padding: 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.feedback-hero-v120 h2,
+.admin-feedback-hero-v120 h2 {
+    color: #fff;
+    font-size: clamp(28px, 5vw, 52px);
+    line-height: 1;
+    margin: 8px 0;
+    letter-spacing: -0.04em;
+}
+
+.feedback-hero-v120 p,
+.admin-feedback-hero-v120 p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.55;
+}
+
+.feedback-guide-v120,
+.admin-feedback-legend-v120 {
+    display: grid;
+    gap: 10px;
+    min-width: 240px;
+}
+
+.feedback-guide-v120 div,
+.admin-feedback-legend-v120 span {
+    border-radius: 16px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.055);
+    padding: 12px;
+}
+
+.feedback-guide-v120 strong {
+    display: block;
+    color: #fff;
+}
+
+.feedback-guide-v120 span,
+.admin-feedback-legend-v120 span {
+    color: var(--az-muted, #bfb3d3);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.feedback-form-v120 {
+    display: grid;
+    gap: 14px;
+}
+
+.feedback-form-grid-v120 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.feedback-form-v120 label {
+    display: grid;
+    gap: 8px;
+}
+
+.feedback-form-v120 label span {
+    color: var(--az-muted, #bfb3d3);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.feedback-form-v120 input,
+.feedback-form-v120 select,
+.feedback-form-v120 textarea,
+.feedback-admin-card-v120 select {
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(216,199,255,0.16);
+    background: rgba(255,255,255,0.07);
+    color: #fff;
+    padding: 12px 14px;
+    font-weight: 800;
+}
+
+.feedback-form-v120 textarea {
+    resize: vertical;
+    min-height: 160px;
+    line-height: 1.5;
+}
+
+.feedback-form-v120 option,
+.feedback-admin-card-v120 option {
+    color: #111;
+}
+
+.feedback-history-v120,
+.admin-feedback-list-v120 {
+    display: grid;
+    gap: 12px;
+}
+
+.feedback-ticket-v120,
+.feedback-admin-card-v120 {
+    border-radius: 22px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.045);
+    padding: 16px;
+}
+
+.feedback-ticket-v120 h3,
+.feedback-admin-card-v120 h2 {
+    color: #fff;
+    margin: 6px 0;
+}
+
+.feedback-ticket-v120 p,
+.feedback-admin-card-v120 p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.5;
+}
+
+.feedback-ticket-v120 footer,
+.feedback-admin-card-v120 header,
+.admin-feedback-meta-v120,
+.feedback-admin-card-v120 form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.feedback-ticket-v120 footer strong,
+.feedback-admin-card-v120 header strong {
+    border-radius: 999px;
+    background: rgba(142,68,173,0.22);
+    border: 1px solid rgba(216,199,255,0.16);
+    color: #efe7ff;
+    padding: 7px 10px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.admin-feedback-meta-v120 {
+    justify-content: flex-start;
+    color: var(--az-muted, #bfb3d3);
+    font-size: 12px;
+    margin: 12px 0;
+}
+
+.feedback-admin-card-v120.status-critical,
+.feedback-admin-card-v120.status-open {
+    border-color: rgba(255, 214, 102, 0.22);
+}
+
+@media (max-width: 760px) {
+    .feedback-hero-v120,
+    .admin-feedback-hero-v120,
+    .feedback-form-grid-v120 {
+        grid-template-columns: 1fr;
+    }
+
+    .feedback-guide-v120,
+    .admin-feedback-legend-v120 {
+        min-width: 0;
+    }
+}

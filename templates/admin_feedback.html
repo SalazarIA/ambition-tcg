@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Feedback - Ambitionz</title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -13,19 +16,51 @@
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Feedback Ops</h1>
-                <p>Bug reports and suggestions</p>
+                <p>Bug reports, balance notes and beta tester suggestions</p>
             </div>
+
+            <a href="{{ url_for('admin_reports') }}" class="btn btn-secondary small-btn">Reports</a>
             <a href="{{ url_for('admin') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
+        {% set feedback_items = reports if reports is defined else feedbacks %}
+
+        <section class="admin-feedback-hero-v120">
+            <div>
+                <span class="progression-kicker">Live Feedback Pipeline</span>
+                <h2>{{ feedback_items|length }} recent reports</h2>
+                <p>Prioritize critical bugs, balance blockers and repeated UX friction from beta testers.</p>
+            </div>
+
+            <div class="admin-feedback-legend-v120">
+                <span>open</span>
+                <span>reviewing</span>
+                <span>planned</span>
+                <span>fixed</span>
+                <span>closed</span>
+            </div>
+        </section>
+
         <section class="deck-status">
-            <div class="deck-list">
-                {% for report in reports %}
-                    <div class="feedback-admin-card">
-                        <strong>{{ report.title }}</strong>
-                        <span>{{ report.category }} / {{ report.severity }} / {{ report.status }}</span>
+            <div class="admin-feedback-list-v120">
+                {% for report in feedback_items %}
+                    <article class="feedback-admin-card-v120 status-{{ report.status }}">
+                        <header>
+                            <div>
+                                <span class="progression-kicker">#{{ report.id }} — {{ report.category }} / {{ report.severity }}</span>
+                                <h2>{{ report.title }}</h2>
+                            </div>
+
+                            <strong>{{ report.status }}</strong>
+                        </header>
+
                         <p>{{ report.message }}</p>
-                        <small>{{ report.username }} — {{ report.created_at }}</small>
+
+                        <div class="admin-feedback-meta-v120">
+                            <span>User: {{ report.username or "Anonymous" }}</span>
+                            <span>Page: {{ report.page_url or "Not provided" }}</span>
+                            <span>{{ report.created_at }}</span>
+                        </div>
 
                         <form method="POST" action="{{ url_for('admin_feedback_update', report_id=report.id) }}">
                             <select name="status">
@@ -36,9 +71,10 @@
                                 <option value="closed" {% if report.status == "closed" %}selected{% endif %}>closed</option>
                                 <option value="rejected" {% if report.status == "rejected" %}selected{% endif %}>rejected</option>
                             </select>
-                            <button class="btn btn-secondary small-btn">Update</button>
+
+                            <button class="btn btn-secondary small-btn" type="submit">Update Status</button>
                         </form>
-                    </div>
+                    </article>
                 {% else %}
                     <p class="subtitle">No feedback yet.</p>
                 {% endfor %}

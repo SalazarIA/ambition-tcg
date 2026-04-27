@@ -5,58 +5,149 @@
     <title>Feedback - Ambitionz</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Ambition">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="format-detection" content="telephone=no">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambitionz">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <main class="page app-shell">
-        <section class="panel form-panel mobile-panel">
-            <div class="app-logo">A</div>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Feedback</h1>
+                <p>Help improve the Ambitionz beta</p>
+            </div>
 
-            <h1>Feedback</h1>
-            <p class="subtitle">Report bugs, balance issues or suggestions.</p>
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary small-btn">Profile</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
 
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="flash">{{ messages[0] }}</div>
-                {% endif %}
-            {% endwith %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
 
-            <form method="POST" class="form mobile-form">
-                <select name="category" required>
-                    <option value="bug">Bug</option>
-                    <option value="balance">Balance</option>
-                    <option value="visual">Visual / UX</option>
-                    <option value="account">Account</option>
-                    <option value="suggestion">Suggestion</option>
-                    <option value="other">Other</option>
-                </select>
+        <section class="feedback-hero-v120">
+            <div>
+                <span class="progression-kicker">Beta Tester Channel</span>
+                <h2>Report bugs, balance issues and improvement ideas.</h2>
+                <p>
+                    Good feedback makes the beta stronger. Be specific: what happened,
+                    what you expected, where it happened and how severe it felt.
+                </p>
+            </div>
 
-                <select name="severity" required>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="critical">Critical</option>
-                </select>
+            <div class="feedback-guide-v120">
+                <div><strong>Bug</strong><span>Something broke</span></div>
+                <div><strong>Balance</strong><span>Card or reward feels wrong</span></div>
+                <div><strong>UX</strong><span>Something feels confusing</span></div>
+            </div>
+        </section>
 
-                <input type="text" name="title" placeholder="Short title" maxlength="160" required>
+        <section class="deck-status feedback-form-panel-v120">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Submit Report</span>
+                    <h2>New feedback</h2>
+                </div>
+            </div>
 
-                <textarea name="message" placeholder="Describe what happened..." rows="7" required></textarea>
+            <form method="POST" class="feedback-form-v120">
+                <div class="feedback-form-grid-v120">
+                    <label>
+                        <span>Category</span>
+                        <select name="category" required>
+                            {% for category in categories %}
+                                <option value="{{ category.value }}">{{ category.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
 
-                <input type="text" name="page_url" placeholder="Page URL, optional">
+                    <label>
+                        <span>Severity</span>
+                        <select name="severity" required>
+                            {% for severity in severities %}
+                                <option value="{{ severity.value }}" {% if severity.value == "normal" %}selected{% endif %}>
+                                    {{ severity.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+
+                <label>
+                    <span>Title</span>
+                    <input
+                        type="text"
+                        name="title"
+                        maxlength="160"
+                        placeholder="Example: Training bot played after match ended"
+                        required
+                    >
+                </label>
+
+                <label>
+                    <span>Details</span>
+                    <textarea
+                        name="message"
+                        rows="8"
+                        placeholder="Describe what happened, what you expected, and how to reproduce it."
+                        required
+                    ></textarea>
+                </label>
+
+                <label>
+                    <span>Page / Context</span>
+                    <input
+                        type="text"
+                        name="page_url"
+                        placeholder="/arena, /deck-builder, /shop, post-match modal..."
+                    >
+                </label>
 
                 <button type="submit" class="btn full-btn">Send Feedback</button>
             </form>
-
-            <a href="{{ url_for('index') }}" class="text-link">Back home</a>
         </section>
+
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Your Recent Reports</span>
+                    <h2>Status tracker</h2>
+                </div>
+            </div>
+
+            <div class="feedback-history-v120">
+                {% for report in recent_reports %}
+                    <article class="feedback-ticket-v120">
+                        <div>
+                            <span class="progression-kicker">{{ report.category }} / {{ report.severity }}</span>
+                            <h3>{{ report.title }}</h3>
+                            <p>{{ report.message }}</p>
+                        </div>
+
+                        <footer>
+                            <strong>{{ report.status }}</strong>
+                            <span>{{ report.created_at }}</span>
+                        </footer>
+                    </article>
+                {% else %}
+                    <p class="subtitle">No feedback submitted yet.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}">Play</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+        </nav>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>

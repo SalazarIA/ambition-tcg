@@ -14,6 +14,7 @@ REQUIRED_FILES = [
     "templates/terms.html",
     "templates/privacy.html",
     "templates/profile.html",
+    "templates/feedback.html",
     "static/css/style.css",
     "static/js/game.js",
     "static/js/card_ui_v103.js",

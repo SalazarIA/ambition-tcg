@@ -2456,6 +2456,106 @@ def training():
 
 
 
+
+# =========================================================
+# AMBITIONZ V1.20 — FEEDBACK COLLECTION 2.0
+# =========================================================
+
+@app.route("/feedback", methods=["GET", "POST"])
+def feedback():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    categories = [
+        {"value": "bug", "label": "Bug"},
+        {"value": "balance", "label": "Balance"},
+        {"value": "ux", "label": "UX / Interface"},
+        {"value": "match", "label": "Match Experience"},
+        {"value": "cards", "label": "Cards / Deck"},
+        {"value": "suggestion", "label": "Suggestion"},
+        {"value": "general", "label": "General"},
+    ]
+
+    severities = [
+        {"value": "low", "label": "Low"},
+        {"value": "normal", "label": "Normal"},
+        {"value": "high", "label": "High"},
+        {"value": "critical", "label": "Critical"},
+    ]
+
+    if request.method == "POST":
+        category = request.form.get("category", "general").strip() or "general"
+        severity = request.form.get("severity", "normal").strip() or "normal"
+        title = request.form.get("title", "").strip()
+        message = request.form.get("message", "").strip()
+        page_url = request.form.get("page_url", "").strip()
+
+        valid_categories = {item["value"] for item in categories}
+        valid_severities = {item["value"] for item in severities}
+
+        if category not in valid_categories:
+            category = "general"
+
+        if severity not in valid_severities:
+            severity = "normal"
+
+        if not title or len(title) < 4:
+            flash("Feedback title must have at least 4 characters.")
+            return redirect("/feedback")
+
+        if not message or len(message) < 10:
+            flash("Feedback message must have at least 10 characters.")
+            return redirect("/feedback")
+
+        report = FeedbackReport(
+            user_id=user.id,
+            username=user.username,
+            category=category,
+            severity=severity,
+            title=title[:160],
+            message=message,
+            page_url=page_url[:255] if page_url else None,
+            status="open",
+        )
+
+        db.session.add(report)
+
+        try:
+            log_system_event(
+                "info",
+                "feedback",
+                f"Feedback submitted: {title[:80]}",
+                user_id=user.id,
+            )
+        except Exception as error:
+            print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+
+        db.session.commit()
+
+        flash("Feedback sent. Thank you for helping improve the beta.")
+        return redirect("/feedback")
+
+    recent_reports = (
+        FeedbackReport.query
+        .filter_by(user_id=user.id)
+        .order_by(FeedbackReport.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    return render_template(
+        "feedback.html",
+        user=user,
+        categories=categories,
+        severities=severities,
+        recent_reports=recent_reports,
+    )
+
+
 @app.route("/admin/reports")
 def admin_reports():
     auth_redirect = admin_required_redirect()
