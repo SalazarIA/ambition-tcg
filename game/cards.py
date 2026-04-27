@@ -1,3 +1,4 @@
+from game.card_identity_applied import apply_identity_to_catalog
 import random
 
 
@@ -546,6 +547,8 @@ TRAPS = generate_traps()
 
 CARD_CATALOG = MONSTERS + SPELLS + TRAPS
 
+
+CARD_CATALOG = apply_identity_to_catalog(CARD_CATALOG)
 
 def get_card_by_id(card_id):
     for card in CARD_CATALOG:

@@ -3444,3 +3444,44 @@ a.menu-card:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.09 — CARD IDENTITY APPLIED
+   ========================================================= */
+
+.az-card-identity {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.az-card-identity span {
+    border-radius: 999px;
+    border: 1px solid rgba(216,199,255,0.16);
+    background: rgba(216,199,255,0.08);
+    color: #e8dcff;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.az-card-lore,
+.az-card-hint {
+    margin: 8px 0 0;
+    color: var(--az-muted, #bfb3d3);
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.az-card-lore {
+    font-style: italic;
+    opacity: 0.92;
+}
+
+.az-card-hint {
+    opacity: 0.78;
+}

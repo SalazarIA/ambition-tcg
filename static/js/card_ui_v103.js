@@ -32,6 +32,10 @@ function cardFrameHtml(card, options = {}) {
     const sigil = escapeHtml(card.sigil || "Global");
     const role = escapeHtml(card.role || "Balancer");
     const effect = escapeHtml(card.effect || card.description || "No effect.");
+    const archetype = escapeHtml(card.archetype || "");
+    const identityRole = escapeHtml(card.identity_role || "");
+    const lore = escapeHtml(card.lore || "");
+    const tacticalHint = escapeHtml(card.tactical_hint || "");
 
     const elementClass = `az-element-${normalizeClass(element)}`;
     const rarityClass = `az-rarity-${normalizeClass(rarity)}`;
@@ -67,6 +71,16 @@ function cardFrameHtml(card, options = {}) {
                 ` : ""}
 
                 <p class="az-card-effect">${effect}</p>
+
+                ${(archetype || identityRole) ? `
+                    <div class="az-card-identity">
+                        ${archetype ? `<span>${archetype}</span>` : ""}
+                        ${identityRole ? `<span>${identityRole}</span>` : ""}
+                    </div>
+                ` : ""}
+
+                ${lore ? `<p class="az-card-lore">${lore}</p>` : ""}
+                ${tacticalHint ? `<p class="az-card-hint">${tacticalHint}</p>` : ""}
             </div>
         </article>
     `;
