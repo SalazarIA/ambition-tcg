@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1235, 'max': 1856, 'avg': 1536.3, 'median': 1527}
+- Monster summary: {'count': 21, 'min': 1034, 'max': 1932, 'avg': 1544.8, 'median': 1610}
 
 ### Starter Type Distribution
 
@@ -64,8 +64,8 @@
 
 ### Starter Rarity Distribution
 
-- Common: 21
-- Uncommon: 9
+- Common: 24
+- Uncommon: 6
 
 
 ## Catalog Outliers
@@ -79,4 +79,5 @@
 
 ## Starter Deck Outliers
 
-- No major starter deck outliers detected.
+- **Ent Florido** `plant_003` score=1051.0 cost=1 power=1051 reasons=high power per cost
+- **Lobo Espinheiro** `plant_002` score=1034.0 cost=1 power=1034 reasons=high power per cost
