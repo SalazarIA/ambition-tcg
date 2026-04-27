@@ -3535,3 +3535,80 @@ a.menu-card:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.10B — BOOSTER SHOP POLISH
+   ========================================================= */
+
+.shop-hero-v110 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+    gap: 18px;
+    align-items: stretch;
+    border-radius: 26px;
+    border: 1px solid rgba(216,199,255,0.16);
+    background:
+        radial-gradient(circle at top left, rgba(142, 68, 173, 0.22), transparent 34%),
+        rgba(255,255,255,0.045);
+    padding: 22px;
+    margin-bottom: 18px;
+}
+
+.shop-hero-v110 h2 {
+    margin: 8px 0;
+    color: #fff;
+    font-size: clamp(26px, 5vw, 44px);
+    line-height: 1;
+}
+
+.shop-hero-v110 p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.55;
+    max-width: 760px;
+}
+
+.shop-loop-v110 {
+    display: grid;
+    gap: 10px;
+}
+
+.shop-loop-v110 div {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 10px;
+    align-items: center;
+    border-radius: 18px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.055);
+    padding: 12px;
+}
+
+.shop-loop-v110 strong {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: rgba(142, 68, 173, 0.35);
+    color: #fff;
+}
+
+.shop-loop-v110 span {
+    color: #e8dcff;
+    font-weight: 900;
+}
+
+.shop-pack-v110 {
+    gap: 16px;
+}
+
+.booster-result-v110 {
+    margin-top: 22px;
+}
+
+@media (max-width: 860px) {
+    .shop-hero-v110 {
+        grid-template-columns: 1fr;
+    }
+}

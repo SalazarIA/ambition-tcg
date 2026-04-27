@@ -1019,43 +1019,55 @@ def shop():
         return auth_redirect
 
     user = current_user()
+
+    booster_cost = 300
+    booster_size = 5
     pulled_cards = []
+    can_afford_booster = int(user.coins or 0) >= booster_cost
 
     if request.method == "POST":
-        pack_cost = 300
-
-        if user.coins < pack_cost:
-            flash("Not enough coins.")
+        if not can_afford_booster:
+            flash("Not enough coins to open this booster.")
             return redirect("/shop")
 
-        user.coins -= pack_cost
+        user.coins -= booster_cost
 
         collection_ids = load_card_ids(user.collection_json)
 
-        for _ in range(5):
+        for _ in range(booster_size):
             card = booster_pull()
             pulled_cards.append(card)
             collection_ids.append(card["id"])
+
+        user.collection_json = json.dumps(collection_ids)
 
         common_count = len([card for card in pulled_cards if card.get("rarity") == "Common"])
         uncommon_count = len([card for card in pulled_cards if card.get("rarity") == "Uncommon"])
 
         history = BoosterHistory(
-            user_id=safe_admin_user_id(),
+            user_id=user.id,
             username=user.username,
-            cost=pack_cost,
+            cost=booster_cost,
             cards_json=json.dumps(pulled_cards),
             common_count=common_count,
             uncommon_count=uncommon_count,
         )
 
         db.session.add(history)
-
-        user.collection_json = json.dumps(collection_ids)
         increment_mission(user, "open_1_booster", 1)
         db.session.commit()
 
-    return render_template("shop.html", user=user, pulled_cards=pulled_cards)
+        flash(f"Booster opened: {booster_size} cards added to your collection.")
+
+    return render_template(
+        "shop.html",
+        user=user,
+        pulled_cards=pulled_cards,
+        booster_cost=booster_cost,
+        booster_size=booster_size,
+        can_afford_booster=can_afford_booster,
+    )
+
 
 
 

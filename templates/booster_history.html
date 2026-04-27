@@ -33,8 +33,9 @@
             </div>
         </section>
 
-        {% if histories %}
-            {% for history in histories %}
+        {% set booster_rows = histories if histories is defined else booster_history %}
+        {% if booster_rows %}
+            {% for history in booster_rows %}
                 <section class="deck-status">
                     <h2>Booster #{{ history.id }}</h2>
 
