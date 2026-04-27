@@ -34,42 +34,76 @@
 
         <section class="shop-hero-v110">
             <div>
-                <span class="progression-kicker">Progression Loop</span>
-                <h2>Open boosters. Improve your deck. Climb higher.</h2>
+                <span class="progression-kicker">V1.14 Booster Strategy</span>
+                <h2>Choose your direction. Build your identity.</h2>
                 <p>
-                    Boosters add cards to your collection. Use them to tune your 30-card beta deck and prepare for stronger matches.
+                    Element packs help you pursue Fire, Water, Earth or Plant. Sigil packs help you pursue Fury,
+                    Insight, Resolve or Harmony.
                 </p>
             </div>
 
             <div class="shop-loop-v110">
-                <div><strong>1</strong><span>Earn coins</span></div>
+                <div><strong>1</strong><span>Pick focus</span></div>
                 <div><strong>2</strong><span>Open booster</span></div>
-                <div><strong>3</strong><span>Edit deck</span></div>
-                <div><strong>4</strong><span>Play again</span></div>
+                <div><strong>3</strong><span>Upgrade deck</span></div>
+                <div><strong>4</strong><span>Test strategy</span></div>
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <span class="progression-kicker">Available Packs</span>
+            <h2>Element and Sigil Boosters</h2>
+
+            <div class="booster-pack-grid-v114">
+                {% for pack in booster_packs %}
+                    <article class="booster-pack-card-v114 {% if selected_pack.key == pack.key %}active{% endif %}">
+                        <div class="booster-pack-top-v114">
+                            <div class="booster-logo">{{ pack.name[0] }}</div>
+                            <div>
+                                <h3>{{ pack.name }}</h3>
+                                <span>{{ pack.subtitle }}</span>
+                            </div>
+                        </div>
+
+                        <p>{{ pack.description }}</p>
+
+                        <div class="deck-list">
+                            <div class="deck-line"><span>Cost</span><strong>{{ pack.cost }} coins</strong></div>
+                            <div class="deck-line"><span>Cards</span><strong>{{ pack.size }}</strong></div>
+                            <div class="deck-line"><span>Focus</span><strong>{{ pack.focus_value }}</strong></div>
+                        </div>
+
+                        <form method="POST">
+                            <input type="hidden" name="pack_key" value="{{ pack.key }}">
+
+                            {% if user.coins >= pack.cost %}
+                                <button type="submit" class="btn full-btn">
+                                    Open {{ pack.name }}
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-secondary full-btn" disabled>
+                                    Need {{ pack.cost - user.coins }} more coins
+                                </button>
+                            {% endif %}
+                        </form>
+                    </article>
+                {% endfor %}
             </div>
         </section>
 
         <section class="shop-panel mobile-shop-panel shop-pack-v110">
             <div class="booster-pack">
-                <div class="booster-logo">A</div>
-                <h2>Elemental Booster</h2>
-                <p>Contains <strong>{{ booster_size|default(5) }}</strong> Common/Uncommon beta cards.</p>
+                <div class="booster-logo">{{ selected_pack.name[0] }}</div>
+                <h2>Selected: {{ selected_pack.name }}</h2>
+                <p>{{ selected_pack.description }}</p>
                 <p>Cost: <strong>{{ booster_cost|default(300) }} coins</strong></p>
 
                 <div class="deck-list">
                     <div class="deck-line"><span>Common odds</span><strong>High</strong></div>
                     <div class="deck-line"><span>Uncommon odds</span><strong>Beta tuned</strong></div>
-                    <div class="deck-line"><span>Purpose</span><strong>Collection growth</strong></div>
+                    <div class="deck-line"><span>Pack focus</span><strong>{{ selected_pack.focus_value }}</strong></div>
                 </div>
             </div>
-
-            <form method="POST">
-                {% if can_afford_booster %}
-                    <button type="submit" class="btn full-btn">Open Booster</button>
-                {% else %}
-                    <button type="button" class="btn btn-secondary full-btn" disabled>Not Enough Coins</button>
-                {% endif %}
-            </form>
 
             <div class="progression-action-row">
                 <a href="{{ url_for('training') }}" class="btn btn-secondary">Earn Coins</a>
@@ -81,7 +115,7 @@
         {% if pulled_cards %}
             <section class="deck-status booster-result-v110">
                 <span class="progression-kicker">Booster Result</span>
-                <h2>Cards Pulled</h2>
+                <h2>{{ selected_pack.name }} Pulled Cards</h2>
                 <p class="subtitle">These cards were added to your collection.</p>
             </section>
 
@@ -141,7 +175,7 @@
 
         <nav class="mobile-bottom-nav">
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('arena') }}">Arena</a>
+            <a href="{{ url_for('training') }}">Play</a>
             <a href="{{ url_for('deck_builder') }}">Deck</a>
             <a href="{{ url_for('shop') }}" class="active">Shop</a>
         </nav>

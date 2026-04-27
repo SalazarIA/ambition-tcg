@@ -4156,3 +4156,70 @@ a.menu-card:hover {
 .mission-card-v113 form .btn {
     box-shadow: 0 0 24px rgba(142, 68, 173, 0.16);
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.14 — ELEMENT AND SIGIL BOOSTER PACKS
+   ========================================================= */
+
+.booster-pack-grid-v114 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.booster-pack-card-v114 {
+    display: grid;
+    gap: 12px;
+    align-content: space-between;
+    border-radius: 24px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.05);
+    padding: 16px;
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.booster-pack-card-v114:hover {
+    transform: translateY(-3px);
+    border-color: rgba(216,199,255,0.30);
+    background: rgba(255,255,255,0.07);
+}
+
+.booster-pack-card-v114.active {
+    border-color: rgba(216,199,255,0.40);
+    box-shadow: 0 0 28px rgba(142, 68, 173, 0.16);
+}
+
+.booster-pack-top-v114 {
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.booster-pack-top-v114 h3 {
+    margin: 0;
+    color: #fff;
+}
+
+.booster-pack-top-v114 span,
+.booster-pack-card-v114 p {
+    color: var(--az-muted, #bfb3d3);
+}
+
+.booster-pack-card-v114 p {
+    line-height: 1.45;
+}
+
+@media (max-width: 1080px) {
+    .booster-pack-grid-v114 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .booster-pack-grid-v114 {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1011,6 +1011,170 @@ def collection():
     return render_template("collection.html", user=user, cards=cards)
 
 
+
+# =========================================================
+# AMBITIONZ V1.14 — ELEMENT AND SIGIL BOOSTER PACKS
+# =========================================================
+
+BOOSTER_PACKS = {
+    "elemental": {
+        "key": "elemental",
+        "name": "Elemental Booster",
+        "subtitle": "Balanced beta pack",
+        "description": "A flexible 5-card booster with cards from all elements and global tactics.",
+        "cost": 300,
+        "size": 5,
+        "focus_type": "mixed",
+        "focus_value": "All",
+    },
+    "fire": {
+        "key": "fire",
+        "name": "Fire Pack",
+        "subtitle": "Blaze Rush",
+        "description": "Focused on Fire monsters and aggressive Fury pressure.",
+        "cost": 350,
+        "size": 5,
+        "focus_type": "element",
+        "focus_value": "Fire",
+    },
+    "water": {
+        "key": "water",
+        "name": "Water Pack",
+        "subtitle": "Tide Insight",
+        "description": "Focused on Water monsters and planning-oriented Insight lines.",
+        "cost": 350,
+        "size": 5,
+        "focus_type": "element",
+        "focus_value": "Water",
+    },
+    "earth": {
+        "key": "earth",
+        "name": "Earth Pack",
+        "subtitle": "Stonewall Resolve",
+        "description": "Focused on Earth monsters and defensive Resolve lines.",
+        "cost": 350,
+        "size": 5,
+        "focus_type": "element",
+        "focus_value": "Earth",
+    },
+    "plant": {
+        "key": "plant",
+        "name": "Plant Pack",
+        "subtitle": "Thorn Harmony",
+        "description": "Focused on Plant monsters and synergy-driven Harmony lines.",
+        "cost": 350,
+        "size": 5,
+        "focus_type": "element",
+        "focus_value": "Plant",
+    },
+    "fury": {
+        "key": "fury",
+        "name": "Fury Pack",
+        "subtitle": "Burst and pressure",
+        "description": "Focused on Fury cards for Strike and Overreach pressure.",
+        "cost": 375,
+        "size": 5,
+        "focus_type": "sigil",
+        "focus_value": "Fury",
+    },
+    "insight": {
+        "key": "insight",
+        "name": "Insight Pack",
+        "subtitle": "Control and planning",
+        "description": "Focused on Insight cards for Focus and tactical control.",
+        "cost": 375,
+        "size": 5,
+        "focus_type": "sigil",
+        "focus_value": "Insight",
+    },
+    "resolve": {
+        "key": "resolve",
+        "name": "Resolve Pack",
+        "subtitle": "Comeback defense",
+        "description": "Focused on Resolve cards for Guard and stabilization.",
+        "cost": 375,
+        "size": 5,
+        "focus_type": "sigil",
+        "focus_value": "Resolve",
+    },
+    "harmony": {
+        "key": "harmony",
+        "name": "Harmony Pack",
+        "subtitle": "Synergy and growth",
+        "description": "Focused on Harmony cards for scaling board cohesion.",
+        "cost": 375,
+        "size": 5,
+        "focus_type": "sigil",
+        "focus_value": "Harmony",
+    },
+}
+
+
+def get_booster_pack(pack_key):
+    key = str(pack_key or "elemental").lower().strip()
+    return BOOSTER_PACKS.get(key, BOOSTER_PACKS["elemental"])
+
+
+def weighted_card_pool_for_pack(pack):
+    from game.cards import CARD_CATALOG
+
+    focus_type = pack.get("focus_type")
+    focus_value = pack.get("focus_value")
+
+    focused = []
+    global_tools = []
+    fallback = list(CARD_CATALOG)
+
+    for card in CARD_CATALOG:
+        if card.get("element") == "Global":
+            global_tools.append(card)
+
+        if focus_type == "element" and card.get("element") == focus_value:
+            focused.append(card)
+
+        elif focus_type == "sigil" and card.get("sigil") == focus_value:
+            focused.append(card)
+
+        elif focus_type == "mixed":
+            focused.append(card)
+
+    if not focused:
+        focused = fallback
+
+    return focused, global_tools, fallback
+
+
+def booster_pull_from_pack(pack):
+    focused, global_tools, fallback = weighted_card_pool_for_pack(pack)
+
+    roll = random.random()
+
+    if pack.get("focus_type") in ["element", "sigil"]:
+        if roll <= 0.78:
+            pool = focused
+        elif roll <= 0.92 and global_tools:
+            pool = global_tools
+        else:
+            pool = fallback
+    else:
+        pool = fallback
+
+    rarity_roll = random.random()
+
+    if rarity_roll <= 0.22:
+        rarity_pool = [card for card in pool if card.get("rarity") == "Uncommon"]
+    else:
+        rarity_pool = [card for card in pool if card.get("rarity") == "Common"]
+
+    if not rarity_pool:
+        rarity_pool = pool
+
+    if not rarity_pool:
+        rarity_pool = fallback
+
+    return random.choice(rarity_pool).copy()
+
+
 @app.route("/shop", methods=["GET", "POST"])
 def shop():
     auth_redirect = login_required_redirect()
@@ -1020,22 +1184,25 @@ def shop():
 
     user = current_user()
 
-    booster_cost = 300
-    booster_size = 5
+    selected_pack_key = request.form.get("pack_key") or request.args.get("pack") or "elemental"
+    selected_pack = get_booster_pack(selected_pack_key)
+
+    booster_cost = int(selected_pack.get("cost", 300))
+    booster_size = int(selected_pack.get("size", 5))
     pulled_cards = []
     can_afford_booster = int(user.coins or 0) >= booster_cost
 
     if request.method == "POST":
         if not can_afford_booster:
             flash("Not enough coins to open this booster.")
-            return redirect("/shop")
+            return redirect(f"/shop?pack={selected_pack['key']}")
 
         user.coins -= booster_cost
 
         collection_ids = load_card_ids(user.collection_json)
 
         for _ in range(booster_size):
-            card = booster_pull()
+            card = booster_pull_from_pack(selected_pack)
             pulled_cards.append(card)
             collection_ids.append(card["id"])
 
@@ -1044,11 +1211,19 @@ def shop():
         common_count = len([card for card in pulled_cards if card.get("rarity") == "Common"])
         uncommon_count = len([card for card in pulled_cards if card.get("rarity") == "Uncommon"])
 
+        history_payload = []
+        for card in pulled_cards:
+            history_payload.append({
+                **card,
+                "pack_key": selected_pack["key"],
+                "pack_name": selected_pack["name"],
+            })
+
         history = BoosterHistory(
             user_id=user.id,
             username=user.username,
             cost=booster_cost,
-            cards_json=json.dumps(pulled_cards),
+            cards_json=json.dumps(history_payload),
             common_count=common_count,
             uncommon_count=uncommon_count,
         )
@@ -1057,7 +1232,7 @@ def shop():
         increment_mission(user, "open_1_booster", 1)
         db.session.commit()
 
-        flash(f"Booster opened: {booster_size} cards added to your collection.")
+        flash(f"{selected_pack['name']} opened: {booster_size} cards added to your collection.")
 
     return render_template(
         "shop.html",
@@ -1066,7 +1241,10 @@ def shop():
         booster_cost=booster_cost,
         booster_size=booster_size,
         can_afford_booster=can_afford_booster,
+        booster_packs=list(BOOSTER_PACKS.values()),
+        selected_pack=selected_pack,
     )
+
 
 
 
