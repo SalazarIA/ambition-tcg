@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Ranking - Ambitionz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -13,24 +14,100 @@
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Ranking</h1>
-                <p>Top Ambitionz players</p>
+                <p>Beta competitive foundation</p>
             </div>
 
+            <a href="{{ url_for('match_history') }}" class="btn btn-secondary small-btn">Match History</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
-        <section class="deck-status">
-            <h2>Leaderboard</h2>
+        <section class="ranking-hero-v116">
+            <div>
+                <span class="progression-kicker">{{ season.name if season is defined else "Beta Season" }}</span>
+                <h2>Climb through wins, consistency and smart deck upgrades.</h2>
+                <p>
+                    This is the ranking foundation for Ambitionz beta. Future seasons can add tiers,
+                    resets and cosmetic rewards without changing the core ranking language.
+                </p>
+            </div>
 
-            <div class="deck-list">
-                {% for player in users %}
-                    <div class="deck-line">
-                        <span>#{{ loop.index }} — {{ player.username }}</span>
-                        <strong>W {{ player.wins }} / L {{ player.losses }} / Lv {{ player.level }}</strong>
+            <div class="ranking-season-grid-v116">
+                <div>
+                    <span>Status</span>
+                    <strong>{{ season.status if season is defined else "Beta" }}</strong>
+                </div>
+                <div>
+                    <span>Players</span>
+                    <strong>{{ season.total_players if season is defined else users|length }}</strong>
+                </div>
+                <div>
+                    <span>Matches</span>
+                    <strong>{{ season.total_matches if season is defined else 0 }}</strong>
+                </div>
+                <div>
+                    <span>Ranked</span>
+                    <strong>{{ season.ranked_count if season is defined else users|length }}</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Leaderboard</span>
+                    <h2>Top Players</h2>
+                </div>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary small-btn">Play</a>
+            </div>
+
+            <div class="ranking-table-v116">
+                <div class="ranking-row-v116 ranking-head-v116">
+                    <span>Rank</span>
+                    <span>Player</span>
+                    <span>Tier</span>
+                    <span>Record</span>
+                    <span>Winrate</span>
+                    <span>Level</span>
+                </div>
+
+                {% for player in ranked_users %}
+                    <div class="ranking-row-v116">
+                        <strong>#{{ player.rank }}</strong>
+                        <span>{{ player.username }}</span>
+                        <span class="ranking-tier-v116">{{ player.tier }}</span>
+                        <span>{{ player.wins }}W / {{ player.losses }}L</span>
+                        <span>{{ player.winrate }}%</span>
+                        <span>Lv {{ player.level }}</span>
                     </div>
                 {% else %}
                     <p class="subtitle">No ranked players yet.</p>
                 {% endfor %}
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <h2>How ranking works now</h2>
+
+            <div class="menu-grid">
+                <div class="menu-card">
+                    <strong>Wins first</strong>
+                    <span>Primary ordering is total wins.</span>
+                </div>
+
+                <div class="menu-card">
+                    <strong>Level second</strong>
+                    <span>Level and XP break early ties.</span>
+                </div>
+
+                <div class="menu-card">
+                    <strong>Tier labels</strong>
+                    <span>Unranked, Climber, Contender and Champion.</span>
+                </div>
+
+                <div class="menu-card">
+                    <strong>Beta ready</strong>
+                    <span>Prepared for future season rewards.</span>
+                </div>
             </div>
         </section>
     </main>

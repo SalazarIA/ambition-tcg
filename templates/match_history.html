@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Match History - Ambitionz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -16,18 +17,90 @@
                 <p>Recent Ambitionz battles</p>
             </div>
 
+            <a href="{{ url_for('ranking') }}" class="btn btn-secondary small-btn">Ranking</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
-        <section class="deck-status">
-            <h2>Recent Matches</h2>
+        <section class="match-history-hero-v116">
+            <div>
+                <span class="progression-kicker">Player Record</span>
+                <h2>{{ user.username }}</h2>
+                <p>
+                    Review recent games, results, final HP and round count. This becomes the base
+                    for future profiles and season tracking.
+                </p>
+            </div>
 
-            <div class="deck-list">
+            <div class="ranking-season-grid-v116">
+                <div>
+                    <span>Total</span>
+                    <strong>{{ stats.total if stats is defined else 0 }}</strong>
+                </div>
+                <div>
+                    <span>Wins</span>
+                    <strong>{{ stats.wins if stats is defined else 0 }}</strong>
+                </div>
+                <div>
+                    <span>Losses</span>
+                    <strong>{{ stats.losses if stats is defined else 0 }}</strong>
+                </div>
+                <div>
+                    <span>Winrate</span>
+                    <strong>{{ stats.winrate if stats is defined else 0 }}%</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">History</span>
+                    <h2>Recent Matches</h2>
+                </div>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary small-btn">Play Training</a>
+            </div>
+
+            <div class="match-history-list-v116">
                 {% for match in matches %}
-                    <div class="deck-line">
-                        <span>Match #{{ match.id }}</span>
-                        <strong>{{ match.created_at if match.created_at is defined else "Recorded" }}</strong>
-                    </div>
+                    <article class="match-card-v116">
+                        <div>
+                            <span class="progression-kicker">Match #{{ match.id }}</span>
+                            <h3>{{ match.player1_name }} vs {{ match.player2_name }}</h3>
+                            <p>
+                                Winner:
+                                <strong>
+                                    {% if match.winner_name %}
+                                        {{ match.winner_name }}
+                                    {% else %}
+                                        Draw
+                                    {% endif %}
+                                </strong>
+                            </p>
+                        </div>
+
+                        <div class="match-card-stats-v116">
+                            <div>
+                                <span>Result</span>
+                                <strong>{{ match.result }}</strong>
+                            </div>
+                            <div>
+                                <span>Rounds</span>
+                                <strong>{{ match.total_rounds }}</strong>
+                            </div>
+                            <div>
+                                <span>P1 HP</span>
+                                <strong>{{ match.player1_final_hp }}</strong>
+                            </div>
+                            <div>
+                                <span>P2 HP</span>
+                                <strong>{{ match.player2_final_hp }}</strong>
+                            </div>
+                        </div>
+
+                        <footer>
+                            <span>{{ match.created_at }}</span>
+                        </footer>
+                    </article>
                 {% else %}
                     <p class="subtitle">No matches recorded yet.</p>
                 {% endfor %}

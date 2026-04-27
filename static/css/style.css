@@ -4444,3 +4444,166 @@ a.menu-card:hover {
 
 }
 
+
+
+/* =========================================================
+   AMBITIONZ V1.16 — RANKING SEASON + MATCH HISTORY POLISH
+   ========================================================= */
+
+.ranking-hero-v116,
+.match-history-hero-v116 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+    gap: 18px;
+    align-items: stretch;
+    border-radius: 28px;
+    border: 1px solid rgba(216,199,255,0.16);
+    background:
+        radial-gradient(circle at top left, rgba(142, 68, 173, 0.25), transparent 34%),
+        rgba(255,255,255,0.045);
+    padding: 24px;
+    margin-bottom: 18px;
+}
+
+.ranking-hero-v116 h2,
+.match-history-hero-v116 h2 {
+    margin: 8px 0;
+    color: #fff;
+    font-size: clamp(30px, 7vw, 58px);
+    line-height: 0.95;
+}
+
+.ranking-hero-v116 p,
+.match-history-hero-v116 p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.55;
+}
+
+.ranking-season-grid-v116 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.ranking-season-grid-v116 div {
+    border-radius: 18px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.06);
+    padding: 14px;
+}
+
+.ranking-season-grid-v116 span,
+.match-card-stats-v116 span {
+    display: block;
+    color: var(--az-muted, #bfb3d3);
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.ranking-season-grid-v116 strong,
+.match-card-stats-v116 strong {
+    display: block;
+    margin-top: 6px;
+    color: #fff;
+    font-size: 20px;
+}
+
+.ranking-table-v116 {
+    display: grid;
+    gap: 8px;
+}
+
+.ranking-row-v116 {
+    display: grid;
+    grid-template-columns: 70px minmax(160px, 1fr) 130px 140px 100px 90px;
+    gap: 10px;
+    align-items: center;
+    border-radius: 16px;
+    border: 1px solid rgba(216,199,255,0.10);
+    background: rgba(255,255,255,0.045);
+    padding: 12px;
+    color: #fff;
+}
+
+.ranking-head-v116 {
+    background: rgba(216,199,255,0.08);
+    color: var(--az-muted, #bfb3d3);
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.ranking-tier-v116 {
+    width: fit-content;
+    border-radius: 999px;
+    border: 1px solid rgba(216,199,255,0.16);
+    background: rgba(142, 68, 173, 0.18);
+    padding: 5px 9px;
+    font-weight: 900;
+}
+
+.match-history-list-v116 {
+    display: grid;
+    gap: 12px;
+}
+
+.match-card-v116 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+    gap: 14px;
+    border-radius: 22px;
+    border: 1px solid rgba(216,199,255,0.12);
+    background: rgba(255,255,255,0.045);
+    padding: 16px;
+}
+
+.match-card-v116 h3 {
+    margin: 6px 0;
+    color: #fff;
+}
+
+.match-card-v116 p,
+.match-card-v116 footer {
+    color: var(--az-muted, #bfb3d3);
+}
+
+.match-card-stats-v116 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.match-card-stats-v116 div {
+    border-radius: 14px;
+    border: 1px solid rgba(216,199,255,0.10);
+    background: rgba(255,255,255,0.045);
+    padding: 10px;
+}
+
+.match-card-v116 footer {
+    grid-column: 1 / -1;
+    font-size: 12px;
+}
+
+@media (max-width: 980px) {
+    .ranking-hero-v116,
+    .match-history-hero-v116,
+    .match-card-v116 {
+        grid-template-columns: 1fr;
+    }
+
+    .ranking-row-v116 {
+        grid-template-columns: 1fr;
+    }
+
+    .ranking-head-v116 {
+        display: none;
+    }
+
+    .match-card-stats-v116 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

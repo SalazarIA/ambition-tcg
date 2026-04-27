@@ -774,13 +774,65 @@ def resend_verification():
 def ranking():
     users = (
         User.query
-        .filter_by(is_verified=True)
         .order_by(User.wins.desc(), User.level.desc(), User.xp.desc())
-        .limit(100)
+        .limit(50)
         .all()
     )
 
-    return render_template("ranking.html", users=users)
+    total_players = User.query.count()
+    total_matches = 0
+
+    try:
+        total_matches = MatchHistory.query.count()
+    except Exception as error:
+        print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+        total_matches = 0
+
+    ranked_users = []
+
+    for index, player in enumerate(users, start=1):
+        total = int(player.wins or 0) + int(player.losses or 0)
+        winrate = 0
+
+        if total > 0:
+            winrate = round((int(player.wins or 0) / total) * 100, 1)
+
+        if int(player.wins or 0) >= 10 and winrate >= 65:
+            tier = "Champion"
+        elif int(player.wins or 0) >= 5 and winrate >= 55:
+            tier = "Contender"
+        elif total >= 3:
+            tier = "Climber"
+        else:
+            tier = "Unranked"
+
+        ranked_users.append({
+            "rank": index,
+            "username": player.username,
+            "wins": int(player.wins or 0),
+            "losses": int(player.losses or 0),
+            "level": int(player.level or 1),
+            "xp": int(player.xp or 0),
+            "total_matches": total,
+            "winrate": winrate,
+            "tier": tier,
+        })
+
+    season = {
+        "name": "Beta Season",
+        "status": "Foundation",
+        "total_players": total_players,
+        "total_matches": total_matches,
+        "ranked_count": len(ranked_users),
+    }
+
+    return render_template(
+        "ranking.html",
+        users=users,
+        ranked_users=ranked_users,
+        season=season,
+    )
+
 
 
 
@@ -2443,6 +2495,15 @@ def match_history():
         return auth_redirect
 
     matches = []
+    user = current_user()
+
+    stats = {
+        "total": 0,
+        "wins": 0,
+        "losses": 0,
+        "draws": 0,
+        "winrate": 0,
+    }
 
     try:
         if "MatchHistory" in globals():
@@ -2452,11 +2513,38 @@ def match_history():
                 .limit(50)
                 .all()
             )
+
+            user_matches = []
+
+            for match in matches:
+                if match.player1_id == user.id or match.player2_id == user.id:
+                    user_matches.append(match)
+
+            stats["total"] = len(user_matches)
+
+            for match in user_matches:
+                if match.result == "DRAW" or not match.winner_id:
+                    stats["draws"] += 1
+                elif match.winner_id == user.id:
+                    stats["wins"] += 1
+                else:
+                    stats["losses"] += 1
+
+            decided = stats["wins"] + stats["losses"]
+
+            if decided > 0:
+                stats["winrate"] = round((stats["wins"] / decided) * 100, 1)
+
     except Exception as error:
         print("Match history query failed:", error)
         matches = []
 
-    return render_template("match_history.html", user=current_user(), matches=matches)
+    return render_template(
+        "match_history.html",
+        user=user,
+        matches=matches,
+        stats=stats,
+    )
 
 
 
