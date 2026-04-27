@@ -2064,8 +2064,23 @@ def claim_user_mission(mission_id):
     if auth_redirect:
         return auth_redirect
 
-    flash("Mission rewards are being stabilized for beta.")
+    user = current_user()
+
+    try:
+        success, message = claim_mission(user, mission_id)
+
+        if success:
+            flash(message)
+        else:
+            flash(message)
+
+    except Exception as error:
+        print("MISSION CLAIM ERROR:", type(error).__name__, error)
+        db.session.rollback()
+        flash("Mission claim failed. Try again.")
+
     return redirect("/missions")
+
 
 
 
