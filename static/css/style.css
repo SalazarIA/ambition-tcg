@@ -3612,3 +3612,136 @@ a.menu-card:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.10C — PROGRESSION HUB
+   ========================================================= */
+
+.progression-hub-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    gap: 18px;
+    align-items: stretch;
+    border-radius: 28px;
+    border: 1px solid rgba(216,199,255,0.16);
+    background:
+        radial-gradient(circle at top left, rgba(142, 68, 173, 0.24), transparent 34%),
+        rgba(255,255,255,0.045);
+    padding: 24px;
+    margin-bottom: 18px;
+}
+
+.progression-hub-hero h2 {
+    margin: 8px 0;
+    color: #fff;
+    font-size: clamp(28px, 6vw, 52px);
+    line-height: 0.96;
+}
+
+.progression-hub-hero p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.55;
+    max-width: 780px;
+}
+
+.progression-account-card {
+    display: grid;
+    gap: 10px;
+}
+
+.progression-account-card div {
+    border-radius: 20px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.06);
+    padding: 16px;
+}
+
+.progression-account-card span,
+.progression-mission-reward span {
+    display: block;
+    color: var(--az-muted, #bfb3d3);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.progression-account-card strong {
+    display: block;
+    color: #fff;
+    margin-top: 6px;
+    font-size: 24px;
+}
+
+.progression-loop-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.progression-step-card,
+.progression-mission-card {
+    border-radius: 22px;
+    border: 1px solid rgba(216,199,255,0.14);
+    background: rgba(255,255,255,0.05);
+    padding: 16px;
+}
+
+.progression-step-card h3,
+.progression-mission-card h3 {
+    margin: 0;
+    color: #fff;
+}
+
+.progression-step-card p,
+.progression-mission-card p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.45;
+}
+
+.section-title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.progression-mission-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.progression-mission-reward {
+    margin: 12px 0;
+}
+
+.progression-mission-reward strong {
+    display: block;
+    margin-top: 4px;
+    color: #fff;
+}
+
+@media (max-width: 980px) {
+    .progression-loop-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .progression-hub-hero,
+    .progression-mission-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .progression-loop-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-title-row {
+        display: grid;
+    }
+}

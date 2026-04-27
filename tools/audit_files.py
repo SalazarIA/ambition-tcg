@@ -39,6 +39,7 @@ REQUIRED_FILES = [
     "tools/progression_loop_report.py",
     "game/card_identity_applied.py",
     "tools/applied_card_identity_report.py",
+    "templates/progression.html",
     "static/manifest.webmanifest",
 ]
 

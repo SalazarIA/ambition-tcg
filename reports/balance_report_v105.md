@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1119, 'max': 1950, 'avg': 1592.9, 'median': 1646}
+- Monster summary: {'count': 21, 'min': 1084, 'max': 2006, 'avg': 1561.6, 'median': 1543}
 
 ### Starter Type Distribution
 
@@ -51,21 +51,21 @@
 - Global: 9
 - Fire: 6
 - Plant: 5
-- Water: 5
 - Earth: 5
+- Water: 5
 
 ### Starter Sigil Distribution
 
 - Global: 9
 - Fury: 6
 - Harmony: 5
-- Insight: 5
 - Resolve: 5
+- Insight: 5
 
 ### Starter Rarity Distribution
 
-- Common: 22
-- Uncommon: 8
+- Common: 20
+- Uncommon: 10
 
 
 ## Catalog Outliers
@@ -79,4 +79,4 @@
 
 ## Starter Deck Outliers
 
-- No major starter deck outliers detected.
+- **Serpente Abissal** `water_002` score=1084.0 cost=1 power=1084 reasons=high power per cost

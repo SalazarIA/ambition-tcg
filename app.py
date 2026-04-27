@@ -2069,6 +2069,37 @@ def complete_onboarding():
 
 
 
+@app.route("/missions")
+def missions():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    missions = []
+
+    try:
+        ensure_daily_missions(user)
+        missions = (
+            UserMission.query
+            .filter_by(user_id=user.id)
+            .order_by(UserMission.id.desc())
+            .all()
+        )
+
+    except Exception as error:
+        print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+        db.session.rollback()
+        missions = []
+
+    return render_template(
+        "missions.html",
+        user=user,
+        missions=missions,
+    )
+
+
 @app.route("/missions/claim/<int:mission_id>", methods=["POST"])
 def claim_user_mission(mission_id):
     auth_redirect = login_required_redirect()
@@ -2136,6 +2167,66 @@ def welcome():
         print("WELCOME RENDER ERROR:", type(error).__name__, error)
         return redirect("/")
 
+
+
+
+@app.route("/progression")
+def progression():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    missions = []
+
+    try:
+        ensure_daily_missions(user)
+        missions = UserMission.query.filter_by(user_id=user.id).order_by(UserMission.id.desc()).limit(6).all()
+    except Exception as error:
+        print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+        db.session.rollback()
+        missions = []
+
+    next_steps = [
+        {
+            "title": "Play a Match",
+            "description": "Earn XP and coins from training or PvP.",
+            "url": url_for("training"),
+            "cta": "Play Training",
+        },
+        {
+            "title": "Claim Missions",
+            "description": "Convert completed objectives into XP and coins.",
+            "url": url_for("missions"),
+            "cta": "View Missions",
+        },
+        {
+            "title": "Open Booster",
+            "description": "Spend coins to grow your card collection.",
+            "url": url_for("shop"),
+            "cta": "Open Shop",
+        },
+        {
+            "title": "Improve Deck",
+            "description": "Tune your 30-card beta deck after pulling new cards.",
+            "url": url_for("deck_builder"),
+            "cta": "Edit Deck",
+        },
+        {
+            "title": "Climb Ranking",
+            "description": "Track your wins and sharpen your strategy.",
+            "url": url_for("ranking"),
+            "cta": "View Ranking",
+        },
+    ]
+
+    return render_template(
+        "progression.html",
+        user=user,
+        missions=missions,
+        next_steps=next_steps,
+    )
 
 
 if __name__ == "__main__":

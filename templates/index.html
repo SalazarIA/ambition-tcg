@@ -40,7 +40,12 @@
                 <a class="menu-card" href="{{ url_for('terms') }}"><strong>Terms</strong><span>Beta terms</span></a>
                 <a class="menu-card" href="{{ url_for('privacy') }}"><strong>Privacy</strong><span>Data notice</span></a>
             </div>
-        </section>
+        
+            <a href="{{ url_for('progression') }}" class="menu-card clickable-menu-card">
+                <strong>Progression</strong>
+                <span>Track XP, missions, boosters and next steps.</span>
+            </a>
+</section>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>

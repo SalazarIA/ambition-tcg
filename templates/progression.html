@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Progression - Ambitionz</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambition">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Progression</h1>
+                <p>Play, earn, claim, open, improve, climb.</p>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="progression-hub-hero">
+            <div>
+                <span class="progression-kicker">Ambition Loop</span>
+                <h2>Every match should push your account forward.</h2>
+                <p>
+                    Your loop is simple: play a quick duel, earn XP and coins, claim missions,
+                    open boosters, improve your deck and climb the ranking.
+                </p>
+            </div>
+
+            <div class="progression-account-card">
+                <div>
+                    <span>Level</span>
+                    <strong>{{ user.level }}</strong>
+                </div>
+                <div>
+                    <span>XP</span>
+                    <strong>{{ user.xp }}/{{ user.next_level_xp }}</strong>
+                </div>
+                <div>
+                    <span>Coins</span>
+                    <strong>{{ user.coins }}</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <div class="deck-progress-label">
+                <span>Level Progress</span>
+                <strong>{{ user.level_progress_percent }}%</strong>
+            </div>
+            <div class="deck-progress-bar">
+                <div class="deck-progress-fill" style="width: {{ user.level_progress_percent }}%;"></div>
+            </div>
+        </section>
+
+        <section class="progression-loop-grid">
+            {% for step in next_steps %}
+                <article class="progression-step-card">
+                    <h3>{{ loop.index }}. {{ step.title }}</h3>
+                    <p>{{ step.description }}</p>
+                    <a href="{{ step.url }}" class="btn btn-secondary full-btn">{{ step.cta }}</a>
+                </article>
+            {% endfor %}
+        </section>
+
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Active Missions</span>
+                    <h2>Claim rewards when objectives are complete</h2>
+                </div>
+                <a href="{{ url_for('missions') }}" class="btn btn-secondary small-btn">All Missions</a>
+            </div>
+
+            {% if missions %}
+                <div class="progression-mission-list">
+                    {% for mission in missions %}
+                        <article class="progression-mission-card">
+                            <div>
+                                <h3>{{ mission.title }}</h3>
+                                <p>{{ mission.description }}</p>
+                            </div>
+
+                            <div class="deck-progress-shell">
+                                <div class="deck-progress-label">
+                                    <span>{{ mission.progress }}/{{ mission.target }}</span>
+                                    <strong>{{ mission.progress_percent }}%</strong>
+                                </div>
+                                <div class="deck-progress-bar">
+                                    <div class="deck-progress-fill" style="width: {{ mission.progress_percent }}%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="progression-mission-reward">
+                                <span>Reward</span>
+                                <strong>{{ mission.xp_reward }} XP + {{ mission.coin_reward }} coins</strong>
+                            </div>
+
+                            {% if mission.is_claimed %}
+                                <button class="btn btn-secondary full-btn" disabled>Claimed</button>
+                            {% elif mission.is_complete %}
+                                <form method="POST" action="{{ url_for('claim_user_mission', mission_id=mission.id) }}">
+                                    <button type="submit" class="btn full-btn">Claim Reward</button>
+                                </form>
+                            {% else %}
+                                <a href="{{ url_for('training') }}" class="btn btn-secondary full-btn">Progress Mission</a>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="subtitle">No missions available yet. Play a match to start progression.</p>
+            {% endif %}
+        </section>
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}">Play</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('shop') }}">Shop</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>
