@@ -50,7 +50,22 @@
 
         </header>
 
-        {% with messages = get_flashed_messages() %}
+        
+        <section class="deck-builder-coach-v123">
+            <div>
+                <span class="progression-kicker">Deck Coach</span>
+                <h2>Build a legal 30-card beta deck.</h2>
+                <p>Keep the beta structure stable: 21 monsters, 6 spells and 3 traps. Use filters to tune element, Sigil, role and cost curve.</p>
+            </div>
+            <div class="deck-coach-rules-v123">
+                <div><strong>21</strong><span>Monsters</span></div>
+                <div><strong>6</strong><span>Spells</span></div>
+                <div><strong>3</strong><span>Traps</span></div>
+                <div><strong>3x</strong><span>Max copies</span></div>
+            </div>
+        </section>
+
+{% with messages = get_flashed_messages() %}
 
             {% if messages %}
 
@@ -515,6 +530,7 @@
             const sigil = document.getElementById("filter-sigil").value;
 
             const role = document.getElementById("filter-role").value;
+            const cost = document.getElementById("filter-cost") ? document.getElementById("filter-cost").value : "";
 
             const rarity = document.getElementById("filter-rarity").value;
 

@@ -3,91 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <title>How to Play - Ambitionz</title>
-
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#070711">
+    <meta name="theme-color" content="#8e44ad">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Ambition">
+    <meta name="apple-mobile-web-app-title" content="Ambitionz">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <main class="wide-page mobile-wide-page">
-        <header class="top-bar mobile-top-bar">
+        <header class="rules-hero-v121">
             <div>
-                <h1>How to Play</h1>
-                <p>Ambitionz V1.01 — Risk. Elements. Overreach.</p>
+                <span class="progression-kicker">How to Play</span>
+                <h1>Win by reading intent, managing risk and timing Overreach.</h1>
+                <p>Each round, both players prepare cards, choose an intent and resolve the clash.</p>
+                <div class="progression-action-row">
+                    <a href="{{ url_for('training') }}" class="btn">Play Training</a>
+                    <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Edit Deck</a>
+                    <a href="{{ url_for('feedback') }}" class="btn btn-secondary">Send Feedback</a>
+                </div>
             </div>
-
-            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+            <aside class="rules-summary-card-v121">
+                <h2>Core Rules</h2>
+                <div class="deck-list">
+                    <div class="deck-line"><span>Deck size</span><strong>30</strong></div>
+                    <div class="deck-line"><span>Monster / Spell / Trap</span><strong>21 / 6 / 3</strong></div>
+                    <div class="deck-line"><span>Starting hand</span><strong>5</strong></div>
+                    <div class="deck-line"><span>Main resource</span><strong>Energy</strong></div>
+                    <div class="deck-line"><span>Risk mechanic</span><strong>Overreach</strong></div>
+                </div>
+            </aside>
         </header>
 
-        <section class="deck-status">
-            <h2>Core Idea</h2>
-            <p>Ambitionz is a fast mobile card duel. Set your cards, choose your Intent, build Ambition and decide when to Unleash power. Push too far and Overreach can punish you.</p>
+        <section class="rules-grid-v121">
+            <article class="rules-card-v121"><span>01</span><h2>Objective</h2><p>Reduce the opponent HP to zero before they reduce yours.</p></article>
+            <article class="rules-card-v121"><span>02</span><h2>Cards</h2><p>Monsters pressure. Spells create tactical effects. Traps punish timing.</p></article>
+            <article class="rules-card-v121"><span>03</span><h2>Energy</h2><p>Cards cost energy. Efficient early plays matter.</p></article>
+            <article class="rules-card-v121"><span>04</span><h2>Intent</h2><p>Strike, Guard, Focus and Overreach change how each round resolves.</p></article>
         </section>
 
         <section class="deck-status">
-            <h2>Round Flow</h2>
-            <div class="deck-list">
-                <div class="deck-line"><span>1</span><strong>Set 1 monster</strong></div>
-                <div class="deck-line"><span>2</span><strong>Set 1 spell/trap if available</strong></div>
-                <div class="deck-line"><span>3</span><strong>Choose Strike, Guard or Focus</strong></div>
-                <div class="deck-line"><span>4</span><strong>Prepare Unleash if you have 5 Ambition</strong></div>
-                <div class="deck-line"><span>5</span><strong>Press Ready and resolve battle</strong></div>
+            <div class="section-title-row">
+                <div><span class="progression-kicker">Intent System</span><h2>Choose the right posture</h2></div>
+            </div>
+            <div class="intent-guide-grid-v121">
+                <article><strong>Strike</strong><p>Use when you have board pressure or want to force damage.</p></article>
+                <article><strong>Guard</strong><p>Use when low HP or expecting aggression.</p></article>
+                <article><strong>Focus</strong><p>Use when you need stability or setup.</p></article>
+                <article><strong>Overreach</strong><p>Use when the reward is worth the risk. Do not spam it.</p></article>
             </div>
         </section>
 
         <section class="deck-status">
-            <h2>Intents</h2>
-            <div class="deck-list">
-                <div class="deck-line"><span>Strike</span><strong>+150 clash power if you win. +100 extra damage if you lose.</strong></div>
-                <div class="deck-line"><span>Guard</span><strong>Blocks 350 incoming damage.</strong></div>
-                <div class="deck-line"><span>Focus</span><strong>Gain +2 Ambition if you survive the round.</strong></div>
+            <div class="section-title-row">
+                <div><span class="progression-kicker">Elements and Sigils</span><h2>Card identity matters</h2></div>
+            </div>
+            <div class="rules-archetype-grid-v121">
+                <article><h3>Fire / Fury</h3><p>Pressure, burst damage and aggressive tempo.</p></article>
+                <article><h3>Water / Insight</h3><p>Control, adaptation and tactical patience.</p></article>
+                <article><h3>Earth / Resolve</h3><p>Defense, comeback pressure and durability.</p></article>
+                <article><h3>Plant / Harmony</h3><p>Synergy, sustain and scaling value.</p></article>
             </div>
         </section>
 
         <section class="deck-status">
-            <h2>Ambition</h2>
-            <p>Ambition is your risk resource. You gain it by playing aggressively, dealing damage and reading the elemental clash correctly.</p>
-            <div class="deck-list">
-                <div class="deck-line"><span>Unleash</span><strong>Spend 5 Ambition for +300 battle power.</strong></div>
-                <div class="deck-line"><span>Overreach</span><strong>If Ambition exceeds 10, take 350 damage and reset to 6.</strong></div>
+            <h2>Ready?</h2>
+            <div class="progression-action-row">
+                <a href="{{ url_for('training') }}" class="btn">Start Training</a>
+                <a href="{{ url_for('collection') }}" class="btn btn-secondary">View Collection</a>
+                <a href="{{ url_for('shop') }}" class="btn btn-secondary">Open Booster</a>
             </div>
         </section>
 
-        <section class="deck-status">
-            <h2>Elements</h2>
-            <p>Elemental advantage gives +300 power during monster clashes.</p>
-            <div class="deck-list">
-                <div class="deck-line"><span>Fire</span><strong>beats Plant</strong></div>
-                <div class="deck-line"><span>Plant</span><strong>beats Earth</strong></div>
-                <div class="deck-line"><span>Earth</span><strong>beats Water</strong></div>
-                <div class="deck-line"><span>Water</span><strong>beats Fire</strong></div>
-            </div>
-        </section>
-
-        <section class="deck-status">
-            <h2>Sigils</h2>
-            <p>Sigils are monster alignments. They connect your card, Intent and battle situation.</p>
-            <div class="deck-list">
-                <div class="deck-line"><span>Fury</span><strong>+100 power with Strike.</strong></div>
-                <div class="deck-line"><span>Resolve</span><strong>+100 power with Guard.</strong></div>
-                <div class="deck-line"><span>Insight</span><strong>+1 Ambition with Focus.</strong></div>
-                <div class="deck-line"><span>Ruin</span><strong>+100 damage when winning with elemental advantage.</strong></div>
-                <div class="deck-line"><span>Harmony</span><strong>Blocks 100 damage while in elemental disadvantage.</strong></div>
-            </div>
-        </section>
-
-        <section class="deck-status">
-            <h2>Deck Rules</h2>
-            <p>Beta decks use 30 cards: 21 monsters, 6 spells and 3 traps.</p>
-        </section>
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}">Play</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('feedback') }}">Feedback</a>
+        </nav>
     </main>
-
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 </body>
 </html>
