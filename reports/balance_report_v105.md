@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1034, 'max': 2056, 'avg': 1603.9, 'median': 1628}
+- Monster summary: {'count': 21, 'min': 1269, 'max': 1938, 'avg': 1568.0, 'median': 1528}
 
 ### Starter Type Distribution
 
@@ -64,8 +64,8 @@
 
 ### Starter Rarity Distribution
 
-- Common: 22
-- Uncommon: 8
+- Common: 20
+- Uncommon: 10
 
 
 ## Catalog Outliers
@@ -79,4 +79,4 @@
 
 ## Starter Deck Outliers
 
-- **Lobo Espinheiro** `plant_002` score=1034.0 cost=1 power=1034 reasons=high power per cost
+- No major starter deck outliers detected.

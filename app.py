@@ -23,6 +23,7 @@ from game.deck import (
     load_card_ids,
     validate_deck,
     full_deck_analysis,
+    deck_analysis_v115,
     create_starter_deck_from_collection,
 )
 from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, db, ensure_database_schema
@@ -1336,7 +1337,7 @@ def deck_builder():
         current_deck=current_deck,
         deck_ids=deck_ids,
         deck_validation_errors=deck_validation_errors,
-        deck_analysis=deck_analysis,
+        deck_analysis=deck_analysis_v115(deck_ids),
     )
 
 

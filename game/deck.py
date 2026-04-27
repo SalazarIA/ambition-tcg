@@ -425,3 +425,192 @@ def full_deck_analysis(deck_ids):
         "elements": elements,
         "warnings": warnings,
     }
+
+
+# =========================================================
+
+# AMBITIONZ V1.15 — DECK ANALYSIS 2.0
+
+# =========================================================
+
+def deck_sigil_counts(deck_ids):
+
+    counts = {}
+
+    for card_id in deck_ids:
+
+        card = get_card_by_id(card_id)
+
+        if not card:
+
+            continue
+
+        sigil = card.get("sigil", "Global")
+
+        counts[sigil] = counts.get(sigil, 0) + 1
+
+    return counts
+
+def deck_rarity_counts(deck_ids):
+
+    counts = {}
+
+    for card_id in deck_ids:
+
+        card = get_card_by_id(card_id)
+
+        if not card:
+
+            continue
+
+        rarity = card.get("rarity", "Common")
+
+        counts[rarity] = counts.get(rarity, 0) + 1
+
+    return counts
+
+def deck_archetype_counts(deck_ids):
+
+    counts = {}
+
+    for card_id in deck_ids:
+
+        card = get_card_by_id(card_id)
+
+        if not card:
+
+            continue
+
+        archetype = card.get("archetype", "Ambition Core")
+
+        counts[archetype] = counts.get(archetype, 0) + 1
+
+    return counts
+
+def deck_analysis_v115(deck_ids):
+
+    stats = starter_deck_stats(deck_ids)
+
+    energy = deck_energy_curve(deck_ids)
+
+    elements = deck_element_counts(deck_ids)
+
+    sigils = deck_sigil_counts(deck_ids)
+
+    rarities = deck_rarity_counts(deck_ids)
+
+    archetypes = deck_archetype_counts(deck_ids)
+
+    warnings = []
+
+    strengths = []
+
+    total = stats["total"]
+
+    if total == 30:
+
+        strengths.append("Deck size is complete at 30/30.")
+
+    else:
+
+        warnings.append(f"Deck has {total}/30 cards.")
+
+    if stats["monsters"] == 21:
+
+        strengths.append("Monster count is correct at 21.")
+
+    else:
+
+        warnings.append(f"Monster count should be 21. Current: {stats['monsters']}.")
+
+    if stats["spells"] == 6:
+
+        strengths.append("Spell count is correct at 6.")
+
+    else:
+
+        warnings.append(f"Spell count should be 6. Current: {stats['spells']}.")
+
+    if stats["traps"] == 3:
+
+        strengths.append("Trap count is correct at 3.")
+
+    else:
+
+        warnings.append(f"Trap count should be 3. Current: {stats['traps']}.")
+
+    early_count = int(energy["curve"].get(1, 0)) + int(energy["curve"].get(2, 0))
+
+    if early_count >= 12:
+
+        strengths.append("Early curve is healthy with 12+ cost 1-2 cards.")
+
+    else:
+
+        warnings.append("Low early-game count. Add more cost 1-2 cards.")
+
+    if energy["average_cost"] > 3.2:
+
+        warnings.append("Average cost is high. The deck may feel slow.")
+
+    elif energy["average_cost"] <= 2.7:
+
+        strengths.append("Average cost is fast and tempo-friendly.")
+
+    else:
+
+        strengths.append("Average cost is balanced.")
+
+    focused_elements = [
+
+        key for key, value in elements.items()
+
+        if key != "Global" and int(value) >= 6
+
+    ]
+
+    if focused_elements:
+
+        strengths.append("Element identity detected: " + ", ".join(focused_elements) + ".")
+
+    else:
+
+        warnings.append("No strong element identity yet. Consider focusing one element.")
+
+    focused_sigils = [
+
+        key for key, value in sigils.items()
+
+        if key != "Global" and int(value) >= 6
+
+    ]
+
+    if focused_sigils:
+
+        strengths.append("Sigil identity detected: " + ", ".join(focused_sigils) + ".")
+
+    else:
+
+        warnings.append("No strong Sigil identity yet. Consider focusing one Sigil.")
+
+    return {
+
+        "stats": stats,
+
+        "energy": energy,
+
+        "elements": elements,
+
+        "sigils": sigils,
+
+        "rarities": rarities,
+
+        "archetypes": archetypes,
+
+        "warnings": warnings,
+
+        "strengths": strengths,
+
+    }
+
+
