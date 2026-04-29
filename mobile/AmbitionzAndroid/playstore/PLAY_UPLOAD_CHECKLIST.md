@@ -1,7 +1,6 @@
 # Ambitionz — Google Play Upload Checklist
 
 ## Before Upload
-
 - [ ] Confirm app-release.aab exists.
 - [ ] Confirm versionCode is 1.
 - [ ] Confirm versionName is 1.0.0-beta.1.
@@ -12,9 +11,9 @@
 - [ ] Confirm app opens in Android emulator.
 - [ ] Confirm login/register pages load.
 - [ ] Confirm feedback page loads.
+- [ ] Confirm screenshots are captured.
 
 ## Play Console Setup
-
 - [ ] Create app in Play Console.
 - [ ] App name: Ambitionz.
 - [ ] Default language: English.
@@ -30,7 +29,6 @@
 - [ ] Release submitted for review.
 
 ## Required URLs
-
 Website:
 https://ambitionzgame.com
 
@@ -44,9 +42,7 @@ Support:
 https://ambitionzgame.com/feedback
 
 ## Artifact
-
 Upload:
-
 mobile/AmbitionzAndroid/android/app/build/outputs/bundle/release/app-release.aab
 
 Do not upload:

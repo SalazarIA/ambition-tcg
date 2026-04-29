@@ -3,9 +3,6 @@
 Thank you for testing Ambitionz.
 
 ## What to Test
-
-Please test the Android app like a real player:
-
 1. Open the app.
 2. Create an account.
 3. Play at least one training match.
@@ -17,9 +14,6 @@ Please test the Android app like a real player:
 9. Send feedback inside the app.
 
 ## What Feedback Should Include
-
-When reporting a bug, include:
-
 - What happened?
 - What did you expect?
 - Which page were you on?
@@ -28,11 +22,7 @@ When reporting a bug, include:
 - Screenshot if possible.
 
 ## Feedback Link
-
-Use the in-app feedback page:
-
 https://ambitionzgame.com/feedback
 
 ## Known Beta Notice
-
 Ambitionz is still in beta. Balance, cards, rewards, ranking and progression may change during testing.

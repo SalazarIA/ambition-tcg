@@ -1,12 +1,10 @@
-# Ambitionz — Google Play Store Listing
-
-## App Name
+APP NAME
 Ambitionz
 
-## Short Description
+SHORT DESCRIPTION
 Fast tactical card duels built around risk, elements and ambition.
 
-## Full Description
+FULL DESCRIPTION
 Ambitionz is a tactical online card game built around fast duels, elemental strategy, hidden intent and calculated risk.
 
 Build your 30-card beta deck, enter quick matches, earn XP and coins, complete missions, open boosters and improve your collection. Every duel pushes your account forward.
@@ -26,17 +24,17 @@ Core features:
 
 Ambitionz is currently in beta. Cards, balance, rewards, ranking, progression and features may change during testing.
 
-## Category
+CATEGORY
 Game / Card
 
-## Website
+WEBSITE
 https://ambitionzgame.com
 
-## Privacy Policy
+PRIVACY POLICY
 https://ambitionzgame.com/privacy
 
-## Terms
+TERMS
 https://ambitionzgame.com/terms
 
-## Support
+SUPPORT
 https://ambitionzgame.com/feedback

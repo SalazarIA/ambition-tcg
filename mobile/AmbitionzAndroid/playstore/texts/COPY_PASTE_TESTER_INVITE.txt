@@ -1,0 +1,22 @@
+You are invited to test Ambitionz on Android.
+
+Please test:
+1. Open the app.
+2. Create an account.
+3. Play one training match.
+4. Check post-match rewards.
+5. Open missions.
+6. Open booster shop.
+7. Edit your deck if possible.
+8. Check profile and ranking.
+9. Submit feedback inside the app.
+
+Report bugs through:
+https://ambitionzgame.com/feedback
+
+When reporting, include:
+- What happened
+- What you expected
+- Which page you were on
+- Your device model
+- Screenshot if possible
