@@ -79,3 +79,82 @@
         });
     }
 })();
+
+
+// ==========================================================================
+// AMBITIONZ V1.40B — MOBILE TAP / LOADING FEEDBACK
+// ==========================================================================
+
+(function () {
+    if (window.__ambitionzMobileTapV140B) {
+        return;
+    }
+
+    window.__ambitionzMobileTapV140B = true;
+
+    function createLoadingPill(label) {
+        try {
+            var existing = document.querySelector(".az-page-loading-pill-v140b");
+            if (existing) {
+                existing.remove();
+            }
+
+            var pill = document.createElement("div");
+            pill.className = "az-page-loading-pill-v140b";
+            pill.textContent = label || "Loading...";
+            document.body.appendChild(pill);
+
+            window.setTimeout(function () {
+                if (pill && pill.parentNode) {
+                    pill.parentNode.removeChild(pill);
+                }
+            }, 1600);
+        } catch (error) {}
+    }
+
+    function markBusy(element) {
+        try {
+            if (!element) {
+                return;
+            }
+
+            element.classList.add("az-loading-tap-v140b");
+            element.setAttribute("aria-busy", "true");
+
+            window.setTimeout(function () {
+                element.classList.remove("az-loading-tap-v140b");
+                element.removeAttribute("aria-busy");
+            }, 1800);
+        } catch (error) {}
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("a[href]").forEach(function (link) {
+            link.addEventListener("click", function () {
+                var href = link.getAttribute("href") || "";
+
+                if (
+                    href &&
+                    href.indexOf("#") !== 0 &&
+                    href.indexOf("javascript:") !== 0 &&
+                    !link.target
+                ) {
+                    markBusy(link);
+                    createLoadingPill("Opening...");
+                }
+            }, { passive: true });
+        });
+
+        document.querySelectorAll("form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                var submit = form.querySelector("button[type=submit], button:not([type]), .btn");
+
+                if (submit) {
+                    markBusy(submit);
+                }
+
+                createLoadingPill("Sending...");
+            });
+        });
+    });
+})();

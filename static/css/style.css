@@ -6041,3 +6041,30 @@ button.btn,
         padding-inline: 6px;
     }
 }
+
+
+/* ==========================================================================
+   AMBITIONZ V1.40B — MOBILE LOADING FEEDBACK
+   ========================================================================== */
+
+.az-loading-tap-v140b {
+    opacity: 0.68;
+    pointer-events: none;
+}
+
+.az-page-loading-pill-v140b {
+    position: fixed;
+    left: 50%;
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+    z-index: 9999;
+    transform: translateX(-50%);
+    border: 1px solid rgba(216, 199, 255, 0.22);
+    background: rgba(10, 8, 18, 0.94);
+    color: #efe7ff;
+    border-radius: 999px;
+    padding: 10px 14px;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.38);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .01em;
+}
