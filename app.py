@@ -670,6 +670,47 @@ def admin_invites():
     return render_template("admin_invites.html", user=user, invites=invites)
 
 
+
+# AMBITIONZ V1.41C — ADMIN BETA EVENTS PANEL
+@app.route("/admin/beta-events")
+def admin_beta_events():
+    user = current_user()
+
+    if not user:
+        return redirect("/login")
+
+    if not getattr(user, "is_admin", False):
+        return redirect("/admin")
+
+    events = []
+
+    try:
+        events = (
+            SystemLog.query
+            .filter_by(category="beta_event")
+            .order_by(SystemLog.created_at.desc())
+            .limit(300)
+            .all()
+        )
+    except Exception as error:
+        print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+
+    summary = {
+        "total_loaded": len(events),
+        "unique_users": len({event.user_id for event in events if getattr(event, "user_id", None)}),
+        "page_views": len([event for event in events if "page_view" in str(getattr(event, "message", ""))]),
+        "clicks": len([event for event in events if "action_link_click" in str(getattr(event, "message", ""))]),
+        "forms": len([event for event in events if "form_submit" in str(getattr(event, "message", ""))]),
+    }
+
+    return render_template(
+        "admin_beta_events.html",
+        user=user,
+        events=events,
+        summary=summary,
+    )
+
+
 @app.route("/admin/feedback")
 def admin_feedback():
     auth_redirect = login_required_redirect()

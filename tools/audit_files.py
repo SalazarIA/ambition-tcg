@@ -52,6 +52,7 @@ REQUIRED_FILES = [
     "templates/progression.html",
     "templates/admin_reports.html",
     "templates/admin_balance.html",
+    "templates/admin_beta_events.html",
     "static/manifest.webmanifest",
 ]
 
