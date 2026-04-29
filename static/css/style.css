@@ -6343,3 +6343,74 @@ button.btn,
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ==========================================================================
+   AMBITIONZ V1.47 — PUBLIC SUPPORT FOOTER
+   ========================================================================== */
+
+.public-support-footer-v147 {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin: 28px 0 92px;
+    padding: 18px;
+    border: 1px solid rgba(216, 199, 255, 0.12);
+    background: rgba(255, 255, 255, 0.035);
+    border-radius: 22px;
+}
+
+.public-support-footer-v147 div {
+    display: grid;
+    gap: 4px;
+}
+
+.public-support-footer-v147 strong {
+    color: #fff;
+}
+
+.public-support-footer-v147 span {
+    color: var(--az-muted, #bfb3d3);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.public-support-footer-v147 nav {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.public-support-footer-v147 a {
+    color: #efe7ff;
+    text-decoration: none;
+    border: 1px solid rgba(216, 199, 255, 0.14);
+    background: rgba(142, 68, 173, 0.16);
+    border-radius: 999px;
+    padding: 8px 11px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.public-support-footer-v147 a:active {
+    transform: scale(0.985);
+}
+
+@media (max-width: 760px) {
+    .public-support-footer-v147 {
+        display: grid;
+        margin-bottom: 104px;
+    }
+
+    .public-support-footer-v147 nav {
+        justify-content: flex-start;
+    }
+
+    .public-support-footer-v147 a {
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+    }
+}
