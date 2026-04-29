@@ -6169,3 +6169,41 @@ button.btn,
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ==========================================================================
+   AMBITIONZ V1.39 — DATA DELETION COMPLIANCE
+   ========================================================================== */
+
+.data-deletion-hero-v139 {
+    border: 1px solid rgba(216, 199, 255, 0.14);
+    background:
+        radial-gradient(circle at top left, rgba(142, 68, 173, 0.32), transparent 42%),
+        linear-gradient(145deg, rgba(18, 13, 32, 0.96), rgba(8, 8, 18, 0.96));
+    border-radius: 28px;
+    padding: 30px;
+    margin-bottom: 22px;
+    box-shadow: 0 26px 90px rgba(0, 0, 0, 0.34);
+}
+
+.data-deletion-hero-v139 h2 {
+    max-width: 820px;
+    color: #fff;
+    margin: 10px 0 14px;
+    font-size: clamp(34px, 5vw, 62px);
+    line-height: .94;
+    letter-spacing: -0.06em;
+}
+
+.data-deletion-hero-v139 p {
+    max-width: 760px;
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.65;
+}
+
+@media (max-width: 760px) {
+    .data-deletion-hero-v139 {
+        border-radius: 22px;
+        padding: 22px;
+    }
+}

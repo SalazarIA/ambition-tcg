@@ -13,6 +13,7 @@ REQUIRED_FILES = [
     "templates/admin_dev_tools.html",
     "templates/terms.html",
     "templates/privacy.html",
+    "templates/data_deletion.html",
     "templates/closed_test.html",
     "templates/beta_launch.html",
     "templates/admin.html",

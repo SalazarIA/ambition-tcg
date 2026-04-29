@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Deletion - Ambitionz</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Data Deletion</h1>
+                <p>Account and personal data removal request</p>
+            </div>
+
+            <a href="{{ url_for('privacy') }}" class="btn btn-secondary small-btn">Privacy</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Home</a>
+        </header>
+
+        <section class="data-deletion-hero-v139">
+            <div>
+                <span class="progression-kicker">User Data Control</span>
+                <h2>Request deletion of your Ambitionz account data.</h2>
+                <p>
+                    Ambitionz is currently in beta. Users may request removal of account-related
+                    data used for login, gameplay progression, deck data, collection data, match
+                    records, feedback and operational beta testing.
+                </p>
+            </div>
+        </section>
+
+        <section class="deck-status legal-text">
+            <h2>1. How to request deletion</h2>
+            <p>
+                To request account or data deletion, contact the Ambitionz project administrator
+                through the available beta support or feedback channel.
+            </p>
+
+            <p>
+                You may also submit a request through the feedback page and include the title:
+                <strong>Account Data Deletion Request</strong>.
+            </p>
+
+            <div class="progression-action-row">
+                <a href="{{ url_for('feedback') }}" class="btn">Open Feedback</a>
+                <a href="{{ url_for('privacy') }}" class="btn btn-secondary">Privacy Notice</a>
+            </div>
+
+            <h2>2. Information to include</h2>
+            <p>
+                Include the email address or username associated with the account so the project
+                administrator can identify the correct records.
+            </p>
+
+            <h2>3. Data covered by deletion</h2>
+            <p>
+                Deletion may include account profile data, login-related records, progression,
+                deck and collection data, match records, feedback records and operational test logs
+                associated with the account.
+            </p>
+
+            <h2>4. Data that may be retained temporarily</h2>
+            <p>
+                Some operational records may be retained for a limited time if required for security,
+                abuse prevention, debugging, legal compliance or platform review obligations.
+            </p>
+
+            <h2>5. Beta reset notice</h2>
+            <p>
+                Because Ambitionz is in beta, test accounts, progression, rewards, matches and logs
+                may also be reset as part of normal development and balancing operations.
+            </p>
+        </section>
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('privacy') }}">Privacy</a>
+            <a href="{{ url_for('terms') }}">Terms</a>
+            <a href="{{ url_for('feedback') }}">Feedback</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>

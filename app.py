@@ -1224,6 +1224,12 @@ def terms():
 
 
 
+
+@app.route("/data-deletion")
+def data_deletion():
+    return render_template("data_deletion.html")
+
+
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
