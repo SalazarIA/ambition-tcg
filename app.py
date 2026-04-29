@@ -1135,6 +1135,48 @@ def closed_test():
     )
 
 
+
+# AMBITIONZ V1.41A — BETA EVENT ANALYTICS ENDPOINT
+@app.route("/api/beta-event", methods=["POST"])
+def beta_event():
+    user = current_user()
+
+    try:
+        payload = request.get_json(silent=True) or request.form.to_dict() or {}
+    except Exception:
+        payload = {}
+
+    event_name = str(payload.get("event") or "unknown_event").strip()[:80]
+    page_path = str(payload.get("path") or request.headers.get("Referer") or "unknown_path").strip()[:180]
+    source = str(payload.get("source") or "web").strip()[:40]
+
+    user_id = None
+    username = "anonymous"
+
+    if user:
+        user_id = getattr(user, "id", None)
+        username = getattr(user, "username", "user")
+
+    message = f"{event_name} | {page_path} | source={source} | user={username}"
+
+    try:
+        log_system_event(
+            "info",
+            "beta_event",
+            message,
+            user_id=user_id,
+        )
+        db.session.commit()
+    except Exception as error:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+
+    return ("", 204)
+
+
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
