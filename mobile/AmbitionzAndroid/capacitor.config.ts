@@ -9,6 +9,7 @@ const config: CapacitorConfig = {
     url: 'https://ambitionzgame.com',
     cleartext: false
   },
+  appendUserAgent: 'AmbitionzAndroid/1.0.0-beta.1',
   android: {
     allowMixedContent: false,
     captureInput: true,

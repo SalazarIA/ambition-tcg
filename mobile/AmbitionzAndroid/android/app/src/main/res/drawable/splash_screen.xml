@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/ambitionz_background" />
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <size android:width="132dp" android:height="132dp" />
+            <gradient
+                android:startColor="#8E44AD"
+                android:endColor="#3B1C52"
+                android:angle="135" />
+        </shape>
+    </item>
+</layer-list>

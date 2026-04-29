@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ambitionz_background">#070711</color>
+    <color name="ambitionz_primary">#8E44AD</color>
+    <color name="ambitionz_primary_dark">#3B1C52</color>
+    <color name="ambitionz_text">#EFE7FF</color>
+</resources>

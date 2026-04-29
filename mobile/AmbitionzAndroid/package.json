@@ -7,7 +7,10 @@
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android",
     "cap:doctor": "npx cap doctor",
-    "android": "npx cap open android"
+    "android": "npx cap open android",
+    "android:open": "npx cap open android",
+    "android:sync": "npx cap sync android",
+    "android:studio": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "latest",
