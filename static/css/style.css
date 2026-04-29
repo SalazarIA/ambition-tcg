@@ -5751,3 +5751,119 @@ a.menu-card:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ==========================================================================
+   AMBITIONZ V1.38 — CLOSED TEST ONBOARDING
+   ========================================================================== */
+
+.closed-test-hero-v138 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr);
+    gap: 22px;
+    margin-bottom: 22px;
+}
+
+.closed-test-copy-v138,
+.closed-test-panel-v138 {
+    border: 1px solid rgba(216, 199, 255, 0.14);
+    background:
+        radial-gradient(circle at top left, rgba(142, 68, 173, 0.32), transparent 42%),
+        linear-gradient(145deg, rgba(18, 13, 32, 0.96), rgba(8, 8, 18, 0.96));
+    border-radius: 28px;
+    padding: 28px;
+    box-shadow: 0 26px 90px rgba(0, 0, 0, 0.34);
+}
+
+.closed-test-copy-v138 h1 {
+    max-width: 760px;
+    margin: 16px 0 14px;
+    color: #fff;
+    font-size: clamp(36px, 6vw, 68px);
+    line-height: .92;
+    letter-spacing: -0.07em;
+}
+
+.closed-test-copy-v138 p,
+.closed-test-panel-v138 p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.65;
+}
+
+.closed-test-panel-v138 h2 {
+    color: #fff;
+    margin: 10px 0;
+    font-size: clamp(24px, 3vw, 38px);
+    letter-spacing: -0.04em;
+}
+
+.closed-test-step-grid-v138 {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.closed-test-step-v138,
+.closed-test-checks-v138 div {
+    border: 1px solid rgba(216, 199, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.closed-test-step-v138 strong,
+.closed-test-checks-v138 span {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #8e44ad, #3b1c52);
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.closed-test-step-v138 h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+.closed-test-checks-v138 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.closed-test-checks-v138 div {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.closed-test-checks-v138 span {
+    flex: 0 0 34px;
+    margin-bottom: 0;
+    border-radius: 999px;
+}
+
+.closed-test-checks-v138 p {
+    margin: 0;
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+    .closed-test-hero-v138,
+    .closed-test-step-grid-v138,
+    .closed-test-checks-v138 {
+        grid-template-columns: 1fr;
+    }
+
+    .closed-test-copy-v138,
+    .closed-test-panel-v138 {
+        border-radius: 22px;
+        padding: 20px;
+    }
+}

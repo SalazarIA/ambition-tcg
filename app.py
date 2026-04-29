@@ -1101,6 +1101,40 @@ def reset_password(token):
 
 
 
+
+@app.route("/closed-test")
+def closed_test():
+    user = current_user()
+
+    tester_steps = [
+        "Create or access your account",
+        "Play one training match",
+        "Check rewards, missions and profile",
+        "Open booster shop and deck builder",
+        "Send feedback if anything breaks or feels confusing",
+    ]
+
+    tester_checklist = [
+        "App opens without browser address bar",
+        "Login and register work",
+        "Training match starts and ends",
+        "Post-match rewards appear",
+        "Missions and profile update",
+        "Booster shop opens",
+        "Deck builder opens",
+        "Feedback form submits",
+        "Android back button behaves correctly",
+        "Portrait layout remains readable",
+    ]
+
+    return render_template(
+        "closed_test.html",
+        user=user,
+        tester_steps=tester_steps,
+        tester_checklist=tester_checklist,
+    )
+
+
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
