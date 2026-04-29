@@ -6207,3 +6207,93 @@ button.btn,
         padding: 22px;
     }
 }
+
+
+/* ==========================================================================
+   AMBITIONZ V1.42 — FIRST SESSION GUIDE
+   ========================================================================== */
+
+.first-session-hero-v142 {
+    border: 1px solid rgba(216, 199, 255, 0.14);
+    background:
+        radial-gradient(circle at top left, rgba(142, 68, 173, 0.34), transparent 42%),
+        linear-gradient(145deg, rgba(18, 13, 32, 0.96), rgba(8, 8, 18, 0.96));
+    border-radius: 30px;
+    padding: 34px;
+    margin-bottom: 22px;
+    box-shadow: 0 26px 90px rgba(0, 0, 0, 0.34);
+}
+
+.first-session-hero-v142 h1 {
+    max-width: 840px;
+    color: #fff;
+    margin: 16px 0 14px;
+    font-size: clamp(38px, 6vw, 72px);
+    line-height: .92;
+    letter-spacing: -0.07em;
+}
+
+.first-session-hero-v142 p,
+.first-session-step-v142 p,
+.first-session-note-v142 p {
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.62;
+}
+
+.first-session-grid-v142 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.first-session-step-v142 {
+    border: 1px solid rgba(216, 199, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 22px;
+    padding: 18px;
+}
+
+.first-session-step-v142 strong {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #8e44ad, #3b1c52);
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.first-session-step-v142 h3,
+.first-session-note-v142 h2 {
+    color: #fff;
+}
+
+.first-session-step-v142 h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+.first-session-step-v142 p {
+    min-height: 76px;
+    margin-bottom: 14px;
+}
+
+.first-session-note-v142 {
+    margin-bottom: 86px;
+}
+
+@media (max-width: 900px) {
+    .first-session-grid-v142 {
+        grid-template-columns: 1fr;
+    }
+
+    .first-session-hero-v142 {
+        border-radius: 22px;
+        padding: 22px;
+    }
+
+    .first-session-step-v142 p {
+        min-height: 0;
+    }
+}

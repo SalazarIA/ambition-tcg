@@ -1143,6 +1143,53 @@ def reset_password(token):
 
 
 
+
+@app.route("/first-session")
+def first_session():
+    user = current_user()
+
+    steps = [
+        {
+            "title": "Create your account",
+            "text": "Start with registration or login so your XP, coins, missions and deck progress can be saved.",
+            "cta": "Create Account",
+            "endpoint": "register",
+        },
+        {
+            "title": "Play training",
+            "text": "Run one training match to test battle loading, card flow, intent selection and match completion.",
+            "cta": "Play Training",
+            "endpoint": "training",
+        },
+        {
+            "title": "Check rewards",
+            "text": "After the match, confirm XP, coins, missions and profile progress updated correctly.",
+            "cta": "Open Profile",
+            "endpoint": "profile",
+        },
+        {
+            "title": "Open a booster",
+            "text": "Use the shop to test collection growth and card reward feeling.",
+            "cta": "Open Shop",
+            "endpoint": "shop",
+        },
+        {
+            "title": "Improve your deck",
+            "text": "Open deck builder and confirm the fixed 30-card beta deck flow is readable on Android.",
+            "cta": "Deck Builder",
+            "endpoint": "deck_builder",
+        },
+        {
+            "title": "Send feedback",
+            "text": "Report bugs, layout issues, confusing moments, balance concerns or Android-specific problems.",
+            "cta": "Send Feedback",
+            "endpoint": "feedback",
+        },
+    ]
+
+    return render_template("first_session.html", user=user, steps=steps)
+
+
 @app.route("/closed-test")
 def closed_test():
     user = current_user()

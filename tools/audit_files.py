@@ -15,6 +15,7 @@ REQUIRED_FILES = [
     "templates/privacy.html",
     "templates/data_deletion.html",
     "templates/closed_test.html",
+    "templates/first_session.html",
     "templates/beta_launch.html",
     "templates/admin.html",
     "templates/booster_history.html",
