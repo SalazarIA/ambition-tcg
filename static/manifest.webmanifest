@@ -1,21 +1,59 @@
 {
+  "id": "/",
   "name": "Ambitionz",
   "short_name": "Ambitionz",
-  "description": "Fast elemental online TCG built around risk, Ambitionz and tactical duels.",
-  "start_url": "/",
+  "description": "Fast elemental online card duels built around risk, intent, Sigils and Ambition.",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "portrait",
   "background_color": "#070711",
-  "theme_color": "#070711",
-  "categories": ["games", "entertainment"],
+  "theme_color": "#8e44ad",
+  "categories": [
+    "games",
+    "entertainment",
+    "strategy"
+  ],
   "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/static/icons/icon.svg",
       "sizes": "1024x1024",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Play Training",
+      "short_name": "Play",
+      "description": "Start a quick Ambitionz training match.",
+      "url": "/training",
+      "icons": [
+        {
+          "src": "/static/icons/icon.svg",
+          "sizes": "1024x1024"
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "short_name": "Feedback",
+      "description": "Send beta feedback.",
+      "url": "/feedback",
+      "icons": [
+        {
+          "src": "/static/icons/icon.svg",
+          "sizes": "1024x1024"
+        }
+      ]
     }
   ]
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambition-tcg-pwa-v1";
+const CACHE_NAME = "ambitionz-web-app-v129";
 
 const CORE_ASSETS = [
     "/",

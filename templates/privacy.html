@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Privacy - Ambitionz</title>
+    <title>Privacy Policy - Ambitionz</title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambitionz">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -12,31 +18,63 @@
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Privacy</h1>
+                <h1>Privacy Policy</h1>
                 <p>Ambitionz beta privacy notice</p>
             </div>
+
+            <a href="{{ url_for('feedback') }}" class="btn btn-secondary small-btn">Support</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
         <section class="deck-status legal-text">
-            <h2>1. Data We Store</h2>
-            <p>Ambitionz stores account data such as username, email, password hash, verification status, game progression, deck data, collection data, match data, feedback and operational logs.</p>
+            <h2>1. Overview</h2>
+            <p>Ambitionz is an online tactical card game currently operating in beta. This Privacy Policy explains what data may be collected, why it is used, and how players can contact the project team.</p>
 
-            <h2>2. Email Usage</h2>
-            <p>Email is used for account verification, password reset and essential account-related messages.</p>
+            <h2>2. Official Website</h2>
+            <p>The official Ambitionz website is <strong>https://ambitionzgame.com</strong>.</p>
 
-            <h2>3. Passwords</h2>
-            <p>Passwords are stored as hashes, not as plain text.</p>
+            <h2>3. Data We Store</h2>
+            <p>Ambitionz may store account data such as username, email address, password hash, verification status, login activity, game progression, deck data, collection data, match history, feedback reports, tester status and operational logs.</p>
 
-            <h2>4. Beta Operations</h2>
-            <p>During beta, gameplay data, logs, missions, rewards and test accounts may be reset to improve stability and balance.</p>
+            <h2>4. Why We Use Data</h2>
+            <p>Data is used to operate accounts, authenticate users, save game progress, run matches, provide rewards, improve balance, detect bugs, support beta testing, prevent abuse and maintain service stability.</p>
 
-            <h2>5. Third-Party Infrastructure</h2>
-            <p>Ambitionz may use external hosting, database and email infrastructure to operate the service.</p>
+            <h2>5. Passwords</h2>
+            <p>Passwords are stored as cryptographic hashes. Ambitionz does not store plain text passwords.</p>
 
-            <h2>6. Contact</h2>
-            <p>For beta support, contact the project administrator through the available testing channel.</p>
+            <h2>6. Email Usage</h2>
+            <p>Email may be used for account verification, password reset, essential account communication, beta support and operational notices.</p>
+
+            <h2>7. Gameplay and Balance Data</h2>
+            <p>During beta, match records, deck information, progression, rewards, missions and feedback may be reviewed to improve gameplay, balance, onboarding and stability.</p>
+
+            <h2>8. Feedback and Support</h2>
+            <p>When a player submits feedback, Ambitionz may store the message, category, severity, page context, username and submission date so the team can review bugs, balance issues and user experience problems.</p>
+
+            <h2>9. Third-Party Infrastructure</h2>
+            <p>Ambitionz may use external hosting, database, email, analytics, deployment and infrastructure providers to operate the service. These providers may process technical data necessary to deliver the application.</p>
+
+            <h2>10. Beta Resets</h2>
+            <p>Because Ambitionz is in beta, test accounts, progression, cards, rewards, match data, logs and other gameplay data may be reset, changed or removed for development, balance, security or stability reasons.</p>
+
+            <h2>11. Data Removal Requests</h2>
+            <p>Players can request support or account/data review through the feedback page at <strong>https://ambitionzgame.com/feedback</strong>.</p>
+
+            <h2>12. Contact</h2>
+            <p>For privacy, support or beta-related requests, use the official feedback page: <strong>https://ambitionzgame.com/feedback</strong>.</p>
+
+            <h2>13. Updates</h2>
+            <p>This policy may be updated as Ambitionz evolves from beta testing toward public release.</p>
         </section>
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('terms') }}">Terms</a>
+            <a href="{{ url_for('privacy') }}" class="active">Privacy</a>
+            <a href="{{ url_for('feedback') }}">Support</a>
+        </nav>
     </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 </body>
 </html>

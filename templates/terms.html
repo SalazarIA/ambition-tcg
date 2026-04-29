@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Terms - Ambitionz</title>
+    <title>Terms of Use - Ambitionz</title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#8e44ad">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambitionz">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -12,28 +18,57 @@
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Terms</h1>
-                <p>Ambitionz beta terms of use</p>
+                <h1>Terms of Use</h1>
+                <p>Ambitionz beta terms</p>
             </div>
+
+            <a href="{{ url_for('privacy') }}" class="btn btn-secondary small-btn">Privacy</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
         <section class="deck-status legal-text">
             <h2>1. Beta Status</h2>
-            <p>Ambitionz is currently in beta. Features, game balance, cards, rewards, progression, ranking and user data may change during development.</p>
+            <p>Ambitionz is currently in beta. Features, game balance, cards, rewards, progression, rankings, missions, visuals and user data may change during development.</p>
 
-            <h2>2. Account Responsibility</h2>
-            <p>Users are responsible for keeping their login information secure. Accounts may be limited, reset or removed during beta testing when required for stability, abuse prevention or balance.</p>
+            <h2>2. Official Website</h2>
+            <p>The official Ambitionz website is <strong>https://ambitionzgame.com</strong>.</p>
 
-            <h2>3. Fair Play</h2>
-            <p>Do not exploit bugs, automate gameplay, attack the service, abuse the matchmaking system or attempt to access restricted admin areas.</p>
+            <h2>3. Account Responsibility</h2>
+            <p>Users are responsible for keeping their login information secure. Accounts may be limited, reset or removed during beta testing when required for stability, abuse prevention, security or balance.</p>
 
-            <h2>4. Test Data</h2>
-            <p>During beta, test users, match records, progression, missions, rewards and logs may be reset as part of development operations.</p>
+            <h2>4. Fair Play</h2>
+            <p>Do not exploit bugs, automate gameplay, attack the service, abuse matchmaking, manipulate progression, reverse engineer restricted systems or attempt to access admin-only areas.</p>
 
-            <h2>5. Availability</h2>
-            <p>The service may become unavailable during maintenance, deployment or infrastructure limits. Ambitionz is provided as-is during beta.</p>
+            <h2>5. Beta Testing</h2>
+            <p>Players participating in beta testing understand that the game may contain bugs, incomplete features, temporary content, balance issues and service interruptions.</p>
+
+            <h2>6. Progression and Virtual Items</h2>
+            <p>Cards, boosters, coins, XP, levels, cosmetics, rankings and other virtual progression systems are part of the beta environment and may be changed, rebalanced, reset or removed.</p>
+
+            <h2>7. Availability</h2>
+            <p>Ambitionz may be unavailable during maintenance, deployment, infrastructure limits, bug fixes or beta operations. The service is provided as-is during beta.</p>
+
+            <h2>8. Feedback</h2>
+            <p>Players may submit bug reports, balance feedback and suggestions through <strong>https://ambitionzgame.com/feedback</strong>. Submitted feedback may be used to improve the game.</p>
+
+            <h2>9. Acceptable Use</h2>
+            <p>Users must not submit abusive content, illegal content, spam, malicious links, exploit instructions or content intended to harm the service or other players.</p>
+
+            <h2>10. Privacy</h2>
+            <p>Use of Ambitionz is also governed by the Privacy Policy available at <strong>https://ambitionzgame.com/privacy</strong>.</p>
+
+            <h2>11. Changes to Terms</h2>
+            <p>These terms may be updated as Ambitionz moves through beta testing, closed testing and future public release.</p>
         </section>
+
+        <nav class="mobile-bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('terms') }}" class="active">Terms</a>
+            <a href="{{ url_for('privacy') }}">Privacy</a>
+            <a href="{{ url_for('feedback') }}">Support</a>
+        </nav>
     </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 </body>
 </html>
