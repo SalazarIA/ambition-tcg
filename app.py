@@ -2641,11 +2641,15 @@ def feedback():
     user = current_user()
 
     categories = [
-        {"value": "bug", "label": "Bug"},
+        {"value": "android_issue", "label": "Android issue"},
+        {"value": "login_register", "label": "Login / Register"},
+        {"value": "training_battle", "label": "Training battle"},
+        {"value": "deck_builder", "label": "Deck builder"},
+        {"value": "booster_shop", "label": "Booster shop"},
+        {"value": "rewards_missions", "label": "Rewards / Missions"},
         {"value": "balance", "label": "Balance"},
-        {"value": "ux", "label": "UX / Interface"},
-        {"value": "match", "label": "Match Experience"},
-        {"value": "cards", "label": "Cards / Deck"},
+        {"value": "visual_ui", "label": "Visual / UI"},
+        {"value": "bug", "label": "Bug"},
         {"value": "suggestion", "label": "Suggestion"},
         {"value": "general", "label": "General"},
     ]

@@ -6297,3 +6297,49 @@ button.btn,
         min-height: 0;
     }
 }
+
+
+/* ==========================================================================
+   AMBITIONZ V1.44 — FEEDBACK CATEGORIES UPGRADE
+   ========================================================================== */
+
+.feedback-quality-v144 {
+    margin-bottom: 22px;
+}
+
+.feedback-quality-grid-v144 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.feedback-quality-grid-v144 article {
+    border: 1px solid rgba(216, 199, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.feedback-quality-grid-v144 strong {
+    display: inline-flex;
+    margin-bottom: 10px;
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: rgba(142, 68, 173, 0.22);
+    border: 1px solid rgba(216, 199, 255, 0.14);
+    color: #efe7ff;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.feedback-quality-grid-v144 p {
+    margin: 0;
+    color: var(--az-muted, #bfb3d3);
+    line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+    .feedback-quality-grid-v144 {
+        grid-template-columns: 1fr;
+    }
+}

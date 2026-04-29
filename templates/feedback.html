@@ -35,7 +35,7 @@
         <section class="feedback-hero-v120">
             <div>
                 <span class="progression-kicker">Beta Tester Channel</span>
-                <h2>Report bugs, balance issues and improvement ideas.</h2>
+                <h2>Report Android issues, bugs, UX problems, balance concerns and improvement ideas.</h2>
                 <p>
                     Good feedback makes the beta stronger. Be specific: what happened,
                     what you expected, where it happened and how severe it felt.
@@ -43,9 +43,36 @@
             </div>
 
             <div class="feedback-guide-v120">
-                <div><strong>Bug</strong><span>Something broke</span></div>
-                <div><strong>Balance</strong><span>Card or reward feels wrong</span></div>
-                <div><strong>UX</strong><span>Something feels confusing</span></div>
+                <div><strong>Android</strong><span>Install, navigation or device behavior</span></div>
+                <div><strong>Battle</strong><span>Training, cards or match flow</span></div>
+                <div><strong>Progression</strong><span>Rewards, missions, boosters or deck</span></div>
+            </div>
+        </section>
+
+
+        <section class="deck-status feedback-quality-v144">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Useful Feedback</span>
+                    <h2>How to write a good report</h2>
+                </div>
+            </div>
+
+            <div class="feedback-quality-grid-v144">
+                <article>
+                    <strong>Good</strong>
+                    <p>On Pixel emulator, the Deck Builder save button is hard to tap because it sits too close to the bottom navigation.</p>
+                </article>
+
+                <article>
+                    <strong>Weak</strong>
+                    <p>The app bugged.</p>
+                </article>
+
+                <article>
+                    <strong>Include</strong>
+                    <p>Page, action, expected result, actual result, device and screenshot if possible.</p>
+                </article>
             </div>
         </section>
 
@@ -86,7 +113,7 @@
                         type="text"
                         name="title"
                         maxlength="160"
-                        placeholder="Example: Training bot played after match ended"
+                        placeholder="Example: Android back button returned to the wrong screen"
                         required
                     >
                 </label>
@@ -96,7 +123,7 @@
                     <textarea
                         name="message"
                         rows="8"
-                        placeholder="Describe what happened, what you expected, and how to reproduce it."
+                        placeholder="Describe what happened, what you expected, where it happened, your device if relevant, and how to reproduce it."
                         required
                     ></textarea>
                 </label>
@@ -106,7 +133,7 @@
                     <input
                         type="text"
                         name="page_url"
-                        placeholder="/arena, /deck-builder, /shop, post-match modal..."
+                        placeholder="/android app, /training, /deck-builder, /shop, post-match modal..."
                     >
                 </label>
 
