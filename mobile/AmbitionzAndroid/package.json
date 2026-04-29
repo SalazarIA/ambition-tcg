@@ -1,0 +1,25 @@
+{
+  "name": "ambitionz-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ambitionz Android wrapper for closed testing.",
+  "scripts": {
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:doctor": "npx cap doctor",
+    "android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/app": "latest",
+    "@capacitor/core": "latest",
+    "@capacitor/haptics": "latest",
+    "@capacitor/keyboard": "latest",
+    "@capacitor/splash-screen": "latest",
+    "@capacitor/status-bar": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest",
+    "typescript": "^6.0.3"
+  }
+}
