@@ -158,3 +158,82 @@
         });
     });
 })();
+
+
+// ==========================================================================
+// AMBITIONZ V1.41B — FRONTEND BETA EVENT ANALYTICS
+// ==========================================================================
+
+(function () {
+    if (window.__ambitionzBetaAnalyticsV141B) {
+        return;
+    }
+
+    window.__ambitionzBetaAnalyticsV141B = true;
+
+    function sendBetaEvent(eventName, extra) {
+        try {
+            var payload = {
+                event: eventName || "unknown_event",
+                path: window.location.pathname || "/",
+                source: "android_webview_or_browser",
+                title: document.title || "",
+                width: String(window.innerWidth || ""),
+                height: String(window.innerHeight || ""),
+                ts: new Date().toISOString()
+            };
+
+            if (extra && typeof extra === "object") {
+                Object.keys(extra).forEach(function (key) {
+                    payload[key] = String(extra[key]).slice(0, 180);
+                });
+            }
+
+            var body = JSON.stringify(payload);
+
+            if (navigator.sendBeacon) {
+                var blob = new Blob([body], { type: "application/json" });
+                navigator.sendBeacon("/api/beta-event", blob);
+                return;
+            }
+
+            fetch("/api/beta-event", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: body,
+                keepalive: true
+            }).catch(function () {});
+        } catch (error) {}
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        sendBetaEvent("page_view");
+
+        document.querySelectorAll("a[href]").forEach(function (link) {
+            link.addEventListener("click", function () {
+                var href = link.getAttribute("href") || "";
+                var label = (link.innerText || link.textContent || "").trim().slice(0, 80);
+
+                sendBetaEvent("action_link_click", {
+                    href: href,
+                    label: label
+                });
+            }, { passive: true });
+        });
+
+        document.querySelectorAll("form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                sendBetaEvent("form_submit", {
+                    action: form.getAttribute("action") || window.location.pathname || "",
+                    method: form.getAttribute("method") || "GET"
+                });
+            });
+        });
+
+        window.addEventListener("pagehide", function () {
+            sendBetaEvent("page_hide");
+        });
+    });
+})();
