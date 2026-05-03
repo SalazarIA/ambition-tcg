@@ -45,23 +45,28 @@
 
                         <div class="admin-user-actions">
                             <form method="POST" action="{{ url_for('admin_verify_user', user_id=target.id) }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <button class="btn small-btn" type="submit">Verify</button>
                             </form>
 
                             <form method="POST" action="{{ url_for('admin_toggle_tester', user_id=target.id) }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <button class="btn btn-secondary small-btn" type="submit">Tester</button>
                             </form>
 
                             <form method="POST" action="{{ url_for('admin_toggle_admin', user_id=target.id) }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <button class="btn btn-secondary small-btn" type="submit">Admin</button>
                             </form>
 
                             {% if target.account_status == "banned" %}
                                 <form method="POST" action="{{ url_for('admin_unban_user', user_id=target.id) }}">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     <button class="btn small-btn" type="submit">Unban</button>
                                 </form>
                             {% else %}
                                 <form method="POST" action="{{ url_for('admin_ban_user', user_id=target.id) }}">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     <button class="btn btn-danger small-btn" type="submit">Ban</button>
                                 </form>
                             {% endif %}

@@ -35,6 +35,7 @@
             <p>Send a real email through production SMTP.</p>
 
             <form method="POST" action="/admin/test-email" class="form mobile-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="email" name="email" placeholder="Destination email" required>
                 <button type="submit" class="btn full-btn">Send Test Email</button>
             </form>
@@ -45,6 +46,7 @@
             <p>Deletes test users and dependent gameplay records. Admin accounts stay alive.</p>
 
             <form method="POST" action="/admin/reset-test-users" class="form mobile-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="text" name="confirmation" placeholder="Type RESET AMBITIONZ" required>
                 <button type="submit" class="btn btn-danger full-btn">Delete Non-Admin Users</button>
             </form>
@@ -55,6 +57,7 @@
             <p>Clears gameplay, feedback, invites, logs and mission progress. Users stay alive.</p>
 
             <form method="POST" action="/admin/clear-gameplay-data" class="form mobile-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="text" name="confirmation" placeholder="Type RESET AMBITIONZ" required>
                 <button type="submit" class="btn btn-danger full-btn">Clear Gameplay Data</button>
             </form>

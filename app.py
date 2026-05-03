@@ -1,11 +1,12 @@
 import json
+import hmac
 import os
 import random
 import secrets
-from datetime import datetime, timezone, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 
 import itsdangerous
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO, join_room
 from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -67,10 +68,13 @@ app.wsgi_app = ProxyFix(
 db.init_app(app)
 migrate = Migrate(app, db)
 
+socketio_allowed_origins = Config.socketio_cors_allowed_origins()
+app.config["SOCKETIO_CORS_EFFECTIVE_ORIGINS"] = socketio_allowed_origins
+
 socketio = SocketIO(
     app,
     async_mode="threading",
-    cors_allowed_origins="*",
+    cors_allowed_origins=socketio_allowed_origins,
     manage_session=False,
 )
 
@@ -81,6 +85,9 @@ player_rooms = {}
 waiting_player = None
 private_waiting_rooms = {}
 login_attempts = {}
+
+CSRF_EXEMPT_ENDPOINTS = {"beta_event"}
+CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 
 
 def create_database_tables():
@@ -125,6 +132,55 @@ def log_rc_event(category, message, details=None, user_id=None, level="info"):
         print("RC EVENT LOG ERROR:", type(error).__name__, error)
 
 
+def csrf_enabled():
+    return bool(app.config.get("WTF_CSRF_ENABLED", True))
+
+
+def generate_csrf_token():
+    token = session.get("_csrf_token")
+
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf_token"] = token
+
+    return token
+
+
+@app.context_processor
+def inject_security_helpers():
+    return {
+        "csrf_token": generate_csrf_token,
+    }
+
+
+@app.before_request
+def validate_csrf_token():
+    if not csrf_enabled() or request.method in CSRF_SAFE_METHODS:
+        return None
+
+    if request.endpoint in CSRF_EXEMPT_ENDPOINTS or request.path.startswith("/socket.io/"):
+        return None
+
+    expected_token = session.get("_csrf_token")
+    submitted_token = (
+        request.form.get("_csrf_token")
+        or request.headers.get("X-CSRFToken")
+        or request.headers.get("X-CSRF-Token")
+    )
+
+    if expected_token and submitted_token and hmac.compare_digest(str(expected_token), str(submitted_token)):
+        return None
+
+    log_system_event(
+        "warning",
+        "security",
+        "CSRF validation failed",
+        details={"path": request.path, "endpoint": request.endpoint},
+        user_id=session.get("user_id"),
+    )
+    abort(400, description="Invalid CSRF token.")
+
+
 def generate_invite_code():
     return secrets.token_hex(4).upper()
 
@@ -147,6 +203,16 @@ def mark_user_verified(user):
 
 def get_public_base_url():
     return app.config.get("PUBLIC_BASE_URL", request.url_root.rstrip("/"))
+
+
+def log_sensitive_link_for_local_dev(label, url):
+    if not app.config.get("EMAIL_LOG_BODY_ENABLED", False):
+        print(f"{label} omitted. Set EMAIL_LOG_BODY_ENABLED=true only in local development if needed.")
+        return
+
+    print(f"\n--- {label} ---")
+    print(url)
+    print("-" * (len(label) + 8) + "\n")
 
 
 
@@ -342,6 +408,46 @@ def get_existing_table_names():
         return set()
 
 
+GAMEPLAY_CLEANUP_TABLES = (
+    "system_logs",
+    "feedback_reports",
+    "feedback_report",
+    "booster_history",
+    "booster_histories",
+    "match_history",
+    "match_histories",
+    "card_stats",
+    "beta_invites",
+    "sessions",
+    "password_reset_tokens",
+    "mission_progress",
+    "missions",
+    "user_missions",
+)
+
+NON_ADMIN_USER_DEPENDENCY_TABLES = (
+    "user_missions",
+    "system_logs",
+    "feedback_reports",
+    "feedback_report",
+    "booster_history",
+    "booster_histories",
+    "match_history",
+    "match_histories",
+    "card_stats",
+    "beta_invites",
+)
+
+CLEANUP_ALLOWED_TABLES = frozenset(GAMEPLAY_CLEANUP_TABLES + NON_ADMIN_USER_DEPENDENCY_TABLES + ("users",))
+
+
+def quote_cleanup_table_name(table_name):
+    if table_name not in CLEANUP_ALLOWED_TABLES:
+        raise ValueError(f"Table is not allowed for cleanup: {table_name}")
+
+    return f'"{table_name}"'
+
+
 def safe_delete_table_rows(connection, table_name, where_clause=None, params=None):
     """Delete rows from a table only if it exists. Works on SQLite and PostgreSQL."""
     try:
@@ -351,11 +457,13 @@ def safe_delete_table_rows(connection, table_name, where_clause=None, params=Non
             print(f"Cleanup skipped; table does not exist: {table_name}")
             return False
 
+        quoted_table = quote_cleanup_table_name(table_name)
+
         if where_clause:
-            query = f'DELETE FROM "{table_name}" WHERE {where_clause}'
+            query = f"DELETE FROM {quoted_table} WHERE {where_clause}"  # nosec B608
             connection.execute(sql_text(query), params or {})
         else:
-            query = f'DELETE FROM "{table_name}"'
+            query = f"DELETE FROM {quoted_table}"  # nosec B608
             connection.execute(sql_text(query))
 
         print(f"Cleanup OK: {table_name}")
@@ -368,27 +476,10 @@ def safe_delete_table_rows(connection, table_name, where_clause=None, params=Non
 
 def cleanup_gameplay_tables():
     """Clear operational/gameplay tables while preserving users."""
-    tables = [
-        "system_logs",
-        "feedback_reports",
-        "feedback_report",
-        "booster_history",
-        "booster_histories",
-        "match_history",
-        "match_histories",
-        "card_stats",
-        "beta_invites",
-        "sessions",
-        "password_reset_tokens",
-        "mission_progress",
-        "missions",
-        "user_missions",
-    ]
-
     cleared = []
 
     with db.engine.begin() as connection:
-        for table in tables:
+        for table in GAMEPLAY_CLEANUP_TABLES:
             if safe_delete_table_rows(connection, table):
                 cleared.append(table)
 
@@ -406,28 +497,16 @@ def cleanup_non_admin_users():
 
     admin_audit("Reset non-admin users requested")
 
-    dependency_tables = [
-        "user_missions",
-        "system_logs",
-        "feedback_reports",
-        "feedback_report",
-        "booster_history",
-        "booster_histories",
-        "match_history",
-        "match_histories",
-        "card_stats",
-        "beta_invites",
-    ]
-
     deleted_users = 0
 
     with db.engine.begin() as connection:
         existing_tables = get_existing_table_names()
 
-        for table in dependency_tables:
+        for table in NON_ADMIN_USER_DEPENDENCY_TABLES:
             if table in existing_tables:
                 try:
-                    connection.execute(sql_text(f'DELETE FROM "{table}"'))
+                    quoted_table = quote_cleanup_table_name(table)
+                    connection.execute(sql_text(f"DELETE FROM {quoted_table}"))  # nosec B608
                     cleared.append(table)
                     print(f"Cleanup OK: {table}")
                 except Exception as error:
@@ -1668,9 +1747,7 @@ def register():
 
         sent = send_verification_email(new_user, verification_url)
 
-        print("\n--- AMBITIONZ VERIFICATION LINK ---")
-        print(verification_url)
-        print("----------------------------------\n")
+        log_sensitive_link_for_local_dev("AMBITIONZ VERIFICATION LINK", verification_url)
 
         if sent:
             flash("Registered. Check your email for the verification link.")
@@ -3644,11 +3721,12 @@ def progression():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
+    host = os.environ.get("HOST", "127.0.0.1")
 
     socketio.run(
         app,
         debug=app.config["DEBUG_MODE"],
-        host="0.0.0.0",
+        host=host,
         port=port,
         allow_unsafe_werkzeug=True,
     )

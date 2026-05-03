@@ -47,6 +47,7 @@
             {% endwith %}
 
             <form method="POST" class="form mobile-form auth-form-v119">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <label>
                     <span>Username</span>
                     <input type="text" name="username" placeholder="Your duelist name" autocomplete="username" required>

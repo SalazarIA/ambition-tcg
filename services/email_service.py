@@ -21,6 +21,7 @@ def send_email(to_email, subject, body):
     password = current_app.config.get("SMTP_PASSWORD")
     use_tls = current_app.config.get("SMTP_USE_TLS", True)
     mail_from = current_app.config.get("MAIL_FROM")
+    log_body_enabled = bool(current_app.config.get("EMAIL_LOG_BODY_ENABLED", False))
 
     if not is_smtp_configured():
         print("\n--- AMBITIONZ EMAIL FALLBACK ---")
@@ -31,7 +32,10 @@ def send_email(to_email, subject, body):
         print("MAIL_FROM:", bool(mail_from))
         print("To:", to_email)
         print("Subject:", subject)
-        print(body)
+        if log_body_enabled:
+            print(body)
+        else:
+            print("Body omitted. Set EMAIL_LOG_BODY_ENABLED=true only in local development if needed.")
         print("--------------------------------\n")
         return False
 
@@ -65,7 +69,10 @@ def send_email(to_email, subject, body):
         print("MAIL_FROM:", mail_from)
         print("To:", to_email)
         print("Subject:", subject)
-        print(body)
+        if log_body_enabled:
+            print(body)
+        else:
+            print("Body omitted. Set EMAIL_LOG_BODY_ENABLED=true only in local development if needed.")
         print("-----------------------------\n")
         return False
 

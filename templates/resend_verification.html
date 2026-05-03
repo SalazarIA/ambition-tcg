@@ -22,6 +22,7 @@
             {% endwith %}
 
             <form method="POST" class="form mobile-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <input type="email" name="email" placeholder="Email" required>
                 <button type="submit" class="btn full-btn">Send Verification</button>
             </form>

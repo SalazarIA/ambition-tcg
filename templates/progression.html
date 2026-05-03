@@ -125,6 +125,7 @@
                                 <button class="btn btn-secondary full-btn" disabled>Claimed</button>
                             {% elif mission.is_complete %}
                                 <form method="POST" action="{{ url_for('claim_user_mission', mission_id=mission.id) }}">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn full-btn">Claim Reward</button>
                                 </form>
                             {% else %}

@@ -31,6 +31,15 @@ def register_auth_routes(app, deps):
 
     create_starter_deck_from_collection = deps.get("create_starter_deck_from_collection")
 
+    def log_sensitive_link_for_local_dev(label, url):
+        if not app.config.get("EMAIL_LOG_BODY_ENABLED", False):
+            print(f"{label} omitted. Set EMAIL_LOG_BODY_ENABLED=true only in local development if needed.")
+            return
+
+        print(f"\n--- {label} ---")
+        print(url)
+        print("-" * (len(label) + 8) + "\n")
+
     @app.route("/login", methods=["GET", "POST"], endpoint="login")
     def login_route():
         if request.method == "POST":
@@ -157,9 +166,7 @@ def register_auth_routes(app, deps):
 
             send_verification_email(new_user, verification_url)
 
-            print("\n--- AMBITIONZ VERIFICATION LINK ---")
-            print(verification_url)
-            print("----------------------------------\n")
+            log_sensitive_link_for_local_dev("AMBITIONZ VERIFICATION LINK", verification_url)
 
             flash("Registered. Check your email for the verification link. If email is not configured, check server logs.")
             return redirect("/login")

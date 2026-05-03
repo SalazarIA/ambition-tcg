@@ -17,6 +17,16 @@ def as_bool(value):
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def cors_is_open(origins):
+    if origins == "*":
+        return True
+
+    if isinstance(origins, str):
+        return origins.strip() == "*"
+
+    return "*" in (origins or [])
+
+
 def audit_config(app):
     errors = []
     warnings = []
@@ -25,6 +35,8 @@ def audit_config(app):
     environment = str(app.config.get("ENVIRONMENT") or "development").lower()
     debug_mode = as_bool(app.config.get("DEBUG_MODE"))
     database_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
+    csrf_enabled = as_bool(app.config.get("WTF_CSRF_ENABLED", True))
+    socketio_origins = app.config.get("SOCKETIO_CORS_EFFECTIVE_ORIGINS")
 
     is_production = environment == "production"
 
@@ -46,6 +58,22 @@ def audit_config(app):
 
     if is_production and debug_mode:
         errors.append("DEBUG_MODE must be false in production.")
+
+    print("WTF_CSRF_ENABLED:", csrf_enabled)
+
+    if not csrf_enabled:
+        if is_production:
+            errors.append("WTF_CSRF_ENABLED must be true in production.")
+        else:
+            warnings.append("CSRF protection is disabled locally. Keep it enabled before release validation.")
+
+    print("SOCKETIO_CORS_EFFECTIVE_ORIGINS:", socketio_origins)
+
+    if cors_is_open(socketio_origins):
+        if is_production:
+            errors.append("Socket.IO CORS is open in production. Set SOCKETIO_CORS_ALLOWED_ORIGINS to the public game URL.")
+        else:
+            warnings.append("Socket.IO CORS is open locally. Use explicit origins for release validation.")
 
     smtp_keys = [
         "SMTP_HOST",

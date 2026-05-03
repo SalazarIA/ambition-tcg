@@ -1,4 +1,9 @@
+import re
+
 from sqlalchemy import inspect, text
+
+
+SAFE_TABLE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def get_table_names(db):
@@ -14,12 +19,16 @@ def table_exists(db, table_name):
 
 
 def delete_table_if_exists(db, connection, table_name):
+    if not SAFE_TABLE_NAME_RE.match(str(table_name)):
+        print(f"Cleanup skipped, unsafe table name: {table_name}")
+        return False
+
     if not table_exists(db, table_name):
         print(f"Cleanup skipped, missing table: {table_name}")
         return False
 
     try:
-        connection.execute(text(f'DELETE FROM "{table_name}"'))
+        connection.execute(text(f'DELETE FROM "{table_name}"'))  # nosec B608
         print(f"Cleanup OK: {table_name}")
         return True
     except Exception as error:

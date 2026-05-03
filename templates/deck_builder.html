@@ -404,6 +404,7 @@
         </section>
 
         <form method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <section class="card-grid deck-builder-grid">
 
@@ -521,4 +522,3 @@
 </body>
 
 </html>
-

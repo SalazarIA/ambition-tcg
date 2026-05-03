@@ -75,6 +75,7 @@
                 </div>
 
                 <form method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     {% if can_afford_booster %}
                         <button type="submit" class="btn full-btn">Open Booster</button>
                     {% else %}

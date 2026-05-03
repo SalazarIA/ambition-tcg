@@ -65,6 +65,7 @@
                 <div class="deck-line"><span>Open booster or edit deck</span><strong>Progression loop</strong></div>
             </div>
             <form method="POST" action="{{ url_for('complete_onboarding') }}" class="onboarding-complete-form-v121">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn full-btn">I Understand — Enter Ambitionz</button>
             </form>
         </section>

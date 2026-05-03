@@ -39,6 +39,20 @@ def clean_database_url(raw_url):
     return url
 
 
+def as_bool(value, default=False):
+    if value is None:
+        return default
+
+    if isinstance(value, bool):
+        return value
+
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def parse_csv_env(value):
+    return [item.strip() for item in str(value or "").split(",") if item.strip()]
+
+
 class Config:
 
     DEV_TOOLS_ENABLED = os.environ.get("DEV_TOOLS_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
@@ -46,7 +60,7 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-this")
 
     ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
-    DEBUG_MODE = os.environ.get("DEBUG_MODE", "false").lower() == "true"
+    DEBUG_MODE = as_bool(os.environ.get("DEBUG_MODE"), default=False)
 
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1:8080")
 
@@ -61,32 +75,56 @@ class Config:
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", "Lax")
-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    SESSION_COOKIE_SECURE = as_bool(os.environ.get("SESSION_COOKIE_SECURE"), default=False)
 
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
 
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024
 
-    WTF_CSRF_ENABLED = False
+    WTF_CSRF_ENABLED = as_bool(os.environ.get("WTF_CSRF_ENABLED"), default=True)
+    EMAIL_LOG_BODY_ENABLED = as_bool(os.environ.get("EMAIL_LOG_BODY_ENABLED"), default=False)
 
     LOGIN_ATTEMPT_LIMIT = int(os.environ.get("LOGIN_ATTEMPT_LIMIT", "8"))
     FEEDBACK_DAILY_LIMIT = int(os.environ.get("FEEDBACK_DAILY_LIMIT", "10"))
 
-    BETA_INVITE_REQUIRED = os.environ.get("BETA_INVITE_REQUIRED", "false").lower() == "true"
+    BETA_INVITE_REQUIRED = as_bool(os.environ.get("BETA_INVITE_REQUIRED"), default=False)
+    SOCKETIO_CORS_ALLOWED_ORIGINS = os.environ.get("SOCKETIO_CORS_ALLOWED_ORIGINS", "")
 
     SMTP_HOST = os.environ.get("SMTP_HOST", "")
     SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
     SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-    SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
+    SMTP_USE_TLS = as_bool(os.environ.get("SMTP_USE_TLS"), default=True)
     MAIL_FROM = os.environ.get("MAIL_FROM", SMTP_USERNAME or "no-reply@ambition-tcg.local")
 
     @classmethod
     def smtp_enabled(cls):
         return bool(cls.SMTP_HOST and cls.SMTP_USERNAME and cls.SMTP_PASSWORD and cls.MAIL_FROM)
 
+    @classmethod
+    def socketio_cors_allowed_origins(cls):
+        configured_origins = parse_csv_env(cls.SOCKETIO_CORS_ALLOWED_ORIGINS)
+
+        if configured_origins:
+            if configured_origins == ["*"]:
+                return "*"
+
+            return configured_origins
+
+        default_origins = [cls.PUBLIC_BASE_URL.rstrip("/")]
+
+        if str(cls.ENVIRONMENT).lower() != "production":
+            default_origins.extend([
+                "http://127.0.0.1:8080",
+                "http://localhost:8080",
+                "http://127.0.0.1:5000",
+                "http://localhost:5000",
+            ])
+
+        return sorted(set(default_origins))
+
 
 # Ambitionz security/admin controls
-DEV_TOOLS_ENABLED = os.environ.get("DEV_TOOLS_ENABLED", "false").lower() == "true"
+DEV_TOOLS_ENABLED = as_bool(os.environ.get("DEV_TOOLS_ENABLED"), default=False)
 ADMIN_DANGER_CONFIRMATION = os.environ.get("ADMIN_DANGER_CONFIRMATION", "RESET AMBITIONZ")
