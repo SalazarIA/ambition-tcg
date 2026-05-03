@@ -2,8 +2,17 @@ const DECK_LIMITS = {
     total: 30,
     Monster: 21,
     Spell: 6,
-    Trap: 3
+    Trap: 3,
+    maxCopies: 3
 };
+
+function setText(id, value) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.textContent = value;
+    }
+}
 
 function getBuilderCards() {
     return Array.from(document.querySelectorAll(".builder-card"));
@@ -45,23 +54,57 @@ function getCurrentCounts() {
     return counts;
 }
 
+function updateCopyButtons() {
+    const counts = getCurrentCounts();
+
+    getBuilderCards().forEach((card) => {
+        const cardId = card.dataset.cardId;
+        const selected = getSelectedInputs(cardId).length;
+        const owned = Number(card.dataset.owned || 0);
+        const type = card.dataset.type;
+        const maxAllowed = Math.min(owned, DECK_LIMITS.maxCopies);
+
+        const removeBtn = card.querySelector(".deck-copy-btn:first-of-type");
+        const addBtn = card.querySelector(".deck-copy-btn:last-of-type");
+
+        if (removeBtn) {
+            removeBtn.disabled = selected <= 0;
+        }
+
+        if (addBtn) {
+            addBtn.disabled =
+                selected >= maxAllowed ||
+                counts.total >= DECK_LIMITS.total ||
+                counts[type] >= DECK_LIMITS[type];
+        }
+    });
+}
+
 function updateDeckLiveStatus() {
     const counts = getCurrentCounts();
 
     const averageCost = counts.total > 0 ? (counts.totalCost / counts.total).toFixed(2) : "0.00";
 
-    document.getElementById("selected-count").textContent = counts.total;
-    document.getElementById("live-total-count").textContent = counts.total;
-    document.getElementById("live-monster-count").textContent = counts.Monster;
-    document.getElementById("live-spell-count").textContent = counts.Spell;
-    document.getElementById("live-trap-count").textContent = counts.Trap;
-    document.getElementById("live-average-cost").textContent = averageCost;
+    setText("selected-count", counts.total);
+    setText("live-total-count", counts.total);
+    setText("live-monster-count", counts.Monster);
+    setText("live-spell-count", counts.Spell);
+    setText("live-trap-count", counts.Trap);
+    setText("live-average-cost", averageCost);
 
     const totalBar = document.getElementById("live-total-bar");
     const percent = Math.min(100, Math.round((counts.total / DECK_LIMITS.total) * 100));
-    totalBar.style.width = `${percent}%`;
+
+    if (totalBar) {
+        totalBar.style.width = `${percent}%`;
+    }
 
     const message = document.getElementById("live-deck-message");
+
+    if (!message) {
+        updateCopyButtons();
+        return;
+    }
 
     const isValid =
         counts.total === DECK_LIMITS.total &&
@@ -87,6 +130,8 @@ function updateDeckLiveStatus() {
 
         card.dataset.selected = selected;
     });
+
+    updateCopyButtons();
 }
 
 function addCardToDeck(cardId) {
@@ -99,7 +144,7 @@ function addCardToDeck(cardId) {
     const owned = Number(card.dataset.owned || 0);
     const selected = getSelectedInputs(cardId).length;
 
-    if (selected >= owned) {
+    if (selected >= Math.min(owned, DECK_LIMITS.maxCopies)) {
         return;
     }
 
@@ -139,29 +184,84 @@ function removeCardFromDeck(cardId) {
 }
 
 function filterBuilderCards() {
-    const search = document.getElementById("builder-search").value.toLowerCase();
-    const type = document.getElementById("builder-type-filter").value;
-    const element = document.getElementById("builder-element-filter").value;
-    const cost = document.getElementById("builder-cost-filter").value;
-    const rarity = document.getElementById("builder-rarity-filter").value;
+    const search = (document.getElementById("builder-search")?.value || "").toLowerCase();
+    const type = document.getElementById("builder-type-filter")?.value || "";
+    const element = document.getElementById("builder-element-filter")?.value || "";
+    const sigil = document.getElementById("filter-sigil")?.value || "";
+    const role = document.getElementById("filter-role")?.value || "";
+    const cost = document.getElementById("builder-cost-filter")?.value || "";
+    const rarity = document.getElementById("builder-rarity-filter")?.value || "";
 
     getBuilderCards().forEach((card) => {
-        const cardName = card.dataset.name.toLowerCase();
-        const cardType = card.dataset.type;
-        const cardElement = card.dataset.element;
-        const cardCost = card.dataset.cost;
-        const cardRarity = card.dataset.rarity;
+        const cardName = (card.dataset.name || "").toLowerCase();
+        const cardType = card.dataset.type || "";
+        const cardElement = card.dataset.element || "";
+        const cardSigil = card.dataset.sigil || "";
+        const cardRole = card.dataset.role || "";
+        const cardCost = card.dataset.cost || "";
+        const cardRarity = card.dataset.rarity || "";
 
-        const matchesSearch = cardName.includes(search);
+        const matchesSearch = !search || cardName.includes(search);
         const matchesType = !type || cardType === type;
         const matchesElement = !element || cardElement === element;
+        const matchesSigil = !sigil || cardSigil === sigil;
+        const matchesRole = !role || cardRole === role;
         const matchesCost = !cost || cardCost === cost;
         const matchesRarity = !rarity || cardRarity === rarity;
 
-        card.style.display = matchesSearch && matchesType && matchesElement && matchesCost && matchesRarity ? "" : "none";
+        card.style.display = (
+            matchesSearch &&
+            matchesType &&
+            matchesElement &&
+            matchesSigil &&
+            matchesRole &&
+            matchesCost &&
+            matchesRarity
+        ) ? "" : "none";
     });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     updateDeckLiveStatus();
 });
+
+
+function quickDeckFilter(kind, value) {
+    if (kind === "element") {
+        const elementFilter = document.getElementById("builder-element-filter");
+
+        if (elementFilter) {
+            elementFilter.value = value;
+        }
+    }
+
+    if (kind === "sigil") {
+        const sigilFilter = document.getElementById("filter-sigil");
+
+        if (sigilFilter) {
+            sigilFilter.value = value;
+        }
+    }
+
+    filterBuilderCards();
+}
+
+function clearDeckFilters() {
+    [
+        "builder-search",
+        "builder-type-filter",
+        "builder-element-filter",
+        "filter-sigil",
+        "filter-role",
+        "builder-rarity-filter",
+        "builder-cost-filter"
+    ].forEach((id) => {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.value = "";
+        }
+    });
+
+    filterBuilderCards();
+}

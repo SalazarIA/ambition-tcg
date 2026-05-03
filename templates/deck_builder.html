@@ -287,9 +287,9 @@
 
             <div class="deck-filter-grid deck-filter-grid-v115">
 
-                <input id="deck-search" type="text" placeholder="Search card..." oninput="filterDeckCards()">
+                <input id="builder-search" type="text" placeholder="Search card..." oninput="filterBuilderCards()">
 
-                <select id="filter-type" onchange="filterDeckCards()">
+                <select id="builder-type-filter" onchange="filterBuilderCards()">
 
                     <option value="">All Types</option>
 
@@ -301,7 +301,7 @@
 
                 </select>
 
-                <select id="filter-element" onchange="filterDeckCards()">
+                <select id="builder-element-filter" onchange="filterBuilderCards()">
 
                     <option value="">All Elements</option>
 
@@ -317,7 +317,7 @@
 
                 </select>
 
-                <select id="filter-sigil" onchange="filterDeckCards()">
+                <select id="filter-sigil" onchange="filterBuilderCards()">
 
                     <option value="">All Sigils</option>
 
@@ -333,7 +333,7 @@
 
                 </select>
 
-                <select id="filter-role" onchange="filterDeckCards()">
+                <select id="filter-role" onchange="filterBuilderCards()">
 
                     <option value="">All Roles</option>
 
@@ -351,7 +351,7 @@
 
                 </select>
 
-                <select id="filter-rarity" onchange="filterDeckCards()">
+                <select id="builder-rarity-filter" onchange="filterBuilderCards()">
 
                     <option value="">All Rarities</option>
 
@@ -361,7 +361,7 @@
 
                 </select>
 
-                <select id="filter-cost" onchange="filterDeckCards()">
+                <select id="builder-cost-filter" onchange="filterBuilderCards()">
 
                     <option value="">All Costs</option>
 
@@ -374,16 +374,6 @@
                     <option value="4">Cost 4</option>
 
                     <option value="5">Cost 5</option>
-
-                </select>
-
-                <select id="filter-selected" onchange="filterDeckCards()">
-
-                    <option value="">All Cards</option>
-
-                    <option value="selected">Selected</option>
-
-                    <option value="unselected">Not Selected</option>
 
                 </select>
 
@@ -419,9 +409,13 @@
 
                 {% for card in collection_cards %}
 
-                    <label
+                    <article
 
-                        class="collection-card selectable-card"
+                        class="collection-card selectable-card builder-card"
+
+                        data-card-id="{{ card.id }}"
+
+                        data-owned="{{ collection_ids.count(card.id) if collection_ids is defined else 3 }}"
 
                         data-name="{{ card.name|lower }}"
 
@@ -439,21 +433,25 @@
 
                     >
 
-                        <input
+                        <div class="deck-card-controls">
 
-                            type="checkbox"
+                            <button type="button" class="deck-copy-btn" onclick="removeCardFromDeck('{{ card.id }}')" aria-label="Remove copy">−</button>
 
-                            name="deck_cards"
+                            <span class="deck-copy-count" id="count-{{ card.id }}">0</span>
 
-                            value="{{ card.id }}"
+                            <button type="button" class="deck-copy-btn" onclick="addCardToDeck('{{ card.id }}')" aria-label="Add copy">+</button>
 
-                            data-type="{{ card.type }}"
+                        </div>
 
-                            {% if card.id in deck_ids %}checked{% endif %}
+                        <div id="inputs-{{ card.id }}" class="deck-hidden-inputs">
 
-                            onchange="updateLiveDeckCounts()"
+                            {% for _ in range(deck_ids.count(card.id)) %}
 
-                        >
+                                <input type="hidden" name="deck_cards" value="{{ card.id }}">
+
+                            {% endfor %}
+
+                        </div>
 
                         <div class="card-shell">
 
@@ -505,7 +503,7 @@
 
                         </div>
 
-                    </label>
+                    </article>
 
                 {% endfor %}
 
@@ -516,164 +514,7 @@
         </form>
 
     </main>
-
-    <script>
-
-        function filterDeckCards() {
-
-            const search = document.getElementById("deck-search").value.toLowerCase();
-
-            const type = document.getElementById("filter-type").value;
-
-            const element = document.getElementById("filter-element").value;
-
-            const sigil = document.getElementById("filter-sigil").value;
-
-            const role = document.getElementById("filter-role").value;
-            const cost = document.getElementById("filter-cost") ? document.getElementById("filter-cost").value : "";
-
-            const rarity = document.getElementById("filter-rarity").value;
-
-            const selectedCost = document.getElementById("filter-cost").value;
-            const costForFilter = selectedCost;
-
-            const selected = document.getElementById("filter-selected").value;
-
-            document.querySelectorAll(".selectable-card").forEach((card) => {
-
-                const input = card.querySelector("input[type='checkbox']");
-
-                const matchesSearch = !search || card.dataset.name.includes(search);
-
-                const matchesType = !type || card.dataset.type === type;
-
-                const matchesElement = !element || card.dataset.element === element;
-
-                const matchesSigil = !sigil || card.dataset.sigil === sigil;
-
-                const matchesRole = !role || card.dataset.role === role;
-
-                const matchesRarity = !rarity || card.dataset.rarity === rarity;
-
-                const matchesCost = !cost || card.dataset.cost === cost;
-
-                const matchesSelected =
-
-                    !selected ||
-
-                    (selected === "selected" && input.checked) ||
-
-                    (selected === "unselected" && !input.checked);
-
-                card.style.display = (
-
-                    matchesSearch &&
-
-                    matchesType &&
-
-                    matchesElement &&
-
-                    matchesSigil &&
-
-                    matchesRole &&
-
-                    matchesRarity &&
-
-                    matchesCost &&
-
-                    matchesSelected
-
-                ) ? "" : "none";
-
-            });
-
-        }
-
-        function quickDeckFilter(kind, value) {
-
-            if (kind === "element") {
-
-                document.getElementById("filter-element").value = value;
-
-            }
-
-            if (kind === "sigil") {
-
-                document.getElementById("filter-sigil").value = value;
-
-            }
-
-            filterDeckCards();
-
-        }
-
-        function clearDeckFilters() {
-
-            [
-
-                "deck-search",
-
-                "filter-type",
-
-                "filter-element",
-
-                "filter-sigil",
-
-                "filter-role",
-
-                "filter-rarity",
-
-                "filter-cost",
-
-                "filter-selected",
-
-            ].forEach((id) => {
-
-                const el = document.getElementById(id);
-
-                if (el) el.value = "";
-
-            });
-
-            filterDeckCards();
-
-        }
-
-        function updateLiveDeckCounts() {
-
-            const checked = Array.from(document.querySelectorAll("input[name='deck_cards']:checked"));
-
-            const counts = {
-
-                Monster: 0,
-
-                Spell: 0,
-
-                Trap: 0,
-
-            };
-
-            checked.forEach((input) => {
-
-                const type = input.dataset.type;
-
-                counts[type] = (counts[type] || 0) + 1;
-
-            });
-
-            document.getElementById("live-total-count").textContent = `${checked.length}/30`;
-
-            document.getElementById("live-monster-count").textContent = `${counts.Monster || 0}/21`;
-
-            document.getElementById("live-spell-count").textContent = `${counts.Spell || 0}/6`;
-
-            document.getElementById("live-trap-count").textContent = `${counts.Trap || 0}/3`;
-
-        }
-
-        document.addEventListener("DOMContentLoaded", updateLiveDeckCounts);
-
-    </script>
+    <script src="{{ url_for('static', filename='js/deck_builder.js') }}"></script>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 
