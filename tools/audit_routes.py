@@ -13,6 +13,7 @@ CRITICAL_ROUTES = [
     "/ranking",
     "/terms",
     "/privacy",
+    "/offline",
     "/training",
     "/arena",
     "/collection",

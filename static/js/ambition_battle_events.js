@@ -33,13 +33,16 @@ function createHUD() {
 }
 
 function updateHUD(state) {
-  document.getElementById("p-hp").innerText = state.player.hp;
-  document.getElementById("e-hp").innerText = state.enemy.hp;
-  document.getElementById("p-amb").innerText = state.player.ambition;
-  document.getElementById("p-energy").innerText = state.player.energy;
+  const player = state.player || state.me || {};
+  const enemy = state.enemy || {};
 
-  document.getElementById("p-intent").innerText = state.player.intent;
-  document.getElementById("e-intent").innerText = state.enemy.intent;
+  document.getElementById("p-hp").innerText = player.hp ?? 0;
+  document.getElementById("e-hp").innerText = enemy.hp ?? 0;
+  document.getElementById("p-amb").innerText = player.ambition ?? 0;
+  document.getElementById("p-energy").innerText = player.energy ?? 0;
+
+  document.getElementById("p-intent").innerText = player.intent || "-";
+  document.getElementById("e-intent").innerText = enemy.intent || "-";
 }
 
 function applyEvents(events) {
