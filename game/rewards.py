@@ -1,46 +1,20 @@
-from game.balance import (
-    PVE_LOSS_XP,
-    PVE_WIN_COINS,
-    PVE_WIN_XP,
-    PVP_LOSS_XP,
-    PVP_WIN_COINS,
-    PVP_WIN_XP,
-)
+from services.reward_tuning import calculate_reward
 
 
-def get_match_rewards(is_bot_match, did_win):
-    if is_bot_match:
-        if did_win:
-            return {
-                "coins": PVE_WIN_COINS,
-                "xp": PVE_WIN_XP,
-            }
-
-        return {
-            "coins": 0,
-            "xp": PVE_LOSS_XP,
-        }
-
-    if did_win:
-        return {
-            "coins": PVP_WIN_COINS,
-            "xp": PVP_WIN_XP,
-        }
-
-    return {
-        "coins": 0,
-        "xp": PVP_LOSS_XP,
-    }
+def get_match_rewards(is_bot_match, did_win, difficulty=None, result=None):
+    mode = "training" if is_bot_match else "pvp"
+    outcome = result or ("win" if did_win else "loss")
+    return calculate_reward(mode, outcome, difficulty)
 
 
-def apply_match_rewards(user, is_bot_match, did_win, award_xp_function):
+def apply_match_rewards(user, is_bot_match, did_win, award_xp_function, difficulty=None, result=None):
     if not user:
         return {
             "coins": 0,
             "xp": 0,
         }
 
-    rewards = get_match_rewards(is_bot_match, did_win)
+    rewards = get_match_rewards(is_bot_match, did_win, difficulty=difficulty, result=result)
 
     user.coins += rewards["coins"]
     award_xp_function(user, rewards["xp"])
@@ -60,4 +34,3 @@ V105_REWARD_BASELINE = {
     "training_loss": {"coins": 15, "xp": 35},
     "training_draw": {"coins": 20, "xp": 45},
 }
-

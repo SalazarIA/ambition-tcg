@@ -18,6 +18,7 @@ from tools.rewards_report import main as generate_rewards_report_file
 from tools.card_identity_report import main as generate_card_identity_report_file
 from tools.applied_card_identity_report import main as generate_applied_card_identity_report_file
 from tools.progression_loop_report import main as generate_progression_loop_report_file
+from tools.internal_rc_check import audit_internal_rc
 
 
 def run_section(title, func):
@@ -49,6 +50,7 @@ def main():
     all_errors += run_section("DATABASE", lambda: audit_database(app, db))
     all_errors += run_section("ROUTES", lambda: audit_routes(app))
     all_errors += run_section("TEMPLATE ENDPOINTS", lambda: audit_template_endpoints(app))
+    all_errors += run_section("INTERNAL RC", audit_internal_rc)
     all_errors += run_section("CARDS", audit_cards)
     all_errors += run_section("BALANCE REPORT", lambda: [] if generate_balance_report_file() is None else [])
     all_errors += run_section("MATCH TELEMETRY REPORT", lambda: [] if generate_match_telemetry_report() else ["Match telemetry report failed"])

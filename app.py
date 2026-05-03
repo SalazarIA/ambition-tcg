@@ -26,7 +26,7 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, db, ensure_database_schema
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
@@ -110,6 +110,19 @@ def log_system_event(level="info", category="system", message="", details=None, 
         db.session.commit()
     except Exception as error:
         print("SYSTEM LOG ERROR:", error)
+
+
+def log_rc_event(category, message, details=None, user_id=None, level="info"):
+    try:
+        log_system_event(
+            level=level,
+            category=category,
+            message=message,
+            details=details,
+            user_id=user_id,
+        )
+    except Exception as error:
+        print("RC EVENT LOG ERROR:", type(error).__name__, error)
 
 
 def generate_invite_code():
@@ -852,6 +865,187 @@ def admin_feedback_update(report_id):
     return redirect("/admin/feedback")
 
 
+def check_route_status(path):
+    try:
+        with app.test_client() as client:
+            response = client.get(path, follow_redirects=False)
+            return response.status_code
+    except Exception:
+        return 500
+
+
+def build_internal_rc_status():
+    checks = []
+
+    def add_check(key, label, ok, detail, priority="required"):
+        checks.append({
+            "key": key,
+            "label": label,
+            "ok": bool(ok),
+            "detail": detail,
+            "priority": priority,
+        })
+
+    db_ok = True
+    db_detail = "Database query OK"
+
+    try:
+        db.session.execute(sql_text("SELECT 1"))
+    except Exception as error:
+        db_ok = False
+        db_detail = f"{type(error).__name__}: {error}"
+
+    add_check("database", "Database responds", db_ok, db_detail)
+    add_check(
+        "smtp",
+        "Email delivery configured",
+        is_smtp_configured(),
+        "SMTP is configured" if is_smtp_configured() else "SMTP missing or incomplete",
+        priority="recommended",
+    )
+
+    route_results = []
+    route_ok = True
+
+    for path in ["/", "/health", "/login", "/register", "/training", "/arena", "/feedback", "/missions", "/shop"]:
+        status = check_route_status(path)
+        route_results.append(f"{path}={status}")
+        if status >= 500:
+            route_ok = False
+
+    add_check(
+        "critical_routes",
+        "Critical routes do not 500",
+        route_ok,
+        ", ".join(route_results),
+    )
+
+    open_critical_feedbacks = 0
+    open_feedbacks = 0
+    recent_errors = 0
+    total_users = 0
+    verified_users = 0
+    total_matches = 0
+    average_rounds = 0
+
+    try:
+        open_feedbacks = FeedbackReport.query.filter_by(status="open").count()
+        open_critical_feedbacks = FeedbackReport.query.filter_by(status="open", severity="critical").count()
+    except Exception as error:
+        add_check("feedback_query", "Feedback can be queried", False, f"{type(error).__name__}: {error}")
+
+    add_check(
+        "critical_feedback",
+        "No open critical feedback",
+        open_critical_feedbacks == 0,
+        f"{open_critical_feedbacks} open critical reports",
+    )
+
+    try:
+        recent_errors = (
+            SystemLog.query
+            .filter(SystemLog.level.in_(["error", "critical"]))
+            .filter_by(is_resolved=False)
+            .count()
+        )
+    except Exception as error:
+        add_check("system_log_query", "System logs can be queried", False, f"{type(error).__name__}: {error}")
+
+    add_check(
+        "runtime_errors",
+        "No unresolved runtime errors",
+        recent_errors == 0,
+        f"{recent_errors} unresolved error logs",
+        priority="recommended",
+    )
+
+    try:
+        total_users = User.query.count()
+        verified_users = User.query.filter_by(is_verified=True).count()
+        total_matches = MatchHistory.query.count()
+        recent_matches = MatchHistory.query.order_by(MatchHistory.id.desc()).limit(20).all()
+
+        if recent_matches:
+            average_rounds = round(
+                sum(int(match.total_rounds or 0) for match in recent_matches) / len(recent_matches),
+                1,
+            )
+    except Exception as error:
+        add_check("core_metrics", "Core metrics can be queried", False, f"{type(error).__name__}: {error}")
+
+    add_check(
+        "tester_accounts",
+        "Tester accounts exist",
+        total_users > 0,
+        f"{total_users} total users, {verified_users} verified",
+        priority="recommended",
+    )
+    add_check(
+        "match_history",
+        "Match history records exist",
+        total_matches > 0,
+        f"{total_matches} saved matches",
+        priority="recommended",
+    )
+    add_check(
+        "balance_sample",
+        "Recent match length is readable",
+        total_matches == 0 or 2 <= average_rounds <= 12,
+        "No match sample yet" if total_matches == 0 else f"{average_rounds} average rounds over recent matches",
+        priority="recommended",
+    )
+
+    required_ok = all(check["ok"] for check in checks if check["priority"] == "required")
+    recommended_ok = all(check["ok"] for check in checks)
+
+    return {
+        "checks": checks,
+        "required_ok": required_ok,
+        "recommended_ok": recommended_ok,
+        "status_label": "READY" if required_ok else "BLOCKED",
+        "open_feedbacks": open_feedbacks,
+        "open_critical_feedbacks": open_critical_feedbacks,
+        "recent_errors": recent_errors,
+        "active_matches": len(active_matches),
+        "waiting_queue": 1 if waiting_player else 0,
+        "private_waiting_rooms": len(private_waiting_rooms),
+        "total_users": total_users,
+        "verified_users": verified_users,
+        "total_matches": total_matches,
+        "average_rounds": average_rounds,
+    }
+
+
+@app.route("/admin/release-candidate")
+def admin_release_candidate():
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    rc_status = build_internal_rc_status()
+    recent_feedbacks = []
+    recent_logs = []
+
+    try:
+        recent_feedbacks = FeedbackReport.query.order_by(FeedbackReport.created_at.desc()).limit(8).all()
+    except Exception as error:
+        print("RC FEEDBACK QUERY ERROR:", type(error).__name__, error)
+
+    try:
+        recent_logs = SystemLog.query.order_by(SystemLog.created_at.desc()).limit(12).all()
+    except Exception as error:
+        print("RC LOG QUERY ERROR:", type(error).__name__, error)
+
+    return render_template(
+        "admin_release_candidate.html",
+        user=current_user(),
+        rc_status=rc_status,
+        recent_feedbacks=recent_feedbacks,
+        recent_logs=recent_logs,
+    )
+
+
 
 @app.route("/")
 def index():
@@ -862,12 +1056,46 @@ def index():
 
 @app.route("/health")
 def health():
+    db_status = "ok"
+
+    try:
+        db.session.execute(sql_text("SELECT 1"))
+    except Exception as error:
+        db_status = f"error:{type(error).__name__}"
+
     return {
         "status": "ok",
         "app": "Ambitionz",
-        "version": "Ambitionz V1.05",
+        "version": "Ambitionz Internal RC",
         "environment": app.config["ENVIRONMENT"],
+        "database": db_status,
+        "smtp_configured": is_smtp_configured(),
+        "active_matches": len(active_matches),
     }
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    try:
+        user = current_user()
+        log_rc_event(
+            "runtime_error",
+            "Unhandled server error",
+            details={
+                "path": request.path,
+                "method": request.method,
+                "error": str(error)[:500],
+            },
+            user_id=getattr(user, "id", None) if user else None,
+            level="error",
+        )
+    except Exception as log_error:
+        print("500 LOG ERROR:", type(log_error).__name__, log_error)
+
+    if request.path.startswith("/api/"):
+        return {"status": "error", "message": "Internal server error"}, 500
+
+    return "Internal server error", 500
 
 
 
@@ -1446,8 +1674,20 @@ def register():
 
         if sent:
             flash("Registered. Check your email for the verification link.")
+            log_rc_event(
+                "account",
+                "User registered and verification email sent",
+                user_id=new_user.id,
+            )
         else:
             flash("Registered, but email delivery failed. Use resend verification or contact beta support.")
+            log_rc_event(
+                "account",
+                "User registered but verification email failed",
+                details={"email": email},
+                user_id=new_user.id,
+                level="warning",
+            )
         return redirect("/login")
 
     return render_template("register.html")
@@ -1464,6 +1704,7 @@ def confirm_email(token):
     mark_user_verified(user)
 
     db.session.commit()
+    log_rc_event("account", "Account verified", user_id=user.id)
 
     flash("Account verified. You can login now.")
     return redirect("/login")
@@ -1487,16 +1728,36 @@ def login():
 
         if not user or not user.check_password(password):
             login_attempts[attempt_key] = attempts + 1
+            log_rc_event(
+                "auth",
+                "Invalid login attempt",
+                details={"email": email, "attempts": attempts + 1},
+                level="warning",
+            )
             flash("Invalid login.")
             return redirect("/login")
 
         can_login, login_message = account_can_login(user)
 
         if not can_login:
+            log_rc_event(
+                "auth",
+                "Blocked login attempt",
+                details={"email": email, "reason": login_message},
+                user_id=getattr(user, "id", None),
+                level="warning",
+            )
             flash(login_message)
             return redirect("/login")
 
         if not user.is_verified:
+            log_rc_event(
+                "auth",
+                "Unverified login attempt",
+                details={"email": email},
+                user_id=getattr(user, "id", None),
+                level="warning",
+            )
             flash("Verify your email first. You can resend the verification email below.")
             return redirect("/resend-verification")
 
@@ -1507,6 +1768,7 @@ def login():
         db.session.commit()
 
         session["user_id"] = user.id
+        log_rc_event("auth", "User logged in", user_id=user.id)
 
         try:
             if not getattr(user, "has_completed_onboarding", False):
@@ -1521,7 +1783,10 @@ def login():
 
 @app.route("/logout")
 def logout():
+    user_id = session.get("user_id")
     session.clear()
+    if user_id:
+        log_rc_event("auth", "User logged out", user_id=user_id)
     return redirect("/")
 
 
@@ -1760,6 +2025,12 @@ def shop():
 
         db.session.add(history)
         increment_mission(user, "open_1_booster", 1)
+        log_rc_event(
+            "progression",
+            "Booster opened",
+            details={"pack": selected_pack["key"], "size": booster_size, "cost": booster_cost},
+            user_id=user.id,
+        )
         db.session.commit()
 
         flash(f"{selected_pack['name']} opened: {booster_size} cards added to your collection.")
@@ -1810,7 +2081,7 @@ def booster_history():
 
     histories = (
         BoosterHistory.query
-        .filter_by(user_id=safe_admin_user_id())
+        .filter_by(user_id=user.id)
         .order_by(BoosterHistory.created_at.desc())
         .limit(30)
         .all()
@@ -1845,6 +2116,12 @@ def deck_builder():
                 flash(error)
         else:
             user.deck_json = json.dumps(selected_cards)
+            log_rc_event(
+                "deck",
+                "Deck saved",
+                details={"cards": len(selected_cards)},
+                user_id=user.id,
+            )
             db.session.commit()
             flash("Deck saved successfully.")
 
@@ -2153,6 +2430,8 @@ def end_match(room_id, winner_key):
     p2 = match["p2"]
 
     battle_logs = match.get("logs", [])
+    is_bot_match = bool(match.get("is_bot_match") or match.get("training"))
+    reward_difficulty = match.get("bot_difficulty")
 
     if winner_key == "DRAW":
         socketio.emit("game_over", {"result": "DRAW"}, to=p1["sid"])
@@ -2164,10 +2443,46 @@ def end_match(room_id, winner_key):
         winner_name = None
         result = "DRAW"
 
-        emit_v107_post_match_summary(match, "p1", "DRAW", {"coins": 0, "xp": 0})
+        p1_user = db.session.get(User, safe_user_id(p1)) if safe_user_id(p1) else None
+        p2_user = db.session.get(User, safe_user_id(p2)) if safe_user_id(p2) else None
+
+        p1_rewards = {"coins": 0, "xp": 0}
+        p2_rewards = {"coins": 0, "xp": 0}
+
+        if p1_user:
+            p1_rewards = apply_match_rewards(
+                p1_user,
+                is_bot_match=is_bot_match,
+                did_win=False,
+                award_xp_function=award_xp,
+                difficulty=reward_difficulty,
+                result="draw",
+            )
+            increment_mission(p1_user, "play_1_match", 1)
+            increment_mission(p1_user, "play_3_matches", 1)
+
+        if p2_user:
+            p2_rewards = apply_match_rewards(
+                p2_user,
+                is_bot_match=is_bot_match,
+                did_win=False,
+                award_xp_function=award_xp,
+                difficulty=reward_difficulty,
+                result="draw",
+            )
+            increment_mission(p2_user, "play_1_match", 1)
+            increment_mission(p2_user, "play_3_matches", 1)
+
+        emit_v107_post_match_summary(match, "p1", "DRAW", p1_rewards)
 
         if not p2.get("is_bot"):
-            emit_v107_post_match_summary(match, "p2", "DRAW", {"coins": 0, "xp": 0})
+            emit_v107_post_match_summary(match, "p2", "DRAW", p2_rewards)
+
+        if is_bot_match:
+            for training_user in [p1_user, p2_user]:
+                if training_user:
+                    training_user.first_training_completed = True
+                    increment_mission(training_user, "play_1_training", 1)
 
     else:
         loser_key = "p2" if winner_key == "p1" else "p1"
@@ -2188,7 +2503,6 @@ def end_match(room_id, winner_key):
         winner_user = db.session.get(User, safe_user_id(winner)) if safe_user_id(winner) else None
         loser_user = db.session.get(User, safe_user_id(loser)) if safe_user_id(loser) else None
 
-        is_bot_match = bool(match.get("is_bot_match"))
         winner_rewards = {"coins": 0, "xp": 0}
         loser_rewards = {"coins": 0, "xp": 0}
 
@@ -2199,6 +2513,7 @@ def end_match(room_id, winner_key):
                 is_bot_match=is_bot_match,
                 did_win=True,
                 award_xp_function=award_xp,
+                difficulty=reward_difficulty,
             )
 
             increment_mission(winner_user, "play_1_match", 1)
@@ -2206,6 +2521,8 @@ def end_match(room_id, winner_key):
             increment_mission(winner_user, "win_1_match", 1)
 
             if is_bot_match:
+                winner_user.first_training_completed = True
+                increment_mission(winner_user, "play_1_training", 1)
                 increment_mission(winner_user, "win_1_training", 1)
 
         if loser_user:
@@ -2215,10 +2532,15 @@ def end_match(room_id, winner_key):
                 is_bot_match=is_bot_match,
                 did_win=False,
                 award_xp_function=award_xp,
+                difficulty=reward_difficulty,
             )
 
             increment_mission(loser_user, "play_1_match", 1)
             increment_mission(loser_user, "play_3_matches", 1)
+
+            if is_bot_match:
+                loser_user.first_training_completed = True
+                increment_mission(loser_user, "play_1_training", 1)
 
         emit_v107_post_match_summary(match, winner_key, "WIN", winner_rewards)
         emit_v107_post_match_summary(match, loser_key, "LOSE", loser_rewards)
@@ -2245,6 +2567,18 @@ def end_match(room_id, winner_key):
         record_match_telemetry(room_id, match, winner_key, loser_key, ending_reason="completed")
 
     update_card_stats_after_match(match, winner_key)
+
+    log_rc_event(
+        "match",
+        "Match completed",
+        details={
+            "room_id": room_id,
+            "winner_key": winner_key,
+            "mode": "training" if match.get("training") or match.get("is_bot_match") else "pvp",
+            "round": match.get("round"),
+        },
+        user_id=safe_user_id(p1),
+    )
 
     db.session.commit()
 
@@ -2274,6 +2608,12 @@ def handle_join_training(data=None):
         return
 
     try:
+        data = data or {}
+        difficulty = str(data.get("difficulty") or "normal").lower()
+
+        if difficulty not in {"easy", "normal", "hard"}:
+            difficulty = "normal"
+
         player_object = create_player_object(user, sid)
 
         bot_user = type("BotUser", (), {})()
@@ -2284,6 +2624,8 @@ def handle_join_training(data=None):
         bot_object = create_player_object(bot_user, f"bot_{sid}")
         bot_object["name"] = "Ambitionz Bot"
         bot_object["sid"] = f"bot_{sid}"
+        bot_object["is_bot"] = True
+        bot_object["difficulty"] = difficulty
 
         room_id = f"training_{sid}"
 
@@ -2297,16 +2639,31 @@ def handle_join_training(data=None):
             "resolving": False,
             "logs": [],
             "training": True,
+            "is_bot_match": True,
+            "bot_difficulty": difficulty,
         }
 
         player_rooms[sid] = room_id
 
         socketio.emit("match_found", {"msg": "Training started against Ambitionz Bot."}, to=sid)
         emit_log(room_id, "Training started. Choose an Intent, set cards, then press Ready.")
+        log_rc_event(
+            "match",
+            "Training match started",
+            details={"room_id": room_id, "difficulty": difficulty},
+            user_id=user.id,
+        )
         emit_state(room_id)
 
     except Exception as error:
         print("TRAINING START ERROR:", type(error).__name__, error)
+        log_rc_event(
+            "match",
+            "Training failed to start",
+            details={"error": f"{type(error).__name__}: {error}"},
+            user_id=user.id,
+            level="error",
+        )
         socketio.emit("queue_status", {"msg": "Training failed to start. Check your deck."}, to=sid)
 
 
@@ -2336,6 +2693,7 @@ def handle_join_queue():
     if waiting_player is None:
         waiting_player = player_object
         socketio.emit("queue_status", {"msg": "Searching for opponent..."}, to=current_sid)
+        log_rc_event("match", "Player entered PvP queue", user_id=user.id)
         return
 
     if waiting_player["sid"] == current_sid:
@@ -2359,6 +2717,12 @@ def handle_join_queue():
     player_rooms[current_sid] = room_id
 
     socketio.emit("match_found", {"msg": "Opponent found. Duel started."}, to=room_id)
+    log_rc_event(
+        "match",
+        "PvP match started",
+        details={"room_id": room_id},
+        user_id=safe_user_id(waiting_player),
+    )
 
     waiting_player = None
 
@@ -2703,12 +3067,19 @@ def handle_disconnect():
     sid = request.sid
 
     if waiting_player and waiting_player["sid"] == sid:
+        log_rc_event("match", "Player left PvP queue", user_id=safe_user_id(waiting_player))
         waiting_player = None
         return
 
     for room_code, private_player in list(private_waiting_rooms.items()):
         if private_player["sid"] == sid:
             private_waiting_rooms.pop(room_code, None)
+            log_rc_event(
+                "match",
+                "Player left private room queue",
+                details={"room_code": room_code},
+                user_id=safe_user_id(private_player),
+            )
             return
 
     room_id = player_rooms.get(sid)
@@ -2730,6 +3101,13 @@ def handle_disconnect():
     enemy = match[enemy_key]
 
     socketio.emit("opponent_left", {"msg": "Opponent disconnected. You win."}, to=enemy["sid"])
+    log_rc_event(
+        "match",
+        "Player disconnected from active match",
+        details={"room_id": room_id, "player_key": player_key},
+        user_id=safe_user_id(match[player_key]),
+        level="warning",
+    )
 
     end_match(room_id, enemy_key)
 
@@ -2810,6 +3188,29 @@ def feedback():
         if not message or len(message) < 10:
             flash("Feedback message must have at least 10 characters.")
             return redirect("/feedback")
+
+        try:
+            daily_limit = int(app.config.get("FEEDBACK_DAILY_LIMIT", 10) or 10)
+            today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            submitted_today = (
+                FeedbackReport.query
+                .filter_by(user_id=user.id)
+                .filter(FeedbackReport.created_at >= today_start)
+                .count()
+            )
+
+            if submitted_today >= daily_limit:
+                flash("Daily feedback limit reached. Try again tomorrow.")
+                log_rc_event(
+                    "feedback",
+                    "Feedback daily limit reached",
+                    details={"limit": daily_limit},
+                    user_id=user.id,
+                    level="warning",
+                )
+                return redirect("/feedback")
+        except Exception as error:
+            print("FEEDBACK LIMIT CHECK ERROR:", type(error).__name__, error)
 
         report = FeedbackReport(
             user_id=user.id,
@@ -3035,6 +3436,7 @@ def complete_onboarding():
     if user:
         try:
             user.has_completed_onboarding = True
+            log_rc_event("onboarding", "Onboarding completed", user_id=user.id)
             db.session.commit()
         except Exception as error:
             print("Complete onboarding failed:", error)
