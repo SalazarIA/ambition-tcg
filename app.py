@@ -1438,13 +1438,16 @@ def register():
         token = serializer.dumps(email, salt="email-confirm")
         verification_url = url_for("confirm_email", token=token, _external=True)
 
-        send_verification_email(new_user, verification_url)
+        sent = send_verification_email(new_user, verification_url)
 
         print("\n--- AMBITIONZ VERIFICATION LINK ---")
         print(verification_url)
         print("----------------------------------\n")
 
-        flash("Registered. Check your email for the verification link. If email is not configured, check server logs.")
+        if sent:
+            flash("Registered. Check your email for the verification link.")
+        else:
+            flash("Registered, but email delivery failed. Use resend verification or contact beta support.")
         return redirect("/login")
 
     return render_template("register.html")
