@@ -40,7 +40,7 @@ function updateReadyVisuals(state) {
 }
 
 function updateIntentVisuals() {
-    const overreachActive = selectedIntent === "Ambition Unleash";
+    const overreachActive = selectedIntent === "Ambition Unleash" || Boolean(latestState?.me?.wants_unleash);
 
     document.body.classList.toggle("overreach-armed-v112", overreachActive);
 
@@ -133,6 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
 const socket = io({
     transports: ["websocket", "polling"],
 });
+
+window.socket = socket;
 
 let latestState = null;
 let selectedIntent = "Strike";
@@ -252,12 +254,18 @@ function renderHand(state) {
 function renderState(state) {
     latestState = state || {};
 
+    if (selectedIntent === "Ambition Unleash" && !latestState?.me?.wants_unleash) {
+        selectedIntent = latestState?.me?.intent || "Strike";
+    }
+
     updateHud(latestState);
     renderField(latestState);
     renderHand(latestState);
     setBodyBattleState(latestState);
     updateReadyVisuals(latestState);
     updateIntentVisuals();
+
+    window.dispatchEvent(new CustomEvent("ambition:state_update", { detail: latestState }));
 }
 
 function setQueueStatus(message) {
@@ -273,12 +281,12 @@ function setIntent(intent) {
 
     updateIntentVisuals();
 
-    socket.emit("set_intent", { intent: selectedIntent });
-
     if (selectedIntent === "Ambition Unleash") {
+        socket.emit("toggle_unleash");
         setQueueStatus("Ambition Unleash armed: high pressure, high risk.");
         logLine("Ambition Unleash selected. Commit only when the reward is worth the exposure.");
     } else {
+        socket.emit("set_intent", { intent: selectedIntent });
         logLine(`Intent selected: ${selectedIntent}`);
     }
 }
@@ -313,6 +321,11 @@ function bootArenaControls() {
 
 document.addEventListener("DOMContentLoaded", bootArenaControls);
 
+window.addEventListener("ambition:unleash_requested", () => {
+    socket.emit("toggle_unleash");
+    setQueueStatus("Ambition Unleash toggled.");
+});
+
 socket.on("connect", () => {
     setQueueStatus("Connected.");
     logLine("Connected to Ambitionz server.");
@@ -335,6 +348,10 @@ socket.on("match_found", (data) => {
 
 socket.on("game_state_update", (state) => {
     renderState(state);
+});
+
+socket.on("battle_events", (events) => {
+    window.dispatchEvent(new CustomEvent("ambition:battle_events", { detail: events || [] }));
 });
 
 socket.on("battle_log", (data) => {

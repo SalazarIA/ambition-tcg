@@ -1924,6 +1924,48 @@ def emit_log(room_id, message):
     socketio.emit("battle_log", {"msg": message}, to=room_id)
 
 
+def perspective_battle_events(events, player_key):
+    if player_key == "p1":
+        return [dict(event) for event in events]
+
+    side_map = {
+        "player": "enemy",
+        "enemy": "player",
+    }
+
+    perspective_events = []
+
+    for event in events:
+        mapped_event = dict(event)
+
+        for key in ["side", "to", "from"]:
+            value = mapped_event.get(key)
+
+            if value in side_map:
+                mapped_event[key] = side_map[value]
+
+        perspective_events.append(mapped_event)
+
+    return perspective_events
+
+
+def emit_battle_events(match, events):
+    if not events:
+        return
+
+    for player_key in ["p1", "p2"]:
+        player = match.get(player_key, {})
+
+        if player.get("is_bot") or not player.get("sid"):
+            continue
+
+        socketio.emit(
+            "battle_events",
+            perspective_battle_events(events, player_key),
+            to=player["sid"],
+        )
+
+
 def emit_state(room_id):
     match = active_matches.get(room_id)
 
@@ -2354,33 +2396,6 @@ def set_intent(data):
     emit_state(room_id)
 
 
-@socketio.on("toggle_unleash")
-def toggle_unleash():
-    room_id = player_rooms.get(request.sid)
-
-    if not room_id:
-        return
-
-    match = active_matches.get(room_id)
-
-    if not match or match["resolving"]:
-        return
-
-    player_key = find_player_key(match, request.sid)
-
-    if not player_key:
-        return
-
-    player = match[player_key]
-
-    if player["ready"]:
-        return
-
-    success, message = request_unleash(player, match.setdefault("logs", []))
-
-    socketio.emit("battle_log", {"msg": message}, to=request.sid)
-    emit_state(room_id)
-
 @socketio.on("play_to_field")
 def play_to_field(data):
     room_id = player_rooms.get(request.sid)
@@ -2573,7 +2588,14 @@ def declare_ready():
     if match["p1"]["ready"] and match["p2"]["ready"]:
         battle_result = resolve_battle(match)
 
-        match.setdefault("logs", []).extend(battle_result["logs"])
+        try:
+            events = battle_result.get("events", [])
+            emit_battle_events(match, events)
+            match.setdefault("v2_events", []).extend(events)
+        except Exception as error:
+            print("V2 BATTLE EVENTS EMIT ERROR:", type(error).__name__, error)
+
+        # emit_log is the single writer for match logs in this phase.
 
         for log_message in battle_result["logs"]:
             emit_log(room_id, log_message)

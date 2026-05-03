@@ -83,9 +83,118 @@ def apply_damage_package(attacker, defender, attacker_monster, defender_monster,
     return apply_damage(defender, raw_damage)
 
 
+def _card_label(card):
+    if not card:
+        return None
+
+    return card.get("name") or card.get("title") or "Unknown Card"
+
+
+def _player_snapshot(player):
+    return {
+        "name": player.get("name", "Player"),
+        "hp": int(player.get("hp", 0)),
+        "energy": int(player.get("energy", 0)),
+        "ambition": int(player.get("ambition", 0)),
+        "intent": player.get("intent", "Strike"),
+        "field_m": player.get("field_m"),
+        "field_st": player.get("field_st"),
+        "hand_count": len(player.get("hand", [])),
+        "graveyard_count": len(player.get("graveyard", [])),
+    }
+
+
+def _battle_snapshot(match):
+    return {
+        "round": int(match.get("round", 1)),
+        "p1": _player_snapshot(match["p1"]),
+        "p2": _player_snapshot(match["p2"]),
+    }
+
+
+def _append_player_change_events(events, before_player, after_player, side, target):
+    before_hp = int(before_player.get("hp", 0))
+    after_hp = int(after_player.get("hp", 0))
+
+    if after_hp < before_hp:
+        events.append({"type": "damage_dealt", "to": target, "amount": before_hp - after_hp})
+
+    if after_hp != before_hp:
+        events.append({"type": "hp_changed", "side": side, "value": after_hp})
+
+    before_ambition = int(before_player.get("ambition", 0))
+    after_ambition = int(after_player.get("ambition", 0))
+
+    if after_ambition > before_ambition:
+        events.append({"type": "ambition_gained", "side": side, "amount": after_ambition - before_ambition})
+
+    if after_ambition != before_ambition:
+        events.append({"type": "ambition_changed", "side": side, "value": after_ambition})
+
+    after_energy = int(after_player.get("energy", 0))
+
+    if after_energy != int(before_player.get("energy", 0)):
+        events.append({"type": "energy_changed", "side": side, "value": after_energy})
+
+    if len(after_player.get("hand", [])) > int(before_player.get("hand_count", 0)):
+        events.append({"type": "card_drawn", "side": side, "amount": 1})
+
+
+def build_battle_events(match, before, logs, winner):
+    events = [{"type": "round_started", "round": before["round"]}]
+
+    p1_before = before["p1"]
+    p2_before = before["p2"]
+
+    events.append({"type": "intent_revealed", "side": "player", "intent": p1_before["intent"]})
+    events.append({"type": "intent_revealed", "side": "enemy", "intent": p2_before["intent"]})
+
+    for side, player_before in [("player", p1_before), ("enemy", p2_before)]:
+        monster_name = _card_label(player_before.get("field_m"))
+        spell_trap_name = _card_label(player_before.get("field_st"))
+
+        if monster_name:
+            events.append({"type": "card_played", "side": side, "card_name": monster_name, "zone": "monster"})
+
+        if spell_trap_name:
+            events.append({"type": "card_played", "side": side, "card_name": spell_trap_name, "zone": "spell_trap"})
+
+    _append_player_change_events(events, p1_before, match["p1"], "player", "player")
+    _append_player_change_events(events, p2_before, match["p2"], "enemy", "enemy")
+
+    if winner == "p1":
+        title = f"{match['p1']['name']} won the match"
+    elif winner == "p2":
+        title = f"{match['p2']['name']} won the match"
+    elif winner == "DRAW":
+        title = "Match ended in a draw"
+    else:
+        title = f"Round {before['round']} resolved"
+
+    events.append({
+        "type": "round_summary",
+        "title": title,
+        "description": logs[-1] if logs else "Battle resolved.",
+    })
+
+    events.append({
+        "type": "unleash_ready",
+        "side": "player",
+        "ready": int(match["p1"].get("ambition", 0)) >= 5 and bool(match["p1"].get("field_m")),
+    })
+    events.append({
+        "type": "unleash_ready",
+        "side": "enemy",
+        "ready": int(match["p2"].get("ambition", 0)) >= 5 and bool(match["p2"].get("field_m")),
+    })
+
+    return events
+
+
 def resolve_battle(match):
     p1 = match["p1"]
     p2 = match["p2"]
+    before = _battle_snapshot(match)
 
     logs = []
     match["resolving"] = True
@@ -295,7 +404,11 @@ def resolve_battle(match):
     elif p2["hp"] <= 0:
         winner = "p1"
 
+    events = build_battle_events(match, before, logs, winner)
+    match.setdefault("events", []).extend(events)
+
     return {
         "logs": logs,
         "winner": winner,
+        "events": events,
     }
