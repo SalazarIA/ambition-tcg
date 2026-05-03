@@ -215,9 +215,103 @@ def admin_audit(message, level="warning", category="admin"):
         print("ADMIN AUDIT LOG FAILED:", type(error).__name__, error)
 
 
-def admin_required_redirect():
-    auth_redirect = login_required_redirect()
 
+def _card_cost_value(card):
+    try:
+        return int(card.get("cost", 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _is_playable_with_energy(card, energy):
+    return _card_cost_value(card) <= energy
+
+
+def _is_playable_monster_with_energy(card, energy):
+    return card.get("type") == "Monster" and _is_playable_with_energy(card, energy)
+
+
+def draw_beta_starting_hand(deck, size=5, starting_energy=2):
+    """Draw a beta-friendly starting hand from a mutable deck list.
+
+    This is a first-session safety net. It avoids a dead mobile opening where
+    the player has no playable card or no playable monster.
+    """
+    hand = draw_starting_hand(deck, size)
+
+    has_playable = any(_is_playable_with_energy(card, starting_energy) for card in hand)
+    has_playable_monster = any(_is_playable_monster_with_energy(card, starting_energy) for card in hand)
+
+    if has_playable and has_playable_monster:
+        return hand
+
+    def swap_in(predicate):
+        for deck_index, candidate in enumerate(deck):
+            if predicate(candidate):
+                # Prefer replacing the highest-cost non-matching card.
+                replace_index = None
+                replacement_score = -1
+
+                for hand_index, current in enumerate(hand):
+                    if predicate(current):
+                        continue
+
+                    score = _card_cost_value(current)
+
+                    if score > replacement_score:
+                        replacement_score = score
+                        replace_index = hand_index
+
+                if replace_index is None and hand:
+                    replace_index = len(hand) - 1
+
+                if replace_index is not None:
+                    removed = hand[replace_index]
+                    hand[replace_index] = candidate
+                    deck[deck_index] = removed
+                return
+
+    if not has_playable_monster:
+        swap_in(lambda card: _is_playable_monster_with_energy(card, starting_energy))
+
+    has_playable = any(_is_playable_with_energy(card, starting_energy) for card in hand)
+
+    if not has_playable:
+        swap_in(lambda card: _is_playable_with_energy(card, starting_energy))
+
+    return hand
+
+
+def admin_required_redirect():
+    """Return a redirect response when the current user is not an admin.
+
+    Kept as a response-returning helper because existing admin routes call it
+    manually instead of using it as a decorator.
+    """
+    user_id = session.get("user_id")
+
+    if not user_id:
+        flash("Login required.", "warning")
+        return redirect(url_for("login"))
+
+    user = User.query.get(user_id)
+
+    if not user:
+        session.clear()
+        flash("Login required.", "warning")
+        return redirect(url_for("login"))
+
+    is_admin = bool(
+        getattr(user, "is_admin", False)
+        or getattr(user, "admin", False)
+        or getattr(user, "role", "") == "admin"
+    )
+
+    if not is_admin:
+        flash("Admin access required.", "danger")
+        return redirect(url_for("index"))
+
+    return None
 
 def get_existing_table_names():
     try:
@@ -1890,7 +1984,7 @@ def emit_state(room_id):
 
 def create_player_object(user, sid):
     deck = build_playable_deck(user.deck_json)
-    hand = draw_starting_hand(deck, 5)
+    hand = draw_beta_starting_hand(deck, 5, starting_energy=2)
 
     player = create_player_state(user, sid, deck, hand)
 
