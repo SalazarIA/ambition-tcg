@@ -78,7 +78,7 @@ def send_smtp_test_email(to_email):
 If you received this message, the production email system is working.
 
 Ambitionz
-Risk. Elements. Overreach.
+Risk. Elements. Ambition.
 """
 
     return send_email(to_email, subject, body)
@@ -100,7 +100,7 @@ This link expires for security reasons.
 After confirming, return to Ambitionz and log in normally.
 
 Ambitionz
-Risk. Elements. Overreach.
+Risk. Elements. Ambition.
 """
 
     return send_email(user.email, subject, body)

@@ -46,6 +46,13 @@ from game.state import create_player_state, normalize_intent
 
 
 app = Flask(__name__)
+
+app.config["SMTP_HOST"] = os.environ.get("SMTP_HOST")
+app.config["SMTP_PORT"] = int(os.environ.get("SMTP_PORT", "587"))
+app.config["SMTP_USERNAME"] = os.environ.get("SMTP_USERNAME")
+app.config["SMTP_PASSWORD"] = os.environ.get("SMTP_PASSWORD")
+app.config["SMTP_USE_TLS"] = os.environ.get("SMTP_USE_TLS", "true").lower() in ("1", "true", "yes", "on")
+app.config["MAIL_FROM"] = os.environ.get("MAIL_FROM")
 app.config.from_object(Config)
 
 app.wsgi_app = ProxyFix(
