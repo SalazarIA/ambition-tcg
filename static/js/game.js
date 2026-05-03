@@ -40,12 +40,12 @@ function updateReadyVisuals(state) {
 }
 
 function updateIntentVisuals() {
-    const overreachActive = selectedIntent === "Overreach";
+    const overreachActive = selectedIntent === "Ambition Unleash";
 
     document.body.classList.toggle("overreach-armed-v112", overreachActive);
 
     DOM.qsa(".intent-btn-v103").forEach((button) => {
-        const isOverreach = button.dataset.intent === "Overreach";
+        const isOverreach = button.dataset.intent === "Ambition Unleash";
         button.classList.toggle("overreach-btn-v112", isOverreach);
         button.classList.toggle("overreach-active-v112", isOverreach && overreachActive);
     });
@@ -275,9 +275,9 @@ function setIntent(intent) {
 
     socket.emit("set_intent", { intent: selectedIntent });
 
-    if (selectedIntent === "Overreach") {
-        setQueueStatus("Overreach armed: high pressure, high risk.");
-        logLine("Overreach selected. Commit only when the reward is worth the exposure.");
+    if (selectedIntent === "Ambition Unleash") {
+        setQueueStatus("Ambition Unleash armed: high pressure, high risk.");
+        logLine("Ambition Unleash selected. Commit only when the reward is worth the exposure.");
     } else {
         logLine(`Intent selected: ${selectedIntent}`);
     }

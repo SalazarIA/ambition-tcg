@@ -2244,7 +2244,7 @@ def set_intent(data):
         return
 
     intent = normalize_intent(data.get("intent"))
-    set_player_intent(player, intent, match.setdefault("logs", []))
+    set_player_intent(player, intent)
 
     socketio.emit("battle_log", {"msg": f"{player['name']} chose {intent} intent."}, to=request.sid)
     emit_state(room_id)
