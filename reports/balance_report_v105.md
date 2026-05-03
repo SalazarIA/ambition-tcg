@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1085, 'max': 1938, 'avg': 1543.9, 'median': 1560}
+- Monster summary: {'count': 21, 'min': 1170, 'max': 1813, 'avg': 1489.1, 'median': 1456}
 
 ### Starter Type Distribution
 
@@ -50,22 +50,22 @@
 
 - Global: 9
 - Fire: 6
-- Earth: 5
-- Water: 5
 - Plant: 5
+- Water: 5
+- Earth: 5
 
 ### Starter Sigil Distribution
 
 - Global: 9
 - Fury: 6
-- Resolve: 5
-- Insight: 5
 - Harmony: 5
+- Insight: 5
+- Resolve: 5
 
 ### Starter Rarity Distribution
 
-- Common: 24
-- Uncommon: 6
+- Common: 26
+- Uncommon: 4
 
 
 ## Catalog Outliers
@@ -79,4 +79,4 @@
 
 ## Starter Deck Outliers
 
-- **Fada do Bosque** `plant_005` score=1085.0 cost=1 power=1085 reasons=high power per cost
+- No major starter deck outliers detected.

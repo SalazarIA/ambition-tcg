@@ -21,6 +21,7 @@ CRITICAL_ROUTES = [
     "/admin",
     "/admin/dev-tools",
     "/admin/system",
+    "/admin/release-candidate",
     "/admin/users",
 ]
 
