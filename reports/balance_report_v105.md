@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1085, 'max': 1970, 'avg': 1496.6, 'median': 1543}
+- Monster summary: {'count': 21, 'min': 1017, 'max': 1846, 'avg': 1548.7, 'median': 1557}
 
 ### Starter Type Distribution
 
@@ -64,8 +64,8 @@
 
 ### Starter Rarity Distribution
 
-- Common: 26
-- Uncommon: 4
+- Common: 22
+- Uncommon: 8
 
 
 ## Catalog Outliers
@@ -79,4 +79,4 @@
 
 ## Starter Deck Outliers
 
-- **Fada do Bosque** `plant_005` score=1085.0 cost=1 power=1085 reasons=high power per cost
+- **Druida das Raizes** `plant_001` score=1017.0 cost=1 power=1017 reasons=high power per cost

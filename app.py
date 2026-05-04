@@ -1827,7 +1827,7 @@ def register():
         new_user = User(
             username=username,
             email=email,
-            account_status="unverified",
+            account_status="active",
             is_tester=True if invite else False,
         )
         new_user.set_password(password)
@@ -1924,16 +1924,8 @@ def login():
             flash(login_message)
             return redirect("/login")
 
-        if not user.is_verified:
-            log_rc_event(
-                "auth",
-                "Unverified login attempt",
-                details={"email": email},
-                user_id=getattr(user, "id", None),
-                level="warning",
-            )
-            flash("Verify your email first. You can resend the verification email below.")
-            return redirect("/resend-verification")
+        # Beta policy: email verification is no longer required to start playing.
+        # Email remains used for login and password recovery.
 
         login_attempts.pop(attempt_key, None)
 
