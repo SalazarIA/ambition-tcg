@@ -1837,31 +1837,22 @@ def register():
         if invite:
             invite.used_count += 1
 
+        new_user.is_verified = True
+        new_user.account_status = "active"
+        try:
+            new_user.verified_at = datetime.now(timezone.utc)
+        except Exception:
+            pass
+
         db.session.commit()
 
-        token = serializer.dumps(email, salt="email-confirm")
-        # Beta mode: no verification URL required.
+        flash("Registered successfully. You can login and play now.")
+        log_rc_event(
+            "account",
+            "User registered without email verification in beta mode",
+            user_id=new_user.id,
+        )
 
-        sent = send_verification_email(new_user, verification_url)
-
-        log_sensitive_link_for_local_dev("AMBITIONZ VERIFICATION LINK", verification_url)
-
-        if sent:
-            flash("Registered. Check your email for the verification link.")
-            log_rc_event(
-                "account",
-                "User registered and verification email sent",
-                user_id=new_user.id,
-            )
-        else:
-            flash("Registered, but email delivery failed. Use resend verification or contact beta support.")
-            log_rc_event(
-                "account",
-                "User registered but verification email failed",
-                details={"email": email},
-                user_id=new_user.id,
-                level="warning",
-            )
         return redirect("/login")
 
     return render_template("register.html")
