@@ -1286,7 +1286,7 @@ def resend_verification():
             return redirect("/login")
 
         token = serializer.dumps(user.email, salt="email-confirm")
-        verification_url = url_for("confirm_email", token=token, _external=True)
+        # Beta mode: no verification URL required.
 
         sent = send_verification_email(user, verification_url)
 
@@ -1840,7 +1840,7 @@ def register():
         db.session.commit()
 
         token = serializer.dumps(email, salt="email-confirm")
-        verification_url = url_for("confirm_email", token=token, _external=True)
+        # Beta mode: no verification URL required.
 
         sent = send_verification_email(new_user, verification_url)
 
