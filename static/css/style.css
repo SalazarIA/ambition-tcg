@@ -6516,3 +6516,332 @@ button.btn,
   font-size: 14px;
   color: rgba(255,255,255,0.88);
 }
+
+/* Ambitionz Web Polish Pack */
+.public-site {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(111, 76, 255, 0.28), transparent 34%),
+    radial-gradient(circle at top right, rgba(255, 204, 102, 0.18), transparent 30%),
+    linear-gradient(135deg, #070913, #101424 48%, #080a12);
+  color: #f8fafc;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.landing-page,
+.how-page {
+  width: min(1160px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 40px 0 64px;
+}
+
+.landing-hero,
+.how-hero {
+  padding: 72px 0 36px;
+  text-align: center;
+}
+
+.landing-badge {
+  display: inline-flex;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: #ffd166;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.landing-hero h1,
+.how-hero h1 {
+  margin: 18px 0 10px;
+  font-size: clamp(48px, 9vw, 104px);
+  line-height: .92;
+  letter-spacing: -0.07em;
+}
+
+.how-hero h1 {
+  font-size: clamp(38px, 7vw, 76px);
+}
+
+.landing-subtitle,
+.how-hero p {
+  max-width: 760px;
+  margin: 0 auto;
+  color: rgba(248,250,252,0.78);
+  font-size: clamp(18px, 2.2vw, 24px);
+  line-height: 1.45;
+}
+
+.landing-actions {
+  margin-top: 28px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.landing-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-weight: 900;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.landing-button.primary {
+  background: linear-gradient(135deg, #ffd166, #f97316);
+  color: #111827;
+}
+
+.landing-button.secondary {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.landing-button.ghost {
+  background: transparent;
+  color: #9fd3ff;
+}
+
+.beta-warning-box {
+  max-width: 960px;
+  margin: 26px auto;
+  padding: 28px;
+  border: 1px solid rgba(255, 204, 102, 0.35);
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(20, 20, 35, 0.96), rgba(45, 30, 12, 0.92));
+  color: #fff;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+}
+
+.beta-warning-box h2 {
+  margin: 0 0 14px;
+  font-size: 28px;
+  color: #ffd166;
+}
+
+.beta-warning-box p {
+  margin: 10px 0;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.88);
+}
+
+.beta-support-box {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid rgba(120, 180, 255, 0.28);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.06);
+}
+
+.beta-support-box h3 {
+  margin: 0 0 8px;
+  color: #9fd3ff;
+  font-size: 21px;
+}
+
+.support-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.support-button {
+  display: inline-block;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.support-button.primary {
+  background: #9fd3ff;
+  color: #101827;
+}
+
+.pix-box {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.9);
+}
+
+.pix-box span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.pix-box strong {
+  color: #ffd166;
+}
+
+.international-support-note {
+  margin-top: 12px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.88);
+}
+
+.beta-warning-button {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #ffd166;
+  color: #121212;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.landing-grid,
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 34px;
+}
+
+.landing-card,
+.how-steps article,
+.landing-section,
+.landing-final,
+.how-intents {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.075);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+}
+
+.landing-card-kicker,
+.how-steps span {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(255,209,102,0.14);
+  color: #ffd166;
+  font-weight: 900;
+}
+
+.landing-card h3,
+.how-steps h3 {
+  margin: 14px 0 8px;
+  font-size: 22px;
+}
+
+.landing-card p,
+.how-steps p,
+.roadmap span,
+.mechanics-grid span {
+  color: rgba(248,250,252,0.76);
+  line-height: 1.55;
+}
+
+.landing-section,
+.landing-final,
+.how-intents {
+  margin-top: 24px;
+}
+
+.landing-section h2,
+.landing-final h2,
+.how-intents h2 {
+  margin: 0 0 18px;
+  font-size: 32px;
+}
+
+.mechanics-grid,
+.roadmap {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.roadmap {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.mechanics-grid div,
+.roadmap div {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.18);
+}
+
+.mechanics-grid strong,
+.roadmap strong {
+  display: block;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.landing-final {
+  text-align: center;
+}
+
+/* Arena readability polish */
+#game,
+.game-shell,
+.arena-shell,
+.battle-area {
+  scroll-margin-bottom: 180px;
+}
+
+button,
+.btn,
+.button {
+  min-height: 42px;
+}
+
+.post-match-summary,
+.post-match-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  padding: 18px;
+}
+
+@media (max-width: 900px) {
+  .landing-grid,
+  .how-steps,
+  .mechanics-grid,
+  .roadmap {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-page,
+  .how-page {
+    width: min(100% - 22px, 1160px);
+    padding-top: 18px;
+  }
+
+  .landing-hero,
+  .how-hero {
+    padding-top: 42px;
+  }
+
+  .landing-actions {
+    flex-direction: column;
+  }
+
+  .landing-button {
+    width: 100%;
+  }
+
+  .beta-warning-box {
+    padding: 20px;
+  }
+}

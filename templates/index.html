@@ -1,379 +1,122 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Ambitionz</title>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#8e44ad">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Ambitionz">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="utf-8">
+  <title>Ambitionz — Tactical Card Battler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Ambitionz is a fast tactical card battler built around Intent, Ambition and decisive turns.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
 
+<body class="public-site">
+  <main class="landing-page">
+    <section class="landing-hero">
+      <div class="landing-badge">Beta Web Version</div>
+      <h1>Ambitionz</h1>
+      <p class="landing-subtitle">
+        A fast tactical card battler built around Intent, Ambition and decisive turns.
+      </p>
 
-<section class="beta-warning-box">
-  <h2>Ambitionz is in Beta</h2>
-
-  <p>
-    This game is still in active development. During this beta phase, bugs,
-    instability, balance changes, account resets, card resets, progression resets
-    or test data resets may happen.
-  </p>
-
-  <p>
-    By continuing, you understand that you are accessing a beta version created
-    for testing, feedback and project improvement.
-  </p>
-
-  <p>
-    To send bugs, feedback, suggestions, partnership requests or international
-    support inquiries, contact us directly:
-    <strong>cavestudiobrasil@gmail.com</strong>
-  </p>
-
-  <div class="beta-support-box">
-    <h3>Support Ambitionz</h3>
-    <p>
-      Ambitionz is an independent game. If you want to support development,
-      server costs, art, balance updates and future releases, you can help below.
-    </p>
-
-    <div class="support-actions">
-      <a class="support-button primary" href="SEU_LINK_REAL_DO_KOFI_AQUI" target="_blank" rel="noopener">
-        Support via Ko-fi / PayPal
-      </a>
-    </div>
-
-    <div class="pix-box">
-      <span>Brazilian supporters can donate directly via Pix:</span>
-      <strong>cavestudiobrasil@gmail.com</strong>
-    </div>
-
-    <p class="international-support-note">
-      International supporters can also contact us through the same email:
-      <strong>cavestudiobrasil@gmail.com</strong>
-    </p>
-  </div>
-
-  <a class="beta-warning-button" href="/login">Enter / Create Account</a>
-</section>
-
-
-
-    <main class="wide-page mobile-wide-page">
-        <!-- AMBITIONZ V1.19 PUBLIC LANDING -->
-        <header class="home-dashboard-hero">
-            <div class="home-dashboard-copy">
-                <div class="app-logo">A</div>
-                <span class="progression-kicker">Ambitionz V1.10</span>
-                <h1>Risk. Elements. Ambition.</h1>
-                <p>
-                    Fast tactical card duels built around hidden intent, calculated risk,
-                    Sigils and progression that pushes you into one more match.
-                </p>
-
-                <div class="hero-actions">
-                    {% if user %}
-                        <a href="{{ url_for('training') }}" class="btn">Play Training</a>
-                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">Profile</a>
-                        <a href="{{ url_for('progression') }}" class="btn btn-secondary">Progression</a>
-                        <a href="{{ url_for('arena') }}" class="btn btn-secondary">Arena</a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}" class="btn">Login</a>
-                        <a href="{{ url_for('register') }}" class="btn btn-secondary">Create Account</a>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if user %}
-                <aside class="home-player-card">
-                    <span class="progression-kicker">Player Status</span>
-                    <h2>{{ user.username }}</h2>
-
-                    <div class="home-player-stats">
-                        <div>
-                            <span>Level</span>
-                            <strong>{{ user.level }}</strong>
-                        </div>
-                        <div>
-                            <span>XP</span>
-                            <strong>{{ user.xp }}/{{ user.next_level_xp }}</strong>
-                        </div>
-                        <div>
-                            <span>Coins</span>
-                            <strong>{{ user.coins }}</strong>
-                        </div>
-                        <div>
-                            <span>Record</span>
-                            <strong>{{ user.wins }}W / {{ user.losses }}L</strong>
-                        </div>
-                    </div>
-
-                    <div class="deck-progress-shell" style="margin-top: 14px;">
-                        <div class="deck-progress-label">
-                            <span>Level Progress</span>
-                            <strong>{{ user.level_progress_percent }}%</strong>
-                        </div>
-                        <div class="deck-progress-bar">
-                            <div class="deck-progress-fill" style="width: {{ user.level_progress_percent }}%;"></div>
-                        </div>
-                    </div>
-                </aside>
-            {% else %}
-                <aside class="home-player-card public-conversion-card-v119">
-                    <span class="progression-kicker">Beta Access</span>
-                    <h2>Start with a complete 30-card deck</h2>
-                    <p class="subtitle">
-                        Create an account, receive a starter deck, train against the bot,
-                        earn coins, open boosters and improve your build.
-                    </p>
-
-                    <div class="public-conversion-list-v119">
-                        <div><strong>30</strong><span>Starter cards</span></div>
-                        <div><strong>250</strong><span>Beta catalog cards</span></div>
-                        <div><strong>5</strong><span>Booster cards per pack</span></div>
-                    </div>
-
-                    <a href="{{ url_for('register') }}" class="btn full-btn">Create Account</a>
-                </aside>
-            {% endif %}
-        </header>
-
+      <div class="landing-actions">
         {% if user %}
-            <section class="home-loop-section">
-                <div class="section-title-row">
-                    <div>
-                        <span class="progression-kicker">Core Loop</span>
-                        <h2>Your next steps</h2>
-                    </div>
-                    <a href="{{ url_for('progression') }}" class="btn btn-secondary small-btn">Open Hub</a>
-                </div>
-
-                <div class="home-loop-grid">
-                    <a href="{{ url_for('training') }}" class="home-loop-card">
-                        <strong>1</strong>
-                        <h3>Play Match</h3>
-                        <p>Start with a quick training duel and earn rewards.</p>
-                    </a>
-
-                    <a href="{{ url_for('missions') }}" class="home-loop-card">
-                        <strong>2</strong>
-                        <h3>Claim Missions</h3>
-                        <p>Convert completed objectives into XP and coins.</p>
-                    </a>
-
-                    <a href="{{ url_for('shop') }}" class="home-loop-card">
-                        <strong>3</strong>
-                        <h3>Open Booster</h3>
-                        <p>Grow your collection with beta cards.</p>
-                    </a>
-
-                    <a href="{{ url_for('deck_builder') }}" class="home-loop-card">
-                        <strong>4</strong>
-                        <h3>Improve Deck</h3>
-                        <p>Tune your 30-card deck around elements and Sigils.</p>
-                    </a>
-
-                    <a href="{{ url_for('ranking') }}" class="home-loop-card">
-                        <strong>5</strong>
-                        <h3>Climb Ranking</h3>
-                        <p>Track wins, losses and competitive progress.</p>
-                    </a>
-                </div>
-            </section>
+          <a class="landing-button primary" href="/training">Play Training</a>
+          <a class="landing-button secondary" href="/arena">Enter Arena</a>
+        {% else %}
+          <a class="landing-button primary" href="/register">Play Beta</a>
+          <a class="landing-button secondary" href="/login">Login</a>
         {% endif %}
+        <a class="landing-button ghost" href="COLE_SEU_LINK_REAL_DO_KOFI_AQUI" target="_blank" rel="noopener">Support Development</a>
+      </div>
+    </section>
 
+    <section class="beta-warning-box">
+      <h2>Ambitionz is in Beta</h2>
+      <p>
+        This game is still in active development. Bugs, instability, balance changes,
+        account resets, card resets, progression resets or test data resets may happen.
+      </p>
+      <p>
+        By continuing, you understand that you are accessing a beta version created for testing,
+        feedback and project improvement.
+      </p>
+      <p>
+        Bugs, feedback, suggestions, partnership requests or international support inquiries:
+        <strong>cavestudiobrasil@gmail.com</strong>
+      </p>
 
-        {% if not user %}
-            <section class="public-landing-section-v119">
-                <div class="section-title-row">
-                    <div>
-                        <span class="progression-kicker">Why play Ambitionz</span>
-                        <h2>A tactical beta card duel built for quick decisions.</h2>
-                    </div>
-                    <a href="{{ url_for('register') }}" class="btn small-btn">Join Beta</a>
-                </div>
+      <div class="beta-support-box">
+        <h3>Support Ambitionz</h3>
+        <p>
+          Ambitionz is an independent game. If you want to support development,
+          server costs, art, balance updates and future releases, you can help below.
+        </p>
 
-                <div class="public-feature-grid-v119">
-                    <article>
-                        <strong>01</strong>
-                        <h3>Choose intent</h3>
-                        <p>Strike, Guard, Focus or Ambition Unleash. Your choice shapes every round.</p>
-                    </article>
+        <div class="support-actions">
+          <a class="support-button primary" href="COLE_SEU_LINK_REAL_DO_KOFI_AQUI" target="_blank" rel="noopener">
+            Support via Ko-fi / PayPal
+          </a>
+        </div>
 
-                    <article>
-                        <strong>02</strong>
-                        <h3>Build identity</h3>
-                        <p>Fire, Water, Earth, Plant and Global cards create different tactical profiles.</p>
-                    </article>
+        <div class="pix-box">
+          <span>Brazilian supporters can donate directly via Pix:</span>
+          <strong>cavestudiobrasil@gmail.com</strong>
+        </div>
 
-                    <article>
-                        <strong>03</strong>
-                        <h3>Earn progression</h3>
-                        <p>Play matches, complete missions, open boosters and improve your deck.</p>
-                    </article>
+        <p class="international-support-note">
+          International supporters can also contact us through:
+          <strong>cavestudiobrasil@gmail.com</strong>
+        </p>
+      </div>
+    </section>
 
-                    <article>
-                        <strong>04</strong>
-                        <h3>Climb ranking</h3>
-                        <p>Track wins, losses, level, profile status and beta competitive progress.</p>
-                    </article>
-                </div>
-            </section>
+    <section class="landing-grid">
+      <article class="landing-card">
+        <span class="landing-card-kicker">01</span>
+        <h3>Choose Intent</h3>
+        <p>Strike for pressure, Guard for defense, Focus to build Ambition and prepare a turn swing.</p>
+      </article>
 
-            <section class="public-cta-v119">
-                <div>
-                    <span class="progression-kicker">Ready</span>
-                    <h2>Create your duelist profile.</h2>
-                    <p>Registration gives you a playable deck immediately. No setup, no spreadsheet, just enter the arena.</p>
-                </div>
+      <article class="landing-card">
+        <span class="landing-card-kicker">02</span>
+        <h3>Play Cards</h3>
+        <p>Set monsters, spells and traps. Read the opponent, manage energy and prepare your field.</p>
+      </article>
 
-                <div class="progression-action-row">
-                    <a href="{{ url_for('register') }}" class="btn">Create Account</a>
-                    <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
-                    <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary">Read Rules</a>
-                </div>
-            </section>
-        {% endif %}
+      <article class="landing-card">
+        <span class="landing-card-kicker">03</span>
+        <h3>Unleash Ambition</h3>
+        <p>Build Ambition and use Unleash at the right time to flip pressure into victory.</p>
+      </article>
+    </section>
 
-        <section class="deck-status">
-            <div class="section-title-row">
-                <div>
-                    <span class="progression-kicker">Game Systems</span>
-                    <h2>Ambitionz beta tools</h2>
-                </div>
-            </div>
+    <section class="landing-section">
+      <h2>Core Mechanics</h2>
+      <div class="mechanics-grid">
+        <div><strong>Strike</strong><span>Aggressive power and higher risk.</span></div>
+        <div><strong>Guard</strong><span>Defensive choice for surviving pressure.</span></div>
+        <div><strong>Focus</strong><span>Builds Ambition and prepares stronger turns.</span></div>
+        <div><strong>Unleash</strong><span>A special power move when Ambition is ready.</span></div>
+      </div>
+    </section>
 
-            <div class="menu-grid">
-                {% if user %}
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('profile') }}">
-                        <strong>Profile</strong>
-                        <span>View your player identity, stats and recent battles.</span>
-                    </a>
+    <section class="landing-section">
+      <h2>Roadmap</h2>
+      <div class="roadmap">
+        <div><strong>Now</strong><span>Web beta, training mode, deck builder, boosters and missions.</span></div>
+        <div><strong>Next</strong><span>Balance updates, improved onboarding, better UI and closed beta feedback.</span></div>
+        <div><strong>Future</strong><span>Android release, seasons, ranked progression, cosmetics and events.</span></div>
+      </div>
+    </section>
 
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('progression') }}">
-                        <strong>Progression</strong>
-                        <span>Track XP, missions, boosters and next steps.</span>
-                    </a>
-
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('collection') }}">
-                        <strong>Collection</strong>
-                        <span>Review your cards and identity.</span>
-                    </a>
-
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('deck_builder') }}">
-                        <strong>Deck Builder</strong>
-                        <span>Build your 30-card beta deck.</span>
-                    </a>
-
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('booster_history') }}">
-                        <strong>Booster History</strong>
-                        <span>Review your latest pulls.</span>
-                    </a>
-
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('feedback') }}">
-                        <strong>Beta Feedback</strong>
-                        <span>Report bugs, UX friction, balance issues and suggestions.</span>
-                    </a>
-
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('feedback') }}">
-                        <strong>Feedback</strong>
-                        <span>Help improve beta balance, bugs and UX.</span>
-                    </a>
-                {% endif %}
-
-                {% if not user %}
-                    <a class="menu-card clickable-menu-card public-system-card-v119" href="{{ url_for('register') }}">
-                        <strong>Create Account</strong>
-                        <span>Get your starter deck and begin progression.</span>
-                    </a>
-
-                    <a class="menu-card clickable-menu-card public-system-card-v119" href="{{ url_for('login') }}">
-                        <strong>Login</strong>
-                        <span>Return to your deck, missions and ranking climb.</span>
-                    </a>
-                {% endif %}
-
-                <a class="menu-card clickable-menu-card" href="{{ url_for('first_session') }}">
-                    <strong>First Session</strong>
-                    <span>Follow the recommended first beta testing loop.</span>
-                </a>
-
-                <a class="menu-card clickable-menu-card" href="{{ url_for('closed_test') }}">
-                    <strong>Closed Test</strong>
-                    <span>Android beta testing guide and checklist.</span>
-                </a>
-
-                <a class="menu-card clickable-menu-card" href="{{ url_for('how_to_play') }}">
-                    <strong>Start Here</strong>
-                    <span>Learn rules, intents, Sigils and your first-match plan.</span>
-                </a>
-
-                <a class="menu-card clickable-menu-card" href="{{ url_for('ranking') }}">
-                    <strong>Ranking</strong>
-                    <span>View players and records.</span>
-                </a>
-
-                <a class="menu-card clickable-menu-card" href="{{ url_for('terms') }}">
-                    <strong>Terms</strong>
-                    <span>Beta terms.</span>
-                </a>
-
-                <a class="menu-card clickable-menu-card" href="{{ url_for('data_deletion') }}">
-                    <strong>Data Deletion</strong>
-                    <span>Request account and beta data removal.</span>
-                </a>
-
-                <a class="menu-card clickable-menu-card" href="{{ url_for('privacy') }}">
-                    <strong>Privacy</strong>
-                    <span>Data notice.</span>
-                </a>
-            </div>
-        </section>
-
-        {% if user %}
-            <section class="deck-status home-session-actions">
-                <h2>Session</h2>
-                <div class="progression-action-row">
-                    <a href="{{ url_for('training') }}" class="btn">Play Now</a>
-                    <a href="{{ url_for('shop') }}" class="btn btn-secondary">Open Booster</a>
-                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
-                </div>
-            </section>
-
-            
-        <footer class="public-support-footer-v147">
-            <div>
-                <strong>Ambitionz Beta Support</strong>
-                <span>Closed testing resources, legal pages and feedback channel.</span>
-            </div>
-
-            <nav>
-                <a href="{{ url_for('closed_test') }}">Closed Test</a>
-                <a href="{{ url_for('first_session') }}">First Session</a>
-                <a href="{{ url_for('feedback') }}">Feedback</a>
-                <a href="{{ url_for('privacy') }}">Privacy</a>
-                <a href="{{ url_for('terms') }}">Terms</a>
-                <a href="{{ url_for('data_deletion') }}">Data Deletion</a>
-            </nav>
-        </footer>
-
-
-        <nav class="mobile-bottom-nav">
-                <a href="{{ url_for('index') }}" class="active">Home</a>
-                <a href="{{ url_for('training') }}">Play</a>
-                <a href="{{ url_for('deck_builder') }}">Deck</a>
-                <a href="{{ url_for('shop') }}">Shop</a>
-            </nav>
-        {% endif %}
-    </main>
-
-    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <section class="landing-final">
+      <h2>Ready to test Ambitionz?</h2>
+      <p>Play, report bugs and help shape the game before the Android launch.</p>
+      {% if user %}
+        <a class="landing-button primary" href="/training">Start Training</a>
+      {% else %}
+        <a class="landing-button primary" href="/register">Create Account</a>
+      {% endif %}
+    </section>
+  </main>
 </body>
 </html>
