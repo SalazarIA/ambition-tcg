@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime, timezone, timedelta
 
 import itsdangerous
-from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
+from flask import make_response, Flask, abort, flash, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO, join_room
 from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -547,6 +547,98 @@ def safe_admin_user_id():
     return getattr(user, "id", None)
 
 
+
+
+# AMBITIONZ ADMIN STABILITY HELPERS
+def get_session_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    try:
+        return db.session.get(User, int(user_id))
+    except Exception:
+        return None
+
+
+def admin_required_redirect():
+    user = get_session_user()
+
+    if not user:
+        flash("Login required.")
+        return redirect("/login")
+
+    if not bool(getattr(user, "is_admin", False)):
+        flash("Admin access required.")
+        return redirect("/")
+
+    if not bool(getattr(user, "is_verified", False)):
+        flash("Verify your account first.")
+        return redirect("/resend-verification")
+
+    if getattr(user, "account_status", "active") in ["banned", "disabled"]:
+        flash("Account is not allowed to access admin.")
+        return redirect("/login")
+
+    return None
+
+
+@app.route("/admin/whoami")
+def admin_whoami():
+    user = get_session_user()
+
+    if not user:
+        return {
+            "ok": False,
+            "logged_in": False,
+            "session_user_id": session.get("user_id"),
+            "hint": "No user_id in session or user not found.",
+        }, 401
+
+    return {
+        "ok": True,
+        "logged_in": True,
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "is_admin": bool(user.is_admin),
+        "is_verified": bool(user.is_verified),
+        "is_tester": bool(getattr(user, "is_tester", False)),
+        "account_status": getattr(user, "account_status", None),
+        "session_user_id": session.get("user_id"),
+    }
+
+
+@app.route("/admin/ping")
+def admin_ping():
+    auth_redirect = admin_required_redirect()
+    if auth_redirect:
+        return auth_redirect
+
+    return {
+        "ok": True,
+        "admin": True,
+        "message": "Admin session is valid.",
+    }
+
+
+@app.route("/debug/routes")
+def debug_routes():
+    if not app.config.get("DEV_TOOLS_ENABLED", False):
+        auth_redirect = admin_required_redirect()
+        if auth_redirect:
+            return auth_redirect
+
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            "rule": str(rule),
+            "endpoint": rule.endpoint,
+            "methods": sorted([m for m in rule.methods if m not in ["HEAD", "OPTIONS"]]),
+        })
+
+    return {"ok": True, "routes": routes}
+
+
 @app.route("/admin/dev-tools")
 def admin_dev_tools():
     auth_redirect = dev_tools_required_redirect()
@@ -658,7 +750,7 @@ def admin_clear_gameplay_data():
 
 @app.route("/admin/system")
 def admin_system():
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -696,7 +788,7 @@ def admin_system():
 
 @app.route("/admin/users")
 def admin_users():
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -714,7 +806,7 @@ def admin_users():
 
 @app.route("/admin/users/<int:user_id>/toggle-admin", methods=["POST"])
 def admin_toggle_admin(user_id):
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -737,7 +829,7 @@ def admin_toggle_admin(user_id):
 
 @app.route("/admin/users/<int:user_id>/toggle-tester", methods=["POST"])
 def admin_toggle_tester(user_id):
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -760,7 +852,7 @@ def admin_toggle_tester(user_id):
 
 @app.route("/admin/users/<int:user_id>/verify", methods=["POST"])
 def admin_verify_user(user_id):
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -783,7 +875,7 @@ def admin_verify_user(user_id):
 
 @app.route("/admin/users/<int:user_id>/ban", methods=["POST"])
 def admin_ban_user(user_id):
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -806,7 +898,7 @@ def admin_ban_user(user_id):
 
 @app.route("/admin/users/<int:user_id>/unban", methods=["POST"])
 def admin_unban_user(user_id):
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -829,7 +921,7 @@ def admin_unban_user(user_id):
 
 @app.route("/admin/invites", methods=["GET", "POST"])
 def admin_invites():
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -906,7 +998,7 @@ def admin_beta_events():
 
 @app.route("/admin/feedback")
 def admin_feedback():
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -923,7 +1015,7 @@ def admin_feedback():
 
 @app.route("/admin/feedback/<int:report_id>/update", methods=["POST"])
 def admin_feedback_update(report_id):
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect

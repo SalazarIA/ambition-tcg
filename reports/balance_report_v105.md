@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1288, 'max': 1988, 'avg': 1603.5, 'median': 1577}
+- Monster summary: {'count': 21, 'min': 1337, 'max': 2000, 'avg': 1636.2, 'median': 1611}
 
 ### Starter Type Distribution
 
@@ -50,22 +50,22 @@
 
 - Global: 9
 - Fire: 6
-- Earth: 5
-- Water: 5
 - Plant: 5
+- Water: 5
+- Earth: 5
 
 ### Starter Sigil Distribution
 
 - Global: 9
 - Fury: 6
-- Resolve: 5
-- Insight: 5
 - Harmony: 5
+- Insight: 5
+- Resolve: 5
 
 ### Starter Rarity Distribution
 
-- Common: 18
-- Uncommon: 12
+- Common: 22
+- Uncommon: 8
 
 
 ## Catalog Outliers
