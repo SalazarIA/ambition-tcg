@@ -86,9 +86,13 @@ class Config:
     EMAIL_LOG_BODY_ENABLED = as_bool(os.environ.get("EMAIL_LOG_BODY_ENABLED"), default=False)
 
     LOGIN_ATTEMPT_LIMIT = int(os.environ.get("LOGIN_ATTEMPT_LIMIT", "8"))
+    LOGIN_ATTEMPT_WINDOW_MINUTES = int(os.environ.get("LOGIN_ATTEMPT_WINDOW_MINUTES", "15"))
     FEEDBACK_DAILY_LIMIT = int(os.environ.get("FEEDBACK_DAILY_LIMIT", "10"))
+    PASSWORD_MIN_LENGTH = int(os.environ.get("PASSWORD_MIN_LENGTH", "10"))
+    PASSWORD_REQUIRE_COMPLEXITY = as_bool(os.environ.get("PASSWORD_REQUIRE_COMPLEXITY"), default=True)
 
     BETA_INVITE_REQUIRED = as_bool(os.environ.get("BETA_INVITE_REQUIRED"), default=False)
+    BETA_AUTO_VERIFY = as_bool(os.environ.get("BETA_AUTO_VERIFY"), default=True)
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.environ.get("SOCKETIO_CORS_ALLOWED_ORIGINS", "")
 
     SMTP_HOST = os.environ.get("SMTP_HOST", "")

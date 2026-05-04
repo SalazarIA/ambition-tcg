@@ -17,61 +17,12 @@
 <body>
 
 
-<section class="beta-warning-box">
-  <h2>Ambitionz is in Beta</h2>
-
-  <p>
-    This game is still in active development. During this beta phase, bugs,
-    instability, balance changes, account resets, card resets, progression resets
-    or test data resets may happen.
-  </p>
-
-  <p>
-    By continuing, you understand that you are accessing a beta version created
-    for testing, feedback and project improvement.
-  </p>
-
-  <p>
-    To send bugs, feedback, suggestions, partnership requests or international
-    support inquiries, contact us directly:
-    <strong>cavestudiobrasil@gmail.com</strong>
-  </p>
-
-  <div class="beta-support-box">
-    <h3>Support Ambitionz</h3>
-    <p>
-      Ambitionz is an independent game. If you want to support development,
-      server costs, art, balance updates and future releases, you can help below.
-    </p>
-
-    <div class="support-actions">
-      <a class="support-button primary" href="SEU_LINK_REAL_DO_KOFI_AQUI" target="_blank" rel="noopener">
-        Support via Ko-fi / PayPal
-      </a>
-    </div>
-
-    <div class="pix-box">
-      <span>Brazilian supporters can donate directly via Pix:</span>
-      <strong>cavestudiobrasil@gmail.com</strong>
-    </div>
-
-    <p class="international-support-note">
-      International supporters can also contact us through the same email:
-      <strong>cavestudiobrasil@gmail.com</strong>
-    </p>
-  </div>
-
-  <a class="beta-warning-button" href="/login">Enter / Create Account</a>
-</section>
-
-
-
     <main class="wide-page mobile-wide-page">
         <!-- AMBITIONZ V1.19 PUBLIC LANDING -->
         <header class="home-dashboard-hero">
             <div class="home-dashboard-copy">
                 <div class="app-logo">A</div>
-                <span class="progression-kicker">Ambitionz V1.10</span>
+                <span class="progression-kicker">Ambitionz Beta</span>
                 <h1>Risk. Elements. Ambition.</h1>
                 <p>
                     Fast tactical card duels built around hidden intent, calculated risk,
@@ -144,6 +95,31 @@
                 </aside>
             {% endif %}
         </header>
+
+        <section class="beta-warning-box beta-notice-v148">
+            <div>
+                <span class="progression-kicker">Beta Notice</span>
+                <h2>Ambitionz is in active beta.</h2>
+                <p>
+                    Gameplay, balance, progression and test data can change while
+                    the project moves toward public release. Your feedback helps
+                    us make the next candidate stronger.
+                </p>
+            </div>
+
+            <div class="beta-support-box">
+                <h3>Feedback & support</h3>
+                <p>
+                    Send bugs, suggestions, partnership requests or support inquiries to
+                    <a href="mailto:cavestudiobrasil@gmail.com">cavestudiobrasil@gmail.com</a>.
+                </p>
+
+                <div class="pix-box">
+                    <span>Pix support key</span>
+                    <strong>cavestudiobrasil@gmail.com</strong>
+                </div>
+            </div>
+        </section>
 
         {% if user %}
             <section class="home-loop-section">
@@ -280,11 +256,6 @@
                     <a class="menu-card clickable-menu-card" href="{{ url_for('feedback') }}">
                         <strong>Beta Feedback</strong>
                         <span>Report bugs, UX friction, balance issues and suggestions.</span>
-                    </a>
-
-                    <a class="menu-card clickable-menu-card" href="{{ url_for('feedback') }}">
-                        <strong>Feedback</strong>
-                        <span>Help improve beta balance, bugs and UX.</span>
                     </a>
                 {% endif %}
 

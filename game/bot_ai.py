@@ -5,6 +5,9 @@ from game.engine import register_card_played_for_ambition
 from game.state import set_player_intent
 
 
+GAME_RNG = random.SystemRandom()
+
+
 DIFFICULTY_PROFILES = {
     "easy": {
         "name": "Easy",
@@ -59,7 +62,7 @@ def profile_for(difficulty):
 def weighted_choice(weight_map):
     options = list(weight_map.keys())
     weights = list(weight_map.values())
-    return random.choices(options, weights=weights, k=1)[0]
+    return GAME_RNG.choices(options, weights=weights, k=1)[0]
 
 
 def card_score(card, bot, opponent, difficulty="normal"):
@@ -171,7 +174,7 @@ def choose_intent(bot, opponent, difficulty="normal"):
         and has_fury
         and bot_hp >= profile["overreach_hp_floor"]
         and opponent_hp <= 2600
-        and random.random() <= profile["overreach_chance"]
+        and GAME_RNG.random() <= profile["overreach_chance"]
     ):
         return "Overreach"
 
@@ -194,8 +197,8 @@ def choose_card_index(bot, opponent, allowed_types, difficulty="normal"):
     if not candidates:
         return None
 
-    if random.random() < profile["mistake_chance"]:
-        return random.choice(candidates)[0]
+    if GAME_RNG.random() < profile["mistake_chance"]:
+        return GAME_RNG.choice(candidates)[0]
 
     candidates.sort(key=lambda item: item[1], reverse=True)
     return candidates[0][0]
@@ -263,7 +266,7 @@ def bot_choose_play(bot, opponent, difficulty="normal"):
     monster_index = choose_card_index(bot, opponent, ["Monster"], difficulty)
     monster = play_index(bot, monster_index, logs)
 
-    if random.random() <= profile["play_spell_trap_chance"]:
+    if GAME_RNG.random() <= profile["play_spell_trap_chance"]:
         spell_trap_index = choose_card_index(bot, opponent, ["Spell", "Trap"], difficulty)
         spell_or_trap = play_index(bot, spell_trap_index, logs)
 

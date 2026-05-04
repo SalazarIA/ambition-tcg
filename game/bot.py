@@ -15,6 +15,7 @@ BOT_NAMES = [
     "Selene",
     "Mira",
 ]
+GAME_RNG = random.SystemRandom()
 
 
 class BotUser:
@@ -24,7 +25,7 @@ class BotUser:
 
 def create_bot_player(deck_json):
     user = BotUser()
-    user.username = random.choice(BOT_NAMES)
+    user.username = GAME_RNG.choice(BOT_NAMES)
 
     deck = build_playable_deck(deck_json)
     hand = draw_starting_hand(deck, 5)
@@ -53,19 +54,19 @@ def choose_bot_intent(bot):
     if hp <= 1600:
         if has_resolve:
             return "Guard"
-        return random.choices(["Guard", "Focus"], weights=[75, 25], k=1)[0]
+        return GAME_RNG.choices(["Guard", "Focus"], weights=[75, 25], k=1)[0]
 
     if ambition >= 5 and has_monster:
         if has_fury:
             return "Strike"
-        return random.choices(["Strike", "Focus"], weights=[75, 25], k=1)[0]
+        return GAME_RNG.choices(["Strike", "Focus"], weights=[75, 25], k=1)[0]
 
     if len(hand) <= 2:
         if has_insight:
             return "Focus"
-        return random.choices(["Focus", "Guard"], weights=[70, 30], k=1)[0]
+        return GAME_RNG.choices(["Focus", "Guard"], weights=[70, 30], k=1)[0]
 
-    return random.choices(
+    return GAME_RNG.choices(
         ["Strike", "Guard", "Focus"],
         weights=[45, 30, 25],
         k=1,
@@ -217,7 +218,7 @@ def bot_play_turn(bot, match_logs):
     play_card_from_hand(bot, spell_trap_index, match_logs)
 
     if int(bot.get("ambition", 0)) >= 5 and bot.get("field_m"):
-        if random.random() <= 0.72:
+        if GAME_RNG.random() <= 0.72:
             request_unleash(bot)
             match_logs.append(f"{bot['name']} prepared Ambition Unleash.")
 

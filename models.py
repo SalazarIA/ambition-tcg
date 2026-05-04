@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from flask_sqlalchemy import SQLAlchemy
 from passlib.hash import pbkdf2_sha256
 
@@ -232,22 +232,25 @@ def ensure_database_schema():
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires_at TIMESTAMP",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT NOW()",
         ]
-    else:
-        statements = [
-            "ALTER TABLE users ADD COLUMN xp INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE users ADD COLUMN level INTEGER NOT NULL DEFAULT 1",
-            "ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0",
-            "ALTER TABLE users ADD COLUMN reset_token VARCHAR(256)",
-            "ALTER TABLE users ADD COLUMN reset_token_expires_at DATETIME",
-            "ALTER TABLE users ADD COLUMN created_at DATETIME",
-        ]
+        with engine.begin() as connection:
+            for statement in statements:
+                connection.execute(text(statement))
+        return
+
+    existing_columns = {column["name"] for column in inspect(engine).get_columns("users")}
+    sqlite_columns = {
+        "xp": "xp INTEGER NOT NULL DEFAULT 0",
+        "level": "level INTEGER NOT NULL DEFAULT 1",
+        "is_admin": "is_admin BOOLEAN NOT NULL DEFAULT 0",
+        "reset_token": "reset_token VARCHAR(256)",
+        "reset_token_expires_at": "reset_token_expires_at DATETIME",
+        "created_at": "created_at DATETIME",
+    }
 
     with engine.begin() as connection:
-        for statement in statements:
-            try:
-                connection.execute(text(statement))
-            except Exception:
-                pass
+        for column_name, ddl in sqlite_columns.items():
+            if column_name not in existing_columns:
+                connection.execute(text(f"ALTER TABLE users ADD COLUMN {ddl}"))
 
 
 

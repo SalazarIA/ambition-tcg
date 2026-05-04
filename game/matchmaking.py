@@ -1,4 +1,4 @@
-import random
+import secrets
 import string
 
 
@@ -11,7 +11,7 @@ def generate_private_room_code(existing_codes=None):
     alphabet = string.ascii_uppercase + string.digits
 
     while True:
-        code = "".join(random.choice(alphabet) for _ in range(PRIVATE_ROOM_CODE_LENGTH))
+        code = "".join(secrets.choice(alphabet) for _ in range(PRIVATE_ROOM_CODE_LENGTH))
 
         if code not in existing_codes:
             return code

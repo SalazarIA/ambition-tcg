@@ -13,6 +13,7 @@ from game.cards import (
 
 
 STARTER_DECK_SIZE = 30
+GAME_RNG = random.SystemRandom()
 
 STARTER_MONSTER_COUNT = 21
 STARTER_SPELL_COUNT = 6
@@ -96,7 +97,7 @@ def choose_cards_with_duplicates(pool, amount):
     selected = []
 
     while len(selected) < amount:
-        card = random.choice(pool)
+        card = GAME_RNG.choice(pool)
         selected.append(card["id"])
 
     return selected
@@ -106,7 +107,7 @@ def choose_unique_cards(pool, amount):
     if amount >= len(pool):
         return [card["id"] for card in pool]
 
-    return [card["id"] for card in random.sample(pool, amount)]
+    return [card["id"] for card in GAME_RNG.sample(pool, amount)]
 
 
 def create_starter_collection():
@@ -183,7 +184,7 @@ def create_starter_deck_from_collection(collection_ids):
         deck_ids.extend([card["id"] for card in traps])
         deck_ids.extend(choose_cards_with_duplicates(traps, STARTER_TRAP_COUNT - len(traps)))
 
-    random.shuffle(deck_ids)
+    GAME_RNG.shuffle(deck_ids)
 
     return json.dumps(deck_ids)
 
@@ -206,7 +207,7 @@ def create_new_player_card_data():
 def build_playable_deck(deck_json):
     deck_ids = load_card_ids(deck_json)
     deck = cards_from_ids(deck_ids)
-    random.shuffle(deck)
+    GAME_RNG.shuffle(deck)
     return deck
 
 
@@ -612,5 +613,4 @@ def deck_analysis_v115(deck_ids):
         "strengths": strengths,
 
     }
-
 

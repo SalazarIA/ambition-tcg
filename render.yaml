@@ -23,6 +23,16 @@ services:
         value: Lax
       - key: WTF_CSRF_ENABLED
         value: true
+      - key: LOGIN_ATTEMPT_LIMIT
+        value: 8
+      - key: LOGIN_ATTEMPT_WINDOW_MINUTES
+        value: 15
+      - key: PASSWORD_MIN_LENGTH
+        value: 10
+      - key: PASSWORD_REQUIRE_COMPLEXITY
+        value: true
+      - key: BETA_AUTO_VERIFY
+        value: false
       - key: EMAIL_LOG_BODY_ENABLED
         value: false
       - key: SECRET_KEY

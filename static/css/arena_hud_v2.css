@@ -1,36 +1,12 @@
+/* Ambitionz V1.48: legacy battle overlay retired.
+   Arena state now lives in the native HUD and Battle Log. */
+
 .ambition-hud-v2 {
-  position: fixed;
-  bottom: 10px;
-  left: 10px;
-  right: 10px;
-  background: rgba(10,10,20,0.9);
-  color: #fff;
-  padding: 12px;
-  border-radius: 12px;
-  font-family: Arial;
-  z-index: 9999;
+    display: none !important;
 }
 
-.ambition-hud-v2 .row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.intent {
-  font-weight: bold;
-}
-
-.intent.Strike { color: #ff4d4d; }
-.intent.Guard { color: #4dff88; }
-.intent.Focus { color: #4db8ff; }
-
-.unleash-btn {
-  margin-top: 8px;
-  width: 100%;
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
-  background: orange;
-  font-weight: bold;
+.battle-event-line-v148 {
+    border-color: rgba(214, 168, 75, 0.28) !important;
+    background: rgba(214, 168, 75, 0.1) !important;
+    color: #f8e7ba !important;
 }
