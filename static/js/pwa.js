@@ -36,7 +36,14 @@
 
     window.installAmbitionPWA = async function () {
         if (!deferredPrompt) {
-            alert("On iPhone, install through Safari: Share > Add to Home Screen.");
+            const message = "On iPhone, install through Safari: Share > Add to Home Screen.";
+const status = document.getElementById("queue-status");
+
+if (status) {
+    status.textContent = message;
+} else {
+    console.info(message);
+}
             return;
         }
 

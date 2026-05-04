@@ -38,3 +38,9 @@ ios/App/build/
 ios/App/xcuserdata/
 # Local safety backups
 backups/
+
+# Local/generated files
+reports/audit_*/
+reports_*.txt
+*_scan.txt
+*_check.txt

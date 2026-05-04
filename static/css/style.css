@@ -6516,3 +6516,705 @@ button.btn,
   font-size: 14px;
   color: rgba(255,255,255,0.88);
 }
+
+
+/* ==========================================================================
+   AMBITIONZ V1.48 — AAA VISUAL RESCUE PASS
+   ========================================================================== */
+
+:root {
+    --aaa-bg: #05060b;
+    --aaa-ink: #f7f3ea;
+    --aaa-muted: #c9c0d8;
+    --aaa-soft: rgba(247, 243, 234, 0.72);
+    --aaa-panel: rgba(13, 12, 22, 0.88);
+    --aaa-panel-strong: rgba(19, 17, 29, 0.96);
+    --aaa-panel-quiet: rgba(247, 243, 234, 0.045);
+    --aaa-line: rgba(238, 226, 198, 0.14);
+    --aaa-line-strong: rgba(238, 226, 198, 0.28);
+    --aaa-gold: #d6a84b;
+    --aaa-gold-2: #f1d18a;
+    --aaa-violet: #6c4df6;
+    --aaa-cyan: #63d4ff;
+    --aaa-danger: #ff6a62;
+    --aaa-radius: 8px;
+    --aaa-radius-lg: 16px;
+    --aaa-shadow: 0 24px 90px rgba(0, 0, 0, 0.46);
+    --app-bg: var(--aaa-bg);
+    --app-panel: var(--aaa-panel);
+    --app-purple: var(--aaa-violet);
+    --app-purple-2: #8d4df3;
+    --app-border: var(--aaa-line);
+    --app-muted: var(--aaa-muted);
+    --az-bg: var(--aaa-bg);
+    --az-panel: var(--aaa-panel);
+    --az-panel-2: var(--aaa-panel-quiet);
+    --az-border: var(--aaa-line);
+    --az-border-strong: var(--aaa-line-strong);
+    --az-text: var(--aaa-ink);
+    --az-muted: var(--aaa-muted);
+    --az-gold: var(--aaa-gold-2);
+}
+
+* {
+    letter-spacing: 0 !important;
+}
+
+html {
+    background: var(--aaa-bg);
+    color-scheme: dark;
+}
+
+body {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--aaa-bg);
+    background-image:
+        linear-gradient(128deg, rgba(108, 77, 246, 0.18), transparent 34%),
+        linear-gradient(212deg, rgba(99, 212, 255, 0.09), transparent 38%),
+        linear-gradient(180deg, #05060b 0%, #090912 46%, #04050b 100%);
+    color: var(--aaa-ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.16;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: linear-gradient(180deg, #000 0%, transparent 76%);
+}
+
+h1,
+h2,
+h3,
+h4,
+strong {
+    text-wrap: balance;
+}
+
+p,
+li,
+.subtitle,
+.menu-card span,
+.home-loop-card p,
+.public-feature-grid-v119 p,
+.auth-hero-v119 p,
+.auth-panel-v119 .subtitle {
+    color: var(--aaa-muted);
+}
+
+a,
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--aaa-gold-2);
+    outline-offset: 3px;
+}
+
+.wide-page {
+    width: min(1360px, 100%);
+    padding: 32px clamp(18px, 3vw, 42px);
+}
+
+.panel,
+.shop-panel,
+.deck-status,
+.home-player-card,
+.public-landing-section-v119,
+.public-cta-v119,
+.public-support-footer-v147,
+[class*="-hero-v"],
+[class*="-card-v"],
+.arena-player-panel,
+.arena-round-panel,
+.arena-zone-v103,
+.arena-action-panel,
+.arena-log-panel,
+.training-coach-panel,
+.first-match-guide-v122,
+.post-match-card {
+    border-color: var(--aaa-line);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.062), rgba(255, 255, 255, 0.026)),
+        var(--aaa-panel);
+    box-shadow: var(--aaa-shadow);
+}
+
+.menu-card,
+.home-loop-card,
+.public-feature-grid-v119 article,
+.home-player-stats div,
+.public-conversion-list-v119 div,
+.auth-benefit-grid-v119 div,
+.auth-mini-loop-v119 div,
+.progression-step-card,
+.progression-mission-card,
+.feedback-ticket-v120,
+.feedback-admin-card-v120,
+.booster-pack-card-v124,
+.mission-card-v113,
+.collection-card,
+.builder-card,
+.az-card-frame,
+.arena-slot-v103,
+.intent-btn-v103,
+.form input,
+.form select,
+.form textarea,
+.mobile-filter-panel,
+.mobile-bottom-nav,
+.flash,
+.danger-box,
+.success-box {
+    border-radius: var(--aaa-radius);
+}
+
+.btn,
+button.btn,
+.support-button,
+.beta-warning-button {
+    min-height: 46px;
+    border: 1px solid rgba(241, 209, 138, 0.42);
+    border-radius: 10px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 52%),
+        linear-gradient(135deg, var(--aaa-gold-2), var(--aaa-gold) 54%, #8b6121);
+    color: #11100c;
+    box-shadow:
+        0 14px 38px rgba(214, 168, 75, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    font-weight: 900;
+    transition:
+        transform 0.16s ease,
+        border-color 0.16s ease,
+        background 0.16s ease,
+        box-shadow 0.16s ease;
+}
+
+.btn:hover,
+button.btn:hover,
+.support-button:hover,
+.beta-warning-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(241, 209, 138, 0.72);
+    filter: none;
+    box-shadow:
+        0 18px 46px rgba(214, 168, 75, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+.btn-secondary,
+.progression-action-row .btn-secondary,
+.hero-actions .btn-secondary {
+    border-color: rgba(255, 255, 255, 0.13);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+        rgba(255, 255, 255, 0.055);
+    color: var(--aaa-ink);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.btn:disabled,
+button.btn:disabled {
+    opacity: 0.48;
+    box-shadow: none;
+}
+
+.app-logo {
+    width: 68px;
+    height: 68px;
+    margin: 0 0 22px;
+    border: 1px solid rgba(241, 209, 138, 0.24);
+    border-radius: 16px;
+    background-image: url("/static/img/brand/ambition-icon.svg");
+    background-position: center;
+    background-size: cover;
+    color: transparent;
+    text-indent: -999px;
+    overflow: hidden;
+    box-shadow:
+        0 18px 56px rgba(108, 77, 246, 0.26),
+        0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.progression-kicker {
+    border-color: rgba(241, 209, 138, 0.22);
+    border-radius: 999px;
+    background: rgba(214, 168, 75, 0.09);
+    color: #f3d99e;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.home-dashboard-hero {
+    position: relative;
+    min-height: 470px;
+    border-radius: var(--aaa-radius-lg);
+    border-color: rgba(241, 209, 138, 0.2);
+    background:
+        linear-gradient(126deg, rgba(50, 35, 82, 0.72), rgba(10, 10, 18, 0.96) 42%, rgba(16, 20, 28, 0.94)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+    box-shadow: 0 30px 110px rgba(0, 0, 0, 0.54);
+}
+
+.home-dashboard-hero::after,
+.auth-hero-v119::after {
+    content: "";
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(241, 209, 138, 0.62), transparent);
+}
+
+.home-dashboard-copy h1 {
+    max-width: 780px;
+    margin: 12px 0 16px;
+    font-size: 4.75rem;
+    line-height: 0.94;
+}
+
+.home-dashboard-copy p {
+    max-width: 680px;
+    color: var(--aaa-soft);
+    font-size: 1.03rem;
+}
+
+.home-player-card,
+.public-conversion-card-v119 {
+    align-self: stretch;
+    border-radius: var(--aaa-radius-lg);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025)),
+        rgba(4, 5, 12, 0.62);
+}
+
+.home-player-card h2,
+.public-cta-v119 h2,
+.deck-status h2,
+.auth-panel-v119 h2,
+.arena-action-panel h3,
+.arena-log-panel h3,
+.training-coach-panel h3 {
+    color: var(--aaa-ink);
+}
+
+.home-player-stats div,
+.public-conversion-list-v119 div,
+.auth-benefit-grid-v119 div,
+.auth-mini-loop-v119 div {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.home-loop-grid,
+.public-feature-grid-v119,
+.menu-grid {
+    gap: 14px;
+}
+
+.home-loop-card,
+.menu-card,
+.public-feature-grid-v119 article {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.018)),
+        rgba(8, 8, 16, 0.66);
+    box-shadow: 0 18px 52px rgba(0, 0, 0, 0.25);
+}
+
+.home-loop-card:hover,
+.menu-card:hover,
+.public-feature-grid-v119 article:hover {
+    border-color: rgba(241, 209, 138, 0.34);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+        rgba(12, 12, 22, 0.8);
+}
+
+.home-loop-card > strong,
+.public-feature-grid-v119 strong {
+    border: 1px solid rgba(99, 212, 255, 0.22);
+    border-radius: var(--aaa-radius);
+    background: rgba(99, 212, 255, 0.09);
+    color: #bfefff;
+}
+
+.menu-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.menu-card {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    min-height: 92px;
+    padding: 16px 18px;
+}
+
+.menu-card strong {
+    display: block;
+    color: var(--aaa-ink);
+    font-size: 17px;
+}
+
+.menu-card span {
+    display: block;
+    line-height: 1.42;
+}
+
+.public-landing-section-v119,
+.public-cta-v119,
+.deck-status {
+    border-radius: var(--aaa-radius-lg);
+}
+
+.beta-warning-box {
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    gap: 18px;
+    align-items: stretch;
+    margin: 0 0 18px;
+    padding: 18px;
+    border: 1px solid rgba(241, 209, 138, 0.18);
+    border-radius: var(--aaa-radius-lg);
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.12), transparent 38%),
+        rgba(10, 9, 17, 0.82);
+    box-shadow: 0 18px 72px rgba(0, 0, 0, 0.34);
+}
+
+.beta-warning-box h2 {
+    margin: 0 0 8px;
+    color: var(--aaa-ink);
+    font-size: 26px;
+}
+
+.beta-warning-box p {
+    max-width: 840px;
+    margin: 0;
+    color: var(--aaa-soft);
+}
+
+.beta-support-box {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid rgba(99, 212, 255, 0.16);
+    border-radius: var(--aaa-radius);
+    background: rgba(99, 212, 255, 0.045);
+}
+
+.beta-support-box h3 {
+    margin: 0;
+    color: #bfefff;
+    font-size: 18px;
+}
+
+.beta-support-box a {
+    color: #f3d99e;
+    font-weight: 900;
+}
+
+.pix-box {
+    margin: 0;
+    border: 1px solid rgba(241, 209, 138, 0.14);
+    border-radius: var(--aaa-radius);
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.pix-box strong {
+    color: var(--aaa-gold-2);
+}
+
+.auth-page-v119 {
+    min-height: 100dvh;
+    background-image:
+        linear-gradient(132deg, rgba(108, 77, 246, 0.18), transparent 36%),
+        linear-gradient(220deg, rgba(214, 168, 75, 0.1), transparent 40%),
+        linear-gradient(180deg, #05060b, #080811 54%, #05060b);
+}
+
+.auth-hero-v119,
+.auth-panel-v119 {
+    position: relative;
+    border-radius: var(--aaa-radius-lg);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.024)),
+        rgba(12, 12, 21, 0.9);
+}
+
+.auth-hero-v119 {
+    min-height: 560px;
+}
+
+.auth-hero-v119 h1 {
+    max-width: 760px;
+    font-size: 4.55rem;
+    line-height: 0.96;
+}
+
+.auth-form-v119 input,
+.feedback-form-v120 input,
+.feedback-form-v120 select,
+.feedback-form-v120 textarea,
+.mobile-filter-panel input,
+.mobile-filter-panel select {
+    border-color: rgba(255, 255, 255, 0.11);
+    background: rgba(0, 0, 0, 0.22);
+    color: var(--aaa-ink);
+}
+
+.auth-form-v119 input:focus,
+.feedback-form-v120 input:focus,
+.feedback-form-v120 select:focus,
+.feedback-form-v120 textarea:focus,
+.mobile-filter-panel input:focus,
+.mobile-filter-panel select:focus {
+    border-color: rgba(241, 209, 138, 0.48);
+    box-shadow: 0 0 0 3px rgba(241, 209, 138, 0.1);
+}
+
+.auth-links-v119 a {
+    color: #f3d99e;
+}
+
+.arena-shell-v103 {
+    max-width: 1340px;
+    padding: 24px;
+}
+
+.top-bar {
+    padding: 4px 2px 10px;
+}
+
+.top-bar h1 {
+    margin-bottom: 4px;
+    color: var(--aaa-ink);
+    font-size: 2.35rem;
+}
+
+.arena-hud-v103 {
+    grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
+}
+
+.arena-player-panel,
+.arena-round-panel,
+.arena-zone-v103,
+.arena-action-panel,
+.arena-log-panel,
+.training-coach-panel,
+.first-match-guide-v122 {
+    border-radius: var(--aaa-radius-lg);
+}
+
+.arena-action-panel {
+    position: static;
+    bottom: auto;
+    z-index: auto;
+    margin: 0;
+    padding: 14px;
+    backdrop-filter: none;
+}
+
+.arena-side-v103 {
+    gap: 16px;
+}
+
+.arena-stat {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.arena-zone-v103 {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.046), rgba(255, 255, 255, 0.018)),
+        rgba(7, 7, 13, 0.74);
+}
+
+.arena-slot-v103 {
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.09);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.12)),
+        rgba(0, 0, 0, 0.16);
+}
+
+.empty-slot-v103 {
+    color: rgba(247, 243, 234, 0.34);
+}
+
+.intent-btn-v103 {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.intent-btn-v103.active,
+.intent-btn-v103:hover {
+    border-color: rgba(241, 209, 138, 0.58);
+    background: rgba(214, 168, 75, 0.11);
+}
+
+.battle-log-v103 .log-line,
+.battle-log-v103 div,
+.battle-log-v103 p {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--aaa-radius);
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.mobile-bottom-nav {
+    border-radius: 14px;
+    background: rgba(5, 6, 11, 0.88);
+}
+
+.mobile-bottom-nav a {
+    border-radius: var(--aaa-radius);
+}
+
+.mobile-bottom-nav a.active {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 55%),
+        linear-gradient(135deg, var(--aaa-gold-2), var(--aaa-gold));
+    color: #11100c;
+}
+
+@media (max-width: 1080px) {
+    .home-dashboard-copy h1,
+    .auth-hero-v119 h1 {
+        font-size: 3.7rem;
+    }
+
+    .home-dashboard-hero,
+    .auth-hero-v119 {
+        min-height: auto;
+    }
+
+    .arena-hud-v103 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .wide-page {
+        padding: 14px;
+    }
+
+    .home-dashboard-hero,
+    .public-landing-section-v119,
+    .public-cta-v119,
+    .deck-status,
+    .beta-warning-box,
+    .auth-hero-v119,
+    .auth-panel-v119,
+    .arena-player-panel,
+    .arena-round-panel,
+    .arena-zone-v103,
+    .arena-action-panel,
+    .arena-log-panel,
+    .training-coach-panel,
+    .first-match-guide-v122 {
+        border-radius: 14px;
+    }
+
+    .home-dashboard-copy h1,
+    .auth-hero-v119 h1 {
+        font-size: 2.8rem;
+        line-height: 1;
+    }
+
+    .home-dashboard-copy p,
+    .auth-hero-v119 p {
+        font-size: 0.98rem;
+    }
+
+    .beta-warning-box,
+    .public-cta-v119 {
+        grid-template-columns: 1fr;
+    }
+
+    .menu-grid,
+    .public-feature-grid-v119,
+    .home-loop-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .arena-shell-v103 {
+        padding: 12px;
+    }
+
+    .arena-side-v103 {
+        order: 0;
+    }
+}
+
+
+/* =========================================================
+   AMBITIONZ V1.25 — ARENA PRIVATE ROOM PANEL
+   ========================================================= */
+
+.private-room-panel-v125 {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.private-room-panel-v125 h3 {
+    margin: 0 0 8px;
+}
+
+.private-room-copy-v125 {
+    margin: 0 0 12px;
+    opacity: 0.76;
+    font-size: 0.92rem;
+    line-height: 1.35;
+}
+
+.private-room-row-v125 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.private-room-input-v125 {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    background: rgba(0, 0, 0, 0.28);
+    color: #ffffff;
+    padding: 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    outline: none;
+}
+
+.private-room-input-v125:focus {
+    border-color: rgba(255, 212, 122, 0.62);
+}

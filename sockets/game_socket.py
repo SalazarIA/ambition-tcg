@@ -633,6 +633,14 @@ def register_game_socket_handlers(socketio, deps):
     @socketio.on("disconnect")
     def handle_disconnect(reason=None):
         sid = request.sid
+
+        for hit_key in list(socket_event_hits.keys()):
+            try:
+                if hit_key[0] == sid:
+                    socket_event_hits.pop(hit_key, None)
+            except Exception:
+                continue
+
         waiting_player = socket_state.get("waiting_player")
 
         if waiting_player and waiting_player["sid"] == sid:
@@ -669,7 +677,9 @@ def register_game_socket_handlers(socketio, deps):
         enemy_key = "p2" if player_key == "p1" else "p1"
         enemy = match[enemy_key]
 
-        socketio.emit("opponent_left", {"msg": "Opponent disconnected. You win."}, to=enemy["sid"])
+        if not enemy.get("is_bot") and enemy.get("sid"):
+            socketio.emit("opponent_left", {"msg": "Opponent disconnected. You win."}, to=enemy["sid"])
+
         log_rc_event(
             "match",
             "Player disconnected from active match",

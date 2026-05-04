@@ -147,6 +147,36 @@
                         <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary full-btn">Rules Guide</a>
                     </section>
 
+
+                {% if not training_mode %}
+                    <section class="private-room-panel-v125">
+                        <h3>Private Duel</h3>
+                        <p class="private-room-copy-v125">
+                            Enter a 5-character room code to duel a specific tester.
+                        </p>
+
+                        <div class="private-room-row-v125">
+                            <input
+                                id="private-room-code"
+                                class="private-room-input-v125"
+                                type="text"
+                                inputmode="text"
+                                maxlength="5"
+                                autocomplete="off"
+                                placeholder="A1B2C"
+                                aria-label="Private room code"
+                            >
+                            <button id="join-private-room-btn" class="btn btn-secondary" type="button">
+                                Join
+                            </button>
+                        </div>
+
+                        <button id="join-bot-match-btn" class="btn btn-secondary full-btn" type="button">
+                            Bot Duel
+                        </button>
+                    </section>
+                {% endif %}
+
 <section class="arena-action-panel">
                     <h3>Intent</h3>
 

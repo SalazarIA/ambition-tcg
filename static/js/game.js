@@ -316,6 +316,26 @@ function bootArenaControls() {
         logLine("Ready declared.");
     });
 
+
+    DOM.onClick("join-private-room-btn", () => {
+        const input = DOM.byId("private-room-code");
+        const code = String(input?.value || "").trim().toUpperCase().replace(/\s+/g, "");
+
+        if (!code || code.length !== 5) {
+            setQueueStatus("Enter a valid 5-character private room code.");
+            logLine("Invalid private room code.");
+            return;
+        }
+
+        setQueueStatus(`Joining private room ${code}...`);
+        socket.emit("join_private_room", { code });
+    });
+
+    DOM.onClick("join-bot-match-btn", () => {
+        setQueueStatus("Starting bot duel...");
+        socket.emit("join_bot_match");
+    });
+
     setIntent(selectedIntent);
 }
 

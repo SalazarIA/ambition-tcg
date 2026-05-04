@@ -1,13 +1,13 @@
 import json
 import hmac
+import hashlib
 import os
-import random
 import secrets
 from datetime import datetime, timezone, timedelta
 
 import itsdangerous
 from flask import make_response, Flask, abort, flash, redirect, render_template, request, session, url_for
-from flask_socketio import SocketIO, join_room
+from flask_socketio import SocketIO
 from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sqlalchemy import text as sql_text
@@ -34,6 +34,8 @@ from services.battle_summary import build_match_summary_lines
 from services.reward_tuning import reward_line
 from services.match_telemetry import record_match_telemetry
 from services.email_service import send_verification_email, send_password_reset_email, send_smtp_test_email, is_smtp_configured
+from services.security.headers import apply_security_headers
+from services.security.password_policy import password_policy_errors
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
 from game.state import create_player_state, set_player_intent
@@ -82,7 +84,8 @@ serializer = itsdangerous.URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 active_matches = {}
 player_rooms = {}
-waiting_player = None
+socket_state = {"waiting_player": None}
+socket_event_hits = {}
 private_waiting_rooms = {}
 login_attempts = {}
 
@@ -181,6 +184,11 @@ def validate_csrf_token():
     abort(400, description="Invalid CSRF token.")
 
 
+@app.after_request
+def attach_security_headers(response):
+    return apply_security_headers(response, app)
+
+
 def generate_invite_code():
     return secrets.token_hex(4).upper()
 
@@ -193,6 +201,78 @@ def account_can_login(user):
         return False, "Account is not allowed to login."
 
     return True, ""
+
+
+def password_errors(password):
+    return password_policy_errors(
+        password,
+        min_length=int(app.config.get("PASSWORD_MIN_LENGTH", 10) or 10),
+        require_complexity=bool(app.config.get("PASSWORD_REQUIRE_COMPLEXITY", True)),
+    )
+
+
+def login_attempt_fingerprint(email):
+    raw = f"{request.remote_addr or 'unknown'}:{str(email or '').strip().lower()}"
+    secret = str(app.config.get("SECRET_KEY", ""))
+    return hmac.new(secret.encode("utf-8"), raw.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def recent_failed_login_count(fingerprint):
+    cutoff = datetime.now(timezone.utc) - timedelta(
+        minutes=int(app.config.get("LOGIN_ATTEMPT_WINDOW_MINUTES", 15) or 15)
+    )
+
+    try:
+        return (
+            SystemLog.query
+            .filter_by(category="auth", message=f"Invalid login attempt:{fingerprint}")
+            .filter(SystemLog.created_at >= cutoff)
+            .count()
+        )
+    except Exception as error:
+        print("LOGIN RATE QUERY ERROR:", type(error).__name__, error)
+        return login_attempts.get(fingerprint, 0)
+
+
+def record_failed_login(fingerprint):
+    try:
+        log_system_event(
+            "warning",
+            "auth",
+            f"Invalid login attempt:{fingerprint}",
+            details={"fingerprint": fingerprint},
+        )
+    except Exception as error:
+        print("LOGIN RATE LOG ERROR:", type(error).__name__, error)
+        login_attempts[fingerprint] = login_attempts.get(fingerprint, 0) + 1
+
+
+def reset_login_attempts(fingerprint):
+    login_attempts.pop(fingerprint, None)
+
+
+def hash_url_token(token):
+    secret = str(app.config.get("SECRET_KEY", ""))
+    return hmac.new(secret.encode("utf-8"), str(token).encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def issue_password_reset_token(user):
+    token = secrets.token_urlsafe(32)
+    user.reset_token = hash_url_token(token)
+    user.reset_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    return token
+
+
+def reset_token_is_expired(expires_at):
+    if not expires_at:
+        return True
+
+    now = datetime.now(timezone.utc)
+
+    if getattr(expires_at, "tzinfo", None) is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    return expires_at < now
 
 
 def mark_user_verified(user):
@@ -623,10 +703,10 @@ def admin_ping():
 
 @app.route("/debug/routes")
 def debug_routes():
-    if not app.config.get("DEV_TOOLS_ENABLED", False):
-        auth_redirect = admin_required_redirect()
-        if auth_redirect:
-            return auth_redirect
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
 
     routes = []
     for rule in app.url_map.iter_rules():
@@ -820,6 +900,14 @@ def admin_toggle_admin(user_id):
     target = db.session.get(User, user_id)
 
     if target:
+        if target.id == current.id and target.is_admin:
+            flash("You cannot remove your own admin access.")
+            return redirect("/admin/users")
+
+        if target.is_admin and User.query.filter_by(is_admin=True).count() <= 1:
+            flash("At least one admin account must remain active.")
+            return redirect("/admin/users")
+
         target.is_admin = not target.is_admin
         db.session.commit()
         log_system_event("warning", "admin", f"Admin toggled for {target.email}", user_id=current.id)
@@ -1098,6 +1186,7 @@ def build_internal_rc_status():
     verified_users = 0
     total_matches = 0
     average_rounds = 0
+    recent_match_sample_size = 0
 
     try:
         open_feedbacks = FeedbackReport.query.filter_by(status="open").count()
@@ -1116,6 +1205,7 @@ def build_internal_rc_status():
         recent_errors = (
             SystemLog.query
             .filter(SystemLog.level.in_(["error", "critical"]))
+            .filter(SystemLog.category != "email")
             .filter_by(is_resolved=False)
             .count()
         )
@@ -1135,6 +1225,7 @@ def build_internal_rc_status():
         verified_users = User.query.filter_by(is_verified=True).count()
         total_matches = MatchHistory.query.count()
         recent_matches = MatchHistory.query.order_by(MatchHistory.id.desc()).limit(20).all()
+        recent_match_sample_size = len(recent_matches)
 
         if recent_matches:
             average_rounds = round(
@@ -1161,8 +1252,12 @@ def build_internal_rc_status():
     add_check(
         "balance_sample",
         "Recent match length is readable",
-        total_matches == 0 or 2 <= average_rounds <= 12,
-        "No match sample yet" if total_matches == 0 else f"{average_rounds} average rounds over recent matches",
+        total_matches == 0 or recent_match_sample_size < 20 or 2 <= average_rounds <= 12,
+        (
+            "No match sample yet"
+            if total_matches == 0
+            else f"{average_rounds} average rounds over {recent_match_sample_size}/20 recent matches"
+        ),
         priority="recommended",
     )
 
@@ -1178,7 +1273,7 @@ def build_internal_rc_status():
         "open_critical_feedbacks": open_critical_feedbacks,
         "recent_errors": recent_errors,
         "active_matches": len(active_matches),
-        "waiting_queue": 1 if waiting_player else 0,
+        "waiting_queue": 1 if socket_state.get("waiting_player") else 0,
         "private_waiting_rooms": len(private_waiting_rooms),
         "total_users": total_users,
         "verified_users": verified_users,
@@ -1596,43 +1691,49 @@ def forgot_password():
             flash("If this email exists, a password reset link will be sent.")
             return redirect("/forgot-password")
 
-        token = serializer.dumps(user.email, salt="password-reset")
+        token = issue_password_reset_token(user)
+        db.session.commit()
         reset_url = url_for("reset_password", token=token, _external=True)
 
         sent = send_password_reset_email(user, reset_url)
 
-        if sent:
-            flash("Password reset email sent.")
-        else:
-            flash("SMTP failed or is not configured. Check server logs.")
+        flash("If this email exists, a password reset link will be sent.")
 
         try:
-            log_system_event("info", "email", "Password reset requested", user_id=getattr(user, "id", None))
+            log_system_event(
+                "info" if sent else "warning",
+                "email",
+                "Password reset requested" if sent else "Password reset requested but SMTP is missing",
+                user_id=getattr(user, "id", None),
+            )
         except Exception as error:
             print("Password reset log failed:", error)
 
-        return redirect("/login")
+        return redirect("/forgot-password")
 
     return render_template("forgot_password.html")
 
 
 @app.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
-    try:
-        email = serializer.loads(token, salt="password-reset", max_age=3600)
-    except Exception:
-        return "Password reset link expired."
+    token_hash = hash_url_token(token)
+    user = User.query.filter_by(reset_token=token_hash).first()
 
-    user = User.query.filter_by(email=email).first_or_404()
+    if not user or reset_token_is_expired(user.reset_token_expires_at):
+        return "Password reset link expired."
 
     if request.method == "POST":
         password = request.form.get("password", "").strip()
+        errors = password_errors(password)
 
-        if len(password) < 6:
-            flash("Password must have at least 6 characters.")
+        if errors:
+            for error in errors:
+                flash(error)
             return redirect(request.url)
 
         user.set_password(password)
+        user.reset_token = None
+        user.reset_token_expires_at = None
         db.session.commit()
 
         flash("Password updated. You can login now.")
@@ -1758,8 +1859,8 @@ def beta_event():
     except Exception as error:
         try:
             db.session.rollback()
-        except Exception:
-            pass
+        except Exception as rollback_error:
+            print("BETA EVENT ROLLBACK ERROR:", type(rollback_error).__name__, rollback_error)
         print("BETA EVENT LOG ERROR:", type(error).__name__, error)
 
     return ("", 204)
@@ -1799,8 +1900,11 @@ def register():
             flash("Fill all fields.")
             return redirect("/register")
 
-        if len(password) < 6:
-            flash("Password must have at least 6 characters.")
+        errors = password_errors(password)
+
+        if errors:
+            for error in errors:
+                flash(error)
             return redirect("/register")
 
         invite = None
@@ -1824,19 +1928,19 @@ def register():
             flash("Username already exists.")
             return redirect("/register")
 
+        auto_verify = bool(app.config.get("BETA_AUTO_VERIFY", True))
+
         new_user = User(
             username=username,
             email=email,
-            account_status="active",
+            account_status="active" if auto_verify else "unverified",
             is_tester=True if invite else False,
-            is_verified=True,
+            is_verified=auto_verify,
         )
         new_user.set_password(password)
 
-        try:
+        if auto_verify:
             new_user.verified_at = datetime.now(timezone.utc)
-        except Exception:
-            pass
 
         db.session.add(new_user)
 
@@ -1845,10 +1949,23 @@ def register():
 
         db.session.commit()
 
-        flash("Registered successfully. You can login and play now.")
+        if auto_verify:
+            flash("Registered successfully. You can login and play now.")
+        else:
+            token = serializer.dumps(email, salt="email-confirm")
+            verification_url = url_for("confirm_email", token=token, _external=True)
+            sent = send_verification_email(new_user, verification_url)
+
+            if sent:
+                flash("Registered successfully. Check your email to verify the account.")
+            else:
+                flash("Registered successfully, but verification email is not configured. Contact support.")
+
+            log_sensitive_link_for_local_dev("AMBITIONZ VERIFICATION LINK", verification_url)
+
         log_rc_event(
             "account",
-            "User registered without email verification in beta mode",
+            "User registered" if not auto_verify else "User registered with beta auto verification",
             user_id=new_user.id,
         )
 
@@ -1882,8 +1999,8 @@ def login():
         password = request.form.get("password", "").strip()
         invite_code = request.form.get("invite_code", "").strip().upper()
 
-        attempt_key = f"{request.remote_addr}:{email}"
-        attempts = login_attempts.get(attempt_key, 0)
+        attempt_key = login_attempt_fingerprint(email)
+        attempts = recent_failed_login_count(attempt_key)
 
         if attempts >= app.config.get("LOGIN_ATTEMPT_LIMIT", 8):
             flash("Too many login attempts. Try again later.")
@@ -1892,13 +2009,7 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if not user or not user.check_password(password):
-            login_attempts[attempt_key] = attempts + 1
-            log_rc_event(
-                "auth",
-                "Invalid login attempt",
-                details={"email": email, "attempts": attempts + 1},
-                level="warning",
-            )
+            record_failed_login(attempt_key)
             flash("Invalid login.")
             return redirect("/login")
 
@@ -1915,10 +2026,17 @@ def login():
             flash(login_message)
             return redirect("/login")
 
-        # Beta policy: email verification is no longer required to start playing.
-        # Email remains used for login and password recovery.
+        if not bool(getattr(user, "is_verified", False)):
+            log_rc_event(
+                "auth",
+                "Unverified login blocked",
+                user_id=getattr(user, "id", None),
+                level="warning",
+            )
+            flash("Please verify your email before logging in.")
+            return redirect("/login")
 
-        login_attempts.pop(attempt_key, None)
+        reset_login_attempts(attempt_key)
 
         user.last_login_at = datetime.now(timezone.utc)
         user.login_count = int(user.login_count or 0) + 1
@@ -2099,7 +2217,7 @@ def weighted_card_pool_for_pack(pack):
 def booster_pull_from_pack(pack):
     focused, global_tools, fallback = weighted_card_pool_for_pack(pack)
 
-    roll = random.random()
+    roll = secrets.randbelow(10_000) / 10_000
 
     if pack.get("focus_type") in ["element", "sigil"]:
         if roll <= 0.78:
@@ -2111,7 +2229,7 @@ def booster_pull_from_pack(pack):
     else:
         pool = fallback
 
-    rarity_roll = random.random()
+    rarity_roll = secrets.randbelow(10_000) / 10_000
 
     if rarity_roll <= 0.22:
         rarity_pool = [card for card in pool if card.get("rarity") == "Uncommon"]
@@ -2124,7 +2242,7 @@ def booster_pull_from_pack(pack):
     if not rarity_pool:
         rarity_pool = fallback
 
-    return random.choice(rarity_pool).copy()
+    return secrets.choice(rarity_pool).copy()
 
 
 @app.route("/shop", methods=["GET", "POST"])
@@ -2572,7 +2690,7 @@ def build_v107_post_match_payload(match, viewer_key, result, rewards):
 
         return {
             "result": result,
-            "mode": "training" if match.get("training") else "pvp",
+            "mode": "fallback_bot" if match.get("matchmaking_fallback") else "training" if match.get("training") else "bot" if match.get("is_bot_match") else "pvp",
             "bot_difficulty": match.get("bot_difficulty"),
             "rounds": int(match.get("round", 1) or 1),
             "rewards": rewards or {"coins": 0, "xp": 0},
@@ -2603,7 +2721,7 @@ def build_v107_post_match_payload(match, viewer_key, result, rewards):
         print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
         return {
             "result": result,
-            "mode": "training" if match.get("training") else "pvp",
+            "mode": "fallback_bot" if match.get("matchmaking_fallback") else "training" if match.get("training") else "bot" if match.get("is_bot_match") else "pvp",
             "rounds": int(match.get("round", 1) or 1),
             "rewards": rewards or {"coins": 0, "xp": 0},
             "summary": {
@@ -2788,7 +2906,7 @@ def end_match(room_id, winner_key):
         details={
             "room_id": room_id,
             "winner_key": winner_key,
-            "mode": "training" if match.get("training") or match.get("is_bot_match") else "pvp",
+            "mode": "fallback_bot" if match.get("matchmaking_fallback") else "training" if match.get("training") else "bot" if match.get("is_bot_match") else "pvp",
             "round": match.get("round"),
         },
         user_id=safe_user_id(p1),
@@ -2804,530 +2922,44 @@ def end_match(room_id, winner_key):
     active_matches.pop(room_id, None)
 
 
-@socketio.on("join_training")
-def handle_join_training(data=None):
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return
-
-    user = db.session.get(User, user_id)
-
-    if not user:
-        return
-
-    sid = request.sid
-
-    if sid in player_rooms:
-        return
-
-    try:
-        data = data or {}
-        difficulty = str(data.get("difficulty") or "normal").lower()
-
-        if difficulty not in {"easy", "normal", "hard"}:
-            difficulty = "normal"
-
-        player_object = create_player_object(user, sid)
-
-        bot_user = type("BotUser", (), {})()
-        bot_user.id = 0
-        bot_user.username = "Ambitionz Bot"
-        bot_user.deck_json = user.deck_json
-
-        bot_object = create_player_object(bot_user, f"bot_{sid}")
-        bot_object["name"] = "Ambitionz Bot"
-        bot_object["sid"] = f"bot_{sid}"
-        bot_object["is_bot"] = True
-        bot_object["difficulty"] = difficulty
-
-        room_id = f"training_{sid}"
-
-        join_room(room_id, sid=sid)
-
-        active_matches[room_id] = {
-            "p1": player_object,
-            "p2": bot_object,
-            "round": 1,
-            "phase": "Set Phase",
-            "resolving": False,
-            "logs": [],
-            "training": True,
-            "is_bot_match": True,
-            "bot_difficulty": difficulty,
-        }
-
-        player_rooms[sid] = room_id
-
-        socketio.emit("match_found", {"msg": "Training started against Ambitionz Bot."}, to=sid)
-        emit_log(room_id, "Training started. Choose an Intent, set cards, then press Ready.")
-        log_rc_event(
-            "match",
-            "Training match started",
-            details={"room_id": room_id, "difficulty": difficulty},
-            user_id=user.id,
-        )
-        emit_state(room_id)
-
-    except Exception as error:
-        print("TRAINING START ERROR:", type(error).__name__, error)
-        log_rc_event(
-            "match",
-            "Training failed to start",
-            details={"error": f"{type(error).__name__}: {error}"},
-            user_id=user.id,
-            level="error",
-        )
-        socketio.emit("queue_status", {"msg": "Training failed to start. Check your deck."}, to=sid)
-
-
-
-
-@socketio.on("join_queue")
-def handle_join_queue():
-    global waiting_player
-
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return
-
-    user = db.session.get(User, user_id)
-
-    if not user:
-        return
-
-    current_sid = request.sid
-
-    if current_sid in player_rooms:
-        return
-
-    player_object = create_player_object(user, current_sid)
-
-    if waiting_player is None:
-        waiting_player = player_object
-        socketio.emit("queue_status", {"msg": "Searching for opponent..."}, to=current_sid)
-        log_rc_event("match", "Player entered PvP queue", user_id=user.id)
-        return
-
-    if waiting_player["sid"] == current_sid:
-        return
-
-    room_id = f"room_{waiting_player['sid']}_{current_sid}"
-
-    join_room(room_id, sid=waiting_player["sid"])
-    join_room(room_id, sid=current_sid)
-
-    active_matches[room_id] = {
-        "p1": waiting_player,
-        "p2": player_object,
-        "round": 1,
-        "phase": "Set Phase",
-        "resolving": False,
-        "logs": [],
-    }
-
-    player_rooms[waiting_player["sid"]] = room_id
-    player_rooms[current_sid] = room_id
-
-    socketio.emit("match_found", {"msg": "Opponent found. Duel started."}, to=room_id)
-    log_rc_event(
-        "match",
-        "PvP match started",
-        details={"room_id": room_id},
-        user_id=safe_user_id(waiting_player),
-    )
-
-    waiting_player = None
-
-    emit_log(room_id, "Match started.")
-    emit_state(room_id)
-
-
-
-@socketio.on("set_intent")
-def set_intent(data):
-    room_id = player_rooms.get(request.sid)
-
-    if not room_id:
-        return
-
-    match = active_matches.get(room_id)
-
-    if not match or match["resolving"]:
-        return
-
-    player_key = find_player_key(match, request.sid)
-
-    if not player_key:
-        return
-
-    player = match[player_key]
-
-    if player["ready"]:
-        return
-
-    intent = normalize_intent(data.get("intent"))
-    set_player_intent(player, intent)
-
-    socketio.emit("battle_log", {"msg": f"{player['name']} chose {intent} intent."}, to=request.sid)
-    emit_state(room_id)
-
-
-@socketio.on("play_to_field")
-def play_to_field(data):
-    room_id = player_rooms.get(request.sid)
-
-    if not room_id:
-        return
-
-    match = active_matches.get(room_id)
-
-    if not match or match["resolving"]:
-        return
-
-    player_key = find_player_key(match, request.sid)
-
-    if not player_key:
-        return
-
-    player = match[player_key]
-
-    if player["ready"]:
-        return
-
-    try:
-        index = int(data.get("index"))
-    except Exception:
-        return
-
-    if index < 0 or index >= len(player["hand"]):
-        return
-
-    card = player["hand"][index]
-    card_type = card.get("type")
-    card_cost = int(card.get("cost", 1))
-
-    if not can_pay_cost(player, card):
-        socketio.emit(
-            "battle_log",
-            {"msg": f"{player['name']} tried to play {card['name']}, but needs {card_cost} energy."},
-            to=request.sid,
-        )
-        return
-
-    if card_type == "Monster":
-        if player["field_m"] is not None:
-            emit_log(room_id, f"{player['name']} tried to play another monster, but the monster zone is occupied.")
-            return
-
-        pay_card_cost(player, card)
-        player["field_m"] = player["hand"].pop(index)
-        register_card_played_for_ambition(player, card, match.setdefault("logs", []))
-        emit_log(room_id, f"{player['name']} set a monster: {card['name']} for {card_cost} energy.")
-
-    elif card_type in ["Spell", "Trap"]:
-        if player["field_st"] is not None:
-            emit_log(room_id, f"{player['name']} tried to play another spell/trap, but the zone is occupied.")
-            return
-
-        pay_card_cost(player, card)
-        player["field_st"] = player["hand"].pop(index)
-        register_card_played_for_ambition(player, card, match.setdefault("logs", []))
-        emit_log(room_id, f"{player['name']} set a spell/trap: {card['name']} for {card_cost} energy.")
-
-    emit_state(room_id)
-
-
-
-
-@socketio.on("choose_intent")
-def choose_intent(data):
-    room_id = player_rooms.get(request.sid)
-
-    if not room_id:
-        return
-
-    match = active_matches.get(room_id)
-
-    if not match or match["resolving"]:
-        return
-
-    player_key = find_player_key(match, request.sid)
-
-    if not player_key:
-        return
-
-    player = match[player_key]
-
-    if player["ready"]:
-        return
-
-    intent = data.get("intent", "Strike")
-    set_player_intent(player, intent)
-
-    if intent == "Overreach":
-        user = current_user()
-
-        if user:
-            increment_mission(user, "use_overreach_1", 1)
-
-    emit_log(room_id, f"{player['name']} selected {player['intent']} intent.")
-    emit_state(room_id)
-
-
-@socketio.on("toggle_unleash")
-def toggle_unleash():
-    room_id = player_rooms.get(request.sid)
-
-    if not room_id:
-        return
-
-    match = active_matches.get(room_id)
-
-    if not match or match["resolving"]:
-        return
-
-    player_key = find_player_key(match, request.sid)
-
-    if not player_key:
-        return
-
-    player = match[player_key]
-
-    if player["ready"]:
-        return
-
-    if player.get("wants_unleash"):
-        cancel_unleash(player)
-        emit_log(room_id, f"{player['name']} cancelled Ambition Unleash.")
-    else:
-        success = request_unleash(player)
-
-        if success:
-            emit_log(room_id, f"{player['name']} prepared Ambition Unleash for this battle.")
-        else:
-            socketio.emit(
-                "battle_log",
-                {"msg": "You need 5 Ambition and a monster on the field to unleash."},
-                to=request.sid,
-            )
-
-    emit_state(room_id)
-
-
-@socketio.on("declare_ready")
-def declare_ready():
-    room_id = player_rooms.get(request.sid)
-
-    if not room_id:
-        return
-
-    match = active_matches.get(room_id)
-
-    if not match or match["resolving"]:
-        return
-
-    player_key = find_player_key(match, request.sid)
-
-    if not player_key:
-        return
-
-    player = match[player_key]
-    player["ready"] = True
-
-    user = current_user()
-
-    if user:
-        increment_mission(user, "declare_ready_1", 1)
-
-    if match.get("training"):
-        enemy_key = "p2" if player_key == "p1" else "p1"
-        enemy = match[enemy_key]
-
-        bot_result = bot_choose_play(enemy, player, difficulty=match.get("bot_difficulty", "normal"))
-        emit_log(room_id, f"Ambitionz Bot difficulty: {bot_result.get('profile', match.get('bot_difficulty', 'normal'))}.")
-        emit_log(room_id, f"Ambitionz Bot chose {bot_result['intent']} intent.")
-
-        if bot_result.get("monster"):
-            emit_log(room_id, f"Ambitionz Bot set a monster: {bot_result['monster'].get('name', 'Unknown')}.")
-
-        if bot_result.get("spell_or_trap"):
-            emit_log(room_id, "Ambitionz Bot set a spell/trap.")
-
-    emit_log(room_id, f"{player['name']} is ready.")
-    emit_state(room_id)
-
-    if match.get("is_bot_match") and player_key == "p1" and not match["p2"]["ready"]:
-        bot_play_turn(match["p2"], match.setdefault("logs", []))
-        emit_log(room_id, f"{match['p2']['name']} is ready.")
-        emit_state(room_id)
-
-    if match["p1"]["ready"] and match["p2"]["ready"]:
-        battle_result = resolve_battle(match)
-
-        try:
-            events = battle_result.get("events", [])
-            emit_battle_events(match, events)
-            match.setdefault("v2_events", []).extend(events)
-        except Exception as error:
-            print("V2 BATTLE EVENTS EMIT ERROR:", type(error).__name__, error)
-
-        # emit_log is the single writer for match logs in this phase.
-
-        for log_message in battle_result["logs"]:
-            emit_log(room_id, log_message)
-
-        emit_state(room_id)
-
-        if battle_result["winner"]:
-            end_match(room_id, battle_result["winner"])
-
-
-
-
-
-
-@socketio.on("join_bot_match")
-def handle_join_bot_match():
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return
-
-    user = db.session.get(User, user_id)
-
-    if not user:
-        return
-
-    current_sid = request.sid
-
-    if current_sid in player_rooms:
-        return
-
-    player_object = create_player_object(user, current_sid)
-    bot_object = create_bot_player(user.deck_json)
-
-    room_id = f"bot_{current_sid}"
-
-    join_room(room_id, sid=current_sid)
-
-    active_matches[room_id] = {
-        "p1": player_object,
-        "p2": bot_object,
-        "round": 1,
-        "phase": "Set Phase",
-        "resolving": False,
-        "logs": [],
-        "is_bot_match": True,
-    }
-
-    player_rooms[current_sid] = room_id
-
-    socketio.emit("match_found", {"msg": "Training match started against bot."}, to=current_sid)
-
-    emit_log(room_id, "Training match started.")
-    emit_log(room_id, f"Opponent: {bot_object['name']}.")
-    emit_state(room_id)
-
-
-@socketio.on("join_private_room")
-def handle_join_private_room(data):
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return
-
-    user = db.session.get(User, user_id)
-
-    if not user:
-        return
-
-    current_sid = request.sid
-
-    if current_sid in player_rooms:
-        return
-
-    code = normalize_room_code(data.get("code", ""))
-
-    if not is_valid_room_code(code):
-        socketio.emit("queue_status", {"msg": "Invalid private room code."}, to=current_sid)
-        return
-
-    player_object = create_player_object(user, current_sid)
-
-    if code not in private_waiting_rooms:
-        private_waiting_rooms[code] = player_object
-        socketio.emit("queue_status", {"msg": f"Private room {code} created. Waiting for opponent..."}, to=current_sid)
-        return
-
-    waiting = private_waiting_rooms.get(code)
-
-    if waiting["sid"] == current_sid:
-        socketio.emit("queue_status", {"msg": f"Waiting in private room {code}..."}, to=current_sid)
-        return
-
-    room_id = f"private_{code}_{waiting['sid']}_{current_sid}"
-
-    start_match_between_players(waiting, player_object, room_id)
-
-    private_waiting_rooms.pop(code, None)
-
-
-@socketio.on("disconnect")
-def handle_disconnect(reason=None):
-    global waiting_player
-
-    sid = request.sid
-
-    if waiting_player and waiting_player["sid"] == sid:
-        log_rc_event("match", "Player left PvP queue", user_id=safe_user_id(waiting_player))
-        waiting_player = None
-        return
-
-    for room_code, private_player in list(private_waiting_rooms.items()):
-        if private_player["sid"] == sid:
-            private_waiting_rooms.pop(room_code, None)
-            log_rc_event(
-                "match",
-                "Player left private room queue",
-                details={"room_code": room_code},
-                user_id=safe_user_id(private_player),
-            )
-            return
-
-    room_id = player_rooms.get(sid)
-
-    if not room_id:
-        return
-
-    match = active_matches.get(room_id)
-
-    if not match:
-        return
-
-    player_key = find_player_key(match, sid)
-
-    if not player_key:
-        return
-
-    enemy_key = "p2" if player_key == "p1" else "p1"
-    enemy = match[enemy_key]
-
-    socketio.emit("opponent_left", {"msg": "Opponent disconnected. You win."}, to=enemy["sid"])
-    log_rc_event(
-        "match",
-        "Player disconnected from active match",
-        details={"room_id": room_id, "player_key": player_key},
-        user_id=safe_user_id(match[player_key]),
-        level="warning",
-    )
-
-    end_match(room_id, enemy_key)
-
-
-
-
+def register_socket_handlers():
+    from sockets.game_socket import register_game_socket_handlers
+
+    register_game_socket_handlers(socketio, {
+        "active_matches": active_matches,
+        "player_rooms": player_rooms,
+        "private_waiting_rooms": private_waiting_rooms,
+        "socket_state": socket_state,
+        "socket_event_hits": socket_event_hits,
+        "db": db,
+        "User": User,
+        "bot_choose_play": bot_choose_play,
+        "bot_play_turn": bot_play_turn,
+        "can_pay_cost": can_pay_cost,
+        "cancel_unleash": cancel_unleash,
+        "create_bot_player": create_bot_player,
+        "create_player_object": create_player_object,
+        "current_user": current_user,
+        "emit_battle_events": emit_battle_events,
+        "emit_log": emit_log,
+        "emit_state": emit_state,
+        "end_match": end_match,
+        "find_player_key": find_player_key,
+        "increment_mission": increment_mission,
+        "is_valid_room_code": is_valid_room_code,
+        "log_rc_event": log_rc_event,
+        "normalize_intent": normalize_intent,
+        "normalize_room_code": normalize_room_code,
+        "pay_card_cost": pay_card_cost,
+        "register_card_played_for_ambition": register_card_played_for_ambition,
+        "request_unleash": request_unleash,
+        "resolve_battle": resolve_battle,
+        "safe_user_id": safe_user_id,
+        "set_player_intent": set_player_intent,
+    })
+
+
+register_socket_handlers()
 
 
 
