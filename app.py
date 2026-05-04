@@ -1829,20 +1829,19 @@ def register():
             email=email,
             account_status="active",
             is_tester=True if invite else False,
+            is_verified=True,
         )
         new_user.set_password(password)
+
+        try:
+            new_user.verified_at = datetime.now(timezone.utc)
+        except Exception:
+            pass
 
         db.session.add(new_user)
 
         if invite:
             invite.used_count += 1
-
-        new_user.is_verified = True
-        new_user.account_status = "active"
-        try:
-            new_user.verified_at = datetime.now(timezone.utc)
-        except Exception:
-            pass
 
         db.session.commit()
 
@@ -1856,6 +1855,7 @@ def register():
         return redirect("/login")
 
     return render_template("register.html")
+
 
 
 @app.route("/confirm_email/<token>")
