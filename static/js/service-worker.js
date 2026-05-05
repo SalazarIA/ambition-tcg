@@ -1,9 +1,10 @@
-const CACHE_NAME = "ambitionz-web-app-v129";
+const CACHE_NAME = "ambitionz-web-app-v152";
 
 const CORE_ASSETS = [
     "/",
     "/offline",
     "/static/css/style.css",
+    "/static/css/arena_hud_v2.css",
     "/static/icons/icon.svg",
     "/static/img/cards/placeholders/card_placeholder.svg"
 ];
