@@ -3,6 +3,31 @@ from email.message import EmailMessage
 from flask import current_app
 
 
+def _mask_email(email):
+    value = str(email or "").strip()
+
+    if "@" not in value:
+        return "<redacted>"
+
+    local, domain = value.split("@", 1)
+    safe_local = local[:2] + "***" if len(local) > 2 else "***"
+    return f"{safe_local}@{domain}"
+
+
+def _print_email_log_context(to_email, subject):
+    print("Recipient:", _mask_email(to_email))
+    print("Subject present:", bool(str(subject or "").strip()))
+
+
+def _print_smtp_config_status(host, username, password, mail_from):
+    print("SMTP configured flags:", {
+        "host": bool(host),
+        "username": bool(username),
+        "password": bool(password),
+        "mail_from": bool(mail_from),
+    })
+
+
 def is_smtp_configured():
     required = [
         current_app.config.get("SMTP_HOST"),
@@ -26,16 +51,12 @@ def send_email(to_email, subject, body):
     if not is_smtp_configured():
         print("\n--- AMBITIONZ EMAIL FALLBACK ---")
         print("Reason: SMTP not fully configured.")
-        print("SMTP_HOST:", bool(host))
-        print("SMTP_USERNAME:", bool(username))
-        print("SMTP_PASSWORD:", bool(password))
-        print("MAIL_FROM:", bool(mail_from))
-        print("To:", to_email)
-        print("Subject:", subject)
+        _print_smtp_config_status(host, username, password, mail_from)
+        _print_email_log_context(to_email, subject)
         if log_body_enabled:
-            print(body)
+            print("Body logging requested but suppressed for safety.")
         else:
-            print("Body omitted. Set EMAIL_LOG_BODY_ENABLED=true only in local development if needed.")
+            print("Body omitted.")
         print("--------------------------------\n")
         return False
 
@@ -54,25 +75,21 @@ def send_email(to_email, subject, body):
             server.send_message(msg)
 
         print("\n--- AMBITIONZ EMAIL SENT ---")
-        print("To:", to_email)
-        print("Subject:", subject)
+        _print_email_log_context(to_email, subject)
         print("----------------------------\n")
         return True
 
     except Exception as error:
         print("\n--- AMBITIONZ SMTP ERROR ---")
         print("Error type:", type(error).__name__)
-        print("Error:", error)
-        print("SMTP_HOST:", host)
+        print("Error message omitted to avoid leaking SMTP or recipient details.")
         print("SMTP_PORT:", port)
-        print("SMTP_USERNAME:", username)
-        print("MAIL_FROM:", mail_from)
-        print("To:", to_email)
-        print("Subject:", subject)
+        _print_smtp_config_status(host, username, password, mail_from)
+        _print_email_log_context(to_email, subject)
         if log_body_enabled:
-            print(body)
+            print("Body logging requested but suppressed for safety.")
         else:
-            print("Body omitted. Set EMAIL_LOG_BODY_ENABLED=true only in local development if needed.")
+            print("Body omitted.")
         print("-----------------------------\n")
         return False
 

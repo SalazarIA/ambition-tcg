@@ -287,9 +287,9 @@
 
             <div class="deck-filter-grid deck-filter-grid-v115">
 
-                <input id="builder-search" type="text" placeholder="Search card..." oninput="filterBuilderCards()">
+                <input id="builder-search" type="text" placeholder="Search card...">
 
-                <select id="builder-type-filter" onchange="filterBuilderCards()">
+                <select id="builder-type-filter">
 
                     <option value="">All Types</option>
 
@@ -301,7 +301,7 @@
 
                 </select>
 
-                <select id="builder-element-filter" onchange="filterBuilderCards()">
+                <select id="builder-element-filter">
 
                     <option value="">All Elements</option>
 
@@ -317,7 +317,7 @@
 
                 </select>
 
-                <select id="filter-sigil" onchange="filterBuilderCards()">
+                <select id="filter-sigil">
 
                     <option value="">All Sigils</option>
 
@@ -333,7 +333,7 @@
 
                 </select>
 
-                <select id="filter-role" onchange="filterBuilderCards()">
+                <select id="filter-role">
 
                     <option value="">All Roles</option>
 
@@ -351,7 +351,7 @@
 
                 </select>
 
-                <select id="builder-rarity-filter" onchange="filterBuilderCards()">
+                <select id="builder-rarity-filter">
 
                     <option value="">All Rarities</option>
 
@@ -361,7 +361,7 @@
 
                 </select>
 
-                <select id="builder-cost-filter" onchange="filterBuilderCards()">
+                <select id="builder-cost-filter">
 
                     <option value="">All Costs</option>
 
@@ -381,23 +381,23 @@
 
             <div class="quick-filter-row-v115">
 
-                <button type="button" onclick="quickDeckFilter('element', 'Fire')">Fire</button>
+                <button type="button" data-quick-filter-kind="element" data-quick-filter-value="Fire">Fire</button>
 
-                <button type="button" onclick="quickDeckFilter('element', 'Water')">Water</button>
+                <button type="button" data-quick-filter-kind="element" data-quick-filter-value="Water">Water</button>
 
-                <button type="button" onclick="quickDeckFilter('element', 'Earth')">Earth</button>
+                <button type="button" data-quick-filter-kind="element" data-quick-filter-value="Earth">Earth</button>
 
-                <button type="button" onclick="quickDeckFilter('element', 'Plant')">Plant</button>
+                <button type="button" data-quick-filter-kind="element" data-quick-filter-value="Plant">Plant</button>
 
-                <button type="button" onclick="quickDeckFilter('sigil', 'Fury')">Fury</button>
+                <button type="button" data-quick-filter-kind="sigil" data-quick-filter-value="Fury">Fury</button>
 
-                <button type="button" onclick="quickDeckFilter('sigil', 'Insight')">Insight</button>
+                <button type="button" data-quick-filter-kind="sigil" data-quick-filter-value="Insight">Insight</button>
 
-                <button type="button" onclick="quickDeckFilter('sigil', 'Resolve')">Resolve</button>
+                <button type="button" data-quick-filter-kind="sigil" data-quick-filter-value="Resolve">Resolve</button>
 
-                <button type="button" onclick="quickDeckFilter('sigil', 'Harmony')">Harmony</button>
+                <button type="button" data-quick-filter-kind="sigil" data-quick-filter-value="Harmony">Harmony</button>
 
-                <button type="button" onclick="clearDeckFilters()">Clear</button>
+                <button type="button" data-clear-deck-filters>Clear</button>
 
             </div>
 
@@ -436,11 +436,11 @@
 
                         <div class="deck-card-controls">
 
-                            <button type="button" class="deck-copy-btn" onclick="removeCardFromDeck('{{ card.id }}')" aria-label="Remove copy">−</button>
+                            <button type="button" class="deck-copy-btn" data-deck-action="remove" data-card-id="{{ card.id }}" aria-label="Remove copy">−</button>
 
                             <span class="deck-copy-count" id="count-{{ card.id }}">0</span>
 
-                            <button type="button" class="deck-copy-btn" onclick="addCardToDeck('{{ card.id }}')" aria-label="Add copy">+</button>
+                            <button type="button" class="deck-copy-btn" data-deck-action="add" data-card-id="{{ card.id }}" aria-label="Add copy">+</button>
 
                         </div>
 

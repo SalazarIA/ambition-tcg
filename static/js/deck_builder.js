@@ -222,8 +222,54 @@ function filterBuilderCards() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    bindDeckBuilderControls();
     updateDeckLiveStatus();
 });
+
+
+function bindDeckBuilderControls() {
+    [
+        "builder-search",
+        "builder-type-filter",
+        "builder-element-filter",
+        "filter-sigil",
+        "filter-role",
+        "builder-rarity-filter",
+        "builder-cost-filter"
+    ].forEach((id) => {
+        const element = document.getElementById(id);
+
+        if (!element) {
+            return;
+        }
+
+        const eventName = element.tagName === "INPUT" ? "input" : "change";
+        element.addEventListener(eventName, filterBuilderCards);
+    });
+
+    document.querySelectorAll("[data-quick-filter-kind][data-quick-filter-value]").forEach((button) => {
+        button.addEventListener("click", () => {
+            quickDeckFilter(button.dataset.quickFilterKind, button.dataset.quickFilterValue);
+        });
+    });
+
+    document.querySelectorAll("[data-clear-deck-filters]").forEach((button) => {
+        button.addEventListener("click", clearDeckFilters);
+    });
+
+    document.querySelectorAll("[data-deck-action][data-card-id]").forEach((button) => {
+        button.addEventListener("click", () => {
+            if (button.dataset.deckAction === "add") {
+                addCardToDeck(button.dataset.cardId);
+                return;
+            }
+
+            if (button.dataset.deckAction === "remove") {
+                removeCardFromDeck(button.dataset.cardId);
+            }
+        });
+    });
+}
 
 
 function quickDeckFilter(kind, value) {

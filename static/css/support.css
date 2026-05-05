@@ -1,0 +1,40 @@
+/* Support page module.
+   Keep this file scoped so the global stylesheet can be split gradually. */
+
+.support-page {
+    max-width: 1180px;
+}
+
+.support-page .beta-journey-v126 {
+    gap: 18px;
+}
+
+.support-page .beta-journey-card-v126 {
+    overflow: hidden;
+}
+
+.support-page .beta-journey-card-v126 > p {
+    max-width: 760px;
+}
+
+.support-page .balance-report-note-v126 {
+    overflow-wrap: anywhere;
+}
+
+.support-page .beta-path-actions-v126 .btn {
+    justify-content: center;
+}
+
+.support-page .beta-pill-row-v126 {
+    align-items: center;
+}
+
+@media (max-width: 640px) {
+    .support-page .beta-path-grid-v126 {
+        gap: 10px;
+    }
+
+    .support-page .beta-path-actions-v126 .btn {
+        width: 100%;
+    }
+}

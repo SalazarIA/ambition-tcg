@@ -16,6 +16,16 @@ def test_homepage_adds_security_headers(client):
     assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
 
 
+def test_support_page_renders_publicly(client):
+    response = client.get("/support")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Support Ambitionz" in body
+    assert "support.css" in body
+    assert "Pix support key" in body
+
+
 def test_csrf_rejects_post_without_token(client):
     response = client.post(
         "/login",
