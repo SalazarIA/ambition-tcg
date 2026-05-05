@@ -268,6 +268,23 @@ function renderState(state) {
     window.dispatchEvent(new CustomEvent("ambition:state_update", { detail: latestState }));
 }
 
+
+function setButtonBusy(id, busy, labelWhenBusy) {
+    const button = DOM.byId(id);
+
+    if (!button) {
+        return;
+    }
+
+    if (!button.dataset.originalLabel) {
+        button.dataset.originalLabel = button.textContent.trim();
+    }
+
+    button.disabled = Boolean(busy);
+    button.textContent = busy ? labelWhenBusy : button.dataset.originalLabel;
+}
+
+
 function setQueueStatus(message) {
     DOM.setText("queue-status", message || "Status updated.");
 }
@@ -302,6 +319,7 @@ function bootArenaControls() {
         const difficulty = difficultySelect ? difficultySelect.value : "normal";
 
         setQueueStatus(trainingMode ? `Starting ${difficulty} training...` : "Searching for opponent...");
+        setButtonBusy("join-queue-btn", true, trainingMode ? "Starting..." : "Searching...");
 
         if (trainingMode) {
             socket.emit("join_training", { difficulty });
@@ -333,6 +351,7 @@ function bootArenaControls() {
 
     DOM.onClick("join-bot-match-btn", () => {
         setQueueStatus("Starting bot duel...");
+        setButtonBusy("join-bot-match-btn", true, "Starting...");
         socket.emit("join_bot_match");
     });
 
@@ -352,6 +371,8 @@ socket.on("connect", () => {
 });
 
 socket.on("disconnect", () => {
+    setButtonBusy("join-queue-btn", false);
+    setButtonBusy("join-bot-match-btn", false);
     setQueueStatus("Disconnected.");
     logLine("Disconnected from server.");
 });
@@ -362,6 +383,8 @@ socket.on("queue_status", (data) => {
 
 socket.on("match_found", (data) => {
     document.body.classList.remove("overreach-armed-v112");
+    setButtonBusy("join-queue-btn", false);
+    setButtonBusy("join-bot-match-btn", false);
     setQueueStatus(data?.msg || "Match found.");
     logLine(data?.msg || "Match found.");
 });
@@ -379,6 +402,8 @@ socket.on("battle_log", (data) => {
 });
 
 socket.on("game_over", (data) => {
+    setButtonBusy("join-queue-btn", false);
+    setButtonBusy("join-bot-match-btn", false);
     logLine(`Game Over: ${data?.result || "Unknown"}`);
     setQueueStatus(`Game Over: ${data?.result || "Unknown"}`);
 });

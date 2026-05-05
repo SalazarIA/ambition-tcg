@@ -30,7 +30,56 @@
                 </p>
 
                 <div class="hero-actions">
-                    {% if user %}
+            
+        {% if user %}
+            <section class="beta-journey-v126">
+                <div class="beta-journey-card-v126">
+                    <span class="progression-kicker">Recommended Beta Path</span>
+                    <h2>Your next 10 minutes in Ambitionz</h2>
+                    <p>
+                        Follow this path to test the full game loop: battle, rewards,
+                        progression, collection and deck improvement.
+                    </p>
+
+                    <div class="beta-path-grid-v126">
+                        <div class="beta-path-step-v126 beta-polish-card-v126">
+                            <strong>1. Train</strong>
+                            <span>Play one bot duel to understand Intent, field setup and Ready.</span>
+                        </div>
+
+                        <div class="beta-path-step-v126 beta-polish-card-v126">
+                            <strong>2. Claim</strong>
+                            <span>Open Missions after the duel and claim XP or coins.</span>
+                        </div>
+
+                        <div class="beta-path-step-v126 beta-polish-card-v126">
+                            <strong>3. Improve</strong>
+                            <span>Use Shop, Collection and Deck Builder to strengthen your list.</span>
+                        </div>
+
+                        <div class="beta-path-step-v126 beta-polish-card-v126">
+                            <strong>4. Arena</strong>
+                            <span>Use Find Match. If no tester is online, a bot duel starts automatically.</span>
+                        </div>
+                    </div>
+
+                    <div class="beta-path-actions-v126">
+                        <a href="{{ url_for('training') }}" class="btn">Start Training</a>
+                        <a href="{{ url_for('missions') }}" class="btn btn-secondary">Missions</a>
+                        <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Edit Deck</a>
+                        <a href="{{ url_for('arena') }}" class="btn btn-secondary">Arena</a>
+                    </div>
+
+                    <div class="beta-pill-row-v126">
+                        <span class="beta-pill-v126">Beta goal: finish one full match</span>
+                        <span class="beta-pill-v126">Report friction through Feedback</span>
+                        <span class="beta-pill-v126">Balance is still evolving</span>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
+        {% if user %}
                         <a href="{{ url_for('training') }}" class="btn">Play Training</a>
                         <a href="{{ url_for('profile') }}" class="btn btn-secondary">Profile</a>
                         <a href="{{ url_for('progression') }}" class="btn btn-secondary">Progression</a>

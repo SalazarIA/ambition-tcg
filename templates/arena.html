@@ -177,6 +177,30 @@
                     </section>
                 {% endif %}
 
+
+                <section class="first-session-coach-v126">
+                    <span class="progression-kicker">Beta Duel Coach</span>
+                    <h3>{% if training_mode %}Training objective{% else %}Arena objective{% endif %}</h3>
+
+                    {% if training_mode %}
+                        <p>Use this match to learn the full loop without pressure.</p>
+                        <ol>
+                            <li>Choose an Intent before Ready.</li>
+                            <li>Set one Monster if you have enough energy.</li>
+                            <li>Set one Spell/Trap when it supports your plan.</li>
+                            <li>Press Ready and read the Battle Log after resolution.</li>
+                        </ol>
+                    {% else %}
+                        <p>Find Match now has bot fallback. You should always get a playable duel.</p>
+                        <ol>
+                            <li>Click Find Match to search for a tester or start bot fallback.</li>
+                            <li>Use Bot Duel for direct testing.</li>
+                            <li>Use Private Duel when another tester has your room code.</li>
+                            <li>After the match, check Missions and improve your Deck.</li>
+                        </ol>
+                    {% endif %}
+                </section>
+
 <section class="arena-action-panel">
                     <h3>Intent</h3>
 

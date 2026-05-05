@@ -7218,3 +7218,151 @@ button.btn:disabled {
 .private-room-input-v125:focus {
     border-color: rgba(255, 212, 122, 0.62);
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.26 — BETA JOURNEY + LIGHT VISUAL POLISH
+   ========================================================= */
+
+.beta-journey-v126 {
+    margin: 24px 0;
+    display: grid;
+    gap: 16px;
+}
+
+.beta-journey-card-v126 {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 22px;
+    padding: 20px;
+    background:
+        radial-gradient(circle at top left, rgba(214, 168, 75, 0.13), transparent 34%),
+        rgba(255, 255, 255, 0.035);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+}
+
+.beta-journey-card-v126 h2,
+.beta-journey-card-v126 h3 {
+    margin: 0 0 8px;
+}
+
+.beta-journey-card-v126 p {
+    margin: 0;
+    opacity: 0.78;
+    line-height: 1.5;
+}
+
+.beta-path-grid-v126 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.beta-path-step-v126 {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.18);
+    min-height: 120px;
+}
+
+.beta-path-step-v126 strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #f8e7ba;
+}
+
+.beta-path-step-v126 span {
+    display: block;
+    opacity: 0.74;
+    font-size: 0.92rem;
+    line-height: 1.35;
+}
+
+.beta-path-actions-v126 {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.first-session-coach-v126 {
+    border: 1px solid rgba(214, 168, 75, 0.2);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background:
+        linear-gradient(135deg, rgba(214, 168, 75, 0.11), rgba(255, 255, 255, 0.025)),
+        rgba(0, 0, 0, 0.18);
+}
+
+.first-session-coach-v126 h3 {
+    margin: 0 0 8px;
+}
+
+.first-session-coach-v126 ol {
+    margin: 10px 0 0;
+    padding-left: 20px;
+}
+
+.first-session-coach-v126 li {
+    margin: 6px 0;
+    opacity: 0.86;
+}
+
+.beta-pill-row-v126 {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.beta-pill-v126 {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.82rem;
+}
+
+.beta-polish-card-v126 {
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.beta-polish-card-v126:hover {
+    transform: translateY(-2px);
+    border-color: rgba(214, 168, 75, 0.28);
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.balance-report-note-v126 {
+    border-left: 3px solid rgba(214, 168, 75, 0.75);
+    padding: 10px 12px;
+    margin: 12px 0;
+    background: rgba(214, 168, 75, 0.08);
+    border-radius: 12px;
+}
+
+@media (max-width: 860px) {
+    .beta-path-grid-v126 {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .beta-path-grid-v126 {
+        grid-template-columns: 1fr;
+    }
+
+    .beta-path-actions-v126 {
+        flex-direction: column;
+    }
+
+    .beta-path-actions-v126 .btn {
+        width: 100%;
+    }
+}
