@@ -1,7 +1,7 @@
 import random
 
 from game.rules import can_pay_cost, pay_card_cost
-from game.engine import register_card_played_for_ambition
+from game.engine import register_card_played_for_ambition, request_unleash
 from game.state import set_player_intent
 
 
@@ -15,7 +15,6 @@ DIFFICULTY_PROFILES = {
             "Strike": 35,
             "Guard": 35,
             "Focus": 25,
-            "Overreach": 5,
         },
         "overreach_hp_floor": 2600,
         "overreach_chance": 0.08,
@@ -29,7 +28,6 @@ DIFFICULTY_PROFILES = {
             "Strike": 45,
             "Guard": 25,
             "Focus": 22,
-            "Overreach": 8,
         },
         "overreach_hp_floor": 2200,
         "overreach_chance": 0.18,
@@ -43,7 +41,6 @@ DIFFICULTY_PROFILES = {
             "Strike": 48,
             "Guard": 18,
             "Focus": 20,
-            "Overreach": 14,
         },
         "overreach_hp_floor": 1800,
         "overreach_chance": 0.34,
@@ -90,7 +87,7 @@ def card_score(card, bot, opponent, difficulty="normal"):
         if intent == "Strike":
             score += 90
 
-        if sigil == "Fury" and intent in ["Strike", "Overreach"]:
+        if sigil == "Fury" and intent == "Strike":
             score += 220
 
         if sigil == "Resolve" and intent == "Guard":
@@ -102,7 +99,7 @@ def card_score(card, bot, opponent, difficulty="normal"):
         if sigil == "Harmony":
             score += 80
 
-        if role == "Aggressor" and intent in ["Strike", "Overreach"]:
+        if role == "Aggressor" and intent == "Strike":
             score += 170
 
         if role == "Defender" and bot_hp <= 2500:
@@ -169,14 +166,8 @@ def choose_intent(bot, opponent, difficulty="normal"):
     if len(hand) <= 2:
         return "Focus" if has_insight else weighted_choice({"Focus": 65, "Guard": 35})
 
-    if (
-        has_monster
-        and has_fury
-        and bot_hp >= profile["overreach_hp_floor"]
-        and opponent_hp <= 2600
-        and GAME_RNG.random() <= profile["overreach_chance"]
-    ):
-        return "Overreach"
+    if has_monster and has_fury and bot_hp >= profile["overreach_hp_floor"] and opponent_hp <= 2600:
+        return "Strike"
 
     return weighted_choice(profile["intent_weights"])
 
@@ -269,6 +260,15 @@ def bot_choose_play(bot, opponent, difficulty="normal"):
     if GAME_RNG.random() <= profile["play_spell_trap_chance"]:
         spell_trap_index = choose_card_index(bot, opponent, ["Spell", "Trap"], difficulty)
         spell_or_trap = play_index(bot, spell_trap_index, logs)
+
+    if (
+        bot.get("field_m")
+        and int(bot.get("ambition", 0) or 0) >= 5
+        and int(bot.get("hp", 0) or 0) >= profile["overreach_hp_floor"]
+        and GAME_RNG.random() <= profile["overreach_chance"]
+    ):
+        if request_unleash(bot):
+            logs.append(f"{bot['name']} prepared Ambition Unleash.")
 
     bot["ready"] = True
 

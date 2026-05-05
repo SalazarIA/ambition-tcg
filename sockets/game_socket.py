@@ -15,10 +15,8 @@ def register_game_socket_handlers(socketio, deps):
     User = deps["User"]
 
     bot_choose_play = deps["bot_choose_play"]
-    bot_play_turn = deps["bot_play_turn"]
     can_pay_cost = deps["can_pay_cost"]
     cancel_unleash = deps["cancel_unleash"]
-    create_bot_player = deps["create_bot_player"]
     create_player_object = deps["create_player_object"]
     current_user = deps["current_user"]
     emit_battle_events = deps["emit_battle_events"]
@@ -191,6 +189,28 @@ def register_game_socket_handlers(socketio, deps):
         )
         emit_state(room_id)
         emit_presence()
+
+    def play_bot_turn_if_needed(match, room_id, player_key):
+        if not match.get("is_bot_match") or player_key != "p1" or match["p2"].get("ready"):
+            return
+
+        bot_result = bot_choose_play(
+            match["p2"],
+            match["p1"],
+            difficulty=match.get("bot_difficulty", "normal"),
+        )
+
+        emit_log(room_id, f"Ambitionz Bot difficulty: {bot_result.get('profile', match.get('bot_difficulty', 'normal'))}.")
+        emit_log(room_id, f"Ambitionz Bot chose {bot_result['intent']} intent.")
+
+        if bot_result.get("monster"):
+            emit_log(room_id, f"Ambitionz Bot set a monster: {bot_result['monster'].get('name', 'Unknown')}.")
+
+        if bot_result.get("spell_or_trap"):
+            emit_log(room_id, "Ambitionz Bot set a spell/trap.")
+
+        for line in bot_result.get("logs", []):
+            emit_log(room_id, line)
 
     def run_fallback_after_timeout(sid, queue_generation, fallback_seconds):
         socketio.sleep(fallback_seconds)
@@ -487,7 +507,25 @@ def register_game_socket_handlers(socketio, deps):
         if player["ready"]:
             return
 
-        intent = normalize_intent(data.get("intent"))
+        raw_intent = data.get("intent")
+
+        if raw_intent in ["Ambition Unleash", "Overreach"]:
+            success = request_unleash(player)
+
+            if success:
+                user = current_user()
+
+                if user:
+                    increment_mission(user, "use_overreach_1", 1)
+
+                socketio.emit("battle_log", {"msg": "Ambition Unleash prepared for this battle."}, to=request.sid)
+            else:
+                socketio.emit("battle_log", {"msg": "You need 5 Ambition and a monster on the field to unleash."}, to=request.sid)
+
+            emit_state(room_id)
+            return
+
+        intent = normalize_intent(raw_intent)
         set_player_intent(player, intent)
 
         socketio.emit("battle_log", {"msg": f"{player['name']} chose {intent} intent."}, to=request.sid)
@@ -588,13 +626,29 @@ def register_game_socket_handlers(socketio, deps):
             return
 
         intent = data.get("intent", "Strike")
+
+        if intent in ["Ambition Unleash", "Overreach"]:
+            success = request_unleash(player)
+
+            if success:
+                user = current_user()
+
+                if user:
+                    increment_mission(user, "use_overreach_1", 1)
+
+                emit_log(room_id, f"{player['name']} prepared Ambition Unleash for this battle.")
+            else:
+                socketio.emit(
+                    "battle_log",
+                    {"msg": "You need 5 Ambition and a monster on the field to unleash."},
+                    to=request.sid,
+                )
+
+            emit_state(room_id)
+            return
+
+        intent = normalize_intent(intent)
         set_player_intent(player, intent)
-
-        if intent == "Overreach":
-            user = current_user()
-
-            if user:
-                increment_mission(user, "use_overreach_1", 1)
 
         emit_log(room_id, f"{player['name']} selected {player['intent']} intent.")
         emit_state(room_id)
@@ -631,6 +685,11 @@ def register_game_socket_handlers(socketio, deps):
             success = request_unleash(player)
 
             if success:
+                user = current_user()
+
+                if user:
+                    increment_mission(user, "use_overreach_1", 1)
+
                 emit_log(room_id, f"{player['name']} prepared Ambition Unleash for this battle.")
             else:
                 socketio.emit(
@@ -669,25 +728,11 @@ def register_game_socket_handlers(socketio, deps):
         if user:
             increment_mission(user, "declare_ready_1", 1)
 
-        if match.get("training"):
-            enemy_key = "p2" if player_key == "p1" else "p1"
-            enemy = match[enemy_key]
-
-            bot_result = bot_choose_play(enemy, player, difficulty=match.get("bot_difficulty", "normal"))
-            emit_log(room_id, f"Ambitionz Bot difficulty: {bot_result.get('profile', match.get('bot_difficulty', 'normal'))}.")
-            emit_log(room_id, f"Ambitionz Bot chose {bot_result['intent']} intent.")
-
-            if bot_result.get("monster"):
-                emit_log(room_id, f"Ambitionz Bot set a monster: {bot_result['monster'].get('name', 'Unknown')}.")
-
-            if bot_result.get("spell_or_trap"):
-                emit_log(room_id, "Ambitionz Bot set a spell/trap.")
-
         emit_log(room_id, f"{player['name']} is ready.")
         emit_state(room_id)
 
         if match.get("is_bot_match") and player_key == "p1" and not match["p2"]["ready"]:
-            bot_play_turn(match["p2"], match.setdefault("logs", []))
+            play_bot_turn_if_needed(match, room_id, player_key)
             emit_log(room_id, f"{match['p2']['name']} is ready.")
             emit_state(room_id)
 
@@ -731,8 +776,9 @@ def register_game_socket_handlers(socketio, deps):
         if current_sid in player_rooms:
             return
 
+        difficulty = "normal"
         player_object = create_player_object(user, current_sid)
-        bot_object = create_bot_player(user.deck_json)
+        bot_object = create_ambitionz_bot(user.deck_json, current_sid, difficulty)
 
         room_id = f"bot_{current_sid}"
 
@@ -746,6 +792,7 @@ def register_game_socket_handlers(socketio, deps):
             "resolving": False,
             "logs": [],
             "is_bot_match": True,
+            "bot_difficulty": difficulty,
         }
 
         player_rooms[current_sid] = room_id
@@ -869,5 +916,5 @@ def register_game_socket_handlers(socketio, deps):
         )
 
         finished_match = match
-        end_match(room_id, enemy_key)
+        end_match(room_id, enemy_key, ending_reason="disconnect")
         release_match_presence(finished_match)

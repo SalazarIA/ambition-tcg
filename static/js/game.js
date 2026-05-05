@@ -197,12 +197,18 @@ function updateHud(state) {
 
     DOM.setText("my-name", me.name || "Player");
     DOM.setText("my-hp", me.hp ?? 4000);
+    DOM.setText("my-energy", `${me.energy ?? 0}/${me.max_energy ?? 0}`);
+    DOM.setText("my-ambition", me.wants_unleash ? `${me.ambition ?? 0} armed` : `${me.ambition ?? 0}`);
+    DOM.setText("my-intent", me.wants_unleash ? "Unleash" : (me.intent || "Strike"));
     DOM.setText("my-deck", me.deck_count ?? 0);
     DOM.setText("my-gy", me.graveyard_count ?? 0);
     DOM.setText("my-ready", me.ready ? "Yes" : "No");
 
     DOM.setText("enemy-name", enemy.name || "Opponent");
     DOM.setText("enemy-hp", enemy.hp ?? 4000);
+    DOM.setText("enemy-energy", `${enemy.energy ?? 0}/${enemy.max_energy ?? 0}`);
+    DOM.setText("enemy-ambition", enemy.wants_unleash ? `${enemy.ambition ?? 0} armed` : `${enemy.ambition ?? 0}`);
+    DOM.setText("enemy-intent", enemy.intent || "Hidden");
     DOM.setText("enemy-deck", enemy.deck_count ?? 0);
     DOM.setText("enemy-hand", enemy.hand_count ?? 0);
     DOM.setText("enemy-ready", enemy.ready ? "Yes" : "No");
@@ -232,6 +238,11 @@ function renderHand(state) {
     hand.innerHTML = "";
 
     const cards = state.me?.hand || [];
+    const me = state.me || {};
+    const energy = Number(me.energy || 0);
+    const monsterOccupied = Boolean(me.field_m);
+    const spellTrapOccupied = Boolean(me.field_st);
+    const lockedByState = Boolean(me.ready || state.resolving);
 
     if (!cards.length) {
         hand.innerHTML = `<div class="empty-slot-v103">No cards in hand</div>`;
@@ -239,13 +250,31 @@ function renderHand(state) {
     }
 
     cards.forEach((card, index) => {
+        const cost = Number(card?.cost || 0);
+        const type = String(card?.type || "");
+        const zoneBlocked = (type === "Monster" && monsterOccupied) || (["Spell", "Trap"].includes(type) && spellTrapOccupied);
+        const canAfford = cost <= energy;
+        const playable = !lockedByState && !zoneBlocked && canAfford;
         const wrapper = document.createElement("button");
         wrapper.type = "button";
-        wrapper.className = "arena-hand-card";
+        wrapper.className = `arena-hand-card ${playable ? "is-playable-v151" : "is-locked-v151"}`;
+        wrapper.disabled = !playable;
         wrapper.setAttribute("data-card-index", String(index));
+        wrapper.setAttribute("aria-disabled", playable ? "false" : "true");
+        wrapper.title = playable
+            ? `Play ${card?.name || "card"}`
+            : zoneBlocked
+                ? "Zone already occupied"
+                : canAfford
+                    ? "Wait until your next action"
+                    : `Needs ${cost} energy`;
         wrapper.innerHTML = renderCard(card);
 
         wrapper.addEventListener("click", () => {
+            if (!playable) {
+                return;
+            }
+
             socket.emit("play_to_field", { index });
         });
 

@@ -20,6 +20,19 @@ def safe_player_hp(player):
         return 0
 
 
+def match_mode(match):
+    if match.get("matchmaking_fallback"):
+        return "fallback_bot"
+
+    if match.get("training"):
+        return "training"
+
+    if match.get("is_bot_match"):
+        return "bot"
+
+    return "pvp"
+
+
 def record_match_telemetry(room_id, match, winner_key, loser_key, ending_reason="completed"):
     try:
         winner = match.get(winner_key, {})
@@ -27,7 +40,7 @@ def record_match_telemetry(room_id, match, winner_key, loser_key, ending_reason=
 
         telemetry = MatchTelemetry(
             room_id=room_id,
-            mode="training" if match.get("training") else "pvp",
+            mode=match_mode(match),
             winner_user_id=safe_player_user_id(winner),
             loser_user_id=safe_player_user_id(loser),
             winner_name=safe_player_name(winner),

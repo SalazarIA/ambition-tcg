@@ -1,7 +1,9 @@
-from models import SystemLog, User, db
+from models import MatchHistory, MatchTelemetry, SystemLog, User, db
 
 from app import active_matches, issue_password_reset_token, socket_state
 from conftest import create_user, csrf_token_from_response, login_session
+from game.bot_ai import DIFFICULTY_PROFILES, choose_intent
+from game.state import VALID_INTENTS
 
 
 def test_homepage_adds_security_headers(client):
@@ -220,9 +222,15 @@ def test_socket_training_smoke_starts_match(client, flask_app, socketio_server):
     socket_client.emit("join_training", {"difficulty": "normal"})
     received = socket_client.get_received()
     event_names = {packet["name"] for packet in received}
+    state_packet = next(packet for packet in received if packet["name"] == "game_state_update")
+    state = state_packet["args"][0]
 
     assert "match_found" in event_names
     assert "game_state_update" in event_names
+    assert state["me"]["energy"] == 2
+    assert state["me"]["max_energy"] == 2
+    assert state["me"]["ambition"] == 0
+    assert state["enemy"]["intent"] == "Hidden"
     assert active_matches
 
 
@@ -316,3 +324,62 @@ def test_socket_public_queue_can_be_cancelled(flask_app, socketio_server):
         assert not active_matches
 
         socket_client.disconnect()
+
+
+def test_socket_disconnect_records_disconnect_telemetry(flask_app, socketio_server):
+    flask_app.config["MATCHMAKING_BOT_FALLBACK_SECONDS"] = 1
+    player_one = create_user(username="leaver", email="leaver@example.com")
+    player_two = create_user(username="stayer", email="stayer@example.com")
+
+    with flask_app.test_client() as client_one, flask_app.test_client() as client_two:
+        login_session(client_one, player_one)
+        login_session(client_two, player_two)
+        socket_one = socketio_server.test_client(flask_app, flask_test_client=client_one)
+        socket_two = socketio_server.test_client(flask_app, flask_test_client=client_two)
+        socket_one.get_received()
+        socket_two.get_received()
+
+        socket_one.emit("join_queue")
+        socket_two.emit("join_queue")
+        socketio_server.sleep(0.05)
+        assert active_matches
+
+        socket_one.disconnect()
+        socketio_server.sleep(0.05)
+
+        history = MatchHistory.query.order_by(MatchHistory.id.desc()).first()
+        telemetry = MatchTelemetry.query.order_by(MatchTelemetry.id.desc()).first()
+
+        assert not active_matches
+        assert history is not None
+        assert history.result == "DISCONNECT"
+        assert history.winner_name == player_two.username
+        assert telemetry is not None
+        assert telemetry.ending_reason == "disconnect"
+        assert telemetry.mode == "pvp"
+
+        socket_two.disconnect()
+
+
+def test_bot_ai_keeps_unleash_out_of_intent_selection():
+    for profile in DIFFICULTY_PROFILES.values():
+        assert "Overreach" not in profile["intent_weights"]
+
+    bot = {
+        "hp": 4000,
+        "energy": 6,
+        "intent": "Strike",
+        "hand": [
+            {
+                "type": "Monster",
+                "cost": 1,
+                "power": 1400,
+                "sigil": "Fury",
+                "role": "Aggressor",
+            }
+        ],
+    }
+    opponent = {"hp": 2000}
+
+    for difficulty in DIFFICULTY_PROFILES:
+        assert choose_intent(bot, opponent, difficulty) in VALID_INTENTS

@@ -41,7 +41,6 @@ from game.engine import register_card_played_for_ambition, request_unleash, canc
 from game.state import create_player_state, set_player_intent
 from game.matchmaking import generate_private_room_code, is_valid_room_code, normalize_room_code
 from game.bot_ai import bot_choose_play
-from game.bot import create_bot_player, bot_play_turn
 from game.rewards import apply_match_rewards
 from game.match_utils import safe_user_id, player_display_name, get_match_result_label
 from game.card_view import enrich_cards_for_view
@@ -2581,6 +2580,8 @@ def emit_state(room_id):
         if enemy.get("field_st"):
             enemy_st_status = "SET"
 
+        enemy_intent = enemy.get("intent", "Strike") if match.get("resolving") else "Hidden"
+
         state = {
             "room_id": room_id,
             "round": match["round"],
@@ -2616,7 +2617,7 @@ def emit_state(room_id):
                 "ambition_unleashed": enemy.get("ambition_unleashed", False),
                 "wants_unleash": enemy.get("wants_unleash", False),
                 "overreach_count": enemy.get("overreach_count", 0),
-                "intent": enemy.get("intent", "Strike"),
+                "intent": enemy_intent,
                 "field_m_status": enemy_monster_status,
                 "field_m_rev": enemy["field_m"] if match["resolving"] else None,
                 "field_st_status": enemy_st_status,
@@ -2735,7 +2736,17 @@ def emit_v107_post_match_summary(match, viewer_key, result, rewards):
         print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
 
 
-def end_match(room_id, winner_key):
+def history_result_for_ending(winner_key, ending_reason):
+    if winner_key == "DRAW":
+        return "DRAW"
+
+    if ending_reason and ending_reason != "completed":
+        return str(ending_reason).upper()[:20]
+
+    return "FINISHED"
+
+
+def end_match(room_id, winner_key, ending_reason="completed"):
     match = active_matches.get(room_id)
 
     if not match:
@@ -2756,7 +2767,7 @@ def end_match(room_id, winner_key):
 
         winner_id = None
         winner_name = None
-        result = "DRAW"
+        result = history_result_for_ending(winner_key, ending_reason)
 
         p1_user = db.session.get(User, safe_user_id(p1)) if safe_user_id(p1) else None
         p2_user = db.session.get(User, safe_user_id(p2)) if safe_user_id(p2) else None
@@ -2805,7 +2816,7 @@ def end_match(room_id, winner_key):
         winner = match[winner_key]
         loser = match[loser_key]
 
-        result = "FINISHED"
+        result = history_result_for_ending(winner_key, ending_reason)
         winner_id = safe_user_id(winner)
         winner_name = player_display_name(winner)
 
@@ -2876,10 +2887,11 @@ def end_match(room_id, winner_key):
 
     db.session.add(history)
     if winner_key == "DRAW":
-        record_match_telemetry(room_id, match, "p1", "p2", ending_reason="draw")
+        telemetry_reason = "draw" if ending_reason == "completed" else ending_reason
+        record_match_telemetry(room_id, match, "p1", "p2", ending_reason=telemetry_reason)
     else:
         loser_key = "p2" if winner_key == "p1" else "p1"
-        record_match_telemetry(room_id, match, winner_key, loser_key, ending_reason="completed")
+        record_match_telemetry(room_id, match, winner_key, loser_key, ending_reason=ending_reason)
 
     update_card_stats_after_match(match, winner_key)
 
@@ -2917,10 +2929,8 @@ def register_socket_handlers():
         "db": db,
         "User": User,
         "bot_choose_play": bot_choose_play,
-        "bot_play_turn": bot_play_turn,
         "can_pay_cost": can_pay_cost,
         "cancel_unleash": cancel_unleash,
-        "create_bot_player": create_bot_player,
         "create_player_object": create_player_object,
         "current_user": current_user,
         "emit_battle_events": emit_battle_events,
