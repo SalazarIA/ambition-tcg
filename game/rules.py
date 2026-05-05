@@ -1,9 +1,12 @@
 from game.deck import draw_card
+from game.balance import (
+    ELEMENT_ADVANTAGE_POWER_BONUS,
+    MAX_ENERGY,
+)
 
 
 MAX_HP = 5000
-MAX_ENERGY = 6
-ELEMENTAL_BONUS = 300
+ELEMENTAL_BONUS = ELEMENT_ADVANTAGE_POWER_BONUS
 
 
 ELEMENT_ADVANTAGES = {

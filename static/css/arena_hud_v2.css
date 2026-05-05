@@ -221,6 +221,7 @@
 }
 
 .arena-hand-card {
+    position: relative;
     border: 0;
     padding: 0;
     background: transparent;
@@ -233,6 +234,30 @@
 
 .arena-hand-card.is-playable-v151 .az-card-frame::after {
     border-color: rgba(70, 190, 170, 0.18);
+}
+
+.arena-hand-card.is-recommended-v153 .az-card-frame {
+    border-color: rgba(80, 255, 150, 0.58);
+    box-shadow:
+        0 24px 58px rgba(0, 0, 0, 0.46),
+        0 0 34px rgba(80, 255, 150, 0.18),
+        inset 0 0 0 1px rgba(248, 231, 186, 0.16);
+}
+
+.arena-hand-card.is-recommended-v153::after {
+    content: "Best play";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 3;
+    padding: 4px 7px;
+    border: 1px solid rgba(80, 255, 150, 0.42);
+    border-radius: 999px;
+    background: rgba(5, 5, 11, 0.88);
+    color: #D9FFE9;
+    font-size: 0.66rem;
+    font-weight: 950;
+    pointer-events: none;
 }
 
 .arena-hand-card.is-locked-v151 {

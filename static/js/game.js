@@ -57,21 +57,115 @@ function updateIntentVisuals() {
     }
 }
 
-function hasPlayableCard(state) {
-    const cards = state?.me?.hand || [];
+function getCardPlayStatus(card, state) {
     const me = state?.me || {};
     const energy = Number(me.energy || 0);
+    const cost = Number(card?.cost || 0);
+    const type = String(card?.type || "");
     const monsterOccupied = Boolean(me.field_m);
     const spellTrapOccupied = Boolean(me.field_st);
     const lockedByState = Boolean(me.ready || state?.resolving);
+    const zoneBlocked = (type === "Monster" && monsterOccupied) || (["Spell", "Trap"].includes(type) && spellTrapOccupied);
 
-    return cards.some((card) => {
-        const cost = Number(card?.cost || 0);
-        const type = String(card?.type || "");
-        const zoneBlocked = (type === "Monster" && monsterOccupied) || (["Spell", "Trap"].includes(type) && spellTrapOccupied);
+    return {
+        playable: !lockedByState && !zoneBlocked && cost <= energy,
+        cost,
+        type,
+        zoneBlocked,
+        canAfford: cost <= energy,
+        lockedByState,
+    };
+}
 
-        return !lockedByState && !zoneBlocked && cost <= energy;
+function scorePlayableCard(card, state) {
+    const me = state?.me || {};
+    const enemy = state?.enemy || {};
+    const type = String(card?.type || "");
+    const effect = String(card?.effect || "");
+    const power = Number(card?.power || 0);
+    const value = Number(card?.value || 0);
+    const cost = Number(card?.cost || 0);
+    const enemyHp = Number(enemy.hp || 3600);
+    const myHp = Number(me.hp || 3600);
+
+    let score = -cost * 45;
+
+    if (type === "Monster") {
+        score += 5000 + power;
+
+        if (!me.field_m) {
+            score += 900;
+        }
+
+        if (effect === "Piercing") {
+            score += value + 260;
+        }
+
+        if (effect === "BurnOnSummon") {
+            score += value + (enemyHp <= 1800 ? 900 : 180);
+        }
+
+        if (effect === "ShieldOnSummon" && myHp <= 2400) {
+            score += value + 220;
+        }
+    } else if (type === "Spell") {
+        score += 3300 + value;
+
+        if (["Burn", "Drain"].includes(effect) && enemyHp <= 1800) {
+            score += 850;
+        }
+
+        if (effect === "Boost" && me.field_m) {
+            score += 700;
+        }
+
+        if (effect === "Heal" && myHp <= 2400) {
+            score += 700;
+        }
+
+        if (effect === "Draw" && (me.hand || []).length <= 3) {
+            score += 520;
+        }
+    } else if (type === "Trap") {
+        score += 2700 + value;
+
+        if (myHp <= 2400) {
+            score += 420;
+        }
+    }
+
+    return score;
+}
+
+function findRecommendedPlayableCard(state) {
+    const cards = state?.me?.hand || [];
+    let recommended = null;
+
+    cards.forEach((card, index) => {
+        const status = getCardPlayStatus(card, state);
+
+        if (!status.playable) {
+            return;
+        }
+
+        const score = scorePlayableCard(card, state);
+
+        if (!recommended || score > recommended.score) {
+            recommended = { card, index, score };
+        }
     });
+
+    return recommended;
+}
+
+function hasPlayableCard(state) {
+    return Boolean(findRecommendedPlayableCard(state));
+}
+
+function canUseAmbitionUnleash(state) {
+    const me = state?.me || {};
+
+    return Number(me.ambition || 0) >= 5 && Boolean(me.field_m);
 }
 
 function setArenaButtonState(state) {
@@ -79,9 +173,14 @@ function setArenaButtonState(state) {
     const me = state?.me || {};
     const lockedByBattle = Boolean(state?.resolving || me.ready);
     const readyButton = DOM.byId("ready-btn");
+    const canUnleash = canUseAmbitionUnleash(state);
 
     DOM.qsa(".intent-btn-v103").forEach((button) => {
-        button.disabled = !hasBattle || lockedByBattle;
+        const isUnleash = button.dataset.intent === "Ambition Unleash";
+        button.disabled = !hasBattle || lockedByBattle || (isUnleash && !canUnleash);
+        button.title = isUnleash && !canUnleash
+            ? "Needs 5 Ambition and a monster in play"
+            : "";
     });
 
     if (readyButton) {
@@ -99,7 +198,9 @@ function updateArenaEaseState(state) {
     const hasBattle = Boolean(state?.room_id);
     const me = state?.me || {};
     const enemy = state?.enemy || {};
-    const playableCard = hasBattle && hasPlayableCard(state);
+    const recommended = hasBattle ? findRecommendedPlayableCard(state) : null;
+    const playableCard = Boolean(recommended);
+    const canUnleash = hasBattle && canUseAmbitionUnleash(state);
     const needsReady = hasBattle && !state?.resolving && !me.ready;
 
     body.classList.toggle("arena-has-match-v152", hasBattle);
@@ -116,7 +217,9 @@ function updateArenaEaseState(state) {
     } else if (me.ready) {
         DOM.setText("arena-action-hint", "Ready locked. Waiting for the round.");
     } else if (playableCard) {
-        DOM.setText("arena-action-hint", "Play one glowing card, then press Ready.");
+        DOM.setText("arena-action-hint", `Best play: ${recommended.card?.name || "play a card"}, then press Ready.`);
+    } else if (canUnleash) {
+        DOM.setText("arena-action-hint", "Ambition Unleash is ready, or choose intent and press Ready.");
     } else {
         DOM.setText("arena-action-hint", "Choose intent, then press Ready.");
     }
@@ -265,7 +368,7 @@ function updateHud(state) {
     const enemy = state.enemy || {};
 
     DOM.setText("my-name", me.name || "Player");
-    DOM.setText("my-hp", me.hp ?? 4000);
+    DOM.setText("my-hp", me.hp ?? 3600);
     DOM.setText("my-energy", `${me.energy ?? 0}/${me.max_energy ?? 0}`);
     DOM.setText("my-ambition", me.wants_unleash ? `${me.ambition ?? 0} armed` : `${me.ambition ?? 0}`);
     DOM.setText("my-intent", me.wants_unleash ? "Unleash" : (me.intent || "Strike"));
@@ -274,7 +377,7 @@ function updateHud(state) {
     DOM.setText("my-ready", me.ready ? "Yes" : "No");
 
     DOM.setText("enemy-name", enemy.name || "Opponent");
-    DOM.setText("enemy-hp", enemy.hp ?? 4000);
+    DOM.setText("enemy-hp", enemy.hp ?? 3600);
     DOM.setText("enemy-energy", `${enemy.energy ?? 0}/${enemy.max_energy ?? 0}`);
     DOM.setText("enemy-ambition", enemy.wants_unleash ? `${enemy.ambition ?? 0} armed` : `${enemy.ambition ?? 0}`);
     DOM.setText("enemy-intent", enemy.intent || "Hidden");
@@ -307,11 +410,7 @@ function renderHand(state) {
     hand.innerHTML = "";
 
     const cards = state.me?.hand || [];
-    const me = state.me || {};
-    const energy = Number(me.energy || 0);
-    const monsterOccupied = Boolean(me.field_m);
-    const spellTrapOccupied = Boolean(me.field_st);
-    const lockedByState = Boolean(me.ready || state.resolving);
+    const recommended = findRecommendedPlayableCard(state);
 
     if (!cards.length) {
         hand.innerHTML = `<div class="empty-slot-v103">No cards in hand</div>`;
@@ -319,24 +418,28 @@ function renderHand(state) {
     }
 
     cards.forEach((card, index) => {
-        const cost = Number(card?.cost || 0);
-        const type = String(card?.type || "");
-        const zoneBlocked = (type === "Monster" && monsterOccupied) || (["Spell", "Trap"].includes(type) && spellTrapOccupied);
-        const canAfford = cost <= energy;
-        const playable = !lockedByState && !zoneBlocked && canAfford;
+        const status = getCardPlayStatus(card, state);
+        const playable = status.playable;
+        const recommendedPlay = playable && recommended?.index === index;
         const wrapper = document.createElement("button");
         wrapper.type = "button";
-        wrapper.className = `arena-hand-card ${playable ? "is-playable-v151" : "is-locked-v151"}`;
+        wrapper.className = [
+            "arena-hand-card",
+            playable ? "is-playable-v151" : "is-locked-v151",
+            recommendedPlay ? "is-recommended-v153" : "",
+        ].filter(Boolean).join(" ");
         wrapper.disabled = !playable;
         wrapper.setAttribute("data-card-index", String(index));
         wrapper.setAttribute("aria-disabled", playable ? "false" : "true");
         wrapper.title = playable
-            ? `Play ${card?.name || "card"}`
-            : zoneBlocked
+            ? recommendedPlay
+                ? `Recommended: play ${card?.name || "card"}`
+                : `Play ${card?.name || "card"}`
+            : status.zoneBlocked
                 ? "Zone already occupied"
-                : canAfford
+                : status.canAfford
                     ? "Wait until your next action"
-                    : `Needs ${cost} energy`;
+                    : `Needs ${status.cost} energy`;
         wrapper.innerHTML = renderCard(card);
 
         wrapper.addEventListener("click", () => {

@@ -1,4 +1,17 @@
 from game.deck import draw_card
+from game.balance import (
+    CLASH_MIN_DAMAGE,
+    CLASH_MIN_NET_DAMAGE,
+    CLASH_NET_TEMPO_DAMAGE_PER_ROUND,
+    CLASH_NET_TEMPO_MAX_BONUS,
+    CLASH_TEMPO_DAMAGE_PER_ROUND,
+    CLASH_TEMPO_MAX_BONUS,
+    CLASH_TEMPO_START_ROUND,
+    DUEL_STORM_DAMAGE,
+    DUEL_STORM_DAMAGE_PER_ROUND,
+    DUEL_STORM_MAX_DAMAGE,
+    DUEL_STORM_START_ROUND,
+)
 from game.engine import add_ambition, resolve_manual_unleash
 from game.rules import (
     apply_damage,
@@ -56,6 +69,60 @@ def strike_win_bonus(player, logs):
     return bonus
 
 
+def clash_damage_floor(round_number):
+    round_number = max(1, int(round_number or 1))
+    bonus_rounds = max(0, round_number - CLASH_TEMPO_START_ROUND + 1)
+    tempo_bonus = min(CLASH_TEMPO_MAX_BONUS, bonus_rounds * CLASH_TEMPO_DAMAGE_PER_ROUND)
+
+    return CLASH_MIN_DAMAGE + tempo_bonus
+
+
+def clash_net_damage_floor(round_number):
+    round_number = max(1, int(round_number or 1))
+    bonus_rounds = max(0, round_number - CLASH_TEMPO_START_ROUND + 1)
+    tempo_bonus = min(CLASH_NET_TEMPO_MAX_BONUS, bonus_rounds * CLASH_NET_TEMPO_DAMAGE_PER_ROUND)
+
+    return CLASH_MIN_NET_DAMAGE + tempo_bonus
+
+
+def duel_storm_damage(round_number):
+    round_number = max(1, int(round_number or 1))
+
+    if round_number < DUEL_STORM_START_ROUND:
+        return 0
+
+    bonus_rounds = round_number - DUEL_STORM_START_ROUND
+    storm_damage = DUEL_STORM_DAMAGE + (bonus_rounds * DUEL_STORM_DAMAGE_PER_ROUND)
+
+    return min(DUEL_STORM_MAX_DAMAGE, storm_damage)
+
+
+def apply_clash_pressure(raw_damage, match, logs):
+    damage_floor = clash_damage_floor(match.get("round", 1))
+
+    if 0 < raw_damage < damage_floor:
+        logs.append(f"Duel pressure raised clash damage from {raw_damage} to {damage_floor}.")
+        return damage_floor
+
+    return raw_damage
+
+
+def apply_duel_storm_pressure(match, logs):
+    damage = duel_storm_damage(match.get("round", 1))
+
+    if damage <= 0:
+        return
+
+    p1_damage = apply_damage(match["p1"], damage)
+    p2_damage = apply_damage(match["p2"], damage)
+
+    logs.append(
+        "Ambition Storm pressured the duel: "
+        f"{match['p1']['name']} took {p1_damage} damage and "
+        f"{match['p2']['name']} took {p2_damage} damage."
+    )
+
+
 def apply_focus_survival(player, logs):
     rule = get_intent_rule(player)
     ambition_gain = int(rule.get("survive_ambition", 0))
@@ -64,7 +131,7 @@ def apply_focus_survival(player, logs):
         add_ambition(player, ambition_gain, "stayed composed with Focus", logs)
 
 
-def apply_damage_package(attacker, defender, attacker_monster, defender_monster, raw_damage, logs):
+def apply_damage_package(attacker, defender, attacker_monster, defender_monster, raw_damage, logs, minimum_damage=0):
     raw_damage += calculate_sigil_damage_bonus(attacker, attacker_monster, defender_monster, logs)
 
     raw_damage = apply_strike_loss_penalty(defender, raw_damage, logs)
@@ -79,6 +146,10 @@ def apply_damage_package(attacker, defender, attacker_monster, defender_monster,
     )
 
     raw_damage = max(0, raw_damage - sigil_reduction)
+
+    if 0 < raw_damage < minimum_damage:
+        logs.append(f"Duel pressure pushed final damage from {raw_damage} to {minimum_damage}.")
+        raw_damage = minimum_damage
 
     return apply_damage(defender, raw_damage)
 
@@ -266,6 +337,7 @@ def resolve_battle(match):
 
         if p1_power > p2_power:
             raw_damage = p1_power - p2_power
+            raw_damage = apply_clash_pressure(raw_damage, match, logs)
             pierce = piercing_bonus_damage(p1_monster)
             raw_damage += pierce
 
@@ -279,6 +351,7 @@ def resolve_battle(match):
                 p2_monster,
                 raw_damage,
                 logs,
+                minimum_damage=clash_net_damage_floor(match.get("round", 1)),
             )
 
             add_ambition(p1, 1, "caused battle damage", logs)
@@ -290,6 +363,7 @@ def resolve_battle(match):
 
         elif p2_power > p1_power:
             raw_damage = p2_power - p1_power
+            raw_damage = apply_clash_pressure(raw_damage, match, logs)
             pierce = piercing_bonus_damage(p2_monster)
             raw_damage += pierce
 
@@ -303,6 +377,7 @@ def resolve_battle(match):
                 p1_monster,
                 raw_damage,
                 logs,
+                minimum_damage=clash_net_damage_floor(match.get("round", 1)),
             )
 
             add_ambition(p2, 1, "caused battle damage", logs)
@@ -355,6 +430,8 @@ def resolve_battle(match):
 
     else:
         logs.append("No monsters were played. Round ended with no battle damage.")
+
+    apply_duel_storm_pressure(match, logs)
 
     apply_focus_survival(p1, logs)
     apply_focus_survival(p2, logs)

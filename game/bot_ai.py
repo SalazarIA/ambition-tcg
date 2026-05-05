@@ -1,5 +1,6 @@
 import random
 
+from game.balance import STARTING_HP
 from game.rules import can_pay_cost, pay_card_cost
 from game.engine import register_card_played_for_ambition, request_unleash
 from game.state import set_player_intent
@@ -75,8 +76,8 @@ def card_score(card, bot, opponent, difficulty="normal"):
     role = card.get("role", "Balancer")
     sigil = card.get("sigil", "Global")
     intent = bot.get("intent", "Strike")
-    bot_hp = int(bot.get("hp", 4000) or 4000)
-    opponent_hp = int(opponent.get("hp", 4000) or 4000)
+    bot_hp = int(bot.get("hp", STARTING_HP) or STARTING_HP)
+    opponent_hp = int(opponent.get("hp", STARTING_HP) or STARTING_HP)
 
     score = 0
 
@@ -151,8 +152,8 @@ def card_score(card, bot, opponent, difficulty="normal"):
 
 def choose_intent(bot, opponent, difficulty="normal"):
     profile = profile_for(difficulty)
-    bot_hp = int(bot.get("hp", 4000) or 4000)
-    opponent_hp = int(opponent.get("hp", 4000) or 4000)
+    bot_hp = int(bot.get("hp", STARTING_HP) or STARTING_HP)
+    opponent_hp = int(opponent.get("hp", STARTING_HP) or STARTING_HP)
     hand = bot.get("hand", [])
 
     has_monster = any(card.get("type") == "Monster" and can_pay_cost(bot, card) for card in hand)

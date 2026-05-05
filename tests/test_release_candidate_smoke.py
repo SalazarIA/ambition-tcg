@@ -2,6 +2,7 @@ from models import MatchHistory, MatchTelemetry, SystemLog, User, db
 
 from app import active_matches, issue_password_reset_token, socket_state
 from conftest import create_user, csrf_token_from_response, login_session
+from game.balance import STARTING_HP
 from game.bot_ai import DIFFICULTY_PROFILES, choose_intent
 from game.state import VALID_INTENTS
 
@@ -376,7 +377,7 @@ def test_bot_ai_keeps_unleash_out_of_intent_selection():
         assert "Overreach" not in profile["intent_weights"]
 
     bot = {
-        "hp": 4000,
+        "hp": STARTING_HP,
         "energy": 6,
         "intent": "Strike",
         "hand": [

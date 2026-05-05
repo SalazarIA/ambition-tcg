@@ -1,5 +1,6 @@
 import random
 
+from game.balance import STARTING_HP
 from game.deck import build_playable_deck, draw_starting_hand
 from game.engine import register_card_played_for_ambition, request_unleash
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
@@ -42,7 +43,7 @@ def create_bot_player(deck_json):
 
 
 def choose_bot_intent(bot):
-    hp = int(bot.get("hp", 4000))
+    hp = int(bot.get("hp", STARTING_HP))
     ambition = int(bot.get("ambition", 0))
     hand = bot.get("hand", [])
 
@@ -126,7 +127,7 @@ def card_score_for_bot(card, bot):
         if effect in ["Burn", "Drain", "Boost", "Draw"]:
             score += 160
 
-        if effect == "Heal" and bot.get("hp", 4000) <= 2500:
+        if effect == "Heal" and bot.get("hp", STARTING_HP) <= 2500:
             score += 220
 
         if role == "Controller" and intent == "Focus":
