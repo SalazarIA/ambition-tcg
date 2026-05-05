@@ -8,12 +8,34 @@
     --safe-left: env(safe-area-inset-left);
     --safe-right: env(safe-area-inset-right);
 
-    --app-bg: #070711;
-    --app-panel: rgba(20, 22, 40, 0.94);
-    --app-purple: #8e44ad;
-    --app-purple-2: #5b2cff;
-    --app-border: rgba(255, 255, 255, 0.1);
-    --app-muted: #aaa;
+    --az-abyss: #05050B;
+    --az-night: #080814;
+    --az-deep: #17112A;
+    --az-gold: #D6A84B;
+    --az-gold-light: #F8E7BA;
+    --az-text: #F7F4EC;
+    --az-muted-text: rgba(247, 244, 236, 0.68);
+    --az-danger: #FF7460;
+    --az-success: #50FF96;
+    --az-focus: #4DB8FF;
+    --az-special: #785AFF;
+    --az-bg: var(--az-abyss);
+    --az-panel: rgba(11, 11, 22, 0.88);
+    --az-panel-strong: rgba(14, 13, 26, 0.96);
+    --az-panel-soft: rgba(247, 244, 236, 0.045);
+    --az-border: rgba(248, 231, 186, 0.14);
+    --az-border-strong: rgba(248, 231, 186, 0.30);
+    --az-shadow: 0 24px 90px rgba(0, 0, 0, 0.54);
+    --az-gold-glow: rgba(214, 168, 75, 0.22);
+    --az-radius: 10px;
+    --az-radius-lg: 18px;
+
+    --app-bg: var(--az-bg);
+    --app-panel: var(--az-panel);
+    --app-purple: var(--az-special);
+    --app-purple-2: var(--az-deep);
+    --app-border: var(--az-border);
+    --app-muted: var(--az-muted-text);
 }
 
 html {
@@ -4607,7 +4629,7 @@ a.menu-card:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-\n
+
 /* =========================================================
    AMBITIONZ V1.17 — PLAYER PROFILE + ACCOUNT IDENTITY
    ========================================================= */
@@ -6523,37 +6545,37 @@ button.btn,
    ========================================================================== */
 
 :root {
-    --aaa-bg: #05060b;
-    --aaa-ink: #f7f3ea;
-    --aaa-muted: #c9c0d8;
-    --aaa-soft: rgba(247, 243, 234, 0.72);
-    --aaa-panel: rgba(13, 12, 22, 0.88);
-    --aaa-panel-strong: rgba(19, 17, 29, 0.96);
-    --aaa-panel-quiet: rgba(247, 243, 234, 0.045);
-    --aaa-line: rgba(238, 226, 198, 0.14);
-    --aaa-line-strong: rgba(238, 226, 198, 0.28);
-    --aaa-gold: #d6a84b;
-    --aaa-gold-2: #f1d18a;
-    --aaa-violet: #6c4df6;
-    --aaa-cyan: #63d4ff;
-    --aaa-danger: #ff6a62;
-    --aaa-radius: 8px;
-    --aaa-radius-lg: 16px;
-    --aaa-shadow: 0 24px 90px rgba(0, 0, 0, 0.46);
+    --aaa-bg: var(--az-abyss);
+    --aaa-ink: var(--az-text);
+    --aaa-muted: var(--az-muted-text);
+    --aaa-soft: var(--az-muted-text);
+    --aaa-panel: var(--az-panel);
+    --aaa-panel-strong: var(--az-panel-strong);
+    --aaa-panel-quiet: var(--az-panel-soft);
+    --aaa-line: var(--az-border);
+    --aaa-line-strong: var(--az-border-strong);
+    --aaa-gold: var(--az-gold);
+    --aaa-gold-2: var(--az-gold-light);
+    --aaa-violet: var(--az-special);
+    --aaa-cyan: var(--az-focus);
+    --aaa-danger: var(--az-danger);
+    --aaa-radius: var(--az-radius);
+    --aaa-radius-lg: var(--az-radius-lg);
+    --aaa-shadow: var(--az-shadow);
     --app-bg: var(--aaa-bg);
     --app-panel: var(--aaa-panel);
     --app-purple: var(--aaa-violet);
-    --app-purple-2: #8d4df3;
+    --app-purple-2: var(--az-deep);
     --app-border: var(--aaa-line);
     --app-muted: var(--aaa-muted);
-    --az-bg: var(--aaa-bg);
-    --az-panel: var(--aaa-panel);
-    --az-panel-2: var(--aaa-panel-quiet);
-    --az-border: var(--aaa-line);
-    --az-border-strong: var(--aaa-line-strong);
-    --az-text: var(--aaa-ink);
-    --az-muted: var(--aaa-muted);
-    --az-gold: var(--aaa-gold-2);
+    --az-bg: var(--az-abyss);
+    --az-panel: rgba(11, 11, 22, 0.88);
+    --az-panel-2: var(--az-panel-soft);
+    --az-border: rgba(248, 231, 186, 0.14);
+    --az-border-strong: rgba(248, 231, 186, 0.30);
+    --az-text: #F7F4EC;
+    --az-muted: var(--az-muted-text);
+    --az-gold: #D6A84B;
 }
 
 * {
@@ -7300,3 +7322,785 @@ button.btn:disabled {
 
 
 /* Arena clarity, matchmaking, and 2.5D field styles continue in arena_hud_v2.css. */
+
+
+/* =========================================================
+   AMBITIONZ IDENTITY V1 — OFFICIAL VISUAL SYSTEM
+   dark tactical fantasy with golden ambition energy
+   ========================================================= */
+
+:root {
+    --az-duel-felt: rgba(10, 9, 18, 0.82);
+    --az-duel-rail: rgba(248, 231, 186, 0.16);
+    --az-glass:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.068), rgba(247, 244, 236, 0.022)),
+        rgba(8, 8, 20, 0.80);
+    --az-glass-strong:
+        radial-gradient(circle at 16% 0%, rgba(214, 168, 75, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(247, 244, 236, 0.074), rgba(247, 244, 236, 0.024)),
+        rgba(10, 9, 20, 0.92);
+    --az-table-gradient:
+        radial-gradient(circle at 50% 18%, rgba(214, 168, 75, 0.10), transparent 38%),
+        linear-gradient(145deg, rgba(23, 17, 42, 0.82), rgba(5, 5, 11, 0.92) 56%, rgba(8, 8, 20, 0.96));
+    --az-control-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.36),
+        inset 0 1px 0 rgba(247, 244, 236, 0.08);
+}
+
+body {
+    overflow-x: hidden;
+    background-color: var(--az-abyss);
+    background-image:
+        radial-gradient(circle at 18% -8%, rgba(214, 168, 75, 0.18), transparent 31%),
+        radial-gradient(circle at 86% 4%, rgba(120, 90, 255, 0.16), transparent 34%),
+        radial-gradient(circle at 50% 106%, rgba(214, 168, 75, 0.08), transparent 34%),
+        linear-gradient(180deg, var(--az-abyss) 0%, var(--az-night) 46%, #030307 100%);
+    color: var(--az-text);
+}
+
+body::before {
+    opacity: 0.13;
+    background-image:
+        linear-gradient(rgba(248, 231, 186, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(248, 231, 186, 0.035) 1px, transparent 1px);
+    background-size: 64px 64px;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 20% 18%, rgba(214, 168, 75, 0.10), transparent 24%),
+        radial-gradient(circle at 78% 20%, rgba(120, 90, 255, 0.10), transparent 26%),
+        linear-gradient(90deg, transparent, rgba(248, 231, 186, 0.025), transparent);
+}
+
+::selection {
+    background: rgba(214, 168, 75, 0.38);
+    color: var(--az-text);
+}
+
+main,
+section,
+article,
+aside,
+header,
+footer,
+form,
+div {
+    min-width: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+.arena-player-name,
+.arena-round-panel strong,
+.card-topline strong,
+.menu-card strong,
+.home-loop-card h3 {
+    color: var(--az-text);
+}
+
+p,
+li,
+.subtitle,
+.top-bar p,
+.menu-card span,
+.home-loop-card p,
+.deck-line span,
+.card-effect,
+.image-card-effect p,
+.rules-card-v121 p,
+.rules-archetype-grid-v121 p,
+.profile-main-v117 p,
+.booster-pack-card-v124 p,
+.mission-card-v113 p,
+.battle-log-v103 .log-line,
+.battle-log-v103 div,
+.battle-log-v103 p {
+    color: var(--az-muted-text);
+}
+
+.wide-page {
+    padding: 28px clamp(16px, 3vw, 40px);
+}
+
+.top-bar {
+    padding: 14px 16px;
+    border: 1px solid var(--az-border);
+    border-radius: var(--az-radius-lg);
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.10), transparent 36%),
+        var(--az-glass);
+    box-shadow: var(--az-control-shadow);
+}
+
+.top-bar h1 {
+    font-size: 2rem;
+    line-height: 1.04;
+}
+
+.top-bar p {
+    max-width: 720px;
+}
+
+.btn,
+button.btn,
+.support-button,
+.beta-warning-button {
+    min-height: 46px;
+    border: 1px solid rgba(248, 231, 186, 0.48);
+    border-radius: var(--az-radius);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04) 52%),
+        linear-gradient(135deg, var(--az-gold-light), var(--az-gold) 54%, #8E6726);
+    color: #120F08;
+    box-shadow:
+        0 16px 38px rgba(214, 168, 75, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.btn:hover,
+button.btn:hover,
+.support-button:hover,
+.beta-warning-button:hover {
+    border-color: rgba(248, 231, 186, 0.82);
+    box-shadow:
+        0 20px 46px rgba(214, 168, 75, 0.32),
+        0 0 24px rgba(214, 168, 75, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.btn-secondary,
+.progression-action-row .btn-secondary,
+.hero-actions .btn-secondary,
+button.btn-secondary {
+    border-color: rgba(248, 231, 186, 0.18);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.075), rgba(247, 244, 236, 0.026)),
+        rgba(11, 11, 22, 0.72);
+    color: var(--az-text);
+    box-shadow:
+        inset 0 1px 0 rgba(247, 244, 236, 0.06),
+        0 12px 28px rgba(0, 0, 0, 0.24);
+    text-shadow: none;
+}
+
+.btn-secondary:hover,
+button.btn-secondary:hover {
+    border-color: rgba(248, 231, 186, 0.34);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.095), rgba(247, 244, 236, 0.034)),
+        rgba(23, 17, 42, 0.78);
+}
+
+.small-btn {
+    min-height: 38px;
+    padding: 9px 14px;
+    font-size: 0.83rem;
+}
+
+.full-btn {
+    width: 100%;
+}
+
+.btn:disabled,
+button.btn:disabled,
+.intent-btn-v103:disabled {
+    opacity: 0.48;
+    filter: grayscale(0.22);
+}
+
+.panel,
+.shop-panel,
+.deck-status,
+.home-player-card,
+.public-landing-section-v119,
+.public-cta-v119,
+.public-support-footer-v147,
+.profile-hero-v117,
+.profile-wallet-v117 div,
+.profile-stat-grid-v117 article,
+.profile-cosmetic-slot-v118,
+.profile-cosmetic-inventory-v118 article,
+.ranking-hero-v116,
+.rules-hero-v121,
+.rules-summary-card-v121,
+.shop-hero-v124,
+.shop-wallet-v124,
+.booster-pack-card-v124,
+.mission-card-v113,
+.deck-builder-coach-v123,
+.deck-builder-hero-v115,
+.deck-analysis-grid-v115 article,
+.deck-builder-stat-grid-v115 div,
+.beta-journey-card-v126,
+.beta-path-step-v126,
+.arena-player-panel,
+.arena-round-panel,
+.arena-zone-v103,
+.arena-action-panel,
+.arena-log-panel,
+.training-coach-panel,
+.first-match-guide-v122,
+.post-match-card {
+    border-color: var(--az-border);
+    background: var(--az-glass-strong);
+    box-shadow: var(--az-shadow);
+}
+
+.menu-card,
+.home-loop-card,
+.public-feature-grid-v119 article,
+.public-conversion-list-v119 div,
+.auth-benefit-grid-v119 div,
+.auth-mini-loop-v119 div,
+.progression-step-card,
+.progression-mission-card,
+.feedback-ticket-v120,
+.feedback-admin-card-v120,
+.ranking-row-v116,
+.deck-line,
+.shop-wallet-grid-v124 div,
+.booster-history-odds-v125 div,
+.booster-history-stats-v125 div,
+.card-shell,
+.image-card-frame,
+.rules-card-v121,
+.rules-archetype-grid-v121 article {
+    border-color: rgba(248, 231, 186, 0.12);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.054), rgba(247, 244, 236, 0.018)),
+        rgba(7, 7, 18, 0.72);
+    box-shadow: var(--az-control-shadow);
+}
+
+.menu-card:hover,
+.home-loop-card:hover,
+.public-feature-grid-v119 article:hover,
+.collection-card:hover .card-shell,
+.booster-pack-card-v124:hover,
+.rules-card-v121:hover,
+.rules-archetype-grid-v121 article:hover {
+    border-color: rgba(214, 168, 75, 0.34);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.076), rgba(247, 244, 236, 0.026)),
+        rgba(16, 13, 30, 0.82);
+    box-shadow:
+        0 20px 54px rgba(0, 0, 0, 0.34),
+        0 0 24px rgba(214, 168, 75, 0.10);
+}
+
+.progression-kicker,
+.beta-pill-v126,
+.ranking-tier-v116,
+.sigil-pill,
+.role-pill,
+.card-meta-row span,
+.image-card-meta span,
+.arena-stat {
+    border-color: rgba(248, 231, 186, 0.16);
+    background: rgba(214, 168, 75, 0.075);
+    color: var(--az-gold-light);
+}
+
+.flash,
+.danger-box {
+    border-color: rgba(255, 116, 96, 0.36);
+    background: rgba(255, 116, 96, 0.12);
+    color: #FFD4CD;
+}
+
+.success-box {
+    border-color: rgba(80, 255, 150, 0.34);
+    background: rgba(80, 255, 150, 0.10);
+    color: #C8FFDD;
+}
+
+.form input,
+.form select,
+.form textarea,
+.auth-form-v119 input,
+.feedback-form-v120 input,
+.feedback-form-v120 select,
+.feedback-form-v120 textarea,
+.deck-filter-grid input,
+.deck-filter-grid select,
+.mobile-filter-panel input,
+.mobile-filter-panel select {
+    border-color: rgba(248, 231, 186, 0.16);
+    background: rgba(0, 0, 0, 0.34);
+    color: var(--az-text);
+    box-shadow: inset 0 1px 0 rgba(247, 244, 236, 0.04);
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus,
+.auth-form-v119 input:focus,
+.feedback-form-v120 input:focus,
+.feedback-form-v120 select:focus,
+.feedback-form-v120 textarea:focus,
+.deck-filter-grid input:focus,
+.deck-filter-grid select:focus,
+.mobile-filter-panel input:focus,
+.mobile-filter-panel select:focus {
+    border-color: rgba(248, 231, 186, 0.56);
+    box-shadow:
+        0 0 0 3px rgba(214, 168, 75, 0.12),
+        inset 0 1px 0 rgba(247, 244, 236, 0.05);
+}
+
+.deck-progress-bar {
+    border: 1px solid rgba(248, 231, 186, 0.13);
+    background: rgba(0, 0, 0, 0.38);
+}
+
+.deck-progress-fill {
+    background:
+        linear-gradient(90deg, var(--az-gold), var(--az-gold-light));
+    box-shadow: 0 0 18px rgba(214, 168, 75, 0.28);
+}
+
+.home-dashboard-hero,
+.auth-hero-v119,
+.rules-hero-v121,
+.shop-hero-v124,
+.profile-hero-v117,
+.ranking-hero-v116,
+.deck-builder-hero-v115,
+.deck-builder-coach-v123 {
+    border-color: rgba(248, 231, 186, 0.20);
+    background:
+        radial-gradient(circle at 16% 8%, rgba(214, 168, 75, 0.16), transparent 32%),
+        radial-gradient(circle at 82% 18%, rgba(120, 90, 255, 0.16), transparent 34%),
+        linear-gradient(135deg, rgba(23, 17, 42, 0.76), rgba(5, 5, 11, 0.94) 58%, rgba(8, 8, 20, 0.98));
+}
+
+.home-dashboard-copy h1,
+.auth-hero-v119 h1,
+.rules-hero-v121 h1,
+.shop-hero-v124 h2,
+.profile-main-v117 h2,
+.ranking-hero-v116 h2,
+.deck-builder-hero-v115 h2,
+.deck-builder-coach-v123 h2 {
+    color: var(--az-text);
+    text-shadow:
+        0 2px 0 rgba(0, 0, 0, 0.32),
+        0 0 34px rgba(214, 168, 75, 0.12);
+}
+
+.app-logo,
+.profile-avatar-v117 span,
+.booster-pack-mark-v124 {
+    border-color: rgba(248, 231, 186, 0.30);
+    background:
+        radial-gradient(circle at 35% 16%, rgba(248, 231, 186, 0.40), transparent 32%),
+        linear-gradient(145deg, var(--az-gold), #7B5520 58%, var(--az-deep));
+    box-shadow:
+        0 18px 52px rgba(214, 168, 75, 0.24),
+        0 0 0 1px rgba(248, 231, 186, 0.08) inset;
+}
+
+.app-logo {
+    display: grid;
+    place-items: center;
+    color: #120F08 !important;
+    font-size: 2.4rem;
+    font-weight: 1000;
+    line-height: 1;
+    text-indent: 0 !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.arena-shell-v103 {
+    max-width: 1420px;
+    padding: 22px clamp(12px, 2vw, 28px);
+}
+
+.arena-hud-v103 {
+    gap: 14px;
+}
+
+.arena-board-v103 {
+    gap: 16px;
+    align-items: start;
+}
+
+.arena-main-v103 {
+    gap: 16px;
+}
+
+.arena-player-panel {
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.11), transparent 46%),
+        var(--az-glass);
+}
+
+.arena-player-panel.enemy {
+    background:
+        linear-gradient(270deg, rgba(120, 90, 255, 0.13), transparent 48%),
+        var(--az-glass);
+}
+
+.arena-player-name {
+    color: var(--az-gold-light);
+}
+
+.arena-stat {
+    color: var(--az-muted-text);
+}
+
+.arena-stat strong {
+    color: var(--az-text);
+}
+
+.resource-stat-v151 {
+    border-color: rgba(77, 184, 255, 0.28);
+    background: rgba(77, 184, 255, 0.09);
+    color: #C9EDFF;
+}
+
+.arena-round-panel {
+    background:
+        radial-gradient(circle at 50% 0%, rgba(214, 168, 75, 0.24), transparent 46%),
+        linear-gradient(180deg, rgba(23, 17, 42, 0.82), rgba(5, 5, 11, 0.92));
+}
+
+.arena-round-panel span {
+    color: var(--az-gold-light);
+}
+
+.arena-zone-v103 {
+    border-color: rgba(248, 231, 186, 0.13);
+    background: var(--az-table-gradient);
+}
+
+.arena-zone-title {
+    color: var(--az-gold-light);
+}
+
+.arena-field-grid {
+    min-height: 238px;
+}
+
+.arena-slot-v103 {
+    min-height: 228px;
+    border-color: rgba(248, 231, 186, 0.14);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(214, 168, 75, 0.10), transparent 36%),
+        linear-gradient(180deg, rgba(247, 244, 236, 0.035), rgba(0, 0, 0, 0.18)),
+        rgba(4, 4, 10, 0.34);
+}
+
+.arena-slot-label {
+    color: var(--az-gold-light);
+}
+
+.empty-slot-v103 {
+    min-height: 176px;
+    color: rgba(247, 244, 236, 0.40);
+}
+
+.hand-zone-v151 .arena-hand-v103 {
+    grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+}
+
+.arena-hand-card.selected .az-card-frame,
+.arena-hand-card:hover .az-card-frame {
+    border-color: rgba(248, 231, 186, 0.68);
+    box-shadow:
+        0 24px 56px rgba(0, 0, 0, 0.44),
+        0 0 28px rgba(214, 168, 75, 0.24);
+}
+
+.intent-grid-v103 {
+    gap: 10px;
+}
+
+.intent-btn-v103 {
+    min-height: 50px;
+    border-color: rgba(248, 231, 186, 0.14);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.064), rgba(247, 244, 236, 0.018)),
+        rgba(7, 7, 18, 0.78);
+    color: var(--az-text);
+    box-shadow: inset 0 1px 0 rgba(247, 244, 236, 0.06);
+}
+
+.intent-btn-v103:hover,
+.intent-btn-v103.active {
+    border-color: rgba(248, 231, 186, 0.52);
+    background:
+        radial-gradient(circle at top, rgba(214, 168, 75, 0.18), transparent 54%),
+        rgba(18, 14, 30, 0.92);
+    color: var(--az-gold-light);
+}
+
+#queue-status {
+    margin-bottom: 10px;
+    border-color: rgba(77, 184, 255, 0.22);
+    background: rgba(77, 184, 255, 0.08);
+    color: #C9EDFF;
+}
+
+.battle-log-v103 {
+    max-height: 380px;
+    padding-right: 4px;
+    scrollbar-color: rgba(214, 168, 75, 0.42) rgba(5, 5, 11, 0.42);
+}
+
+.battle-log-v103 .log-line,
+.battle-log-v103 div,
+.battle-log-v103 p {
+    border: 1px solid rgba(248, 231, 186, 0.10);
+    border-left-color: rgba(214, 168, 75, 0.42);
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.065), transparent 56%),
+        rgba(5, 5, 11, 0.48);
+}
+
+.deck-filter-panel {
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.09), transparent 42%),
+        var(--az-glass);
+}
+
+.deck-filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.quick-filter-row-v115 button,
+.deck-copy-btn {
+    min-height: 34px;
+    border: 1px solid rgba(248, 231, 186, 0.16);
+    border-radius: var(--az-radius);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.07), rgba(247, 244, 236, 0.018)),
+        rgba(8, 8, 20, 0.78);
+    color: var(--az-gold-light);
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.quick-filter-row-v115 button:hover,
+.deck-copy-btn:hover {
+    border-color: rgba(248, 231, 186, 0.36);
+    background: rgba(214, 168, 75, 0.12);
+}
+
+.deck-copy-count {
+    min-width: 34px;
+    min-height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(248, 231, 186, 0.14);
+    border-radius: var(--az-radius);
+    background: rgba(0, 0, 0, 0.28);
+    color: var(--az-text);
+    font-weight: 900;
+}
+
+.card-shell,
+.image-card-frame,
+.az-card-frame {
+    border-color: rgba(248, 231, 186, 0.14);
+    background:
+        radial-gradient(circle at 18% 0%, rgba(214, 168, 75, 0.12), transparent 34%),
+        linear-gradient(160deg, rgba(23, 17, 42, 0.86), rgba(5, 5, 11, 0.94));
+}
+
+.collection-card input:checked + .card-shell {
+    border-color: rgba(248, 231, 186, 0.72);
+    box-shadow:
+        0 0 26px rgba(214, 168, 75, 0.24),
+        0 20px 54px rgba(0, 0, 0, 0.38);
+}
+
+.card-power,
+.image-card-footer strong,
+.deck-line strong,
+.shop-wallet-grid-v124 strong,
+.profile-wallet-v117 strong,
+.profile-stat-grid-v117 strong,
+.ranking-season-grid-v116 strong {
+    color: var(--az-gold-light);
+}
+
+.booster-pack-card-v124.active {
+    border-color: rgba(248, 231, 186, 0.34);
+    background:
+        radial-gradient(circle at 18% 0%, rgba(214, 168, 75, 0.18), transparent 38%),
+        linear-gradient(180deg, rgba(247, 244, 236, 0.07), rgba(247, 244, 236, 0.022)),
+        rgba(7, 7, 18, 0.82);
+}
+
+.mission-card-v113 h2::before {
+    color: var(--az-gold);
+}
+
+.ranking-head-v116 {
+    border-color: rgba(248, 231, 186, 0.18);
+    background: rgba(214, 168, 75, 0.10);
+    color: var(--az-gold-light);
+}
+
+.mobile-bottom-nav {
+    border-color: rgba(248, 231, 186, 0.16);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.06), rgba(247, 244, 236, 0.02)),
+        rgba(5, 5, 11, 0.90);
+}
+
+.mobile-bottom-nav a {
+    color: var(--az-muted-text);
+}
+
+.mobile-bottom-nav a.active {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.20), transparent 58%),
+        linear-gradient(135deg, var(--az-gold-light), var(--az-gold));
+    color: #120F08;
+}
+
+@media (max-width: 1080px) {
+    .home-dashboard-copy h1,
+    .auth-hero-v119 h1,
+    .rules-hero-v121 h1,
+    .deck-builder-hero-v115 h2,
+    .deck-builder-coach-v123 h2 {
+        font-size: 3rem;
+    }
+
+    .arena-board-v103,
+    .arena-hud-v103 {
+        grid-template-columns: 1fr;
+    }
+
+    .arena-side-v103 {
+        order: 0;
+    }
+}
+
+@media (max-width: 760px) {
+    .wide-page,
+    .arena-shell-v103 {
+        padding: 12px;
+        padding-bottom: calc(76px + var(--safe-bottom));
+    }
+
+    .top-bar {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .top-bar h1 {
+        font-size: 1.7rem;
+    }
+
+    .top-bar .btn {
+        width: 100%;
+    }
+
+    .home-dashboard-copy h1,
+    .auth-hero-v119 h1,
+    .rules-hero-v121 h1,
+    .shop-hero-v124 h2,
+    .profile-main-v117 h2,
+    .ranking-hero-v116 h2,
+    .deck-builder-hero-v115 h2,
+    .deck-builder-coach-v123 h2 {
+        font-size: 2.45rem;
+        line-height: 1.04;
+    }
+
+    .panel,
+    .shop-panel,
+    .deck-status,
+    .home-dashboard-hero,
+    .home-player-card,
+    .public-landing-section-v119,
+    .public-cta-v119,
+    .profile-hero-v117,
+    .ranking-hero-v116,
+    .rules-hero-v121,
+    .shop-hero-v124,
+    .deck-builder-hero-v115,
+    .deck-builder-coach-v123,
+    .arena-player-panel,
+    .arena-round-panel,
+    .arena-zone-v103,
+    .arena-action-panel,
+    .arena-log-panel,
+    .training-coach-panel {
+        border-radius: 14px;
+    }
+
+    .section-title-row,
+    .progression-action-row,
+    .hero-actions,
+    .beta-path-actions-v126 {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .section-title-row .btn,
+    .progression-action-row .btn,
+    .hero-actions .btn,
+    .beta-path-actions-v126 .btn {
+        width: 100%;
+    }
+
+    .arena-field-grid {
+        min-height: auto;
+    }
+
+    .arena-slot-v103 {
+        min-height: 176px;
+    }
+
+    .hand-zone-v151 .arena-hand-v103,
+    .card-grid,
+    .deck-builder-grid,
+    .booster-pack-grid-v124,
+    .profile-stat-grid-v117,
+    .ranking-season-grid-v116 {
+        grid-template-columns: 1fr;
+    }
+
+    .battle-log-v103 {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 420px) {
+    .btn,
+    button.btn {
+        padding-inline: 14px;
+    }
+
+    .home-dashboard-copy h1,
+    .auth-hero-v119 h1,
+    .rules-hero-v121 h1,
+    .shop-hero-v124 h2,
+    .profile-main-v117 h2,
+    .ranking-hero-v116 h2,
+    .deck-builder-hero-v115 h2,
+    .deck-builder-coach-v123 h2 {
+        font-size: 2.1rem;
+    }
+
+    .deck-line,
+    .ranking-row-v116 {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}
