@@ -15,7 +15,7 @@ from sqlalchemy import inspect as sql_inspect
 
 from config import Config
 from game.battle import resolve_battle
-from game.cards import CARD_CATALOG, card_sort_key, get_card_by_id
+from game.cards import CARD_CATALOG, card_sort_key
 from game.deck import (
     build_playable_deck,
     collection_summary,
@@ -27,10 +27,18 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, CardStat, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
+from services.card_stats import update_card_stats_after_match
+from services.match_payloads import (
+    build_game_state_payloads,
+    build_post_match_payload,
+    find_player_key,
+    history_result_for_ending,
+    perspective_battle_events,
+)
 from services.reward_tuning import reward_line
 from services.match_telemetry import record_match_telemetry
 from services.email_service import send_password_reset_email, send_smtp_test_email, is_smtp_configured
@@ -340,10 +348,6 @@ def login_required_redirect():
 
 
 def dev_tools_enabled():
-    return bool(app.config.get("DEV_TOOLS_ENABLED", False))
-
-
-def dev_tools_enabled():
     config_value = app.config.get("DEV_TOOLS_ENABLED", False)
     env_value = os.environ.get("DEV_TOOLS_ENABLED", "")
 
@@ -466,37 +470,6 @@ def draw_beta_starting_hand(deck, size=5, starting_energy=2):
 
     return hand
 
-
-def admin_required_redirect():
-    """Return a redirect response when the current user is not an admin.
-
-    Kept as a response-returning helper because existing admin routes call it
-    manually instead of using it as a decorator.
-    """
-    user_id = session.get("user_id")
-
-    if not user_id:
-        flash("Login required.", "warning")
-        return redirect(url_for("login"))
-
-    user = User.query.get(user_id)
-
-    if not user:
-        session.clear()
-        flash("Login required.", "warning")
-        return redirect(url_for("login"))
-
-    is_admin = bool(
-        getattr(user, "is_admin", False)
-        or getattr(user, "admin", False)
-        or getattr(user, "role", "") == "admin"
-    )
-
-    if not is_admin:
-        flash("Admin access required.", "danger")
-        return redirect(url_for("index"))
-
-    return None
 
 def get_existing_table_names():
     try:
@@ -2438,73 +2411,6 @@ def arena():
     )
 
 
-def find_player_key(match, sid):
-    if match["p1"]["sid"] == sid:
-        return "p1"
-
-    if match["p2"]["sid"] == sid:
-        return "p2"
-
-    return None
-
-
-def played_cards_for_stats(player):
-    cards = []
-
-    cards.extend([card for card in player.get("graveyard", []) if card])
-
-    for zone in ("field_m", "field_st"):
-        card = player.get(zone)
-
-        if card:
-            cards.append(card)
-
-    return cards
-
-
-def update_card_stats_after_match(match, winner_key):
-    for player_key in ("p1", "p2"):
-        player = match.get(player_key, {})
-        played_cards = played_cards_for_stats(player)
-
-        if not played_cards:
-            continue
-
-        seen_card_ids = set()
-
-        for card in played_cards:
-            card_id = card.get("id")
-
-            if not card_id:
-                continue
-
-            catalog_card = get_card_by_id(card_id) or card
-            stat = CardStat.query.filter_by(card_id=card_id).first()
-
-            if not stat:
-                stat = CardStat(
-                    card_id=card_id,
-                    card_name=catalog_card.get("name", card.get("name", card_id)),
-                    card_type=catalog_card.get("type", card.get("type", "Unknown")),
-                    element=catalog_card.get("element", card.get("element", "Global")),
-                    rarity=catalog_card.get("rarity", card.get("rarity", "Common")),
-                )
-                db.session.add(stat)
-
-            stat.times_played = int(stat.times_played or 0) + 1
-
-            if card_id not in seen_card_ids:
-                stat.games_seen = int(stat.games_seen or 0) + 1
-                seen_card_ids.add(card_id)
-
-            if winner_key == "DRAW":
-                stat.draws_when_played = int(stat.draws_when_played or 0) + 1
-            elif winner_key == player_key:
-                stat.wins_when_played = int(stat.wins_when_played or 0) + 1
-            else:
-                stat.losses_when_played = int(stat.losses_when_played or 0) + 1
-
-
 def emit_log(room_id, message):
     match = active_matches.get(room_id)
 
@@ -2513,31 +2419,6 @@ def emit_log(room_id, message):
         match["logs"].append(str(message))
 
     socketio.emit("battle_log", {"msg": message}, to=room_id)
-
-
-def perspective_battle_events(events, player_key):
-    if player_key == "p1":
-        return [dict(event) for event in events]
-
-    side_map = {
-        "player": "enemy",
-        "enemy": "player",
-    }
-
-    perspective_events = []
-
-    for event in events:
-        mapped_event = dict(event)
-
-        for key in ["side", "to", "from"]:
-            value = mapped_event.get(key)
-
-            if value in side_map:
-                mapped_event[key] = side_map[value]
-
-        perspective_events.append(mapped_event)
-
-    return perspective_events
 
 
 def emit_battle_events(match, events):
@@ -2563,68 +2444,8 @@ def emit_state(room_id):
     if not match:
         return
 
-    for player_key, enemy_key in [("p1", "p2"), ("p2", "p1")]:
-        player = match[player_key]
-        enemy = match[enemy_key]
-
-        if player.get("is_bot"):
-            continue
-
-        enemy_monster_status = "EMPTY"
-
-        if enemy.get("field_m"):
-            enemy_monster_status = "REVEALED" if match["resolving"] else "HIDDEN"
-
-        enemy_st_status = "EMPTY"
-
-        if enemy.get("field_st"):
-            enemy_st_status = "SET"
-
-        enemy_intent = enemy.get("intent", "Strike") if match.get("resolving") else "Hidden"
-
-        state = {
-            "room_id": room_id,
-            "round": match["round"],
-            "phase": match.get("phase", "Set Phase"),
-            "resolving": match["resolving"],
-            "me": {
-                "name": player["name"],
-                "hp": player["hp"],
-                "deck_count": len(player["deck"]),
-                "graveyard_count": len(player["graveyard"]),
-                "hand": player["hand"],
-                "field_m": player["field_m"],
-                "field_st": player["field_st"],
-                "ready": player["ready"],
-                "energy": player.get("energy", 0),
-                "max_energy": player.get("max_energy", 0),
-                "ambition": player.get("ambition", 0),
-                "ambition_unleashed": player.get("ambition_unleashed", False),
-                "wants_unleash": player.get("wants_unleash", False),
-                "overreach_count": player.get("overreach_count", 0),
-                "intent": player.get("intent", "Strike"),
-            },
-            "enemy": {
-                "name": enemy["name"],
-                "hp": enemy["hp"],
-                "deck_count": len(enemy["deck"]),
-                "graveyard_count": len(enemy["graveyard"]),
-                "hand_count": len(enemy["hand"]),
-                "ready": enemy["ready"],
-                "energy": enemy.get("energy", 0),
-                "max_energy": enemy.get("max_energy", 0),
-                "ambition": enemy.get("ambition", 0),
-                "ambition_unleashed": enemy.get("ambition_unleashed", False),
-                "wants_unleash": enemy.get("wants_unleash", False),
-                "overreach_count": enemy.get("overreach_count", 0),
-                "intent": enemy_intent,
-                "field_m_status": enemy_monster_status,
-                "field_m_rev": enemy["field_m"] if match["resolving"] else None,
-                "field_st_status": enemy_st_status,
-            },
-        }
-
-        socketio.emit("game_state_update", state, to=player["sid"])
+    for sid, state in build_game_state_payloads(room_id, match):
+        socketio.emit("game_state_update", state, to=sid)
 
 
 def create_player_object(user, sid):
@@ -2663,58 +2484,6 @@ def emit_v105_match_end_summary(room_id, match, winner_key):
 
 
 
-def build_v107_post_match_payload(match, viewer_key, result, rewards):
-    try:
-        p1 = match.get("p1", {})
-        p2 = match.get("p2", {})
-
-        opponent_key = "p2" if viewer_key == "p1" else "p1"
-        viewer = match.get(viewer_key, {})
-        opponent = match.get(opponent_key, {})
-
-        return {
-            "result": result,
-            "mode": "fallback_bot" if match.get("matchmaking_fallback") else "training" if match.get("training") else "bot" if match.get("is_bot_match") else "pvp",
-            "bot_difficulty": match.get("bot_difficulty"),
-            "rounds": int(match.get("round", 1) or 1),
-            "rewards": rewards or {"coins": 0, "xp": 0},
-            "viewer": {
-                "name": player_display_name(viewer),
-                "hp": max(0, int(viewer.get("hp", 0) or 0)),
-            },
-            "opponent": {
-                "name": player_display_name(opponent),
-                "hp": max(0, int(opponent.get("hp", 0) or 0)),
-            },
-            "players": {
-                "p1": {
-                    "name": player_display_name(p1),
-                    "hp": max(0, int(p1.get("hp", 0) or 0)),
-                },
-                "p2": {
-                    "name": player_display_name(p2),
-                    "hp": max(0, int(p2.get("hp", 0) or 0)),
-                },
-            },
-            "summary": {
-                "title": "Victory" if result == "WIN" else "Defeat" if result == "LOSE" else "Draw",
-                "message": "You won the duel." if result == "WIN" else "You were defeated." if result == "LOSE" else "The duel ended in a draw.",
-            },
-        }
-    except Exception as error:
-        print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
-        return {
-            "result": result,
-            "mode": "fallback_bot" if match.get("matchmaking_fallback") else "training" if match.get("training") else "bot" if match.get("is_bot_match") else "pvp",
-            "rounds": int(match.get("round", 1) or 1),
-            "rewards": rewards or {"coins": 0, "xp": 0},
-            "summary": {
-                "title": result,
-                "message": "Match finished.",
-            },
-        }
-
-
 def emit_v107_post_match_summary(match, viewer_key, result, rewards):
     try:
         viewer = match.get(viewer_key, {})
@@ -2729,21 +2498,11 @@ def emit_v107_post_match_summary(match, viewer_key, result, rewards):
 
         socketio.emit(
             "post_match_summary",
-            build_v107_post_match_payload(match, viewer_key, result, rewards),
+            build_post_match_payload(match, viewer_key, result, rewards),
             to=sid,
         )
     except Exception as error:
         print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
-
-
-def history_result_for_ending(winner_key, ending_reason):
-    if winner_key == "DRAW":
-        return "DRAW"
-
-    if ending_reason and ending_reason != "completed":
-        return str(ending_reason).upper()[:20]
-
-    return "FINISHED"
 
 
 def end_match(room_id, winner_key, ending_reason="completed"):
