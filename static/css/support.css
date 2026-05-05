@@ -5,19 +5,45 @@
     max-width: 1180px;
 }
 
+.support-page .top-bar {
+    border-color: rgba(248, 231, 186, 0.18);
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.12), transparent 42%),
+        linear-gradient(180deg, rgba(247, 244, 236, 0.06), rgba(247, 244, 236, 0.02)),
+        rgba(8, 8, 20, 0.88);
+}
+
 .support-page .beta-journey-v126 {
     gap: 18px;
 }
 
 .support-page .beta-journey-card-v126 {
     overflow: hidden;
+    border-color: rgba(248, 231, 186, 0.18);
+    background:
+        radial-gradient(circle at 14% 0%, rgba(214, 168, 75, 0.16), transparent 34%),
+        radial-gradient(circle at 86% 12%, rgba(120, 90, 255, 0.13), transparent 34%),
+        linear-gradient(180deg, rgba(247, 244, 236, 0.062), rgba(247, 244, 236, 0.024)),
+        rgba(8, 8, 20, 0.86);
 }
 
 .support-page .beta-journey-card-v126 > p {
     max-width: 760px;
 }
 
+.support-page .beta-path-step-v126 {
+    border-color: rgba(248, 231, 186, 0.14);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.052), rgba(247, 244, 236, 0.018)),
+        rgba(5, 5, 11, 0.48);
+}
+
 .support-page .balance-report-note-v126 {
+    border-color: rgba(214, 168, 75, 0.72);
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.13), transparent 68%),
+        rgba(0, 0, 0, 0.26);
+    color: var(--az-gold-light, #F8E7BA);
     overflow-wrap: anywhere;
 }
 
@@ -27,6 +53,12 @@
 
 .support-page .beta-pill-row-v126 {
     align-items: center;
+}
+
+.support-page .beta-pill-v126 {
+    border-color: rgba(248, 231, 186, 0.15);
+    background: rgba(214, 168, 75, 0.08);
+    color: var(--az-gold-light, #F8E7BA);
 }
 
 @media (max-width: 640px) {
