@@ -1,20 +1,22 @@
 import time
 
-from flask import has_app_context, request, session
+from flask import request, session
 from flask_socketio import join_room
+
+from sockets.runtime import GameSocketRuntime
 
 
 def register_game_socket_handlers(socketio, deps):
-    active_matches = deps["active_matches"]
-    player_rooms = deps["player_rooms"]
-    private_waiting_rooms = deps["private_waiting_rooms"]
-    socket_state = deps["socket_state"]
-    socket_event_hits = deps.setdefault("socket_event_hits", {})
+    runtime = GameSocketRuntime(socketio, deps)
+
+    active_matches = runtime.active_matches
+    player_rooms = runtime.player_rooms
+    private_waiting_rooms = runtime.private_waiting_rooms
+    socket_state = runtime.socket_state
+    socket_event_hits = runtime.socket_event_hits
 
     db = deps["db"]
     User = deps["User"]
-
-    bot_choose_play = deps["bot_choose_play"]
     can_pay_cost = deps["can_pay_cost"]
     cancel_unleash = deps["cancel_unleash"]
     create_player_object = deps["create_player_object"]
@@ -35,233 +37,22 @@ def register_game_socket_handlers(socketio, deps):
     resolve_battle = deps["resolve_battle"]
     safe_user_id = deps["safe_user_id"]
     set_player_intent = deps["set_player_intent"]
-    app = deps.get("app")
 
-    socket_state.setdefault("waiting_player", None)
-    socket_state.setdefault("waiting_since", None)
-    socket_state.setdefault("waiting_deck_json", None)
-    socket_state.setdefault("queue_generation", 0)
-    socket_state.setdefault("online_players", {})
-
-    def matchmaking_fallback_seconds():
-        try:
-            return max(0.0, float(app.config.get("MATCHMAKING_BOT_FALLBACK_SECONDS", 10)))
-        except Exception:
-            return 10.0
-
-    def online_players():
-        return socket_state.setdefault("online_players", {})
-
-    def set_presence_status(sid, status):
-        player = online_players().get(sid)
-
-        if player:
-            player["status"] = status
-
-    def presence_payload():
-        online = online_players()
-        return {
-            "online": len(online),
-            "queued": 1 if socket_state.get("waiting_player") else 0,
-            "active_matches": len(active_matches),
-            "pvp_matches": sum(1 for match in active_matches.values() if not match.get("is_bot_match")),
-            "bot_matches": sum(1 for match in active_matches.values() if match.get("is_bot_match")),
-        }
-
-    def emit_presence(to=None):
-        payload = presence_payload()
-
-        if to:
-            socketio.emit("presence_update", payload, to=to)
-        else:
-            socketio.emit("presence_update", payload)
-
-    def emit_matchmaking_status(sid, status, **extra):
-        payload = {
-            "status": status,
-            "fallback_seconds": matchmaking_fallback_seconds(),
-            **extra,
-        }
-        socketio.emit("matchmaking_status", payload, to=sid)
-
-    def log_event(*args, **kwargs):
-        if app and not has_app_context():
-            with app.app_context():
-                return log_rc_event(*args, **kwargs)
-
-        return log_rc_event(*args, **kwargs)
-
-    def add_sid_to_room(sid, room_id):
-        socketio.server.enter_room(sid, room_id, namespace="/")
-
-    def clear_waiting_player():
-        socket_state["waiting_player"] = None
-        socket_state["waiting_since"] = None
-        socket_state["waiting_deck_json"] = None
-        socket_state["queue_generation"] = int(socket_state.get("queue_generation", 0) or 0) + 1
-
-    def release_match_presence(match):
-        for player_key in ("p1", "p2"):
-            sid = match.get(player_key, {}).get("sid")
-
-            if sid and sid in online_players():
-                set_presence_status(sid, "online")
-
-        emit_presence()
-
-    def create_ambitionz_bot(deck_json, sid, difficulty="normal"):
-        bot_user = type("BotUser", (), {})()
-        bot_user.id = 0
-        bot_user.username = "Ambitionz Bot"
-        bot_user.deck_json = deck_json
-
-        bot_object = create_player_object(bot_user, f"bot_{sid}")
-        bot_object["name"] = "Ambitionz Bot"
-        bot_object["sid"] = f"bot_{sid}"
-        bot_object["is_bot"] = True
-        bot_object["difficulty"] = difficulty
-        return bot_object
-
-    def start_match_between_players(waiting_player, player_object, room_id, log_message="PvP match started"):
-        add_sid_to_room(waiting_player["sid"], room_id)
-        add_sid_to_room(player_object["sid"], room_id)
-
-        active_matches[room_id] = {
-            "p1": waiting_player,
-            "p2": player_object,
-            "round": 1,
-            "phase": "Set Phase",
-            "resolving": False,
-            "logs": [],
-        }
-
-        player_rooms[waiting_player["sid"]] = room_id
-        player_rooms[player_object["sid"]] = room_id
-        set_presence_status(waiting_player["sid"], "in_match")
-        set_presence_status(player_object["sid"], "in_match")
-
-        socketio.emit("match_found", {"msg": "Opponent found. Duel started."}, to=room_id)
-        emit_matchmaking_status(waiting_player["sid"], "matched", mode="pvp")
-        emit_matchmaking_status(player_object["sid"], "matched", mode="pvp")
-        emit_log(room_id, "PvP duel started. Choose an Intent, set cards, then press Ready.")
-        log_event(
-            "match",
-            log_message,
-            details={"room_id": room_id},
-            user_id=safe_user_id(waiting_player),
-        )
-        emit_state(room_id)
-        emit_presence()
-
-    def start_bot_fallback_match(player_object, deck_json, sid, reason="timeout"):
-        difficulty = "normal"
-        bot_object = create_ambitionz_bot(deck_json, sid, difficulty)
-        room_id = f"quick_bot_{sid}"
-
-        add_sid_to_room(sid, room_id)
-
-        active_matches[room_id] = {
-            "p1": player_object,
-            "p2": bot_object,
-            "round": 1,
-            "phase": "Set Phase",
-            "resolving": False,
-            "logs": [],
-            "training": True,
-            "is_bot_match": True,
-            "bot_difficulty": difficulty,
-            "matchmaking_fallback": True,
-        }
-
-        player_rooms[sid] = room_id
-        set_presence_status(sid, "in_match")
-
-        socketio.emit("queue_status", {"msg": "No online opponent found. Starting bot duel..."}, to=sid)
-        socketio.emit("match_found", {"msg": "Bot opponent found. Duel started."}, to=sid)
-        emit_matchmaking_status(sid, "fallback", mode="bot", reason=reason)
-        emit_log(room_id, "No online opponent was available. Bot duel started automatically.")
-        emit_log(room_id, "Choose an Intent, set cards, then press Ready.")
-        log_event(
-            "match",
-            "Matchmaking fallback bot match started",
-            details={"room_id": room_id, "difficulty": difficulty, "reason": reason},
-            user_id=safe_user_id(player_object),
-        )
-        emit_state(room_id)
-        emit_presence()
-
-    def play_bot_turn_if_needed(match, room_id, player_key):
-        if not match.get("is_bot_match") or player_key != "p1" or match["p2"].get("ready"):
-            return
-
-        bot_result = bot_choose_play(
-            match["p2"],
-            match["p1"],
-            difficulty=match.get("bot_difficulty", "normal"),
-        )
-
-        emit_log(room_id, f"Ambitionz Bot difficulty: {bot_result.get('profile', match.get('bot_difficulty', 'normal'))}.")
-        emit_log(room_id, f"Ambitionz Bot chose {bot_result['intent']} intent.")
-
-        if bot_result.get("monster"):
-            emit_log(room_id, f"Ambitionz Bot set a monster: {bot_result['monster'].get('name', 'Unknown')}.")
-
-        if bot_result.get("spell_or_trap"):
-            emit_log(room_id, "Ambitionz Bot set a spell/trap.")
-
-        for line in bot_result.get("logs", []):
-            emit_log(room_id, line)
-
-    def run_fallback_after_timeout(sid, queue_generation, fallback_seconds):
-        socketio.sleep(fallback_seconds)
-
-        waiting_player = socket_state.get("waiting_player")
-
-        if not waiting_player or waiting_player.get("sid") != sid:
-            return
-
-        if int(socket_state.get("queue_generation", 0) or 0) != int(queue_generation):
-            return
-
-        if sid in player_rooms or sid not in online_players():
-            clear_waiting_player()
-            emit_presence()
-            return
-
-        deck_json = socket_state.get("waiting_deck_json")
-        clear_waiting_player()
-
-        try:
-            start_bot_fallback_match(waiting_player, deck_json, sid, reason="timeout")
-        except Exception as error:
-            print("QUEUE BOT FALLBACK ERROR:", type(error).__name__, error)
-            set_presence_status(sid, "online")
-            socketio.emit("queue_status", {"msg": "Matchmaking failed. Try Training mode."}, to=sid)
-            emit_matchmaking_status(sid, "error", mode="bot")
-            log_event(
-                "match",
-                "Matchmaking fallback failed",
-                details={"error": f"{type(error).__name__}: {error}"},
-                user_id=safe_user_id(waiting_player),
-                level="error",
-            )
-            emit_presence()
-
-
-    def allow_socket_event(event_name, limit=80, window_seconds=10):
-        sid = getattr(request, "sid", None) or "unknown"
-        key = (sid, event_name)
-        now = time.monotonic()
-        hits = [hit for hit in socket_event_hits.get(key, []) if now - hit <= window_seconds]
-
-        if len(hits) >= limit:
-            socket_event_hits[key] = hits
-            socketio.emit("queue_status", {"msg": "Too many actions. Slow down."}, to=sid)
-            return False
-
-        hits.append(now)
-        socket_event_hits[key] = hits
-        return True
+    matchmaking_fallback_seconds = runtime.matchmaking_fallback_seconds
+    online_players = runtime.online_players
+    set_presence_status = runtime.set_presence_status
+    presence_payload = runtime.presence_payload
+    emit_presence = runtime.emit_presence
+    emit_matchmaking_status = runtime.emit_matchmaking_status
+    log_event = runtime.log_event
+    add_sid_to_room = runtime.add_sid_to_room
+    clear_waiting_player = runtime.clear_waiting_player
+    release_match_presence = runtime.release_match_presence
+    create_ambitionz_bot = runtime.create_ambitionz_bot
+    start_match_between_players = runtime.start_match_between_players
+    play_bot_turn_if_needed = runtime.play_bot_turn_if_needed
+    run_fallback_after_timeout = runtime.run_fallback_after_timeout
+    allow_socket_event = runtime.allow_socket_event
 
     @socketio.on("connect")
     def handle_connect(auth=None):
