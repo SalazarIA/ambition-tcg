@@ -362,3 +362,35 @@
         linear-gradient(90deg, rgba(214, 168, 75, 0.12), rgba(23, 17, 42, 0.16)) !important;
     color: var(--az-gold-light, #F8E7BA) !important;
 }
+
+
+/* =========================================================
+   AMBITIONZ V1.52 — ARENA EASE PASS
+   ========================================================= */
+
+.arena-details-panel-v152.private-room-panel-v125 {
+    padding: 0;
+}
+
+.arena-details-panel-v152 .private-room-copy-v125 {
+    margin-bottom: 12px;
+}
+
+.arena-details-panel-v152 .private-room-row-v125 {
+    margin-bottom: 0;
+}
+
+.arena-primary-actions-v152 #queue-status {
+    margin: 0;
+}
+
+.arena-match-status-v152 .matchmaking-presence-v150,
+.arena-match-status-v152 .matchmaking-countdown-v150 {
+    margin-top: 0;
+}
+
+@media (max-width: 560px) {
+    .private-room-row-v125 {
+        grid-template-columns: 1fr;
+    }
+}

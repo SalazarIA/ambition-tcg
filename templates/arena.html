@@ -116,20 +116,14 @@
                 </section>
             </div>
 
-            <aside class="arena-side-v103">
-                {% if training_mode %}
-                    <section class="training-coach-panel">
-                        <h3>Training Coach</h3>
+            <aside class="arena-side-v103 arena-play-rail-v152">
+                <section class="arena-action-panel arena-primary-actions-v152">
+                    <span class="progression-kicker">Next Move</span>
+                    <h3>{% if training_mode %}Training Duel{% else %}Start or Play{% endif %}</h3>
+                    <p id="arena-action-hint" class="arena-action-hint-v152">Start a duel to draw your hand.</p>
 
-                        <div class="training-step">
-                            <p><strong>Goal:</strong> Learn the loop before fighting real players.</p>
-                            <p><strong>1.</strong> Choose an Intent: Strike, Guard, Focus or Ambition Unleash.</p>
-                            <p><strong>2.</strong> Set one Monster and optionally one Spell/Trap.</p>
-                            <p><strong>3.</strong> Click Ready and read the Battle Log.</p>
-                            <p><strong>Tip:</strong> Ambition Unleash is strongest when you already have pressure and 5 Ambition.</p>
-                        </div>
-
-                        <div class="training-difficulty-box">
+                    {% if training_mode %}
+                        <div class="training-difficulty-box compact-difficulty-v152">
                             <label for="bot-difficulty">Bot Difficulty</label>
                             <select id="bot-difficulty">
                                 <option value="easy">Easy</option>
@@ -137,47 +131,70 @@
                                 <option value="hard">Hard</option>
                             </select>
                         </div>
-                    </section>
-                {% endif %}
+                    {% endif %}
 
-                <section class="first-match-guide-v122">
-                    <span class="progression-kicker">First Match Coach</span>
-                    <h3>Quick Duel Plan</h3>
-                    <ol>
-                        <li>Pick an intent before pressing Ready.</li>
-                        <li>Play one monster if you have enough energy.</li>
-                        <li>Use Guard when low HP. Use Strike when ahead.</li>
-                        <li>After the match, claim missions and improve your deck.</li>
-                    </ol>
-                    <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary full-btn">Rules Guide</a>
+                    <div class="arena-action-grid arena-start-grid-v152">
+                        <button id="join-queue-btn" class="btn full-btn" type="button">
+                            {% if training_mode %}Start Training{% else %}Find Match{% endif %}
+                        </button>
+
+                        {% if not training_mode %}
+                            <button id="join-bot-match-btn" class="btn btn-secondary full-btn" type="button">
+                                Bot Duel
+                            </button>
+                        {% endif %}
+                    </div>
+
+                    {% if not training_mode %}
+                        <button id="cancel-queue-btn" class="btn btn-secondary full-btn" type="button" hidden>
+                            Cancel Search
+                        </button>
+                    {% endif %}
+
+                    <div id="queue-status" class="flash subtle-flash">Not connected.</div>
+
+                    {% if not training_mode %}
+                        <div class="arena-match-status-v152">
+                            <div class="matchmaking-presence-v150" id="presence-status">
+                                Online players: checking...
+                            </div>
+
+                            <div class="matchmaking-countdown-v150" id="matchmaking-countdown">
+                                Find a tester or start a bot duel.
+                            </div>
+                        </div>
+                    {% endif %}
                 </section>
 
+                <section class="arena-action-panel arena-intent-panel-v152">
+                    <span class="progression-kicker">Round Choice</span>
+                    <h3>Intent</h3>
+
+                    <div class="intent-grid-v103">
+                        <button type="button" class="intent-btn-v103" data-intent="Strike">
+                            <strong>Strike</strong>
+                            <span>Attack</span>
+                        </button>
+                        <button type="button" class="intent-btn-v103" data-intent="Guard">
+                            <strong>Guard</strong>
+                            <span>Defend</span>
+                        </button>
+                        <button type="button" class="intent-btn-v103" data-intent="Focus">
+                            <strong>Focus</strong>
+                            <span>Build</span>
+                        </button>
+                        <button type="button" class="intent-btn-v103" data-intent="Ambition Unleash">
+                            <strong>Unleash</strong>
+                            <span>Risk</span>
+                        </button>
+                    </div>
+
+                    <button id="ready-btn" class="btn btn-secondary full-btn" type="button">Ready</button>
+                </section>
 
                 {% if not training_mode %}
-                    <section class="matchmaking-panel-v150">
-                        <div>
-                            <span class="progression-kicker">Casual PvP</span>
-                            <h3>Battle Search</h3>
-                        </div>
-
-                        <div class="matchmaking-presence-v150" id="presence-status">
-                            Online players: checking...
-                        </div>
-
-                        <div class="matchmaking-countdown-v150" id="matchmaking-countdown">
-                            Find a real opponent first. Bot fallback starts only if nobody joins.
-                        </div>
-
-                        <div class="matchmaking-mode-grid-v150" aria-label="Battle modes">
-                            <span>Casual PvP</span>
-                            <span>Bot Duel</span>
-                            <span>Private Duel</span>
-                            <span>Training</span>
-                        </div>
-                    </section>
-
-                    <section class="private-room-panel-v125">
-                        <h3>Private Duel</h3>
+                    <details class="private-room-panel-v125 arena-details-panel-v152">
+                        <summary>Private Duel</summary>
                         <p class="private-room-copy-v125">
                             Enter a 5-character room code to duel a specific tester.
                         </p>
@@ -197,65 +214,21 @@
                                 Join
                             </button>
                         </div>
-
-                        <button id="join-bot-match-btn" class="btn btn-secondary full-btn" type="button">
-                            Bot Duel
-                        </button>
-                    </section>
+                    </details>
                 {% endif %}
 
-
-                <section class="first-session-coach-v126">
-                    <span class="progression-kicker">Beta Duel Coach</span>
-                    <h3>{% if training_mode %}Training objective{% else %}Arena objective{% endif %}</h3>
-
-                    {% if training_mode %}
-                        <p>Use this match to learn the full loop without pressure.</p>
-                        <ol>
-                            <li>Choose an Intent before Ready.</li>
-                            <li>Set one Monster if you have enough energy.</li>
-                            <li>Set one Spell/Trap when it supports your plan.</li>
-                            <li>Press Ready and read the Battle Log after resolution.</li>
-                        </ol>
-                    {% else %}
-                        <p>Find Match now has bot fallback. You should always get a playable duel.</p>
-                        <ol>
-                            <li>Click Find Match to search for a tester or start bot fallback.</li>
-                            <li>Use Bot Duel for direct testing.</li>
-                            <li>Use Private Duel when another tester has your room code.</li>
-                            <li>After the match, check Missions and improve your Deck.</li>
-                        </ol>
-                    {% endif %}
-                </section>
-
-                <section class="arena-action-panel">
-                    <h3>Intent</h3>
-
-                    <div class="intent-grid-v103">
-                        <button type="button" class="intent-btn-v103" data-intent="Strike">Strike</button>
-                        <button type="button" class="intent-btn-v103" data-intent="Guard">Guard</button>
-                        <button type="button" class="intent-btn-v103" data-intent="Focus">Focus</button>
-                        <button type="button" class="intent-btn-v103" data-intent="Ambition Unleash">Ambition Unleash</button>
-                    </div>
-
-                    <div class="arena-action-grid">
-                        <button id="join-queue-btn" class="btn full-btn" type="button">
-                            {% if training_mode %}Start Training{% else %}Find Match{% endif %}
-                        </button>
-
-                        <button id="ready-btn" class="btn btn-secondary full-btn" type="button">Ready</button>
-                    </div>
-
-                    {% if not training_mode %}
-                        <button id="cancel-queue-btn" class="btn btn-secondary full-btn" type="button" hidden>
-                            Cancel Search
-                        </button>
-                    {% endif %}
-                </section>
+                <details class="first-match-guide-v122 arena-details-panel-v152">
+                    <summary>Quick Tips</summary>
+                    <ol>
+                        <li>Pick one intent.</li>
+                        <li>Play one glowing card.</li>
+                        <li>Press Ready.</li>
+                    </ol>
+                    <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary full-btn">Rules Guide</a>
+                </details>
 
                 <section class="arena-log-panel">
                     <h3>Battle Log</h3>
-                    <div id="queue-status" class="flash subtle-flash">Not connected.</div>
                     <div id="battle-log" class="battle-log-v103"></div>
                 </section>
             </aside>

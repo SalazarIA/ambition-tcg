@@ -57,6 +57,75 @@ function updateIntentVisuals() {
     }
 }
 
+function hasPlayableCard(state) {
+    const cards = state?.me?.hand || [];
+    const me = state?.me || {};
+    const energy = Number(me.energy || 0);
+    const monsterOccupied = Boolean(me.field_m);
+    const spellTrapOccupied = Boolean(me.field_st);
+    const lockedByState = Boolean(me.ready || state?.resolving);
+
+    return cards.some((card) => {
+        const cost = Number(card?.cost || 0);
+        const type = String(card?.type || "");
+        const zoneBlocked = (type === "Monster" && monsterOccupied) || (["Spell", "Trap"].includes(type) && spellTrapOccupied);
+
+        return !lockedByState && !zoneBlocked && cost <= energy;
+    });
+}
+
+function setArenaButtonState(state) {
+    const hasBattle = Boolean(state?.room_id);
+    const me = state?.me || {};
+    const lockedByBattle = Boolean(state?.resolving || me.ready);
+    const readyButton = DOM.byId("ready-btn");
+
+    DOM.qsa(".intent-btn-v103").forEach((button) => {
+        button.disabled = !hasBattle || lockedByBattle;
+    });
+
+    if (readyButton) {
+        readyButton.disabled = !hasBattle || lockedByBattle;
+    }
+}
+
+function updateArenaEaseState(state) {
+    const body = document.body;
+
+    if (!body) {
+        return;
+    }
+
+    const hasBattle = Boolean(state?.room_id);
+    const me = state?.me || {};
+    const enemy = state?.enemy || {};
+    const playableCard = hasBattle && hasPlayableCard(state);
+    const needsReady = hasBattle && !state?.resolving && !me.ready;
+
+    body.classList.toggle("arena-has-match-v152", hasBattle);
+    body.classList.toggle("arena-needs-match-v152", !hasBattle);
+    body.classList.toggle("arena-needs-card-v152", playableCard);
+    body.classList.toggle("arena-needs-ready-v152", needsReady && !playableCard);
+    body.classList.toggle("arena-waiting-v152", Boolean(hasBattle && me.ready && !state?.resolving));
+    body.classList.toggle("arena-resolving-v152", Boolean(state?.resolving));
+
+    if (!hasBattle) {
+        DOM.setText("arena-action-hint", "Start a duel to draw your hand.");
+    } else if (state?.resolving) {
+        DOM.setText("arena-action-hint", "Round resolving. Watch the Battle Log.");
+    } else if (me.ready) {
+        DOM.setText("arena-action-hint", "Ready locked. Waiting for the round.");
+    } else if (playableCard) {
+        DOM.setText("arena-action-hint", "Play one glowing card, then press Ready.");
+    } else {
+        DOM.setText("arena-action-hint", "Choose intent, then press Ready.");
+    }
+
+    DOM.setText("my-field-status", me.ready ? "Ready" : (playableCard ? "Play a card" : "Choose intent"));
+    DOM.setText("enemy-field-status", enemy.ready ? "Ready" : (hasBattle ? "Choosing" : "Waiting"));
+    setArenaButtonState(state);
+}
+
 function normalizeBattleLogMessage(message) {
     const text = String(message || "Battle event.");
 
@@ -295,6 +364,7 @@ function renderState(state) {
     setBodyBattleState(latestState);
     updateReadyVisuals(latestState);
     updateIntentVisuals();
+    updateArenaEaseState(latestState);
 
     window.dispatchEvent(new CustomEvent("ambition:state_update", { detail: latestState }));
 }
@@ -387,22 +457,33 @@ function updatePresence(data) {
     );
 }
 
-function setIntent(intent) {
+function setIntent(intent, options = {}) {
     selectedIntent = intent || "Strike";
+    const shouldEmit = options.emit !== false;
+    const shouldLog = options.log !== false;
 
     DOM.qsa(".intent-btn-v103").forEach((button) => {
         button.classList.toggle("active", button.dataset.intent === selectedIntent);
     });
 
     updateIntentVisuals();
+    updateArenaEaseState(latestState);
+
+    if (!shouldEmit || !latestState?.room_id) {
+        return;
+    }
 
     if (selectedIntent === "Ambition Unleash") {
         socket.emit("toggle_unleash");
         setQueueStatus("Ambition Unleash armed: high pressure, high risk.");
-        logLine("Ambition Unleash selected. Commit only when the reward is worth the exposure.");
+        if (shouldLog) {
+            logLine("Ambition Unleash selected. Commit only when the reward is worth the exposure.");
+        }
     } else {
         socket.emit("set_intent", { intent: selectedIntent });
-        logLine(`Intent selected: ${selectedIntent}`);
+        if (shouldLog) {
+            logLine(`Intent selected: ${selectedIntent}`);
+        }
     }
 }
 
@@ -460,7 +541,8 @@ function bootArenaControls() {
         socket.emit("cancel_queue");
     });
 
-    setIntent(selectedIntent);
+    updateArenaEaseState(latestState);
+    setIntent(selectedIntent, { emit: false, log: false });
 }
 
 document.addEventListener("DOMContentLoaded", bootArenaControls);

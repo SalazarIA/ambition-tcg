@@ -22,3 +22,34 @@ def test_support_page_uses_scoped_css_module():
     assert "css/support.css" in template
     assert "support-page" in template
     assert ".support-page" in css
+
+
+def test_arena_keeps_socket_critical_ids_after_ux_polish():
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    required_ids = [
+        "join-queue-btn",
+        "ready-btn",
+        "join-private-room-btn",
+        "join-bot-match-btn",
+        "private-room-code",
+        "queue-status",
+        "battle-log",
+        "hand",
+        "my-name",
+        "enemy-name",
+        "my-hp",
+        "enemy-hp",
+        "my-deck",
+        "enemy-deck",
+        "my-ready",
+        "enemy-ready",
+        "my-monster-slot",
+        "enemy-monster-slot",
+        "my-st-slot",
+        "enemy-st-slot",
+        "phase-label",
+        "round-label",
+    ]
+
+    for element_id in required_ids:
+        assert f'id="{element_id}"' in template

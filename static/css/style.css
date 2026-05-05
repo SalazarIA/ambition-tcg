@@ -7867,6 +7867,171 @@ button.btn:disabled,
         rgba(5, 5, 11, 0.48);
 }
 
+.arena-play-rail-v152 {
+    position: sticky;
+    top: 14px;
+}
+
+.arena-primary-actions-v152,
+.arena-intent-panel-v152 {
+    display: grid;
+    gap: 12px;
+}
+
+.arena-primary-actions-v152 {
+    border-color: rgba(248, 231, 186, 0.24);
+    background:
+        radial-gradient(circle at 16% 0%, rgba(214, 168, 75, 0.18), transparent 36%),
+        linear-gradient(180deg, rgba(247, 244, 236, 0.075), rgba(247, 244, 236, 0.026)),
+        rgba(8, 8, 20, 0.92);
+}
+
+.arena-primary-actions-v152 h3,
+.arena-intent-panel-v152 h3 {
+    margin: 0;
+}
+
+.arena-action-hint-v152 {
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid rgba(248, 231, 186, 0.16);
+    border-radius: var(--az-radius);
+    background:
+        linear-gradient(90deg, rgba(214, 168, 75, 0.10), transparent 72%),
+        rgba(0, 0, 0, 0.22);
+    color: var(--az-gold-light);
+    font-weight: 850;
+    line-height: 1.35;
+}
+
+.arena-start-grid-v152 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.arena-start-grid-v152 .btn {
+    min-height: 52px;
+}
+
+.arena-has-match-v152 .arena-start-grid-v152,
+.arena-has-match-v152 #cancel-queue-btn {
+    display: none;
+}
+
+.arena-match-status-v152 {
+    display: grid;
+    gap: 8px;
+}
+
+.arena-details-panel-v152 {
+    border: 1px solid rgba(248, 231, 186, 0.13);
+    border-radius: var(--az-radius-lg);
+    background:
+        linear-gradient(180deg, rgba(247, 244, 236, 0.05), rgba(247, 244, 236, 0.018)),
+        rgba(7, 7, 18, 0.66);
+    box-shadow: var(--az-control-shadow);
+}
+
+.arena-details-panel-v152 summary {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    color: var(--az-gold-light);
+    cursor: pointer;
+    font-weight: 950;
+    list-style: none;
+}
+
+.arena-details-panel-v152 summary::-webkit-details-marker {
+    display: none;
+}
+
+.arena-details-panel-v152 summary::after {
+    content: "+";
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(248, 231, 186, 0.16);
+    border-radius: 999px;
+    color: var(--az-gold-light);
+}
+
+.arena-details-panel-v152[open] summary::after {
+    content: "-";
+}
+
+.arena-details-panel-v152 > :not(summary) {
+    margin-left: 14px;
+    margin-right: 14px;
+}
+
+.arena-details-panel-v152 > :last-child {
+    margin-bottom: 14px;
+}
+
+.arena-details-panel-v152 ol {
+    margin-top: 0;
+    color: var(--az-muted-text);
+}
+
+.intent-btn-v103 {
+    display: grid;
+    gap: 2px;
+    align-content: center;
+    text-align: left;
+}
+
+.intent-btn-v103 strong,
+.intent-btn-v103 span {
+    position: relative;
+    z-index: 1;
+}
+
+.intent-btn-v103 strong {
+    color: inherit;
+    font-size: 0.98rem;
+}
+
+.intent-btn-v103 span {
+    color: var(--az-muted-text);
+    font-size: 0.76rem;
+    font-weight: 850;
+}
+
+.intent-btn-v103.active span,
+.intent-btn-v103:hover span {
+    color: var(--az-gold-light);
+}
+
+.arena-needs-card-v152 .hand-zone-v151 {
+    border-color: rgba(80, 255, 150, 0.22);
+    box-shadow:
+        var(--az-shadow),
+        0 0 28px rgba(80, 255, 150, 0.08);
+}
+
+.arena-needs-ready-v152 .arena-intent-panel-v152 {
+    border-color: rgba(248, 231, 186, 0.28);
+}
+
+.arena-waiting-v152 .arena-action-hint-v152 {
+    border-color: rgba(77, 184, 255, 0.22);
+    background: rgba(77, 184, 255, 0.08);
+    color: #C9EDFF;
+}
+
+.arena-resolving-v152 .arena-log-panel {
+    border-color: rgba(214, 168, 75, 0.28);
+}
+
+.arena-needs-match-v152 #ready-btn,
+.arena-needs-match-v152 .intent-btn-v103 {
+    opacity: 0.56;
+}
+
 .deck-filter-panel {
     background:
         linear-gradient(90deg, rgba(214, 168, 75, 0.09), transparent 42%),
@@ -8078,6 +8243,15 @@ button.btn:disabled,
 
     .battle-log-v103 {
         max-height: 300px;
+    }
+
+    .arena-play-rail-v152 {
+        position: static;
+    }
+
+    .arena-start-grid-v152,
+    .intent-grid-v103 {
+        grid-template-columns: 1fr;
     }
 }
 
