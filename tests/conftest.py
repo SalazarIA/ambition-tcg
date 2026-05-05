@@ -23,6 +23,7 @@ os.environ["PASSWORD_MIN_LENGTH"] = "10"
 os.environ["PASSWORD_REQUIRE_COMPLEXITY"] = "true"
 os.environ["LOGIN_ATTEMPT_LIMIT"] = "8"
 os.environ["LOGIN_ATTEMPT_WINDOW_MINUTES"] = "15"
+os.environ["MATCHMAKING_BOT_FALLBACK_SECONDS"] = "10"
 os.environ["ENVIRONMENT"] = "testing"
 
 
@@ -46,6 +47,10 @@ def flask_app():
         ambition_app.player_rooms.clear()
         ambition_app.private_waiting_rooms.clear()
         ambition_app.socket_state["waiting_player"] = None
+        ambition_app.socket_state["waiting_since"] = None
+        ambition_app.socket_state["waiting_deck_json"] = None
+        ambition_app.socket_state["queue_generation"] = 0
+        ambition_app.socket_state.setdefault("online_players", {}).clear()
         ambition_app.socket_event_hits.clear()
         ambition_app.login_attempts.clear()
         yield ambition_app.app

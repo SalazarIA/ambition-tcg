@@ -138,6 +138,8 @@ window.socket = socket;
 
 let latestState = null;
 let selectedIntent = "Strike";
+let matchmakingTimer = null;
+let matchmakingDeadline = 0;
 
 const DOM = window.AmbitionzDOM || {
     byId: (id) => document.getElementById(id),
@@ -289,6 +291,73 @@ function setQueueStatus(message) {
     DOM.setText("queue-status", message || "Status updated.");
 }
 
+function clearMatchmakingCountdown(message) {
+    if (matchmakingTimer) {
+        window.clearInterval(matchmakingTimer);
+        matchmakingTimer = null;
+    }
+
+    matchmakingDeadline = 0;
+
+    if (message) {
+        DOM.setText("matchmaking-countdown", message);
+    }
+
+    const countdown = DOM.byId("matchmaking-countdown");
+
+    if (countdown) {
+        countdown.classList.remove("searching", "fallback");
+    }
+}
+
+function tickMatchmakingCountdown() {
+    const remaining = Math.max(0, Math.ceil((matchmakingDeadline - Date.now()) / 1000));
+    const countdown = DOM.byId("matchmaking-countdown");
+
+    if (!countdown) {
+        return;
+    }
+
+    countdown.classList.add("searching");
+    countdown.classList.remove("fallback");
+    countdown.textContent = remaining > 0
+        ? `Searching real players. Bot fallback in ${remaining}s.`
+        : "No real opponent yet. Starting bot fallback...";
+}
+
+function startMatchmakingCountdown(seconds) {
+    clearMatchmakingCountdown();
+
+    matchmakingDeadline = Date.now() + Math.max(0, Number(seconds || 0)) * 1000;
+    tickMatchmakingCountdown();
+    matchmakingTimer = window.setInterval(tickMatchmakingCountdown, 250);
+}
+
+function setSearchUi(searching) {
+    document.body.classList.toggle("matchmaking-searching-v150", Boolean(searching));
+    setButtonBusy("join-queue-btn", Boolean(searching), "Searching...");
+
+    const cancelButton = DOM.byId("cancel-queue-btn");
+
+    if (cancelButton) {
+        cancelButton.hidden = !searching;
+        cancelButton.disabled = false;
+    }
+}
+
+function updatePresence(data) {
+    const online = Number(data?.online || 0);
+    const queued = Number(data?.queued || 0);
+    const activeMatches = Number(data?.active_matches || 0);
+    const pvpMatches = Number(data?.pvp_matches || 0);
+    const botMatches = Number(data?.bot_matches || 0);
+
+    DOM.setText(
+        "presence-status",
+        `${online} online • ${queued} searching • ${activeMatches} active (${pvpMatches} PvP / ${botMatches} bot)`
+    );
+}
+
 function setIntent(intent) {
     selectedIntent = intent || "Strike";
 
@@ -319,11 +388,13 @@ function bootArenaControls() {
         const difficulty = difficultySelect ? difficultySelect.value : "normal";
 
         setQueueStatus(trainingMode ? `Starting ${difficulty} training...` : "Searching for opponent...");
-        setButtonBusy("join-queue-btn", true, trainingMode ? "Starting..." : "Searching...");
 
         if (trainingMode) {
+            setButtonBusy("join-queue-btn", true, "Starting...");
             socket.emit("join_training", { difficulty });
         } else {
+            setSearchUi(true);
+            startMatchmakingCountdown(10);
             socket.emit("join_queue");
         }
     });
@@ -355,6 +426,11 @@ function bootArenaControls() {
         socket.emit("join_bot_match");
     });
 
+    DOM.onClick("cancel-queue-btn", () => {
+        setQueueStatus("Cancelling match search...");
+        socket.emit("cancel_queue");
+    });
+
     setIntent(selectedIntent);
 }
 
@@ -371,6 +447,8 @@ socket.on("connect", () => {
 });
 
 socket.on("disconnect", () => {
+    clearMatchmakingCountdown("Disconnected from matchmaking.");
+    setSearchUi(false);
     setButtonBusy("join-queue-btn", false);
     setButtonBusy("join-bot-match-btn", false);
     setQueueStatus("Disconnected.");
@@ -383,10 +461,61 @@ socket.on("queue_status", (data) => {
 
 socket.on("match_found", (data) => {
     document.body.classList.remove("overreach-armed-v112");
+    clearMatchmakingCountdown("Match found. Entering battle.");
+    setSearchUi(false);
     setButtonBusy("join-queue-btn", false);
     setButtonBusy("join-bot-match-btn", false);
     setQueueStatus(data?.msg || "Match found.");
     logLine(data?.msg || "Match found.");
+});
+
+socket.on("matchmaking_status", (data) => {
+    const status = data?.status || "idle";
+
+    if (status === "searching") {
+        if (data?.mode === "pvp") {
+            setSearchUi(true);
+            startMatchmakingCountdown(data?.fallback_seconds || 10);
+        } else {
+            setSearchUi(false);
+            clearMatchmakingCountdown("Private room created. Waiting for the invited tester.");
+        }
+
+        return;
+    }
+
+    if (status === "fallback") {
+        clearMatchmakingCountdown("No real player found. Bot duel started.");
+        const countdown = DOM.byId("matchmaking-countdown");
+
+        if (countdown) {
+            countdown.classList.add("fallback");
+        }
+
+        setSearchUi(false);
+        return;
+    }
+
+    if (status === "matched") {
+        clearMatchmakingCountdown("Real opponent found.");
+        setSearchUi(false);
+        return;
+    }
+
+    if (status === "cancelled") {
+        clearMatchmakingCountdown("Search cancelled.");
+        setSearchUi(false);
+        return;
+    }
+
+    if (status === "error") {
+        clearMatchmakingCountdown("Matchmaking needs another try.");
+        setSearchUi(false);
+    }
+});
+
+socket.on("presence_update", (data) => {
+    updatePresence(data);
 });
 
 socket.on("game_state_update", (state) => {
@@ -402,6 +531,8 @@ socket.on("battle_log", (data) => {
 });
 
 socket.on("game_over", (data) => {
+    clearMatchmakingCountdown("Match complete.");
+    setSearchUi(false);
     setButtonBusy("join-queue-btn", false);
     setButtonBusy("join-bot-match-btn", false);
     logLine(`Game Over: ${data?.result || "Unknown"}`);

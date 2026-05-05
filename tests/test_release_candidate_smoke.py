@@ -1,6 +1,6 @@
 from models import SystemLog, User, db
 
-from app import active_matches, issue_password_reset_token
+from app import active_matches, issue_password_reset_token, socket_state
 from conftest import create_user, csrf_token_from_response, login_session
 
 
@@ -150,3 +150,95 @@ def test_socket_training_smoke_starts_match(client, flask_app, socketio_server):
     assert "match_found" in event_names
     assert "game_state_update" in event_names
     assert active_matches
+
+
+def test_socket_public_queue_matches_two_players_before_bot_fallback(flask_app, socketio_server):
+    flask_app.config["MATCHMAKING_BOT_FALLBACK_SECONDS"] = 0.25
+    player_one = create_user(username="queueone", email="queueone@example.com")
+    player_two = create_user(username="queuetwo", email="queuetwo@example.com")
+
+    with flask_app.test_client() as client_one, flask_app.test_client() as client_two:
+        login_session(client_one, player_one)
+        login_session(client_two, player_two)
+        socket_one = socketio_server.test_client(flask_app, flask_test_client=client_one)
+        socket_two = socketio_server.test_client(flask_app, flask_test_client=client_two)
+        socket_one.get_received()
+        socket_two.get_received()
+
+        socket_one.emit("join_queue")
+        first_events = socket_one.get_received()
+
+        assert "match_found" not in {event["name"] for event in first_events}
+        assert socket_state["waiting_player"]["name"] == player_one.username
+
+        socket_two.emit("join_queue")
+        socketio_server.sleep(0.05)
+        event_names_one = {event["name"] for event in socket_one.get_received()}
+        event_names_two = {event["name"] for event in socket_two.get_received()}
+
+        assert "match_found" in event_names_one
+        assert "match_found" in event_names_two
+        assert socket_state["waiting_player"] is None
+        assert len(active_matches) == 1
+
+        match = next(iter(active_matches.values()))
+        assert match["p1"]["name"] == player_one.username
+        assert match["p2"]["name"] == player_two.username
+        assert not match.get("is_bot_match")
+
+        socket_one.disconnect()
+        socket_two.disconnect()
+
+
+def test_socket_public_queue_falls_back_to_bot_after_timeout(flask_app, socketio_server):
+    flask_app.config["MATCHMAKING_BOT_FALLBACK_SECONDS"] = 0.05
+    player = create_user(username="fallback", email="fallback@example.com")
+
+    with flask_app.test_client() as client:
+        login_session(client, player)
+        socket_client = socketio_server.test_client(flask_app, flask_test_client=client)
+        socket_client.get_received()
+
+        socket_client.emit("join_queue")
+        socketio_server.sleep(0.12)
+        received = socket_client.get_received()
+        event_names = {event["name"] for event in received}
+
+        assert "match_found" in event_names
+        assert socket_state["waiting_player"] is None
+        assert len(active_matches) == 1
+
+        match = next(iter(active_matches.values()))
+        assert match.get("is_bot_match") is True
+        assert match.get("matchmaking_fallback") is True
+        assert match["p2"]["name"] == "Ambitionz Bot"
+
+        socket_client.disconnect()
+
+
+def test_socket_public_queue_can_be_cancelled(flask_app, socketio_server):
+    flask_app.config["MATCHMAKING_BOT_FALLBACK_SECONDS"] = 0.2
+    player = create_user(username="cancelqueue", email="cancelqueue@example.com")
+
+    with flask_app.test_client() as client:
+        login_session(client, player)
+        socket_client = socketio_server.test_client(flask_app, flask_test_client=client)
+        socket_client.get_received()
+
+        socket_client.emit("join_queue")
+        assert socket_state["waiting_player"]["name"] == player.username
+
+        socket_client.emit("cancel_queue")
+        socketio_server.sleep(0.25)
+        received = socket_client.get_received()
+        statuses = [
+            event["args"][0].get("status")
+            for event in received
+            if event["name"] == "matchmaking_status"
+        ]
+
+        assert "cancelled" in statuses
+        assert socket_state["waiting_player"] is None
+        assert not active_matches
+
+        socket_client.disconnect()

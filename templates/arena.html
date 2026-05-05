@@ -134,21 +134,42 @@
                     </section>
                 {% endif %}
 
-                
-                    <section class="first-match-guide-v122">
-                        <span class="progression-kicker">First Match Coach</span>
-                        <h3>Quick Duel Plan</h3>
-                        <ol>
-                            <li>Pick an intent before pressing Ready.</li>
-                            <li>Play one monster if you have enough energy.</li>
-                            <li>Use Guard when low HP. Use Strike when ahead.</li>
-                            <li>After the match, claim missions and improve your deck.</li>
-                        </ol>
-                        <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary full-btn">Rules Guide</a>
-                    </section>
+                <section class="first-match-guide-v122">
+                    <span class="progression-kicker">First Match Coach</span>
+                    <h3>Quick Duel Plan</h3>
+                    <ol>
+                        <li>Pick an intent before pressing Ready.</li>
+                        <li>Play one monster if you have enough energy.</li>
+                        <li>Use Guard when low HP. Use Strike when ahead.</li>
+                        <li>After the match, claim missions and improve your deck.</li>
+                    </ol>
+                    <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary full-btn">Rules Guide</a>
+                </section>
 
 
                 {% if not training_mode %}
+                    <section class="matchmaking-panel-v150">
+                        <div>
+                            <span class="progression-kicker">Casual PvP</span>
+                            <h3>Battle Search</h3>
+                        </div>
+
+                        <div class="matchmaking-presence-v150" id="presence-status">
+                            Online players: checking...
+                        </div>
+
+                        <div class="matchmaking-countdown-v150" id="matchmaking-countdown">
+                            Find a real opponent first. Bot fallback starts only if nobody joins.
+                        </div>
+
+                        <div class="matchmaking-mode-grid-v150" aria-label="Battle modes">
+                            <span>Casual PvP</span>
+                            <span>Bot Duel</span>
+                            <span>Private Duel</span>
+                            <span>Training</span>
+                        </div>
+                    </section>
+
                     <section class="private-room-panel-v125">
                         <h3>Private Duel</h3>
                         <p class="private-room-copy-v125">
@@ -201,7 +222,7 @@
                     {% endif %}
                 </section>
 
-<section class="arena-action-panel">
+                <section class="arena-action-panel">
                     <h3>Intent</h3>
 
                     <div class="intent-grid-v103">
@@ -218,6 +239,12 @@
 
                         <button id="ready-btn" class="btn btn-secondary full-btn" type="button">Ready</button>
                     </div>
+
+                    {% if not training_mode %}
+                        <button id="cancel-queue-btn" class="btn btn-secondary full-btn" type="button" hidden>
+                            Cancel Search
+                        </button>
+                    {% endif %}
                 </section>
 
                 <section class="arena-log-panel">

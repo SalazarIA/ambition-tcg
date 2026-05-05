@@ -84,7 +84,13 @@ serializer = itsdangerous.URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 active_matches = {}
 player_rooms = {}
-socket_state = {"waiting_player": None}
+socket_state = {
+    "waiting_player": None,
+    "waiting_since": None,
+    "waiting_deck_json": None,
+    "queue_generation": 0,
+    "online_players": {},
+}
 socket_event_hits = {}
 private_waiting_rooms = {}
 login_attempts = {}
@@ -2956,6 +2962,7 @@ def register_socket_handlers():
         "resolve_battle": resolve_battle,
         "safe_user_id": safe_user_id,
         "set_player_intent": set_player_intent,
+        "app": app,
     })
 
 

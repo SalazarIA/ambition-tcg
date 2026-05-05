@@ -90,6 +90,7 @@ class Config:
     FEEDBACK_DAILY_LIMIT = int(os.environ.get("FEEDBACK_DAILY_LIMIT", "10"))
     PASSWORD_MIN_LENGTH = int(os.environ.get("PASSWORD_MIN_LENGTH", "10"))
     PASSWORD_REQUIRE_COMPLEXITY = as_bool(os.environ.get("PASSWORD_REQUIRE_COMPLEXITY"), default=True)
+    MATCHMAKING_BOT_FALLBACK_SECONDS = float(os.environ.get("MATCHMAKING_BOT_FALLBACK_SECONDS", "10"))
 
     BETA_INVITE_REQUIRED = as_bool(os.environ.get("BETA_INVITE_REQUIRED"), default=False)
     BETA_AUTO_VERIFY = as_bool(os.environ.get("BETA_AUTO_VERIFY"), default=True)

@@ -3,7 +3,19 @@
 ## Git status
 
 ```
-?? tools/deep_audit.py
+M .env.example
+ M app.py
+ M config.py
+ M env.example
+ M render.yaml
+ M reports/balance_report_v105.md
+ M reports/deep_audit_report.md
+ M sockets/game_socket.py
+ M static/css/style.css
+ M static/js/game.js
+ M templates/arena.html
+ M tests/conftest.py
+ M tests/test_release_candidate_smoke.py
 
 ```
 
@@ -17,7 +29,6 @@ Listing 'services/admin'...
 Listing 'services/database'...
 Listing 'services/security'...
 Listing 'tools'...
-Compiling 'tools/deep_audit.py'...
 
 ```
 
@@ -37,6 +48,9 @@ Compiling 'tools/deep_audit.py'...
 
 ## Flask routes
 
+- `admin_whoami`: `"/admin/whoami"`
+- `admin_ping`: `"/admin/ping"`
+- `debug_routes`: `"/debug/routes"`
 - `admin_dev_tools`: `"/admin/dev-tools"`
 - `admin_test_email`: `"/admin/test-email", methods=["POST"]`
 - `admin_reset_test_users`: `"/admin/reset-test-users", methods=["POST"]`
@@ -93,63 +107,60 @@ Compiling 'tools/deep_audit.py'...
 
 ## Socket.IO handlers
 
-- `join_training` -> `handle_join_training`
-- `join_queue` -> `handle_join_queue`
-- `set_intent` -> `set_intent`
-- `play_to_field` -> `play_to_field`
-- `choose_intent` -> `choose_intent`
-- `toggle_unleash` -> `toggle_unleash`
-- `declare_ready` -> `declare_ready`
-- `join_bot_match` -> `handle_join_bot_match`
-- `join_private_room` -> `handle_join_private_room`
-- `disconnect` -> `handle_disconnect`
 
 No duplicate socket handlers found.
 
 ## Auth/login scan
 
-87: `login_attempts = {}`
-166: `request.form.get("_csrf_token")`
-192: `if getattr(user, "account_status", "active") in ["banned", "disabled"]:`
-199: `user.is_verified = True`
-200: `user.account_status = "active"`
-278: `received = request.form.get("confirmation", "").strip()`
-571: `email = request.form.get("email", "").strip().lower()`
-690: `verified_users=User.query.filter_by(is_verified=True).count(),`
-800: `target.account_status = "banned"`
-823: `target.account_status = "active" if target.is_verified else "unverified"`
-844: `max_uses = int(request.form.get("max_uses", "1") or 1)`
-845: `code = request.form.get("code", "").strip().upper() or generate_invite_code()`
-940: `report.status = request.form.get("status", report.status)`
-1043: `verified_users = User.query.filter_by(is_verified=True).count()`
-1184: `email = request.form.get("email", "").strip().lower()`
-1192: `if user.is_verified:`
-1408: `"status": getattr(user, "account_status", "beta"),`
-1410: `"is_verified": bool(getattr(user, "is_verified", False)),`
-1500: `email = request.form.get("email", "").strip().lower()`
-1537: `password = request.form.get("password", "").strip()`
-1641: `payload = request.get_json(silent=True) or request.form.to_dict() or {}`
-1701: `username = request.form.get("username", "").strip()`
-1702: `email = request.form.get("email", "").strip().lower()`
-1703: `password = request.form.get("password", "").strip()`
-1704: `invite_code = request.form.get("invite_code", "").strip().upper()`
-1738: `account_status="unverified",`
-1798: `email = request.form.get("email", "").strip().lower()`
-1799: `password = request.form.get("password", "").strip()`
-1800: `invite_code = request.form.get("invite_code", "").strip().upper()`
-1803: `attempts = login_attempts.get(attempt_key, 0)`
-1811: `if not user or not user.check_password(password):`
-1812: `login_attempts[attempt_key] = attempts + 1`
-1835: `if not user.is_verified:`
-1846: `login_attempts.pop(attempt_key, None)`
-2064: `selected_pack_key = request.form.get("pack_key") or request.args.get("pack") or "elemental"`
-2193: `selected_cards = request.form.getlist("deck_cards")`
-3308: `category = request.form.get("category", "general").strip() or "general"`
-3309: `severity = request.form.get("severity", "normal").strip() or "normal"`
-3310: `title = request.form.get("title", "").strip()`
-3311: `message = request.form.get("message", "").strip()`
-3312: `page_url = request.form.get("page_url", "").strip()`
-3534: `verified_users = User.query.filter_by(is_verified=True).count()`
+96: `login_attempts = {}`
+175: `request.form.get("_csrf_token")`
+206: `if getattr(user, "account_status", "active") in ["banned", "disabled"]:`
+240: `return login_attempts.get(fingerprint, 0)`
+253: `login_attempts[fingerprint] = login_attempts.get(fingerprint, 0) + 1`
+256: `def reset_login_attempts(fingerprint):`
+257: `login_attempts.pop(fingerprint, None)`
+285: `user.is_verified = True`
+286: `user.account_status = "active"`
+364: `received = request.form.get("confirmation", "").strip()`
+660: `if not bool(getattr(user, "is_verified", False)):`
+664: `if getattr(user, "account_status", "active") in ["banned", "disabled"]:`
+690: `"is_verified": bool(user.is_verified),`
+692: `"account_status": getattr(user, "account_status", None),`
+749: `email = request.form.get("email", "").strip().lower()`
+868: `verified_users=User.query.filter_by(is_verified=True).count(),`
+986: `target.account_status = "banned"`
+1009: `target.account_status = "active" if target.is_verified else "unverified"`
+1030: `max_uses = int(request.form.get("max_uses", "1") or 1)`
+1031: `code = request.form.get("code", "").strip().upper() or generate_invite_code()`
+1126: `report.status = request.form.get("status", report.status)`
+1231: `verified_users = User.query.filter_by(is_verified=True).count()`
+1377: `email = request.form.get("email", "").strip().lower()`
+1385: `if user.is_verified:`
+1601: `"status": getattr(user, "account_status", "beta"),`
+1603: `"is_verified": bool(getattr(user, "is_verified", False)),`
+1693: `email = request.form.get("email", "").strip().lower()`
+1732: `password = request.form.get("password", "").strip()`
+1840: `payload = request.get_json(silent=True) or request.form.to_dict() or {}`
+1900: `username = request.form.get("username", "").strip()`
+1901: `email = request.form.get("email", "").strip().lower()`
+1902: `password = request.form.get("password", "").strip()`
+1903: `invite_code = request.form.get("invite_code", "").strip().upper()`
+1942: `account_status="active" if auto_verify else "unverified",`
+1944: `is_verified=auto_verify,`
+2004: `email = request.form.get("email", "").strip().lower()`
+2005: `password = request.form.get("password", "").strip()`
+2006: `invite_code = request.form.get("invite_code", "").strip().upper()`
+2017: `if not user or not user.check_password(password):`
+2035: `if not bool(getattr(user, "is_verified", False)):`
+2045: `reset_login_attempts(attempt_key)`
+2263: `selected_pack_key = request.form.get("pack_key") or request.args.get("pack") or "elemental"`
+2392: `selected_cards = request.form.getlist("deck_cards")`
+3022: `category = request.form.get("category", "general").strip() or "general"`
+3023: `severity = request.form.get("severity", "normal").strip() or "normal"`
+3024: `title = request.form.get("title", "").strip()`
+3025: `message = request.form.get("message", "").strip()`
+3026: `page_url = request.form.get("page_url", "").strip()`
+3248: `verified_users = User.query.filter_by(is_verified=True).count()`
 
 ## Model scan
 
@@ -164,27 +175,23 @@ No duplicate socket handlers found.
 67: `return pbkdf2_sha256.verify(password, self.password_hash)`
 175: `class UserMission(db.Model):`
 230: `"ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE",`
-239: `"ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0",`
-400: `"ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(40) DEFAULT 'active' NOT NULL",`
-407: `"UPDATE users SET account_status = 'active' WHERE is_verified = true AND (account_status IS NULL OR account_status = 'unverified')",`
-408: `"UPDATE users SET account_status = 'unverified' WHERE is_verified = false AND account_status IS NULL",`
-420: `"account_status": "account_status VARCHAR(40) DEFAULT 'active' NOT NULL",`
+244: `"is_admin": "is_admin BOOLEAN NOT NULL DEFAULT 0",`
+403: `"ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(40) DEFAULT 'active' NOT NULL",`
+410: `"UPDATE users SET account_status = 'active' WHERE is_verified = true AND (account_status IS NULL OR account_status = 'unverified')",`
+411: `"UPDATE users SET account_status = 'unverified' WHERE is_verified = false AND account_status IS NULL",`
+423: `"account_status": "account_status VARCHAR(40) DEFAULT 'active' NOT NULL",`
 
 ## Rough undefined function scan in app.py
 
 - `abort`
 - `apply_match_rewards`
-- `bot_choose_play`
-- `bot_play_turn`
+- `apply_security_headers`
 - `build_match_summary_lines`
 - `build_playable_deck`
-- `can_pay_cost`
-- `cancel_unleash`
 - `cards_from_ids`
 - `claim_mission`
 - `clear_gameplay_data`
 - `collection_summary`
-- `create_bot_player`
 - `create_player_state`
 - `create_starter_deck_from_collection`
 - `deck_analysis_v115`
@@ -200,114 +207,113 @@ No duplicate socket handlers found.
 - `increment_mission`
 - `is_smtp_configured`
 - `is_valid_room_code`
-- `join_room`
 - `load_card_ids`
-- `normalize_intent`
 - `normalize_room_code`
-- `pay_card_cost`
+- `password_policy_errors`
 - `player_display_name`
 - `predicate`
 - `record_match_telemetry`
-- `register_card_played_for_ambition`
-- `request_unleash`
+- `register_game_socket_handlers`
 - `reset_player_energy`
-- `resolve_battle`
 - `reward_line`
 - `safe_user_id`
 - `send_password_reset_email`
 - `send_smtp_test_email`
 - `send_verification_email`
-- `set_player_intent`
 - `sql_inspect`
 - `sql_text`
-- `start_match_between_players`
 - `summarize_monsters`
+- `timedelta`
 - `validate_deck`
 
 ## TODO/FIXME/Error strings
 
-- `models.py:249` except Exception:
-- `app.py:118` except Exception as error:
-- `app.py:119` print("SYSTEM LOG ERROR:", error)
-- `app.py:131` except Exception as error:
-- `app.py:132` print("RC EVENT LOG ERROR:", type(error).__name__, error)
-- `app.py:300` except Exception as error:
-- `app.py:406` except Exception as error:
-- `app.py:472` except Exception as error:
-- `app.py:512` except Exception as error:
-- `app.py:527` except Exception as error:
-- `app.py:530` print("Error:", error)
-- `app.py:584` except Exception as log_error:
-- `app.py:590` except Exception as log_error:
-- `app.py:593` except Exception as error:
-- `app.py:596` print("Error:", error)
-- `app.py:622` except Exception as error:
-- `app.py:625` print("Error:", error)
-- `app.py:649` except Exception as error:
-- `app.py:652` print("Error:", error)
-- `app.py:677` except Exception as error:
-- `app.py:888` except Exception as error:
-- `app.py:889` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
-- `app.py:952` except Exception:
-- `app.py:973` except Exception as error:
-- `app.py:1013` except Exception as error:
-- `app.py:1030` except Exception as error:
-- `app.py:1052` except Exception as error:
-- `app.py:1111` except Exception as error:
-- `app.py:1112` print("RC FEEDBACK QUERY ERROR:", type(error).__name__, error)
-- `app.py:1116` except Exception as error:
-- `app.py:1117` print("RC LOG QUERY ERROR:", type(error).__name__, error)
-- `app.py:1142` except Exception as error:
-- `app.py:1143` db_status = f"error:{type(error).__name__}"
-- `app.py:1171` except Exception as log_error:
-- `app.py:1172` print("500 LOG ERROR:", type(log_error).__name__, log_error)
-- `app.py:1213` except Exception as error:
-- `app.py:1388` except Exception as error:
-- `app.py:1389` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
-- `app.py:1439` except Exception as error:
-- `app.py:1440` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
-- `app.py:1519` except Exception as error:
-- `app.py:1531` except Exception:
-- `app.py:1642` except Exception:
-- `app.py:1666` except Exception as error:
-- `app.py:1669` except Exception:
-- `app.py:1671` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
-- `app.py:1782` except Exception:
-- `app.py:1858` except Exception as error:
-- `app.py:1859` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
-- `app.py:2484` except Exception as error:
-- `app.py:2485` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
-- `app.py:2527` except Exception as error:
-- `app.py:2528` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
-- `app.py:2558` except Exception as error:
-- `app.py:2559` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
-- `app.py:2797` except Exception as error:
-- `app.py:2798` print("TRAINING START ERROR:", type(error).__name__, error)
-- `app.py:2926` except Exception:
-- `app.py:3098` except Exception as error:
-- `app.py:3099` print("V2 BATTLE EVENTS EMIT ERROR:", type(error).__name__, error)
-- `app.py:3351` except Exception as error:
-- `app.py:3352` print("FEEDBACK LIMIT CHECK ERROR:", type(error).__name__, error)
-- `app.py:3374` except Exception as error:
-- `app.py:3375` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
-- `app.py:3507` except Exception as error:
-- `app.py:3508` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
-- `app.py:3535` except Exception as error:
-- `app.py:3580` except Exception as error:
-- `app.py:3607` except Exception as error:
-- `app.py:3608` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
-- `app.py:3636` except Exception as error:
-- `app.py:3637` print("MISSION CLAIM ERROR:", type(error).__name__, error)
-- `app.py:3694` except Exception as error:
-- `app.py:3718` except Exception as error:
-- `app.py:3719` print("WELCOME RENDER ERROR:", type(error).__name__, error)
-- `app.py:3738` except Exception as error:
-- `app.py:3739` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `app.py:127` except Exception as error:
+- `app.py:128` print("SYSTEM LOG ERROR:", error)
+- `app.py:140` except Exception as error:
+- `app.py:141` print("RC EVENT LOG ERROR:", type(error).__name__, error)
+- `app.py:238` except Exception as error:
+- `app.py:239` print("LOGIN RATE QUERY ERROR:", type(error).__name__, error)
+- `app.py:251` except Exception as error:
+- `app.py:252` print("LOGIN RATE LOG ERROR:", type(error).__name__, error)
+- `app.py:386` except Exception as error:
+- `app.py:492` except Exception as error:
+- `app.py:558` except Exception as error:
+- `app.py:598` except Exception as error:
+- `app.py:613` except Exception as error:
+- `app.py:616` print("Error:", error)
+- `app.py:645` except Exception:
+- `app.py:762` except Exception as log_error:
+- `app.py:768` except Exception as log_error:
+- `app.py:771` except Exception as error:
+- `app.py:774` print("Error:", error)
+- `app.py:800` except Exception as error:
+- `app.py:803` print("Error:", error)
+- `app.py:827` except Exception as error:
+- `app.py:830` print("Error:", error)
+- `app.py:855` except Exception as error:
+- `app.py:1074` except Exception as error:
+- `app.py:1075` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `app.py:1138` except Exception:
+- `app.py:1159` except Exception as error:
+- `app.py:1200` except Exception as error:
+- `app.py:1218` except Exception as error:
+- `app.py:1241` except Exception as error:
+- `app.py:1304` except Exception as error:
+- `app.py:1305` print("RC FEEDBACK QUERY ERROR:", type(error).__name__, error)
+- `app.py:1309` except Exception as error:
+- `app.py:1310` print("RC LOG QUERY ERROR:", type(error).__name__, error)
+- `app.py:1335` except Exception as error:
+- `app.py:1336` db_status = f"error:{type(error).__name__}"
+- `app.py:1364` except Exception as log_error:
+- `app.py:1365` print("500 LOG ERROR:", type(log_error).__name__, log_error)
+- `app.py:1406` except Exception as error:
+- `app.py:1581` except Exception as error:
+- `app.py:1582` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `app.py:1632` except Exception as error:
+- `app.py:1633` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `app.py:1715` except Exception as error:
+- `app.py:1841` except Exception:
+- `app.py:1865` except Exception as error:
+- `app.py:1868` except Exception as rollback_error:
+- `app.py:1869` print("BETA EVENT ROLLBACK ERROR:", type(rollback_error).__name__, rollback_error)
+- `app.py:1870` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `app.py:1988` except Exception:
+- `app.py:2057` except Exception as error:
+- `app.py:2058` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `app.py:2683` except Exception as error:
+- `app.py:2684` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `app.py:2726` except Exception as error:
+- `app.py:2727` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `app.py:2757` except Exception as error:
+- `app.py:2758` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `app.py:3065` except Exception as error:
+- `app.py:3066` print("FEEDBACK LIMIT CHECK ERROR:", type(error).__name__, error)
+- `app.py:3088` except Exception as error:
+- `app.py:3089` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `app.py:3221` except Exception as error:
+- `app.py:3222` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `app.py:3249` except Exception as error:
+- `app.py:3294` except Exception as error:
+- `app.py:3321` except Exception as error:
+- `app.py:3322` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `app.py:3350` except Exception as error:
+- `app.py:3351` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `app.py:3408` except Exception as error:
+- `app.py:3432` except Exception as error:
+- `app.py:3433` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `app.py:3452` except Exception as error:
+- `app.py:3453` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
 - `migrations/env.py:31` except AttributeError:
 - `tools/audit_routes.py:43` except Exception as error:
+- `tools/register_audit.py:20` except Exception:
+- `tools/register_audit.py:86` except Exception:
+- `tools/register_audit.py:100` except Exception:
 - `tools/audit_database.py:49` except Exception as error:
 - `tools/audit_database.py:52` except Exception as error:
 - `tools/balance_report.py:16` except Exception:
+- `tools/balance_snapshot.py:19` except Exception:
+- `tools/balance_snapshot.py:26` except Exception:
 - `tools/audit_cards.py:23` except Exception as error:
 - `tools/audit_cards.py:62` except Exception:
 - `tools/audit_cards.py:74` except Exception:
@@ -325,7 +331,17 @@ No duplicate socket handlers found.
 - `tools/preflight.py:31` except Exception as error:
 - `tools/preflight.py:38` print("ERROR:", error)
 - `tools/preflight.py:70` print("ERROR:", error)
-- `game/deck.py:76` except Exception:
+- `sockets/game_socket.py:51` except Exception:
+- `sockets/game_socket.py:216` except Exception as error:
+- `sockets/game_socket.py:217` print("QUEUE BOT FALLBACK ERROR:", type(error).__name__, error)
+- `sockets/game_socket.py:336` except Exception as error:
+- `sockets/game_socket.py:337` print("TRAINING START ERROR:", type(error).__name__, error)
+- `sockets/game_socket.py:375` except Exception as error:
+- `sockets/game_socket.py:376` print("QUEUE PLAYER CREATE ERROR:", type(error).__name__, error)
+- `sockets/game_socket.py:524` except Exception:
+- `sockets/game_socket.py:701` except Exception as error:
+- `sockets/game_socket.py:702` print("V2 BATTLE EVENTS EMIT ERROR:", type(error).__name__, error)
+- `game/deck.py:77` except Exception:
 - `game/cards.py:165` "Mastodonte Antigo",
 - `game/match_utils.py:16` except Exception:
 - `templates/first_session.html:67` If anything blocks the path, feels confusing, looks broken on Android,
@@ -543,13 +559,672 @@ No duplicate socket handlers found.
 - `services/database/schema_tools.py:12` except Exception as error:
 - `services/database/schema_tools.py:34` except Exception as error:
 - `services/database/schema_tools.py:46` except Exception as error:
+- `reports/register_audit_report.md:57` except Exception:
+- `reports/register_audit_report.md:148` except Exception:
+- `reports/deep_audit_report.md:217` ## TODO/FIXME/Error strings
+- `reports/deep_audit_report.md:219` - `app.py:121` except Exception as error:
+- `reports/deep_audit_report.md:220` - `app.py:122` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:221` - `app.py:134` except Exception as error:
+- `reports/deep_audit_report.md:222` - `app.py:135` print("RC EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:223` - `app.py:232` except Exception as error:
+- `reports/deep_audit_report.md:224` - `app.py:233` print("LOGIN RATE QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:225` - `app.py:245` except Exception as error:
+- `reports/deep_audit_report.md:226` - `app.py:246` print("LOGIN RATE LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:227` - `app.py:380` except Exception as error:
+- `reports/deep_audit_report.md:228` - `app.py:486` except Exception as error:
+- `reports/deep_audit_report.md:229` - `app.py:552` except Exception as error:
+- `reports/deep_audit_report.md:230` - `app.py:592` except Exception as error:
+- `reports/deep_audit_report.md:231` - `app.py:607` except Exception as error:
+- `reports/deep_audit_report.md:232` - `app.py:610` print("Error:", error)
+- `reports/deep_audit_report.md:233` - `app.py:639` except Exception:
+- `reports/deep_audit_report.md:234` - `app.py:756` except Exception as log_error:
+- `reports/deep_audit_report.md:235` - `app.py:762` except Exception as log_error:
+- `reports/deep_audit_report.md:236` - `app.py:765` except Exception as error:
+- `reports/deep_audit_report.md:237` - `app.py:768` print("Error:", error)
+- `reports/deep_audit_report.md:238` - `app.py:794` except Exception as error:
+- `reports/deep_audit_report.md:239` - `app.py:797` print("Error:", error)
+- `reports/deep_audit_report.md:240` - `app.py:821` except Exception as error:
+- `reports/deep_audit_report.md:241` - `app.py:824` print("Error:", error)
+- `reports/deep_audit_report.md:242` - `app.py:849` except Exception as error:
+- `reports/deep_audit_report.md:243` - `app.py:1068` except Exception as error:
+- `reports/deep_audit_report.md:244` - `app.py:1069` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:245` - `app.py:1132` except Exception:
+- `reports/deep_audit_report.md:246` - `app.py:1153` except Exception as error:
+- `reports/deep_audit_report.md:247` - `app.py:1194` except Exception as error:
+- `reports/deep_audit_report.md:248` - `app.py:1212` except Exception as error:
+- `reports/deep_audit_report.md:249` - `app.py:1235` except Exception as error:
+- `reports/deep_audit_report.md:250` - `app.py:1298` except Exception as error:
+- `reports/deep_audit_report.md:251` - `app.py:1299` print("RC FEEDBACK QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:252` - `app.py:1303` except Exception as error:
+- `reports/deep_audit_report.md:253` - `app.py:1304` print("RC LOG QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:254` - `app.py:1329` except Exception as error:
+- `reports/deep_audit_report.md:255` - `app.py:1330` db_status = f"error:{type(error).__name__}"
+- `reports/deep_audit_report.md:256` - `app.py:1358` except Exception as log_error:
+- `reports/deep_audit_report.md:257` - `app.py:1359` print("500 LOG ERROR:", type(log_error).__name__, log_error)
+- `reports/deep_audit_report.md:258` - `app.py:1400` except Exception as error:
+- `reports/deep_audit_report.md:259` - `app.py:1575` except Exception as error:
+- `reports/deep_audit_report.md:260` - `app.py:1576` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:261` - `app.py:1626` except Exception as error:
+- `reports/deep_audit_report.md:262` - `app.py:1627` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:263` - `app.py:1709` except Exception as error:
+- `reports/deep_audit_report.md:264` - `app.py:1835` except Exception:
+- `reports/deep_audit_report.md:265` - `app.py:1859` except Exception as error:
+- `reports/deep_audit_report.md:266` - `app.py:1862` except Exception as rollback_error:
+- `reports/deep_audit_report.md:267` - `app.py:1863` print("BETA EVENT ROLLBACK ERROR:", type(rollback_error).__name__, rollback_error)
+- `reports/deep_audit_report.md:268` - `app.py:1864` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:269` - `app.py:1982` except Exception:
+- `reports/deep_audit_report.md:270` - `app.py:2051` except Exception as error:
+- `reports/deep_audit_report.md:271` - `app.py:2052` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:272` - `app.py:2677` except Exception as error:
+- `reports/deep_audit_report.md:273` - `app.py:2678` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:274` - `app.py:2720` except Exception as error:
+- `reports/deep_audit_report.md:275` - `app.py:2721` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:276` - `app.py:2751` except Exception as error:
+- `reports/deep_audit_report.md:277` - `app.py:2752` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:278` - `app.py:3058` except Exception as error:
+- `reports/deep_audit_report.md:279` - `app.py:3059` print("FEEDBACK LIMIT CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:280` - `app.py:3081` except Exception as error:
+- `reports/deep_audit_report.md:281` - `app.py:3082` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:282` - `app.py:3214` except Exception as error:
+- `reports/deep_audit_report.md:283` - `app.py:3215` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:284` - `app.py:3242` except Exception as error:
+- `reports/deep_audit_report.md:285` - `app.py:3287` except Exception as error:
+- `reports/deep_audit_report.md:286` - `app.py:3314` except Exception as error:
+- `reports/deep_audit_report.md:287` - `app.py:3315` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:288` - `app.py:3343` except Exception as error:
+- `reports/deep_audit_report.md:289` - `app.py:3344` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:290` - `app.py:3401` except Exception as error:
+- `reports/deep_audit_report.md:291` - `app.py:3425` except Exception as error:
+- `reports/deep_audit_report.md:292` - `app.py:3426` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:293` - `app.py:3445` except Exception as error:
+- `reports/deep_audit_report.md:294` - `app.py:3446` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:295` - `migrations/env.py:31` except AttributeError:
+- `reports/deep_audit_report.md:296` - `tools/audit_routes.py:43` except Exception as error:
+- `reports/deep_audit_report.md:297` - `tools/register_audit.py:20` except Exception:
+- `reports/deep_audit_report.md:298` - `tools/register_audit.py:86` except Exception:
+- `reports/deep_audit_report.md:299` - `tools/register_audit.py:100` except Exception:
+- `reports/deep_audit_report.md:300` - `tools/audit_database.py:49` except Exception as error:
+- `reports/deep_audit_report.md:301` - `tools/audit_database.py:52` except Exception as error:
+- `reports/deep_audit_report.md:302` - `tools/balance_report.py:16` except Exception:
+- `reports/deep_audit_report.md:303` - `tools/balance_snapshot.py:19` except Exception:
+- `reports/deep_audit_report.md:304` - `tools/balance_snapshot.py:26` except Exception:
+- `reports/deep_audit_report.md:305` - `tools/audit_cards.py:23` except Exception as error:
+- `reports/deep_audit_report.md:306` - `tools/audit_cards.py:62` except Exception:
+- `reports/deep_audit_report.md:307` - `tools/audit_cards.py:74` except Exception:
+- `reports/deep_audit_report.md:308` - `tools/fix_deck_builder_v112_manual.py:115` raise SystemExit("ERROR: old checkbox block not found exactly. No changes made.")
+- `reports/deep_audit_report.md:309` - `tools/deep_audit.py:30` except Exception as e:
+- `reports/deep_audit_report.md:310` - `tools/deep_audit.py:125` # 8. Broken references: function calls not defined in same file rough scan
+- `reports/deep_audit_report.md:311` - `tools/deep_audit.py:144` except Exception as e:
+- `reports/deep_audit_report.md:312` - `tools/deep_audit.py:147` # 9. TODO/FIXME/errors
+- `reports/deep_audit_report.md:313` - `tools/deep_audit.py:148` section("TODO/FIXME/Error strings")
+- `reports/deep_audit_report.md:314` - `tools/deep_audit.py:156` except Exception:
+- `reports/deep_audit_report.md:315` - `tools/deep_audit.py:160` if any(k in low for k in ["todo", "fixme", "hack", "broken", "error:", "except exception", "pass  #"]):
+- `reports/deep_audit_report.md:316` - `tools/deep_audit.py:179` except Exception:
+- `reports/deep_audit_report.md:317` - `tools/internal_rc_check.py:42` print("ERROR:", failure)
+- `reports/deep_audit_report.md:318` - `tools/fix_beta_core_v111.py:118` # The common broken shape has two const cost declarations close together.
+- `reports/deep_audit_report.md:319` - `tools/preflight.py:31` except Exception as error:
+- `reports/deep_audit_report.md:320` - `tools/preflight.py:38` print("ERROR:", error)
+- `reports/deep_audit_report.md:321` - `tools/preflight.py:70` print("ERROR:", error)
+- `reports/deep_audit_report.md:322` - `sockets/game_socket.py:150` except Exception as error:
+- `reports/deep_audit_report.md:323` - `sockets/game_socket.py:151` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:324` - `sockets/game_socket.py:189` except Exception as error:
+- `reports/deep_audit_report.md:325` - `sockets/game_socket.py:190` print("QUEUE PLAYER CREATE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:326` - `sockets/game_socket.py:283` except Exception as error:
+- `reports/deep_audit_report.md:327` - `sockets/game_socket.py:284` print("QUEUE BOT FALLBACK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:328` - `sockets/game_socket.py:354` except Exception:
+- `reports/deep_audit_report.md:329` - `sockets/game_socket.py:531` except Exception as error:
+- `reports/deep_audit_report.md:330` - `sockets/game_socket.py:532` print("V2 BATTLE EVENTS EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:331` - `sockets/game_socket.py:641` except Exception:
+- `reports/deep_audit_report.md:332` - `game/deck.py:77` except Exception:
+- `reports/deep_audit_report.md:333` - `game/cards.py:165` "Mastodonte Antigo",
+- `reports/deep_audit_report.md:334` - `game/match_utils.py:16` except Exception:
+- `reports/deep_audit_report.md:335` - `templates/first_session.html:67` If anything blocks the path, feels confusing, looks broken on Android,
+- `reports/deep_audit_report.md:336` - `backups/beta_final_stability_v113_20260503_103647/app.py:104` except Exception as error:
+- `reports/deep_audit_report.md:337` - `backups/beta_final_stability_v113_20260503_103647/app.py:105` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:338` - `backups/beta_final_stability_v113_20260503_103647/app.py:214` except Exception as error:
+- `reports/deep_audit_report.md:339` - `backups/beta_final_stability_v113_20260503_103647/app.py:226` except Exception as error:
+- `reports/deep_audit_report.md:340` - `backups/beta_final_stability_v113_20260503_103647/app.py:250` except Exception as error:
+- `reports/deep_audit_report.md:341` - `backups/beta_final_stability_v113_20260503_103647/app.py:319` except Exception as error:
+- `reports/deep_audit_report.md:342` - `backups/beta_final_stability_v113_20260503_103647/app.py:334` except Exception as error:
+- `reports/deep_audit_report.md:343` - `backups/beta_final_stability_v113_20260503_103647/app.py:337` print("Error:", error)
+- `reports/deep_audit_report.md:344` - `backups/beta_final_stability_v113_20260503_103647/app.py:391` except Exception as log_error:
+- `reports/deep_audit_report.md:345` - `backups/beta_final_stability_v113_20260503_103647/app.py:397` except Exception as log_error:
+- `reports/deep_audit_report.md:346` - `backups/beta_final_stability_v113_20260503_103647/app.py:400` except Exception as error:
+- `reports/deep_audit_report.md:347` - `backups/beta_final_stability_v113_20260503_103647/app.py:403` print("Error:", error)
+- `reports/deep_audit_report.md:348` - `backups/beta_final_stability_v113_20260503_103647/app.py:429` except Exception as error:
+- `reports/deep_audit_report.md:349` - `backups/beta_final_stability_v113_20260503_103647/app.py:432` print("Error:", error)
+- `reports/deep_audit_report.md:350` - `backups/beta_final_stability_v113_20260503_103647/app.py:456` except Exception as error:
+- `reports/deep_audit_report.md:351` - `backups/beta_final_stability_v113_20260503_103647/app.py:459` print("Error:", error)
+- `reports/deep_audit_report.md:352` - `backups/beta_final_stability_v113_20260503_103647/app.py:484` except Exception as error:
+- `reports/deep_audit_report.md:353` - `backups/beta_final_stability_v113_20260503_103647/app.py:695` except Exception as error:
+- `reports/deep_audit_report.md:354` - `backups/beta_final_stability_v113_20260503_103647/app.py:696` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:355` - `backups/beta_final_stability_v113_20260503_103647/app.py:805` except Exception as error:
+- `reports/deep_audit_report.md:356` - `backups/beta_final_stability_v113_20260503_103647/app.py:980` except Exception as error:
+- `reports/deep_audit_report.md:357` - `backups/beta_final_stability_v113_20260503_103647/app.py:981` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:358` - `backups/beta_final_stability_v113_20260503_103647/app.py:1031` except Exception as error:
+- `reports/deep_audit_report.md:359` - `backups/beta_final_stability_v113_20260503_103647/app.py:1032` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:360` - `backups/beta_final_stability_v113_20260503_103647/app.py:1111` except Exception as error:
+- `reports/deep_audit_report.md:361` - `backups/beta_final_stability_v113_20260503_103647/app.py:1123` except Exception:
+- `reports/deep_audit_report.md:362` - `backups/beta_final_stability_v113_20260503_103647/app.py:1234` except Exception:
+- `reports/deep_audit_report.md:363` - `backups/beta_final_stability_v113_20260503_103647/app.py:1258` except Exception as error:
+- `reports/deep_audit_report.md:364` - `backups/beta_final_stability_v113_20260503_103647/app.py:1261` except Exception:
+- `reports/deep_audit_report.md:365` - `backups/beta_final_stability_v113_20260503_103647/app.py:1263` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:366` - `backups/beta_final_stability_v113_20260503_103647/app.py:1356` except Exception:
+- `reports/deep_audit_report.md:367` - `backups/beta_final_stability_v113_20260503_103647/app.py:1410` except Exception as error:
+- `reports/deep_audit_report.md:368` - `backups/beta_final_stability_v113_20260503_103647/app.py:1411` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:369` - `backups/beta_final_stability_v113_20260503_103647/app.py:1922` except Exception as error:
+- `reports/deep_audit_report.md:370` - `backups/beta_final_stability_v113_20260503_103647/app.py:1923` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:371` - `backups/beta_final_stability_v113_20260503_103647/app.py:1965` except Exception as error:
+- `reports/deep_audit_report.md:372` - `backups/beta_final_stability_v113_20260503_103647/app.py:1966` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:373` - `backups/beta_final_stability_v113_20260503_103647/app.py:1996` except Exception as error:
+- `reports/deep_audit_report.md:374` - `backups/beta_final_stability_v113_20260503_103647/app.py:1997` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:375` - `backups/beta_final_stability_v113_20260503_103647/app.py:2162` except Exception as error:
+- `reports/deep_audit_report.md:376` - `backups/beta_final_stability_v113_20260503_103647/app.py:2163` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:377` - `backups/beta_final_stability_v113_20260503_103647/app.py:2304` except Exception:
+- `reports/deep_audit_report.md:378` - `backups/beta_final_stability_v113_20260503_103647/app.py:2708` except Exception as error:
+- `reports/deep_audit_report.md:379` - `backups/beta_final_stability_v113_20260503_103647/app.py:2709` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:380` - `backups/beta_final_stability_v113_20260503_103647/app.py:2841` except Exception as error:
+- `reports/deep_audit_report.md:381` - `backups/beta_final_stability_v113_20260503_103647/app.py:2842` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:382` - `backups/beta_final_stability_v113_20260503_103647/app.py:2869` except Exception as error:
+- `reports/deep_audit_report.md:383` - `backups/beta_final_stability_v113_20260503_103647/app.py:2913` except Exception as error:
+- `reports/deep_audit_report.md:384` - `backups/beta_final_stability_v113_20260503_103647/app.py:2940` except Exception as error:
+- `reports/deep_audit_report.md:385` - `backups/beta_final_stability_v113_20260503_103647/app.py:2941` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:386` - `backups/beta_final_stability_v113_20260503_103647/app.py:2969` except Exception as error:
+- `reports/deep_audit_report.md:387` - `backups/beta_final_stability_v113_20260503_103647/app.py:2970` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:388` - `backups/beta_final_stability_v113_20260503_103647/app.py:3027` except Exception as error:
+- `reports/deep_audit_report.md:389` - `backups/beta_final_stability_v113_20260503_103647/app.py:3051` except Exception as error:
+- `reports/deep_audit_report.md:390` - `backups/beta_final_stability_v113_20260503_103647/app.py:3052` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:391` - `backups/beta_final_stability_v113_20260503_103647/app.py:3071` except Exception as error:
+- `reports/deep_audit_report.md:392` - `backups/beta_final_stability_v113_20260503_103647/app.py:3072` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:393` - `backups/beta_core_v111_20260503_102709/app.py:104` except Exception as error:
+- `reports/deep_audit_report.md:394` - `backups/beta_core_v111_20260503_102709/app.py:105` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:395` - `backups/beta_core_v111_20260503_102709/app.py:214` except Exception as error:
+- `reports/deep_audit_report.md:396` - `backups/beta_core_v111_20260503_102709/app.py:226` except Exception as error:
+- `reports/deep_audit_report.md:397` - `backups/beta_core_v111_20260503_102709/app.py:250` except Exception as error:
+- `reports/deep_audit_report.md:398` - `backups/beta_core_v111_20260503_102709/app.py:319` except Exception as error:
+- `reports/deep_audit_report.md:399` - `backups/beta_core_v111_20260503_102709/app.py:334` except Exception as error:
+- `reports/deep_audit_report.md:400` - `backups/beta_core_v111_20260503_102709/app.py:337` print("Error:", error)
+- `reports/deep_audit_report.md:401` - `backups/beta_core_v111_20260503_102709/app.py:391` except Exception as log_error:
+- `reports/deep_audit_report.md:402` - `backups/beta_core_v111_20260503_102709/app.py:397` except Exception as log_error:
+- `reports/deep_audit_report.md:403` - `backups/beta_core_v111_20260503_102709/app.py:400` except Exception as error:
+- `reports/deep_audit_report.md:404` - `backups/beta_core_v111_20260503_102709/app.py:403` print("Error:", error)
+- `reports/deep_audit_report.md:405` - `backups/beta_core_v111_20260503_102709/app.py:429` except Exception as error:
+- `reports/deep_audit_report.md:406` - `backups/beta_core_v111_20260503_102709/app.py:432` print("Error:", error)
+- `reports/deep_audit_report.md:407` - `backups/beta_core_v111_20260503_102709/app.py:456` except Exception as error:
+- `reports/deep_audit_report.md:408` - `backups/beta_core_v111_20260503_102709/app.py:459` print("Error:", error)
+- `reports/deep_audit_report.md:409` - `backups/beta_core_v111_20260503_102709/app.py:484` except Exception as error:
+- `reports/deep_audit_report.md:410` - `backups/beta_core_v111_20260503_102709/app.py:695` except Exception as error:
+- `reports/deep_audit_report.md:411` - `backups/beta_core_v111_20260503_102709/app.py:696` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:412` - `backups/beta_core_v111_20260503_102709/app.py:805` except Exception as error:
+- `reports/deep_audit_report.md:413` - `backups/beta_core_v111_20260503_102709/app.py:980` except Exception as error:
+- `reports/deep_audit_report.md:414` - `backups/beta_core_v111_20260503_102709/app.py:981` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:415` - `backups/beta_core_v111_20260503_102709/app.py:1031` except Exception as error:
+- `reports/deep_audit_report.md:416` - `backups/beta_core_v111_20260503_102709/app.py:1032` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:417` - `backups/beta_core_v111_20260503_102709/app.py:1111` except Exception as error:
+- `reports/deep_audit_report.md:418` - `backups/beta_core_v111_20260503_102709/app.py:1123` except Exception:
+- `reports/deep_audit_report.md:419` - `backups/beta_core_v111_20260503_102709/app.py:1234` except Exception:
+- `reports/deep_audit_report.md:420` - `backups/beta_core_v111_20260503_102709/app.py:1258` except Exception as error:
+- `reports/deep_audit_report.md:421` - `backups/beta_core_v111_20260503_102709/app.py:1261` except Exception:
+- `reports/deep_audit_report.md:422` - `backups/beta_core_v111_20260503_102709/app.py:1263` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:423` - `backups/beta_core_v111_20260503_102709/app.py:1356` except Exception:
+- `reports/deep_audit_report.md:424` - `backups/beta_core_v111_20260503_102709/app.py:1410` except Exception as error:
+- `reports/deep_audit_report.md:425` - `backups/beta_core_v111_20260503_102709/app.py:1411` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:426` - `backups/beta_core_v111_20260503_102709/app.py:1922` except Exception as error:
+- `reports/deep_audit_report.md:427` - `backups/beta_core_v111_20260503_102709/app.py:1923` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:428` - `backups/beta_core_v111_20260503_102709/app.py:1965` except Exception as error:
+- `reports/deep_audit_report.md:429` - `backups/beta_core_v111_20260503_102709/app.py:1966` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:430` - `backups/beta_core_v111_20260503_102709/app.py:1996` except Exception as error:
+- `reports/deep_audit_report.md:431` - `backups/beta_core_v111_20260503_102709/app.py:1997` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:432` - `backups/beta_core_v111_20260503_102709/app.py:2162` except Exception as error:
+- `reports/deep_audit_report.md:433` - `backups/beta_core_v111_20260503_102709/app.py:2163` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:434` - `backups/beta_core_v111_20260503_102709/app.py:2304` except Exception:
+- `reports/deep_audit_report.md:435` - `backups/beta_core_v111_20260503_102709/app.py:2708` except Exception as error:
+- `reports/deep_audit_report.md:436` - `backups/beta_core_v111_20260503_102709/app.py:2709` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:437` - `backups/beta_core_v111_20260503_102709/app.py:2841` except Exception as error:
+- `reports/deep_audit_report.md:438` - `backups/beta_core_v111_20260503_102709/app.py:2842` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:439` - `backups/beta_core_v111_20260503_102709/app.py:2869` except Exception as error:
+- `reports/deep_audit_report.md:440` - `backups/beta_core_v111_20260503_102709/app.py:2913` except Exception as error:
+- `reports/deep_audit_report.md:441` - `backups/beta_core_v111_20260503_102709/app.py:2940` except Exception as error:
+- `reports/deep_audit_report.md:442` - `backups/beta_core_v111_20260503_102709/app.py:2941` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:443` - `backups/beta_core_v111_20260503_102709/app.py:2969` except Exception as error:
+- `reports/deep_audit_report.md:444` - `backups/beta_core_v111_20260503_102709/app.py:2970` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:445` - `backups/beta_core_v111_20260503_102709/app.py:3027` except Exception as error:
+- `reports/deep_audit_report.md:446` - `backups/beta_core_v111_20260503_102709/app.py:3051` except Exception as error:
+- `reports/deep_audit_report.md:447` - `backups/beta_core_v111_20260503_102709/app.py:3052` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:448` - `backups/beta_core_v111_20260503_102709/app.py:3071` except Exception as error:
+- `reports/deep_audit_report.md:449` - `backups/beta_core_v111_20260503_102709/app.py:3072` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:450` - `backups/email_delivery_v114_20260503_104855/app.py:104` except Exception as error:
+- `reports/deep_audit_report.md:451` - `backups/email_delivery_v114_20260503_104855/app.py:105` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:452` - `backups/email_delivery_v114_20260503_104855/app.py:214` except Exception as error:
+- `reports/deep_audit_report.md:453` - `backups/email_delivery_v114_20260503_104855/app.py:320` except Exception as error:
+- `reports/deep_audit_report.md:454` - `backups/email_delivery_v114_20260503_104855/app.py:344` except Exception as error:
+- `reports/deep_audit_report.md:455` - `backups/email_delivery_v114_20260503_104855/app.py:413` except Exception as error:
+- `reports/deep_audit_report.md:456` - `backups/email_delivery_v114_20260503_104855/app.py:428` except Exception as error:
+- `reports/deep_audit_report.md:457` - `backups/email_delivery_v114_20260503_104855/app.py:431` print("Error:", error)
+- `reports/deep_audit_report.md:458` - `backups/email_delivery_v114_20260503_104855/app.py:485` except Exception as log_error:
+- `reports/deep_audit_report.md:459` - `backups/email_delivery_v114_20260503_104855/app.py:491` except Exception as log_error:
+- `reports/deep_audit_report.md:460` - `backups/email_delivery_v114_20260503_104855/app.py:494` except Exception as error:
+- `reports/deep_audit_report.md:461` - `backups/email_delivery_v114_20260503_104855/app.py:497` print("Error:", error)
+- `reports/deep_audit_report.md:462` - `backups/email_delivery_v114_20260503_104855/app.py:523` except Exception as error:
+- `reports/deep_audit_report.md:463` - `backups/email_delivery_v114_20260503_104855/app.py:526` print("Error:", error)
+- `reports/deep_audit_report.md:464` - `backups/email_delivery_v114_20260503_104855/app.py:550` except Exception as error:
+- `reports/deep_audit_report.md:465` - `backups/email_delivery_v114_20260503_104855/app.py:553` print("Error:", error)
+- `reports/deep_audit_report.md:466` - `backups/email_delivery_v114_20260503_104855/app.py:578` except Exception as error:
+- `reports/deep_audit_report.md:467` - `backups/email_delivery_v114_20260503_104855/app.py:789` except Exception as error:
+- `reports/deep_audit_report.md:468` - `backups/email_delivery_v114_20260503_104855/app.py:790` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:469` - `backups/email_delivery_v114_20260503_104855/app.py:899` except Exception as error:
+- `reports/deep_audit_report.md:470` - `backups/email_delivery_v114_20260503_104855/app.py:1074` except Exception as error:
+- `reports/deep_audit_report.md:471` - `backups/email_delivery_v114_20260503_104855/app.py:1075` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:472` - `backups/email_delivery_v114_20260503_104855/app.py:1125` except Exception as error:
+- `reports/deep_audit_report.md:473` - `backups/email_delivery_v114_20260503_104855/app.py:1126` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:474` - `backups/email_delivery_v114_20260503_104855/app.py:1205` except Exception as error:
+- `reports/deep_audit_report.md:475` - `backups/email_delivery_v114_20260503_104855/app.py:1217` except Exception:
+- `reports/deep_audit_report.md:476` - `backups/email_delivery_v114_20260503_104855/app.py:1328` except Exception:
+- `reports/deep_audit_report.md:477` - `backups/email_delivery_v114_20260503_104855/app.py:1352` except Exception as error:
+- `reports/deep_audit_report.md:478` - `backups/email_delivery_v114_20260503_104855/app.py:1355` except Exception:
+- `reports/deep_audit_report.md:479` - `backups/email_delivery_v114_20260503_104855/app.py:1357` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:480` - `backups/email_delivery_v114_20260503_104855/app.py:1450` except Exception:
+- `reports/deep_audit_report.md:481` - `backups/email_delivery_v114_20260503_104855/app.py:1504` except Exception as error:
+- `reports/deep_audit_report.md:482` - `backups/email_delivery_v114_20260503_104855/app.py:1505` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:483` - `backups/email_delivery_v114_20260503_104855/app.py:2016` except Exception as error:
+- `reports/deep_audit_report.md:484` - `backups/email_delivery_v114_20260503_104855/app.py:2017` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:485` - `backups/email_delivery_v114_20260503_104855/app.py:2059` except Exception as error:
+- `reports/deep_audit_report.md:486` - `backups/email_delivery_v114_20260503_104855/app.py:2060` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:487` - `backups/email_delivery_v114_20260503_104855/app.py:2090` except Exception as error:
+- `reports/deep_audit_report.md:488` - `backups/email_delivery_v114_20260503_104855/app.py:2091` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:489` - `backups/email_delivery_v114_20260503_104855/app.py:2256` except Exception as error:
+- `reports/deep_audit_report.md:490` - `backups/email_delivery_v114_20260503_104855/app.py:2257` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:491` - `backups/email_delivery_v114_20260503_104855/app.py:2398` except Exception:
+- `reports/deep_audit_report.md:492` - `backups/email_delivery_v114_20260503_104855/app.py:2802` except Exception as error:
+- `reports/deep_audit_report.md:493` - `backups/email_delivery_v114_20260503_104855/app.py:2803` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:494` - `backups/email_delivery_v114_20260503_104855/app.py:2935` except Exception as error:
+- `reports/deep_audit_report.md:495` - `backups/email_delivery_v114_20260503_104855/app.py:2936` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:496` - `backups/email_delivery_v114_20260503_104855/app.py:2963` except Exception as error:
+- `reports/deep_audit_report.md:497` - `backups/email_delivery_v114_20260503_104855/app.py:3007` except Exception as error:
+- `reports/deep_audit_report.md:498` - `backups/email_delivery_v114_20260503_104855/app.py:3034` except Exception as error:
+- `reports/deep_audit_report.md:499` - `backups/email_delivery_v114_20260503_104855/app.py:3035` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:500` - `backups/email_delivery_v114_20260503_104855/app.py:3063` except Exception as error:
+- `reports/deep_audit_report.md:501` - `backups/email_delivery_v114_20260503_104855/app.py:3064` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:502` - `backups/email_delivery_v114_20260503_104855/app.py:3121` except Exception as error:
+- `reports/deep_audit_report.md:503` - `backups/email_delivery_v114_20260503_104855/app.py:3145` except Exception as error:
+- `reports/deep_audit_report.md:504` - `backups/email_delivery_v114_20260503_104855/app.py:3146` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:505` - `backups/email_delivery_v114_20260503_104855/app.py:3165` except Exception as error:
+- `reports/deep_audit_report.md:506` - `backups/email_delivery_v114_20260503_104855/app.py:3166` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:507` - `backups/email_delivery_v114_20260503_104855/services/email_service.py:58` except Exception as error:
+- `reports/deep_audit_report.md:508` - `backups/email_delivery_v114_20260503_104855/services/email_service.py:61` print("Error:", error)
+- `reports/deep_audit_report.md:509` - `routes/auth.py:68` except Exception as error:
+- `reports/deep_audit_report.md:510` - `routes/auth.py:69` print("LOGIN TRACKING ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:511` - `routes/auth.py:75` except Exception as error:
+- `reports/deep_audit_report.md:512` - `routes/auth.py:76` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:513` - `routes/auth.py:134` except Exception as error:
+- `reports/deep_audit_report.md:514` - `routes/auth.py:135` print("STARTER DECK CREATE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:515` - `routes/auth.py:180` except Exception:
+- `reports/deep_audit_report.md:516` - `routes/auth.py:187` except Exception:
+- `reports/deep_audit_report.md:517` - `routes/auth.py:253` except Exception:
+- `reports/deep_audit_report.md:518` - `routes/public.py:61` except Exception as error:
+- `reports/deep_audit_report.md:519` - `routes/public.py:76` except Exception as error:
+- `reports/deep_audit_report.md:520` - `routes/public.py:77` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:521` - `routes/public.py:93` except Exception as error:
+- `reports/deep_audit_report.md:522` - `routes/public.py:116` except Exception as error:
+- `reports/deep_audit_report.md:523` - `routes/game.py:17` except Exception:
+- `reports/deep_audit_report.md:524` - `routes/game.py:74` except Exception as error:
+- `reports/deep_audit_report.md:525` - `routes/game.py:96` except Exception as error:
+- `reports/deep_audit_report.md:526` - `routes/game.py:120` except Exception as error:
+- `reports/deep_audit_report.md:527` - `routes/game.py:175` except Exception as error:
+- `reports/deep_audit_report.md:528` - `routes/game.py:185` except Exception as error:
+- `reports/deep_audit_report.md:529` - `routes/game.py:206` except Exception as error:
+- `reports/deep_audit_report.md:530` - `routes/game.py:212` except Exception as error:
+- `reports/deep_audit_report.md:531` - `routes/game.py:218` except Exception as error:
+- `reports/deep_audit_report.md:532` - `routes/game.py:270` except Exception as error:
+- `reports/deep_audit_report.md:533` - `routes/admin.py:44` except Exception as error:
+- `reports/deep_audit_report.md:534` - `routes/admin.py:50` except Exception as error:
+- `reports/deep_audit_report.md:535` - `routes/admin.py:56` except Exception as error:
+- `reports/deep_audit_report.md:536` - `routes/admin.py:80` except Exception as error:
+- `reports/deep_audit_report.md:537` - `routes/admin.py:97` except Exception as error:
+- `reports/deep_audit_report.md:538` - `routes/admin.py:120` except Exception as error:
+- `reports/deep_audit_report.md:539` - `routes/admin.py:137` except Exception as error:
+- `reports/deep_audit_report.md:540` - `services/match_telemetry.py:8` except Exception:
+- `reports/deep_audit_report.md:541` - `services/match_telemetry.py:19` except Exception:
+- `reports/deep_audit_report.md:542` - `services/match_telemetry.py:56` except Exception as error:
+- `reports/deep_audit_report.md:543` - `services/match_telemetry.py:57` print("MATCH TELEMETRY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:544` - `services/battle_summary.py:8` except Exception:
+- `reports/deep_audit_report.md:545` - `services/email_service.py:62` except Exception as error:
+- `reports/deep_audit_report.md:546` - `services/email_service.py:65` print("Error:", error)
+- `reports/deep_audit_report.md:547` - `services/database/schema_tools.py:12` except Exception as error:
+- `reports/deep_audit_report.md:548` - `services/database/schema_tools.py:34` except Exception as error:
+- `reports/deep_audit_report.md:549` - `services/database/schema_tools.py:46` except Exception as error:
+- `reports/deep_audit_report.md:550` - `reports/register_audit_report.md:57` except Exception:
+- `reports/deep_audit_report.md:551` - `reports/register_audit_report.md:148` except Exception:
+- `reports/deep_audit_report.md:552` - `reports/deep_audit_report.md:227` ## TODO/FIXME/Error strings
+- `reports/deep_audit_report.md:553` - `reports/deep_audit_report.md:229` - `models.py:249` except Exception:
+- `reports/deep_audit_report.md:554` - `reports/deep_audit_report.md:230` - `app.py:118` except Exception as error:
+- `reports/deep_audit_report.md:555` - `reports/deep_audit_report.md:231` - `app.py:119` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:556` - `reports/deep_audit_report.md:232` - `app.py:131` except Exception as error:
+- `reports/deep_audit_report.md:557` - `reports/deep_audit_report.md:233` - `app.py:132` print("RC EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:558` - `reports/deep_audit_report.md:234` - `app.py:300` except Exception as error:
+- `reports/deep_audit_report.md:559` - `reports/deep_audit_report.md:235` - `app.py:406` except Exception as error:
+- `reports/deep_audit_report.md:560` - `reports/deep_audit_report.md:236` - `app.py:472` except Exception as error:
+- `reports/deep_audit_report.md:561` - `reports/deep_audit_report.md:237` - `app.py:512` except Exception as error:
+- `reports/deep_audit_report.md:562` - `reports/deep_audit_report.md:238` - `app.py:527` except Exception as error:
+- `reports/deep_audit_report.md:563` - `reports/deep_audit_report.md:239` - `app.py:530` print("Error:", error)
+- `reports/deep_audit_report.md:564` - `reports/deep_audit_report.md:240` - `app.py:584` except Exception as log_error:
+- `reports/deep_audit_report.md:565` - `reports/deep_audit_report.md:241` - `app.py:590` except Exception as log_error:
+- `reports/deep_audit_report.md:566` - `reports/deep_audit_report.md:242` - `app.py:593` except Exception as error:
+- `reports/deep_audit_report.md:567` - `reports/deep_audit_report.md:243` - `app.py:596` print("Error:", error)
+- `reports/deep_audit_report.md:568` - `reports/deep_audit_report.md:244` - `app.py:622` except Exception as error:
+- `reports/deep_audit_report.md:569` - `reports/deep_audit_report.md:245` - `app.py:625` print("Error:", error)
+- `reports/deep_audit_report.md:570` - `reports/deep_audit_report.md:246` - `app.py:649` except Exception as error:
+- `reports/deep_audit_report.md:571` - `reports/deep_audit_report.md:247` - `app.py:652` print("Error:", error)
+- `reports/deep_audit_report.md:572` - `reports/deep_audit_report.md:248` - `app.py:677` except Exception as error:
+- `reports/deep_audit_report.md:573` - `reports/deep_audit_report.md:249` - `app.py:888` except Exception as error:
+- `reports/deep_audit_report.md:574` - `reports/deep_audit_report.md:250` - `app.py:889` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:575` - `reports/deep_audit_report.md:251` - `app.py:952` except Exception:
+- `reports/deep_audit_report.md:576` - `reports/deep_audit_report.md:252` - `app.py:973` except Exception as error:
+- `reports/deep_audit_report.md:577` - `reports/deep_audit_report.md:253` - `app.py:1013` except Exception as error:
+- `reports/deep_audit_report.md:578` - `reports/deep_audit_report.md:254` - `app.py:1030` except Exception as error:
+- `reports/deep_audit_report.md:579` - `reports/deep_audit_report.md:255` - `app.py:1052` except Exception as error:
+- `reports/deep_audit_report.md:580` - `reports/deep_audit_report.md:256` - `app.py:1111` except Exception as error:
+- `reports/deep_audit_report.md:581` - `reports/deep_audit_report.md:257` - `app.py:1112` print("RC FEEDBACK QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:582` - `reports/deep_audit_report.md:258` - `app.py:1116` except Exception as error:
+- `reports/deep_audit_report.md:583` - `reports/deep_audit_report.md:259` - `app.py:1117` print("RC LOG QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:584` - `reports/deep_audit_report.md:260` - `app.py:1142` except Exception as error:
+- `reports/deep_audit_report.md:585` - `reports/deep_audit_report.md:261` - `app.py:1143` db_status = f"error:{type(error).__name__}"
+- `reports/deep_audit_report.md:586` - `reports/deep_audit_report.md:262` - `app.py:1171` except Exception as log_error:
+- `reports/deep_audit_report.md:587` - `reports/deep_audit_report.md:263` - `app.py:1172` print("500 LOG ERROR:", type(log_error).__name__, log_error)
+- `reports/deep_audit_report.md:588` - `reports/deep_audit_report.md:264` - `app.py:1213` except Exception as error:
+- `reports/deep_audit_report.md:589` - `reports/deep_audit_report.md:265` - `app.py:1388` except Exception as error:
+- `reports/deep_audit_report.md:590` - `reports/deep_audit_report.md:266` - `app.py:1389` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:591` - `reports/deep_audit_report.md:267` - `app.py:1439` except Exception as error:
+- `reports/deep_audit_report.md:592` - `reports/deep_audit_report.md:268` - `app.py:1440` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:593` - `reports/deep_audit_report.md:269` - `app.py:1519` except Exception as error:
+- `reports/deep_audit_report.md:594` - `reports/deep_audit_report.md:270` - `app.py:1531` except Exception:
+- `reports/deep_audit_report.md:595` - `reports/deep_audit_report.md:271` - `app.py:1642` except Exception:
+- `reports/deep_audit_report.md:596` - `reports/deep_audit_report.md:272` - `app.py:1666` except Exception as error:
+- `reports/deep_audit_report.md:597` - `reports/deep_audit_report.md:273` - `app.py:1669` except Exception:
+- `reports/deep_audit_report.md:598` - `reports/deep_audit_report.md:274` - `app.py:1671` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:599` - `reports/deep_audit_report.md:275` - `app.py:1782` except Exception:
+- `reports/deep_audit_report.md:600` - `reports/deep_audit_report.md:276` - `app.py:1858` except Exception as error:
+- `reports/deep_audit_report.md:601` - `reports/deep_audit_report.md:277` - `app.py:1859` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:602` - `reports/deep_audit_report.md:278` - `app.py:2484` except Exception as error:
+- `reports/deep_audit_report.md:603` - `reports/deep_audit_report.md:279` - `app.py:2485` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:604` - `reports/deep_audit_report.md:280` - `app.py:2527` except Exception as error:
+- `reports/deep_audit_report.md:605` - `reports/deep_audit_report.md:281` - `app.py:2528` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:606` - `reports/deep_audit_report.md:282` - `app.py:2558` except Exception as error:
+- `reports/deep_audit_report.md:607` - `reports/deep_audit_report.md:283` - `app.py:2559` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:608` - `reports/deep_audit_report.md:284` - `app.py:2797` except Exception as error:
+- `reports/deep_audit_report.md:609` - `reports/deep_audit_report.md:285` - `app.py:2798` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:610` - `reports/deep_audit_report.md:286` - `app.py:2926` except Exception:
+- `reports/deep_audit_report.md:611` - `reports/deep_audit_report.md:287` - `app.py:3098` except Exception as error:
+- `reports/deep_audit_report.md:612` - `reports/deep_audit_report.md:288` - `app.py:3099` print("V2 BATTLE EVENTS EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:613` - `reports/deep_audit_report.md:289` - `app.py:3351` except Exception as error:
+- `reports/deep_audit_report.md:614` - `reports/deep_audit_report.md:290` - `app.py:3352` print("FEEDBACK LIMIT CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:615` - `reports/deep_audit_report.md:291` - `app.py:3374` except Exception as error:
+- `reports/deep_audit_report.md:616` - `reports/deep_audit_report.md:292` - `app.py:3375` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:617` - `reports/deep_audit_report.md:293` - `app.py:3507` except Exception as error:
+- `reports/deep_audit_report.md:618` - `reports/deep_audit_report.md:294` - `app.py:3508` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:619` - `reports/deep_audit_report.md:295` - `app.py:3535` except Exception as error:
+- `reports/deep_audit_report.md:620` - `reports/deep_audit_report.md:296` - `app.py:3580` except Exception as error:
+- `reports/deep_audit_report.md:621` - `reports/deep_audit_report.md:297` - `app.py:3607` except Exception as error:
+- `reports/deep_audit_report.md:622` - `reports/deep_audit_report.md:298` - `app.py:3608` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:623` - `reports/deep_audit_report.md:299` - `app.py:3636` except Exception as error:
+- `reports/deep_audit_report.md:624` - `reports/deep_audit_report.md:300` - `app.py:3637` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:625` - `reports/deep_audit_report.md:301` - `app.py:3694` except Exception as error:
+- `reports/deep_audit_report.md:626` - `reports/deep_audit_report.md:302` - `app.py:3718` except Exception as error:
+- `reports/deep_audit_report.md:627` - `reports/deep_audit_report.md:303` - `app.py:3719` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:628` - `reports/deep_audit_report.md:304` - `app.py:3738` except Exception as error:
+- `reports/deep_audit_report.md:629` - `reports/deep_audit_report.md:305` - `app.py:3739` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:630` - `reports/deep_audit_report.md:306` - `migrations/env.py:31` except AttributeError:
+- `reports/deep_audit_report.md:631` - `reports/deep_audit_report.md:307` - `tools/audit_routes.py:43` except Exception as error:
+- `reports/deep_audit_report.md:632` - `reports/deep_audit_report.md:308` - `tools/audit_database.py:49` except Exception as error:
+- `reports/deep_audit_report.md:633` - `reports/deep_audit_report.md:309` - `tools/audit_database.py:52` except Exception as error:
+- `reports/deep_audit_report.md:634` - `reports/deep_audit_report.md:310` - `tools/balance_report.py:16` except Exception:
+- `reports/deep_audit_report.md:635` - `reports/deep_audit_report.md:311` - `tools/audit_cards.py:23` except Exception as error:
+- `reports/deep_audit_report.md:636` - `reports/deep_audit_report.md:312` - `tools/audit_cards.py:62` except Exception:
+- `reports/deep_audit_report.md:637` - `reports/deep_audit_report.md:313` - `tools/audit_cards.py:74` except Exception:
+- `reports/deep_audit_report.md:638` - `reports/deep_audit_report.md:314` - `tools/fix_deck_builder_v112_manual.py:115` raise SystemExit("ERROR: old checkbox block not found exactly. No changes made.")
+- `reports/deep_audit_report.md:639` - `reports/deep_audit_report.md:315` - `tools/deep_audit.py:30` except Exception as e:
+- `reports/deep_audit_report.md:640` - `reports/deep_audit_report.md:316` - `tools/deep_audit.py:125` # 8. Broken references: function calls not defined in same file rough scan
+- `reports/deep_audit_report.md:641` - `reports/deep_audit_report.md:317` - `tools/deep_audit.py:144` except Exception as e:
+- `reports/deep_audit_report.md:642` - `reports/deep_audit_report.md:318` - `tools/deep_audit.py:147` # 9. TODO/FIXME/errors
+- `reports/deep_audit_report.md:643` - `reports/deep_audit_report.md:319` - `tools/deep_audit.py:148` section("TODO/FIXME/Error strings")
+- `reports/deep_audit_report.md:644` - `reports/deep_audit_report.md:320` - `tools/deep_audit.py:156` except Exception:
+- `reports/deep_audit_report.md:645` - `reports/deep_audit_report.md:321` - `tools/deep_audit.py:160` if any(k in low for k in ["todo", "fixme", "hack", "broken", "error:", "except exception", "pass  #"]):
+- `reports/deep_audit_report.md:646` - `reports/deep_audit_report.md:322` - `tools/deep_audit.py:179` except Exception:
+- `reports/deep_audit_report.md:647` - `reports/deep_audit_report.md:323` - `tools/internal_rc_check.py:42` print("ERROR:", failure)
+- `reports/deep_audit_report.md:648` - `reports/deep_audit_report.md:324` - `tools/fix_beta_core_v111.py:118` # The common broken shape has two const cost declarations close together.
+- `reports/deep_audit_report.md:649` - `reports/deep_audit_report.md:325` - `tools/preflight.py:31` except Exception as error:
+- `reports/deep_audit_report.md:650` - `reports/deep_audit_report.md:326` - `tools/preflight.py:38` print("ERROR:", error)
+- `reports/deep_audit_report.md:651` - `reports/deep_audit_report.md:327` - `tools/preflight.py:70` print("ERROR:", error)
+- `reports/deep_audit_report.md:652` - `reports/deep_audit_report.md:328` - `game/deck.py:76` except Exception:
+- `reports/deep_audit_report.md:653` - `reports/deep_audit_report.md:329` - `game/cards.py:165` "Mastodonte Antigo",
+- `reports/deep_audit_report.md:654` - `reports/deep_audit_report.md:330` - `game/match_utils.py:16` except Exception:
+- `reports/deep_audit_report.md:655` - `reports/deep_audit_report.md:331` - `templates/first_session.html:67` If anything blocks the path, feels confusing, looks broken on Android,
+- `reports/deep_audit_report.md:656` - `reports/deep_audit_report.md:332` - `backups/beta_final_stability_v113_20260503_103647/app.py:104` except Exception as error:
+- `reports/deep_audit_report.md:657` - `reports/deep_audit_report.md:333` - `backups/beta_final_stability_v113_20260503_103647/app.py:105` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:658` - `reports/deep_audit_report.md:334` - `backups/beta_final_stability_v113_20260503_103647/app.py:214` except Exception as error:
+- `reports/deep_audit_report.md:659` - `reports/deep_audit_report.md:335` - `backups/beta_final_stability_v113_20260503_103647/app.py:226` except Exception as error:
+- `reports/deep_audit_report.md:660` - `reports/deep_audit_report.md:336` - `backups/beta_final_stability_v113_20260503_103647/app.py:250` except Exception as error:
+- `reports/deep_audit_report.md:661` - `reports/deep_audit_report.md:337` - `backups/beta_final_stability_v113_20260503_103647/app.py:319` except Exception as error:
+- `reports/deep_audit_report.md:662` - `reports/deep_audit_report.md:338` - `backups/beta_final_stability_v113_20260503_103647/app.py:334` except Exception as error:
+- `reports/deep_audit_report.md:663` - `reports/deep_audit_report.md:339` - `backups/beta_final_stability_v113_20260503_103647/app.py:337` print("Error:", error)
+- `reports/deep_audit_report.md:664` - `reports/deep_audit_report.md:340` - `backups/beta_final_stability_v113_20260503_103647/app.py:391` except Exception as log_error:
+- `reports/deep_audit_report.md:665` - `reports/deep_audit_report.md:341` - `backups/beta_final_stability_v113_20260503_103647/app.py:397` except Exception as log_error:
+- `reports/deep_audit_report.md:666` - `reports/deep_audit_report.md:342` - `backups/beta_final_stability_v113_20260503_103647/app.py:400` except Exception as error:
+- `reports/deep_audit_report.md:667` - `reports/deep_audit_report.md:343` - `backups/beta_final_stability_v113_20260503_103647/app.py:403` print("Error:", error)
+- `reports/deep_audit_report.md:668` - `reports/deep_audit_report.md:344` - `backups/beta_final_stability_v113_20260503_103647/app.py:429` except Exception as error:
+- `reports/deep_audit_report.md:669` - `reports/deep_audit_report.md:345` - `backups/beta_final_stability_v113_20260503_103647/app.py:432` print("Error:", error)
+- `reports/deep_audit_report.md:670` - `reports/deep_audit_report.md:346` - `backups/beta_final_stability_v113_20260503_103647/app.py:456` except Exception as error:
+- `reports/deep_audit_report.md:671` - `reports/deep_audit_report.md:347` - `backups/beta_final_stability_v113_20260503_103647/app.py:459` print("Error:", error)
+- `reports/deep_audit_report.md:672` - `reports/deep_audit_report.md:348` - `backups/beta_final_stability_v113_20260503_103647/app.py:484` except Exception as error:
+- `reports/deep_audit_report.md:673` - `reports/deep_audit_report.md:349` - `backups/beta_final_stability_v113_20260503_103647/app.py:695` except Exception as error:
+- `reports/deep_audit_report.md:674` - `reports/deep_audit_report.md:350` - `backups/beta_final_stability_v113_20260503_103647/app.py:696` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:675` - `reports/deep_audit_report.md:351` - `backups/beta_final_stability_v113_20260503_103647/app.py:805` except Exception as error:
+- `reports/deep_audit_report.md:676` - `reports/deep_audit_report.md:352` - `backups/beta_final_stability_v113_20260503_103647/app.py:980` except Exception as error:
+- `reports/deep_audit_report.md:677` - `reports/deep_audit_report.md:353` - `backups/beta_final_stability_v113_20260503_103647/app.py:981` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:678` - `reports/deep_audit_report.md:354` - `backups/beta_final_stability_v113_20260503_103647/app.py:1031` except Exception as error:
+- `reports/deep_audit_report.md:679` - `reports/deep_audit_report.md:355` - `backups/beta_final_stability_v113_20260503_103647/app.py:1032` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:680` - `reports/deep_audit_report.md:356` - `backups/beta_final_stability_v113_20260503_103647/app.py:1111` except Exception as error:
+- `reports/deep_audit_report.md:681` - `reports/deep_audit_report.md:357` - `backups/beta_final_stability_v113_20260503_103647/app.py:1123` except Exception:
+- `reports/deep_audit_report.md:682` - `reports/deep_audit_report.md:358` - `backups/beta_final_stability_v113_20260503_103647/app.py:1234` except Exception:
+- `reports/deep_audit_report.md:683` - `reports/deep_audit_report.md:359` - `backups/beta_final_stability_v113_20260503_103647/app.py:1258` except Exception as error:
+- `reports/deep_audit_report.md:684` - `reports/deep_audit_report.md:360` - `backups/beta_final_stability_v113_20260503_103647/app.py:1261` except Exception:
+- `reports/deep_audit_report.md:685` - `reports/deep_audit_report.md:361` - `backups/beta_final_stability_v113_20260503_103647/app.py:1263` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:686` - `reports/deep_audit_report.md:362` - `backups/beta_final_stability_v113_20260503_103647/app.py:1356` except Exception:
+- `reports/deep_audit_report.md:687` - `reports/deep_audit_report.md:363` - `backups/beta_final_stability_v113_20260503_103647/app.py:1410` except Exception as error:
+- `reports/deep_audit_report.md:688` - `reports/deep_audit_report.md:364` - `backups/beta_final_stability_v113_20260503_103647/app.py:1411` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:689` - `reports/deep_audit_report.md:365` - `backups/beta_final_stability_v113_20260503_103647/app.py:1922` except Exception as error:
+- `reports/deep_audit_report.md:690` - `reports/deep_audit_report.md:366` - `backups/beta_final_stability_v113_20260503_103647/app.py:1923` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:691` - `reports/deep_audit_report.md:367` - `backups/beta_final_stability_v113_20260503_103647/app.py:1965` except Exception as error:
+- `reports/deep_audit_report.md:692` - `reports/deep_audit_report.md:368` - `backups/beta_final_stability_v113_20260503_103647/app.py:1966` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:693` - `reports/deep_audit_report.md:369` - `backups/beta_final_stability_v113_20260503_103647/app.py:1996` except Exception as error:
+- `reports/deep_audit_report.md:694` - `reports/deep_audit_report.md:370` - `backups/beta_final_stability_v113_20260503_103647/app.py:1997` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:695` - `reports/deep_audit_report.md:371` - `backups/beta_final_stability_v113_20260503_103647/app.py:2162` except Exception as error:
+- `reports/deep_audit_report.md:696` - `reports/deep_audit_report.md:372` - `backups/beta_final_stability_v113_20260503_103647/app.py:2163` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:697` - `reports/deep_audit_report.md:373` - `backups/beta_final_stability_v113_20260503_103647/app.py:2304` except Exception:
+- `reports/deep_audit_report.md:698` - `reports/deep_audit_report.md:374` - `backups/beta_final_stability_v113_20260503_103647/app.py:2708` except Exception as error:
+- `reports/deep_audit_report.md:699` - `reports/deep_audit_report.md:375` - `backups/beta_final_stability_v113_20260503_103647/app.py:2709` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:700` - `reports/deep_audit_report.md:376` - `backups/beta_final_stability_v113_20260503_103647/app.py:2841` except Exception as error:
+- `reports/deep_audit_report.md:701` - `reports/deep_audit_report.md:377` - `backups/beta_final_stability_v113_20260503_103647/app.py:2842` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:702` - `reports/deep_audit_report.md:378` - `backups/beta_final_stability_v113_20260503_103647/app.py:2869` except Exception as error:
+- `reports/deep_audit_report.md:703` - `reports/deep_audit_report.md:379` - `backups/beta_final_stability_v113_20260503_103647/app.py:2913` except Exception as error:
+- `reports/deep_audit_report.md:704` - `reports/deep_audit_report.md:380` - `backups/beta_final_stability_v113_20260503_103647/app.py:2940` except Exception as error:
+- `reports/deep_audit_report.md:705` - `reports/deep_audit_report.md:381` - `backups/beta_final_stability_v113_20260503_103647/app.py:2941` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:706` - `reports/deep_audit_report.md:382` - `backups/beta_final_stability_v113_20260503_103647/app.py:2969` except Exception as error:
+- `reports/deep_audit_report.md:707` - `reports/deep_audit_report.md:383` - `backups/beta_final_stability_v113_20260503_103647/app.py:2970` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:708` - `reports/deep_audit_report.md:384` - `backups/beta_final_stability_v113_20260503_103647/app.py:3027` except Exception as error:
+- `reports/deep_audit_report.md:709` - `reports/deep_audit_report.md:385` - `backups/beta_final_stability_v113_20260503_103647/app.py:3051` except Exception as error:
+- `reports/deep_audit_report.md:710` - `reports/deep_audit_report.md:386` - `backups/beta_final_stability_v113_20260503_103647/app.py:3052` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:711` - `reports/deep_audit_report.md:387` - `backups/beta_final_stability_v113_20260503_103647/app.py:3071` except Exception as error:
+- `reports/deep_audit_report.md:712` - `reports/deep_audit_report.md:388` - `backups/beta_final_stability_v113_20260503_103647/app.py:3072` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:713` - `reports/deep_audit_report.md:389` - `backups/beta_core_v111_20260503_102709/app.py:104` except Exception as error:
+- `reports/deep_audit_report.md:714` - `reports/deep_audit_report.md:390` - `backups/beta_core_v111_20260503_102709/app.py:105` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:715` - `reports/deep_audit_report.md:391` - `backups/beta_core_v111_20260503_102709/app.py:214` except Exception as error:
+- `reports/deep_audit_report.md:716` - `reports/deep_audit_report.md:392` - `backups/beta_core_v111_20260503_102709/app.py:226` except Exception as error:
+- `reports/deep_audit_report.md:717` - `reports/deep_audit_report.md:393` - `backups/beta_core_v111_20260503_102709/app.py:250` except Exception as error:
+- `reports/deep_audit_report.md:718` - `reports/deep_audit_report.md:394` - `backups/beta_core_v111_20260503_102709/app.py:319` except Exception as error:
+- `reports/deep_audit_report.md:719` - `reports/deep_audit_report.md:395` - `backups/beta_core_v111_20260503_102709/app.py:334` except Exception as error:
+- `reports/deep_audit_report.md:720` - `reports/deep_audit_report.md:396` - `backups/beta_core_v111_20260503_102709/app.py:337` print("Error:", error)
+- `reports/deep_audit_report.md:721` - `reports/deep_audit_report.md:397` - `backups/beta_core_v111_20260503_102709/app.py:391` except Exception as log_error:
+- `reports/deep_audit_report.md:722` - `reports/deep_audit_report.md:398` - `backups/beta_core_v111_20260503_102709/app.py:397` except Exception as log_error:
+- `reports/deep_audit_report.md:723` - `reports/deep_audit_report.md:399` - `backups/beta_core_v111_20260503_102709/app.py:400` except Exception as error:
+- `reports/deep_audit_report.md:724` - `reports/deep_audit_report.md:400` - `backups/beta_core_v111_20260503_102709/app.py:403` print("Error:", error)
+- `reports/deep_audit_report.md:725` - `reports/deep_audit_report.md:401` - `backups/beta_core_v111_20260503_102709/app.py:429` except Exception as error:
+- `reports/deep_audit_report.md:726` - `reports/deep_audit_report.md:402` - `backups/beta_core_v111_20260503_102709/app.py:432` print("Error:", error)
+- `reports/deep_audit_report.md:727` - `reports/deep_audit_report.md:403` - `backups/beta_core_v111_20260503_102709/app.py:456` except Exception as error:
+- `reports/deep_audit_report.md:728` - `reports/deep_audit_report.md:404` - `backups/beta_core_v111_20260503_102709/app.py:459` print("Error:", error)
+- `reports/deep_audit_report.md:729` - `reports/deep_audit_report.md:405` - `backups/beta_core_v111_20260503_102709/app.py:484` except Exception as error:
+- `reports/deep_audit_report.md:730` - `reports/deep_audit_report.md:406` - `backups/beta_core_v111_20260503_102709/app.py:695` except Exception as error:
+- `reports/deep_audit_report.md:731` - `reports/deep_audit_report.md:407` - `backups/beta_core_v111_20260503_102709/app.py:696` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:732` - `reports/deep_audit_report.md:408` - `backups/beta_core_v111_20260503_102709/app.py:805` except Exception as error:
+- `reports/deep_audit_report.md:733` - `reports/deep_audit_report.md:409` - `backups/beta_core_v111_20260503_102709/app.py:980` except Exception as error:
+- `reports/deep_audit_report.md:734` - `reports/deep_audit_report.md:410` - `backups/beta_core_v111_20260503_102709/app.py:981` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:735` - `reports/deep_audit_report.md:411` - `backups/beta_core_v111_20260503_102709/app.py:1031` except Exception as error:
+- `reports/deep_audit_report.md:736` - `reports/deep_audit_report.md:412` - `backups/beta_core_v111_20260503_102709/app.py:1032` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:737` - `reports/deep_audit_report.md:413` - `backups/beta_core_v111_20260503_102709/app.py:1111` except Exception as error:
+- `reports/deep_audit_report.md:738` - `reports/deep_audit_report.md:414` - `backups/beta_core_v111_20260503_102709/app.py:1123` except Exception:
+- `reports/deep_audit_report.md:739` - `reports/deep_audit_report.md:415` - `backups/beta_core_v111_20260503_102709/app.py:1234` except Exception:
+- `reports/deep_audit_report.md:740` - `reports/deep_audit_report.md:416` - `backups/beta_core_v111_20260503_102709/app.py:1258` except Exception as error:
+- `reports/deep_audit_report.md:741` - `reports/deep_audit_report.md:417` - `backups/beta_core_v111_20260503_102709/app.py:1261` except Exception:
+- `reports/deep_audit_report.md:742` - `reports/deep_audit_report.md:418` - `backups/beta_core_v111_20260503_102709/app.py:1263` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:743` - `reports/deep_audit_report.md:419` - `backups/beta_core_v111_20260503_102709/app.py:1356` except Exception:
+- `reports/deep_audit_report.md:744` - `reports/deep_audit_report.md:420` - `backups/beta_core_v111_20260503_102709/app.py:1410` except Exception as error:
+- `reports/deep_audit_report.md:745` - `reports/deep_audit_report.md:421` - `backups/beta_core_v111_20260503_102709/app.py:1411` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:746` - `reports/deep_audit_report.md:422` - `backups/beta_core_v111_20260503_102709/app.py:1922` except Exception as error:
+- `reports/deep_audit_report.md:747` - `reports/deep_audit_report.md:423` - `backups/beta_core_v111_20260503_102709/app.py:1923` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:748` - `reports/deep_audit_report.md:424` - `backups/beta_core_v111_20260503_102709/app.py:1965` except Exception as error:
+- `reports/deep_audit_report.md:749` - `reports/deep_audit_report.md:425` - `backups/beta_core_v111_20260503_102709/app.py:1966` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:750` - `reports/deep_audit_report.md:426` - `backups/beta_core_v111_20260503_102709/app.py:1996` except Exception as error:
+- `reports/deep_audit_report.md:751` - `reports/deep_audit_report.md:427` - `backups/beta_core_v111_20260503_102709/app.py:1997` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:752` - `reports/deep_audit_report.md:428` - `backups/beta_core_v111_20260503_102709/app.py:2162` except Exception as error:
+- `reports/deep_audit_report.md:753` - `reports/deep_audit_report.md:429` - `backups/beta_core_v111_20260503_102709/app.py:2163` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:754` - `reports/deep_audit_report.md:430` - `backups/beta_core_v111_20260503_102709/app.py:2304` except Exception:
+- `reports/deep_audit_report.md:755` - `reports/deep_audit_report.md:431` - `backups/beta_core_v111_20260503_102709/app.py:2708` except Exception as error:
+- `reports/deep_audit_report.md:756` - `reports/deep_audit_report.md:432` - `backups/beta_core_v111_20260503_102709/app.py:2709` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:757` - `reports/deep_audit_report.md:433` - `backups/beta_core_v111_20260503_102709/app.py:2841` except Exception as error:
+- `reports/deep_audit_report.md:758` - `reports/deep_audit_report.md:434` - `backups/beta_core_v111_20260503_102709/app.py:2842` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:759` - `reports/deep_audit_report.md:435` - `backups/beta_core_v111_20260503_102709/app.py:2869` except Exception as error:
+- `reports/deep_audit_report.md:760` - `reports/deep_audit_report.md:436` - `backups/beta_core_v111_20260503_102709/app.py:2913` except Exception as error:
+- `reports/deep_audit_report.md:761` - `reports/deep_audit_report.md:437` - `backups/beta_core_v111_20260503_102709/app.py:2940` except Exception as error:
+- `reports/deep_audit_report.md:762` - `reports/deep_audit_report.md:438` - `backups/beta_core_v111_20260503_102709/app.py:2941` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:763` - `reports/deep_audit_report.md:439` - `backups/beta_core_v111_20260503_102709/app.py:2969` except Exception as error:
+- `reports/deep_audit_report.md:764` - `reports/deep_audit_report.md:440` - `backups/beta_core_v111_20260503_102709/app.py:2970` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:765` - `reports/deep_audit_report.md:441` - `backups/beta_core_v111_20260503_102709/app.py:3027` except Exception as error:
+- `reports/deep_audit_report.md:766` - `reports/deep_audit_report.md:442` - `backups/beta_core_v111_20260503_102709/app.py:3051` except Exception as error:
+- `reports/deep_audit_report.md:767` - `reports/deep_audit_report.md:443` - `backups/beta_core_v111_20260503_102709/app.py:3052` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:768` - `reports/deep_audit_report.md:444` - `backups/beta_core_v111_20260503_102709/app.py:3071` except Exception as error:
+- `reports/deep_audit_report.md:769` - `reports/deep_audit_report.md:445` - `backups/beta_core_v111_20260503_102709/app.py:3072` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:770` - `reports/deep_audit_report.md:446` - `backups/email_delivery_v114_20260503_104855/app.py:104` except Exception as error:
+- `reports/deep_audit_report.md:771` - `reports/deep_audit_report.md:447` - `backups/email_delivery_v114_20260503_104855/app.py:105` print("SYSTEM LOG ERROR:", error)
+- `reports/deep_audit_report.md:772` - `reports/deep_audit_report.md:448` - `backups/email_delivery_v114_20260503_104855/app.py:214` except Exception as error:
+- `reports/deep_audit_report.md:773` - `reports/deep_audit_report.md:449` - `backups/email_delivery_v114_20260503_104855/app.py:320` except Exception as error:
+- `reports/deep_audit_report.md:774` - `reports/deep_audit_report.md:450` - `backups/email_delivery_v114_20260503_104855/app.py:344` except Exception as error:
+- `reports/deep_audit_report.md:775` - `reports/deep_audit_report.md:451` - `backups/email_delivery_v114_20260503_104855/app.py:413` except Exception as error:
+- `reports/deep_audit_report.md:776` - `reports/deep_audit_report.md:452` - `backups/email_delivery_v114_20260503_104855/app.py:428` except Exception as error:
+- `reports/deep_audit_report.md:777` - `reports/deep_audit_report.md:453` - `backups/email_delivery_v114_20260503_104855/app.py:431` print("Error:", error)
+- `reports/deep_audit_report.md:778` - `reports/deep_audit_report.md:454` - `backups/email_delivery_v114_20260503_104855/app.py:485` except Exception as log_error:
+- `reports/deep_audit_report.md:779` - `reports/deep_audit_report.md:455` - `backups/email_delivery_v114_20260503_104855/app.py:491` except Exception as log_error:
+- `reports/deep_audit_report.md:780` - `reports/deep_audit_report.md:456` - `backups/email_delivery_v114_20260503_104855/app.py:494` except Exception as error:
+- `reports/deep_audit_report.md:781` - `reports/deep_audit_report.md:457` - `backups/email_delivery_v114_20260503_104855/app.py:497` print("Error:", error)
+- `reports/deep_audit_report.md:782` - `reports/deep_audit_report.md:458` - `backups/email_delivery_v114_20260503_104855/app.py:523` except Exception as error:
+- `reports/deep_audit_report.md:783` - `reports/deep_audit_report.md:459` - `backups/email_delivery_v114_20260503_104855/app.py:526` print("Error:", error)
+- `reports/deep_audit_report.md:784` - `reports/deep_audit_report.md:460` - `backups/email_delivery_v114_20260503_104855/app.py:550` except Exception as error:
+- `reports/deep_audit_report.md:785` - `reports/deep_audit_report.md:461` - `backups/email_delivery_v114_20260503_104855/app.py:553` print("Error:", error)
+- `reports/deep_audit_report.md:786` - `reports/deep_audit_report.md:462` - `backups/email_delivery_v114_20260503_104855/app.py:578` except Exception as error:
+- `reports/deep_audit_report.md:787` - `reports/deep_audit_report.md:463` - `backups/email_delivery_v114_20260503_104855/app.py:789` except Exception as error:
+- `reports/deep_audit_report.md:788` - `reports/deep_audit_report.md:464` - `backups/email_delivery_v114_20260503_104855/app.py:790` print("ADMIN BETA EVENTS QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:789` - `reports/deep_audit_report.md:465` - `backups/email_delivery_v114_20260503_104855/app.py:899` except Exception as error:
+- `reports/deep_audit_report.md:790` - `reports/deep_audit_report.md:466` - `backups/email_delivery_v114_20260503_104855/app.py:1074` except Exception as error:
+- `reports/deep_audit_report.md:791` - `reports/deep_audit_report.md:467` - `backups/email_delivery_v114_20260503_104855/app.py:1075` print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:792` - `reports/deep_audit_report.md:468` - `backups/email_delivery_v114_20260503_104855/app.py:1125` except Exception as error:
+- `reports/deep_audit_report.md:793` - `reports/deep_audit_report.md:469` - `backups/email_delivery_v114_20260503_104855/app.py:1126` print("RANKING MATCH COUNT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:794` - `reports/deep_audit_report.md:470` - `backups/email_delivery_v114_20260503_104855/app.py:1205` except Exception as error:
+- `reports/deep_audit_report.md:795` - `reports/deep_audit_report.md:471` - `backups/email_delivery_v114_20260503_104855/app.py:1217` except Exception:
+- `reports/deep_audit_report.md:796` - `reports/deep_audit_report.md:472` - `backups/email_delivery_v114_20260503_104855/app.py:1328` except Exception:
+- `reports/deep_audit_report.md:797` - `reports/deep_audit_report.md:473` - `backups/email_delivery_v114_20260503_104855/app.py:1352` except Exception as error:
+- `reports/deep_audit_report.md:798` - `reports/deep_audit_report.md:474` - `backups/email_delivery_v114_20260503_104855/app.py:1355` except Exception:
+- `reports/deep_audit_report.md:799` - `reports/deep_audit_report.md:475` - `backups/email_delivery_v114_20260503_104855/app.py:1357` print("BETA EVENT LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:800` - `reports/deep_audit_report.md:476` - `backups/email_delivery_v114_20260503_104855/app.py:1450` except Exception:
+- `reports/deep_audit_report.md:801` - `reports/deep_audit_report.md:477` - `backups/email_delivery_v114_20260503_104855/app.py:1504` except Exception as error:
+- `reports/deep_audit_report.md:802` - `reports/deep_audit_report.md:478` - `backups/email_delivery_v114_20260503_104855/app.py:1505` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:803` - `reports/deep_audit_report.md:479` - `backups/email_delivery_v114_20260503_104855/app.py:2016` except Exception as error:
+- `reports/deep_audit_report.md:804` - `reports/deep_audit_report.md:480` - `backups/email_delivery_v114_20260503_104855/app.py:2017` print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:805` - `reports/deep_audit_report.md:481` - `backups/email_delivery_v114_20260503_104855/app.py:2059` except Exception as error:
+- `reports/deep_audit_report.md:806` - `reports/deep_audit_report.md:482` - `backups/email_delivery_v114_20260503_104855/app.py:2060` print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:807` - `reports/deep_audit_report.md:483` - `backups/email_delivery_v114_20260503_104855/app.py:2090` except Exception as error:
+- `reports/deep_audit_report.md:808` - `reports/deep_audit_report.md:484` - `backups/email_delivery_v114_20260503_104855/app.py:2091` print("V1.07 POST MATCH EMIT ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:809` - `reports/deep_audit_report.md:485` - `backups/email_delivery_v114_20260503_104855/app.py:2256` except Exception as error:
+- `reports/deep_audit_report.md:810` - `reports/deep_audit_report.md:486` - `backups/email_delivery_v114_20260503_104855/app.py:2257` print("TRAINING START ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:811` - `reports/deep_audit_report.md:487` - `backups/email_delivery_v114_20260503_104855/app.py:2398` except Exception:
+- `reports/deep_audit_report.md:812` - `reports/deep_audit_report.md:488` - `backups/email_delivery_v114_20260503_104855/app.py:2802` except Exception as error:
+- `reports/deep_audit_report.md:813` - `reports/deep_audit_report.md:489` - `backups/email_delivery_v114_20260503_104855/app.py:2803` print("FEEDBACK LOG ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:814` - `reports/deep_audit_report.md:490` - `backups/email_delivery_v114_20260503_104855/app.py:2935` except Exception as error:
+- `reports/deep_audit_report.md:815` - `reports/deep_audit_report.md:491` - `backups/email_delivery_v114_20260503_104855/app.py:2936` print("ADMIN BALANCE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:816` - `reports/deep_audit_report.md:492` - `backups/email_delivery_v114_20260503_104855/app.py:2963` except Exception as error:
+- `reports/deep_audit_report.md:817` - `reports/deep_audit_report.md:493` - `backups/email_delivery_v114_20260503_104855/app.py:3007` except Exception as error:
+- `reports/deep_audit_report.md:818` - `reports/deep_audit_report.md:494` - `backups/email_delivery_v114_20260503_104855/app.py:3034` except Exception as error:
+- `reports/deep_audit_report.md:819` - `reports/deep_audit_report.md:495` - `backups/email_delivery_v114_20260503_104855/app.py:3035` print("MISSIONS PAGE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:820` - `reports/deep_audit_report.md:496` - `backups/email_delivery_v114_20260503_104855/app.py:3063` except Exception as error:
+- `reports/deep_audit_report.md:821` - `reports/deep_audit_report.md:497` - `backups/email_delivery_v114_20260503_104855/app.py:3064` print("MISSION CLAIM ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:822` - `reports/deep_audit_report.md:498` - `backups/email_delivery_v114_20260503_104855/app.py:3121` except Exception as error:
+- `reports/deep_audit_report.md:823` - `reports/deep_audit_report.md:499` - `backups/email_delivery_v114_20260503_104855/app.py:3145` except Exception as error:
+- `reports/deep_audit_report.md:824` - `reports/deep_audit_report.md:500` - `backups/email_delivery_v114_20260503_104855/app.py:3146` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:825` - `reports/deep_audit_report.md:501` - `backups/email_delivery_v114_20260503_104855/app.py:3165` except Exception as error:
+- `reports/deep_audit_report.md:826` - `reports/deep_audit_report.md:502` - `backups/email_delivery_v114_20260503_104855/app.py:3166` print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:827` - `reports/deep_audit_report.md:503` - `backups/email_delivery_v114_20260503_104855/services/email_service.py:58` except Exception as error:
+- `reports/deep_audit_report.md:828` - `reports/deep_audit_report.md:504` - `backups/email_delivery_v114_20260503_104855/services/email_service.py:61` print("Error:", error)
+- `reports/deep_audit_report.md:829` - `reports/deep_audit_report.md:505` - `routes/auth.py:68` except Exception as error:
+- `reports/deep_audit_report.md:830` - `reports/deep_audit_report.md:506` - `routes/auth.py:69` print("LOGIN TRACKING ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:831` - `reports/deep_audit_report.md:507` - `routes/auth.py:75` except Exception as error:
+- `reports/deep_audit_report.md:832` - `reports/deep_audit_report.md:508` - `routes/auth.py:76` print("LOGIN ONBOARDING CHECK ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:833` - `reports/deep_audit_report.md:509` - `routes/auth.py:134` except Exception as error:
+- `reports/deep_audit_report.md:834` - `reports/deep_audit_report.md:510` - `routes/auth.py:135` print("STARTER DECK CREATE ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:835` - `reports/deep_audit_report.md:511` - `routes/auth.py:180` except Exception:
+- `reports/deep_audit_report.md:836` - `reports/deep_audit_report.md:512` - `routes/auth.py:187` except Exception:
+- `reports/deep_audit_report.md:837` - `reports/deep_audit_report.md:513` - `routes/auth.py:253` except Exception:
+- `reports/deep_audit_report.md:838` - `reports/deep_audit_report.md:514` - `routes/public.py:61` except Exception as error:
+- `reports/deep_audit_report.md:839` - `reports/deep_audit_report.md:515` - `routes/public.py:76` except Exception as error:
+- `reports/deep_audit_report.md:840` - `reports/deep_audit_report.md:516` - `routes/public.py:77` print("WELCOME RENDER ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:841` - `reports/deep_audit_report.md:517` - `routes/public.py:93` except Exception as error:
+- `reports/deep_audit_report.md:842` - `reports/deep_audit_report.md:518` - `routes/public.py:116` except Exception as error:
+- `reports/deep_audit_report.md:843` - `reports/deep_audit_report.md:519` - `routes/game.py:17` except Exception:
+- `reports/deep_audit_report.md:844` - `reports/deep_audit_report.md:520` - `routes/game.py:74` except Exception as error:
+- `reports/deep_audit_report.md:845` - `reports/deep_audit_report.md:521` - `routes/game.py:96` except Exception as error:
+- `reports/deep_audit_report.md:846` - `reports/deep_audit_report.md:522` - `routes/game.py:120` except Exception as error:
+- `reports/deep_audit_report.md:847` - `reports/deep_audit_report.md:523` - `routes/game.py:175` except Exception as error:
+- `reports/deep_audit_report.md:848` - `reports/deep_audit_report.md:524` - `routes/game.py:185` except Exception as error:
+- `reports/deep_audit_report.md:849` - `reports/deep_audit_report.md:525` - `routes/game.py:206` except Exception as error:
+- `reports/deep_audit_report.md:850` - `reports/deep_audit_report.md:526` - `routes/game.py:212` except Exception as error:
+- `reports/deep_audit_report.md:851` - `reports/deep_audit_report.md:527` - `routes/game.py:218` except Exception as error:
+- `reports/deep_audit_report.md:852` - `reports/deep_audit_report.md:528` - `routes/game.py:270` except Exception as error:
+- `reports/deep_audit_report.md:853` - `reports/deep_audit_report.md:529` - `routes/admin.py:44` except Exception as error:
+- `reports/deep_audit_report.md:854` - `reports/deep_audit_report.md:530` - `routes/admin.py:50` except Exception as error:
+- `reports/deep_audit_report.md:855` - `reports/deep_audit_report.md:531` - `routes/admin.py:56` except Exception as error:
+- `reports/deep_audit_report.md:856` - `reports/deep_audit_report.md:532` - `routes/admin.py:80` except Exception as error:
+- `reports/deep_audit_report.md:857` - `reports/deep_audit_report.md:533` - `routes/admin.py:97` except Exception as error:
+- `reports/deep_audit_report.md:858` - `reports/deep_audit_report.md:534` - `routes/admin.py:120` except Exception as error:
+- `reports/deep_audit_report.md:859` - `reports/deep_audit_report.md:535` - `routes/admin.py:137` except Exception as error:
+- `reports/deep_audit_report.md:860` - `reports/deep_audit_report.md:536` - `services/match_telemetry.py:8` except Exception:
+- `reports/deep_audit_report.md:861` - `reports/deep_audit_report.md:537` - `services/match_telemetry.py:19` except Exception:
+- `reports/deep_audit_report.md:862` - `reports/deep_audit_report.md:538` - `services/match_telemetry.py:56` except Exception as error:
+- `reports/deep_audit_report.md:863` - `reports/deep_audit_report.md:539` - `services/match_telemetry.py:57` print("MATCH TELEMETRY ERROR:", type(error).__name__, error)
+- `reports/deep_audit_report.md:864` - `reports/deep_audit_report.md:540` - `services/battle_summary.py:8` except Exception:
+- `reports/deep_audit_report.md:865` - `reports/deep_audit_report.md:541` - `services/email_service.py:62` except Exception as error:
+- `reports/deep_audit_report.md:866` - `reports/deep_audit_report.md:542` - `services/email_service.py:65` print("Error:", error)
+- `reports/deep_audit_report.md:867` - `reports/deep_audit_report.md:543` - `services/database/schema_tools.py:12` except Exception as error:
+- `reports/deep_audit_report.md:868` - `reports/deep_audit_report.md:544` - `services/database/schema_tools.py:34` except Exception as error:
+- `reports/deep_audit_report.md:869` - `reports/deep_audit_report.md:545` - `services/database/schema_tools.py:46` except Exception as error:
 
 ## Security quick scan
 
 - Secret key: `config.py:60`
-- Email body logging: `app.py:210`
+- Email body logging: `app.py:296`
+- Hardcoded password: `tools/ensure_admin.py:13`
 - Secret key: `tools/audit_config.py:34`
 - Email body logging: `tools/deep_audit.py:170`
+- Hardcoded password: `tests/conftest.py:82`
+- Hardcoded password: `tests/test_release_candidate_smoke.py:87`
+- Hardcoded password: `tests/test_release_candidate_smoke.py:109`
+- Hardcoded password: `tests/test_release_candidate_smoke.py:138`
 - CORS wildcard: `backups/beta_final_stability_v113_20260503_103647/app.py:66`
 - CORS wildcard: `backups/beta_core_v111_20260503_102709/app.py:66`
 - CORS wildcard: `backups/email_delivery_v114_20260503_104855/app.py:66`
@@ -559,7 +1234,7 @@ No duplicate socket handlers found.
 
 ## Existing project checks
 
-### /Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/preflight.py
+### /Users/lucassilverio/Desktop/Ambition/.venv/bin/python tools/preflight.py
 Exit code: 0
 ```
 \n========================================================================
@@ -642,7 +1317,7 @@ CONFIG: OK
 DATABASE
 ========================================================================
 DATABASE TABLES: ['alembic_version', 'beta_invites', 'booster_history', 'card_stats', 'feedback_reports', 'match_history', 'match_telemetry', 'system_logs', 'user', 'user_missions', 'users']
-USERS TOTAL: 4
+USERS TOTAL: 5
 DATABASE: OK
 \n========================================================================
 ROUTES
@@ -672,7 +1347,7 @@ ROUTES: OK
 \n========================================================================
 TEMPLATE ENDPOINTS
 ========================================================================
-REGISTERED ENDPOINTS: 54
+REGISTERED ENDPOINTS: 57
 CALLED ENDPOINTS: ['admin', 'admin_balance', 'admin_ban_user', 'admin_beta_events', 'admin_dev_tools', 'admin_feedback', 'admin_feedback_update', 'admin_invites', 'admin_release_candidate', 'admin_reports', 'admin_system', 'admin_toggle_admin', 'admin_toggle_tester', 'admin_unban_user', 'admin_users', 'admin_verify_user', 'arena', 'beta_launch', 'booster_history', 'claim_user_mission', 'closed_test', 'collection', 'complete_onboarding', 'data_deletion', 'deck_builder', 'feedback', 'first_session', 'forgot_password', 'how_to_play', 'index', 'login', 'logout', 'match_history', 'missions', 'privacy', 'profile', 'progression', 'ranking', 'register', 'resend_verification', 'shop', 'terms', 'training']
 MISSING ENDPOINTS: []
 TEMPLATE ENDPOINTS: OK
@@ -686,10 +1361,10 @@ OK: Database responds [required] - Database query OK
 FAIL: Email delivery configured [recommended] - SMTP missing or incomplete
 OK: Critical routes do not 500 [required] - /=200, /health=200, /login=200, /register=200, /training=302, /arena=302, /feedback=302, /missions=302, /shop=302
 OK: No open critical feedback [required] - 0 open critical reports
-FAIL: No unresolved runtime errors [recommended] - 1 unresolved error logs
-OK: Tester accounts exist [recommended] - 4 total users, 4 verified
-OK: Match history records exist [recommended] - 8 saved matches
-FAIL: Recent match length is readable [recommended] - 1.6 average rounds over recent matches
+OK: No unresolved runtime errors [recommended] - 0 unresolved error logs
+OK: Tester accounts exist [recommended] - 5 total users, 5 verified
+OK: Match history records exist [recommended] - 9 saved matches
+OK: Recent match length is readable [recommended] - 1.6 average rounds over 9/20 recent matches
 INTERNAL RC: OK
 \n========================================================================
 CARDS
@@ -741,7 +1416,7 @@ Balance report written to reports/balance_report_v105.md
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1288, 'max': 1988, 'avg': 1603.5, 'median': 1577}
+- Monster summary: {'count': 21, 'min': 1235, 'max': 1950, 'avg': 1550.9, 'median': 1527}
 
 ### Starter Type Distribution
 
@@ -753,22 +1428,22 @@ Balance report written to reports/balance_report_v105.md
 
 - Global: 9
 - Fire: 6
-- Earth: 5
 - Water: 5
+- Earth: 5
 - Plant: 5
 
 ### Starter Sigil Distribution
 
 - Global: 9
 - Fury: 6
-- Resolve: 5
 - Insight: 5
+- Resolve: 5
 - Harmony: 5
 
 ### Starter Rarity Distribution
 
-- Common: 18
-- Uncommon: 12
+- Common: 21
+- Uncommon: 9
 
 
 ## Catalog Outliers
@@ -1130,7 +1805,7 @@ AMBITIONZ PREFLIGHT PASSED
 /Users/lucassilverio/Desktop/Ambition/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
 ```
-### /Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/internal_rc_check.py
+### /Users/lucassilverio/Desktop/Ambition/.venv/bin/python tools/internal_rc_check.py
 Exit code: 0
 ```
 INTERNAL RC STATUS: READY
@@ -1140,10 +1815,10 @@ OK: Database responds [required] - Database query OK
 FAIL: Email delivery configured [recommended] - SMTP missing or incomplete
 OK: Critical routes do not 500 [required] - /=200, /health=200, /login=200, /register=200, /training=302, /arena=302, /feedback=302, /missions=302, /shop=302
 OK: No open critical feedback [required] - 0 open critical reports
-FAIL: No unresolved runtime errors [recommended] - 1 unresolved error logs
-OK: Tester accounts exist [recommended] - 4 total users, 4 verified
-OK: Match history records exist [recommended] - 8 saved matches
-FAIL: Recent match length is readable [recommended] - 1.6 average rounds over recent matches
+OK: No unresolved runtime errors [recommended] - 0 unresolved error logs
+OK: Tester accounts exist [recommended] - 5 total users, 5 verified
+OK: Match history records exist [recommended] - 9 saved matches
+OK: Recent match length is readable [recommended] - 1.6 average rounds over 9/20 recent matches
 /Users/lucassilverio/Desktop/Ambition/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
 ```
