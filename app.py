@@ -1858,6 +1858,13 @@ def data_deletion():
     return render_template("data_deletion.html")
 
 
+
+
+@app.route("/support")
+def support():
+    return render_template("support.html", user=current_user())
+
+
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")

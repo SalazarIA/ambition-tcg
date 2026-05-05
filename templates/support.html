@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Support Ambitionz</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#070711">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
+            <div>
+                <h1>Support Ambitionz</h1>
+                <p>Help turn a playable beta into a real indie TCG.</p>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        <section class="beta-journey-v126">
+            <div class="beta-journey-card-v126">
+                <span class="progression-kicker">Founder Support</span>
+                <h2>Ambitionz is an independent tactical card game.</h2>
+                <p>
+                    Your support helps with server costs, Android release, card art,
+                    balance updates, visual polish, music, sound effects and future content.
+                </p>
+
+                <div class="beta-path-grid-v126">
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Server & Infrastructure</strong>
+                        <span>Keep the web beta stable and available for testers.</span>
+                    </div>
+
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Android Release</strong>
+                        <span>Support testing, publishing and mobile improvements.</span>
+                    </div>
+
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Cards & Balance</strong>
+                        <span>Help expand the collection and tune the battle meta.</span>
+                    </div>
+
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Visual Polish</strong>
+                        <span>Improve UI, animations, sound and presentation.</span>
+                    </div>
+                </div>
+
+                <div class="balance-report-note-v126">
+                    <strong>Pix support key:</strong><br>
+                    cavestudiobrasil@gmail.com
+                </div>
+
+                <div class="beta-path-actions-v126">
+                    <a href="mailto:cavestudiobrasil@gmail.com?subject=Ambitionz%20Support" class="btn">
+                        Contact Support
+                    </a>
+                    <a href="{{ url_for('feedback') }}" class="btn btn-secondary">
+                        Send Feedback
+                    </a>
+                    <a href="{{ url_for('training') }}" class="btn btn-secondary">
+                        Play Beta
+                    </a>
+                </div>
+
+                <div class="beta-pill-row-v126">
+                    <span class="beta-pill-v126">Suggested support: R$10, R$25, R$50 or R$100</span>
+                    <span class="beta-pill-v126">Future cosmetic rewards planned</span>
+                    <span class="beta-pill-v126">No pay-to-win rewards</span>
+                </div>
+            </div>
+
+            <div class="beta-journey-card-v126">
+                <span class="progression-kicker">Future Founder Rewards</span>
+                <h3>Planned supporter rewards</h3>
+                <p>
+                    Founder rewards should stay cosmetic and symbolic, preserving fair gameplay.
+                </p>
+
+                <div class="beta-path-grid-v126">
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Founder Title</strong>
+                        <span>Special profile title for early supporters.</span>
+                    </div>
+
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Beta Card Back</strong>
+                        <span>Exclusive cosmetic card back for supporters.</span>
+                    </div>
+
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Credits Name</strong>
+                        <span>Name listed in future supporter credits.</span>
+                    </div>
+
+                    <div class="beta-path-step-v126 beta-polish-card-v126">
+                        <strong>Founder Badge</strong>
+                        <span>Permanent supporter badge when cosmetics launch.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>
