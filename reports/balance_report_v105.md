@@ -38,7 +38,7 @@
 - Starter deck IDs: 30
 - Starter deck cards found: 30
 - Missing starter IDs: []
-- Monster summary: {'count': 21, 'min': 1235, 'max': 1950, 'avg': 1550.9, 'median': 1527}
+- Monster summary: {'count': 21, 'min': 1152, 'max': 2006, 'avg': 1615.8, 'median': 1592}
 
 ### Starter Type Distribution
 
@@ -64,8 +64,8 @@
 
 ### Starter Rarity Distribution
 
-- Common: 21
-- Uncommon: 9
+- Common: 24
+- Uncommon: 6
 
 
 ## Catalog Outliers
