@@ -30,7 +30,7 @@ with app.app_context():
         for u in admins:
             print(
                 f"OK ADMIN id={u.id} email={u.email} username={u.username} "
-                f"verified={u.is_verified} status={u.account_status}"
+                f"active={u.account_status == 'active'} status={u.account_status}"
             )
 
     print("\n=== ADMIN ROUTES ===")

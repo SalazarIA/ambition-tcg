@@ -17,7 +17,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
 
-    account_status = db.Column(db.String(40), nullable=False, default="unverified", index=True)
+    account_status = db.Column(db.String(40), nullable=False, default="active", index=True)
     is_tester = db.Column(db.Boolean, default=False, nullable=False)
     last_login_at = db.Column(db.DateTime, nullable=True)
     verified_at = db.Column(db.DateTime, nullable=True)
@@ -25,7 +25,7 @@ class User(db.Model):
     has_completed_onboarding = db.Column(db.Boolean, default=False, nullable=False)
     first_training_completed = db.Column(db.Boolean, default=False, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    is_verified = db.Column(db.Boolean, default=True, nullable=False)
 
     coins = db.Column(db.Integer, default=1000, nullable=False)
 
@@ -53,6 +53,15 @@ class User(db.Model):
         super().__init__(**kwargs)
 
         card_data = create_new_player_card_data()
+
+        if self.account_status in (None, "unverified", "pending_verification"):
+            self.account_status = "active"
+
+        if self.is_verified is None:
+            self.is_verified = True
+
+        if self.is_verified and not self.verified_at:
+            self.verified_at = datetime.now(timezone.utc)
 
         if not self.deck_json:
             self.deck_json = card_data["deck_json"]
@@ -407,8 +416,9 @@ def ensure_liveops_schema(app):
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0 NOT NULL",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS has_completed_onboarding BOOLEAN DEFAULT false NOT NULL",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS first_training_completed BOOLEAN DEFAULT false NOT NULL",
-                "UPDATE users SET account_status = 'active' WHERE is_verified = true AND (account_status IS NULL OR account_status = 'unverified')",
-                "UPDATE users SET account_status = 'unverified' WHERE is_verified = false AND account_status IS NULL",
+                "UPDATE users SET is_verified = true WHERE is_verified = false OR is_verified IS NULL",
+                "UPDATE users SET account_status = 'active' WHERE account_status IS NULL OR account_status IN ('unverified', 'pending_verification')",
+                "UPDATE users SET verified_at = NOW() WHERE verified_at IS NULL",
             ]
 
             with db.engine.begin() as connection:
@@ -433,6 +443,10 @@ def ensure_liveops_schema(app):
             for column_name, ddl in sqlite_columns.items():
                 if column_name not in existing_columns:
                     connection.execute(sql_text(f"ALTER TABLE users ADD COLUMN {ddl}"))
+
+            connection.execute(sql_text("UPDATE users SET is_verified = 1 WHERE is_verified = 0 OR is_verified IS NULL"))
+            connection.execute(sql_text("UPDATE users SET account_status = 'active' WHERE account_status IS NULL OR account_status IN ('unverified', 'pending_verification')"))
+            connection.execute(sql_text("UPDATE users SET verified_at = CURRENT_TIMESTAMP WHERE verified_at IS NULL"))
 
 
 

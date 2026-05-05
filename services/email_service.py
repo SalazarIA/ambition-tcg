@@ -91,28 +91,6 @@ Risk. Elements. Ambition.
     return send_email(to_email, subject, body)
 
 
-def send_verification_email(user, verification_url):
-    subject = "Confirm your Ambitionz account"
-
-    body = f"""Welcome to Ambitionz, {user.username}.
-
-Your account was created successfully.
-
-Confirm your account using the secure link below:
-
-{verification_url}
-
-This link expires for security reasons.
-
-After confirming, return to Ambitionz and log in normally.
-
-Ambitionz
-Risk. Elements. Ambition.
-"""
-
-    return send_email(user.email, subject, body)
-
-
 def send_password_reset_email(user, reset_url):
     subject = "Reset your Ambitionz password"
 

@@ -53,7 +53,7 @@ def register_public_routes(app, deps):
         try:
             users = (
                 User.query
-                .filter_by(is_verified=True)
+                .filter_by(account_status="active")
                 .order_by(User.wins.desc(), User.level.desc(), User.xp.desc())
                 .limit(100)
                 .all()

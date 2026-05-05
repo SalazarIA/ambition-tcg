@@ -33,12 +33,9 @@ if m:
 else:
     add("FAIL: rota /register não encontrada")
 
-section("Suspicious verification leftovers")
+section("Registration access state scan")
 for i, line in enumerate(text.splitlines(), 1):
     if any(k in line for k in [
-        "send_verification_email",
-        "verification_url",
-        "verification_token",
         "confirm_email",
         "resend-verification",
         "is_verified",

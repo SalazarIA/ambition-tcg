@@ -35,7 +35,6 @@
                             <p class="subtitle">{{ target.email }}</p>
                             <p class="subtitle">
                                 ID {{ target.id }}
-                                · verified={{ target.is_verified }}
                                 · admin={{ target.is_admin }}
                                 · tester={{ target.is_tester }}
                                 · status={{ target.account_status }}
@@ -46,7 +45,7 @@
                         <div class="admin-user-actions">
                             <form method="POST" action="{{ url_for('admin_verify_user', user_id=target.id) }}">
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <button class="btn small-btn" type="submit">Verify</button>
+                                <button class="btn small-btn" type="submit">Activate</button>
                             </form>
 
                             <form method="POST" action="{{ url_for('admin_toggle_tester', user_id=target.id) }}">

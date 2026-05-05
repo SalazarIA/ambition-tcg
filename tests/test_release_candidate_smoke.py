@@ -44,6 +44,80 @@ def test_register_rejects_weak_password(client):
     assert User.query.filter_by(email="weak@example.com").first() is None
 
 
+def test_register_grants_instant_access_even_if_auto_verify_is_disabled(client, flask_app):
+    flask_app.config["BETA_AUTO_VERIFY"] = False
+    token = csrf_token_from_response(client.get("/register"))
+
+    response = client.post(
+        "/register",
+        data={
+            "_csrf_token": token,
+            "username": "instant",
+            "email": "instant@example.com",
+            "password": "StrongPass1",
+        },
+        follow_redirects=True,
+    )
+
+    user = User.query.filter_by(email="instant@example.com").first()
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Registered successfully. You can login and play now." in body
+    assert user is not None
+    assert user.is_verified is True
+    assert user.account_status == "active"
+    assert user.verified_at is not None
+
+
+def test_login_normalizes_legacy_unverified_user(client):
+    user = create_user(username="legacy", email="legacy@example.com", password="StrongPass1")
+    user.is_verified = False
+    user.account_status = "unverified"
+    user.verified_at = None
+    db.session.commit()
+
+    token = csrf_token_from_response(client.get("/login"))
+    response = client.post(
+        "/login",
+        data={
+            "_csrf_token": token,
+            "email": "legacy@example.com",
+            "password": "StrongPass1",
+        },
+        follow_redirects=False,
+    )
+
+    db.session.refresh(user)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/welcome")
+    assert user.is_verified is True
+    assert user.account_status == "active"
+    assert user.verified_at is not None
+
+
+def test_resend_verification_route_normalizes_legacy_account(client):
+    user = create_user(username="pending", email="pending@example.com", password="StrongPass1")
+    user.is_verified = False
+    user.account_status = "pending_verification"
+    user.verified_at = None
+    db.session.commit()
+
+    token = csrf_token_from_response(client.get("/login"))
+    response = client.post(
+        "/resend-verification",
+        data={"_csrf_token": token, "email": "pending@example.com"},
+        follow_redirects=False,
+    )
+
+    db.session.refresh(user)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
+    assert user.is_verified is True
+    assert user.account_status == "active"
+    assert user.verified_at is not None
+
+
 def test_login_rate_limit_blocks_repeated_invalid_attempts(client):
     token = csrf_token_from_response(client.get("/login"))
     form = {

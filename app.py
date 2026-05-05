@@ -33,7 +33,7 @@ from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin
 from services.battle_summary import build_match_summary_lines
 from services.reward_tuning import reward_line
 from services.match_telemetry import record_match_telemetry
-from services.email_service import send_verification_email, send_password_reset_email, send_smtp_test_email, is_smtp_configured
+from services.email_service import send_password_reset_email, send_smtp_test_email, is_smtp_configured
 from services.security.headers import apply_security_headers
 from services.security.password_policy import password_policy_errors
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
@@ -207,6 +207,20 @@ def account_can_login(user):
         return False, "Account is not allowed to login."
 
     return True, ""
+
+
+def normalize_email_verification_state(user):
+    if not user:
+        return
+
+    if not bool(getattr(user, "is_verified", False)):
+        user.is_verified = True
+
+    if getattr(user, "account_status", "active") in ["unverified", "pending_verification"]:
+        user.account_status = "active"
+
+    if not getattr(user, "verified_at", None):
+        user.verified_at = datetime.now(timezone.utc)
 
 
 def password_errors(password):
@@ -657,10 +671,6 @@ def admin_required_redirect():
         flash("Admin access required.")
         return redirect("/")
 
-    if not bool(getattr(user, "is_verified", False)):
-        flash("Verify your account first.")
-        return redirect("/resend-verification")
-
     if getattr(user, "account_status", "active") in ["banned", "disabled"]:
         flash("Account is not allowed to access admin.")
         return redirect("/login")
@@ -865,7 +875,7 @@ def admin_system():
         app_version="Ambitionz V1.02",
         environment=app.config.get("ENVIRONMENT"),
         total_users=User.query.count(),
-        verified_users=User.query.filter_by(is_verified=True).count(),
+        verified_users=User.query.filter_by(account_status="active").count(),
         total_matches=MatchHistory.query.count(),
         open_feedbacks=FeedbackReport.query.filter_by(status="open").count(),
         recent_logs=SystemLog.query.order_by(SystemLog.created_at.desc()).limit(20).all(),
@@ -960,9 +970,9 @@ def admin_verify_user(user_id):
     target = db.session.get(User, user_id)
 
     if target:
-        mark_user_verified(target)
+        normalize_email_verification_state(target)
         db.session.commit()
-        log_system_event("info", "admin", f"User verified manually: {target.email}", user_id=current.id)
+        log_system_event("info", "admin", f"User activated manually: {target.email}", user_id=current.id)
 
     return redirect("/admin/users")
 
@@ -1006,7 +1016,8 @@ def admin_unban_user(user_id):
     target = db.session.get(User, user_id)
 
     if target:
-        target.account_status = "active" if target.is_verified else "unverified"
+        normalize_email_verification_state(target)
+        target.account_status = "active"
         db.session.commit()
         log_system_event("info", "admin", f"User unbanned: {target.email}", user_id=current.id)
 
@@ -1163,9 +1174,13 @@ def build_internal_rc_status():
     add_check("database", "Database responds", db_ok, db_detail)
     add_check(
         "smtp",
-        "Email delivery configured",
-        is_smtp_configured(),
-        "SMTP is configured" if is_smtp_configured() else "SMTP missing or incomplete",
+        "Email delivery configured or optional",
+        True,
+        (
+            "SMTP is configured"
+            if is_smtp_configured()
+            else "Email verification disabled; SMTP is optional for password reset only"
+        ),
         priority="recommended",
     )
 
@@ -1228,7 +1243,7 @@ def build_internal_rc_status():
 
     try:
         total_users = User.query.count()
-        verified_users = User.query.filter_by(is_verified=True).count()
+        verified_users = User.query.filter_by(account_status="active").count()
         total_matches = MatchHistory.query.count()
         recent_matches = MatchHistory.query.order_by(MatchHistory.id.desc()).limit(20).all()
         recent_match_sample_size = len(recent_matches)
@@ -1245,7 +1260,7 @@ def build_internal_rc_status():
         "tester_accounts",
         "Tester accounts exist",
         total_users > 0,
-        f"{total_users} total users, {verified_users} verified",
+        f"{total_users} total users, {verified_users} active",
         priority="recommended",
     )
     add_check(
@@ -1375,40 +1390,27 @@ def internal_server_error(error):
 def resend_verification():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-
         user = User.query.filter_by(email=email).first()
 
-        if not user:
-            flash("If this email exists, a verification link will be sent.")
-            return redirect("/resend-verification")
-
-        if user.is_verified:
-            flash("This account is already verified. You can login.")
-            return redirect("/login")
-
-        token = serializer.dumps(user.email, salt="email-confirm")
-        # Beta mode: no verification URL required.
-
-        sent = send_verification_email(user, verification_url)
-
-        if sent:
-            flash("Verification email sent.")
-        else:
-            flash("SMTP failed or is not configured. Check server logs.")
+        if user:
+            normalize_email_verification_state(user)
+            db.session.commit()
 
         try:
             log_system_event(
                 level="info",
-                category="email",
-                message="Verification email requested",
+                category="account",
+                message="Verification bypass requested",
                 user_id=getattr(user, "id", None),
             )
         except Exception as error:
-            print("Resend verification log failed:", error)
+            print("Verification bypass log failed:", error)
 
+        flash("Email verification is disabled. You can login now.")
         return redirect("/login")
 
-    return render_template("resend_verification.html")
+    flash("Email verification is disabled. You can login now.")
+    return redirect("/login")
 
 
 
@@ -1934,19 +1936,15 @@ def register():
             flash("Username already exists.")
             return redirect("/register")
 
-        auto_verify = bool(app.config.get("BETA_AUTO_VERIFY", True))
-
         new_user = User(
             username=username,
             email=email,
-            account_status="active" if auto_verify else "unverified",
+            account_status="active",
             is_tester=True if invite else False,
-            is_verified=auto_verify,
+            is_verified=True,
+            verified_at=datetime.now(timezone.utc),
         )
         new_user.set_password(password)
-
-        if auto_verify:
-            new_user.verified_at = datetime.now(timezone.utc)
 
         db.session.add(new_user)
 
@@ -1955,23 +1953,11 @@ def register():
 
         db.session.commit()
 
-        if auto_verify:
-            flash("Registered successfully. You can login and play now.")
-        else:
-            token = serializer.dumps(email, salt="email-confirm")
-            verification_url = url_for("confirm_email", token=token, _external=True)
-            sent = send_verification_email(new_user, verification_url)
-
-            if sent:
-                flash("Registered successfully. Check your email to verify the account.")
-            else:
-                flash("Registered successfully, but verification email is not configured. Contact support.")
-
-            log_sensitive_link_for_local_dev("AMBITIONZ VERIFICATION LINK", verification_url)
+        flash("Registered successfully. You can login and play now.")
 
         log_rc_event(
             "account",
-            "User registered" if not auto_verify else "User registered with beta auto verification",
+            "User registered with instant beta access",
             user_id=new_user.id,
         )
 
@@ -1989,12 +1975,12 @@ def confirm_email(token):
         return "Verification link expired."
 
     user = User.query.filter_by(email=email).first_or_404()
-    mark_user_verified(user)
+    normalize_email_verification_state(user)
 
     db.session.commit()
-    log_rc_event("account", "Account verified", user_id=user.id)
+    log_rc_event("account", "Legacy verification link accepted", user_id=user.id)
 
-    flash("Account verified. You can login now.")
+    flash("Email verification is disabled. You can login now.")
     return redirect("/login")
 
 
@@ -2032,17 +2018,8 @@ def login():
             flash(login_message)
             return redirect("/login")
 
-        if not bool(getattr(user, "is_verified", False)):
-            log_rc_event(
-                "auth",
-                "Unverified login blocked",
-                user_id=getattr(user, "id", None),
-                level="warning",
-            )
-            flash("Please verify your email before logging in.")
-            return redirect("/login")
-
         reset_login_attempts(attempt_key)
+        normalize_email_verification_state(user)
 
         user.last_login_at = datetime.now(timezone.utc)
         user.login_count = int(user.login_count or 0) + 1
@@ -3141,7 +3118,7 @@ def admin_reports():
         },
         {
             "title": "User Ops",
-            "description": "Users, tester status, verification and account actions.",
+            "description": "Users, tester status, access and account actions.",
             "endpoint": "admin_users",
             "cta": "Open Users",
             "status": "Active",
@@ -3245,7 +3222,7 @@ def admin():
 
     try:
         total_users = User.query.count()
-        verified_users = User.query.filter_by(is_verified=True).count()
+        verified_users = User.query.filter_by(account_status="active").count()
     except Exception as error:
         print("Admin dashboard query failed:", error)
         total_users = 0

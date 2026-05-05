@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Resend Verification - Ambitionz</title>
+    <title>Email Verification Disabled - Ambitionz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
@@ -12,20 +12,14 @@
     <main class="page app-shell">
         <section class="panel form-panel mobile-panel">
             <div class="app-logo">A</div>
-            <h1>Resend Verification</h1>
-            <p class="subtitle">Enter your email to receive a new verification link.</p>
+            <h1>Email Verification Disabled</h1>
+            <p class="subtitle">Beta accounts can login immediately after registration.</p>
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
                     <div class="flash">{{ messages[0] }}</div>
                 {% endif %}
             {% endwith %}
-
-            <form method="POST" class="form mobile-form">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <input type="email" name="email" placeholder="Email" required>
-                <button type="submit" class="btn full-btn">Send Verification</button>
-            </form>
 
             <a href="{{ url_for('login') }}" class="text-link">Back to Login</a>
         </section>

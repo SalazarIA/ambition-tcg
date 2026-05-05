@@ -40,7 +40,7 @@ def register_admin_routes(app, deps):
 
         try:
             total_users = User.query.count()
-            verified_users = User.query.filter_by(is_verified=True).count()
+            verified_users = User.query.filter_by(account_status="active").count()
         except Exception as error:
             print("Admin user stats failed:", type(error).__name__, error)
 

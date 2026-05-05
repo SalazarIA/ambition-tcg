@@ -70,7 +70,7 @@
                 {% for target in users %}
                     <div class="deck-line">
                         <span>{{ target.id }} — {{ target.username }} — {{ target.email }}</span>
-                        <strong>admin={{ target.is_admin }} / tester={{ target.is_tester }} / verified={{ target.is_verified }} / {{ target.account_status }}</strong>
+                        <strong>admin={{ target.is_admin }} / tester={{ target.is_tester }} / {{ target.account_status }}</strong>
                     </div>
                 {% else %}
                     <p class="subtitle">No users found.</p>

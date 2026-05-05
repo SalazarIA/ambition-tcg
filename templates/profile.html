@@ -45,11 +45,7 @@
                     {% if identity.is_tester %}
                         <span>Beta Tester</span>
                     {% endif %}
-                    {% if identity.is_verified %}
-                        <span>Verified</span>
-                    {% else %}
-                        <span>{{ identity.status }}</span>
-                    {% endif %}
+                    <span>{{ identity.status }}</span>
                 </div>
             </div>
 

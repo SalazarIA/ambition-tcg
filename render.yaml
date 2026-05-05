@@ -34,7 +34,7 @@ services:
       - key: MATCHMAKING_BOT_FALLBACK_SECONDS
         value: 10
       - key: BETA_AUTO_VERIFY
-        value: false
+        value: true
       - key: EMAIL_LOG_BODY_ENABLED
         value: false
       - key: SECRET_KEY

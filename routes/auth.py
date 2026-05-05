@@ -11,8 +11,8 @@ def register_auth_routes(app, deps):
     - /login
     - /logout
     - /register
-    - /confirm_email/<token>
-    - /resend-verification
+    - /confirm_email/<token> (legacy compatibility)
+    - /resend-verification (legacy compatibility)
     - /forgot-password
     - /reset-password/<token>
     """
@@ -24,21 +24,22 @@ def register_auth_routes(app, deps):
 
     check_password_hash = deps["check_password_hash"]
     mark_user_login = deps["mark_user_login"]
-    mark_user_verified = deps["mark_user_verified"]
-
-    send_verification_email = deps["send_verification_email"]
     send_password_reset_email = deps["send_password_reset_email"]
 
     create_starter_deck_from_collection = deps.get("create_starter_deck_from_collection")
 
-    def log_sensitive_link_for_local_dev(label, url):
-        if not app.config.get("EMAIL_LOG_BODY_ENABLED", False):
-            print(f"{label} omitted. Set EMAIL_LOG_BODY_ENABLED=true only in local development if needed.")
+    def normalize_email_verification_state(user):
+        if not user:
             return
 
-        print(f"\n--- {label} ---")
-        print(url)
-        print("-" * (len(label) + 8) + "\n")
+        if not bool(getattr(user, "is_verified", False)):
+            user.is_verified = True
+
+        if getattr(user, "account_status", "active") in ["unverified", "pending_verification"]:
+            user.account_status = "active"
+
+        if not getattr(user, "verified_at", None):
+            user.verified_at = datetime.now(timezone.utc)
 
     @app.route("/login", methods=["GET", "POST"], endpoint="login")
     def login_route():
@@ -56,13 +57,10 @@ def register_auth_routes(app, deps):
                 flash("This account is banned.")
                 return redirect("/login")
 
-            if not user.is_verified:
-                flash("Please verify your email before logging in.")
-                return redirect("/login")
-
             session["user_id"] = user.id
 
             try:
+                normalize_email_verification_state(user)
                 mark_user_login(user)
                 db.session.commit()
             except Exception as error:
@@ -140,8 +138,9 @@ def register_auth_routes(app, deps):
                 username=username,
                 email=email,
                 password_hash=generate_password_hash(password),
-                is_verified=False,
-                account_status="pending_verification",
+                is_verified=True,
+                verified_at=datetime.now(timezone.utc),
+                account_status="active",
                 coins=0,
                 deck_json=starter_deck,
                 collection_json=starter_collection,
@@ -161,14 +160,7 @@ def register_auth_routes(app, deps):
 
             db.session.commit()
 
-            token = serializer.dumps(email, salt="email-confirm")
-            verification_url = url_for("confirm_email", token=token, _external=True)
-
-            send_verification_email(new_user, verification_url)
-
-            log_sensitive_link_for_local_dev("AMBITIONZ VERIFICATION LINK", verification_url)
-
-            flash("Registered. Check your email for the verification link. If email is not configured, check server logs.")
+            flash("Registered successfully. You can login and play now.")
             return redirect("/login")
 
         return render_template("register.html")
@@ -182,16 +174,10 @@ def register_auth_routes(app, deps):
 
         user = User.query.filter_by(email=email).first_or_404()
 
-        try:
-            mark_user_verified(user)
-        except Exception:
-            user.is_verified = True
-            user.account_status = "active"
-            user.verified_at = datetime.now(timezone.utc)
-
+        normalize_email_verification_state(user)
         db.session.commit()
 
-        flash("Account verified. You can login now.")
+        flash("Email verification is disabled. You can login now.")
         return redirect("/login")
 
     @app.route("/resend-verification", methods=["GET", "POST"], endpoint="resend_verification")
@@ -200,27 +186,15 @@ def register_auth_routes(app, deps):
             email = request.form.get("email", "").strip().lower()
             user = User.query.filter_by(email=email).first()
 
-            if not user:
-                flash("If this email exists, a verification link will be sent.")
-                return redirect("/resend-verification")
+            if user:
+                normalize_email_verification_state(user)
+                db.session.commit()
 
-            if user.is_verified:
-                flash("This account is already verified. You can login.")
-                return redirect("/login")
-
-            token = serializer.dumps(user.email, salt="email-confirm")
-            verification_url = url_for("confirm_email", token=token, _external=True)
-
-            sent = send_verification_email(user, verification_url)
-
-            if sent:
-                flash("Verification email sent.")
-            else:
-                flash("SMTP failed or is not configured. Check server logs.")
-
+            flash("Email verification is disabled. You can login now.")
             return redirect("/login")
 
-        return render_template("resend_verification.html")
+        flash("Email verification is disabled. You can login now.")
+        return redirect("/login")
 
     @app.route("/forgot-password", methods=["GET", "POST"], endpoint="forgot_password")
     def forgot_password_route():

@@ -91,10 +91,8 @@ def audit_config(app):
         if not value:
             missing_smtp.append(key)
 
-    if missing_smtp and is_production:
-        errors.append(f"SMTP is incomplete in production. Missing: {missing_smtp}")
-    elif missing_smtp:
-        warnings.append(f"SMTP incomplete locally. Missing: {missing_smtp}")
+    if missing_smtp:
+        warnings.append(f"SMTP incomplete. Password reset email will be unavailable. Missing: {missing_smtp}")
 
     if app.config.get("SMTP_USERNAME") and app.config.get("MAIL_FROM"):
         if app.config.get("SMTP_USERNAME") != app.config.get("MAIL_FROM"):
