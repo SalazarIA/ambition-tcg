@@ -3,6 +3,7 @@ import time
 from flask import request, session
 from flask_socketio import join_room
 
+from sockets.battle_actions import BattleActionController
 from sockets.runtime import GameSocketRuntime
 
 
@@ -17,26 +18,17 @@ def register_game_socket_handlers(socketio, deps):
 
     db = deps["db"]
     User = deps["User"]
-    can_pay_cost = deps["can_pay_cost"]
-    cancel_unleash = deps["cancel_unleash"]
     create_player_object = deps["create_player_object"]
-    current_user = deps["current_user"]
-    emit_battle_events = deps["emit_battle_events"]
     emit_log = deps["emit_log"]
     emit_state = deps["emit_state"]
     end_match = deps["end_match"]
     find_player_key = deps["find_player_key"]
-    increment_mission = deps["increment_mission"]
     is_valid_room_code = deps["is_valid_room_code"]
     log_rc_event = deps["log_rc_event"]
-    normalize_intent = deps["normalize_intent"]
     normalize_room_code = deps["normalize_room_code"]
-    pay_card_cost = deps["pay_card_cost"]
-    register_card_played_for_ambition = deps["register_card_played_for_ambition"]
-    request_unleash = deps["request_unleash"]
-    resolve_battle = deps["resolve_battle"]
     safe_user_id = deps["safe_user_id"]
-    set_player_intent = deps["set_player_intent"]
+
+    battle_actions = BattleActionController(socketio, deps, runtime)
 
     matchmaking_fallback_seconds = runtime.matchmaking_fallback_seconds
     online_players = runtime.online_players
@@ -50,7 +42,6 @@ def register_game_socket_handlers(socketio, deps):
     release_match_presence = runtime.release_match_presence
     create_ambitionz_bot = runtime.create_ambitionz_bot
     start_match_between_players = runtime.start_match_between_players
-    play_bot_turn_if_needed = runtime.play_bot_turn_if_needed
     run_fallback_after_timeout = runtime.run_fallback_after_timeout
     allow_socket_event = runtime.allow_socket_event
 
@@ -274,278 +265,23 @@ def register_game_socket_handlers(socketio, deps):
 
     @socketio.on("set_intent")
     def set_intent(data):
-        if not allow_socket_event("set_intent"):
-            return
-
-        data = data or {}
-        room_id = player_rooms.get(request.sid)
-
-        if not room_id:
-            return
-
-        match = active_matches.get(room_id)
-
-        if not match or match["resolving"]:
-            return
-
-        player_key = find_player_key(match, request.sid)
-
-        if not player_key:
-            return
-
-        player = match[player_key]
-
-        if player["ready"]:
-            return
-
-        raw_intent = data.get("intent")
-
-        if raw_intent in ["Ambition Unleash", "Overreach"]:
-            success = request_unleash(player)
-
-            if success:
-                user = current_user()
-
-                if user:
-                    increment_mission(user, "use_overreach_1", 1)
-
-                socketio.emit("battle_log", {"msg": "Ambition Unleash prepared for this battle."}, to=request.sid)
-            else:
-                socketio.emit("battle_log", {"msg": "You need 5 Ambition and a monster on the field to unleash."}, to=request.sid)
-
-            emit_state(room_id)
-            return
-
-        intent = normalize_intent(raw_intent)
-        set_player_intent(player, intent)
-
-        socketio.emit("battle_log", {"msg": f"{player['name']} chose {intent} intent."}, to=request.sid)
-        emit_state(room_id)
+        battle_actions.set_intent(request.sid, data)
 
     @socketio.on("play_to_field")
     def play_to_field(data):
-        if not allow_socket_event("play_to_field"):
-            return
-
-        data = data or {}
-        room_id = player_rooms.get(request.sid)
-
-        if not room_id:
-            return
-
-        match = active_matches.get(room_id)
-
-        if not match or match["resolving"]:
-            return
-
-        player_key = find_player_key(match, request.sid)
-
-        if not player_key:
-            return
-
-        player = match[player_key]
-
-        if player["ready"]:
-            return
-
-        try:
-            index = int(data.get("index"))
-        except Exception:
-            return
-
-        if index < 0 or index >= len(player["hand"]):
-            return
-
-        card = player["hand"][index]
-        card_type = card.get("type")
-        card_cost = int(card.get("cost", 1))
-
-        if not can_pay_cost(player, card):
-            socketio.emit(
-                "battle_log",
-                {"msg": f"{player['name']} tried to play {card['name']}, but needs {card_cost} energy."},
-                to=request.sid,
-            )
-            return
-
-        if card_type == "Monster":
-            if player["field_m"] is not None:
-                emit_log(room_id, f"{player['name']} tried to play another monster, but the monster zone is occupied.")
-                return
-
-            pay_card_cost(player, card)
-            player["field_m"] = player["hand"].pop(index)
-            register_card_played_for_ambition(player, card, match.setdefault("logs", []))
-            emit_log(room_id, f"{player['name']} set a monster: {card['name']} for {card_cost} energy.")
-
-        elif card_type in ["Spell", "Trap"]:
-            if player["field_st"] is not None:
-                emit_log(room_id, f"{player['name']} tried to play another spell/trap, but the zone is occupied.")
-                return
-
-            pay_card_cost(player, card)
-            player["field_st"] = player["hand"].pop(index)
-            register_card_played_for_ambition(player, card, match.setdefault("logs", []))
-            emit_log(room_id, f"{player['name']} set a spell/trap: {card['name']} for {card_cost} energy.")
-
-        emit_state(room_id)
+        battle_actions.play_to_field(request.sid, data)
 
     @socketio.on("choose_intent")
     def choose_intent(data):
-        if not allow_socket_event("choose_intent"):
-            return
-
-        data = data or {}
-        room_id = player_rooms.get(request.sid)
-
-        if not room_id:
-            return
-
-        match = active_matches.get(room_id)
-
-        if not match or match["resolving"]:
-            return
-
-        player_key = find_player_key(match, request.sid)
-
-        if not player_key:
-            return
-
-        player = match[player_key]
-
-        if player["ready"]:
-            return
-
-        intent = data.get("intent", "Strike")
-
-        if intent in ["Ambition Unleash", "Overreach"]:
-            success = request_unleash(player)
-
-            if success:
-                user = current_user()
-
-                if user:
-                    increment_mission(user, "use_overreach_1", 1)
-
-                emit_log(room_id, f"{player['name']} prepared Ambition Unleash for this battle.")
-            else:
-                socketio.emit(
-                    "battle_log",
-                    {"msg": "You need 5 Ambition and a monster on the field to unleash."},
-                    to=request.sid,
-                )
-
-            emit_state(room_id)
-            return
-
-        intent = normalize_intent(intent)
-        set_player_intent(player, intent)
-
-        emit_log(room_id, f"{player['name']} selected {player['intent']} intent.")
-        emit_state(room_id)
+        battle_actions.choose_intent(request.sid, data)
 
     @socketio.on("toggle_unleash")
     def toggle_unleash():
-        if not allow_socket_event("toggle_unleash"):
-            return
-
-        room_id = player_rooms.get(request.sid)
-
-        if not room_id:
-            return
-
-        match = active_matches.get(room_id)
-
-        if not match or match["resolving"]:
-            return
-
-        player_key = find_player_key(match, request.sid)
-
-        if not player_key:
-            return
-
-        player = match[player_key]
-
-        if player["ready"]:
-            return
-
-        if player.get("wants_unleash"):
-            cancel_unleash(player)
-            emit_log(room_id, f"{player['name']} cancelled Ambition Unleash.")
-        else:
-            success = request_unleash(player)
-
-            if success:
-                user = current_user()
-
-                if user:
-                    increment_mission(user, "use_overreach_1", 1)
-
-                emit_log(room_id, f"{player['name']} prepared Ambition Unleash for this battle.")
-            else:
-                socketio.emit(
-                    "battle_log",
-                    {"msg": "You need 5 Ambition and a monster on the field to unleash."},
-                    to=request.sid,
-                )
-
-        emit_state(room_id)
+        battle_actions.toggle_unleash(request.sid)
 
     @socketio.on("declare_ready")
     def declare_ready():
-        if not allow_socket_event("declare_ready"):
-            return
-
-        room_id = player_rooms.get(request.sid)
-
-        if not room_id:
-            return
-
-        match = active_matches.get(room_id)
-
-        if not match or match["resolving"]:
-            return
-
-        player_key = find_player_key(match, request.sid)
-
-        if not player_key:
-            return
-
-        player = match[player_key]
-        player["ready"] = True
-
-        user = current_user()
-
-        if user:
-            increment_mission(user, "declare_ready_1", 1)
-
-        emit_log(room_id, f"{player['name']} is ready.")
-        emit_state(room_id)
-
-        if match.get("is_bot_match") and player_key == "p1" and not match["p2"]["ready"]:
-            play_bot_turn_if_needed(match, room_id, player_key)
-            emit_log(room_id, f"{match['p2']['name']} is ready.")
-            emit_state(room_id)
-
-        if match["p1"]["ready"] and match["p2"]["ready"]:
-            battle_result = resolve_battle(match)
-
-            try:
-                events = battle_result.get("events", [])
-                emit_battle_events(match, events)
-                match.setdefault("v2_events", []).extend(events)
-            except Exception as error:
-                print("V2 BATTLE EVENTS EMIT ERROR:", type(error).__name__, error)
-
-            for log_message in battle_result["logs"]:
-                emit_log(room_id, log_message)
-
-            emit_state(room_id)
-
-            if battle_result["winner"]:
-                finished_match = match
-                end_match(room_id, battle_result["winner"])
-                release_match_presence(finished_match)
+        battle_actions.declare_ready(request.sid)
 
     @socketio.on("join_bot_match")
     def handle_join_bot_match():
