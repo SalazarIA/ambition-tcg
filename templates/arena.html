@@ -11,6 +11,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_v4.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_v5.css') }}?v=5">
 </head>
 
 <body class="az-arena-v4-body" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
@@ -231,5 +232,6 @@
     <script src="{{ url_for('static', filename='js/game.js') }}"></script>
     <script src="{{ url_for('static', filename='js/arena_v4.js') }}"></script>
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/arena_v5.js') }}?v=5"></script>
 </body>
 </html>

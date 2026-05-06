@@ -1,0 +1,470 @@
+/* =========================================================
+   Ambitionz Arena V5 Clean Overlay
+   The old arena stays alive as hidden engine.
+   ========================================================= */
+
+body[data-page-kind="training"],
+body[data-page-kind="arena"] {
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(103, 74, 255, 0.26), transparent 32%),
+        radial-gradient(circle at 50% 100%, rgba(255, 167, 59, 0.12), transparent 30%),
+        #040408 !important;
+    color: #fff;
+}
+
+/* Hide old visible arena but keep JS engine alive */
+body.az-v5-active .az-v4-shell,
+body.az-v5-active .arena-shell,
+body.az-v5-active .arena-layout,
+body.az-v5-active .az-v4-topbar,
+body.az-v5-active .az-v4-scoreboard,
+body.az-v5-active .az-v4-next-card,
+body.az-v5-active .az-v4-board,
+body.az-v5-active .az-v4-hand-panel,
+body.az-v5-active .az-v4-control-panel,
+body.az-v5-active .az-v4-log-panel,
+body.az-v5-active .az-v4-tips-panel,
+body.az-v5-active .az-v4-bottom-dock,
+body.az-v5-active .ambitionz-turn-banner,
+body.az-v5-active .az-v3-next-action,
+body.az-v5-active .az-v3-dock,
+body.az-v5-active .ambitionz-action-dock,
+body.az-v5-active .premium-battle-coach,
+body.az-v5-active .training-coach-compact {
+    position: absolute !important;
+    left: -99999px !important;
+    top: -99999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+}
+
+/* App root */
+.az-v5-root {
+    width: min(1180px, calc(100vw - 20px));
+    margin: 0 auto;
+    padding: 12px 0 112px;
+}
+
+.az-v5-top {
+    min-height: 56px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 24px;
+    background: rgba(10, 10, 18, 0.78);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 18px 54px rgba(0,0,0,0.28);
+    backdrop-filter: blur(18px);
+}
+
+.az-v5-title h1 {
+    margin: 2px 0 0;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    line-height: 1;
+}
+
+.az-v5-kicker {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: rgba(255, 218, 148, .96);
+    background: rgba(255, 199, 107, .10);
+    border: 1px solid rgba(255, 199, 107, .16);
+    font-size: .66rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.az-v5-online {
+    padding: 6px 14px;
+    border-radius: 999px;
+    color: rgba(150, 255, 190, .98);
+    background: rgba(48, 190, 108, .18);
+    border: 1px solid rgba(86, 255, 154, .26);
+    font-size: .75rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-v5-back {
+    justify-self: end;
+    padding: 10px 14px;
+    border-radius: 16px;
+    color: #fff;
+    text-decoration: none;
+    background: rgba(255,255,255,.065);
+    border: 1px solid rgba(255,255,255,.11);
+    font-weight: 900;
+}
+
+.az-v5-hero {
+    margin: 12px 0;
+    min-height: 86px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    border-radius: 28px;
+    background:
+        linear-gradient(135deg, rgba(118, 77, 255, .20), rgba(255, 187, 90, .08)),
+        rgba(10,10,18,.78);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 18px 60px rgba(0,0,0,.28);
+    backdrop-filter: blur(18px);
+}
+
+.az-v5-hero h2 {
+    margin: 7px 0 4px;
+    font-size: clamp(1.35rem, 3vw, 2.25rem);
+    line-height: 1.02;
+}
+
+.az-v5-hero p {
+    margin: 0;
+    color: rgba(255,255,255,.64);
+    font-size: .98rem;
+}
+
+.az-v5-start {
+    min-width: 132px;
+    min-height: 52px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,199,107,.38);
+    background: linear-gradient(135deg, rgba(255,199,107,.34), rgba(154,107,255,.24));
+    color: #fff;
+    font-weight: 950;
+    cursor: pointer;
+}
+
+.az-v5-score {
+    display: grid;
+    grid-template-columns: 1fr 150px 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.az-v5-player,
+.az-v5-round {
+    min-height: 78px;
+    border-radius: 24px;
+    padding: 14px;
+    background: rgba(10,10,18,.76);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 16px 48px rgba(0,0,0,.22);
+}
+
+.az-v5-player-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+
+.az-v5-player-head span {
+    color: rgba(255,255,255,.48);
+    font-size: .72rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-v5-player-head strong {
+    font-size: 1.08rem;
+}
+
+.az-v5-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.az-v5-stats span {
+    display: inline-flex;
+    gap: 5px;
+    min-height: 27px;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    color: rgba(255,255,255,.62);
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.08);
+    font-size: .76rem;
+    font-weight: 850;
+}
+
+.az-v5-stats strong {
+    color: #fff;
+    font-weight: 950;
+}
+
+.az-v5-round {
+    text-align: center;
+    display: grid;
+    place-items: center;
+    background:
+        linear-gradient(135deg, rgba(154,107,255,.20), rgba(255,199,107,.06)),
+        rgba(10,10,18,.76);
+}
+
+.az-v5-round span {
+    color: rgba(188, 139, 255, .98);
+    font-size: .7rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-v5-round strong {
+    display: block;
+    font-size: 1.2rem;
+}
+
+.az-v5-board {
+    display: grid;
+    gap: 10px;
+}
+
+.az-v5-field {
+    padding: 14px;
+    border-radius: 28px;
+    background: rgba(10,10,18,.72);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 16px 50px rgba(0,0,0,.22);
+    backdrop-filter: blur(16px);
+}
+
+.az-v5-field-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.az-v5-field-head h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.az-v5-field-head span {
+    color: rgba(255,255,255,.52);
+    font-size: .78rem;
+    font-weight: 850;
+}
+
+.az-v5-zones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.az-v5-zone {
+    min-height: 112px;
+    padding: 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.028);
+    border: 1px solid rgba(255,255,255,.07);
+}
+
+.az-v5-zone-label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(255,220,156,.9);
+    font-size: .72rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-v5-slot {
+    min-height: 76px;
+    border-radius: 17px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.38);
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.055);
+    font-weight: 850;
+    text-align: center;
+}
+
+.az-v5-divider {
+    display: grid;
+    place-items: center;
+    min-height: 36px;
+}
+
+.az-v5-divider span {
+    padding: 7px 14px;
+    border-radius: 999px;
+    color: rgba(255,255,255,.82);
+    background: rgba(154,107,255,.18);
+    border: 1px solid rgba(154,107,255,.27);
+    font-size: .76rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-v5-hand {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 28px;
+    background: rgba(10,10,18,.72);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 16px 50px rgba(0,0,0,.22);
+}
+
+.az-v5-hand-row {
+    min-height: 122px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 2px;
+}
+
+.az-v5-card-mini {
+    flex: 0 0 136px;
+    min-height: 98px;
+    padding: 10px;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.075), rgba(255,255,255,.025)),
+        rgba(0,0,0,.20);
+    border: 1px solid rgba(255,255,255,.10);
+}
+
+.az-v5-card-mini strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: .9rem;
+}
+
+.az-v5-card-mini span {
+    color: rgba(255,255,255,.54);
+    font-size: .76rem;
+}
+
+.az-v5-empty {
+    width: 100%;
+    min-height: 96px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.42);
+    background: rgba(255,255,255,.026);
+    border: 1px dashed rgba(255,255,255,.10);
+    font-weight: 850;
+}
+
+.az-v5-tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.az-v5-details {
+    border-radius: 20px;
+    padding: 12px;
+    background: rgba(10,10,18,.72);
+    border: 1px solid rgba(255,255,255,.09);
+}
+
+.az-v5-details summary {
+    cursor: pointer;
+    font-weight: 950;
+}
+
+.az-v5-details div {
+    margin-top: 10px;
+    color: rgba(255,255,255,.62);
+    font-size: .88rem;
+}
+
+.az-v5-dock {
+    position: fixed;
+    left: 50%;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 200;
+    width: min(780px, calc(100vw - 18px));
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 10px;
+    border-radius: 24px;
+    background: rgba(8,8,14,.94);
+    border: 1px solid rgba(255,255,255,.13);
+    box-shadow: 0 24px 90px rgba(0,0,0,.54);
+    backdrop-filter: blur(20px);
+}
+
+.az-v5-dock button {
+    min-height: 56px;
+    border-radius: 17px;
+    border: 1px solid rgba(255,255,255,.12);
+    color: #fff;
+    background: rgba(255,255,255,.065);
+    cursor: pointer;
+    font-weight: 950;
+}
+
+.az-v5-dock button small {
+    display: block;
+    margin-top: 3px;
+    color: rgba(255,255,255,.52);
+    font-size: .68rem;
+    font-weight: 800;
+}
+
+.az-v5-dock button[data-v5-action="ready"] {
+    background: linear-gradient(135deg, rgba(255,199,107,.36), rgba(154,107,255,.24));
+    border-color: rgba(255,199,107,.36);
+}
+
+.az-v5-dock button.is-selected {
+    border-color: rgba(255,199,107,.58);
+    box-shadow: 0 0 0 4px rgba(255,199,107,.10);
+}
+
+@media (max-width: 900px) {
+    .az-v5-score {
+        grid-template-columns: 1fr;
+    }
+
+    .az-v5-round {
+        order: -1;
+    }
+
+    .az-v5-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .az-v5-start {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .az-v5-top {
+        grid-template-columns: 1fr auto;
+    }
+
+    .az-v5-online {
+        display: none;
+    }
+
+    .az-v5-zones,
+    .az-v5-tools,
+    .az-v5-dock {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
