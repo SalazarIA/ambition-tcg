@@ -56,4 +56,8 @@ def validate_deck_against_inventory(user, deck_ids):
 
 def build_auto_deck_from_inventory(user):
     owned_ids = owned_card_ids_for_user(user, include_legacy_fallback=True)
-    return create_starter_deck_from_collection(owned_ids)
+    starter_deck = create_starter_deck_from_collection(owned_ids)
+
+    # create_starter_deck_from_collection may return JSON depending on legacy path.
+    # Deck Builder/Arena must receive a Python list of card ids.
+    return load_card_ids(starter_deck)
