@@ -224,6 +224,25 @@ class UserMission(db.Model):
         return f"<UserMission {self.user_id} {self.mission_key}>"
 
 
+
+
+
+class RewardLedger(db.Model):
+    __tablename__ = "reward_ledger"
+
+    id = db.Column(db.Integer, primary_key=True)
+    reward_key = db.Column(db.String(180), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    match_id = db.Column(db.String(180), nullable=True, index=True)
+    source = db.Column(db.String(80), nullable=False, default="arena_v1")
+    result = db.Column(db.String(40), nullable=True)
+    xp = db.Column(db.Integer, nullable=False, default=0)
+    coins = db.Column(db.Integer, nullable=False, default=0)
+    gems = db.Column(db.Integer, nullable=False, default=0)
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
 def ensure_database_schema():
     """
     Lightweight schema guard for this beta.
@@ -518,3 +537,39 @@ class UserCosmetic(db.Model):
     __table_args__ = (
         db.UniqueConstraint("user_id", "cosmetic_key", name="uq_user_cosmetic_key"),
     )
+
+
+
+def ensure_reward_ledger_schema():
+    try:
+        inspector = db.inspect(db.engine)
+        tables = inspector.get_table_names()
+
+        if "reward_ledger" not in tables:
+            RewardLedger.__table__.create(db.engine, checkfirst=True)
+            return
+
+        columns = {column["name"] for column in inspector.get_columns("reward_ledger")}
+
+        required_columns = {
+            "reward_key": "VARCHAR(180)",
+            "user_id": "INTEGER",
+            "match_id": "VARCHAR(180)",
+            "source": "VARCHAR(80)",
+            "result": "VARCHAR(40)",
+            "xp": "INTEGER DEFAULT 0",
+            "coins": "INTEGER DEFAULT 0",
+            "gems": "INTEGER DEFAULT 0",
+            "metadata_json": "TEXT",
+            "created_at": "DATETIME",
+        }
+
+        for column, definition in required_columns.items():
+            if column not in columns:
+                db.session.execute(db.text(f"ALTER TABLE reward_ledger ADD COLUMN {column} {definition}"))
+
+        db.session.commit()
+
+    except Exception as error:
+        db.session.rollback()
+        print("REWARD LEDGER SCHEMA ERROR:", type(error).__name__, error)

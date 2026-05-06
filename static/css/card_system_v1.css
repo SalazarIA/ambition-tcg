@@ -965,3 +965,23 @@
         justify-content: center;
     }
 }
+
+
+/* =========================================================
+   Match History Details Polish
+   ========================================================= */
+
+.match-history-v1-polish a {
+    color: #ffe09c;
+    font-weight: 950;
+    text-decoration: none;
+}
+
+.match-history-v1-polish a:hover {
+    text-decoration: underline;
+}
+
+.match-history-v1-polish .deck-line strong a,
+.match-history-v1-polish strong a {
+    color: #fff;
+}

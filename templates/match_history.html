@@ -125,7 +125,7 @@
                         <div class="match-card-stats-v116">
                             <div>
                                 <span>Result</span>
-                                <strong>{{ match.result }}</strong>
+                                <strong><a href="{{ url_for('match_history_detail', history_id=match.id) }}">{{ match.result }}</a></strong>
                             </div>
                             <div>
                                 <span>Rounds</span>

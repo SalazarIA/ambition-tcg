@@ -6,7 +6,7 @@
 import json
 from datetime import datetime, timezone
 
-from models import db, MatchHistory
+from models import db, MatchHistory, RewardLedger
 from game.progression import award_xp, increment_mission
 
 
@@ -40,7 +40,11 @@ def match_reward_key(match, viewer_key):
 
 def already_rewarded(match, viewer_key):
     rewarded = match.setdefault("rewarded_viewers", {})
-    return bool(rewarded.get(viewer_key))
+
+    if bool(rewarded.get(viewer_key)):
+        return True
+
+    return ledger_exists(match_reward_key(match, viewer_key))
 
 
 def mark_rewarded(match, viewer_key, reward_payload):
@@ -49,6 +53,47 @@ def mark_rewarded(match, viewer_key, reward_payload):
         "at": datetime.now(timezone.utc).isoformat(),
         "reward": reward_payload,
     }
+
+
+
+
+def ledger_exists(reward_key):
+    if not reward_key:
+        return False
+
+    try:
+        return RewardLedger.query.filter_by(reward_key=reward_key).first() is not None
+    except Exception as error:
+        print("REWARD LEDGER CHECK ERROR:", type(error).__name__, error)
+        return False
+
+
+def create_reward_ledger(match, user, viewer_key, result, reward):
+    reward_key = match_reward_key(match, viewer_key)
+
+    metadata = {
+        "schema": "arena_v1_reward_ledger",
+        "viewer_key": viewer_key,
+        "winner": match.get("winner"),
+        "round": match.get("round"),
+        "mode": "training" if match.get("training") else "pvp",
+        "events": match.get("events", [])[-12:],
+    }
+
+    entry = RewardLedger(
+        reward_key=reward_key,
+        user_id=user.id if user else None,
+        match_id=str(match.get("id") or match.get("room") or ""),
+        source="arena_v1",
+        result=result,
+        xp=int(reward.get("xp") or 0),
+        coins=int(reward.get("coins") or 0),
+        gems=int(reward.get("gems") or 0),
+        metadata_json=json.dumps(metadata, ensure_ascii=False),
+    )
+
+    db.session.add(entry)
+    return entry
 
 
 def persist_match_history_v1(match, user, viewer_key, result, reward):
@@ -120,6 +165,7 @@ def persist_rewards_for_user(match, user, viewer_key):
             "coins": previous.get("coins", reward["coins"]),
             "result": result,
             "title": title_for_result(result),
+            "ledger_key": match_reward_key(match, viewer_key),
         }
 
     try:

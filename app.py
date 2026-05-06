@@ -27,7 +27,7 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic, RewardLedger, ensure_reward_ledger_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
@@ -115,6 +115,10 @@ CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 def create_database_tables():
     with app.app_context():
         db.create_all()
+        try:
+            ensure_reward_ledger_schema()
+        except Exception as error:
+            print("REWARD LEDGER INIT ERROR:", type(error).__name__, error)
 
 
 create_database_tables()
@@ -3525,6 +3529,35 @@ def api_retention_event():
     db.session.commit()
 
     return jsonify({"ok": True})
+
+
+
+
+
+@app.route("/match-history/<int:history_id>")
+def match_history_detail(history_id):
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    history = MatchHistory.query.filter_by(id=history_id, user_id=user.id).first_or_404()
+
+    summary = {}
+
+    try:
+        summary = json.loads(history.summary_json or "{}")
+    except Exception:
+        summary = {}
+
+    return render_template(
+        "match_history_detail.html",
+        user=user,
+        history=history,
+        summary=summary,
+    )
 
 
 @app.route("/progression")
