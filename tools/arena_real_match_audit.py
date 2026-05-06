@@ -79,15 +79,15 @@ with app.app_context():
 
     print("payload_keys", sorted(payload.keys()))
     print("payload_phase", payload.get("phase"))
-    print("payload_my_hand_count", len(payload.get("my_hand") or []))
-    print("payload_hand_count", len(payload.get("hand") or []))
+    print("payload_me_hand_count", len((payload.get("me") or {}).get("hand") or []))
+    print("payload_enemy_hand_count", (payload.get("enemy") or {}).get("hand_count"))
 
-    for index, card in enumerate((payload.get("my_hand") or [])[:5], start=1):
+    for index, card in enumerate(((payload.get("me") or {}).get("hand") or [])[:5], start=1):
         print("PAYLOAD_HAND", index, card_summary(card))
 
     missing_power = [
         card_summary(card)
-        for card in (payload.get("my_hand") or [])
+        for card in ((payload.get("me") or {}).get("hand") or [])
         if card.get("type") == "Monster" and not (card.get("power") or card.get("attack") or card.get("value"))
     ]
 
@@ -95,7 +95,7 @@ with app.app_context():
         print("FAILED_missing_power", missing_power)
         raise SystemExit("FAILED - monster cards missing power/attack/value in payload")
 
-    if len(payload.get("my_hand") or []) <= 0:
-        raise SystemExit("FAILED - payload hand empty")
+    if len((payload.get("me") or {}).get("hand") or []) <= 0:
+        raise SystemExit("FAILED - payload me.hand empty")
 
     print("ARENA_REAL_MATCH_AUDIT_PASSED")
