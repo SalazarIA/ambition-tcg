@@ -17,6 +17,16 @@ def test_homepage_adds_security_headers(client):
     assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
 
 
+def test_service_worker_is_served_from_root_scope(client):
+    response = client.get("/service-worker.js")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert response.headers["Service-Worker-Allowed"] == "/"
+    assert "text/javascript" in response.content_type
+    assert "ambitionz-web-app-v155" in body
+
+
 def test_support_page_renders_publicly(client):
     response = client.get("/support")
     body = response.get_data(as_text=True)

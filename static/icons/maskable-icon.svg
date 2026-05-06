@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#05050B"/>
+      <stop offset="54%" stop-color="#17112A"/>
+      <stop offset="100%" stop-color="#080814"/>
+    </linearGradient>
+    <radialGradient id="gold-glow" cx="50%" cy="36%" r="60%">
+      <stop offset="0%" stop-color="#F8E7BA" stop-opacity="0.42"/>
+      <stop offset="54%" stop-color="#D6A84B" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#D6A84B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8E7BA"/>
+      <stop offset="48%" stop-color="#D6A84B"/>
+      <stop offset="100%" stop-color="#8F6827"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#gold-glow)"/>
+  <circle cx="512" cy="512" r="426" fill="none" stroke="#D6A84B" stroke-opacity="0.28" stroke-width="40"/>
+  <path d="M512 160 L810 512 L512 864 L214 512 Z" fill="none" stroke="#D6A84B" stroke-opacity="0.76" stroke-width="34"/>
+  <path d="M512 252 L704 512 L512 772 L320 512 Z" fill="#0B0917" stroke="#F8E7BA" stroke-opacity="0.64" stroke-width="16"/>
+  <path d="M512 318 L614 638 L512 590 L410 638 Z" fill="url(#gold)"/>
+  <text x="512" y="585" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="310" fill="#F8E7BA" font-weight="900">A</text>
+</svg>

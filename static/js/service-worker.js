@@ -1,12 +1,18 @@
-const CACHE_NAME = "ambitionz-web-app-v152";
+const CACHE_NAME = "ambitionz-web-app-v155";
 
 const CORE_ASSETS = [
     "/",
     "/offline",
+    "/static/manifest.webmanifest",
     "/static/css/style.css",
     "/static/css/arena_hud_v2.css",
+    "/static/js/pwa.js",
     "/static/icons/icon.svg",
-    "/static/img/cards/placeholders/card_placeholder.svg"
+    "/static/icons/icon-192.png",
+    "/static/icons/icon-512.png",
+    "/static/icons/maskable-icon-192.png",
+    "/static/icons/maskable-icon-512.png",
+    "/static/icons/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", function (event) {
@@ -44,11 +50,40 @@ self.addEventListener("fetch", function (event) {
         return;
     }
 
+    const requestUrl = new URL(event.request.url);
+
+    if (
+        requestUrl.pathname.startsWith("/socket.io/") ||
+        requestUrl.pathname.startsWith("/api/")
+    ) {
+        return;
+    }
+
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            fetch(event.request).catch(function () {
+                return caches.match("/offline");
+            })
+        );
+        return;
+    }
+
     event.respondWith(
-        fetch(event.request).catch(function () {
-            return caches.match(event.request).then(function (cachedResponse) {
+        caches.match(event.request).then(function (cachedResponse) {
+            const networkFetch = fetch(event.request).then(function (networkResponse) {
+                if (networkResponse && networkResponse.ok && requestUrl.origin === self.location.origin) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(function (cache) {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+
+                return networkResponse;
+            }).catch(function () {
                 return cachedResponse || caches.match("/offline");
             });
+
+            return cachedResponse || networkFetch;
         })
     );
 });

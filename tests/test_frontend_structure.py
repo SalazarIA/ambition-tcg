@@ -62,3 +62,18 @@ def test_arena_uses_single_screen_layout_module():
     assert "arena-page-v154" in template
     assert "AMBITIONZ V1.54" in css
     assert ".arena-page-v154 .arena-board-v103" in css
+
+
+def test_pwa_install_assets_are_declared():
+    manifest = (PROJECT_ROOT / "static" / "manifest.webmanifest").read_text()
+    pwa_js = (PROJECT_ROOT / "static" / "js" / "pwa.js").read_text()
+    service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
+    homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
+
+    assert '"/static/icons/icon-192.png"' in manifest
+    assert '"/static/icons/icon-512.png"' in manifest
+    assert '"/static/icons/maskable-icon-512.png"' in manifest
+    assert '"display": "standalone"' in manifest
+    assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
+    assert 'CACHE_NAME = "ambitionz-web-app-v155"' in service_worker
+    assert "apple-touch-icon.png" in homepage

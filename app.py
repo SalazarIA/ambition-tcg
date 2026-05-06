@@ -1371,6 +1371,15 @@ def health():
     }
 
 
+@app.route("/service-worker.js")
+def service_worker():
+    response = make_response(app.send_static_file("js/service-worker.js"))
+    response.headers["Content-Type"] = "text/javascript; charset=utf-8"
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.errorhandler(500)
 def internal_server_error(error):
     try:

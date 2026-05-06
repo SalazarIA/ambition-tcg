@@ -1,86 +1,176 @@
 (function () {
     let deferredPrompt = null;
 
-    const banner = document.getElementById("network-status-banner");
+    const INSTALL_SNOOZE_KEY = "ambitionzInstallPromptHiddenUntil";
+    const INSTALL_ACCEPTED_KEY = "ambitionzInstallAccepted";
+
+    function isStandaloneMode() {
+        return window.navigator.standalone === true ||
+            window.matchMedia("(display-mode: standalone)").matches;
+    }
+
+    function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) || (
+            navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1
+        );
+    }
+
+    function isMobileDevice() {
+        return window.matchMedia("(max-width: 820px)").matches ||
+            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
+
+    function promptIsSnoozed() {
+        const hiddenUntil = Number(localStorage.getItem(INSTALL_SNOOZE_KEY) || 0);
+        return hiddenUntil > Date.now() || localStorage.getItem(INSTALL_ACCEPTED_KEY) === "true";
+    }
+
+    function createNetworkBanner() {
+        let banner = document.getElementById("network-status-banner");
+
+        if (!banner) {
+            banner = document.createElement("div");
+            banner.id = "network-status-banner";
+            banner.className = "network-banner";
+            banner.setAttribute("aria-live", "polite");
+            document.body.appendChild(banner);
+        }
+
+        return banner;
+    }
 
     function setNetworkStatus() {
-        if (!banner) {
-            return;
-        }
+        const banner = createNetworkBanner();
 
         if (navigator.onLine) {
             banner.textContent = "Online";
             banner.classList.remove("offline");
             banner.classList.add("online");
         } else {
-            banner.textContent = "Offline";
+            banner.textContent = "Offline mode";
             banner.classList.remove("online");
             banner.classList.add("offline");
         }
     }
 
+    function createInstallPanel() {
+        let panel = document.getElementById("pwa-install-panel");
+
+        if (panel) {
+            return panel;
+        }
+
+        panel = document.createElement("aside");
+        panel.id = "pwa-install-panel";
+        panel.className = "pwa-install-panel-v155";
+        panel.setAttribute("aria-live", "polite");
+        panel.innerHTML = [
+            '<img src="/static/icons/icon-192.png" alt="" class="pwa-install-icon-v155">',
+            '<div class="pwa-install-copy-v155">',
+            "<strong>Install Ambitionz</strong>",
+            "<span>Play from your home screen, fullscreen and faster to open.</span>",
+            '<small class="pwa-ios-copy-v155">iPhone: use Safari, Share, then Add to Home Screen.</small>',
+            "</div>",
+            '<div class="pwa-install-actions-v155">',
+            '<button type="button" id="install-app-btn" class="btn small-btn">Install</button>',
+            '<button type="button" id="dismiss-install-app-btn" class="btn btn-secondary small-btn">Later</button>',
+            "</div>"
+        ].join("");
+
+        document.body.appendChild(panel);
+
+        panel.querySelector("#install-app-btn").addEventListener("click", window.installAmbitionPWA);
+        panel.querySelector("#dismiss-install-app-btn").addEventListener("click", function () {
+            localStorage.setItem(INSTALL_SNOOZE_KEY, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+            hideInstallPanel();
+        });
+
+        return panel;
+    }
+
+    function showInstallPanel() {
+        if (isStandaloneMode() || promptIsSnoozed()) {
+            return;
+        }
+
+        if (document.body && document.body.classList.contains("arena-page-v154")) {
+            return;
+        }
+
+        if (!deferredPrompt && !isIOSDevice()) {
+            return;
+        }
+
+        const panel = createInstallPanel();
+        panel.classList.add("is-visible-v155");
+        panel.classList.toggle("is-ios-v155", isIOSDevice());
+    }
+
+    function hideInstallPanel() {
+        const panel = document.getElementById("pwa-install-panel");
+
+        if (panel) {
+            panel.classList.remove("is-visible-v155");
+        }
+    }
+
     window.addEventListener("online", setNetworkStatus);
     window.addEventListener("offline", setNetworkStatus);
-    setNetworkStatus();
 
     window.addEventListener("beforeinstallprompt", function (event) {
         event.preventDefault();
         deferredPrompt = event;
 
-        const installButton = document.getElementById("install-app-btn");
-
-        if (installButton) {
-            installButton.style.display = "inline-flex";
+        if (isMobileDevice()) {
+            showInstallPanel();
         }
+    });
+
+    window.addEventListener("appinstalled", function () {
+        localStorage.setItem(INSTALL_ACCEPTED_KEY, "true");
+        deferredPrompt = null;
+        hideInstallPanel();
     });
 
     window.installAmbitionPWA = async function () {
         if (!deferredPrompt) {
-            const message = "On iPhone, install through Safari: Share > Add to Home Screen.";
-const status = document.getElementById("queue-status");
+            const message = "iPhone install: open Safari, tap Share, then Add to Home Screen.";
+            const status = document.getElementById("queue-status");
 
-if (status) {
-    status.textContent = message;
-} else {
-    console.info(message);
-}
+            if (status) {
+                status.textContent = message;
+            } else {
+                console.info(message);
+            }
+
             return;
         }
 
         deferredPrompt.prompt();
 
         try {
-            await deferredPrompt.userChoice;
+            const result = await deferredPrompt.userChoice;
+
+            if (result && result.outcome === "accepted") {
+                localStorage.setItem(INSTALL_ACCEPTED_KEY, "true");
+                hideInstallPanel();
+            }
         } finally {
             deferredPrompt = null;
         }
     };
 
     document.addEventListener("DOMContentLoaded", function () {
-        const installButton = document.getElementById("install-app-btn");
+        setNetworkStatus();
 
-        if (installButton) {
-            installButton.addEventListener("click", window.installAmbitionPWA);
-        }
-
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (
-            navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1
-        );
-
-        const isStandalone =
-            window.navigator.standalone === true ||
-            window.matchMedia("(display-mode: standalone)").matches;
-
-        const iosTip = document.getElementById("ios-install-tip");
-
-        if (iosTip && isIOS && !isStandalone) {
-            iosTip.style.display = "block";
+        if (isMobileDevice() && isIOSDevice() && !isStandaloneMode()) {
+            window.setTimeout(showInstallPanel, 900);
         }
     });
 
     if ("serviceWorker" in navigator) {
         window.addEventListener("load", function () {
-            navigator.serviceWorker.register("/static/js/service-worker.js").catch(function () {
+            navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch(function () {
                 // Silent fail during local or restricted environments.
             });
         });
