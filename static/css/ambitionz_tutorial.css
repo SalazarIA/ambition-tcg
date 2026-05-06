@@ -1,0 +1,213 @@
+/* =========================================================
+   Ambitionz Guided Tutorial
+   Training-only onboarding overlay.
+   ========================================================= */
+
+.az-tutorial-overlay {
+    position: fixed;
+    z-index: 750;
+    left: 50%;
+    bottom: 178px;
+    transform: translateX(-50%);
+    width: min(520px, calc(100vw - 28px));
+    border-radius: 28px;
+    padding: 16px;
+    background:
+        radial-gradient(circle at top left, rgba(255, 220, 145, .18), transparent 32%),
+        linear-gradient(135deg, rgba(20, 18, 30, .96), rgba(8, 8, 14, .96));
+    border: 1px solid rgba(255, 220, 145, .26);
+    box-shadow:
+        0 28px 90px rgba(0,0,0,.58),
+        0 0 40px rgba(142, 98, 255, .18);
+    backdrop-filter: blur(16px);
+    color: #fff;
+    display: none;
+}
+
+.az-tutorial-overlay.is-visible {
+    display: block;
+    animation: azTutorialIn .24s ease both;
+}
+
+@keyframes azTutorialIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(14px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+.az-tutorial-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.az-tutorial-kicker {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: rgba(255, 224, 156, .96);
+    background: rgba(255, 197, 106, .11);
+    border: 1px solid rgba(255, 197, 106, .18);
+    font-size: .66rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.az-tutorial-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 900;
+}
+
+.az-tutorial-overlay h2 {
+    margin: 8px 0 6px;
+    font-size: clamp(1.2rem, 3vw, 1.75rem);
+    line-height: 1.05;
+}
+
+.az-tutorial-overlay p {
+    margin: 0;
+    color: rgba(255,255,255,.66);
+    line-height: 1.42;
+}
+
+.az-tutorial-progress {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+    margin: 14px 0;
+}
+
+.az-tutorial-dot {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.az-tutorial-dot.is-active {
+    background: linear-gradient(90deg, #8e62ff, #f1c56a);
+    box-shadow: 0 0 20px rgba(241,197,106,.22);
+}
+
+.az-tutorial-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.az-tutorial-btn {
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.13);
+    background: rgba(255,255,255,.07);
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.az-tutorial-btn.primary {
+    background: linear-gradient(135deg, rgba(255,197,106,.32), rgba(142,98,255,.24));
+    border-color: rgba(255,220,145,.34);
+}
+
+.az-tutorial-highlight {
+    position: relative;
+    z-index: 760 !important;
+    box-shadow:
+        0 0 0 6px rgba(255, 220, 145, .16),
+        0 0 38px rgba(255, 220, 145, .34) !important;
+    animation: azTutorialPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes azTutorialPulse {
+    0%, 100% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.26);
+    }
+}
+
+.az-playability-panel {
+    position: fixed;
+    right: 18px;
+    top: 84px;
+    z-index: 740;
+    width: 230px;
+    padding: 12px;
+    border-radius: 20px;
+    background: rgba(8,8,14,.86);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 20px 60px rgba(0,0,0,.42);
+    backdrop-filter: blur(14px);
+    color: #fff;
+    display: none;
+}
+
+.az-playability-panel.is-visible {
+    display: block;
+}
+
+.az-playability-panel strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: .9rem;
+}
+
+.az-playability-list {
+    display: grid;
+    gap: 6px;
+}
+
+.az-playability-item {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    color: rgba(255,255,255,.62);
+    font-size: .76rem;
+}
+
+.az-playability-check {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.12);
+    flex: 0 0 auto;
+}
+
+.az-playability-item.done {
+    color: rgba(174,255,204,.92);
+}
+
+.az-playability-item.done .az-playability-check {
+    background: rgba(85,212,135,.24);
+    border-color: rgba(85,212,135,.38);
+}
+
+@media (max-width: 760px) {
+    .az-tutorial-overlay {
+        bottom: 128px;
+    }
+
+    .az-playability-panel {
+        display: none !important;
+    }
+}

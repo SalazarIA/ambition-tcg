@@ -9,70 +9,93 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_tutorial.css') }}?v=1">
 </head>
-<body class="app-body">
-    <main class="page-shell">
-        <section class="hero-card">
+<body class="az-themed-page">
+    <main class="wide-page mobile-wide-page">
+        <header class="top-bar mobile-top-bar">
             <div>
                 <span class="progression-kicker">Onboarding</span>
-                <h1>Ambitionz Tutorial</h1>
-                <p class="subtitle">Learn the duel loop before entering the full arena. Three fast lessons: intent, cards and Ambition.</p>
+                <h1>Tutorial</h1>
+                <p>Learn the battle loop in one guided training match.</p>
             </div>
-            <div class="hero-actions">
-                <a href="{{ url_for('training') }}" class="btn">Start Training</a>
-                <a href="{{ url_for('campaign') }}" class="btn btn-secondary">Campaign</a>
+
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+        </header>
+
+        <section class="az-loop-hero">
+            <div class="az-loop-hero-inner">
+                <div>
+                    <span class="progression-kicker">Guided Duel</span>
+                    <h2>Start. Choose intent. Commit. Earn.</h2>
+                    <p>
+                        Ambitionz is built around clean decisions. The tutorial guides you through
+                        the first real training duel with overlays, highlights and a checklist.
+                    </p>
+
+                    <div class="az-loop-actions">
+                        <a href="{{ url_for('training') }}" class="btn">Start Guided Training</a>
+                        <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">View Deck</a>
+                        <a href="{{ url_for('daily') }}" class="btn btn-secondary">Daily Quests</a>
+                    </div>
+                </div>
+
+                <div class="az-account-orbs">
+                    <div class="az-account-orb"><strong>1</strong><span>Start</span></div>
+                    <div class="az-account-orb"><strong>2</strong><span>Intent</span></div>
+                    <div class="az-account-orb"><strong>3</strong><span>Ready</span></div>
+                </div>
             </div>
         </section>
 
-        <section class="progression-grid">
-            {% for step in steps %}
-            <article class="progression-card tutorial-step-card">
-                <div class="step-badge">{{ step.number }}</div>
-                <span class="progression-kicker">{{ step.subtitle }}</span>
-                <h2>{{ step.title }}</h2>
-                <p>{{ step.description }}</p>
-
-                <div class="deck-line">
-                    <span>Objective</span>
-                    <strong>{{ step.objective }}</strong>
-                </div>
-                <div class="deck-line">
-                    <span>Reward Path</span>
-                    <strong>{{ step.reward }}</strong>
-                </div>
-
-                <a href="{{ step.cta_url }}" class="btn full-btn">{{ step.cta_label }}</a>
+        <section class="az-loop-strip">
+            <article class="az-loop-step">
+                <b>1</b>
+                <strong>Start Duel</strong>
+                <span>Draw your opening hand.</span>
             </article>
-            {% endfor %}
+            <article class="az-loop-step">
+                <b>2</b>
+                <strong>Strike</strong>
+                <span>Learn pressure intent.</span>
+            </article>
+            <article class="az-loop-step">
+                <b>3</b>
+                <strong>Ready</strong>
+                <span>Commit your round.</span>
+            </article>
+            <article class="az-loop-step">
+                <b>4</b>
+                <strong>Reward</strong>
+                <span>Gain XP and coins.</span>
+            </article>
         </section>
 
-        <section class="panel-card">
-            <span class="progression-kicker">Core Rule</span>
-            <h2>Round Discipline</h2>
-            <p class="subtitle">Do not click randomly. Choose an intent, play around Energy, build Ambition, then commit the round when your plan is clear.</p>
+        <section class="deck-status">
+            <span class="progression-kicker">Core Rules</span>
+            <h2>Intent decides your round identity.</h2>
 
-            <div class="progression-grid compact-grid">
-                <article class="mini-card">
+            <div class="menu-grid">
+                <div class="menu-card">
                     <strong>Strike</strong>
-                    <span>Pressure HP and force tempo.</span>
-                </article>
-                <article class="mini-card">
+                    <span>Pressure enemy HP.</span>
+                </div>
+                <div class="menu-card">
                     <strong>Guard</strong>
-                    <span>Reduce risk and survive pressure.</span>
-                </article>
-                <article class="mini-card">
+                    <span>Reduce risk and survive.</span>
+                </div>
+                <div class="menu-card">
                     <strong>Focus</strong>
-                    <span>Build Ambition for future swing turns.</span>
-                </article>
+                    <span>Build Ambition for swing turns.</span>
+                </div>
             </div>
         </section>
 
-        <nav class="bottom-nav">
+        <nav class="mobile-bottom-nav">
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('training') }}">Training</a>
-            <a href="{{ url_for('tutorial') }}" class="active">Tutorial</a>
-            <a href="{{ url_for('campaign') }}">Campaign</a>
-            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('training') }}" class="active">Play</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
         </nav>
     </main>
 
