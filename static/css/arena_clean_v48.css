@@ -1,0 +1,484 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: #05050b;
+    color: #fff;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+a {
+    font: inherit;
+}
+
+.az48-arena {
+    position: fixed;
+    inset: 0;
+    width: 100dvw;
+    height: 100dvh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 74px 40px minmax(0, 1fr) 190px;
+    gap: 8px;
+    padding: 8px;
+    background:
+        radial-gradient(circle at 50% 18%, rgba(255, 220, 135, .15), transparent 28%),
+        radial-gradient(circle at 10% 80%, rgba(113, 75, 255, .18), transparent 30%),
+        radial-gradient(circle at 88% 75%, rgba(0, 170, 255, .12), transparent 32%),
+        linear-gradient(180deg, #090914 0%, #05050b 100%);
+}
+
+.az48-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr) 74px;
+    gap: 8px;
+    min-height: 0;
+}
+
+.az48-player,
+.az48-center,
+.az48-message,
+.az48-board,
+.az48-bottom {
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.055);
+    box-shadow: 0 18px 50px rgba(0,0,0,.28);
+    backdrop-filter: blur(14px);
+}
+
+.az48-player {
+    min-width: 0;
+    border-radius: 20px;
+    padding: 10px 12px;
+    display: grid;
+    align-content: center;
+    gap: 7px;
+}
+
+.az48-player span,
+.az48-player small,
+.az48-center span,
+.az48-center em {
+    color: rgba(255,255,255,.62);
+    font-style: normal;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+}
+
+.az48-player strong {
+    display: block;
+    color: #fff;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-stats {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.az48-stats b {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.32);
+    border: 1px solid rgba(255,255,255,.08);
+    font-size: .68rem;
+    line-height: 1;
+}
+
+.az48-center {
+    border-radius: 20px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 8px;
+    background: linear-gradient(180deg, rgba(255,214,122,.16), rgba(255,255,255,.05));
+}
+
+.az48-center strong {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.az48-back {
+    display: grid;
+    place-items: center;
+    border-radius: 20px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 900;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+}
+
+.az48-message {
+    min-height: 0;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    padding: 0 16px;
+    color: rgba(255,255,255,.82);
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-board {
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 30px;
+    padding: 12px;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 28px minmax(0, 1fr);
+    gap: 8px;
+    background:
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.03) 1px, transparent 1px),
+        radial-gradient(circle at 50% 50%, rgba(255,220,130,.12), transparent 34%),
+        rgba(255,255,255,.035);
+    background-size: 38px 38px, 38px 38px, auto, auto;
+}
+
+.az48-field-row {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(76px, 128px));
+    justify-content: center;
+    align-items: center;
+    gap: clamp(8px, 2vw, 18px);
+    overflow: hidden;
+}
+
+.az48-divider {
+    display: grid;
+    place-items: center;
+    color: rgba(255,220,140,.82);
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    font-weight: 1000;
+}
+
+.az48-slot {
+    width: min(128px, 15vw);
+    height: min(150px, 20dvh);
+    min-height: 96px;
+    border-radius: 18px;
+    border: 1px dashed rgba(255,255,255,.18);
+    background: rgba(0,0,0,.22);
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.44);
+    font-weight: 900;
+    text-align: center;
+    padding: 8px;
+}
+
+.az48-bottom {
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 10px;
+    display: grid;
+    grid-template-rows: 24px minmax(0, 1fr) 42px;
+    gap: 8px;
+}
+
+.az48-hand-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: rgba(255,255,255,.82);
+    font-size: .82rem;
+}
+
+.az48-hand {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: 8px;
+}
+
+.az48-empty {
+    align-self: center;
+    padding: 14px 18px;
+    border-radius: 16px;
+    color: rgba(255,255,255,.55);
+    border: 1px dashed rgba(255,255,255,.16);
+}
+
+.az48-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.az48-btn {
+    min-width: 98px;
+    height: 40px;
+    border: 0;
+    border-radius: 16px;
+    color: rgba(255,255,255,.90);
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.12);
+    font-weight: 1000;
+    cursor: pointer;
+}
+
+.az48-btn small {
+    display: block;
+    font-size: .58rem;
+    color: rgba(255,255,255,.54);
+    line-height: 1;
+}
+
+.az48-start,
+.az48-ready {
+    color: #111;
+    background: linear-gradient(180deg, #fff1bb, #d6a84c);
+}
+
+.az48-card {
+    position: relative;
+    width: min(106px, 14vw);
+    height: min(154px, 17dvh);
+    min-height: 112px;
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    color: #fff;
+    padding: 7px;
+    display: grid;
+    grid-template-rows: 22px minmax(0, 1fr) auto auto;
+    gap: 3px;
+    text-align: left;
+    background:
+        radial-gradient(circle at 50% 18%, rgba(255,255,255,.14), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.035));
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 44px rgba(0,0,0,.34);
+}
+
+.az48-card:hover {
+    transform: translateY(-8px) scale(1.04);
+    z-index: 10;
+}
+
+.az48-card.playable {
+    outline: 2px solid rgba(255,218,128,.75);
+}
+
+.az48-card.type-monster {
+    background:
+        radial-gradient(circle at 50% 18%, rgba(255,214,130,.20), transparent 34%),
+        linear-gradient(180deg, rgba(95,68,34,.45), rgba(255,255,255,.04));
+}
+
+.az48-card.type-spell {
+    background:
+        radial-gradient(circle at 50% 18%, rgba(102,166,255,.22), transparent 34%),
+        linear-gradient(180deg, rgba(38,72,138,.45), rgba(255,255,255,.04));
+}
+
+.az48-card.type-trap {
+    background:
+        radial-gradient(circle at 50% 18%, rgba(255,92,154,.20), transparent 34%),
+        linear-gradient(180deg, rgba(110,34,74,.45), rgba(255,255,255,.04));
+}
+
+.az48-cost,
+.az48-power,
+.az48-rarity {
+    position: absolute;
+    z-index: 4;
+    border-radius: 999px;
+    font-size: .62rem;
+    font-weight: 1000;
+    line-height: 1;
+}
+
+.az48-cost {
+    top: 6px;
+    left: 6px;
+    padding: 6px 7px;
+    color: #111;
+    background: linear-gradient(180deg, #fff1bb, #d7a84f);
+}
+
+.az48-power {
+    right: 6px;
+    bottom: 6px;
+    padding: 7px 8px;
+    color: #111;
+    background: linear-gradient(180deg, #baf7ff, #5cc4ff);
+}
+
+.az48-rarity {
+    top: 6px;
+    right: 6px;
+    max-width: 58%;
+    padding: 5px 7px;
+    color: rgba(255,255,255,.78);
+    background: rgba(0,0,0,.40);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-art {
+    margin-top: 18px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(255,255,255,.20), transparent 36%),
+        rgba(0,0,0,.25);
+    min-height: 0;
+}
+
+.az48-art span {
+    font-size: 1.35rem;
+    font-weight: 1000;
+    color: rgba(255,255,255,.72);
+}
+
+.az48-name {
+    font-size: .68rem;
+    line-height: .92;
+    letter-spacing: -.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-tags {
+    display: flex;
+    gap: 4px;
+}
+
+.az48-tags span {
+    max-width: 50%;
+    padding: 3px 5px;
+    border-radius: 999px;
+    font-size: .52rem;
+    color: rgba(255,255,255,.72);
+    background: rgba(0,0,0,.30);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-field-card {
+    cursor: default;
+    width: min(112px, 13vw);
+    height: min(144px, 19dvh);
+}
+
+@media (max-width: 860px) {
+    .az48-arena {
+        grid-template-rows: 58px 32px minmax(0, 1fr) 160px;
+        gap: 6px;
+        padding: 6px;
+    }
+
+    .az48-top {
+        grid-template-columns: 1fr 94px 1fr 56px;
+        gap: 5px;
+    }
+
+    .az48-player,
+    .az48-center,
+    .az48-back {
+        border-radius: 14px;
+        padding: 6px;
+    }
+
+    .az48-player span,
+    .az48-center span,
+    .az48-center em {
+        font-size: .55rem;
+    }
+
+    .az48-player strong,
+    .az48-center strong {
+        font-size: .72rem;
+    }
+
+    .az48-stats b {
+        font-size: .52rem;
+        padding: 4px 5px;
+    }
+
+    .az48-board {
+        border-radius: 20px;
+        padding: 7px;
+        grid-template-rows: minmax(0, 1fr) 22px minmax(0, 1fr);
+    }
+
+    .az48-field-row {
+        grid-template-columns: repeat(3, minmax(56px, 82px));
+        gap: 6px;
+    }
+
+    .az48-slot,
+    .az48-field-card {
+        width: min(74px, 17vw);
+        height: min(102px, 14dvh);
+        min-height: 78px;
+        border-radius: 12px;
+        font-size: .58rem;
+    }
+
+    .az48-bottom {
+        border-radius: 18px;
+        padding: 7px;
+        grid-template-rows: 18px minmax(0, 1fr) 32px;
+        gap: 5px;
+    }
+
+    .az48-card {
+        width: min(72px, 17vw);
+        height: min(104px, 13dvh);
+        min-height: 86px;
+        border-radius: 12px;
+        padding: 5px;
+    }
+
+    .az48-name {
+        font-size: .54rem;
+    }
+
+    .az48-cost,
+    .az48-power,
+    .az48-rarity {
+        font-size: .48rem;
+    }
+
+    .az48-btn {
+        min-width: 54px;
+        height: 30px;
+        border-radius: 12px;
+        font-size: .64rem;
+    }
+
+    .az48-btn small {
+        display: none;
+    }
+}

@@ -3,236 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <title>{% if training_mode %}Training{% else %}Arena{% endif %} - Ambitionz</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05050B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ambitionz">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_v4.css') }}">
-                        <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_app.css') }}?v=47">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=48">
 </head>
 
-<body class="az-arena-v4-body az-arena-stable-v47" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
-    <main class="az-v4-shell">
-        <header class="az-v4-topbar">
-            <div>
-                <span class="az-v4-kicker">{% if training_mode %}Training Mode{% else %}Competitive Arena{% endif %}</span>
-                <h1>{% if training_mode %}Training{% else %}Arena{% endif %}</h1>
-            </div>
+<body class="az-clean-arena-v48" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
+    <main class="az48-arena">
+        <header class="az48-top">
+            <section class="az48-player az48-enemy">
+                <div>
+                    <span>Enemy</span>
+                    <strong id="az48-enemy-name">Opponent</strong>
+                </div>
+                <div class="az48-stats">
+                    <b><span id="az48-enemy-hp">3600</span> HP</b>
+                    <b><span id="az48-enemy-energy">0</span>/<span id="az48-enemy-max-energy">0</span> EN</b>
+                    <b>Hand <span id="az48-enemy-hand">0</span></b>
+                </div>
+            </section>
 
-            <div class="az-v4-online-pill">Online</div>
+            <section class="az48-center">
+                <span id="az48-mode">{% if training_mode %}Training{% else %}Arena{% endif %}</span>
+                <strong>Round <span id="az48-round">1</span></strong>
+                <em id="az48-phase">Start</em>
+            </section>
 
-            <a href="{{ url_for('index') }}" class="az-v4-back">Back</a>
+            <section class="az48-player az48-you">
+                <div>
+                    <span>You</span>
+                    <strong id="az48-me-name">{{ user.username if user else "Player" }}</strong>
+                </div>
+                <div class="az48-stats">
+                    <b><span id="az48-me-hp">3600</span> HP</b>
+                    <b><span id="az48-me-energy">0</span>/<span id="az48-me-max-energy">0</span> EN</b>
+                    <b><span id="az48-me-ambition">0</span> AMB</b>
+                </div>
+            </section>
+
+            <a class="az48-back" href="{{ url_for('index') }}">Back</a>
         </header>
 
-        <section class="az-v4-scoreboard">
-            <article class="az-v4-player-card az-v4-enemy">
-                <div class="az-v4-player-name">
-                    <span>Opponent</span>
-                    <strong id="enemy-name">Opponent</strong>
-                </div>
-
-                <div class="az-v4-stat-row">
-                    <span>HP <strong id="enemy-hp">3600</strong></span>
-                    <span>EN <strong id="enemy-energy">0/0</strong></span>
-                    <span>AMB <strong id="enemy-ambition">0</strong></span>
-                    <span>Intent <strong id="enemy-intent">Hidden</strong></span>
-                </div>
-            </article>
-
-            <article class="az-v4-round-card">
-                <span id="phase-label">Set Phase</span>
-                <strong id="round-number">Round 1</strong>
-                <small id="turn-status">Choose intent</small>
-            </article>
-
-            <article class="az-v4-player-card az-v4-you">
-                <div class="az-v4-player-name">
-                    <span>You</span>
-                    <strong id="my-name">{{ user.username if user else "Player" }}</strong>
-                </div>
-
-                <div class="az-v4-stat-row">
-                    <span>HP <strong id="my-hp">3600</strong></span>
-                    <span>EN <strong id="my-energy">0/0</strong></span>
-                    <span>AMB <strong id="my-ambition">0</strong></span>
-                    <span>Intent <strong id="my-intent">Strike</strong></span>
-                </div>
-            </article>
+        <section class="az48-message" id="az48-message">
+            {% if training_mode %}Press Start to draw your hand.{% else %}Enter the arena and wait for sync.{% endif %}
         </section>
 
-        <section class="az-v4-next-card">
-            <div>
-                <span class="az-v4-kicker">Next Move</span>
-                <h2 id="next-move-title">{% if training_mode %}Start the training duel{% else %}Find an opponent{% endif %}</h2>
-                <p id="next-move-copy">
-                    {% if training_mode %}
-                        Draw your hand, choose one intent, then press Ready.
-                    {% else %}
-                        Queue into a match, choose your intent and outplay the opponent.
-                    {% endif %}
-                </p>
+        <section class="az48-board">
+            <div class="az48-field-row az48-enemy-field" id="az48-enemy-field">
+                <article class="az48-slot">Enemy Trap</article>
+                <article class="az48-slot">Enemy Monster</article>
+                <article class="az48-slot">Enemy Spell</article>
             </div>
 
-            <div class="az-v4-mini-stats">
-                <span>Deck <strong id="my-deck">30</strong></span>
-                <span>GY <strong id="my-graveyard">0</strong></span>
-                <span>Ready <strong id="my-ready">No</strong></span>
+            <div class="az48-divider">Battlefield</div>
+
+            <div class="az48-field-row az48-me-field" id="az48-me-field">
+                <article class="az48-slot">Trap Slot</article>
+                <article class="az48-slot">Monster Slot</article>
+                <article class="az48-slot">Spell Slot</article>
             </div>
         </section>
 
-        <section class="az-v4-board">
-            <div class="az-v4-field az-v4-enemy-field">
-                <div class="az-v4-field-head">
-                    <h2>Enemy Field</h2>
-                    <span id="enemy-ready">Ready No</span>
-                </div>
-
-                <div class="az-v4-zones">
-                    <article class="az-v4-zone">
-                        <span>Monster</span>
-                        <div id="enemy-monster-zone" class="az-v4-zone-slot">Hidden</div>
-                    </article>
-
-                    <article class="az-v4-zone">
-                        <span>Spell / Trap</span>
-                        <div id="enemy-spell-zone" class="az-v4-zone-slot">Set Zone</div>
-                    </article>
-                </div>
-
-                <div class="az-v4-hidden-enemy-stats">
-                    <span>Deck <strong id="enemy-deck">30</strong></span>
-                    <span>Hand <strong id="enemy-hand">0</strong></span>
-                </div>
+        <footer class="az48-bottom">
+            <div class="az48-hand-head">
+                <strong>Your Hand</strong>
+                <span id="az48-hand-count">0 cards</span>
             </div>
 
-            <div class="az-v4-divider">
-                <span id="battle-state-label">Waiting</span>
-            </div>
+            <section class="az48-hand" id="az48-hand">
+                <div class="az48-empty">No cards yet. Press Start.</div>
+            </section>
 
-            <div class="az-v4-field az-v4-your-field">
-                <div class="az-v4-field-head">
-                    <h2>Your Field</h2>
-                    <span id="field-hint">Choose intent</span>
-                </div>
-
-                <div class="az-v4-zones">
-                    <article class="az-v4-zone">
-                        <span>Monster</span>
-                        <div id="my-monster-zone" class="az-v4-zone-slot">Empty Monster Zone</div>
-                    </article>
-
-                    <article class="az-v4-zone">
-                        <span>Spell / Trap</span>
-                        <div id="my-spell-zone" class="az-v4-zone-slot">Empty Spell/Trap Zone</div>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section class="az-v4-hand-panel">
-            <div class="az-v4-field-head">
-                <h2>Your Hand</h2>
-                <span>Tap a card to play it</span>
-            </div>
-
-            <div id="my-hand" class="az-v4-hand">
-                <div class="az-v4-empty-hand">Start the duel to draw your hand.</div>
-            </div>
-        </section>
-
-        <section class="az-v4-control-panel">
-            <div class="az-v4-control-head">
-                <div>
-                    <span class="az-v4-kicker">Battle Controls</span>
-                    <h2>{% if training_mode %}Training Duel{% else %}Arena Duel{% endif %}</h2>
-                </div>
-
-                <select id="bot-difficulty" class="az-v4-select" {% if not training_mode %}hidden{% endif %}>
-                    <option value="easy">Easy</option>
-                    <option value="normal" selected>Normal</option>
-                    <option value="hard">Hard</option>
-                </select>
-            </div>
-
-            <div class="az-v4-action-grid">
-                <button id="intent-strike-btn" type="button" class="az-v4-action-btn" data-intent="Strike">
-                    Strike
-                    <small>Attack</small>
-                </button>
-
-                <button id="intent-guard-btn" type="button" class="az-v4-action-btn" data-intent="Guard">
-                    Guard
-                    <small>Defend</small>
-                </button>
-
-                <button id="intent-focus-btn" type="button" class="az-v4-action-btn" data-intent="Focus">
-                    Focus
-                    <small>Build</small>
-                </button>
-
-                <button id="unleash-btn" type="button" class="az-v4-action-btn az-v4-risk-btn">
-                    Unleash
-                    <small>Risk</small>
-                </button>
-            </div>
-
-            <button id="ready-btn" type="button" class="az-v4-ready-btn">
-                {% if training_mode %}Start Training{% else %}Ready{% endif %}
-            </button>
-
-            <div id="connection-status" class="az-v4-connection">Connecting...</div>
-        </section>
-
-        <details class="az-v4-log-panel">
-            <summary>Battle Log</summary>
-            <div id="battle-log" class="az-v4-battle-log">
-                <p>Connected to Ambitionz server.</p>
-            </div>
-        </details>
-
-        <details class="az-v4-tips-panel">
-            <summary>Quick Tips</summary>
-            <div>
-                <p><strong>Strike</strong> pressures HP.</p>
-                <p><strong>Guard</strong> reduces risk.</p>
-                <p><strong>Focus</strong> builds Ambition.</p>
-            </div>
-        </details>
-
-        <nav class="az-v4-bottom-dock">
-            <button type="button" class="az-v4-dock-btn" data-v4-click="Strike">
-                Strike
-                <small>Attack</small>
-            </button>
-
-            <button type="button" class="az-v4-dock-btn" data-v4-click="Guard">
-                Guard
-                <small>Defend</small>
-            </button>
-
-            <button type="button" class="az-v4-dock-btn" data-v4-click="Focus">
-                Focus
-                <small>Build</small>
-            </button>
-
-            <button type="button" class="az-v4-dock-btn az-v4-dock-ready" data-v4-click="Ready">
-                Ready
-                <small>Commit</small>
-            </button>
-        </nav>
+            <nav class="az48-actions">
+                <button type="button" id="az48-start" class="az48-btn az48-start">Start</button>
+                <button type="button" id="az48-strike" class="az48-btn">Strike <small>Attack</small></button>
+                <button type="button" id="az48-guard" class="az48-btn">Guard <small>Defend</small></button>
+                <button type="button" id="az48-focus" class="az48-btn">Focus <small>Build</small></button>
+                <button type="button" id="az48-ready" class="az48-btn az48-ready">Ready <small>Commit</small></button>
+            </nav>
+        </footer>
     </main>
 
-    <script>
-        window.AMBITIONZ_TRAINING_MODE = {{ "true" if training_mode else "false" }};
-    </script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/arena_app.js') }}?v=47"></script>
-    <script src="{{ url_for('static', filename='js/arena_v4.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-                    </body>
+    <script>
+        window.AMBITIONZ_ARENA_MODE = "{{ 'training' if training_mode else 'arena' }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=48"></script>
+</body>
 </html>
