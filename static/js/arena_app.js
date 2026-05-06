@@ -940,3 +940,338 @@
         subtree: true
     });
 })();
+
+/* =========================================================
+   Arena V45 — Structural Renderer Lock
+   Keeps the arena as a single-screen board and normalizes
+   match_state_v1 payloads into the frontend renderer.
+   ========================================================= */
+(function () {
+    const V45 = "Arena V45 Structural Lock";
+
+    function safeArray(value) {
+        return Array.isArray(value) ? value : [];
+    }
+
+    function safeText(value, fallback = "") {
+        if (value === undefined || value === null || value === "") return fallback;
+        return String(value);
+    }
+
+    function safeNumber(value, fallback = 0) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    function escapeHtml(value) {
+        return safeText(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function normalizeCardV45(card, index = 0) {
+        card = card || {};
+
+        const id = safeText(card.id || card.card_id || card.runtime_id || card.name || ("card-" + index));
+        const type = safeText(card.type || "Monster");
+        const isMonster = type.toLowerCase() === "monster";
+        const power = safeNumber(card.power || card.attack || card.value || 0, 0);
+        const value = safeNumber(card.value || card.power || card.attack || 0, 0);
+
+        return {
+            id,
+            card_id: id,
+            name: safeText(card.name || id),
+            type,
+            element: safeText(card.element || "Neutral"),
+            rarity: safeText(card.rarity || "Common"),
+            sigil: safeText(card.sigil || "None"),
+            role: safeText(card.role || "Balancer"),
+            cost: safeNumber(card.cost || card.energy_cost || 1, 1),
+            power,
+            attack: safeNumber(card.attack || card.power || card.value || 0, 0),
+            value,
+            stat: isMonster ? power : value,
+            statLabel: isMonster ? "PWR" : "VAL",
+            effect: safeText(card.effect || card.description || ""),
+            image: safeText(card.image || ""),
+            isMonster,
+        };
+    }
+
+    function normalizeMatchV45(payload) {
+        payload = payload || {};
+
+        const me = payload.me || payload.player || {};
+        const enemy = payload.enemy || payload.opponent || {};
+        const legal = payload.legal_actions || {};
+
+        const hand = safeArray(me.hand || payload.my_hand || payload.hand).map(normalizeCardV45);
+        const enemyHandCount = safeNumber(enemy.hand_count ?? payload.enemy_hand_count ?? 0, 0);
+
+        return {
+            raw: payload,
+            phase: safeText(payload.phase || "intent"),
+            round: safeNumber(payload.round || 1, 1),
+            mode: safeText(payload.mode || "training"),
+            message: safeText(payload.message || "Choose your action."),
+            me: {
+                name: safeText(me.name || "You"),
+                hp: safeNumber(me.hp || me.health || 3600, 3600),
+                energy: safeNumber(me.energy || me.current_energy || 0, 0),
+                max_energy: safeNumber(me.max_energy || me.energy_max || me.energy || 0, 0),
+                ambition: safeNumber(me.ambition || 0, 0),
+                intent: safeText(me.intent || ""),
+                ready: Boolean(me.ready || me.is_ready),
+                hand,
+                field: me.field || {},
+                deck_count: safeNumber(me.deck_count || 0, 0),
+            },
+            enemy: {
+                name: safeText(enemy.name || "Opponent"),
+                hp: safeNumber(enemy.hp || enemy.health || 3600, 3600),
+                energy: safeNumber(enemy.energy || enemy.current_energy || 0, 0),
+                max_energy: safeNumber(enemy.max_energy || enemy.energy_max || enemy.energy || 0, 0),
+                ambition: safeNumber(enemy.ambition || 0, 0),
+                intent: safeText(enemy.intent || "Hidden"),
+                ready: Boolean(enemy.ready || enemy.is_ready),
+                hand_count: enemyHandCount,
+                field: enemy.field || {},
+                deck_count: safeNumber(enemy.deck_count || 0, 0),
+            },
+            playableIds: safeArray(legal.playable_card_ids).map(String),
+            canReady: Boolean(legal.can_ready ?? true),
+            canPlayCards: Boolean(legal.can_play_cards ?? hand.length),
+        };
+    }
+
+    function ensureArenaRootV45() {
+        document.body.classList.add("az-arena-v45", "az-arena-v40");
+
+        let root = document.getElementById("az-arena-v45-root");
+
+        if (!root) {
+            root = document.createElement("main");
+            root.id = "az-arena-v45-root";
+            root.className = "az-arena-v45-root";
+            document.body.appendChild(root);
+        }
+
+        if (!root.dataset.ready) {
+            root.innerHTML = [
+                '<section class="az-v45-top">',
+                '  <div class="az-v45-player az-v45-enemy">',
+                '    <span id="az-v45-enemy-name">Opponent</span>',
+                '    <strong><b id="az-v45-enemy-hp">3600</b> HP</strong>',
+                '    <em>Hand <b id="az-v45-enemy-hand">0</b></em>',
+                '  </div>',
+                '  <div class="az-v45-center-status">',
+                '    <span id="az-v45-mode">Training</span>',
+                '    <strong>Round <b id="az-v45-round">1</b></strong>',
+                '    <em id="az-v45-phase">Intent</em>',
+                '  </div>',
+                '  <div class="az-v45-player az-v45-me">',
+                '    <span id="az-v45-me-name">You</span>',
+                '    <strong><b id="az-v45-me-hp">3600</b> HP</strong>',
+                '    <em><b id="az-v45-energy">0</b>/<b id="az-v45-max-energy">0</b> Energy</em>',
+                '  </div>',
+                '</section>',
+                '<section class="az-v45-board">',
+                '  <div class="az-v45-field-row az-v45-enemy-field" id="az-v45-enemy-field"></div>',
+                '  <div class="az-v45-message" id="az-v45-message">Start the duel.</div>',
+                '  <div class="az-v45-field-row az-v45-me-field" id="az-v45-me-field"></div>',
+                '</section>',
+                '<section class="az-v45-bottom">',
+                '  <div class="az-v45-hand-head">',
+                '    <strong>Your Hand</strong>',
+                '    <span id="az-v45-hand-count">0 cards</span>',
+                '  </div>',
+                '  <div class="az-v45-hand" id="az-v45-hand"></div>',
+                '  <div class="az-v45-actions">',
+                '    <button type="button" class="az-v45-action" data-v45-action="start">Start</button>',
+                '    <button type="button" class="az-v45-action" data-v45-action="strike">Strike</button>',
+                '    <button type="button" class="az-v45-action" data-v45-action="guard">Guard</button>',
+                '    <button type="button" class="az-v45-action" data-v45-action="focus">Focus</button>',
+                '    <button type="button" class="az-v45-action primary" data-v45-action="ready">Ready</button>',
+                '  </div>',
+                '</section>'
+            ].join("");
+
+            root.dataset.ready = "1";
+        }
+
+        return root;
+    }
+
+    function fieldCardV45(card, label) {
+        const c = card ? normalizeCardV45(card) : null;
+
+        if (!c) {
+            return '<article class="az-v45-slot empty"><span>' + escapeHtml(label) + '</span></article>';
+        }
+
+        return renderCardV45(c, { compact: true, disabled: true });
+    }
+
+    function normalizeFieldV45(field) {
+        field = field || {};
+
+        return {
+            monster: field.monster || field.field_m || field.active_monster || null,
+            spell: field.spell || field.field_st || field.support || null,
+            trap: field.trap || null,
+        };
+    }
+
+    function renderCardV45(card, options = {}) {
+        const c = normalizeCardV45(card);
+        const disabled = options.disabled ? " disabled" : "";
+        const playable = options.playable ? " playable" : "";
+        const compact = options.compact ? " compact" : "";
+        const typeClass = "type-" + c.type.toLowerCase().replaceAll(" ", "-");
+        const elementClass = "element-" + c.element.toLowerCase().replaceAll(" ", "-");
+        const rarityClass = "rarity-" + c.rarity.toLowerCase().replaceAll(" ", "-");
+
+        return [
+            '<button type="button" class="az-v45-card ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + compact + '" data-card-id="' + escapeHtml(c.id) + '" data-cost="' + escapeHtml(c.cost) + '" data-power="' + escapeHtml(c.stat) + '" data-type="' + escapeHtml(c.type) + '"' + disabled + '>',
+            '  <span class="az-v45-cost">E ' + escapeHtml(c.cost) + '</span>',
+            '  <span class="az-v45-rarity">' + escapeHtml(c.rarity) + '</span>',
+            '  <div class="az-v45-art"><span>' + escapeHtml(c.element.slice(0, 2).toUpperCase()) + '</span></div>',
+            '  <strong class="az-v45-name">' + escapeHtml(c.name) + '</strong>',
+            '  <div class="az-v45-tags"><span>' + escapeHtml(c.type) + '</span><span>' + escapeHtml(c.sigil) + '</span></div>',
+            '  <p class="az-v45-effect">' + escapeHtml(c.effect) + '</p>',
+            '  <span class="az-v45-power">' + escapeHtml(c.statLabel) + ' ' + escapeHtml(c.stat) + '</span>',
+            '</button>'
+        ].join("");
+    }
+
+    function renderFieldV45(selector, field, enemy) {
+        const el = document.querySelector(selector);
+        if (!el) return;
+
+        const f = normalizeFieldV45(field);
+
+        el.innerHTML = [
+            fieldCardV45(f.trap, enemy ? "Enemy Trap" : "Trap"),
+            fieldCardV45(f.monster, enemy ? "Enemy Monster" : "Monster"),
+            fieldCardV45(f.spell, enemy ? "Enemy Spell" : "Spell")
+        ].join("");
+    }
+
+    function renderArenaV45(payload) {
+        ensureArenaRootV45();
+
+        const match = normalizeMatchV45(payload);
+
+        const set = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+
+        set("az-v45-enemy-name", match.enemy.name);
+        set("az-v45-enemy-hp", match.enemy.hp);
+        set("az-v45-enemy-hand", match.enemy.hand_count);
+        set("az-v45-me-name", match.me.name);
+        set("az-v45-me-hp", match.me.hp);
+        set("az-v45-energy", match.me.energy);
+        set("az-v45-max-energy", match.me.max_energy);
+        set("az-v45-mode", match.mode);
+        set("az-v45-round", match.round);
+        set("az-v45-phase", match.phase);
+        set("az-v45-message", match.message);
+        set("az-v45-hand-count", match.me.hand.length + " cards");
+
+        renderFieldV45("#az-v45-enemy-field", match.enemy.field, true);
+        renderFieldV45("#az-v45-me-field", match.me.field, false);
+
+        const hand = document.getElementById("az-v45-hand");
+
+        if (hand) {
+            if (!match.me.hand.length) {
+                hand.innerHTML = '<div class="az-v45-empty-hand">No cards in hand. Start the match or wait for sync.</div>';
+            } else {
+                hand.innerHTML = match.me.hand.map((card) => {
+                    const id = String(card.id || card.card_id);
+                    return renderCardV45(card, {
+                        playable: match.playableIds.includes(id),
+                    });
+                }).join("");
+            }
+        }
+
+        if (window.AmbitionzEnhanceArenaCardsV40) {
+            window.AmbitionzEnhanceArenaCardsV40();
+        }
+    }
+
+    function emitV45(eventName, payload) {
+        if (window.socket && typeof window.socket.emit === "function") {
+            window.socket.emit(eventName, payload || {});
+            return true;
+        }
+
+        if (window.io && window.__ambitionzSocket && typeof window.__ambitionzSocket.emit === "function") {
+            window.__ambitionzSocket.emit(eventName, payload || {});
+            return true;
+        }
+
+        document.dispatchEvent(new CustomEvent("ambitionz:v45:emit", {
+            detail: { eventName, payload: payload || {} }
+        }));
+
+        return false;
+    }
+
+    document.addEventListener("click", function (event) {
+        const card = event.target.closest("#az-v45-hand .az-v45-card[data-card-id]");
+
+        if (card) {
+            emitV45("play_card", { card_id: card.dataset.cardId });
+            emitV45("play_card_v1", { card_id: card.dataset.cardId });
+            return;
+        }
+
+        const action = event.target.closest("[data-v45-action]");
+        if (!action) return;
+
+        const kind = action.dataset.v45Action;
+
+        if (kind === "start") {
+            emitV45("start_training", {});
+            emitV45("start_training_v1", {});
+        } else if (kind === "ready") {
+            emitV45("declare_ready", {});
+            emitV45("declare_ready_v1", {});
+        } else if (["strike", "guard", "focus"].includes(kind)) {
+            const intent = kind.charAt(0).toUpperCase() + kind.slice(1);
+            emitV45("set_intent", { intent });
+            emitV45("set_intent_v1", { intent });
+        }
+    });
+
+    document.addEventListener("ambitionz:match-state", function (event) {
+        renderArenaV45(event.detail || {});
+    });
+
+    document.addEventListener("game_state_update", function (event) {
+        renderArenaV45(event.detail || {});
+    });
+
+    window.AmbitionzArenaV45 = {
+        version: V45,
+        normalizeMatch: normalizeMatchV45,
+        render: renderArenaV45,
+        ensureRoot: ensureArenaRootV45
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        ensureArenaRootV45();
+
+        if (window.latestState) {
+            renderArenaV45(window.latestState);
+        }
+    });
+})();
