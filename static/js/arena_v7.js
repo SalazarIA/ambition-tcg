@@ -247,3 +247,24 @@
 
     document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+
+/* Arena animation integration */
+(function () {
+    function isBattlePage() {
+        return window.location.pathname === "/training" || window.location.pathname === "/arena";
+    }
+
+    if (!isBattlePage()) return;
+
+    document.addEventListener("click", function (event) {
+        var card = event.target.closest(".az-v7-hand-card");
+        if (!card) return;
+
+        card.classList.remove("az-card-played");
+        void card.offsetWidth;
+        card.classList.add("az-card-played");
+    });
+})();
+

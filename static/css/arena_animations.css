@@ -1,0 +1,378 @@
+/* =========================================================
+   Ambitionz Arena Animations
+   Gameplay feedback layer for Arena V7.
+   ========================================================= */
+
+/* ---------- Core animation utilities ---------- */
+
+.az-hit-shake {
+    animation: azHitShake .42s ease both;
+}
+
+@keyframes azHitShake {
+    0%, 100% { transform: translateX(0) scale(1); }
+    18% { transform: translateX(-5px) scale(1.04); }
+    36% { transform: translateX(5px) scale(1.04); }
+    54% { transform: translateX(-3px) scale(1.02); }
+    72% { transform: translateX(3px) scale(1.02); }
+}
+
+.az-hp-damage {
+    animation: azHpDamage .7s ease both;
+}
+
+@keyframes azHpDamage {
+    0% {
+        filter: brightness(1);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+    }
+    35% {
+        filter: brightness(1.65) saturate(1.35);
+        box-shadow:
+            0 0 0 8px rgba(255, 79, 79, 0.14),
+            0 0 34px rgba(255, 79, 79, 0.44),
+            0 10px 28px rgba(0,0,0,0.45);
+    }
+    100% {
+        filter: brightness(1);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+    }
+}
+
+.az-energy-pulse {
+    animation: azEnergyPulse .64s ease both;
+}
+
+@keyframes azEnergyPulse {
+    0%, 100% {
+        box-shadow: 0 10px 24px rgba(0,0,0,0.38);
+    }
+    45% {
+        box-shadow:
+            0 0 0 8px rgba(94, 203, 255, 0.13),
+            0 0 34px rgba(94, 203, 255, 0.42),
+            0 10px 24px rgba(0,0,0,0.38);
+    }
+}
+
+.az-card-draw {
+    animation: azCardDraw .42s cubic-bezier(.2,.9,.2,1) both;
+}
+
+@keyframes azCardDraw {
+    from {
+        opacity: 0;
+        transform: translateY(34px) rotate(var(--rot, 0deg)) scale(.82);
+        filter: blur(3px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(var(--lift, 0px)) rotate(var(--rot, 0deg)) scale(1);
+        filter: blur(0);
+    }
+}
+
+.az-card-played {
+    animation: azCardPlayed .48s cubic-bezier(.2,.9,.2,1) both;
+}
+
+@keyframes azCardPlayed {
+    0% {
+        transform: translateY(0) scale(1);
+        filter: brightness(1);
+    }
+    45% {
+        transform: translateY(-26px) scale(1.08);
+        filter: brightness(1.25);
+        box-shadow: 0 0 42px rgba(255, 220, 145, .32), 0 26px 60px rgba(0,0,0,.58);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        filter: brightness(1);
+    }
+}
+
+.az-ready-pulse {
+    animation: azReadyPulse 1.35s ease-in-out infinite;
+}
+
+@keyframes azReadyPulse {
+    0%, 100% {
+        box-shadow:
+            0 0 0 7px rgba(0,0,0,0.32),
+            0 16px 48px rgba(0,0,0,0.52),
+            0 0 24px rgba(255, 91, 52, 0.20);
+    }
+    50% {
+        box-shadow:
+            0 0 0 9px rgba(255, 220, 145, 0.10),
+            0 18px 58px rgba(0,0,0,0.58),
+            0 0 48px rgba(255, 91, 52, 0.46);
+    }
+}
+
+.az-intent-glow {
+    border-color: rgba(255, 220, 145, .88) !important;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(255, 220, 145, .18), transparent 38%),
+        rgba(102, 74, 40, .78) !important;
+    box-shadow:
+        0 0 0 4px rgba(255, 220, 145, .10),
+        0 12px 30px rgba(0,0,0,.42) !important;
+}
+
+/* ---------- Floating feedback text ---------- */
+
+.az-floating-text {
+    position: fixed;
+    z-index: 500;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    color: #fff2d4;
+    font-size: clamp(1.5rem, 5vw, 3.2rem);
+    font-weight: 1000;
+    text-shadow:
+        0 4px 18px rgba(0,0,0,.82),
+        0 0 28px rgba(255, 220, 145, .36);
+    animation: azFloatingText .95s ease both;
+}
+
+.az-floating-text.damage {
+    color: #ffb0b0;
+    text-shadow:
+        0 4px 18px rgba(0,0,0,.82),
+        0 0 28px rgba(255, 78, 78, .42);
+}
+
+.az-floating-text.reward {
+    color: #ffe29b;
+}
+
+@keyframes azFloatingText {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -36%) scale(.82);
+    }
+    18% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -78%) scale(1);
+    }
+}
+
+/* ---------- Round banner ---------- */
+
+.az-round-banner {
+    position: fixed;
+    left: 50%;
+    top: 18%;
+    transform: translateX(-50%) translateY(-18px);
+    z-index: 420;
+    width: min(560px, calc(100vw - 32px));
+    padding: 16px 18px;
+    border-radius: 26px;
+    text-align: center;
+    background:
+        radial-gradient(circle at top, rgba(255, 220, 145, .18), transparent 34%),
+        linear-gradient(135deg, rgba(34, 25, 54, .96), rgba(12, 12, 18, .96));
+    border: 1px solid rgba(255, 220, 145, .30);
+    box-shadow:
+        0 28px 90px rgba(0,0,0,.58),
+        0 0 44px rgba(142, 98, 255, .20);
+    pointer-events: none;
+    opacity: 0;
+}
+
+.az-round-banner.is-visible {
+    animation: azRoundBanner 1.55s ease both;
+}
+
+.az-round-banner strong {
+    display: block;
+    color: #fff;
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    line-height: 1;
+}
+
+.az-round-banner span {
+    display: block;
+    margin-top: 8px;
+    color: rgba(255,255,255,.68);
+    font-weight: 750;
+}
+
+@keyframes azRoundBanner {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-22px) scale(.94);
+    }
+    16%, 74% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px) scale(.98);
+    }
+}
+
+/* ---------- Victory / defeat overlay ---------- */
+
+.az-end-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    display: none;
+    place-items: center;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 50% 36%, rgba(142, 98, 255, .28), transparent 32%),
+        rgba(0,0,0,.72);
+    backdrop-filter: blur(10px);
+}
+
+.az-end-overlay.is-visible {
+    display: grid;
+    animation: azOverlayIn .22s ease both;
+}
+
+@keyframes azOverlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.az-end-card {
+    width: min(520px, 100%);
+    padding: 24px;
+    border-radius: 32px;
+    text-align: center;
+    background:
+        radial-gradient(circle at top, rgba(255, 220, 145, .18), transparent 34%),
+        linear-gradient(135deg, rgba(20, 18, 30, .98), rgba(8, 8, 14, .98));
+    border: 1px solid rgba(255, 220, 145, .28);
+    box-shadow: 0 34px 110px rgba(0,0,0,.70);
+}
+
+.az-end-card small {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: rgba(255, 224, 156, .96);
+    background: rgba(255, 197, 106, .11);
+    border: 1px solid rgba(255, 197, 106, .18);
+    font-size: .7rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.az-end-card h2 {
+    margin: 12px 0 8px;
+    color: #fff;
+    font-size: clamp(2rem, 7vw, 4rem);
+    line-height: .92;
+    letter-spacing: -.06em;
+}
+
+.az-end-card p {
+    margin: 0;
+    color: rgba(255,255,255,.68);
+    line-height: 1.45;
+}
+
+.az-end-rewards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.az-end-reward {
+    min-height: 86px;
+    padding: 14px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.09);
+}
+
+.az-end-reward strong {
+    color: #fff;
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.az-end-reward span {
+    margin-top: 5px;
+    color: rgba(255,255,255,.58);
+    text-transform: uppercase;
+    font-size: .68rem;
+    font-weight: 950;
+}
+
+.az-end-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.az-end-actions a,
+.az-end-actions button {
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.13);
+    color: #fff;
+    background: rgba(255,255,255,.07);
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.az-end-actions .primary {
+    background: linear-gradient(135deg, rgba(255, 197, 106, .32), rgba(142, 98, 255, .24));
+    border-color: rgba(255, 220, 145, .34);
+}
+
+/* ---------- Board atmosphere ---------- */
+
+.az-v7-board-card {
+    transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+
+.az-v7-board-card:hover {
+    filter: brightness(1.14);
+    box-shadow: 0 22px 58px rgba(0,0,0,0.50), 0 0 32px rgba(255, 220, 145, .16);
+}
+
+.az-v7-main-action {
+    animation: azReadyPulse 1.35s ease-in-out infinite;
+}
+
+.az-v7-hand-card {
+    animation: azCardDraw .38s cubic-bezier(.2,.9,.2,1) both;
+}
+
+.az-v7-hand-card:nth-child(1) { animation-delay: 0ms; }
+.az-v7-hand-card:nth-child(2) { animation-delay: 45ms; }
+.az-v7-hand-card:nth-child(3) { animation-delay: 90ms; }
+.az-v7-hand-card:nth-child(4) { animation-delay: 135ms; }
+.az-v7-hand-card:nth-child(5) { animation-delay: 180ms; }
+.az-v7-hand-card:nth-child(6) { animation-delay: 225ms; }
+
+@media (max-width: 720px) {
+    .az-round-banner {
+        top: 14%;
+    }
+
+    .az-end-rewards {
+        grid-template-columns: 1fr;
+    }
+}

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_v4.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_v5.css') }}?v=6">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_v7.css') }}?v=7">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_animations.css') }}?v=1">
 </head>
 
 <body class="az-arena-v4-body" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
@@ -235,5 +236,6 @@
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/arena_v5.js') }}?v=6"></script>
     <script src="{{ url_for('static', filename='js/arena_v7.js') }}?v=7"></script>
+    <script src="{{ url_for('static', filename='js/arena_animations.js') }}?v=1"></script>
 </body>
 </html>
