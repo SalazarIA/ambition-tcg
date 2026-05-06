@@ -3894,6 +3894,35 @@ def az48_declare_ready(data=None):
 
 @socketio.on("az48_start_training")
 def az48_start_training(data=None):
+    handle_start_training_v1(data or {})
+    return None
+
+
+@socketio.on("az48_request_state")
+def az48_request_state(data=None):
+    handle_request_match_state(data or {})
+    return None
+
+
+@socketio.on("az48_set_intent")
+def az48_set_intent(data=None):
+    handle_set_intent_v1(data or {})
+    return None
+
+
+@socketio.on("az48_play_card")
+def az48_play_card(data=None):
+    handle_play_card_v1(data or {})
+    return None
+
+
+@socketio.on("az48_declare_ready")
+def az48_declare_ready(data=None):
+    handle_declare_ready_v1(data or {})
+    return None
+
+@socketio.on("az48_start_training")
+def az48_start_training(data=None):
     return handle_start_training_v1(data or {})
 
 
