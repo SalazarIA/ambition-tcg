@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime, timezone, timedelta
 
 import itsdangerous
-from flask import make_response, Flask, abort, flash, redirect, render_template, request, session, url_for
+from flask import make_response, Flask, abort, flash, redirect, render_template, request, session, url_for, jsonify
 from flask_socketio import SocketIO
 from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -27,7 +27,7 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
@@ -3228,6 +3228,42 @@ def welcome():
         return redirect("/")
 
 
+
+
+
+@app.route("/daily")
+def daily():
+    user = current_user()
+    missions = ensure_daily_missions(user) if user else []
+
+    return render_template(
+        "daily.html",
+        user=user,
+        missions=missions,
+    )
+
+
+@app.route("/api/retention/event", methods=["POST"])
+def api_retention_event():
+    payload = request.get_json(silent=True) or {}
+
+    event_key = str(payload.get("event_key") or "unknown")[:120]
+    page = str(payload.get("page") or request.referrer or "")[:220]
+    metadata = payload.get("metadata") or {}
+
+    user = current_user()
+
+    event = RetentionEvent(
+        user_id=user.id if user else None,
+        event_key=event_key,
+        page=page,
+        metadata_json=json.dumps(metadata, ensure_ascii=False)[:4000],
+    )
+
+    db.session.add(event)
+    db.session.commit()
+
+    return jsonify({"ok": True})
 
 
 @app.route("/progression")

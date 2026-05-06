@@ -334,3 +334,49 @@
         });
     });
 })();
+
+
+(function () {
+    function trackRetentionEvent(eventKey, metadata) {
+        try {
+            if (!window.fetch) return;
+
+            fetch("/api/retention/event", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "same-origin",
+                body: JSON.stringify({
+                    event_key: eventKey,
+                    page: window.location.pathname,
+                    metadata: metadata || {}
+                })
+            }).catch(function () {});
+        } catch (err) {}
+    }
+
+    window.AmbitionzRetention = {
+        track: trackRetentionEvent
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var page = document.body ? document.body.getAttribute("data-retention-page") : null;
+        trackRetentionEvent("page_view", {
+            page: page || window.location.pathname,
+            standalone: window.matchMedia && window.matchMedia("(display-mode: standalone)").matches
+        });
+
+        document.querySelectorAll("a[href], button").forEach(function (el) {
+            el.addEventListener("click", function () {
+                var label = (el.textContent || "").trim().slice(0, 80);
+                var href = el.getAttribute("href") || "";
+                trackRetentionEvent("ui_click", {
+                    label: label,
+                    href: href
+                });
+            });
+        });
+    });
+})();
+

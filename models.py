@@ -466,3 +466,15 @@ class MatchTelemetry(db.Model):
     bot_difficulty = db.Column(db.String(40), nullable=True)
     ending_reason = db.Column(db.String(120), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class RetentionEvent(db.Model):
+    __tablename__ = "retention_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=True, index=True)
+    event_key = db.Column(db.String(120), nullable=False, index=True)
+    page = db.Column(db.String(220), nullable=True)
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
