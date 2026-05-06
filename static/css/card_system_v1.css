@@ -321,3 +321,212 @@
         display: none;
     }
 }
+
+
+/* =========================================================
+   Deck Builder + Booster Card UI Extensions
+   ========================================================= */
+
+.az-card-v1.is-owned {
+    border-color: rgba(125, 240, 156, .42);
+}
+
+.az-card-v1.is-selected {
+    border-color: rgba(255, 220, 145, .86);
+    box-shadow:
+        0 0 0 4px rgba(255,220,145,.10),
+        0 24px 76px rgba(0,0,0,.46),
+        0 0 34px rgba(255,220,145,.18);
+}
+
+.az-card-v1.is-deck-builder-card {
+    min-height: 252px;
+}
+
+.az-card-v1.is-booster-result-card {
+    min-height: 268px;
+    animation: azBoosterCardReveal .46s cubic-bezier(.2,.9,.18,1) both;
+}
+
+@keyframes azBoosterCardReveal {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(.94) rotate(-1deg);
+        filter: brightness(.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0);
+        filter: brightness(1);
+    }
+}
+
+.az-card-count-badge-v1 {
+    position: absolute;
+    right: 9px;
+    top: 47px;
+    z-index: 10;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 7px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(8,8,14,.74);
+    border: 1px solid rgba(255,255,255,.14);
+    font-size: .68rem;
+    font-weight: 1000;
+    box-shadow: 0 8px 24px rgba(0,0,0,.30);
+}
+
+.az-card-type-badge-v1 {
+    position: absolute;
+    left: 10px;
+    top: 47px;
+    z-index: 10;
+    padding: 4px 7px;
+    border-radius: 999px;
+    color: rgba(255,255,255,.82);
+    background: rgba(8,8,14,.58);
+    border: 1px solid rgba(255,255,255,.10);
+    font-size: .56rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-card-v1.type-monster .az-card-type-badge-v1 {
+    color: rgba(255,228,166,.94);
+}
+
+.az-card-v1.type-spell .az-card-type-badge-v1 {
+    color: rgba(116,219,255,.94);
+}
+
+.az-card-v1.type-trap .az-card-type-badge-v1 {
+    color: rgba(255,146,156,.94);
+}
+
+.az-card-deck-controls-v1 {
+    position: absolute;
+    left: 9px;
+    right: 9px;
+    bottom: 9px;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+}
+
+.az-card-deck-controls-v1 button {
+    min-height: 34px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 12px;
+    color: #fff;
+    background: rgba(8,8,14,.76);
+    font-size: .7rem;
+    font-weight: 1000;
+    cursor: pointer;
+}
+
+.az-card-deck-controls-v1 button:hover {
+    filter: brightness(1.18);
+}
+
+.az-card-deck-controls-v1 .add-card-btn {
+    background: linear-gradient(135deg, rgba(125,240,156,.22), rgba(142,98,255,.14));
+    border-color: rgba(125,240,156,.26);
+}
+
+.az-card-deck-controls-v1 .remove-card-btn {
+    background: rgba(255,111,122,.12);
+    border-color: rgba(255,111,122,.22);
+}
+
+.az-card-v1.has-deck-controls .az-card-stats-v1 {
+    bottom: 50px;
+}
+
+.az-card-v1.has-deck-controls .az-card-body-v1 {
+    bottom: 94px;
+}
+
+.az-card-v1.has-deck-controls {
+    min-height: 292px;
+}
+
+.az-booster-rarity-stamp-v1 {
+    position: absolute;
+    left: 50%;
+    top: 38px;
+    z-index: 20;
+    transform: translateX(-50%);
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(8,8,14,.72);
+    border: 1px solid rgba(255,220,145,.22);
+    color: rgba(255,220,145,.96);
+    font-size: .58rem;
+    font-weight: 1000;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.az-card-v1.is-booster-result-card.rarity-rare,
+.az-card-v1.is-booster-result-card.rarity-ultra-rare,
+.az-card-v1.is-booster-result-card.rarity-unique {
+    animation: azBoosterRareReveal .68s cubic-bezier(.2,.9,.18,1) both;
+}
+
+@keyframes azBoosterRareReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(26px) scale(.88) rotate(-2deg);
+        filter: brightness(.6) blur(2px);
+    }
+    56% {
+        opacity: 1;
+        transform: translateY(-8px) scale(1.06) rotate(1deg);
+        filter: brightness(1.35) blur(0);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0);
+        filter: brightness(1);
+    }
+}
+
+.az-card-v1.is-booster-result-card.rarity-ultra-rare::after,
+.az-card-v1.is-booster-result-card.rarity-unique::after {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    z-index: 2;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.18), transparent 70%);
+    animation: azRareSweep 2.1s ease infinite;
+    pointer-events: none;
+}
+
+@keyframes azRareSweep {
+    from {
+        transform: translateX(-70%) rotate(10deg);
+    }
+    to {
+        transform: translateX(70%) rotate(10deg);
+    }
+}
+
+@media (max-width: 720px) {
+    .az-card-v1.has-deck-controls {
+        min-height: 262px;
+    }
+
+    .az-card-v1.has-deck-controls .az-card-body-v1 {
+        bottom: 84px;
+    }
+
+    .az-card-deck-controls-v1 button {
+        min-height: 31px;
+        font-size: .64rem;
+    }
+}

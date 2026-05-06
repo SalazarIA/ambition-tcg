@@ -113,45 +113,32 @@
                 <p class="subtitle">These cards were added to your collection. Open the deck builder to use them.</p>
             </section>
 
-            <section class="card-grid mobile-card-grid">
+            <section class="az-card-grid-v1">
                 {% for card in pulled_cards %}
-                    <article class="collection-card image-card {{ card.type|lower }} {{ card.rarity|lower }}">
-                        <div class="image-card-frame">
-                            <header class="image-card-header">
-                                <h4>{{ card.name }}</h4>
-                                <span>{{ card.rarity }}</span>
-                            </header>
-
-                            <div class="image-card-art">
-                                <img
-                                    src="{{ url_for('static', filename='img/' + card.image) }}"
-                                    alt="{{ card.name }}"
-                                    onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/cards/placeholders/card_placeholder.svg') }}';"
-                                >
-                            </div>
-
-                            <div class="image-card-meta">
-                                <span>{{ card.element }}</span>
-                                <span>{{ card.type }}</span>
-                                <span>{{ card.sigil }}</span>
-                            </div>
-
-                            <div class="image-card-effect">
-                                <p>{{ card.description }}</p>
-                                {% if card.lore %}
-                                    <p class="az-card-lore">{{ card.lore }}</p>
-                                {% endif %}
-                            </div>
-
-                            <footer class="image-card-footer">
-                                {% if card.type == "Monster" %}
-                                    <span>POWER</span>
-                                    <strong>{{ card.power }}</strong>
-                                {% else %}
-                                    <span>VALUE</span>
-                                    <strong>{{ card.value }}</strong>
-                                {% endif %}
-                            </footer>
+                    <article class="az-card-v1 is-booster-result-card {{ card.rarity_css|default('rarity-common') }} {{ card.element_css|default('element-neutral') }} type-{{ card.type|lower }}">
+                        <div class="az-card-tags-v1">
+                            <span>{{ card.sigil }}</span>
+                            <span>{{ card.rarity }}</span>
+                        </div>
+                        <div class="az-booster-rarity-stamp-v1">{{ card.rarity }}</div>
+                        <div class="az-card-cost-v1">{{ card.cost|default(1) }}</div>
+                        <div class="az-card-rarity-v1"></div>
+                        <div class="az-card-art-v1">
+                            <div class="az-card-orb-v1"></div>
+                            <div class="az-card-mark-v1">{{ card.element[:1]|upper }}</div>
+                        </div>
+                        <div class="az-card-body-v1">
+                            <strong>{{ card.name }}</strong>
+                            <p>{{ card.description or card.effect }}</p>
+                        </div>
+                        <div class="az-card-stats-v1">
+                            {% if card.type == "Monster" %}
+                                <div><b>{{ card.power }}</b><small>ATK</small></div>
+                                <div><b>{{ card.value|default(card.power) }}</b><small>DEF</small></div>
+                            {% else %}
+                                <div><b>{{ card.value|default(0) }}</b><small>VALUE</small></div>
+                                <div><b>{{ card.cost|default(1) }}</b><small>COST</small></div>
+                            {% endif %}
                         </div>
                     </article>
                 {% endfor %}
