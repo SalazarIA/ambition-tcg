@@ -1,3 +1,4 @@
+from services.economy.deck_inventory import owned_card_ids_for_user, validate_deck_against_inventory, build_auto_deck_from_inventory
 from services.economy.inventory_cards import build_collection_from_inventory, user_inventory_counts
 from services.economy.inventory_ownership import grant_card, remove_card, get_quantity
 from services.economy.premium_currency import credit_gems, debit_gems
@@ -2163,7 +2164,7 @@ def shop():
 
         user.coins -= booster_cost
 
-        collection_ids = load_card_ids(user.collection_json)
+        collection_ids = owned_card_ids_for_user(user)
 
         for _ in range(booster_size):
             card = booster_pull_from_pack(selected_pack)
@@ -2246,9 +2247,9 @@ def auto_build_deck():
         return auth_redirect
 
     user = current_user()
-    collection_ids = load_card_ids(user.collection_json)
+    collection_ids = owned_card_ids_for_user(user)
 
-    user.deck_json = create_starter_deck_from_collection(collection_ids)
+    user.deck_json = build_auto_deck_from_inventory(user)
     db.session.commit()
 
     flash("Auto deck created with beta structure: 21 monsters, 6 spells, 3 traps.")
@@ -2291,7 +2292,7 @@ def deck_builder():
 
     user = current_user()
 
-    collection_ids = load_card_ids(user.collection_json)
+    collection_ids = owned_card_ids_for_user(user)
     deck_ids = load_card_ids(user.deck_json)
 
     if request.method == "POST":
@@ -2342,7 +2343,7 @@ def arena():
         return auth_redirect
 
     user = current_user()
-    collection_ids = load_card_ids(user.collection_json)
+    collection_ids = owned_card_ids_for_user(user)
     deck_ids = load_card_ids(user.deck_json)
     errors = validate_deck(deck_ids, collection_ids)
 
