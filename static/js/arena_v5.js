@@ -287,3 +287,32 @@
 
     document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+
+/* Arena V6 scroll lock */
+(function () {
+    function isBattlePage() {
+        return window.location.pathname === "/training" || window.location.pathname === "/arena";
+    }
+
+    function allowScrollTarget(target) {
+        return Boolean(
+            target.closest &&
+            target.closest(".az-v5-hand-row")
+        );
+    }
+
+    document.addEventListener("wheel", function (event) {
+        if (!isBattlePage() || !document.body.classList.contains("az-v5-active")) return;
+        if (allowScrollTarget(event.target)) return;
+        event.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener("touchmove", function (event) {
+        if (!isBattlePage() || !document.body.classList.contains("az-v5-active")) return;
+        if (allowScrollTarget(event.target)) return;
+        event.preventDefault();
+    }, { passive: false });
+})();
+

@@ -468,3 +468,379 @@ body.az-v5-active .training-coach-compact {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+
+
+/* =========================================================
+   Arena V6 — Fullscreen No Scroll
+   ========================================================= */
+
+html,
+body.az-v5-active {
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+}
+
+body.az-v5-active {
+    position: fixed;
+    inset: 0;
+}
+
+body.az-v5-active .az-v5-root {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    margin: 0;
+    padding: 8px 8px 86px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows:
+        52px
+        74px
+        78px
+        minmax(0, 1fr)
+        112px;
+    gap: 8px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-top {
+    min-height: 0;
+    height: 52px;
+    padding: 7px 12px;
+    border-radius: 18px;
+}
+
+body.az-v5-active .az-v5-title h1 {
+    font-size: 1.35rem;
+}
+
+body.az-v5-active .az-v5-kicker {
+    font-size: 0.58rem;
+    padding: 3px 7px;
+}
+
+body.az-v5-active .az-v5-back {
+    padding: 8px 12px;
+    border-radius: 13px;
+}
+
+body.az-v5-active .az-v5-online {
+    padding: 5px 12px;
+    font-size: 0.68rem;
+}
+
+body.az-v5-active .az-v5-hero {
+    margin: 0;
+    min-height: 0;
+    height: 74px;
+    padding: 10px 14px;
+    border-radius: 20px;
+}
+
+body.az-v5-active .az-v5-hero h2 {
+    margin: 4px 0 2px;
+    font-size: clamp(1.15rem, 2vw, 1.65rem);
+}
+
+body.az-v5-active .az-v5-hero p {
+    font-size: 0.86rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+body.az-v5-active .az-v5-start {
+    min-height: 44px;
+    min-width: 108px;
+    border-radius: 15px;
+}
+
+body.az-v5-active .az-v5-score {
+    margin: 0;
+    height: 78px;
+    grid-template-columns: 1fr 126px 1fr;
+    gap: 8px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-player,
+body.az-v5-active .az-v5-round {
+    min-height: 0;
+    height: 78px;
+    padding: 10px;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-player-head {
+    margin-bottom: 7px;
+}
+
+body.az-v5-active .az-v5-player-head strong {
+    font-size: 0.96rem;
+}
+
+body.az-v5-active .az-v5-player-head span {
+    font-size: 0.64rem;
+}
+
+body.az-v5-active .az-v5-stats {
+    gap: 5px;
+}
+
+body.az-v5-active .az-v5-stats span {
+    min-height: 22px;
+    padding: 3px 7px;
+    font-size: 0.68rem;
+}
+
+body.az-v5-active .az-v5-round strong {
+    font-size: 1.05rem;
+}
+
+body.az-v5-active .az-v5-board {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 28px minmax(0, 1fr);
+    gap: 8px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-field {
+    min-height: 0;
+    padding: 10px;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-field-head {
+    margin-bottom: 7px;
+}
+
+body.az-v5-active .az-v5-field-head h3 {
+    font-size: 0.92rem;
+}
+
+body.az-v5-active .az-v5-field-head span {
+    font-size: 0.7rem;
+}
+
+body.az-v5-active .az-v5-zones {
+    height: calc(100% - 28px);
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+body.az-v5-active .az-v5-zone {
+    min-height: 0;
+    height: 100%;
+    padding: 8px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-zone-label {
+    margin-bottom: 6px;
+    font-size: 0.64rem;
+}
+
+body.az-v5-active .az-v5-slot {
+    min-height: 0;
+    height: calc(100% - 22px);
+    border-radius: 14px;
+    font-size: 0.82rem;
+}
+
+body.az-v5-active .az-v5-divider {
+    min-height: 0;
+    height: 28px;
+}
+
+body.az-v5-active .az-v5-divider span {
+    padding: 5px 12px;
+    font-size: 0.68rem;
+}
+
+body.az-v5-active .az-v5-hand {
+    margin: 0;
+    min-height: 0;
+    height: 112px;
+    padding: 10px;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-hand .az-v5-field-head {
+    margin-bottom: 6px;
+}
+
+body.az-v5-active .az-v5-hand-row {
+    min-height: 0;
+    height: 68px;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 2px 4px;
+}
+
+body.az-v5-active .az-v5-card-mini {
+    flex: 0 0 118px;
+    min-height: 64px;
+    height: 64px;
+    padding: 8px;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+body.az-v5-active .az-v5-card-mini strong {
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+}
+
+body.az-v5-active .az-v5-card-mini span {
+    font-size: 0.66rem;
+}
+
+body.az-v5-active .az-v5-empty {
+    min-height: 0;
+    height: 64px;
+    border-radius: 14px;
+    font-size: 0.82rem;
+}
+
+body.az-v5-active .az-v5-tools {
+    display: none !important;
+}
+
+body.az-v5-active .az-v5-dock {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(760px, calc(100vw - 16px));
+    padding: 8px;
+    border-radius: 22px;
+}
+
+body.az-v5-active .az-v5-dock button {
+    min-height: 50px;
+    border-radius: 15px;
+}
+
+body.az-v5-active .az-v5-dock button small {
+    margin-top: 2px;
+    font-size: 0.64rem;
+}
+
+/* Laptop short screens */
+@media (max-height: 760px) {
+    body.az-v5-active .az-v5-root {
+        grid-template-rows:
+            46px
+            62px
+            68px
+            minmax(0, 1fr)
+            96px;
+        gap: 6px;
+        padding: 6px 6px 78px;
+    }
+
+    body.az-v5-active .az-v5-top {
+        height: 46px;
+    }
+
+    body.az-v5-active .az-v5-title h1 {
+        font-size: 1.16rem;
+    }
+
+    body.az-v5-active .az-v5-hero {
+        height: 62px;
+        padding: 8px 12px;
+    }
+
+    body.az-v5-active .az-v5-hero h2 {
+        font-size: 1.16rem;
+    }
+
+    body.az-v5-active .az-v5-hero p {
+        font-size: 0.78rem;
+    }
+
+    body.az-v5-active .az-v5-score {
+        height: 68px;
+        grid-template-columns: 1fr 110px 1fr;
+    }
+
+    body.az-v5-active .az-v5-player,
+    body.az-v5-active .az-v5-round {
+        height: 68px;
+        padding: 8px;
+    }
+
+    body.az-v5-active .az-v5-stats span {
+        font-size: 0.62rem;
+        min-height: 20px;
+        padding: 2px 6px;
+    }
+
+    body.az-v5-active .az-v5-hand {
+        height: 96px;
+        padding: 8px;
+    }
+
+    body.az-v5-active .az-v5-hand-row {
+        height: 56px;
+    }
+
+    body.az-v5-active .az-v5-card-mini,
+    body.az-v5-active .az-v5-empty {
+        height: 56px;
+        min-height: 56px;
+    }
+
+    body.az-v5-active .az-v5-dock button {
+        min-height: 46px;
+    }
+}
+
+/* Mobile portrait */
+@media (max-width: 640px) {
+    body.az-v5-active .az-v5-root {
+        grid-template-rows:
+            48px
+            76px
+            132px
+            minmax(0, 1fr)
+            106px;
+        padding-bottom: 142px;
+    }
+
+    body.az-v5-active .az-v5-top {
+        grid-template-columns: 1fr auto;
+    }
+
+    body.az-v5-active .az-v5-score {
+        height: 132px;
+        grid-template-columns: 1fr;
+    }
+
+    body.az-v5-active .az-v5-round {
+        display: none;
+    }
+
+    body.az-v5-active .az-v5-player {
+        height: 62px;
+    }
+
+    body.az-v5-active .az-v5-zones {
+        grid-template-columns: 1fr;
+    }
+
+    body.az-v5-active .az-v5-zone:nth-child(2) {
+        display: none;
+    }
+
+    body.az-v5-active .az-v5-dock {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
