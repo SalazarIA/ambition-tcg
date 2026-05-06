@@ -8391,3 +8391,121 @@ button.btn:disabled,
         grid-template-columns: 1fr;
     }
 }
+
+
+
+/* =========================================================
+   Ambitionz Product Block — Tutorial + Campaign
+   ========================================================= */
+
+.tutorial-step-card,
+.campaign-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.step-badge,
+.campaign-number {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, rgba(154, 107, 255, 0.22), rgba(255, 199, 107, 0.14));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+    margin-bottom: 14px;
+}
+
+.compact-grid {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.mini-card {
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mini-card strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-strong, #fff);
+}
+
+.mini-card span {
+    color: var(--text-muted, rgba(255,255,255,.68));
+    line-height: 1.45;
+}
+
+.campaign-timeline {
+    display: grid;
+    gap: 18px;
+}
+
+.campaign-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    padding: 22px;
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at top left, rgba(154, 107, 255, 0.16), transparent 34%),
+        rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+}
+
+.campaign-content h2 {
+    margin: 4px 0 10px;
+}
+
+.campaign-content p {
+    color: var(--text-muted, rgba(255,255,255,.7));
+    line-height: 1.55;
+}
+
+.campaign-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.campaign-meta span,
+.campaign-meta strong {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.locked-card {
+    opacity: 0.68;
+    filter: saturate(0.75);
+}
+
+button[disabled] {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+@media (max-width: 720px) {
+    .campaign-card {
+        grid-template-columns: 1fr;
+    }
+
+    .campaign-number {
+        margin-bottom: 0;
+    }
+}

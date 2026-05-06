@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tutorial - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#05050B">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-body">
+    <main class="page-shell">
+        <section class="hero-card">
+            <div>
+                <span class="progression-kicker">Onboarding</span>
+                <h1>Ambitionz Tutorial</h1>
+                <p class="subtitle">Learn the duel loop before entering the full arena. Three fast lessons: intent, cards and Ambition.</p>
+            </div>
+            <div class="hero-actions">
+                <a href="{{ url_for('training') }}" class="btn">Start Training</a>
+                <a href="{{ url_for('campaign') }}" class="btn btn-secondary">Campaign</a>
+            </div>
+        </section>
+
+        <section class="progression-grid">
+            {% for step in steps %}
+            <article class="progression-card tutorial-step-card">
+                <div class="step-badge">{{ step.number }}</div>
+                <span class="progression-kicker">{{ step.subtitle }}</span>
+                <h2>{{ step.title }}</h2>
+                <p>{{ step.description }}</p>
+
+                <div class="deck-line">
+                    <span>Objective</span>
+                    <strong>{{ step.objective }}</strong>
+                </div>
+                <div class="deck-line">
+                    <span>Reward Path</span>
+                    <strong>{{ step.reward }}</strong>
+                </div>
+
+                <a href="{{ step.cta_url }}" class="btn full-btn">{{ step.cta_label }}</a>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="panel-card">
+            <span class="progression-kicker">Core Rule</span>
+            <h2>Round Discipline</h2>
+            <p class="subtitle">Do not click randomly. Choose an intent, play around Energy, build Ambition, then commit the round when your plan is clear.</p>
+
+            <div class="progression-grid compact-grid">
+                <article class="mini-card">
+                    <strong>Strike</strong>
+                    <span>Pressure HP and force tempo.</span>
+                </article>
+                <article class="mini-card">
+                    <strong>Guard</strong>
+                    <span>Reduce risk and survive pressure.</span>
+                </article>
+                <article class="mini-card">
+                    <strong>Focus</strong>
+                    <span>Build Ambition for future swing turns.</span>
+                </article>
+            </div>
+        </section>
+
+        <nav class="bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}">Training</a>
+            <a href="{{ url_for('tutorial') }}" class="active">Tutorial</a>
+            <a href="{{ url_for('campaign') }}">Campaign</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>

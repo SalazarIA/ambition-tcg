@@ -2672,6 +2672,98 @@ register_socket_handlers()
 
 
 
+
+@app.route("/tutorial")
+def tutorial():
+    steps = [
+        {
+            "number": "01",
+            "title": "Intent Duel",
+            "subtitle": "Learn Strike, Guard and Focus.",
+            "description": "Every round starts with a decision. Strike pressures HP, Guard protects tempo, and Focus builds Ambition for bigger turns.",
+            "objective": "Understand the intent triangle before entering real matches.",
+            "reward": "+35 XP / +60 Coins through Training Grounds mission",
+            "cta_label": "Start Training",
+            "cta_url": url_for("training"),
+        },
+        {
+            "number": "02",
+            "title": "Card Basics",
+            "subtitle": "Learn Energy, Hand, Board and HP.",
+            "description": "Use Energy to play cards, build pressure on the board and manage your hand before committing the round.",
+            "objective": "Play cards without overextending your resources.",
+            "reward": "+40 XP / +80 Coins through Enter the Arena mission",
+            "cta_label": "Edit Deck",
+            "cta_url": url_for("deck_builder"),
+        },
+        {
+            "number": "03",
+            "title": "Ambition Trial",
+            "subtitle": "Learn Ambition, Unleash and Overreach.",
+            "description": "Ambition is your comeback fuel. Build it with discipline, unleash it at the right time, and avoid reckless Overreach.",
+            "objective": "Win one training duel after understanding Ambition.",
+            "reward": "+80 XP / +120 Coins through Beat the Bot mission",
+            "cta_label": "Open Progression",
+            "cta_url": url_for("progression"),
+        },
+    ]
+
+    return render_template("tutorial.html", user=current_user(), steps=steps)
+
+
+@app.route("/campaign")
+def campaign():
+    chapters = [
+        {
+            "number": "01",
+            "title": "The First Spark",
+            "difficulty": "Beginner",
+            "status": "Available",
+            "objective": "Play your first training match and learn the basic duel rhythm.",
+            "reward": "Starter XP, Coins and Training mission progress.",
+            "url": url_for("training"),
+        },
+        {
+            "number": "02",
+            "title": "Broken Arena",
+            "difficulty": "Beginner",
+            "status": "Available",
+            "objective": "Test your 30-card beta deck against the bot.",
+            "reward": "Deck confidence and match reward progress.",
+            "url": url_for("deck_builder"),
+        },
+        {
+            "number": "03",
+            "title": "The Ambition Trial",
+            "difficulty": "Normal",
+            "status": "Available",
+            "objective": "Use Focus and Ambition to prepare a stronger round.",
+            "reward": "Progression loop momentum.",
+            "url": url_for("progression"),
+        },
+        {
+            "number": "04",
+            "title": "Rival Duel",
+            "difficulty": "Normal",
+            "status": "Coming Soon",
+            "objective": "Face a stronger scripted rival with a clearer strategy.",
+            "reward": "Future campaign chest.",
+            "url": url_for("training"),
+        },
+        {
+            "number": "05",
+            "title": "Ascension Gate",
+            "difficulty": "Hard",
+            "status": "Coming Soon",
+            "objective": "Clear the first campaign arc and prepare for ranked play.",
+            "reward": "Future Founder cosmetic track.",
+            "url": url_for("ranking"),
+        },
+    ]
+
+    return render_template("campaign.html", user=current_user(), chapters=chapters)
+
+
 @app.route("/training")
 def training():
     auth_redirect = login_required_redirect()

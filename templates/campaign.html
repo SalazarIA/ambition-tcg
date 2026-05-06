@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Campaign - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#05050B">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-body">
+    <main class="page-shell">
+        <section class="hero-card">
+            <div>
+                <span class="progression-kicker">Solo Progression</span>
+                <h1>Campaign</h1>
+                <p class="subtitle">A first PvE structure for onboarding, retention and future chapter rewards. Start with training, then grow into scripted rivals.</p>
+            </div>
+            <div class="hero-actions">
+                <a href="{{ url_for('tutorial') }}" class="btn">Tutorial</a>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary">Training</a>
+            </div>
+        </section>
+
+        <section class="campaign-timeline">
+            {% for chapter in chapters %}
+            <article class="campaign-card {% if chapter.status != 'Available' %}locked-card{% endif %}">
+                <div class="campaign-number">{{ chapter.number }}</div>
+                <div class="campaign-content">
+                    <div class="campaign-meta">
+                        <span>{{ chapter.difficulty }}</span>
+                        <strong>{{ chapter.status }}</strong>
+                    </div>
+                    <h2>{{ chapter.title }}</h2>
+                    <p>{{ chapter.objective }}</p>
+                    <div class="deck-line">
+                        <span>Reward</span>
+                        <strong>{{ chapter.reward }}</strong>
+                    </div>
+
+                    {% if chapter.status == 'Available' %}
+                        <a href="{{ chapter.url }}" class="btn full-btn">Continue</a>
+                    {% else %}
+                        <button class="btn btn-secondary full-btn" disabled>Coming Soon</button>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="panel-card">
+            <span class="progression-kicker">Design Direction</span>
+            <h2>Campaign Purpose</h2>
+            <p class="subtitle">This campaign is the bridge between first-session onboarding and real competitive play. It gives the player clear goals before ranked systems become the main loop.</p>
+        </section>
+
+        <nav class="bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}">Training</a>
+            <a href="{{ url_for('tutorial') }}">Tutorial</a>
+            <a href="{{ url_for('campaign') }}" class="active">Campaign</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>
