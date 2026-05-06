@@ -42,6 +42,56 @@
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
+
+        <section class="az-profile-hero-v1">
+            <div class="az-profile-identity-v1">
+                <div class="az-profile-avatar-v1">{{ user.username[:1]|upper }}</div>
+                <div>
+                    <span class="progression-kicker">Player Identity</span>
+                    <h1>{{ user.username }}</h1>
+                    <p>Build your collection, improve your deck and climb through Ambitionz.</p>
+                </div>
+            </div>
+
+            <div class="az-profile-stat-grid-v1">
+                <div class="az-profile-stat-v1">
+                    <strong>{{ user.level }}</strong>
+                    <span>Level</span>
+                </div>
+                <div class="az-profile-stat-v1">
+                    <strong>{{ user.xp }}</strong>
+                    <span>XP</span>
+                </div>
+                <div class="az-profile-stat-v1">
+                    <strong>{{ user.coins }}</strong>
+                    <span>Coins</span>
+                </div>
+                <div class="az-profile-stat-v1">
+                    <strong>{{ user.gems|default(0) }}</strong>
+                    <span>Gems</span>
+                </div>
+            </div>
+
+            <div class="az-profile-progress-card-v1">
+                <div class="az-reward-progress-label">
+                    <span>Level Progress</span>
+                    <strong>{{ user.level_progress_percent|default(0) }}%</strong>
+                </div>
+                <div class="az-profile-progress-bar-v1" style="--progress: {{ user.level_progress_percent|default(0) }}%;">
+                    <i></i>
+                </div>
+            </div>
+
+            <div class="az-profile-action-grid-v1">
+                <a class="primary" href="{{ url_for('training') }}">Play Training</a>
+                <a href="{{ url_for('deck_builder') }}">Improve Deck</a>
+                <a href="{{ url_for('shop') }}">Open Booster</a>
+                <a href="{{ url_for('collection') }}">Collection</a>
+                <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+            </div>
+        </section>
+
+
         <section class="profile-hero-v117">
             <div class="profile-avatar-v117">
                 <span>{{ identity.avatar_letter }}</span>

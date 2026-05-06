@@ -256,6 +256,83 @@
         }, 900);
     }
 
+
+    function showRewardModal(match) {
+        if (!match || match.phase !== "finished") return;
+
+        const reward = match.reward_preview || {};
+        if (!reward.available) return;
+
+        let modal = document.querySelector("#az-reward-modal");
+
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "az-reward-modal";
+            modal.className = "az-reward-modal";
+            modal.innerHTML = [
+                '<article class="az-reward-card">',
+                '  <span class="az-arena-app-kicker">Match Rewards</span>',
+                '  <h2 id="az-reward-title">Victory</h2>',
+                '  <p id="az-reward-copy">Your progress moved forward.</p>',
+                '  <div class="az-reward-grid">',
+                '    <div><strong id="az-reward-xp">0</strong><span>XP</span></div>',
+                '    <div><strong id="az-reward-coins">0</strong><span>Coins</span></div>',
+                '    <div><strong id="az-reward-round">1</strong><span>Round</span></div>',
+                '  </div>',
+                '  <div class="az-reward-progress">',
+                '    <div class="az-reward-progress-label"><span>Next Booster</span><strong id="az-reward-booster-progress">+0%</strong></div>',
+                '    <div class="az-reward-progress-bar"><i id="az-reward-booster-fill"></i></div>',
+                '  </div>',
+                '  <div class="az-reward-actions">',
+                '    <button type="button" id="az-reward-rematch">Train Again</button>',
+                '    <a href="/deck-builder">Improve Deck</a>',
+                '    <a href="/shop">Open Booster</a>',
+                '  </div>',
+                '</article>'
+            ].join("");
+
+            document.body.appendChild(modal);
+
+            const rematch = document.querySelector("#az-reward-rematch");
+
+            if (rematch) {
+                rematch.addEventListener("click", () => {
+                    modal.classList.remove("is-visible");
+                    state.endSoundPlayed = false;
+                    state.seenEventKeys = new Set();
+                    emit("start_training", {});
+                    setTimeout(() => emit("request_match_state", {}), 250);
+                });
+            }
+        }
+
+        const title = document.querySelector("#az-reward-title");
+        const copy = document.querySelector("#az-reward-copy");
+        const xp = document.querySelector("#az-reward-xp");
+        const coins = document.querySelector("#az-reward-coins");
+        const round = document.querySelector("#az-reward-round");
+        const boosterProgress = document.querySelector("#az-reward-booster-progress");
+        const boosterFill = document.querySelector("#az-reward-booster-fill");
+
+        if (title) title.textContent = reward.title || "Match Complete";
+        if (copy) {
+            if (reward.result === "win") copy.textContent = "Clean win. Your account gained stronger progress.";
+            else if (reward.result === "draw") copy.textContent = "Close match. You still earned useful progress.";
+            else copy.textContent = "Defeat still teaches. Claim progress and improve the deck.";
+        }
+
+        if (xp) xp.textContent = "+" + (reward.xp || 0);
+        if (coins) coins.textContent = "+" + (reward.coins || 0);
+        if (round) round.textContent = match.round || 1;
+
+        const boosterPct = Math.max(8, Math.min(100, Math.round((Number(reward.coins || 0) / 300) * 100)));
+
+        if (boosterProgress) boosterProgress.textContent = "+" + boosterPct + "%";
+        if (boosterFill) boosterFill.style.width = boosterPct + "%";
+
+        modal.classList.add("is-visible");
+    }
+
     function showEndOverlay(match) {
         if (!match || match.phase !== "finished") return;
 
@@ -609,6 +686,7 @@
         processHpChanges(match);
         processBattleEvents(match);
         showEndOverlay(match);
+        showRewardModal(match);
 
         updateActions();
     }

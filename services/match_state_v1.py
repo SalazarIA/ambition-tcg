@@ -250,6 +250,47 @@ def build_message(me, legal_actions):
     return "Waiting for opponent."
 
 
+
+def build_reward_preview(match, viewer_key):
+    winner = match.get("winner")
+    finished = match.get("phase") == "finished"
+
+    if not finished:
+        return {
+            "available": False,
+            "xp": 0,
+            "coins": 0,
+            "result": None,
+            "title": "Battle in progress",
+        }
+
+    if winner == "draw":
+        return {
+            "available": True,
+            "xp": 45,
+            "coins": 20,
+            "result": "draw",
+            "title": "Draw",
+        }
+
+    if winner == viewer_key:
+        return {
+            "available": True,
+            "xp": 70,
+            "coins": 35,
+            "result": "win",
+            "title": "Victory",
+        }
+
+    return {
+        "available": True,
+        "xp": 35,
+        "coins": 15,
+        "result": "loss",
+        "title": "Defeat",
+    }
+
+
 def build_match_state_v1(match, viewer_key="p1", message=None):
     match = match or {}
 
@@ -281,6 +322,7 @@ def build_match_state_v1(match, viewer_key="p1", message=None):
         "message": message or build_message(me, legal_actions),
         "events": match.get("events", [])[-8:],
         "winner": match.get("winner"),
+        "reward_preview": build_reward_preview(match, me_key),
     }
 
 
