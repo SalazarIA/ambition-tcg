@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=48">
 </head>
 
-<body class="az-clean-arena-v48" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
+<body class="az-clean-arena-v48 arena-page-v154" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
     <main class="az48-arena">
         <header class="az48-top">
             <section class="az48-player az48-enemy">
@@ -53,8 +53,20 @@
             <a class="az48-back" href="{{ url_for('index') }}">Back</a>
         </header>
 
-        <section class="az48-message" id="az48-message">
-            {% if training_mode %}Press Start to draw your hand.{% else %}Enter the arena and wait for sync.{% endif %}
+        <section class="az48-message az48-statusbar" id="queue-status">
+            <span class="az48-message-text" id="az48-message">
+                {% if training_mode %}Press Start to draw your hand.{% else %}Choose how to find a duel.{% endif %}
+            </span>
+
+            <div class="az48-match-actions">
+                <button type="button" id="join-queue-btn" class="az48-mini-btn">
+                    {% if training_mode %}Start Training{% else %}Find Match{% endif %}
+                </button>
+                <button type="button" id="join-bot-match-btn" class="az48-mini-btn">Bot</button>
+                <input id="private-room-code" class="az48-room-input" type="text" maxlength="5" placeholder="ROOM">
+                <button type="button" id="join-private-room-btn" class="az48-mini-btn">Private</button>
+                <button type="button" id="cancel-queue-btn" class="az48-mini-btn az48-muted-btn">Cancel</button>
+            </div>
         </section>
 
         <section class="az48-board">
@@ -79,7 +91,7 @@
                 <span id="az48-hand-count">0 cards</span>
             </div>
 
-            <section class="az48-hand" id="az48-hand">
+            <section class="az48-hand" id="hand">
                 <div class="az48-empty">No cards yet. Press Start.</div>
             </section>
 
@@ -88,10 +100,28 @@
                 <button type="button" id="az48-strike" class="az48-btn">Strike <small>Attack</small></button>
                 <button type="button" id="az48-guard" class="az48-btn">Guard <small>Defend</small></button>
                 <button type="button" id="az48-focus" class="az48-btn">Focus <small>Build</small></button>
-                <button type="button" id="az48-ready" class="az48-btn az48-ready">Ready <small>Commit</small></button>
+                <button type="button" id="ready-btn" class="az48-btn az48-ready">Ready <small>Commit</small></button>
             </nav>
         </footer>
     </main>
+
+    <section class="az48-compat-contract" aria-hidden="true">
+        <span id="my-name"></span>
+        <span id="enemy-name"></span>
+        <span id="my-hp"></span>
+        <span id="enemy-hp"></span>
+        <span id="my-deck"></span>
+        <span id="enemy-deck"></span>
+        <span id="my-ready"></span>
+        <span id="enemy-ready"></span>
+        <span id="phase-label"></span>
+        <span id="round-label"></span>
+        <div id="battle-log"></div>
+        <div id="my-monster-slot"></div>
+        <div id="enemy-monster-slot"></div>
+        <div id="my-st-slot"></div>
+        <div id="enemy-st-slot"></div>
+    </section>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>

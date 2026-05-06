@@ -42,6 +42,15 @@ def flask_app():
         TESTING=True,
         WTF_CSRF_ENABLED=True,
         SERVER_NAME="localhost",
+        DEV_TOOLS_ENABLED=False,
+        LOGIN_ATTEMPT_LIMIT=8,
+        PASSWORD_RESET_RATE_LIMIT=5,
+        PASSWORD_RESET_RATE_WINDOW_MINUTES=60,
+        BETA_EVENT_RATE_LIMIT=60,
+        BETA_EVENT_RATE_WINDOW_SECONDS=60,
+        RETENTION_EVENT_RATE_LIMIT=120,
+        RETENTION_EVENT_RATE_WINDOW_SECONDS=60,
+        MATCHMAKING_BOT_FALLBACK_SECONDS=10,
     )
 
     with ambition_app.app.app_context():
@@ -58,6 +67,7 @@ def flask_app():
         ambition_app.socket_state.setdefault("online_players", {}).clear()
         ambition_app.socket_event_hits.clear()
         ambition_app.login_attempts.clear()
+        ambition_app.retention_event_limiter.clear()
         reset_security_ops_rate_limits()
         yield ambition_app.app
         db.session.remove()

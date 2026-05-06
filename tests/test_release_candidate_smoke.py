@@ -1,6 +1,6 @@
-from models import MatchHistory, MatchTelemetry, SystemLog, User, db
+from models import MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, db
 
-from app import active_matches, issue_password_reset_token, socket_state
+from app import active_matches, emit_arena_state_v8, issue_password_reset_token, socket_state, socketio
 from conftest import create_user, csrf_token_from_response, login_session
 from game.balance import STARTING_HP
 from game.bot_ai import DIFFICULTY_PROFILES, choose_intent
@@ -264,6 +264,94 @@ def test_beta_event_filters_unknown_events_and_rate_limits(client, flask_app):
     assert unknown_response.status_code == 204
     assert len(logs) == 2
     assert all("page_view" in log.message for log in logs)
+
+
+def test_retention_event_filters_unknown_events_and_rate_limits(client, flask_app):
+    flask_app.config["RETENTION_EVENT_RATE_LIMIT"] = 2
+    flask_app.config["RETENTION_EVENT_RATE_WINDOW_SECONDS"] = 60
+
+    for _ in range(3):
+        response = client.post(
+            "/api/retention/event",
+            json={"event_key": "page_view", "page": "/arena", "metadata": {"source": "test"}},
+        )
+        assert response.status_code == 200
+
+    unknown_response = client.post(
+        "/api/retention/event",
+        json={"event_key": "script_probe", "page": "/admin", "metadata": {"probe": True}},
+    )
+
+    logs = RetentionEvent.query.all()
+    assert unknown_response.status_code == 200
+    assert len(logs) == 2
+    assert all(log.event_key == "page_view" for log in logs)
+
+
+def test_test_grant_routes_require_admin_dev_tools(client, flask_app):
+    user = create_user(username="grantuser", email="grantuser@example.com", password="StrongPass1")
+    admin = create_user(username="grantadmin", email="grantadmin@example.com", password="StrongPass1", is_admin=True)
+
+    user_csrf = login_session(client, user)
+    response = client.post("/inventory/test-card-grant", data={"_csrf_token": user_csrf}, follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/")
+
+    admin_csrf = login_session(client, admin)
+    response = client.post("/economy/test-premium-grant", data={"_csrf_token": admin_csrf}, follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/admin")
+
+    flask_app.config["DEV_TOOLS_ENABLED"] = True
+    response = client.post("/economy/test-premium-grant", data={"_csrf_token": admin_csrf}, follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/economy/premium-ledger")
+
+
+def test_arena_state_v8_emit_does_not_recurse(monkeypatch):
+    emitted = []
+
+    def fake_emit(event, payload=None, **kwargs):
+        emitted.append((event, payload, kwargs))
+
+    monkeypatch.setattr(socketio, "emit", fake_emit)
+
+    match = {
+        "p1": {
+            "sid": "sid-one",
+            "name": "One",
+            "hp": 3600,
+            "energy": 2,
+            "hand": [],
+            "deck": [],
+        },
+        "p2": {
+            "sid": "sid-two",
+            "name": "Two",
+            "hp": 3600,
+            "energy": 2,
+            "hand": [],
+            "deck": [],
+        },
+        "round": 1,
+        "phase": "Set Phase",
+    }
+
+    emit_arena_state_v8(match, phase="sync")
+
+    event_names = [event for event, _payload, _kwargs in emitted]
+    assert event_names.count("arena_state_update") == 2
+    assert event_names.count("game_state_update") == 2
+    assert len(emitted) == 4
+
+
+def test_legacy_socket_handlers_remain_bound_after_az48_aliases(flask_app):
+    handlers = socketio.server.handlers["/"]
+
+    assert handlers["set_intent"].__name__ == "set_intent"
+    assert handlers["declare_ready"].__name__ == "declare_ready"
+    assert handlers["az48_set_intent"].__name__ == "az48_set_intent"
+    assert handlers["az48_declare_ready"].__name__ == "az48_declare_ready"
 
 
 def test_forgot_password_rate_limit_blocks_extra_token_generation(client, flask_app):

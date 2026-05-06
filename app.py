@@ -54,6 +54,7 @@ from services.match_telemetry import record_match_telemetry
 from services.email_service import send_password_reset_email, send_smtp_test_email, is_smtp_configured
 from services.security.headers import apply_security_headers
 from services.security.password_policy import password_policy_errors
+from services.security.rate_limit import SlidingWindowRateLimiter, request_rate_limit_key
 from routes.security_ops import register_security_ops_routes
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
@@ -113,9 +114,14 @@ socket_state = {
 socket_event_hits = {}
 private_waiting_rooms = {}
 login_attempts = {}
+retention_event_limiter = SlidingWindowRateLimiter()
 
 CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event"}
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
+ALLOWED_RETENTION_EVENTS = {
+    "page_view",
+    "ui_click",
+}
 
 
 def create_database_tables():
@@ -2406,14 +2412,21 @@ def emit_state(room_id):
 
     for sid, state in build_game_state_payloads(room_id, match):
         socketio.emit("game_state_update", state, to=sid)
-        try:
-            emit_match_state_v1(match)
-        except Exception as error:
-            print("MATCH_STATE_V1 PATCH ERROR:", type(error).__name__, error)
-        try:
-            emit_arena_state_v8(match, phase="sync")
-        except Exception as error:
-            print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
+
+    try:
+        emit_match_state_v1(match)
+    except Exception as error:
+        print("MATCH_STATE_V1 PATCH ERROR:", type(error).__name__, error)
+
+    try:
+        emit_arena_state_v8(match, phase="sync")
+    except Exception as error:
+        print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
+
+    try:
+        emit_arena_clean_state_to_match(match)
+    except Exception as error:
+        print("ARENA CLEAN STATE PATCH ERROR:", type(error).__name__, error)
 
 
 def create_player_object(user, sid):
@@ -2533,6 +2546,24 @@ def emit_match_state_v1(match, message=None):
         print("MATCH_STATE_V1 EMIT ERROR:", type(error).__name__, error)
 
 
+def emit_arena_clean_state_to_match(match, message=None):
+    """Emit the clean Arena state contract used by the single-screen client."""
+    try:
+        payloads = build_arena_clean_payloads(match, message=message)
+
+        p1_sid = (match.get("p1") or {}).get("sid")
+        p2_sid = (match.get("p2") or {}).get("sid")
+
+        if p1_sid:
+            socketio.emit("az48_state", payloads["p1"], room=p1_sid)
+
+        if p2_sid:
+            socketio.emit("az48_state", payloads["p2"], room=p2_sid)
+
+    except Exception as error:
+        print("ARENA CLEAN STATE EMIT ERROR:", type(error).__name__, error)
+
+
 def emit_arena_state_v8(match, phase=None, message=None):
     """Emit canonical Arena V8 state payloads without replacing legacy payloads."""
     try:
@@ -2543,26 +2574,10 @@ def emit_arena_state_v8(match, phase=None, message=None):
 
         if p1_sid:
             socketio.emit("game_state_update", payloads["p1"], room=p1_sid)
-            try:
-                emit_match_state_v1(match)
-            except Exception as error:
-                print("MATCH_STATE_V1 PATCH ERROR:", type(error).__name__, error)
-            try:
-                emit_arena_state_v8(match, phase="sync")
-            except Exception as error:
-                print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
             socketio.emit("arena_state_update", payloads["p1"], room=p1_sid)
 
         if p2_sid:
             socketio.emit("game_state_update", payloads["p2"], room=p2_sid)
-            try:
-                emit_match_state_v1(match)
-            except Exception as error:
-                print("MATCH_STATE_V1 PATCH ERROR:", type(error).__name__, error)
-            try:
-                emit_arena_state_v8(match, phase="sync")
-            except Exception as error:
-                print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
             socketio.emit("arena_state_update", payloads["p2"], room=p2_sid)
 
     except Exception as error:
@@ -3374,16 +3389,44 @@ def daily():
 
 @app.route("/api/retention/event", methods=["POST"])
 def api_retention_event():
-    payload = request.get_json(silent=True) or {}
+    try:
+        payload = request.get_json(silent=True) or {}
+    except Exception:
+        payload = {}
 
-    event_key = str(payload.get("event_key") or "unknown")[:120]
+    event_key = str(payload.get("event_key") or "unknown").strip()[:120]
+
+    if event_key not in ALLOWED_RETENTION_EVENTS:
+        return jsonify({"ok": True})
+
+    user = current_user()
+    user_id = user.id if user else None
+    rate_key = request_rate_limit_key(
+        request,
+        session,
+        app.config.get("SECRET_KEY", ""),
+        "retention_event",
+        identity=str(user_id or "anonymous"),
+    )
+
+    try:
+        limit = int(app.config.get("RETENTION_EVENT_RATE_LIMIT", 120) or 120)
+        window_seconds = int(app.config.get("RETENTION_EVENT_RATE_WINDOW_SECONDS", 60) or 60)
+    except (TypeError, ValueError):
+        limit = 120
+        window_seconds = 60
+
+    if not retention_event_limiter.allow(rate_key, limit, window_seconds):
+        return jsonify({"ok": True, "limited": True})
+
     page = str(payload.get("page") or request.referrer or "")[:220]
     metadata = payload.get("metadata") or {}
 
-    user = current_user()
+    if not isinstance(metadata, dict):
+        metadata = {}
 
     event = RetentionEvent(
-        user_id=user.id if user else None,
+        user_id=user_id,
         event_key=event_key,
         page=page,
         metadata_json=json.dumps(metadata, ensure_ascii=False)[:4000],
@@ -3430,15 +3473,12 @@ def match_history_detail(history_id):
 
 @app.route("/admin/economy-audit")
 def admin_economy_audit():
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
 
     user = current_user()
-
-    if not user or not getattr(user, "is_admin", False):
-        abort(403)
 
     source = request.args.get("source", "").strip()
     q = request.args.get("q", "").strip()
@@ -3494,15 +3534,10 @@ def inventory_repair():
 
 @app.route("/admin/users/<int:user_id>/repair-inventory", methods=["POST"])
 def admin_repair_user_inventory(user_id):
-    auth_redirect = login_required_redirect()
+    auth_redirect = admin_required_redirect()
 
     if auth_redirect:
         return auth_redirect
-
-    admin_user = current_user()
-
-    if not admin_user or not getattr(admin_user, "is_admin", False):
-        abort(403)
 
     user = User.query.get_or_404(user_id)
     result = repair_user_inventory_and_deck(user)
@@ -3532,7 +3567,7 @@ def inventory():
 
 @app.route("/inventory/test-card-grant", methods=["POST"])
 def inventory_test_card_grant():
-    auth_redirect = login_required_redirect()
+    auth_redirect = dev_tools_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -3585,7 +3620,7 @@ def premium_ledger():
 
 @app.route("/economy/test-premium-grant", methods=["POST"])
 def economy_test_premium_grant():
-    auth_redirect = login_required_redirect()
+    auth_redirect = dev_tools_required_redirect()
 
     if auth_redirect:
         return auth_redirect
@@ -3669,23 +3704,6 @@ def progression():
     )
 
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    host = os.environ.get("HOST", "127.0.0.1")
-
-    socketio.run(
-        app,
-        debug=app.config["DEBUG_MODE"],
-        host=host,
-        port=port,
-        allow_unsafe_werkzeug=True,
-    )
-
-
-
-
-
-
 @socketio.on("start_training")
 def handle_start_training_v1(data=None):
     sid = request.sid
@@ -3705,6 +3723,7 @@ def handle_start_training_v1(data=None):
 
     socketio.emit("battle_log", {"message": "Training match started."}, room=sid)
     emit_match_state_to_sid(match, sid, message="Training started. Choose your intent.")
+    emit_az48_state_for_sid(sid, message="Training started. Choose your intent.")
 
 
 @socketio.on("play_card")
@@ -3727,9 +3746,10 @@ def handle_play_card_v1(data=None):
         socketio.emit("action_error", {"code": "PLAY_CARD_FAILED", "message": message}, room=sid)
 
     emit_match_state_to_match(match, message=message)
+    emit_az48_state_for_sid(sid, message=message)
 
 
-@socketio.on("declare_ready")
+@socketio.on("v1_declare_ready")
 def handle_declare_ready_v1(data=None):
     sid = request.sid
 
@@ -3752,6 +3772,7 @@ def handle_declare_ready_v1(data=None):
         socketio.emit("reward_result", payload, room=sid)
 
     emit_match_state_to_match(match, message=message)
+    emit_az48_state_for_sid(sid, message=message)
 
 
 
@@ -3807,6 +3828,7 @@ def handle_request_match_state(data=None):
         player_rooms[sid] = room_code
 
         emit_match_state_to_sid(match, sid, message="Training started. Choose your intent.")
+        emit_az48_state_for_sid(sid, message="Training started. Choose your intent.")
         return
 
     viewer_key = "p1"
@@ -3817,10 +3839,11 @@ def handle_request_match_state(data=None):
     payload = build_match_state_v1(match, viewer_key=viewer_key)
 
     socketio.emit("match_state", payload, room=sid)
+    emit_az48_state_for_sid(sid)
 
 
 
-@socketio.on("set_intent")
+@socketio.on("v1_set_intent")
 def handle_set_intent_v1(data=None):
     sid = request.sid
     data = data or {}
@@ -3839,6 +3862,7 @@ def handle_set_intent_v1(data=None):
         socketio.emit("action_error", {"code": "SET_INTENT_FAILED", "message": message}, room=sid)
 
     emit_match_state_to_match(match, message=message)
+    emit_az48_state_for_sid(sid, message=message)
 
 
 
@@ -3930,85 +3954,15 @@ def az48_declare_ready(data=None):
     handle_declare_ready_v1(data or {})
     emit_az48_state_for_sid(message="Ready. Waiting for battle resolution.")
 
-@socketio.on("az48_start_training")
-def az48_start_training(data=None):
-    handle_start_training_v1(data or {})
-    return None
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    host = os.environ.get("HOST", "127.0.0.1")
 
-@socketio.on("az48_request_state")
-def az48_request_state(data=None):
-    handle_request_match_state(data or {})
-    return None
-
-
-@socketio.on("az48_set_intent")
-def az48_set_intent(data=None):
-    handle_set_intent_v1(data or {})
-    return None
-
-
-@socketio.on("az48_play_card")
-def az48_play_card(data=None):
-    handle_play_card_v1(data or {})
-    return None
-
-
-@socketio.on("az48_declare_ready")
-def az48_declare_ready(data=None):
-    handle_declare_ready_v1(data or {})
-    return None
-
-@socketio.on("az48_start_training")
-def az48_start_training(data=None):
-    handle_start_training_v1(data or {})
-    return None
-
-
-@socketio.on("az48_request_state")
-def az48_request_state(data=None):
-    handle_request_match_state(data or {})
-    return None
-
-
-@socketio.on("az48_set_intent")
-def az48_set_intent(data=None):
-    handle_set_intent_v1(data or {})
-    return None
-
-
-@socketio.on("az48_play_card")
-def az48_play_card(data=None):
-    handle_play_card_v1(data or {})
-    return None
-
-
-@socketio.on("az48_declare_ready")
-def az48_declare_ready(data=None):
-    handle_declare_ready_v1(data or {})
-    return None
-
-@socketio.on("az48_start_training")
-def az48_start_training(data=None):
-    return handle_start_training_v1(data or {})
-
-
-@socketio.on("az48_request_state")
-def az48_request_state(data=None):
-    return handle_request_match_state(data or {})
-
-
-@socketio.on("az48_set_intent")
-def az48_set_intent(data=None):
-    return handle_set_intent_v1(data or {})
-
-
-@socketio.on("az48_play_card")
-def az48_play_card(data=None):
-    return handle_play_card_v1(data or {})
-
-
-@socketio.on("az48_declare_ready")
-def az48_declare_ready(data=None):
-    return handle_declare_ready_v1(data or {})
-
+    socketio.run(
+        app,
+        debug=app.config["DEBUG_MODE"],
+        host=host,
+        port=port,
+        allow_unsafe_werkzeug=True,
+    )

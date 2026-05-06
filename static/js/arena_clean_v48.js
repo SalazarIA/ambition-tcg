@@ -7,18 +7,64 @@
     let bootTries = 0;
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
+    const PAGE_KIND = document.body ? document.body.getAttribute("data-page-kind") : "arena";
+    const ID_ALIASES = {
+        "az48-ready": ["ready-btn"],
+        "az48-hand": ["hand"],
+        "az48-round": ["round-label"],
+        "az48-phase": ["phase-label"],
+        "az48-me-name": ["my-name"],
+        "az48-enemy-name": ["enemy-name"],
+        "az48-me-hp": ["my-hp"],
+        "az48-enemy-hp": ["enemy-hp"],
+    };
 
     function $(id) {
-        return document.getElementById(id);
+        const direct = document.getElementById(id);
+        if (direct) return direct;
+
+        const aliases = ID_ALIASES[id] || [];
+        for (const alias of aliases) {
+            const el = document.getElementById(alias);
+            if (el) return el;
+        }
+
+        return null;
+    }
+
+    function elements(id) {
+        const ids = [id].concat(ID_ALIASES[id] || []);
+        const seen = new Set();
+        return ids
+            .map((candidate) => document.getElementById(candidate))
+            .filter((el) => {
+                if (!el || seen.has(el)) return false;
+                seen.add(el);
+                return true;
+            });
     }
 
     function text(id, value) {
-        const el = $(id);
-        if (el) el.textContent = value;
+        elements(id).forEach((el) => {
+            el.textContent = value;
+        });
     }
 
     function setMessage(value) {
         text("az48-message", value);
+    }
+
+    function appendLog(value) {
+        const log = document.getElementById("battle-log");
+        if (!log || !value) return;
+
+        const line = document.createElement("div");
+        line.textContent = value;
+        log.appendChild(line);
+
+        while (log.children.length > 8) {
+            log.removeChild(log.firstElementChild);
+        }
     }
 
     function arr(value) {
@@ -128,7 +174,7 @@
 
         const phase = str(state.phase || "start");
 
-        setVisible("az48-start", Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length));
+        setVisible("az48-start", PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length));
         setVisible("az48-strike", Boolean(legal.show_intents || legal.can_choose_intent));
         setVisible("az48-guard", Boolean(legal.show_intents || legal.can_choose_intent));
         setVisible("az48-focus", Boolean(legal.show_intents || legal.can_choose_intent));
@@ -144,12 +190,16 @@
         text("az48-me-energy", num(me.energy || 0));
         text("az48-me-max-energy", num(me.max_energy || me.energy || 0));
         text("az48-me-ambition", num(me.ambition || 0));
+        text("my-deck", num(me.deck_count || 0));
+        text("my-ready", me.ready ? "Ready" : "Not ready");
 
         text("az48-enemy-name", str(enemy.name || "Opponent"));
         text("az48-enemy-hp", num(enemy.hp || 3600, 3600));
         text("az48-enemy-energy", num(enemy.energy || 0));
         text("az48-enemy-max-energy", num(enemy.max_energy || enemy.energy || 0));
         text("az48-enemy-hand", num(enemy.hand_count || 0));
+        text("enemy-deck", num(enemy.deck_count || 0));
+        text("enemy-ready", enemy.ready ? "Ready" : "Not ready");
 
         const meField = normalizeField(me.field);
         const enemyField = normalizeField(enemy.field);
@@ -202,7 +252,7 @@
 
     function startTraining() {
         setMessage("Starting training...");
-        emit("az48_start_training", {});
+        emit("join_training", { difficulty: "normal" });
     }
 
     function requestState() {
@@ -211,24 +261,65 @@
 
     function setIntent(intent) {
         setMessage(intent + " selected.");
-        emit("az48_set_intent", { intent });
+        emit("choose_intent", { intent });
     }
 
     function ready() {
         setMessage("Ready sent.");
-        emit("az48_declare_ready", {});
+        emit("declare_ready", {});
     }
 
     function playCard(id) {
+        const hand = arr((latestState && latestState.me && latestState.me.hand) || []);
+        const index = hand.findIndex((card, cardIndex) => normalizeCard(card, cardIndex).id === String(id));
+
+        if (index < 0) {
+            setMessage("Card is no longer in hand.");
+            return;
+        }
+
         setMessage("Playing card...");
-        emit("az48_play_card", { card_id: id });
+        emit("play_to_field", { index });
+    }
+
+    function joinQueue() {
+        if (PAGE_KIND === "training") {
+            startTraining();
+            return;
+        }
+
+        setMessage("Searching for opponent...");
+        emit("join_queue", {});
+    }
+
+    function joinBotMatch() {
+        setMessage("Starting bot duel...");
+        emit("join_bot_match", {});
+    }
+
+    function joinPrivateRoom() {
+        const input = $("private-room-code");
+        const code = str(input && input.value).trim().toUpperCase().replace(/\s+/g, "");
+
+        if (!code || code.length !== 5) {
+            setMessage("Enter a valid 5-character private room code.");
+            appendLog("Invalid private room code.");
+            return;
+        }
+
+        setMessage("Joining private room " + code + "...");
+        emit("join_private_room", { code });
+    }
+
+    function cancelQueue() {
+        setMessage("Cancelling match search...");
+        emit("cancel_queue", {});
     }
 
     function bindSocketEvents() {
         socket.on("connect", () => {
-            setMessage("Connected. Press Start.");
+            setMessage(PAGE_KIND === "training" ? "Connected. Press Start." : "Connected. Choose how to find a duel.");
             console.debug("[Ambitionz V51] connected", socket.id);
-            requestState();
         });
 
         socket.on("connect_error", (error) => {
@@ -245,10 +336,71 @@
             render(payload);
         });
 
+        socket.on("game_state_update", (payload) => {
+            if (isCanonical(payload)) render(payload);
+        });
+
+        socket.on("arena_state_update", (payload) => {
+            if (isCanonical(payload)) render(payload);
+        });
+
         socket.on("battle_log", (payload) => {
+            const message = typeof payload === "string" ? payload : (payload && (payload.message || payload.msg));
+
+            if (message) {
+                setMessage(message);
+                appendLog(message);
+            }
+        });
+
+        socket.on("queue_status", (payload) => {
+            const message = payload && payload.msg ? payload.msg : "Queue updated.";
+            setMessage(message);
+            appendLog(message);
+        });
+
+        socket.on("match_found", (payload) => {
+            const message = payload && payload.msg ? payload.msg : "Match found. Duel started.";
+            setMessage(message);
+            appendLog(message);
+        });
+
+        socket.on("matchmaking_status", (payload) => {
+            if (!payload || !payload.status) return;
+            if (payload.status === "searching") setMessage("Searching for opponent...");
+            if (payload.status === "fallback") setMessage("No player found. Bot duel started.");
+            if (payload.status === "matched") setMessage("Match found.");
+            if (payload.status === "cancelled") setMessage("Search cancelled.");
+            if (payload.status === "error") setMessage("Matchmaking failed. Try again.");
+        });
+
+        socket.on("action_error", (payload) => {
+            const message = payload && payload.message ? payload.message : "Action failed.";
+            setMessage(message);
+            appendLog(message);
+        });
+
+        socket.on("game_over", (payload) => {
+            const message = "Game Over: " + str(payload && payload.result, "Unknown");
+            setMessage(message);
+            appendLog(message);
+        });
+
+        socket.on("opponent_left", (payload) => {
+            const message = payload && payload.msg ? payload.msg : "Opponent left.";
+            setMessage(message);
+            appendLog(message);
+        });
+
+        socket.on("presence_update", (payload) => {
+            if (!payload) return;
+            window.__ambitionzArenaPresence = payload;
+        });
+
+        socket.on("match_state", (payload) => {
             if (typeof payload === "string") {
-                setMessage(payload);
-            } else if (payload && payload.message) {
+                appendLog(payload);
+            } else if (payload && payload.message && !hasCanonicalState) {
                 setMessage(payload.message);
             }
         });
@@ -266,6 +418,31 @@
             const card = event.target.closest(".az48-card[data-card-id]");
             if (card && card.closest("#az48-hand")) {
                 playCard(card.dataset.cardId);
+                return;
+            }
+
+            if (card && card.closest("#hand")) {
+                playCard(card.dataset.cardId);
+                return;
+            }
+
+            if (event.target.closest("#join-queue-btn")) {
+                joinQueue();
+                return;
+            }
+
+            if (event.target.closest("#join-bot-match-btn")) {
+                joinBotMatch();
+                return;
+            }
+
+            if (event.target.closest("#join-private-room-btn")) {
+                joinPrivateRoom();
+                return;
+            }
+
+            if (event.target.closest("#cancel-queue-btn")) {
+                cancelQueue();
                 return;
             }
 
@@ -289,7 +466,7 @@
                 return;
             }
 
-            if (event.target.closest("#az48-ready")) {
+            if (event.target.closest("#az48-ready") || event.target.closest("#ready-btn")) {
                 ready();
             }
         });
@@ -319,6 +496,10 @@
             render,
             startTraining,
             requestState,
+            joinQueue,
+            joinBotMatch,
+            joinPrivateRoom,
+            cancelQueue,
             setIntent,
             ready,
             playCard,

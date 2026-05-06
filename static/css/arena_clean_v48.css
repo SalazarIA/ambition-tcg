@@ -25,7 +25,7 @@ a {
     height: 100dvh;
     overflow: hidden;
     display: grid;
-    grid-template-rows: 74px 40px minmax(0, 1fr) 190px;
+    grid-template-rows: 74px 60px minmax(0, 1fr) 190px;
     gap: 8px;
     padding: 8px;
     background:
@@ -124,15 +124,75 @@ a {
 
 .az48-message {
     min-height: 0;
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-    padding: 0 16px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px 8px 16px;
     color: rgba(255,255,255,.82);
     font-weight: 800;
+    overflow: hidden;
+}
+
+.az48-message-text {
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.az48-match-actions {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.az48-mini-btn,
+.az48-room-input {
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.13);
+    background: rgba(0,0,0,.26);
+    color: rgba(255,255,255,.88);
+    font-weight: 950;
+}
+
+.az48-mini-btn {
+    min-width: 78px;
+    padding: 0 11px;
+    cursor: pointer;
+}
+
+.az48-mini-btn:first-child {
+    color: #111;
+    background: linear-gradient(180deg, #fff1bb, #d6a84c);
+    border-color: rgba(255,226,151,.44);
+}
+
+.az48-muted-btn {
+    min-width: 66px;
+    color: rgba(255,255,255,.68);
+}
+
+.az48-room-input {
+    width: 76px;
+    padding: 0 8px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.az48-compat-contract {
+    position: fixed;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .az48-board {
@@ -393,7 +453,7 @@ a {
 
 @media (max-width: 860px) {
     .az48-arena {
-        grid-template-rows: 58px 32px minmax(0, 1fr) 160px;
+        grid-template-rows: 58px 74px minmax(0, 1fr) 160px;
         gap: 6px;
         padding: 6px;
     }
@@ -430,6 +490,34 @@ a {
         border-radius: 20px;
         padding: 7px;
         grid-template-rows: minmax(0, 1fr) 22px minmax(0, 1fr);
+    }
+
+    .az48-message {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 5px;
+        border-radius: 14px;
+        padding: 6px;
+        font-size: .66rem;
+    }
+
+    .az48-match-actions {
+        width: 100%;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .az48-mini-btn,
+    .az48-room-input {
+        min-width: 0;
+        height: 28px;
+        border-radius: 10px;
+        font-size: .58rem;
+        padding: 0 6px;
+    }
+
+    .az48-room-input {
+        width: 50px;
     }
 
     .az48-field-row {

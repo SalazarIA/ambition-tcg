@@ -36,6 +36,10 @@ services:
         value: 60
       - key: BETA_EVENT_RATE_WINDOW_SECONDS
         value: 60
+      - key: RETENTION_EVENT_RATE_LIMIT
+        value: 120
+      - key: RETENTION_EVENT_RATE_WINDOW_SECONDS
+        value: 60
       - key: PASSWORD_MIN_LENGTH
         value: 10
       - key: PASSWORD_REQUIRE_COMPLEXITY
