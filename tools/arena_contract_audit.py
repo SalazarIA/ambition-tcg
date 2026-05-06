@@ -7,17 +7,25 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app import app
 from models import User
-from services.match_actions_v1 import create_training_match_v1, play_card, set_intent
+from services.match_actions_v1 import create_training_match_v1, play_card
 from services.arena_clean_state import build_arena_clean_state
 
 
-def assert_cards(label, cards):
+def check_payload(label, payload):
     print("")
-    print(label, "count", len(cards))
+    print("===", label, "===")
+    print("schema", payload.get("schema"))
+    print("phase", payload.get("phase"))
+    print("message", payload.get("message"))
+    print("me.hand", len((payload.get("me") or {}).get("hand") or []))
+    print("enemy.hand_count", (payload.get("enemy") or {}).get("hand_count"))
+    print("legal", payload.get("legal_actions"))
 
-    for index, card in enumerate(cards[:8], start=1):
+    hand = (payload.get("me") or {}).get("hand") or []
+
+    for index, card in enumerate(hand[:5], start=1):
         print(
-            label,
+            "HAND",
             index,
             card.get("id"),
             card.get("name"),
@@ -27,8 +35,14 @@ def assert_cards(label, cards):
             "display", card.get("display_stat"),
         )
 
-        if card.get("type") == "Monster" and int(card.get("power") or 0) <= 0:
-            raise SystemExit(f"FAILED - {label} monster has zero power: {card}")
+    broken = [
+        card
+        for card in hand
+        if card.get("type") == "Monster" and int(card.get("power") or 0) <= 0
+    ]
+
+    if broken:
+        raise SystemExit(f"FAILED - monster card in hand with zero power: {broken[:3]}")
 
 
 with app.app_context():
@@ -40,27 +54,23 @@ with app.app_context():
 
     match = create_training_match_v1(user, "AUDIT_SID", "audit_room")
 
-    p1 = build_arena_clean_state(match, "p1")
-    assert_cards("initial_hand", p1["me"]["hand"])
+    payload = build_arena_clean_state(match, "p1")
+    check_payload("initial", payload)
 
-    ok, msg = set_intent(match, "p1", "Strike")
-    print("set_intent", ok, msg)
-
-    p2 = build_arena_clean_state(match, "p1", message=msg)
-    assert_cards("after_intent_hand", p2["me"]["hand"])
-
-    first_card = p2["me"]["hand"][0]
+    first_card = payload["me"]["hand"][0]
     ok, msg = play_card(match, "p1", first_card["id"])
+    print("")
     print("play_card", ok, msg)
 
-    p3 = build_arena_clean_state(match, "p1", message=msg)
-    assert_cards("after_play_hand", p3["me"]["hand"])
+    payload2 = build_arena_clean_state(match, "p1", message=msg)
+    check_payload("after_play_card", payload2)
 
-    monster = p3["me"]["field"]["monster"]
-    print("field_monster", monster)
+    if len(payload2["me"]["hand"]) != 4:
+        raise SystemExit("FAILED - hand did not decrease to 4 after play card")
 
+    monster = payload2["me"]["field"]["monster"]
     if not monster:
-        raise SystemExit("FAILED - no monster in field after play")
+        raise SystemExit("FAILED - monster not in field after play card")
 
     if int(monster.get("power") or 0) <= 0:
         raise SystemExit("FAILED - field monster has zero power")

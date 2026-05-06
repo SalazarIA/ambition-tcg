@@ -56,8 +56,7 @@
 
         const power = num(card.power || card.attack || card.display_stat || card.value || 0);
         const value = num(card.value || card.display_stat || card.power || card.attack || 0);
-        const fallbackStat = Math.max(1, num(card.cost || 1, 1));
-        const stat = num(card.display_stat || (isMonster ? power : value) || fallbackStat, fallbackStat);
+        const stat = num(card.display_stat || (isMonster ? power : value) || card.cost || 1, 1);
 
         return {
             id: str(card.id || card.card_id || card.runtime_id || card.name || ("card-" + index)),
@@ -89,7 +88,7 @@
         const field = options.field ? " az48-field-card" : "";
 
         return [
-            '<button type="button" class="az48-card ' + typeClass + playable + field + '" data-card-id="' + esc(c.id) + '" title="' + esc(c.name) + '">',
+            '<button type="button" class="az48-card ' + typeClass + playable + field + '" data-card-id="' + esc(c.id) + '">',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
             '<div class="az48-art"><span>' + esc(c.element.slice(0, 2).toUpperCase()) + '</span></div>',
