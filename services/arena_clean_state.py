@@ -76,8 +76,38 @@ def hydrate_card(card, index=0):
             or card.get("name")
         )
 
-        base = deepcopy(catalog.get(str(raw_id)) or {})
-        base.update(deepcopy(card))
+        catalog_card = deepcopy(catalog.get(str(raw_id)) or {})
+        incoming = deepcopy(card)
+
+        # V52 rule:
+        # Catalog is the source of truth for card identity/combat stats.
+        # Runtime payload may override zones/state, but must not turn a real
+        # monster into PWR 0 just because a legacy renderer sent partial data.
+        base = catalog_card
+        base.update(incoming)
+
+        if catalog_card:
+            for key in ("name", "type", "element", "rarity", "sigil", "role", "cost", "image", "effect", "description"):
+                if not base.get(key) and catalog_card.get(key):
+                    base[key] = catalog_card.get(key)
+
+            incoming_power = incoming.get("power") or incoming.get("attack") or incoming.get("value")
+            catalog_power = catalog_card.get("power") or catalog_card.get("attack") or catalog_card.get("value")
+
+            try:
+                incoming_power_int = int(incoming_power or 0)
+            except Exception:
+                incoming_power_int = 0
+
+            try:
+                catalog_power_int = int(catalog_power or 0)
+            except Exception:
+                catalog_power_int = 0
+
+            if incoming_power_int <= 0 and catalog_power_int > 0:
+                base["power"] = catalog_power_int
+                base["attack"] = catalog_power_int
+                base["value"] = catalog_power_int
     else:
         base = {
             "id": f"card-{index}",
