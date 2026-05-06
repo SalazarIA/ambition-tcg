@@ -1371,6 +1371,14 @@ def health():
     }
 
 
+
+@app.route("/manifest.webmanifest")
+def pwa_manifest():
+    return send_from_directory(
+        app.static_folder,
+        "manifest.webmanifest",
+        mimetype="application/manifest+json",
+    )
 @app.route("/service-worker.js")
 def service_worker():
     response = make_response(app.send_static_file("js/service-worker.js"))
