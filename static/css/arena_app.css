@@ -382,3 +382,21 @@ body.az-arena-app-enabled {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+
+/* Arena App V1 action/error polish */
+.az-arena-app-phase.finished {
+    color: #ffe29b;
+    background: rgba(255,197,106,.16);
+    border-color: rgba(255,220,145,.30);
+}
+
+.az-arena-card.is-playable:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 64px rgba(0,0,0,.50), 0 0 24px rgba(125,240,156,.16);
+}
+
+.az-arena-actions button:disabled {
+    opacity: .48;
+    cursor: not-allowed;
+}

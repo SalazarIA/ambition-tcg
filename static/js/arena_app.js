@@ -268,6 +268,10 @@
                 setText("#az-message", payload && payload.message ? payload.message : "Action failed.");
             });
 
+            if (window.location.pathname === "/training") {
+                socket.emit("start_training", {});
+            }
+
             socket.emit("request_match_state", {});
 
             return true;
