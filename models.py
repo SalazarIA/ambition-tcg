@@ -28,6 +28,7 @@ class User(db.Model):
     is_verified = db.Column(db.Boolean, default=True, nullable=False)
 
     coins = db.Column(db.Integer, default=1000, nullable=False)
+    gems = db.Column(db.Integer, default=0, nullable=False)
 
     deck_json = db.Column(db.Text, nullable=False)
     collection_json = db.Column(db.Text, nullable=False)
