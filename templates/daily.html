@@ -63,7 +63,7 @@
                     </div>
 
                     {% if mission.is_complete and not mission.is_claimed %}
-                        <form method="POST" action="{{ url_for('claim_mission_route', mission_id=mission.id) }}">
+                        <form method="POST" action="{{ url_for('claim_user_mission', mission_id=mission.id) }}">
                             <button type="submit" class="btn full-btn">Claim Reward</button>
                         </form>
                     {% elif mission.is_claimed %}
