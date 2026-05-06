@@ -2600,3 +2600,89 @@ body.az-arena-v45 > footer {
         padding: 5px 10px;
     }
 }
+
+
+/* =========================================================
+   Arena V47 — Recovery Kill Switch
+   Purpose: restore one canonical arena renderer.
+   Disables experimental V45 root and prevents hidden original arena.
+   ========================================================= */
+
+body.az-arena-stable-v47 {
+    margin: 0 !important;
+    background: #05050b !important;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+}
+
+body.az-arena-stable-v47 #az-arena-v45-root,
+body.az-arena-stable-v47 .az-arena-v45-root {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+body.az-arena-stable-v47 > main,
+body.az-arena-stable-v47 main,
+body.az-arena-stable-v47 .az-arena-app,
+body.az-arena-stable-v47 .arena-shell,
+body.az-arena-stable-v47 .arena-board,
+body.az-arena-stable-v47 .mobile-arena-page {
+    display: block;
+    visibility: visible;
+}
+
+body.az-arena-stable-v47 .az-arena-app {
+    position: fixed !important;
+    inset: 8px !important;
+    width: auto !important;
+    height: calc(100dvh - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    overflow: hidden !important;
+    display: grid !important;
+    grid-template-rows: minmax(52px, 72px) minmax(0, 1fr) minmax(128px, 180px) !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+}
+
+body.az-arena-stable-v47 .az-arena-board,
+body.az-arena-stable-v47 .arena-board {
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+body.az-arena-stable-v47 .az-arena-hand,
+body.az-arena-stable-v47 .az-arena-hand-row,
+body.az-arena-stable-v47 #az-hand,
+body.az-arena-stable-v47 #hand {
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+}
+
+body.az-arena-stable-v47 .az-arena-card,
+body.az-arena-stable-v47 .arena-hand-card,
+body.az-arena-stable-v47 [data-card-id] {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+body.az-arena-stable-v47 button {
+    pointer-events: auto !important;
+}
+
+body.az-arena-stable-v47 .az-arena-actions,
+body.az-arena-stable-v47 .arena-actions {
+    pointer-events: auto !important;
+    z-index: 30 !important;
+}
+
+@media (max-width: 860px) {
+    body.az-arena-stable-v47 .az-arena-app {
+        inset: 6px !important;
+        height: calc(100dvh - 12px) !important;
+        max-height: calc(100dvh - 12px) !important;
+        grid-template-rows: 54px minmax(0, 1fr) 150px !important;
+        gap: 6px !important;
+    }
+}
