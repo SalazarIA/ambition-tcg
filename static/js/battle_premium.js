@@ -1,9 +1,7 @@
 /* =========================================================
-   Ambitionz Battle Premium Layer
-   Disabled during full UX rework.
-   The old Battle Coach was too noisy and has been intentionally removed.
+   Ambitionz Battle Premium
+   Disabled. Arena/Training UX is now controlled by arena_rework_v2.
    ========================================================= */
-
 (function () {
     window.AmbitionzBattlePremiumDisabled = true;
 })();
