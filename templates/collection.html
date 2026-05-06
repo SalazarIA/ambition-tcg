@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_cards.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/card_system_v1.css') }}?v=1">
 </head>
 <body class="az-game-collection-page">
     <main class="wide-page mobile-wide-page">
@@ -75,37 +76,37 @@
             </div>
         </section>
 
-        <section class="card-grid deck-builder-grid">
+        <section class="az-card-grid-v1">
             {% for card in cards %}
                 <article
-                    class="collection-card"
+                    class="az-card-v1 collection-card {{ card.rarity_css|default('rarity-common') }} {{ card.element_css|default('element-neutral') }}"
                     data-name="{{ card.name|lower }}"
                     data-type="{{ card.type }}"
                     data-sigil="{{ card.sigil }}"
                     data-role="{{ card.role }}"
                 >
-                    <div class="card-shell">
-                        <div class="card-topline">
-                            <strong>{{ card.name }}</strong>
-                            <span>x{{ card.count }}</span>
-                        </div>
-
-                        <div class="card-meta-row">
-                            <span>{{ card.type }}</span>
-                            <span>{{ card.element }}</span>
-                            <span>{{ card.rarity }}</span>
-                        </div>
-
-                        <div class="card-identity-row">
-                            <span class="sigil-pill {{ card.sigil_css }}" title="{{ card.sigil_description }}">{{ card.sigil }}</span>
-                            <span class="role-pill {{ card.role_css }}">{{ card.role }}</span>
-                        </div>
-
+                    <div class="az-card-tags-v1">
+                        <span>{{ card.sigil }}</span>
+                        <span>{{ card.rarity }}</span>
+                    </div>
+                    <div class="az-card-cost-v1">{{ card.cost|default(1) }}</div>
+                    <div class="az-card-rarity-v1"></div>
+                    <div class="az-card-art-v1">
+                        <div class="az-card-orb-v1"></div>
+                        <div class="az-card-mark-v1">{{ card.element[:1]|upper }}</div>
+                    </div>
+                    <div class="az-card-body-v1">
+                        <strong>{{ card.name }}</strong>
+                        <p>{{ card.effect }}</p>
+                    </div>
+                    <div class="az-card-stats-v1">
                         {% if card.type == "Monster" %}
-                            <div class="card-power">Power {{ card.power }}</div>
+                            <div><b>{{ card.power }}</b><small>ATK</small></div>
+                            <div><b>{{ card.value|default(card.power) }}</b><small>DEF</small></div>
+                        {% else %}
+                            <div><b>{{ card.value|default(0) }}</b><small>VALUE</small></div>
+                            <div><b>{{ card.count }}</b><small>OWNED</small></div>
                         {% endif %}
-
-                        <p class="card-effect">{{ card.effect }}</p>
                     </div>
                 </article>
             {% endfor %}

@@ -10,6 +10,7 @@ from game.cards import CARD_CATALOG
 from game.deck import build_playable_deck, draw_starting_hand
 from game.state import create_player_state
 from game.bot_ai import bot_choose_play
+from services.starter_deck_v1 import build_balanced_starter_deck
 
 
 VALID_INTENTS = {"Strike", "Guard", "Focus"}
@@ -124,19 +125,7 @@ def hydrate_deck_card(card_id):
 
 
 def build_default_training_deck():
-    monsters = [card for card in CARD_CATALOG if str(card.get("type")) == "Monster"]
-    spells = [card for card in CARD_CATALOG if str(card.get("type")) == "Spell"]
-    traps = [card for card in CARD_CATALOG if str(card.get("type")) == "Trap"]
-
-    chosen = []
-    chosen.extend(monsters[:21])
-    chosen.extend(spells[:6])
-    chosen.extend(traps[:3])
-
-    if len(chosen) < 30:
-        chosen.extend(CARD_CATALOG[: 30 - len(chosen)])
-
-    return [deepcopy(card) for card in chosen[:30]]
+    return [deepcopy(card) for card in build_balanced_starter_deck()]
 
 
 def create_training_match_v1(user, sid, room_code):
