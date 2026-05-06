@@ -1,137 +1,8 @@
 /* =========================================================
    Ambitionz Gameplay Premium Layer
-   Cleaner UX: Training coach only + Deck Builder helper
+   Battle coach disabled during full UX rework.
+   Deck Builder helper only.
    ========================================================= */
-
-/* ---------- Training Coach Compact ---------- */
-
-.training-coach-compact {
-    position: relative;
-    z-index: 2;
-    margin: 10px 0 14px;
-    padding: 14px;
-    border-radius: 22px;
-    background:
-        linear-gradient(135deg, rgba(17, 17, 28, 0.92), rgba(26, 21, 42, 0.82)),
-        rgba(5, 5, 11, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.26);
-}
-
-.training-coach-compact.is-hidden {
-    display: none;
-}
-
-.training-coach-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 14px;
-}
-
-.training-chip {
-    display: inline-flex;
-    width: fit-content;
-    padding: 5px 9px;
-    border-radius: 999px;
-    font-size: 0.68rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(255, 220, 154, 0.96);
-    background: rgba(255, 199, 107, 0.11);
-    border: 1px solid rgba(255, 199, 107, 0.20);
-}
-
-.training-coach-top h2 {
-    margin: 8px 0 4px;
-    font-size: clamp(1.05rem, 2vw, 1.28rem);
-    line-height: 1.1;
-}
-
-.training-coach-top p {
-    margin: 0;
-    max-width: 720px;
-    color: rgba(255, 255, 255, 0.66);
-    line-height: 1.42;
-    font-size: 0.94rem;
-}
-
-.training-coach-hide {
-    width: 32px;
-    height: 32px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(255,255,255,.06);
-    color: rgba(255,255,255,.82);
-    font-size: 1.2rem;
-    cursor: pointer;
-}
-
-.training-steps-compact {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 12px 0;
-}
-
-.training-steps-compact span {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 10px;
-    border-radius: 999px;
-    background: rgba(255,255,255,.055);
-    border: 1px solid rgba(255,255,255,.075);
-    color: rgba(255,255,255,.72);
-    font-size: .82rem;
-}
-
-.training-steps-compact strong {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 19px;
-    height: 19px;
-    border-radius: 999px;
-    background: rgba(154, 107, 255, 0.34);
-    color: #fff;
-    font-size: .72rem;
-}
-
-.training-intent-help {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.training-intent-help article {
-    padding: 10px;
-    border-radius: 16px;
-    background: rgba(0,0,0,.18);
-    border: 1px solid rgba(255,255,255,.07);
-}
-
-.training-intent-help strong {
-    display: block;
-    margin-bottom: 3px;
-    font-size: .9rem;
-}
-
-.training-intent-help small {
-    display: block;
-    color: rgba(255,255,255,.58);
-    line-height: 1.35;
-}
-
-.training-primary-action {
-    box-shadow: 0 0 0 4px rgba(255, 199, 107, 0.10), 0 0 24px rgba(255, 199, 107, 0.22) !important;
-}
-
-.training-intent-selected {
-    outline: 2px solid rgba(255, 199, 107, 0.52) !important;
-    box-shadow: 0 0 0 5px rgba(255, 199, 107, 0.10) !important;
-}
 
 /* ---------- Deck Builder Helper ---------- */
 
@@ -243,14 +114,7 @@
     color: rgba(255, 118, 118, 0.94);
 }
 
-/* ---------- Mobile ---------- */
-
 @media (max-width: 720px) {
-    .training-intent-help {
-        grid-template-columns: 1fr;
-    }
-
-    .training-coach-top,
     .deck-premium-head {
         flex-direction: column;
     }
