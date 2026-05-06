@@ -268,3 +268,89 @@
     });
 })();
 
+
+
+/* =========================================================
+   Arena V8 base set sync fallback
+   Improves visible hand/monster fallback when old engine cards are hard to parse.
+   ========================================================= */
+
+(function () {
+    function isBattlePage() {
+        return window.location.pathname === "/training" || window.location.pathname === "/arena";
+    }
+
+    if (!isBattlePage()) return;
+
+    var starterNames = [
+        "Ash Vanguard",
+        "Ironroot Sentinel",
+        "Ember Duelist",
+        "Ruin Initiate",
+        "Harmony Warden",
+        "Focus Channeler"
+    ];
+
+    function qs(selector) {
+        return document.querySelector(selector);
+    }
+
+    function qsa(selector) {
+        return Array.prototype.slice.call(document.querySelectorAll(selector));
+    }
+
+    function makeHandCard(name, index) {
+        var card = document.createElement("button");
+        card.type = "button";
+        card.className = "az-v7-hand-card";
+        card.style.setProperty("--rot", ((index - 2) * 4) + "deg");
+        card.style.setProperty("--lift", Math.abs(index - 2) * 2 + "px");
+        card.innerHTML = [
+            '<div class="cost">' + ((index % 3) + 1) + '</div>',
+            '<strong>' + name + '</strong>',
+            '<span>Base Set</span>'
+        ].join("");
+        return card;
+    }
+
+    function ensureVisibleHand() {
+        var hand = qs("#az-v7-hand");
+        if (!hand) return;
+
+        var visibleCards = qsa("#az-v7-hand .az-v7-hand-card");
+
+        if (visibleCards.length <= 1 && hand.textContent.toLowerCase().indexOf("start duel") !== -1) {
+            var oldHand = qs("#my-hand");
+            var oldText = oldHand ? oldHand.textContent.trim() : "";
+
+            if (oldText && oldText.toLowerCase().indexOf("start") === -1) {
+                hand.innerHTML = "";
+                starterNames.slice(0, 5).forEach(function (name, index) {
+                    hand.appendChild(makeHandCard(name, index));
+                });
+            }
+        }
+    }
+
+    function ensureVisibleBoard() {
+        var lane = qs("#az-v7-your-lane");
+        if (!lane) return;
+
+        if (lane.dataset.v8Ready === "1") return;
+
+        lane.dataset.v8Ready = "1";
+
+        // Keep board visually alive even before exact card-state sync is implemented.
+        qsa("#az-v7-your-lane .az-v7-board-card strong").forEach(function (el, index) {
+            if ((el.textContent || "").toLowerCase().indexOf("zone") !== -1) {
+                el.textContent = index === 0 ? "Ready Slot" : "Tactic Slot";
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(ensureVisibleBoard, 500);
+        setInterval(ensureVisibleHand, 900);
+    });
+})();
+

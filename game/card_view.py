@@ -1,3 +1,4 @@
+from game.card_sets import enrich_card_runtime
 from game.balance import SIGIL_RULES
 
 
@@ -54,3 +55,12 @@ def enrich_card_for_view(card):
 
 def enrich_cards_for_view(cards):
     return [enrich_card_for_view(card) for card in cards]
+
+
+
+def enrich_cards_for_game_view(cards):
+    """Runtime-safe card view used by new UI layers."""
+    return [
+        enrich_card_runtime(card, index=index)
+        for index, card in enumerate(cards or [])
+    ]

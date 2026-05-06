@@ -644,3 +644,61 @@ body.az-v5-active .az-v5-root {
         height: 108px;
     }
 }
+
+
+
+/* =========================================================
+   Arena V8 base set card readability
+   ========================================================= */
+
+.az-v7-hand-card,
+.az-v7-board-card {
+    border-color: rgba(255, 220, 145, 0.72);
+}
+
+.az-v7-hand-card strong,
+.az-v7-board-card strong {
+    font-size: clamp(0.68rem, 1vw, 0.82rem);
+    line-height: 1.05;
+}
+
+.az-v7-hand-card span {
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 900;
+}
+
+.az-v7-board-card .cost,
+.az-v7-hand-card .cost {
+    box-shadow: 0 6px 16px rgba(0,0,0,.42);
+}
+
+.az-v7-hand-card:nth-child(1) { --rot: -10deg; }
+.az-v7-hand-card:nth-child(2) { --rot: -5deg; }
+.az-v7-hand-card:nth-child(3) { --rot: 0deg; }
+.az-v7-hand-card:nth-child(4) { --rot: 5deg; }
+.az-v7-hand-card:nth-child(5) { --rot: 10deg; }
+.az-v7-hand-card:nth-child(6) { --rot: 14deg; }
+
+.rarity-common {
+    border-color: rgba(210, 210, 210, .42);
+}
+
+.rarity-uncommon {
+    border-color: rgba(125, 240, 156, .55);
+}
+
+.rarity-rare {
+    border-color: rgba(94, 203, 255, .62);
+}
+
+.rarity-ultra-rare {
+    border-color: rgba(184, 120, 255, .74);
+    box-shadow: 0 0 38px rgba(184, 120, 255, .22), 0 18px 46px rgba(0,0,0,.44);
+}
+
+.rarity-unique {
+    border-color: rgba(255, 220, 145, .86);
+    box-shadow: 0 0 46px rgba(255, 220, 145, .28), 0 18px 50px rgba(0,0,0,.50);
+}
+
