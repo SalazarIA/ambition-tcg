@@ -19,6 +19,7 @@
         lastHp: { me: null, enemy: null },
         pendingPlayedCards: new Map(),
         lastPlayedCardId: null,
+        endSoundPlayed: false,
     };
 
     const $ = (selector) => document.querySelector(selector);
@@ -126,7 +127,7 @@
         const subStat = isMonster ? defense : Number(card.cost ?? 0);
 
         return [
-            '<button type="button" class="az-arena-card ' + playableClass + ' type-' + escapeHtml(String(type).toLowerCase()) + '" data-card-id="' + escapeHtml(card.id) + '" ' + (options.inHand ? "" : "disabled") + '>',
+            '<button type="button" class="az-arena-card ' + playableClass + ' type-' + escapeHtml(String(type).toLowerCase()) + ' ' + elementClass(card.element) + '" data-card-id="' + escapeHtml(card.id) + '" data-element="' + escapeHtml(card.element || "Neutral") + '" ' + (options.inHand ? "" : "disabled") + '>',
             '  <div class="az-card-frame-glow"></div>',
             '  <div class="az-arena-card-cost">' + escapeHtml(card.cost ?? 0) + '</div>',
             '  <div class="az-arena-card-art"></div>',
@@ -292,15 +293,41 @@
         if (winner === "p1" || winner === match.viewer_key) {
             title.textContent = "Victory";
             copy.textContent = "You won the training duel.";
+            if (!state.endSoundPlayed) {
+                playSound("victory");
+                state.endSoundPlayed = true;
+            }
         } else if (winner === "draw") {
             title.textContent = "Draw";
             copy.textContent = "The duel ended in a draw.";
+            if (!state.endSoundPlayed) {
+                playSound("roundResolve");
+                state.endSoundPlayed = true;
+            }
         } else {
             title.textContent = "Defeat";
             copy.textContent = "You lost the duel. Adjust your strategy and try again.";
+            if (!state.endSoundPlayed) {
+                playSound("defeat");
+                state.endSoundPlayed = true;
+            }
         }
 
         overlay.classList.add("is-visible");
+    }
+
+
+
+    function playSound(name, payload) {
+        try {
+            if (window.AmbitionzSound && window.AmbitionzSound.play) {
+                window.AmbitionzSound.play(name, payload || {});
+            }
+        } catch (err) {}
+    }
+
+    function elementClass(element) {
+        return "element-" + String(element || "neutral").toLowerCase().replace(/\s+/g, "-");
     }
 
 
@@ -334,6 +361,32 @@
         } catch (err) {}
     }
 
+
+    function createElementBurst(element, x, y) {
+        const layer = document.querySelector("#az-event-layer");
+
+        if (!layer) return;
+
+        const burst = document.createElement("div");
+        burst.className = "az-element-burst " + elementClass(element);
+        burst.style.left = x + "px";
+        burst.style.top = y + "px";
+
+        for (let i = 0; i < 10; i += 1) {
+            const particle = document.createElement("span");
+            particle.style.setProperty("--angle", (i * 36) + "deg");
+            particle.style.setProperty("--dist", (28 + Math.random() * 34) + "px");
+            burst.appendChild(particle);
+        }
+
+        layer.appendChild(burst);
+
+        setTimeout(() => {
+            burst.remove();
+        }, 900);
+    }
+
+
     function findCardElementById(cardId) {
         if (!cardId) return null;
 
@@ -354,7 +407,7 @@
         return document.querySelector("#az-me-field .az-arena-slot:nth-child(1), #az-me-field .az-arena-card:nth-child(1)");
     }
 
-    function flyCardToField(cardId, zone, label) {
+    function flyCardToField(cardId, zone, label, element) {
         const source = findCardElementById(cardId);
         const target = findFieldTargetForZone(zone);
         const layer = document.querySelector("#az-event-layer");
@@ -387,10 +440,14 @@
             clone.classList.add("is-flying");
         });
 
+        playSound("cardFly", { element });
+
         setTimeout(() => {
             clone.remove();
             pulseSelector("#az-me-field", "az-field-impact");
             showRoundBanner("Card Played", label || "Card entered the field.");
+            createElementBurst(element || "Global", targetRect.left + targetRect.width / 2, targetRect.top + targetRect.height / 2);
+            playSound("cardImpact", { element });
             visualHaptic("medium");
         }, 620);
     }
@@ -441,25 +498,28 @@
             state.seenEventKeys.add(key);
 
             if (event.type === "play_card") {
-                flyCardToField(event.card_id, event.zone, event.card_name || "A card entered the field.");
+                flyCardToField(event.card_id, event.zone, event.card_name || "A card entered the field.", event.element || "Global");
                 pulseSelector("#az-me-field", "az-field-pulse");
             }
 
             if (event.type === "bot_play_card") {
                 showRoundBanner("Enemy Played", event.card_name || "Enemy card entered the field.");
                 pulseSelector("#az-enemy-field", "az-field-impact");
+                playSound("cardImpact", { element: event.element || "Global" });
                 visualHaptic("light");
             }
 
             if (event.type === "set_intent") {
                 showRoundBanner("Intent", (event.intent || "Intent") + " selected.");
                 buttonImpact(event.intent || "");
+                playSound("intent", { element: event.intent || "Global" });
                 visualHaptic("light");
             }
 
             if (event.type === "declare_ready") {
                 showRoundBanner("Ready", "Round committed.");
                 buttonImpact("Ready");
+                playSound("ready");
                 visualHaptic("medium");
             }
 
@@ -470,6 +530,10 @@
                 pulseSelector("#az-enemy-hp", "az-hp-hit");
                 pulseSelector("#az-me-hp", "az-hp-hit");
                 pulseSelector(".az-arena-board", "az-board-impact");
+                playSound("roundResolve");
+                if (Number(event.p1_damage || 0) > 0 || Number(event.p2_damage || 0) > 0) {
+                    playSound("damage");
+                }
                 visualHaptic("heavy");
             }
         });
@@ -572,6 +636,7 @@
                     state.selectedIntent = action;
                     updateActions();
                     buttonImpact(action);
+                    playSound("intent", { element: action });
                     visualHaptic("light");
                     emit("set_intent", { intent: action });
                     return;
@@ -579,6 +644,7 @@
 
                 if (action === "Ready") {
                     buttonImpact("Ready");
+                    playSound("ready");
                     visualHaptic("medium");
                     emit("declare_ready", {});
                     return;
@@ -597,6 +663,7 @@
 
                 state.selectedCardId = cardId;
                 markPendingCard(cardId);
+                playSound("cardSelect");
                 visualHaptic("light");
                 emit("play_card", { card_id: cardId });
             }

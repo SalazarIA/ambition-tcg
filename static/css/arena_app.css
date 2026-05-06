@@ -1375,3 +1375,141 @@ body.az-arena-app-enabled .az-arena-actions button.active::after {
         animation: none !important;
     }
 }
+
+
+/* =========================================================
+   Arena Sound Toggle + Elemental VFX
+   ========================================================= */
+
+.az-sound-toggle {
+    position: fixed;
+    right: max(10px, env(safe-area-inset-right));
+    top: max(10px, env(safe-area-inset-top));
+    z-index: 420;
+    min-height: 34px;
+    padding: 0 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(8,8,14,.72);
+    color: rgba(255,255,255,.86);
+    font-size: .68rem;
+    font-weight: 950;
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+    box-shadow: 0 12px 38px rgba(0,0,0,.36);
+}
+
+.az-sound-toggle.is-muted {
+    color: rgba(255,255,255,.50);
+    background: rgba(8,8,14,.46);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-fire .az-arena-card-art,
+.az-element-burst.element-fire {
+    --element-a: rgba(255, 83, 55, .95);
+    --element-b: rgba(255, 197, 106, .85);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-water .az-arena-card-art,
+.az-element-burst.element-water {
+    --element-a: rgba(54, 178, 255, .95);
+    --element-b: rgba(104, 255, 240, .72);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-earth .az-arena-card-art,
+.az-element-burst.element-earth {
+    --element-a: rgba(111, 82, 51, .98);
+    --element-b: rgba(180, 139, 85, .78);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-plant .az-arena-card-art,
+.az-element-burst.element-plant {
+    --element-a: rgba(76, 220, 105, .92);
+    --element-b: rgba(170, 255, 119, .70);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-global .az-arena-card-art,
+.az-element-burst.element-global {
+    --element-a: rgba(142, 98, 255, .96);
+    --element-b: rgba(255, 220, 145, .78);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-neutral .az-arena-card-art,
+.az-element-burst.element-neutral {
+    --element-a: rgba(170, 170, 190, .86);
+    --element-b: rgba(255, 255, 255, .52);
+}
+
+body.az-arena-app-enabled .az-arena-card-art {
+    background:
+        radial-gradient(circle at 50% 28%, rgba(255,255,255,.34), transparent 17%),
+        radial-gradient(circle at 72% 78%, var(--element-b, rgba(255,197,106,.18)), transparent 24%),
+        linear-gradient(135deg, var(--element-a, rgba(84,112,161,.92)), rgba(30,37,55,.96)) !important;
+}
+
+body.az-arena-app-enabled .az-arena-card.element-fire {
+    box-shadow: 0 16px 38px rgba(0,0,0,.38), 0 0 18px rgba(255, 83, 55, .10);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-water {
+    box-shadow: 0 16px 38px rgba(0,0,0,.38), 0 0 18px rgba(54, 178, 255, .10);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-earth {
+    box-shadow: 0 16px 38px rgba(0,0,0,.38), 0 0 18px rgba(180, 139, 85, .10);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-plant {
+    box-shadow: 0 16px 38px rgba(0,0,0,.38), 0 0 18px rgba(76, 220, 105, .10);
+}
+
+body.az-arena-app-enabled .az-arena-card.element-global {
+    box-shadow: 0 16px 38px rgba(0,0,0,.38), 0 0 20px rgba(142, 98, 255, .14);
+}
+
+.az-element-burst {
+    position: fixed;
+    z-index: 260;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+.az-element-burst span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--element-a, rgba(255,220,145,.95));
+    box-shadow:
+        0 0 16px var(--element-a, rgba(255,220,145,.55)),
+        0 0 30px var(--element-b, rgba(255,255,255,.20));
+    transform: rotate(var(--angle)) translateX(0);
+    animation: azElementParticle .78s ease-out both;
+}
+
+@keyframes azElementParticle {
+    0% {
+        opacity: 1;
+        transform: rotate(var(--angle)) translateX(0) scale(1.1);
+        filter: brightness(1.4);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(var(--angle)) translateX(var(--dist)) scale(.35);
+        filter: brightness(.8);
+    }
+}
+
+@media (max-width: 760px) {
+    .az-sound-toggle {
+        top: auto;
+        bottom: max(58px, calc(env(safe-area-inset-bottom) + 58px));
+        right: 10px;
+        min-height: 30px;
+        font-size: .62rem;
+    }
+}

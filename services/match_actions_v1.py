@@ -288,6 +288,7 @@ def play_card(match, player_key, card_id):
         "card_name": card.get("name"),
         "zone": zone,
         "cost": cost,
+        "element": card.get("element") or "Global",
     }
 
     match.setdefault("events", []).append(event)
@@ -346,6 +347,7 @@ def bot_prepare(match):
                     "type": "bot_play_card",
                     "player": "p2",
                     "card_name": found.get("name"),
+                    "element": found.get("element") or "Global",
                 })
                 break
 
