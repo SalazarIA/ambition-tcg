@@ -15,6 +15,8 @@
         selectedIntent: null,
         selectedCardId: null,
         booted: false,
+        seenEventKeys: new Set(),
+        lastHp: { me: null, enemy: null },
     };
 
     const $ = (selector) => document.querySelector(selector);
@@ -77,6 +79,8 @@
             '  <div class="az-arena-field" id="az-me-field"></div>',
             '</section>',
 
+            '<div class="az-arena-perspective-glow" id="az-perspective-glow"></div>',
+            '<div class="az-event-layer" id="az-event-layer"></div>',
             '<section class="az-arena-hand az-arena-app-shell">',
             '  <div class="az-arena-hand-head">',
             '    <h2>Your Hand</h2>',
@@ -177,6 +181,187 @@
         })).join("");
     }
 
+
+    function eventKey(event, index) {
+        return [
+            event.type || "event",
+            event.player || "",
+            event.card_id || event.card_name || "",
+            event.p1_damage ?? "",
+            event.p2_damage ?? "",
+            event.p1_hp ?? "",
+            event.p2_hp ?? "",
+            index,
+        ].join(":");
+    }
+
+    function showRoundBanner(title, copy) {
+        let layer = document.querySelector("#az-event-layer");
+
+        if (!layer) return;
+
+        const banner = document.createElement("div");
+        banner.className = "az-round-event-banner";
+        banner.innerHTML = '<strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(copy || "") + '</span>';
+
+        layer.appendChild(banner);
+
+        setTimeout(() => {
+            banner.remove();
+        }, 1800);
+    }
+
+    function floatingDamage(target, amount) {
+        if (!amount || amount <= 0) return;
+
+        let layer = document.querySelector("#az-event-layer");
+
+        if (!layer) return;
+
+        const el = document.createElement("div");
+        el.className = "az-floating-damage " + target;
+        el.textContent = "-" + amount;
+
+        layer.appendChild(el);
+
+        setTimeout(() => {
+            el.remove();
+        }, 1200);
+    }
+
+    function pulseSelector(selector, className) {
+        const el = document.querySelector(selector);
+
+        if (!el) return;
+
+        el.classList.remove(className);
+        void el.offsetWidth;
+        el.classList.add(className);
+
+        setTimeout(() => {
+            el.classList.remove(className);
+        }, 900);
+    }
+
+    function showEndOverlay(match) {
+        if (!match || match.phase !== "finished") return;
+
+        let overlay = document.querySelector("#az-match-end-overlay");
+
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.id = "az-match-end-overlay";
+            overlay.className = "az-match-end-overlay";
+            overlay.innerHTML = [
+                '<article>',
+                '  <span class="az-arena-app-kicker">Match Result</span>',
+                '  <h2 id="az-end-title">Victory</h2>',
+                '  <p id="az-end-copy">The battle is complete.</p>',
+                '  <div class="az-end-actions">',
+                '    <button type="button" id="az-end-continue">Continue</button>',
+                '    <button type="button" id="az-end-rematch">Train Again</button>',
+                '  </div>',
+                '</article>'
+            ].join("");
+
+            document.body.appendChild(overlay);
+
+            const close = document.querySelector("#az-end-continue");
+            const rematch = document.querySelector("#az-end-rematch");
+
+            if (close) {
+                close.addEventListener("click", () => overlay.classList.remove("is-visible"));
+            }
+
+            if (rematch) {
+                rematch.addEventListener("click", () => {
+                    overlay.classList.remove("is-visible");
+                    emit("start_training", {});
+                    setTimeout(() => emit("request_match_state", {}), 250);
+                });
+            }
+        }
+
+        const title = document.querySelector("#az-end-title");
+        const copy = document.querySelector("#az-end-copy");
+
+        const winner = match.winner;
+
+        if (winner === "p1" || winner === match.viewer_key) {
+            title.textContent = "Victory";
+            copy.textContent = "You won the training duel.";
+        } else if (winner === "draw") {
+            title.textContent = "Draw";
+            copy.textContent = "The duel ended in a draw.";
+        } else {
+            title.textContent = "Defeat";
+            copy.textContent = "You lost the duel. Adjust your strategy and try again.";
+        }
+
+        overlay.classList.add("is-visible");
+    }
+
+    function processBattleEvents(match) {
+        const events = Array.isArray(match.events) ? match.events : [];
+
+        events.forEach((event, index) => {
+            const key = eventKey(event, index);
+
+            if (state.seenEventKeys.has(key)) return;
+
+            state.seenEventKeys.add(key);
+
+            if (event.type === "play_card") {
+                showRoundBanner("Card Played", event.card_name || "A card entered the field.");
+                pulseSelector("#az-me-field", "az-field-pulse");
+            }
+
+            if (event.type === "bot_play_card") {
+                showRoundBanner("Enemy Played", event.card_name || "Enemy card entered the field.");
+                pulseSelector("#az-enemy-field", "az-field-pulse");
+            }
+
+            if (event.type === "set_intent") {
+                showRoundBanner("Intent", (event.intent || "Intent") + " selected.");
+            }
+
+            if (event.type === "declare_ready") {
+                showRoundBanner("Ready", "Round committed.");
+            }
+
+            if (event.type === "resolve_round") {
+                showRoundBanner("Round Resolved", "Damage exchanged.");
+                floatingDamage("enemy", Number(event.p1_damage || 0));
+                floatingDamage("me", Number(event.p2_damage || 0));
+                pulseSelector("#az-enemy-hp", "az-hp-hit");
+                pulseSelector("#az-me-hp", "az-hp-hit");
+            }
+        });
+
+        if (state.seenEventKeys.size > 80) {
+            state.seenEventKeys = new Set(Array.from(state.seenEventKeys).slice(-40));
+        }
+    }
+
+    function processHpChanges(match) {
+        const meHp = Number(match?.me?.hp ?? 0);
+        const enemyHp = Number(match?.enemy?.hp ?? 0);
+
+        if (state.lastHp.me !== null && meHp < state.lastHp.me) {
+            floatingDamage("me", state.lastHp.me - meHp);
+            pulseSelector("#az-me-hp", "az-hp-hit");
+        }
+
+        if (state.lastHp.enemy !== null && enemyHp < state.lastHp.enemy) {
+            floatingDamage("enemy", state.lastHp.enemy - enemyHp);
+            pulseSelector("#az-enemy-hp", "az-hp-hit");
+        }
+
+        state.lastHp.me = meHp;
+        state.lastHp.enemy = enemyHp;
+    }
+
+
     function render(match) {
         if (!match || match.schema !== "ambitionz_match_v1") return;
 
@@ -210,6 +395,10 @@
         renderField("#az-enemy-field", enemy.field || {}, true);
         renderField("#az-me-field", me.field || {}, false);
         renderHand(match);
+
+        processHpChanges(match);
+        processBattleEvents(match);
+        showEndOverlay(match);
 
         updateActions();
     }

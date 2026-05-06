@@ -277,6 +277,8 @@ def build_match_state_v1(match, viewer_key="p1", message=None):
         "enemy": enemy,
         "legal_actions": legal_actions,
         "message": message or build_message(me, legal_actions),
+        "events": match.get("events", [])[-8:],
+        "winner": match.get("winner"),
     }
 
 
