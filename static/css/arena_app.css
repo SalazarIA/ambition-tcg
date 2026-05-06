@@ -1,0 +1,384 @@
+/* =========================================================
+   Ambitionz Arena App V1
+   Clean frontend for canonical match_state payload.
+   Loaded without hiding legacy engine until fully stable.
+   ========================================================= */
+
+body.az-arena-app-enabled {
+    background:
+        radial-gradient(circle at 50% 8%, rgba(142,98,255,.24), transparent 34%),
+        radial-gradient(circle at 50% 74%, rgba(70,116,58,.24), transparent 34%),
+        #050509 !important;
+}
+
+.az-arena-app {
+    width: min(1180px, calc(100vw - 18px));
+    min-height: calc(100vh - 18px);
+    margin: 9px auto;
+    color: #fff;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 10px;
+    position: relative;
+    z-index: 30;
+}
+
+.az-arena-app-shell {
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top left, rgba(255,220,145,.12), transparent 30%),
+        rgba(8,8,14,.78);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 24px 80px rgba(0,0,0,.42);
+    backdrop-filter: blur(18px);
+}
+
+.az-arena-app-top {
+    min-height: 62px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.az-arena-app-title h1 {
+    margin: 0;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    line-height: 1;
+}
+
+.az-arena-app-kicker {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: rgba(255,224,156,.96);
+    background: rgba(255,197,106,.11);
+    border: 1px solid rgba(255,197,106,.18);
+    font-size: .66rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.az-arena-app-phase {
+    justify-self: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    color: rgba(150,255,190,.98);
+    background: rgba(27,141,79,.44);
+    border: 1px solid rgba(119,255,170,.26);
+    font-weight: 950;
+}
+
+.az-arena-app-back {
+    justify-self: end;
+    color: #fff;
+    text-decoration: none;
+    padding: 9px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    font-weight: 900;
+}
+
+.az-arena-app-message {
+    padding: 12px 14px;
+    color: rgba(255,255,255,.74);
+    font-weight: 850;
+}
+
+.az-arena-app-score {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+}
+
+.az-arena-player {
+    padding: 14px;
+    border-radius: 24px;
+    background: rgba(8,8,14,.72);
+    border: 1px solid rgba(255,255,255,.09);
+}
+
+.az-arena-player-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.az-arena-player-head span {
+    color: rgba(255,255,255,.56);
+    font-size: .72rem;
+    text-transform: uppercase;
+    font-weight: 950;
+}
+
+.az-arena-player-head strong {
+    color: #fff;
+    font-size: 1.06rem;
+}
+
+.az-arena-stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.az-arena-stat {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    color: rgba(255,255,255,.62);
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.08);
+    font-size: .76rem;
+    font-weight: 850;
+}
+
+.az-arena-stat strong {
+    color: #fff;
+}
+
+.az-arena-round {
+    min-width: 122px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top, rgba(142,98,255,.20), transparent 40%),
+        rgba(8,8,14,.72);
+    border: 1px solid rgba(255,255,255,.09);
+}
+
+.az-arena-round strong {
+    display: block;
+    font-size: 1.4rem;
+}
+
+.az-arena-round span {
+    color: rgba(255,255,255,.54);
+    font-size: .72rem;
+    text-transform: uppercase;
+    font-weight: 950;
+}
+
+.az-arena-board {
+    padding: 12px;
+    display: grid;
+    grid-template-rows: minmax(140px, 1fr) auto minmax(140px, 1fr);
+    gap: 10px;
+}
+
+.az-arena-field {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    gap: 10px;
+    align-items: stretch;
+}
+
+.az-arena-slot {
+    min-height: 128px;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.07), transparent 34%),
+        rgba(0,0,0,.20);
+    border: 1px dashed rgba(255,255,255,.16);
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    color: rgba(255,255,255,.40);
+    font-weight: 850;
+    text-align: center;
+}
+
+.az-arena-divider {
+    text-align: center;
+    color: rgba(255,224,156,.86);
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-weight: 950;
+}
+
+.az-arena-card {
+    width: 100%;
+    min-height: 126px;
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+    padding: 10px;
+    display: grid;
+    align-content: end;
+    text-align: left;
+    background:
+        radial-gradient(circle at 50% 24%, rgba(255,255,255,.22), transparent 22%),
+        linear-gradient(135deg, #2b2438, #10121a);
+    border: 2px solid rgba(255,220,145,.46);
+    box-shadow: 0 16px 42px rgba(0,0,0,.34);
+    color: #fff;
+    cursor: pointer;
+}
+
+.az-arena-card::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 34px;
+    height: 54px;
+    border-radius: 12px;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(255,255,255,.32), transparent 18%),
+        linear-gradient(135deg, rgba(92,119,165,.92), rgba(33,40,59,.92));
+    border: 1px solid rgba(255,255,255,.10);
+}
+
+.az-arena-card strong,
+.az-arena-card span {
+    position: relative;
+    z-index: 2;
+}
+
+.az-arena-card strong {
+    display: block;
+    font-size: .82rem;
+    line-height: 1.05;
+}
+
+.az-arena-card span {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255,255,255,.62);
+    font-size: .68rem;
+}
+
+.az-arena-card-cost {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    z-index: 3;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #221400;
+    background: #f1c56a;
+    border: 2px solid rgba(255,234,172,.90);
+    font-weight: 1000;
+}
+
+.az-arena-card.is-playable {
+    border-color: rgba(125,240,156,.72);
+}
+
+.az-arena-card.is-unplayable {
+    filter: grayscale(.25) brightness(.72);
+    cursor: not-allowed;
+}
+
+.az-arena-hand {
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.az-arena-hand-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+}
+
+.az-arena-hand-head h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.az-arena-hand-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.az-arena-hand-row .az-arena-card {
+    flex: 0 0 138px;
+    min-height: 174px;
+}
+
+.az-arena-actions {
+    position: fixed;
+    left: 50%;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 80;
+    width: min(680px, calc(100vw - 18px));
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 8px;
+    border-radius: 24px;
+    background: rgba(8,8,14,.94);
+    border: 1px solid rgba(255,255,255,.13);
+    box-shadow: 0 24px 90px rgba(0,0,0,.54);
+    backdrop-filter: blur(18px);
+}
+
+.az-arena-actions button {
+    min-height: 48px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.12);
+    color: #fff;
+    background: rgba(255,255,255,.07);
+    font-weight: 950;
+    cursor: pointer;
+}
+
+.az-arena-actions button.active {
+    border-color: rgba(255,220,145,.62);
+    background: linear-gradient(135deg, rgba(255,197,106,.26), rgba(142,98,255,.18));
+}
+
+.az-arena-actions button.primary {
+    background: linear-gradient(135deg, rgba(255,197,106,.34), rgba(142,98,255,.22));
+    border-color: rgba(255,220,145,.34);
+}
+
+.az-arena-empty {
+    color: rgba(255,255,255,.42);
+    border-style: dashed;
+    cursor: default;
+}
+
+@media (max-width: 760px) {
+    .az-arena-app {
+        min-height: auto;
+        padding-bottom: 88px;
+    }
+
+    .az-arena-app-top,
+    .az-arena-app-score {
+        grid-template-columns: 1fr;
+    }
+
+    .az-arena-app-phase,
+    .az-arena-app-back {
+        justify-self: stretch;
+        text-align: center;
+    }
+
+    .az-arena-field {
+        grid-template-columns: 1fr;
+    }
+
+    .az-arena-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

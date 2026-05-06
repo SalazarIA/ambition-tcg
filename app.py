@@ -33,6 +33,7 @@ from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin
 from services.battle_summary import build_match_summary_lines
 from services.card_stats import update_card_stats_after_match
 from services.arena_payload import build_arena_payloads_for_match, build_arena_state_payload
+from services.match_state_v1 import build_match_state_payloads, build_match_state_v1
 from services.match_payloads import (
     build_game_state_payloads,
     build_post_match_payload,
@@ -2536,6 +2537,10 @@ def emit_state(room_id):
     for sid, state in build_game_state_payloads(room_id, match):
         socketio.emit("game_state_update", state, to=sid)
         try:
+            emit_match_state_v1(match)
+        except Exception as error:
+            print("MATCH_STATE_V1 PATCH ERROR:", type(error).__name__, error)
+        try:
             emit_arena_state_v8(match, phase="sync")
         except Exception as error:
             print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
@@ -2580,6 +2585,27 @@ def emit_v105_match_end_summary(room_id, match, winner_key):
 
 
 
+
+
+
+def emit_match_state_v1(match, message=None):
+    """Emit canonical match_state event while legacy game_state_update remains available."""
+    try:
+        payloads = build_match_state_payloads(match, message=message)
+
+        p1_sid = (match.get("p1") or {}).get("sid")
+        p2_sid = (match.get("p2") or {}).get("sid")
+
+        if p1_sid:
+            socketio.emit("match_state", payloads["p1"], room=p1_sid)
+
+        if p2_sid:
+            socketio.emit("match_state", payloads["p2"], room=p2_sid)
+
+    except Exception as error:
+        print("MATCH_STATE_V1 EMIT ERROR:", type(error).__name__, error)
+
+
 def emit_arena_state_v8(match, phase=None, message=None):
     """Emit canonical Arena V8 state payloads without replacing legacy payloads."""
     try:
@@ -2591,6 +2617,10 @@ def emit_arena_state_v8(match, phase=None, message=None):
         if p1_sid:
             socketio.emit("game_state_update", payloads["p1"], room=p1_sid)
             try:
+                emit_match_state_v1(match)
+            except Exception as error:
+                print("MATCH_STATE_V1 PATCH ERROR:", type(error).__name__, error)
+            try:
                 emit_arena_state_v8(match, phase="sync")
             except Exception as error:
                 print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
@@ -2598,6 +2628,10 @@ def emit_arena_state_v8(match, phase=None, message=None):
 
         if p2_sid:
             socketio.emit("game_state_update", payloads["p2"], room=p2_sid)
+            try:
+                emit_match_state_v1(match)
+            except Exception as error:
+                print("MATCH_STATE_V1 PATCH ERROR:", type(error).__name__, error)
             try:
                 emit_arena_state_v8(match, phase="sync")
             except Exception as error:
@@ -3504,3 +3538,45 @@ if __name__ == "__main__":
         port=port,
         allow_unsafe_werkzeug=True,
     )
+
+
+
+@socketio.on("request_match_state")
+def handle_request_match_state(data=None):
+    """Client asks for the canonical match_state payload."""
+    sid = request.sid
+    room_code = None
+
+    try:
+        data = data or {}
+        room_code = data.get("room") or data.get("room_code")
+    except Exception:
+        room_code = None
+
+    match = None
+
+    if sid in player_rooms:
+        match = active_matches.get(player_rooms[sid])
+
+    if not match and room_code:
+        match = active_matches.get(room_code)
+
+    if not match:
+        socketio.emit(
+            "action_error",
+            {
+                "code": "NO_ACTIVE_MATCH",
+                "message": "No active match found for this socket.",
+            },
+            room=sid,
+        )
+        return
+
+    viewer_key = "p1"
+
+    if (match.get("p2") or {}).get("sid") == sid:
+        viewer_key = "p2"
+
+    payload = build_match_state_v1(match, viewer_key=viewer_key)
+
+    socketio.emit("match_state", payload, room=sid)

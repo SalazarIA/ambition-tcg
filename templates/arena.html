@@ -11,7 +11,8 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_v4.css') }}">
-                    </head>
+                        <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_app.css') }}?v=1">
+</head>
 
 <body class="az-arena-v4-body" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
     <main class="az-v4-shell">
@@ -229,6 +230,7 @@
     </script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/arena_app.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/arena_v4.js') }}"></script>
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
                     </body>
