@@ -478,3 +478,42 @@ class RetentionEvent(db.Model):
     metadata_json = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
 
+
+
+
+class EconomyLedger(db.Model):
+    __tablename__ = "economy_ledger"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+
+    currency = db.Column(db.String(24), nullable=False, index=True)  # coins, gems
+    amount = db.Column(db.Integer, nullable=False)
+    balance_after = db.Column(db.Integer, nullable=True)
+
+    source = db.Column(db.String(80), nullable=False, index=True)  # match_reward, mission_claim, admin, shop, premium_pack
+    reason = db.Column(db.String(180), nullable=True)
+    reference_type = db.Column(db.String(80), nullable=True)
+    reference_id = db.Column(db.String(120), nullable=True)
+
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
+class UserCosmetic(db.Model):
+    __tablename__ = "user_cosmetics"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+
+    cosmetic_key = db.Column(db.String(120), nullable=False, index=True)
+    cosmetic_type = db.Column(db.String(60), nullable=False, index=True)  # avatar, card_back, frame, title, arena_skin
+    name = db.Column(db.String(120), nullable=False)
+
+    is_equipped = db.Column(db.Boolean, default=False, nullable=False)
+    acquired_source = db.Column(db.String(80), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "cosmetic_key", name="uq_user_cosmetic_key"),
+    )

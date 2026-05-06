@@ -1,0 +1,169 @@
+/* =========================================================
+   Ambitionz Economy Foundation
+   Wallet, cosmetics and ledger UI.
+   ========================================================= */
+
+.az-economy-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 14px;
+    padding: 22px;
+    border-radius: 30px;
+    background:
+        radial-gradient(circle at top left, rgba(255,197,106,.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(142,98,255,.18), transparent 34%),
+        rgba(10,10,18,.80);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 26px 80px rgba(0,0,0,.36);
+    backdrop-filter: blur(18px);
+}
+
+.az-economy-hero h2 {
+    margin: 8px 0;
+    font-size: clamp(1.7rem, 4vw, 3rem);
+    line-height: .98;
+    letter-spacing: -.055em;
+}
+
+.az-economy-hero p {
+    color: rgba(255,255,255,.66);
+    line-height: 1.45;
+}
+
+.az-wallet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.az-wallet-orb {
+    min-height: 150px;
+    border-radius: 28px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 16px;
+    background:
+        radial-gradient(circle at 50% 22%, rgba(255,255,255,.24), transparent 24%),
+        rgba(0,0,0,.24);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: inset 0 0 34px rgba(0,0,0,.28), 0 20px 60px rgba(0,0,0,.26);
+}
+
+.az-wallet-orb.coins {
+    border-color: rgba(255,197,106,.30);
+}
+
+.az-wallet-orb.gems {
+    border-color: rgba(142,98,255,.34);
+}
+
+.az-wallet-orb strong {
+    display: block;
+    color: #fff;
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    line-height: .9;
+}
+
+.az-wallet-orb span {
+    display: block;
+    margin-top: 9px;
+    color: rgba(255,255,255,.58);
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 950;
+}
+
+.az-cosmetic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.az-cosmetic-card {
+    position: relative;
+    overflow: hidden;
+    padding: 14px;
+    border-radius: 26px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.025)),
+        rgba(0,0,0,.20);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 20px 62px rgba(0,0,0,.28);
+}
+
+.az-cosmetic-card.owned {
+    border-color: rgba(85,212,135,.32);
+    box-shadow: 0 20px 62px rgba(0,0,0,.28), 0 0 30px rgba(85,212,135,.10);
+}
+
+.az-cosmetic-art {
+    height: 118px;
+    margin-bottom: 12px;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(255,255,255,.26), transparent 18%),
+        radial-gradient(circle at 70% 80%, rgba(255,197,106,.20), transparent 22%),
+        linear-gradient(135deg, rgba(142,98,255,.36), rgba(18,18,28,.96));
+    border: 1px solid rgba(255,255,255,.10);
+}
+
+.az-cosmetic-card h3 {
+    margin: 8px 0 6px;
+    color: #fff;
+    font-size: 1.2rem;
+}
+
+.az-cosmetic-card p {
+    color: rgba(255,255,255,.62);
+    min-height: 44px;
+}
+
+.az-ledger-table {
+    display: grid;
+    gap: 8px;
+    overflow-x: auto;
+}
+
+.az-ledger-row {
+    min-width: 820px;
+    display: grid;
+    grid-template-columns: 110px 90px 100px 150px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(0,0,0,.22);
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.az-ledger-row.head {
+    color: rgba(255,255,255,.58);
+    text-transform: uppercase;
+    font-size: .72rem;
+    letter-spacing: .07em;
+    background: rgba(255,255,255,.06);
+}
+
+.az-ledger-row .positive {
+    color: #55d487;
+    font-weight: 950;
+}
+
+.az-ledger-row .negative {
+    color: #ff6b6b;
+    font-weight: 950;
+}
+
+@media (max-width: 760px) {
+    .az-economy-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .az-wallet-grid {
+        grid-template-columns: 1fr;
+    }
+}

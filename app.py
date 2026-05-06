@@ -27,7 +27,7 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
@@ -51,6 +51,7 @@ from game.state import create_player_state, set_player_intent
 from game.matchmaking import generate_private_room_code, is_valid_room_code, normalize_room_code
 from game.bot_ai import bot_choose_play
 from game.rewards import apply_match_rewards
+from services.economy_service import cosmetic_catalog_for_user, grant_cosmetic, spend_currency, add_currency, PREMIUM_CURRENCY_KEY
 from game.match_utils import safe_user_id, player_display_name, get_match_result_label
 from game.card_view import enrich_cards_for_view
 from game.state import create_player_state, normalize_intent
@@ -113,6 +114,24 @@ def create_database_tables():
 
 
 create_database_tables()
+
+
+def ensure_economy_schema():
+    with app.app_context():
+        try:
+            inspector = sql_inspect(db.engine)
+            user_columns = {col["name"] for col in inspector.get_columns("users")}
+
+            with db.engine.begin() as connection:
+                if "gems" not in user_columns:
+                    connection.execute(sql_text("ALTER TABLE users ADD COLUMN gems INTEGER DEFAULT 0"))
+                    print("ECONOMY SCHEMA: added users.gems")
+
+            db.create_all()
+        except Exception as error:
+            print("ECONOMY SCHEMA ERROR:", type(error).__name__, error)
+
+ensure_economy_schema()
 
 
 def log_system_event(level="info", category="system", message="", details=None, user_id=None):
@@ -2197,6 +2216,76 @@ def booster_pull_from_pack(pack):
         rarity_pool = fallback
 
     return secrets.choice(rarity_pool).copy()
+
+
+
+
+@app.route("/economy")
+def economy():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    entries = (
+        EconomyLedger.query
+        .filter_by(user_id=user.id)
+        .order_by(EconomyLedger.id.desc())
+        .limit(80)
+        .all()
+    )
+
+    cosmetics = cosmetic_catalog_for_user(user)
+
+    return render_template(
+        "economy.html",
+        user=user,
+        entries=entries,
+        cosmetics=cosmetics,
+    )
+
+
+@app.route("/economy/grant-founder", methods=["POST"])
+def economy_grant_founder():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    ok, message = grant_cosmetic(user, "founder_title", source="beta_founder")
+
+    flash(message)
+
+    return redirect(url_for("economy"))
+
+
+@app.route("/economy/test-gems", methods=["POST"])
+def economy_test_gems():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    if not bool(getattr(user, "is_admin", False)):
+        abort(403)
+
+    ok, message = add_currency(
+        user=user,
+        currency=PREMIUM_CURRENCY_KEY,
+        amount=100,
+        source="admin_test",
+        reason="Admin test gems for economy validation.",
+    )
+
+    flash(message)
+
+    return redirect(url_for("economy"))
 
 
 @app.route("/shop", methods=["GET", "POST"])
