@@ -3856,12 +3856,79 @@ def emit_az48_state(match, viewer_sid=None, message=None):
         return None
 
 
+
+def emit_az48_state_for_sid(sid=None, message=None):
+    """Best-effort canonical state emit for clean arena."""
+    try:
+        sid = sid or request.sid
+
+        candidates = []
+
+        for name in ("active_matches", "matches", "MATCHES", "training_matches", "rooms", "game_rooms"):
+            value = globals().get(name)
+
+            if isinstance(value, dict):
+                candidates.extend(value.values())
+
+        for match in candidates:
+            if not isinstance(match, dict):
+                continue
+
+            p1 = match.get("p1") or {}
+            p2 = match.get("p2") or {}
+
+            viewer_key = "p1"
+
+            if str(p2.get("sid")) == str(sid):
+                viewer_key = "p2"
+
+            if str(p1.get("sid")) == str(sid) or str(p2.get("sid")) == str(sid):
+                payload = build_arena_clean_state(match, viewer_key, message=message)
+                socketio.emit("az48_state", payload, room=sid)
+                return payload
+
+        return None
+
+    except Exception as error:
+        print("AZ48 EMIT FOR SID ERROR:", type(error).__name__, error)
+        return None
+
+
 # =========================================================
 # AZ48 Clean Arena Socket Aliases
 # Stable event names for the clean single-renderer arena.
-# They delegate to the existing V1 handlers and emit the
-# canonical Arena Clean State V50 contract.
 # =========================================================
+
+@socketio.on("az48_start_training")
+def az48_start_training(data=None):
+    handle_start_training_v1(data or {})
+    emit_az48_state_for_sid(message="Training started. Choose your intent.")
+
+
+@socketio.on("az48_request_state")
+def az48_request_state(data=None):
+    payload = emit_az48_state_for_sid()
+    if not payload:
+        handle_request_match_state(data or {})
+
+
+@socketio.on("az48_set_intent")
+def az48_set_intent(data=None):
+    handle_set_intent_v1(data or {})
+    intent = (data or {}).get("intent") or "Intent"
+    emit_az48_state_for_sid(message=f"{intent} selected. Play a card or press Ready.")
+
+
+@socketio.on("az48_play_card")
+def az48_play_card(data=None):
+    handle_play_card_v1(data or {})
+    emit_az48_state_for_sid()
+
+
+@socketio.on("az48_declare_ready")
+def az48_declare_ready(data=None):
+    handle_declare_ready_v1(data or {})
+    emit_az48_state_for_sid(message="Ready. Waiting for battle resolution.")
 
 @socketio.on("az48_start_training")
 def az48_start_training(data=None):
