@@ -1,4 +1,5 @@
-from services.economy.inventory_ownership import grant_card, remove_card
+from services.economy.inventory_cards import build_collection_from_inventory, user_inventory_counts
+from services.economy.inventory_ownership import grant_card, remove_card, get_quantity
 from services.economy.premium_currency import credit_gems, debit_gems
 import json
 import hmac
@@ -2058,178 +2059,16 @@ def collection():
         return auth_redirect
 
     user = current_user()
-    collection_ids = load_card_ids(user.collection_json)
-    cards = collection_summary(collection_ids)
-    cards = sorted(cards, key=card_sort_key)
-    cards = enrich_cards_for_view(cards)
 
-    return render_template("collection.html", user=user, cards=cards)
+    # COLLECTION_REAL_OWNERSHIP_V1
+    cards = build_collection_from_inventory(user, include_zero=False)
 
-
-
-# =========================================================
-# AMBITIONZ V1.14 — ELEMENT AND SIGIL BOOSTER PACKS
-# =========================================================
-
-BOOSTER_PACKS = {
-    "elemental": {
-        "key": "elemental",
-        "name": "Elemental Booster",
-        "subtitle": "Balanced beta pack",
-        "description": "A flexible 5-card booster with cards from all elements and global tactics.",
-        "cost": 300,
-        "size": 5,
-        "focus_type": "mixed",
-        "focus_value": "All",
-    },
-    "fire": {
-        "key": "fire",
-        "name": "Fire Pack",
-        "subtitle": "Blaze Rush",
-        "description": "Focused on Fire monsters and aggressive Fury pressure.",
-        "cost": 350,
-        "size": 5,
-        "focus_type": "element",
-        "focus_value": "Fire",
-    },
-    "water": {
-        "key": "water",
-        "name": "Water Pack",
-        "subtitle": "Tide Insight",
-        "description": "Focused on Water monsters and planning-oriented Insight lines.",
-        "cost": 350,
-        "size": 5,
-        "focus_type": "element",
-        "focus_value": "Water",
-    },
-    "earth": {
-        "key": "earth",
-        "name": "Earth Pack",
-        "subtitle": "Stonewall Resolve",
-        "description": "Focused on Earth monsters and defensive Resolve lines.",
-        "cost": 350,
-        "size": 5,
-        "focus_type": "element",
-        "focus_value": "Earth",
-    },
-    "plant": {
-        "key": "plant",
-        "name": "Plant Pack",
-        "subtitle": "Thorn Harmony",
-        "description": "Focused on Plant monsters and synergy-driven Harmony lines.",
-        "cost": 350,
-        "size": 5,
-        "focus_type": "element",
-        "focus_value": "Plant",
-    },
-    "fury": {
-        "key": "fury",
-        "name": "Fury Pack",
-        "subtitle": "Burst and pressure",
-        "description": "Focused on Fury cards for Strike and Overreach pressure.",
-        "cost": 375,
-        "size": 5,
-        "focus_type": "sigil",
-        "focus_value": "Fury",
-    },
-    "insight": {
-        "key": "insight",
-        "name": "Insight Pack",
-        "subtitle": "Control and planning",
-        "description": "Focused on Insight cards for Focus and tactical control.",
-        "cost": 375,
-        "size": 5,
-        "focus_type": "sigil",
-        "focus_value": "Insight",
-    },
-    "resolve": {
-        "key": "resolve",
-        "name": "Resolve Pack",
-        "subtitle": "Comeback defense",
-        "description": "Focused on Resolve cards for Guard and stabilization.",
-        "cost": 375,
-        "size": 5,
-        "focus_type": "sigil",
-        "focus_value": "Resolve",
-    },
-    "harmony": {
-        "key": "harmony",
-        "name": "Harmony Pack",
-        "subtitle": "Synergy and growth",
-        "description": "Focused on Harmony cards for scaling board cohesion.",
-        "cost": 375,
-        "size": 5,
-        "focus_type": "sigil",
-        "focus_value": "Harmony",
-    },
-}
-
-
-def get_booster_pack(pack_key):
-    key = str(pack_key or "elemental").lower().strip()
-    return BOOSTER_PACKS.get(key, BOOSTER_PACKS["elemental"])
-
-
-def weighted_card_pool_for_pack(pack):
-    from game.cards import CARD_CATALOG
-
-    focus_type = pack.get("focus_type")
-    focus_value = pack.get("focus_value")
-
-    focused = []
-    global_tools = []
-    fallback = list(CARD_CATALOG)
-
-    for card in CARD_CATALOG:
-        if card.get("element") == "Global":
-            global_tools.append(card)
-
-        if focus_type == "element" and card.get("element") == focus_value:
-            focused.append(card)
-
-        elif focus_type == "sigil" and card.get("sigil") == focus_value:
-            focused.append(card)
-
-        elif focus_type == "mixed":
-            focused.append(card)
-
-    if not focused:
-        focused = fallback
-
-    return focused, global_tools, fallback
-
-
-def booster_pull_from_pack(pack):
-    focused, global_tools, fallback = weighted_card_pool_for_pack(pack)
-
-    roll = secrets.randbelow(10_000) / 10_000
-
-    if pack.get("focus_type") in ["element", "sigil"]:
-        if roll <= 0.78:
-            pool = focused
-        elif roll <= 0.92 and global_tools:
-            pool = global_tools
-        else:
-            pool = fallback
-    else:
-        pool = fallback
-
-    rarity_roll = secrets.randbelow(10_000) / 10_000
-
-    if rarity_roll <= 0.22:
-        rarity_pool = [card for card in pool if card.get("rarity") == "Uncommon"]
-    else:
-        rarity_pool = [card for card in pool if card.get("rarity") == "Common"]
-
-    if not rarity_pool:
-        rarity_pool = pool
-
-    if not rarity_pool:
-        rarity_pool = fallback
-
-    return secrets.choice(rarity_pool).copy()
-
-
+    return render_template(
+        "collection.html",
+        user=user,
+        cards=cards,
+        inventory_counts=user_inventory_counts(user),
+    )
 
 
 @app.route("/economy")
@@ -2354,6 +2193,24 @@ def shop():
         )
 
         db.session.add(history)
+
+        # BOOSTER_TO_INVENTORY_V1
+        for index, card in enumerate(pulled_cards):
+            grant_card(
+                user=user,
+                card_id=card["id"],
+                quantity=1,
+                source="booster",
+                idempotency_key=f"booster-{user.id}-{selected_pack['key']}-{datetime.utcnow().timestamp()}-{index}-{card['id']}",
+                metadata={
+                    "pack_key": selected_pack["key"],
+                    "pack_name": selected_pack["name"],
+                    "card_name": card.get("name"),
+                    "rarity": card.get("rarity"),
+                    "element": card.get("element"),
+                },
+            )
+
         increment_mission(user, "open_1_booster", 1)
         log_rc_event(
             "progression",
