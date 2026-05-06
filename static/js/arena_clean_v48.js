@@ -1,7 +1,9 @@
 (function () {
-    const socket = io();
+    "use strict";
 
+    let socket = null;
     let latestState = null;
+    let bootTries = 0;
 
     function $(id) {
         return document.getElementById(id);
@@ -10,6 +12,10 @@
     function text(id, value) {
         const el = $(id);
         if (el) el.textContent = value;
+    }
+
+    function setMessage(value) {
+        text("az48-message", value);
     }
 
     function arr(value) {
@@ -41,6 +47,7 @@
 
     function normalizeCard(card, index = 0) {
         card = card || {};
+
         const type = str(card.type || "Monster");
         const isMonster = type.toLowerCase() === "monster";
         const power = num(card.power || card.attack || card.value || 0);
@@ -60,6 +67,16 @@
         };
     }
 
+    function normalizeField(field) {
+        field = field || {};
+
+        return {
+            trap: field.trap || field.field_t || null,
+            monster: field.monster || field.field_m || field.active_monster || null,
+            spell: field.spell || field.field_st || field.support || null,
+        };
+    }
+
     function normalizePayload(payload) {
         payload = payload || {};
 
@@ -68,20 +85,21 @@
         }
 
         return {
+            schema: "az48_flat_or_legacy",
             mode: payload.mode || window.AMBITIONZ_ARENA_MODE || "training",
-            phase: payload.phase || "start",
-            round: payload.round || 1,
-            message: payload.message || payload.status_message || "Choose your action.",
-            me: payload.me || {
-                name: payload.player_name || "You",
-                hp: payload.hp || 3600,
-                energy: payload.energy || 0,
-                max_energy: payload.max_energy || payload.energy || 0,
-                ambition: payload.ambition || 0,
+            phase: payload.phase || payload.status || "start",
+            round: payload.round || payload.turn || 1,
+            message: payload.message || payload.status_message || payload.hint || "Choose your action.",
+            me: payload.me || payload.player || payload.p1 || {
+                name: payload.player_name || payload.my_name || "You",
+                hp: payload.hp || payload.my_hp || 3600,
+                energy: payload.energy || payload.my_energy || 0,
+                max_energy: payload.max_energy || payload.my_max_energy || payload.energy || 0,
+                ambition: payload.ambition || payload.my_ambition || 0,
                 hand: payload.my_hand || payload.hand || [],
                 field: payload.my_field || payload.field || {},
             },
-            enemy: payload.enemy || {
+            enemy: payload.enemy || payload.opponent || payload.p2 || {
                 name: payload.enemy_name || "Opponent",
                 hp: payload.enemy_hp || 3600,
                 energy: payload.enemy_energy || 0,
@@ -94,24 +112,6 @@
                 can_ready: true,
                 can_play_cards: true,
             },
-        };
-    }
-
-    function fieldCard(card, label) {
-        if (!card) {
-            return '<article class="az48-slot">' + esc(label) + '</article>';
-        }
-
-        return renderCard(card, { field: true });
-    }
-
-    function normalizeField(field) {
-        field = field || {};
-
-        return {
-            trap: field.trap || field.field_t || null,
-            monster: field.monster || field.field_m || field.active_monster || null,
-            spell: field.spell || field.field_st || field.support || null,
         };
     }
 
@@ -131,6 +131,11 @@
             '<span class="az48-power">' + esc(c.statLabel) + ' ' + esc(c.stat) + '</span>',
             '</button>'
         ].join("");
+    }
+
+    function fieldCard(card, label) {
+        if (!card) return '<article class="az48-slot">' + esc(label) + '</article>';
+        return renderCard(card, { field: true });
     }
 
     function render(payload) {
@@ -197,101 +202,197 @@
         }
     }
 
+    function emit(name, payload) {
+        if (!socket || !socket.connected) {
+            setMessage("Socket not connected yet. Wait one second and try again.");
+            console.warn("[Ambitionz V49] socket not connected", name, payload);
+            return false;
+        }
+
+        socket.emit(name, payload || {});
+        console.debug("[Ambitionz V49 emit]", name, payload || {});
+        return true;
+    }
+
     function emitMany(names, payload) {
+        let sent = false;
+
         names.forEach((name) => {
-            try {
-                socket.emit(name, payload || {});
-                console.debug("[Ambitionz V48 emit]", name, payload || {});
-            } catch (error) {
-                console.warn("[Ambitionz V48 emit failed]", name, error);
+            if (emit(name, payload)) sent = true;
+        });
+
+        return sent;
+    }
+
+    function startTraining() {
+        setMessage("Starting training...");
+        emitMany(["az48_start_training", "start_training_v1", "start_training"], {});
+    }
+
+    function requestState() {
+        emitMany(["az48_request_state", "request_match_state"], {});
+    }
+
+    function setIntent(intent) {
+        setMessage("Intent selected: " + intent);
+        emitMany(["az48_set_intent", "set_intent_v1", "set_intent"], { intent });
+    }
+
+    function ready() {
+        setMessage("Ready sent.");
+        emitMany(["az48_declare_ready", "declare_ready_v1", "declare_ready"], {});
+    }
+
+    function playCard(id) {
+        setMessage("Playing card...");
+        emitMany(["az48_play_card", "play_card_v1", "play_card"], { card_id: id });
+    }
+
+    function looksLikeState(payload) {
+        if (!payload || typeof payload !== "object") return false;
+
+        return Boolean(
+            payload.me ||
+            payload.enemy ||
+            payload.hand ||
+            payload.my_hand ||
+            payload.p1 ||
+            payload.p2 ||
+            payload.legal_actions ||
+            payload.phase ||
+            payload.round
+        );
+    }
+
+    function bindSocketEvents() {
+        socket.on("connect", () => {
+            setMessage("Connected. Press Start.");
+            console.debug("[Ambitionz V49] connected", socket.id);
+            requestState();
+        });
+
+        socket.on("connect_error", (error) => {
+            setMessage("Socket connection error.");
+            console.error("[Ambitionz V49] connect_error", error);
+        });
+
+        socket.on("disconnect", () => {
+            setMessage("Disconnected. Reconnecting...");
+        });
+
+        const knownEvents = [
+            "game_state_update",
+            "match_state",
+            "match_state_v1",
+            "arena_state",
+            "battle_state",
+            "training_started",
+            "start_training_result",
+            "battle_log",
+        ];
+
+        knownEvents.forEach((eventName) => {
+            socket.on(eventName, (payload) => {
+                console.debug("[Ambitionz V49 event]", eventName, payload);
+
+                if (eventName === "battle_log") {
+                    if (typeof payload === "string") setMessage(payload);
+                    else if (payload && payload.message) setMessage(payload.message);
+                    return;
+                }
+
+                if (looksLikeState(payload)) {
+                    render(payload);
+                }
+            });
+        });
+
+        if (typeof socket.onAny === "function") {
+            socket.onAny((eventName, payload) => {
+                console.debug("[Ambitionz V49 any]", eventName, payload);
+
+                if (looksLikeState(payload)) {
+                    render(payload);
+                }
+            });
+        }
+    }
+
+    function bindClicks() {
+        document.addEventListener("click", (event) => {
+            const card = event.target.closest(".az48-card[data-card-id]");
+            if (card && card.closest("#az48-hand")) {
+                playCard(card.dataset.cardId);
+                return;
+            }
+
+            if (event.target.closest("#az48-start")) {
+                startTraining();
+                return;
+            }
+
+            if (event.target.closest("#az48-strike")) {
+                setIntent("Strike");
+                return;
+            }
+
+            if (event.target.closest("#az48-guard")) {
+                setIntent("Guard");
+                return;
+            }
+
+            if (event.target.closest("#az48-focus")) {
+                setIntent("Focus");
+                return;
+            }
+
+            if (event.target.closest("#az48-ready")) {
+                ready();
             }
         });
     }
 
-    function startTraining() {
-        emitMany(["start_training_v1", "start_training", "request_match_state"], {});
-    }
+    function boot() {
+        bootTries += 1;
 
-    function setIntent(intent) {
-        emitMany(["set_intent_v1", "set_intent"], { intent });
-    }
+        if (typeof window.io === "undefined") {
+            setMessage("Loading Socket.IO...");
 
-    function ready() {
-        emitMany(["declare_ready_v1", "declare_ready"], {});
-    }
+            if (bootTries < 80) {
+                window.setTimeout(boot, 100);
+            } else {
+                setMessage("Socket.IO failed to load. Check internet/CDN.");
+                console.error("[Ambitionz V49] io undefined after retries");
+            }
 
-    function playCard(cardId) {
-        emitMany(["play_card_v1", "play_card"], { card_id: cardId });
-    }
-
-    socket.on("connect", () => {
-        text("az48-message", "Connected. Press Start.");
-        if (window.AMBITIONZ_ARENA_MODE === "training") {
-            emitMany(["request_match_state"], {});
+            return;
         }
-    });
 
-    [
-        "game_state_update",
-        "match_state",
-        "match_state_v1",
-        "arena_state",
-        "battle_state",
-        "training_started",
-        "start_training_result"
-    ].forEach((eventName) => {
-        socket.on(eventName, (payload) => {
-            console.debug("[Ambitionz V48 state]", eventName, payload);
-            render(payload || {});
+        socket = window.io({
+            transports: ["websocket", "polling"],
+            reconnection: true,
         });
-    });
 
-    socket.on("battle_log", (payload) => {
-        if (typeof payload === "string") {
-            text("az48-message", payload);
-        } else if (payload && payload.message) {
-            text("az48-message", payload.message);
-        }
-    });
+        window.AmbitionzArena48 = {
+            render,
+            startTraining,
+            requestState,
+            setIntent,
+            ready,
+            playCard,
+            get socket() {
+                return socket;
+            },
+            get state() {
+                return latestState;
+            },
+        };
 
-    document.addEventListener("click", (event) => {
-        const card = event.target.closest(".az48-card[data-card-id]");
-        if (card && card.closest("#az48-hand")) {
-            playCard(card.dataset.cardId);
-            return;
-        }
+        bindSocketEvents();
+        bindClicks();
 
-        if (event.target.closest("#az48-start")) {
-            startTraining();
-            return;
-        }
+        setMessage("Connecting...");
+    }
 
-        if (event.target.closest("#az48-strike")) {
-            setIntent("Strike");
-            return;
-        }
-
-        if (event.target.closest("#az48-guard")) {
-            setIntent("Guard");
-            return;
-        }
-
-        if (event.target.closest("#az48-focus")) {
-            setIntent("Focus");
-            return;
-        }
-
-        if (event.target.closest("#az48-ready")) {
-            ready();
-        }
-    });
-
-    window.AmbitionzArena48 = {
-        render,
-        startTraining,
-        setIntent,
-        ready,
-        playCard,
-        socket,
-    };
+    document.addEventListener("DOMContentLoaded", boot);
 })();

@@ -95,6 +95,12 @@
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
+        if (typeof window.io === "undefined") {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"><\/script>');
+        }
+    </script>
+
+    <script>
         window.AMBITIONZ_ARENA_MODE = "{{ 'training' if training_mode else 'arena' }}";
     </script>
     <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=48"></script>

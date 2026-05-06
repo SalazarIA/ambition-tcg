@@ -3838,3 +3838,35 @@ def handle_set_intent_v1(data=None):
         socketio.emit("action_error", {"code": "SET_INTENT_FAILED", "message": message}, room=sid)
 
     emit_match_state_to_match(match, message=message)
+
+
+# =========================================================
+# AZ48 Clean Arena Socket Aliases
+# Stable event names for the clean single-renderer arena.
+# They delegate to the existing V1 handlers.
+# =========================================================
+
+@socketio.on("az48_start_training")
+def az48_start_training(data=None):
+    return handle_start_training_v1(data or {})
+
+
+@socketio.on("az48_request_state")
+def az48_request_state(data=None):
+    return handle_request_match_state(data or {})
+
+
+@socketio.on("az48_set_intent")
+def az48_set_intent(data=None):
+    return handle_set_intent_v1(data or {})
+
+
+@socketio.on("az48_play_card")
+def az48_play_card(data=None):
+    return handle_play_card_v1(data or {})
+
+
+@socketio.on("az48_declare_ready")
+def az48_declare_ready(data=None):
+    return handle_declare_ready_v1(data or {})
+
