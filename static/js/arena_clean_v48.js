@@ -148,6 +148,20 @@
         const legal = state.legal_actions || {};
         const playable = arr(legal.playable_card_ids).map(String);
 
+        const setVisible = (id, visible) => {
+            const el = $(id);
+            if (el) el.style.display = visible ? "" : "none";
+        };
+
+        const phase = str(state.phase || "start");
+        const hasHand = arr(me.hand || state.my_hand || state.hand).length > 0;
+
+        setVisible("az48-start", Boolean(legal.show_start || legal.can_start || !hasHand || phase === "start"));
+        setVisible("az48-strike", Boolean(legal.show_intents || legal.can_choose_intent || phase === "intent" || phase === "main"));
+        setVisible("az48-guard", Boolean(legal.show_intents || legal.can_choose_intent || phase === "intent" || phase === "main"));
+        setVisible("az48-focus", Boolean(legal.show_intents || legal.can_choose_intent || phase === "intent" || phase === "main"));
+        setVisible("az48-ready", Boolean(legal.show_ready || legal.can_ready || phase === "main" || phase === "intent"));
+
         text("az48-mode", str(state.mode || "training"));
         text("az48-round", num(state.round || 1, 1));
         text("az48-phase", str(state.phase || "start"));
@@ -281,6 +295,7 @@
         });
 
         const knownEvents = [
+            "az48_state",
             "game_state_update",
             "match_state",
             "match_state_v1",

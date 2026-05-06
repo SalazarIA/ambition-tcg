@@ -1,3 +1,4 @@
+from services.arena_clean_state import build_arena_clean_state, build_arena_clean_payloads
 from services.economy.inventory_migration import migrate_legacy_collection_to_inventory, ensure_user_has_playable_inventory, repair_user_inventory_and_deck
 from services.economy.deck_inventory import owned_card_ids_for_user, validate_deck_against_inventory, build_auto_deck_from_inventory
 from services.economy.inventory_cards import build_collection_from_inventory, user_inventory_counts
@@ -3840,11 +3841,56 @@ def handle_set_intent_v1(data=None):
     emit_match_state_to_match(match, message=message)
 
 
+
+
+def emit_az48_state(match, viewer_sid=None, message=None):
+    """Emit canonical clean-arena state to the current client/room."""
+    try:
+        payload = build_arena_clean_state(match, "p1", message=message)
+        socketio.emit("az48_state", payload, room=viewer_sid) if viewer_sid else socketio.emit("az48_state", payload)
+        socketio.emit("match_state_v1", payload, room=viewer_sid) if viewer_sid else socketio.emit("match_state_v1", payload)
+        socketio.emit("game_state_update", payload, room=viewer_sid) if viewer_sid else socketio.emit("game_state_update", payload)
+        return payload
+    except Exception as error:
+        print("AZ48 STATE EMIT ERROR:", type(error).__name__, error)
+        return None
+
+
 # =========================================================
 # AZ48 Clean Arena Socket Aliases
 # Stable event names for the clean single-renderer arena.
-# They delegate to the existing V1 handlers.
+# They delegate to the existing V1 handlers and emit the
+# canonical Arena Clean State V50 contract.
 # =========================================================
+
+@socketio.on("az48_start_training")
+def az48_start_training(data=None):
+    handle_start_training_v1(data or {})
+    return None
+
+
+@socketio.on("az48_request_state")
+def az48_request_state(data=None):
+    handle_request_match_state(data or {})
+    return None
+
+
+@socketio.on("az48_set_intent")
+def az48_set_intent(data=None):
+    handle_set_intent_v1(data or {})
+    return None
+
+
+@socketio.on("az48_play_card")
+def az48_play_card(data=None):
+    handle_play_card_v1(data or {})
+    return None
+
+
+@socketio.on("az48_declare_ready")
+def az48_declare_ready(data=None):
+    handle_declare_ready_v1(data or {})
+    return None
 
 @socketio.on("az48_start_training")
 def az48_start_training(data=None):
