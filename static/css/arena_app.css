@@ -1165,3 +1165,213 @@ body.az-arena-app-enabled #az-enemy-field .az-arena-card:hover:not(:disabled) {
         top: 65%;
     }
 }
+
+
+/* =========================================================
+   Hand-to-Field Movement + Visual Haptics
+   No audio. Mobile vibration only when supported.
+   ========================================================= */
+
+.az-flying-card {
+    position: fixed !important;
+    z-index: 240 !important;
+    pointer-events: none !important;
+    margin: 0 !important;
+    transform: translate3d(0, 0, 0) rotate(-4deg) scale(1);
+    box-shadow:
+        0 30px 90px rgba(0,0,0,.70),
+        0 0 44px rgba(255,220,145,.30) !important;
+    opacity: 1;
+}
+
+.az-flying-card.is-flying {
+    animation: azCardFlyToField .62s cubic-bezier(.2,.9,.18,1) both;
+}
+
+@keyframes azCardFlyToField {
+    0% {
+        transform: translate3d(0, 0, 0) rotate(-4deg) scale(1);
+        filter: brightness(1);
+        opacity: 1;
+    }
+    42% {
+        transform: translate3d(calc(var(--fly-x) * .56), calc(var(--fly-y) * .38 - 44px), 0) rotate(7deg) scale(1.16);
+        filter: brightness(1.24);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(var(--fly-x), var(--fly-y), 0) rotate(0deg) scale(.82);
+        filter: brightness(1.05);
+        opacity: 0;
+    }
+}
+
+.az-card-pending-play {
+    animation: azCardPendingPlay .55s ease both;
+}
+
+@keyframes azCardPendingPlay {
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.42);
+        transform: translateY(-8px) scale(1.035);
+        box-shadow:
+            0 0 0 5px rgba(255,220,145,.16),
+            0 0 34px rgba(255,220,145,.28),
+            0 18px 52px rgba(0,0,0,.46);
+    }
+}
+
+.az-field-impact {
+    animation: azFieldImpact .72s cubic-bezier(.2,.9,.18,1) both;
+}
+
+@keyframes azFieldImpact {
+    0%,
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    36% {
+        transform: scale(1.018);
+        filter: brightness(1.28);
+    }
+    58% {
+        transform: scale(.995);
+    }
+}
+
+.az-board-impact {
+    animation: azBoardImpact .62s cubic-bezier(.2,.9,.18,1) both;
+}
+
+@keyframes azBoardImpact {
+    0%,
+    100% {
+        transform: translate3d(0,0,0);
+        filter: brightness(1);
+    }
+    18% {
+        transform: translate3d(-3px, 2px, 0);
+        filter: brightness(1.13);
+    }
+    34% {
+        transform: translate3d(3px, -2px, 0);
+    }
+    52% {
+        transform: translate3d(-2px, 1px, 0);
+    }
+    70% {
+        transform: translate3d(2px, 0, 0);
+    }
+}
+
+.az-action-impact {
+    animation: azActionImpact .34s cubic-bezier(.2,.9,.18,1) both;
+}
+
+@keyframes azActionImpact {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    45% {
+        transform: scale(1.055);
+        box-shadow:
+            0 0 0 5px rgba(255,220,145,.10),
+            0 0 28px rgba(255,220,145,.24);
+        filter: brightness(1.18);
+    }
+}
+
+.az-haptic-light {
+    animation: azHapticLight .22s ease both;
+}
+
+.az-haptic-medium {
+    animation: azHapticMedium .28s ease both;
+}
+
+.az-haptic-heavy {
+    animation: azHapticHeavy .38s ease both;
+}
+
+@keyframes azHapticLight {
+    0%,
+    100% {
+        transform: translate3d(0,0,0);
+    }
+    50% {
+        transform: translate3d(.5px, 0, 0);
+    }
+}
+
+@keyframes azHapticMedium {
+    0%,
+    100% {
+        transform: translate3d(0,0,0);
+    }
+    30% {
+        transform: translate3d(-1px, .5px, 0);
+    }
+    60% {
+        transform: translate3d(1px, -.5px, 0);
+    }
+}
+
+@keyframes azHapticHeavy {
+    0%,
+    100% {
+        transform: translate3d(0,0,0);
+    }
+    18% {
+        transform: translate3d(-2px, 1px, 0);
+    }
+    36% {
+        transform: translate3d(2px, -1px, 0);
+    }
+    54% {
+        transform: translate3d(-1px, 1px, 0);
+    }
+    72% {
+        transform: translate3d(1px, 0, 0);
+    }
+}
+
+body.az-arena-app-enabled .az-arena-actions button.active {
+    position: relative;
+    overflow: hidden;
+}
+
+body.az-arena-app-enabled .az-arena-actions button.active::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: linear-gradient(110deg, transparent, rgba(255,255,255,.18), transparent);
+    animation: azButtonSweep 1.4s ease infinite;
+}
+
+@keyframes azButtonSweep {
+    from {
+        transform: translateX(-80%);
+    }
+    to {
+        transform: translateX(80%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .az-flying-card.is-flying,
+    .az-card-pending-play,
+    .az-field-impact,
+    .az-board-impact,
+    .az-action-impact,
+    .az-haptic-light,
+    .az-haptic-medium,
+    .az-haptic-heavy {
+        animation: none !important;
+    }
+}
