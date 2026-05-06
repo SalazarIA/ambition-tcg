@@ -15,6 +15,7 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
 </head>
 <body>
     <main class="wide-page mobile-wide-page">
@@ -34,7 +35,7 @@
             {% endif %}
         {% endwith %}
 
-        <section class="progression-hub-hero">
+        <section class="progression-hub-hero az-loop-hero"><div class="az-loop-hero-inner">
             <div>
                 <span class="progression-kicker">Ambition Loop</span>
                 <h2>Every match should push your account forward.</h2>
@@ -58,7 +59,7 @@
                     <strong>{{ user.coins }}</strong>
                 </div>
             </div>
-        </section>
+        </div></section>
 
         <section class="deck-status final-beta-loop-v128">
             <div class="section-title-row">
@@ -151,5 +152,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=1"></script>
 </body>
 </html>

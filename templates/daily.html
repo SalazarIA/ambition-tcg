@@ -9,10 +9,11 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
 </head>
 <body class="app-body" data-retention-page="daily">
     <main class="page-shell">
-        <section class="hero-card">
+        <section class="hero-card az-loop-hero">
             <div>
                 <span class="progression-kicker">Daily Loop</span>
                 <h1>Daily Quests</h1>
@@ -100,5 +101,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=1"></script>
 </body>
 </html>
