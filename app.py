@@ -103,7 +103,7 @@ socket_event_hits = {}
 private_waiting_rooms = {}
 login_attempts = {}
 
-CSRF_EXEMPT_ENDPOINTS = {"beta_event"}
+CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event"}
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 
 
