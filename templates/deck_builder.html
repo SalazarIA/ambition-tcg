@@ -30,9 +30,10 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gameplay_premium.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_cards.css') }}?v=1">
 </head>
 
-<body>
+<body class="az-game-deck-page">
 
     <main class="wide-page mobile-wide-page">
 
@@ -523,6 +524,7 @@
 
     <script src="{{ url_for('static', filename='js/deck_builder_premium.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=1"></script>
 </body>
 
 </html>

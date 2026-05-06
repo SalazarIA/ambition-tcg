@@ -16,8 +16,9 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_cards.css') }}?v=1">
 </head>
-<body>
+<body class="az-game-collection-page">
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
@@ -27,6 +28,18 @@
 
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
+
+        <section class="deck-status az-collection-hero-v2">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Collection Vault</span>
+                    <h2>Your Ambitionz arsenal</h2>
+                    <p class="subtitle">Filter your cards by type, Sigil and role. Build around identity, not random power.</p>
+                </div>
+                <a href="{{ url_for('deck_builder') }}" class="btn">Build Deck</a>
+            </div>
+        </section>
+
 
         <section class="deck-status deck-filter-panel">
             <h2>Filters</h2>
@@ -124,5 +137,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=1"></script>
 </body>
 </html>

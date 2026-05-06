@@ -1,0 +1,396 @@
+/* =========================================================
+   Ambitionz Card System
+   Unified card visuals for Collection, Shop, Deck Builder.
+   ========================================================= */
+
+:root {
+    --az-card-w: 214px;
+    --az-card-h: 308px;
+    --az-card-radius: 22px;
+    --az-card-border: rgba(255, 220, 145, 0.38);
+    --az-card-bg: #11131d;
+    --az-card-gold: #f1c56a;
+    --az-card-blue: #5ecbff;
+    --az-card-red: #ff6f7a;
+    --az-card-green: #7df09c;
+    --az-card-purple: #a878ff;
+}
+
+.az-card-grid,
+.card-grid,
+.deck-builder-grid,
+.mobile-card-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+    gap: 18px !important;
+    align-items: start;
+}
+
+/* ---------- Universal card wrapper ---------- */
+
+.collection-card,
+.image-card {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-width: 0;
+}
+
+.collection-card .card-shell,
+.image-card .image-card-frame,
+.az-game-card {
+    position: relative;
+    min-height: var(--az-card-h);
+    border-radius: var(--az-card-radius);
+    overflow: hidden;
+    isolation: isolate;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.18), transparent 19%),
+        radial-gradient(circle at 50% 25%, rgba(142, 98, 255, 0.28), transparent 26%),
+        linear-gradient(135deg, #252132, #0c0d13 72%);
+    border: 2px solid var(--az-card-border);
+    box-shadow:
+        0 22px 58px rgba(0,0,0,0.42),
+        inset 0 0 0 1px rgba(255,255,255,0.06);
+    transform: translateZ(0);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, filter .18s ease;
+}
+
+.collection-card:hover .card-shell,
+.image-card:hover .image-card-frame,
+.az-game-card:hover {
+    transform: translateY(-7px) scale(1.015);
+    border-color: rgba(255, 225, 157, 0.70);
+    box-shadow:
+        0 30px 72px rgba(0,0,0,0.52),
+        0 0 32px rgba(241,197,106,0.14),
+        inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.collection-card .card-shell::before,
+.image-card .image-card-frame::before,
+.az-game-card::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 48px;
+    height: 116px;
+    margin: 0;
+    border-radius: 17px;
+    background:
+        radial-gradient(circle at 48% 28%, rgba(255,255,255,0.36), transparent 18%),
+        radial-gradient(circle at 70% 62%, rgba(255,197,106,0.22), transparent 24%),
+        linear-gradient(135deg, rgba(82, 113, 156, 0.95), rgba(31, 38, 57, 0.96));
+    border: 1px solid rgba(255,255,255,0.13);
+    box-shadow: inset 0 0 28px rgba(0,0,0,0.30);
+    z-index: 0;
+}
+
+.collection-card .card-shell::after,
+.image-card .image-card-frame::after,
+.az-game-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, rgba(255,255,255,0.06), transparent 18%, transparent 82%, rgba(0,0,0,0.22)),
+        linear-gradient(180deg, transparent 48%, rgba(0,0,0,0.48));
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ---------- Card name/cost ---------- */
+
+.card-topline,
+.image-card-header {
+    position: relative;
+    z-index: 4;
+    min-height: 34px;
+    display: flex !important;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 10px 0;
+}
+
+.card-topline strong,
+.image-card-header h4 {
+    margin: 0;
+    color: #fff !important;
+    font-size: 0.92rem !important;
+    line-height: 1.05;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.78);
+}
+
+.card-topline span,
+.image-card-header span {
+    flex: 0 0 auto;
+    display: grid !important;
+    place-items: center;
+    min-width: 31px !important;
+    height: 31px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    color: #241600 !important;
+    background:
+        radial-gradient(circle at 35% 25%, rgba(255,255,255,0.52), transparent 22%),
+        var(--az-card-gold) !important;
+    border: 2px solid rgba(255, 234, 172, 0.88) !important;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.36);
+    font-weight: 1000 !important;
+    font-size: .78rem !important;
+}
+
+/* ---------- Card art img compatibility ---------- */
+
+.image-card-art {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 48px;
+    height: 116px;
+    border-radius: 17px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.image-card-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ---------- Card metadata ---------- */
+
+.card-meta-row,
+.card-identity-row,
+.image-card-meta {
+    position: relative;
+    z-index: 4;
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 5px !important;
+    margin: 132px 10px 8px !important;
+}
+
+.image-card-meta {
+    margin-top: 132px !important;
+}
+
+.card-meta-row span,
+.card-identity-row span,
+.image-card-meta span,
+.sigil-pill,
+.role-pill {
+    display: inline-flex !important;
+    align-items: center;
+    min-height: 22px;
+    padding: 3px 7px !important;
+    border-radius: 999px !important;
+    color: rgba(255,255,255,0.76) !important;
+    background: rgba(0,0,0,0.28) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    font-size: .62rem !important;
+    font-weight: 850 !important;
+    line-height: 1;
+}
+
+/* ---------- Card effect box ---------- */
+
+.card-effect,
+.image-card-effect {
+    position: relative;
+    z-index: 4;
+    min-height: 58px;
+    margin: 8px 10px 0 !important;
+    padding: 9px !important;
+    border-radius: 14px;
+    color: rgba(255,255,255,0.73) !important;
+    background: rgba(0,0,0,0.30);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: .74rem !important;
+    line-height: 1.28 !important;
+    overflow: hidden;
+}
+
+.image-card-effect p,
+.card-effect p {
+    margin: 0 0 5px;
+}
+
+/* ---------- Footer stats ---------- */
+
+.card-power,
+.image-card-footer {
+    position: absolute;
+    z-index: 5;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 32px;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #fff !important;
+}
+
+.card-power::before,
+.image-card-footer span {
+    content: "POWER";
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: rgba(255,255,255,0.68);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: .62rem;
+    font-weight: 950;
+}
+
+.card-power {
+    font-size: 0;
+}
+
+.card-power {
+    --power-value: "0";
+}
+
+.image-card-footer strong,
+.card-power {
+    font-weight: 1000;
+}
+
+.card-power::after,
+.image-card-footer strong {
+    display: grid;
+    place-items: center;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: #fff;
+    background:
+        radial-gradient(circle at 35% 25%, rgba(255,255,255,0.34), transparent 22%),
+        rgba(123, 35, 42, 0.94);
+    border: 2px solid rgba(255, 136, 145, 0.80);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.34);
+    font-size: .9rem;
+}
+
+/* Fallback: keep original Power text readable */
+.card-power {
+    font-size: .82rem !important;
+    justify-content: flex-end !important;
+}
+
+/* ---------- Rarity/type accent ---------- */
+
+.collection-card[data-type="Monster"] .card-shell,
+.image-card.monster .image-card-frame {
+    --az-card-border: rgba(255, 220, 145, 0.48);
+}
+
+.collection-card[data-type="Spell"] .card-shell,
+.image-card.spell .image-card-frame {
+    --az-card-border: rgba(94, 203, 255, 0.48);
+}
+
+.collection-card[data-type="Trap"] .card-shell,
+.image-card.trap .image-card-frame {
+    --az-card-border: rgba(255, 111, 122, 0.48);
+}
+
+.image-card.common .image-card-frame {
+    filter: saturate(.95);
+}
+
+.image-card.uncommon .image-card-frame {
+    box-shadow:
+        0 24px 62px rgba(0,0,0,0.46),
+        0 0 30px rgba(94,203,255,0.14);
+}
+
+.image-card.rare .image-card-frame,
+.image-card.epic .image-card-frame,
+.image-card.legendary .image-card-frame {
+    box-shadow:
+        0 24px 70px rgba(0,0,0,0.52),
+        0 0 36px rgba(241,197,106,0.22);
+}
+
+/* ---------- Deck builder selectable cards ---------- */
+
+.deck-card,
+.deck-builder-card,
+[data-card-id] {
+    transition: transform .16s ease, opacity .16s ease, filter .16s ease;
+}
+
+.deck-card:hover,
+.deck-builder-card:hover,
+[data-card-id]:hover {
+    transform: translateY(-3px);
+}
+
+/* ---------- Booster opening result emphasis ---------- */
+
+.booster-result-v124 + .card-grid .collection-card,
+.booster-result-v124 + .mobile-card-grid .collection-card {
+    animation: azBoosterPop .42s ease both;
+}
+
+@keyframes azBoosterPop {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ---------- Compact mobile cards ---------- */
+
+@media (max-width: 760px) {
+    .az-card-grid,
+    .card-grid,
+    .deck-builder-grid,
+    .mobile-card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    .collection-card .card-shell,
+    .image-card .image-card-frame,
+    .az-game-card {
+        min-height: 252px;
+        border-radius: 19px;
+    }
+
+    .collection-card .card-shell::before,
+    .image-card .image-card-frame::before,
+    .image-card-art {
+        left: 10px;
+        right: 10px;
+        top: 46px;
+        height: 98px;
+    }
+
+    .card-meta-row,
+    .card-identity-row,
+    .image-card-meta {
+        margin-top: 112px !important;
+    }
+
+    .card-effect,
+    .image-card-effect {
+        min-height: 56px;
+        font-size: .68rem !important;
+    }
+}
