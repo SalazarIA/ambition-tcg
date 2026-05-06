@@ -49,14 +49,24 @@ flask --app app db upgrade
 
 Do not run destructive migrations on Render without a database backup.
 
+Render is configured with:
+
+```yaml
+preDeployCommand: flask --app app db upgrade
+```
+
+This keeps migrations separate from the Gunicorn start command. Treat every model/schema change as a deploy gate: create the Alembic revision locally, review it, commit it, then take a Render PostgreSQL backup before deploying the build that contains it.
+
 Recommended production order:
 
-1. Confirm deploy boots successfully.
-2. Confirm /health.
-3. Backup PostgreSQL.
-4. Run migration command only when needed.
-5. Confirm /health again.
-6. Run login/register/training smoke tests.
+1. Confirm the migration revision exists in `migrations/versions`.
+2. Review the generated migration for destructive operations.
+3. Run tests locally.
+4. Backup PostgreSQL in Render.
+5. Deploy the candidate build.
+6. Confirm the pre-deploy migration step passed.
+7. Confirm `/health`.
+8. Run login/register/training/arena smoke tests.
 
 ## Important
 

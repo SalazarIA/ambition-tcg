@@ -4,6 +4,7 @@ services:
     env: python
     plan: starter
     buildCommand: pip install -r requirements.txt
+    preDeployCommand: flask --app app db upgrade
     startCommand: gunicorn -w 1 --threads 100 --bind 0.0.0.0:$PORT app:app
     healthCheckPath: /health
     envVars:
@@ -27,6 +28,14 @@ services:
         value: 8
       - key: LOGIN_ATTEMPT_WINDOW_MINUTES
         value: 15
+      - key: PASSWORD_RESET_RATE_LIMIT
+        value: 5
+      - key: PASSWORD_RESET_RATE_WINDOW_MINUTES
+        value: 60
+      - key: BETA_EVENT_RATE_LIMIT
+        value: 60
+      - key: BETA_EVENT_RATE_WINDOW_SECONDS
+        value: 60
       - key: PASSWORD_MIN_LENGTH
         value: 10
       - key: PASSWORD_REQUIRE_COMPLEXITY

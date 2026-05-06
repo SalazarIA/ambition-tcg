@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from flask import render_template, request, redirect, flash, session, url_for
+from flask import render_template, request, redirect, flash, session
 from werkzeug.security import generate_password_hash
 
 
@@ -13,8 +13,6 @@ def register_auth_routes(app, deps):
     - /register
     - /confirm_email/<token> (legacy compatibility)
     - /resend-verification (legacy compatibility)
-    - /forgot-password
-    - /reset-password/<token>
     """
 
     User = deps["User"]
@@ -24,8 +22,6 @@ def register_auth_routes(app, deps):
 
     check_password_hash = deps["check_password_hash"]
     mark_user_login = deps["mark_user_login"]
-    send_password_reset_email = deps["send_password_reset_email"]
-
     create_starter_deck_from_collection = deps.get("create_starter_deck_from_collection")
 
     def normalize_email_verification_state(user):
@@ -195,51 +191,3 @@ def register_auth_routes(app, deps):
 
         flash("Email verification is disabled. You can login now.")
         return redirect("/login")
-
-    @app.route("/forgot-password", methods=["GET", "POST"], endpoint="forgot_password")
-    def forgot_password_route():
-        if request.method == "POST":
-            email = request.form.get("email", "").strip().lower()
-            user = User.query.filter_by(email=email).first()
-
-            if not user:
-                flash("If this email exists, a password reset link will be sent.")
-                return redirect("/forgot-password")
-
-            token = serializer.dumps(user.email, salt="password-reset")
-            reset_url = url_for("reset_password", token=token, _external=True)
-
-            sent = send_password_reset_email(user, reset_url)
-
-            if sent:
-                flash("Password reset email sent.")
-            else:
-                flash("SMTP failed or is not configured. Check server logs.")
-
-            return redirect("/login")
-
-        return render_template("forgot_password.html")
-
-    @app.route("/reset-password/<token>", methods=["GET", "POST"], endpoint="reset_password")
-    def reset_password_route(token):
-        try:
-            email = serializer.loads(token, salt="password-reset", max_age=3600)
-        except Exception:
-            return "Password reset link expired."
-
-        user = User.query.filter_by(email=email).first_or_404()
-
-        if request.method == "POST":
-            password = request.form.get("password", "").strip()
-
-            if len(password) < 6:
-                flash("Password must have at least 6 characters.")
-                return redirect(request.url)
-
-            user.password_hash = generate_password_hash(password)
-            db.session.commit()
-
-            flash("Password updated. You can login now.")
-            return redirect("/login")
-
-        return render_template("reset_password.html")

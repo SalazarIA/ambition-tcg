@@ -37,6 +37,36 @@
         </section>
 
         <section class="deck-status">
+            <h2>Live Arena Ops</h2>
+            <div class="deck-list">
+                <div class="deck-line"><span>Online Players</span><strong>{{ liveops.online_players }}</strong></div>
+                <div class="deck-line"><span>Queued Players</span><strong>{{ liveops.queued_players }}</strong></div>
+                <div class="deck-line"><span>Private Rooms Waiting</span><strong>{{ liveops.private_waiting_rooms }}</strong></div>
+                <div class="deck-line"><span>Active Matches</span><strong>{{ liveops.active_matches }}</strong></div>
+                <div class="deck-line"><span>Active PvP Matches</span><strong>{{ liveops.active_pvp_matches }}</strong></div>
+                <div class="deck-line"><span>Active Bot Matches</span><strong>{{ liveops.active_bot_matches }}</strong></div>
+                <div class="deck-line"><span>Recent Match Starts</span><strong>{{ liveops.recent_match_starts }}</strong></div>
+                <div class="deck-line"><span>Recent Bot Fallbacks</span><strong>{{ liveops.recent_bot_fallbacks }}</strong></div>
+                <div class="deck-line"><span>Recent Disconnects</span><strong>{{ liveops.recent_disconnects }}</strong></div>
+                <div class="deck-line"><span>Recent Errors</span><strong>{{ liveops.recent_errors_count }}</strong></div>
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <h2>Recent Error Signals</h2>
+            <div class="deck-list">
+                {% for log in liveops.recent_errors %}
+                    <div class="deck-line">
+                        <span>{{ log.level }} / {{ log.category }} — {{ log.message }}</span>
+                        <strong>{{ log.created_at }}</strong>
+                    </div>
+                {% else %}
+                    <p class="subtitle">No recent errors.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="deck-status">
             <h2>Recent System Logs</h2>
             <div class="deck-list">
                 {% for log in recent_logs %}

@@ -23,12 +23,17 @@ os.environ["PASSWORD_MIN_LENGTH"] = "10"
 os.environ["PASSWORD_REQUIRE_COMPLEXITY"] = "true"
 os.environ["LOGIN_ATTEMPT_LIMIT"] = "8"
 os.environ["LOGIN_ATTEMPT_WINDOW_MINUTES"] = "15"
+os.environ["PASSWORD_RESET_RATE_LIMIT"] = "5"
+os.environ["PASSWORD_RESET_RATE_WINDOW_MINUTES"] = "60"
+os.environ["BETA_EVENT_RATE_LIMIT"] = "60"
+os.environ["BETA_EVENT_RATE_WINDOW_SECONDS"] = "60"
 os.environ["MATCHMAKING_BOT_FALLBACK_SECONDS"] = "10"
 os.environ["ENVIRONMENT"] = "testing"
 
 
 import app as ambition_app  # noqa: E402
 from models import User, db  # noqa: E402
+from routes.security_ops import reset_security_ops_rate_limits  # noqa: E402
 
 
 @pytest.fixture()
@@ -53,6 +58,7 @@ def flask_app():
         ambition_app.socket_state.setdefault("online_players", {}).clear()
         ambition_app.socket_event_hits.clear()
         ambition_app.login_attempts.clear()
+        reset_security_ops_rate_limits()
         yield ambition_app.app
         db.session.remove()
         db.drop_all()

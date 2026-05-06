@@ -189,6 +189,102 @@ def test_admin_cannot_remove_own_or_last_admin(client):
     assert "You cannot remove your own admin access." in body
 
 
+def test_admin_whoami_requires_admin(client):
+    response = client.get("/admin/whoami")
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
+
+    user = create_user(username="plainuser", email="plain@example.com", password="StrongPass1")
+    login_session(client, user)
+    response = client.get("/admin/whoami")
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/")
+
+    admin = create_user(username="whoadmin", email="whoadmin@example.com", password="StrongPass1", is_admin=True)
+    login_session(client, admin)
+    response = client.get("/admin/whoami")
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["is_admin"] is True
+    assert payload["email"] == "whoadmin@example.com"
+
+
+def test_hardened_routes_are_registered_from_security_ops(flask_app):
+    for endpoint in ["admin_whoami", "forgot_password", "reset_password", "beta_event"]:
+        assert flask_app.view_functions[endpoint].__module__ == "routes.security_ops"
+
+
+def test_admin_system_shows_liveops_observability(client):
+    admin = create_user(username="opsadmin", email="opsadmin@example.com", password="StrongPass1", is_admin=True)
+    login_session(client, admin)
+    db.session.add(SystemLog(level="warning", category="match", message="Matchmaking fallback bot match started"))
+    db.session.add(SystemLog(level="warning", category="match", message="Player disconnected from active match"))
+    db.session.add(SystemLog(level="error", category="match", message="Synthetic arena error"))
+    db.session.commit()
+
+    response = client.get("/admin/system")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Live Arena Ops" in body
+    assert "Recent Bot Fallbacks" in body
+    assert "Recent Disconnects" in body
+    assert "Synthetic arena error" in body
+
+
+def test_beta_event_filters_unknown_events_and_rate_limits(client, flask_app):
+    flask_app.config["BETA_EVENT_RATE_LIMIT"] = 2
+    flask_app.config["BETA_EVENT_RATE_WINDOW_SECONDS"] = 60
+
+    for _ in range(3):
+        response = client.post(
+            "/api/beta-event",
+            json={"event": "page_view", "path": "/arena", "source": "test"},
+        )
+        assert response.status_code == 204
+
+    unknown_response = client.post(
+        "/api/beta-event",
+        json={"event": "script_probe", "path": "/admin", "source": "test"},
+    )
+
+    logs = SystemLog.query.filter_by(category="beta_event").all()
+    assert unknown_response.status_code == 204
+    assert len(logs) == 2
+    assert all("page_view" in log.message for log in logs)
+
+
+def test_forgot_password_rate_limit_blocks_extra_token_generation(client, flask_app):
+    flask_app.config["PASSWORD_RESET_RATE_LIMIT"] = 2
+    flask_app.config["PASSWORD_RESET_RATE_WINDOW_MINUTES"] = 60
+    user = create_user(username="resetlimited", email="resetlimited@example.com", password="StrongPass1")
+
+    for _ in range(2):
+        csrf_token = csrf_token_from_response(client.get("/forgot-password"))
+        response = client.post(
+            "/forgot-password",
+            data={"_csrf_token": csrf_token, "email": "resetlimited@example.com"},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+
+    db.session.refresh(user)
+    allowed_token_hash = user.reset_token
+    csrf_token = csrf_token_from_response(client.get("/forgot-password"))
+    response = client.post(
+        "/forgot-password",
+        data={"_csrf_token": csrf_token, "email": "resetlimited@example.com"},
+        follow_redirects=True,
+    )
+
+    db.session.refresh(user)
+    assert response.status_code == 200
+    assert user.reset_token == allowed_token_hash
+    assert SystemLog.query.filter_by(category="security", message="Password reset rate limit reached").count() == 1
+
+
 def test_password_reset_uses_stored_single_use_token(client):
     user = create_user(
         username="resetuser",

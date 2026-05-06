@@ -44,6 +44,7 @@ from services.match_telemetry import record_match_telemetry
 from services.email_service import send_password_reset_email, send_smtp_test_email, is_smtp_configured
 from services.security.headers import apply_security_headers
 from services.security.password_policy import password_policy_errors
+from routes.security_ops import register_security_ops_routes
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
 from game.state import create_player_state, set_player_intent
@@ -391,6 +392,54 @@ def require_danger_confirmation_or_redirect():
     return redirect("/admin/dev-tools")
 
 
+def build_liveops_observability():
+    recent_match_logs = []
+    recent_errors = []
+
+    try:
+        recent_match_logs = (
+            SystemLog.query
+            .filter_by(category="match")
+            .order_by(SystemLog.created_at.desc())
+            .limit(500)
+            .all()
+        )
+    except Exception as error:
+        print("LIVEOPS MATCH LOG QUERY ERROR:", type(error).__name__, error)
+
+    try:
+        recent_errors = (
+            SystemLog.query
+            .filter(SystemLog.level.in_(["error", "critical"]))
+            .order_by(SystemLog.created_at.desc())
+            .limit(8)
+            .all()
+        )
+    except Exception as error:
+        print("LIVEOPS ERROR LOG QUERY ERROR:", type(error).__name__, error)
+
+    def has_message(log, *needles):
+        message = str(getattr(log, "message", "") or "").lower()
+        return any(str(needle).lower() in message for needle in needles)
+
+    return {
+        "online_players": len(socket_state.get("online_players", {}) or {}),
+        "queued_players": 1 if socket_state.get("waiting_player") else 0,
+        "private_waiting_rooms": len(private_waiting_rooms),
+        "active_matches": len(active_matches),
+        "active_pvp_matches": sum(1 for match in active_matches.values() if not match.get("is_bot_match")),
+        "active_bot_matches": sum(1 for match in active_matches.values() if match.get("is_bot_match")),
+        "recent_match_starts": sum(
+            1 for log in recent_match_logs
+            if has_message(log, "match started", "duel started", "fallback bot match started")
+        ),
+        "recent_bot_fallbacks": sum(1 for log in recent_match_logs if has_message(log, "fallback bot match started")),
+        "recent_disconnects": sum(1 for log in recent_match_logs if has_message(log, "disconnected")),
+        "recent_errors_count": len(recent_errors),
+        "recent_errors": recent_errors,
+    }
+
+
 def admin_audit(message, level="warning", category="admin"):
     try:
         user = current_user()
@@ -650,30 +699,19 @@ def admin_required_redirect():
     return None
 
 
-@app.route("/admin/whoami")
-def admin_whoami():
-    user = get_session_user()
-
-    if not user:
-        return {
-            "ok": False,
-            "logged_in": False,
-            "session_user_id": session.get("user_id"),
-            "hint": "No user_id in session or user not found.",
-        }, 401
-
-    return {
-        "ok": True,
-        "logged_in": True,
-        "id": user.id,
-        "email": user.email,
-        "username": user.username,
-        "is_admin": bool(user.is_admin),
-        "is_verified": bool(user.is_verified),
-        "is_tester": bool(getattr(user, "is_tester", False)),
-        "account_status": getattr(user, "account_status", None),
-        "session_user_id": session.get("user_id"),
-    }
+register_security_ops_routes(app, {
+    "db": db,
+    "User": User,
+    "admin_required_redirect": admin_required_redirect,
+    "current_user": current_user,
+    "get_session_user": get_session_user,
+    "hash_url_token": hash_url_token,
+    "issue_password_reset_token": issue_password_reset_token,
+    "log_system_event": log_system_event,
+    "password_errors": password_errors,
+    "reset_token_is_expired": reset_token_is_expired,
+    "send_password_reset_email": send_password_reset_email,
+})
 
 
 @app.route("/admin/ping")
@@ -850,6 +888,7 @@ def admin_system():
         verified_users=User.query.filter_by(account_status="active").count(),
         total_matches=MatchHistory.query.count(),
         open_feedbacks=FeedbackReport.query.filter_by(status="open").count(),
+        liveops=build_liveops_observability(),
         recent_logs=SystemLog.query.order_by(SystemLog.created_at.desc()).limit(20).all(),
     )
 
@@ -1036,13 +1075,12 @@ def admin_invites():
 # AMBITIONZ V1.41C — ADMIN BETA EVENTS PANEL
 @app.route("/admin/beta-events")
 def admin_beta_events():
+    auth_redirect = admin_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
     user = current_user()
-
-    if not user:
-        return redirect("/login")
-
-    if not getattr(user, "is_admin", False):
-        return redirect("/admin")
 
     events = []
 
@@ -1661,70 +1699,6 @@ def how_to_play():
 
 
 
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            flash("If this email exists, a password reset link will be sent.")
-            return redirect("/forgot-password")
-
-        token = issue_password_reset_token(user)
-        db.session.commit()
-        reset_url = url_for("reset_password", token=token, _external=True)
-
-        sent = send_password_reset_email(user, reset_url)
-
-        flash("If this email exists, a password reset link will be sent.")
-
-        try:
-            log_system_event(
-                "info" if sent else "warning",
-                "email",
-                "Password reset requested" if sent else "Password reset requested but SMTP is missing",
-                user_id=getattr(user, "id", None),
-            )
-        except Exception as error:
-            print("Password reset log failed:", error)
-
-        return redirect("/forgot-password")
-
-    return render_template("forgot_password.html")
-
-
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
-def reset_password(token):
-    token_hash = hash_url_token(token)
-    user = User.query.filter_by(reset_token=token_hash).first()
-
-    if not user or reset_token_is_expired(user.reset_token_expires_at):
-        return "Password reset link expired."
-
-    if request.method == "POST":
-        password = request.form.get("password", "").strip()
-        errors = password_errors(password)
-
-        if errors:
-            for error in errors:
-                flash(error)
-            return redirect(request.url)
-
-        user.set_password(password)
-        user.reset_token = None
-        user.reset_token_expires_at = None
-        db.session.commit()
-
-        flash("Password updated. You can login now.")
-        return redirect("/login")
-
-    return render_template("reset_password.html")
-
-
-
-
-
 @app.route("/first-session")
 def first_session():
     user = current_user()
@@ -1803,47 +1777,6 @@ def closed_test():
         tester_checklist=tester_checklist,
     )
 
-
-
-# AMBITIONZ V1.41A — BETA EVENT ANALYTICS ENDPOINT
-@app.route("/api/beta-event", methods=["POST"])
-def beta_event():
-    user = current_user()
-
-    try:
-        payload = request.get_json(silent=True) or request.form.to_dict() or {}
-    except Exception:
-        payload = {}
-
-    event_name = str(payload.get("event") or "unknown_event").strip()[:80]
-    page_path = str(payload.get("path") or request.headers.get("Referer") or "unknown_path").strip()[:180]
-    source = str(payload.get("source") or "web").strip()[:40]
-
-    user_id = None
-    username = "anonymous"
-
-    if user:
-        user_id = getattr(user, "id", None)
-        username = getattr(user, "username", "user")
-
-    message = f"{event_name} | {page_path} | source={source} | user={username}"
-
-    try:
-        log_system_event(
-            "info",
-            "beta_event",
-            message,
-            user_id=user_id,
-        )
-        db.session.commit()
-    except Exception as error:
-        try:
-            db.session.rollback()
-        except Exception as rollback_error:
-            print("BETA EVENT ROLLBACK ERROR:", type(rollback_error).__name__, rollback_error)
-        print("BETA EVENT LOG ERROR:", type(error).__name__, error)
-
-    return ("", 204)
 
 
 @app.route("/terms")
