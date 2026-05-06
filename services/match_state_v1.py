@@ -68,6 +68,8 @@ def normalize_card(card, index=0):
         "type_css": enriched.get("type_css") or "type-monster",
         "sigil_css": enriched.get("sigil_css") or "sigil-none",
         "role_css": enriched.get("role_css") or "role-balancer",
+        "element_css": "element-" + str(enriched.get("element") or "Neutral").lower().replace(" ", "-"),
+        "is_monster": (enriched.get("type") or "Monster") == "Monster",
     }
 
 

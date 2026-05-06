@@ -119,6 +119,8 @@
             : "";
 
         const type = card.type || "Monster";
+        const rarity = card.rarity || "Common";
+        const element = card.element || "Neutral";
         const isMonster = type === "Monster";
         const combatLabel = card.combat_label || (isMonster ? "ATK" : "VALUE");
         const attack = Number(card.attack ?? card.power ?? card.value ?? 0);
@@ -126,18 +128,26 @@
         const mainStat = isMonster ? attack : Number(card.value ?? card.power ?? 0);
         const subStat = isMonster ? defense : Number(card.cost ?? 0);
 
+        const typeCss = "type-" + String(type).toLowerCase().replace(/\s+/g, "-");
+        const rarityCss = "rarity-" + String(rarity).toLowerCase().replace(/\s+/g, "-");
+        const elementCss = elementClass(element);
+
         return [
-            '<button type="button" class="az-arena-card ' + playableClass + ' type-' + escapeHtml(String(type).toLowerCase()) + ' ' + elementClass(card.element) + '" data-card-id="' + escapeHtml(card.id) + '" data-element="' + escapeHtml(card.element || "Neutral") + '" ' + (options.inHand ? "" : "disabled") + '>',
+            '<button type="button" class="az-arena-card ' + playableClass + ' ' + typeCss + ' ' + rarityCss + ' ' + elementCss + '" data-card-id="' + escapeHtml(card.id) + '" data-element="' + escapeHtml(element) + '" ' + (options.inHand ? "" : "disabled") + '>',
             '  <div class="az-card-frame-glow"></div>',
+            '  <div class="az-card-rarity-line"></div>',
             '  <div class="az-arena-card-cost">' + escapeHtml(card.cost ?? 0) + '</div>',
-            '  <div class="az-arena-card-art"></div>',
+            '  <div class="az-arena-card-art">',
+            '    <div class="az-card-art-orb"></div>',
+            '    <div class="az-card-art-mark">' + escapeHtml(String(element).slice(0, 1).toUpperCase()) + '</div>',
+            '  </div>',
             '  <div class="az-arena-card-body">',
-            '    <strong>' + escapeHtml(card.name || "Card") + '</strong>',
-            '    <span>' + escapeHtml(type) + ' · ' + escapeHtml(card.element || "Neutral") + '</span>',
+            '    <strong title="' + escapeHtml(card.name || "Card") + '">' + escapeHtml(card.name || "Card") + '</strong>',
+            '    <span>' + escapeHtml(type) + ' · ' + escapeHtml(element) + '</span>',
             '  </div>',
             '  <div class="az-arena-card-tags">',
             '    <small>' + escapeHtml(card.sigil || "None") + '</small>',
-            '    <small>' + escapeHtml(card.rarity || "Common") + '</small>',
+            '    <small>' + escapeHtml(rarity) + '</small>',
             '  </div>',
             '  <div class="az-arena-card-stats">',
             '    <div><b>' + escapeHtml(mainStat) + '</b><small>' + escapeHtml(combatLabel) + '</small></div>',
@@ -709,12 +719,30 @@
         }, 250);
     }
 
+
+    function recalibrateArenaViewport() {
+        const app = document.querySelector(".az-arena-app");
+        if (!app) return;
+
+        const vh = window.innerHeight || document.documentElement.clientHeight || 720;
+        app.style.setProperty("--az-vh", vh + "px");
+
+        if (vh < 680) {
+            app.classList.add("az-compact-height");
+        } else {
+            app.classList.remove("az-compact-height");
+        }
+    }
+
+
     function boot() {
         if (state.booted) return;
 
         state.booted = true;
 
         createAppShell();
+        recalibrateArenaViewport();
+        window.addEventListener("resize", recalibrateArenaViewport);
         bindActions();
         connectSocket();
 

@@ -1513,3 +1513,274 @@ body.az-arena-app-enabled .az-arena-card.element-global {
         font-size: .62rem;
     }
 }
+
+
+/* =========================================================
+   Card Art Placeholder Upgrade + AAA Layout QA
+   ========================================================= */
+
+body.az-arena-app-enabled .az-arena-app {
+    height: calc(var(--az-vh, 100vh) - 16px);
+    max-height: calc(var(--az-vh, 100vh) - 16px);
+}
+
+body.az-arena-app-enabled .az-arena-app.az-compact-height {
+    grid-template-rows: 50px 32px 72px minmax(0, 1fr) 138px;
+    gap: 6px;
+}
+
+body.az-arena-app-enabled .az-arena-app.az-compact-height .az-arena-hand {
+    height: 138px;
+}
+
+body.az-arena-app-enabled .az-arena-app.az-compact-height .az-arena-hand-row {
+    height: 104px;
+}
+
+body.az-arena-app-enabled .az-arena-app.az-compact-height .az-arena-hand-row .az-arena-card {
+    flex-basis: 98px;
+    height: 100px;
+    min-height: 100px;
+}
+
+body.az-arena-app-enabled .az-card-rarity-line {
+    position: absolute;
+    left: 9px;
+    right: 9px;
+    top: 27px;
+    height: 2px;
+    z-index: 7;
+    border-radius: 999px;
+    background: rgba(255,255,255,.28);
+    box-shadow: 0 0 12px rgba(255,255,255,.10);
+}
+
+body.az-arena-app-enabled .az-arena-card.rarity-common .az-card-rarity-line {
+    background: rgba(210,210,210,.56);
+}
+
+body.az-arena-app-enabled .az-arena-card.rarity-uncommon .az-card-rarity-line {
+    background: rgba(125,240,156,.78);
+    box-shadow: 0 0 14px rgba(125,240,156,.24);
+}
+
+body.az-arena-app-enabled .az-arena-card.rarity-rare .az-card-rarity-line {
+    background: rgba(94,203,255,.86);
+    box-shadow: 0 0 16px rgba(94,203,255,.30);
+}
+
+body.az-arena-app-enabled .az-arena-card.rarity-ultra-rare .az-card-rarity-line {
+    background: linear-gradient(90deg, rgba(184,120,255,.95), rgba(255,220,145,.92));
+    box-shadow: 0 0 18px rgba(184,120,255,.34);
+}
+
+body.az-arena-app-enabled .az-arena-card.rarity-unique .az-card-rarity-line {
+    background: linear-gradient(90deg, rgba(255,220,145,.98), rgba(255,255,255,.92), rgba(142,98,255,.96));
+    box-shadow: 0 0 20px rgba(255,220,145,.44);
+}
+
+body.az-arena-app-enabled .az-arena-card-art {
+    overflow: hidden;
+    box-shadow:
+        inset 0 0 28px rgba(0,0,0,.26),
+        0 8px 24px rgba(0,0,0,.20);
+}
+
+body.az-arena-app-enabled .az-arena-card-art::before {
+    content: "";
+    position: absolute;
+    inset: -18%;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 16%),
+        radial-gradient(circle at 70% 70%, var(--element-b, rgba(255,220,145,.25)), transparent 20%),
+        conic-gradient(from 180deg, transparent, rgba(255,255,255,.10), transparent, var(--element-a, rgba(142,98,255,.20)), transparent);
+    animation: azArtEnergySlow 7s linear infinite;
+    opacity: .88;
+}
+
+body.az-arena-app-enabled .az-arena-card-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.14), transparent 22%, rgba(0,0,0,.18) 70%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 12px);
+    mix-blend-mode: screen;
+    opacity: .55;
+}
+
+@keyframes azArtEnergySlow {
+    from {
+        transform: rotate(0deg) scale(1);
+    }
+    to {
+        transform: rotate(360deg) scale(1.04);
+    }
+}
+
+body.az-arena-app-enabled .az-card-art-orb {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: 38%;
+    aspect-ratio: 1;
+    z-index: 3;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 35% 28%, rgba(255,255,255,.72), transparent 16%),
+        radial-gradient(circle at 50% 50%, var(--element-b, rgba(255,220,145,.66)), var(--element-a, rgba(142,98,255,.55)) 62%, rgba(0,0,0,.10));
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow:
+        0 0 24px var(--element-a, rgba(142,98,255,.36)),
+        inset 0 0 18px rgba(255,255,255,.20);
+}
+
+body.az-arena-app-enabled .az-card-art-mark {
+    position: absolute;
+    left: 50%;
+    top: 51%;
+    z-index: 4;
+    transform: translate(-50%, -50%);
+    color: rgba(255,255,255,.86);
+    font-size: clamp(1rem, 2vw, 1.4rem);
+    font-weight: 1000;
+    text-shadow: 0 3px 12px rgba(0,0,0,.78);
+}
+
+body.az-arena-app-enabled .az-arena-hand-row .az-card-art-mark {
+    font-size: .95rem;
+}
+
+body.az-arena-app-enabled .az-arena-card-body {
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.36));
+    padding: 18px 3px 2px;
+    border-radius: 0 0 12px 12px;
+}
+
+body.az-arena-app-enabled .az-arena-card strong {
+    max-height: 2.1em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+body.az-arena-app-enabled #az-me-field .az-arena-card strong,
+body.az-arena-app-enabled #az-enemy-field .az-arena-card strong {
+    font-size: .74rem;
+}
+
+body.az-arena-app-enabled #az-me-field .az-arena-card span,
+body.az-arena-app-enabled #az-enemy-field .az-arena-card span {
+    font-size: .60rem;
+}
+
+body.az-arena-app-enabled #az-me-field .az-arena-card-stats div,
+body.az-arena-app-enabled #az-enemy-field .az-arena-card-stats div {
+    min-width: 42px;
+    height: 32px;
+}
+
+body.az-arena-app-enabled #az-me-field .az-arena-card-stats b,
+body.az-arena-app-enabled #az-enemy-field .az-arena-card-stats b {
+    font-size: .9rem;
+}
+
+body.az-arena-app-enabled .az-arena-card-tags {
+    right: 42px;
+}
+
+body.az-arena-app-enabled .az-arena-card-tags small {
+    max-width: 58px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+body.az-arena-app-enabled .az-arena-app-shell,
+body.az-arena-app-enabled .az-arena-card,
+body.az-arena-app-enabled .az-arena-slot {
+    -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 960px) {
+    body.az-arena-app-enabled .az-arena-field {
+        grid-template-columns: repeat(3, minmax(86px, 1fr));
+    }
+
+    body.az-arena-app-enabled .az-arena-card-tags small:nth-child(2) {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    body.az-arena-app-enabled .az-arena-app {
+        grid-template-rows: 48px 32px 104px minmax(0, 1fr) 136px;
+    }
+
+    body.az-arena-app-enabled .az-arena-app-title h1 {
+        font-size: 1rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-app-message {
+        font-size: .72rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-player {
+        padding: 7px;
+    }
+
+    body.az-arena-app-enabled .az-arena-player-head {
+        margin-bottom: 5px;
+    }
+
+    body.az-arena-app-enabled .az-arena-player-head span {
+        font-size: .54rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-player-head strong {
+        font-size: .72rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-field {
+        grid-template-columns: repeat(3, minmax(72px, 1fr));
+        gap: 4px;
+    }
+
+    body.az-arena-app-enabled .az-arena-card-cost {
+        width: 23px;
+        height: 23px;
+        font-size: .64rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-card-tags {
+        display: none;
+    }
+
+    body.az-arena-app-enabled .az-arena-card-body {
+        left: 6px;
+        right: 6px;
+        bottom: 31px;
+    }
+
+    body.az-arena-app-enabled .az-arena-card strong {
+        font-size: .58rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-card span {
+        font-size: .49rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-card-stats div {
+        min-width: 30px;
+        height: 24px;
+    }
+
+    body.az-arena-app-enabled .az-arena-card-stats b {
+        font-size: .66rem;
+    }
+
+    body.az-arena-app-enabled .az-arena-card-stats small {
+        font-size: .36rem;
+    }
+}
