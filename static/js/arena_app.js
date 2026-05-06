@@ -111,11 +111,31 @@
             ? playable ? "is-playable" : "is-unplayable"
             : "";
 
+        const type = card.type || "Monster";
+        const isMonster = type === "Monster";
+        const combatLabel = card.combat_label || (isMonster ? "ATK" : "VALUE");
+        const attack = Number(card.attack ?? card.power ?? card.value ?? 0);
+        const defense = Number(card.defense ?? card.value ?? 0);
+        const mainStat = isMonster ? attack : Number(card.value ?? card.power ?? 0);
+        const subStat = isMonster ? defense : Number(card.cost ?? 0);
+
         return [
-            '<button type="button" class="az-arena-card ' + playableClass + '" data-card-id="' + escapeHtml(card.id) + '" ' + (options.inHand ? "" : "disabled") + '>',
+            '<button type="button" class="az-arena-card ' + playableClass + ' type-' + escapeHtml(String(type).toLowerCase()) + '" data-card-id="' + escapeHtml(card.id) + '" ' + (options.inHand ? "" : "disabled") + '>',
+            '  <div class="az-card-frame-glow"></div>',
             '  <div class="az-arena-card-cost">' + escapeHtml(card.cost ?? 0) + '</div>',
-            '  <strong>' + escapeHtml(card.name || "Card") + '</strong>',
-            '  <span>' + escapeHtml(card.type || "Card") + ' · ' + escapeHtml(card.element || "Neutral") + '</span>',
+            '  <div class="az-arena-card-art"></div>',
+            '  <div class="az-arena-card-body">',
+            '    <strong>' + escapeHtml(card.name || "Card") + '</strong>',
+            '    <span>' + escapeHtml(type) + ' · ' + escapeHtml(card.element || "Neutral") + '</span>',
+            '  </div>',
+            '  <div class="az-arena-card-tags">',
+            '    <small>' + escapeHtml(card.sigil || "None") + '</small>',
+            '    <small>' + escapeHtml(card.rarity || "Common") + '</small>',
+            '  </div>',
+            '  <div class="az-arena-card-stats">',
+            '    <div><b>' + escapeHtml(mainStat) + '</b><small>' + escapeHtml(combatLabel) + '</small></div>',
+            '    <div><b>' + escapeHtml(subStat) + '</b><small>' + (isMonster ? "DEF" : "COST") + '</small></div>',
+            '  </div>',
             '</button>'
         ].join("");
     }
@@ -168,6 +188,10 @@
         setText("#az-mode", match.mode || "Arena");
         setText("#az-title", window.location.pathname === "/training" ? "Training" : "Arena");
         setText("#az-phase", match.phase || "Battle");
+        const azPhaseEl = document.querySelector("#az-phase");
+        if (azPhaseEl) {
+            azPhaseEl.className = "az-arena-app-phase " + String(match.phase || "battle").toLowerCase();
+        }
         setText("#az-message", match.message || "Choose your move.");
         setText("#az-round", match.round || 1);
 

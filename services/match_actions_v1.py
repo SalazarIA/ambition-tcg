@@ -41,9 +41,14 @@ def _card_cost(card):
 
 def _card_power(card):
     try:
-        return int(card.get("power") or card.get("attack") or card.get("value") or 0)
+        value = int(card.get("attack") or card.get("power") or card.get("value") or card.get("cost") or 1)
     except Exception:
-        return 0
+        value = 1
+
+    if str(card.get("type") or "Monster") == "Monster":
+        return max(1, value)
+
+    return max(0, value)
 
 
 def ensure_field(player):
