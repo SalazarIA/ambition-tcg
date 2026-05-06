@@ -1,0 +1,646 @@
+/* =========================================================
+   Ambitionz Arena V7 — Board Game Style
+   Inspired by modern digital card battlers, with original UI.
+   ========================================================= */
+
+html,
+body.az-v5-active {
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+}
+
+body.az-v5-active {
+    position: fixed;
+    inset: 0;
+    color: #fff;
+    background:
+        radial-gradient(circle at 50% 55%, rgba(95, 134, 76, 0.34), transparent 42%),
+        radial-gradient(circle at 50% 6%, rgba(172, 125, 70, 0.28), transparent 34%),
+        linear-gradient(180deg, #18110b 0%, #314128 44%, #0a0b0e 100%) !important;
+}
+
+/* Hide old engines/UI visually, keep JS alive */
+body.az-v5-active .az-v4-shell,
+body.az-v5-active .arena-shell,
+body.az-v5-active .arena-layout,
+body.az-v5-active .az-v4-topbar,
+body.az-v5-active .az-v4-scoreboard,
+body.az-v5-active .az-v4-next-card,
+body.az-v5-active .az-v4-board,
+body.az-v5-active .az-v4-hand-panel,
+body.az-v5-active .az-v4-control-panel,
+body.az-v5-active .az-v4-log-panel,
+body.az-v5-active .az-v4-tips-panel,
+body.az-v5-active .az-v4-bottom-dock,
+body.az-v5-active .az-v5-root {
+    position: absolute !important;
+    left: -99999px !important;
+    top: -99999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+}
+
+/* Main board */
+.az-v7-root {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    isolation: isolate;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.az-v7-root::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 18% 22%, rgba(0,0,0,0.34), transparent 20%),
+        radial-gradient(circle at 78% 18%, rgba(255,255,255,0.14), transparent 16%),
+        radial-gradient(circle at 50% 52%, rgba(255, 227, 145, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(125, 89, 48, 0.72) 0 36%, rgba(72, 111, 59, 0.72) 36% 72%, rgba(20, 24, 20, 0.84) 72% 100%);
+    z-index: -3;
+}
+
+.az-v7-root::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, rgba(0,0,0,0.52), transparent 18%, transparent 82%, rgba(0,0,0,0.48)),
+        linear-gradient(180deg, rgba(0,0,0,0.20), transparent 36%, rgba(0,0,0,0.52));
+    z-index: -2;
+    pointer-events: none;
+}
+
+.az-v7-board-line {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 43.5%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent);
+    box-shadow: 0 0 24px rgba(255, 229, 151, 0.28);
+    opacity: 0.8;
+}
+
+/* Top / status */
+.az-v7-top {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 12px;
+    height: 54px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    z-index: 20;
+}
+
+.az-v7-mode {
+    justify-self: center;
+    padding: 7px 18px;
+    border-radius: 999px;
+    color: rgba(153,255,190,0.98);
+    background: rgba(27, 141, 79, 0.54);
+    border: 1px solid rgba(119,255,170,0.34);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+    font-size: 0.78rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-v7-back {
+    justify-self: end;
+    padding: 10px 14px;
+    border-radius: 16px;
+    color: #fff;
+    text-decoration: none;
+    background: rgba(0,0,0,0.38);
+    border: 1px solid rgba(255,255,255,0.18);
+    font-weight: 900;
+}
+
+/* Player portraits / side HUD */
+.az-v7-avatar {
+    position: absolute;
+    left: 20px;
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at 40% 30%, rgba(255,255,255,0.22), transparent 30%),
+        linear-gradient(135deg, #3d2a28, #101019);
+    border: 3px solid rgba(235, 208, 143, 0.76);
+    box-shadow: 0 10px 34px rgba(0,0,0,0.45);
+    z-index: 12;
+    overflow: hidden;
+}
+
+.az-v7-avatar::before {
+    content: "";
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 42% 28%, rgba(255,255,255,.42), transparent 18%),
+        linear-gradient(135deg, #a24746, #242036 52%, #12121b);
+}
+
+.az-v7-avatar.enemy {
+    top: 72px;
+}
+
+.az-v7-avatar.you {
+    bottom: 92px;
+}
+
+.az-v7-side-name {
+    position: absolute;
+    left: 104px;
+    z-index: 12;
+    font-weight: 950;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.65);
+}
+
+.az-v7-side-name.enemy {
+    top: 86px;
+}
+
+.az-v7-side-name.you {
+    bottom: 122px;
+}
+
+.az-v7-side-name span {
+    display: block;
+    color: rgba(255,255,255,0.58);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.az-v7-hp-orb {
+    position: absolute;
+    left: 28px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff2d4;
+    background:
+        radial-gradient(circle at 38% 28%, rgba(255,255,255,0.38), transparent 20%),
+        radial-gradient(circle at center, #73491d, #251208 72%);
+    border: 3px solid rgba(255,220,134,0.82);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+    font-size: 1.55rem;
+    font-weight: 1000;
+    z-index: 15;
+}
+
+.az-v7-hp-orb.enemy {
+    top: 154px;
+}
+
+.az-v7-hp-orb.you {
+    bottom: 28px;
+}
+
+.az-v7-resource-orb {
+    position: absolute;
+    left: 96px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #dff8ff;
+    background:
+        radial-gradient(circle at 35% 25%, rgba(255,255,255,0.42), transparent 22%),
+        radial-gradient(circle at center, #17435d, #08151d 74%);
+    border: 2px solid rgba(99,216,255,0.72);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.38);
+    font-size: 0.86rem;
+    font-weight: 1000;
+    z-index: 15;
+}
+
+.az-v7-resource-orb.enemy {
+    top: 218px;
+}
+
+.az-v7-resource-orb.you {
+    bottom: 32px;
+    left: 100px;
+}
+
+/* Round badge */
+.az-v7-round {
+    position: absolute;
+    top: 74px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
+    min-height: 62px;
+    border-radius: 20px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.18), transparent 34%),
+        linear-gradient(135deg, rgba(44,32,76,0.94), rgba(29,20,43,0.94));
+    border: 1px solid rgba(205, 166, 255, 0.35);
+    box-shadow: 0 12px 34px rgba(0,0,0,0.38);
+    z-index: 15;
+}
+
+.az-v7-round span {
+    display: block;
+    color: rgba(198, 158, 255, 0.95);
+    font-size: 0.66rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.az-v7-round strong {
+    display: block;
+    font-size: 1.12rem;
+    margin-top: 1px;
+}
+
+/* Main action / button */
+.az-v7-main-action {
+    position: absolute;
+    right: 24px;
+    top: 42%;
+    transform: translateY(-50%);
+    width: 118px;
+    height: 118px;
+    border-radius: 50%;
+    border: 4px solid rgba(255, 222, 145, 0.82);
+    background:
+        radial-gradient(circle at 50% 38%, rgba(255,255,255,0.26), transparent 24%),
+        radial-gradient(circle at center, #8b2f28, #2d0d12 70%);
+    color: #fff;
+    box-shadow:
+        0 0 0 7px rgba(0,0,0,0.32),
+        0 16px 48px rgba(0,0,0,0.52),
+        0 0 34px rgba(255, 91, 52, 0.28);
+    z-index: 30;
+    cursor: pointer;
+    font-weight: 1000;
+    font-size: 1rem;
+    text-transform: uppercase;
+    line-height: 1.05;
+}
+
+.az-v7-main-action small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.66rem;
+    opacity: .74;
+}
+
+/* Cards in field */
+.az-v7-lane {
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(8px, 1.2vw, 16px);
+    z-index: 10;
+}
+
+.az-v7-lane.enemy {
+    top: 22%;
+}
+
+.az-v7-lane.you {
+    top: 50%;
+}
+
+.az-v7-board-card {
+    width: clamp(82px, 8vw, 118px);
+    height: clamp(112px, 10.8vw, 154px);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.20), transparent 22%),
+        linear-gradient(135deg, #283247, #11131d);
+    border: 2px solid rgba(255, 233, 176, 0.62);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.40);
+    position: relative;
+    overflow: hidden;
+    transform: rotate(var(--rot, 0deg));
+}
+
+.az-v7-board-card::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border-radius: 10px;
+    background:
+        radial-gradient(circle at 50% 22%, rgba(255,255,255,.30), transparent 18%),
+        linear-gradient(135deg, rgba(95,122,171,.92), rgba(41,53,69,.92));
+}
+
+.az-v7-board-card strong {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 2;
+    font-size: 0.72rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,.8);
+}
+
+.az-v7-board-card .cost {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #123852;
+    border: 2px solid rgba(164, 235, 255, .86);
+    font-weight: 1000;
+}
+
+.az-v7-board-card .atk,
+.az-v7-board-card .hp {
+    position: absolute;
+    bottom: -4px;
+    z-index: 3;
+    min-width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    font-weight: 1000;
+    text-shadow: 0 2px 6px rgba(0,0,0,.8);
+}
+
+.az-v7-board-card .atk {
+    left: -2px;
+    color: #eaffce;
+    background: rgba(41, 113, 37, .92);
+    border: 2px solid rgba(200,255,163,.82);
+    border-radius: 50%;
+}
+
+.az-v7-board-card .hp {
+    right: -2px;
+    color: #ffe0e0;
+    background: rgba(126, 31, 39, .92);
+    border: 2px solid rgba(255,163,163,.82);
+    border-radius: 50%;
+}
+
+/* Hand */
+.az-v7-hand {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    width: min(620px, 62vw);
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: end;
+    gap: 8px;
+    z-index: 28;
+    pointer-events: auto;
+}
+
+.az-v7-hand-card {
+    width: clamp(88px, 7.5vw, 116px);
+    height: clamp(120px, 10vw, 150px);
+    border-radius: 14px;
+    border: 2px solid rgba(255, 229, 160, 0.64);
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.20), transparent 22%),
+        linear-gradient(135deg, #292237, #11131d);
+    box-shadow: 0 16px 40px rgba(0,0,0,.46);
+    transform-origin: 50% 120%;
+    transform: translateY(var(--lift, 0px)) rotate(var(--rot, 0deg));
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.az-v7-hand-card:hover {
+    transform: translateY(-18px) rotate(0deg) scale(1.04);
+    box-shadow: 0 26px 60px rgba(0,0,0,.58);
+}
+
+.az-v7-hand-card::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border-radius: 10px;
+    background:
+        radial-gradient(circle at 50% 25%, rgba(255,255,255,.34), transparent 18%),
+        linear-gradient(135deg, rgba(166, 116, 78, .92), rgba(50, 38, 47, .92));
+}
+
+.az-v7-hand-card strong {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 22px;
+    z-index: 3;
+    font-size: 0.72rem;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0,0,0,.9);
+}
+
+.az-v7-hand-card span {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 3;
+    color: rgba(255,255,255,.64);
+    font-size: 0.62rem;
+    text-align: center;
+}
+
+.az-v7-hand-card .cost {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    z-index: 4;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #4d3414;
+    border: 2px solid rgba(255,220,139,.9);
+    font-weight: 1000;
+}
+
+/* Intent dock */
+.az-v7-intents {
+    position: absolute;
+    right: 22px;
+    bottom: 24px;
+    width: 148px;
+    display: grid;
+    gap: 8px;
+    z-index: 29;
+}
+
+.az-v7-intents button {
+    min-height: 42px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(0,0,0,.42);
+    color: #fff;
+    font-weight: 950;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(0,0,0,.32);
+}
+
+.az-v7-intents button.is-selected {
+    border-color: rgba(255,220,139,.88);
+    background: rgba(102, 74, 40, .76);
+}
+
+/* Deck piles */
+.az-v7-deck-pile {
+    position: absolute;
+    right: 28px;
+    width: 76px;
+    height: 104px;
+    border-radius: 12px;
+    background:
+        repeating-linear-gradient(135deg, rgba(255,255,255,.10) 0 4px, transparent 4px 8px),
+        linear-gradient(135deg, #2b303a, #11141a);
+    border: 2px solid rgba(255,255,255,.30);
+    box-shadow: 0 14px 34px rgba(0,0,0,.46);
+    z-index: 12;
+}
+
+.az-v7-deck-pile.enemy {
+    top: 142px;
+}
+
+.az-v7-deck-pile.you {
+    bottom: 170px;
+}
+
+/* Log button */
+.az-v7-log {
+    position: absolute;
+    left: 22px;
+    top: 22px;
+    z-index: 30;
+}
+
+.az-v7-log button {
+    width: 48px;
+    height: 40px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(0,0,0,.42);
+    color: #fff;
+    font-weight: 950;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+    .az-v7-lane {
+        left: 12%;
+        right: 12%;
+    }
+
+    .az-v7-main-action {
+        width: 96px;
+        height: 96px;
+        font-size: .86rem;
+    }
+
+    .az-v7-intents {
+        width: 126px;
+    }
+
+    .az-v7-hand {
+        width: 68vw;
+    }
+}
+
+@media (max-width: 720px) {
+    .az-v7-avatar,
+    .az-v7-side-name,
+    .az-v7-resource-orb,
+    .az-v7-deck-pile {
+        display: none;
+    }
+
+    .az-v7-hp-orb.enemy {
+        top: 76px;
+        left: 18px;
+    }
+
+    .az-v7-hp-orb.you {
+        bottom: 88px;
+        left: 18px;
+    }
+
+    .az-v7-lane {
+        left: 5%;
+        right: 5%;
+    }
+
+    .az-v7-lane.enemy {
+        top: 24%;
+    }
+
+    .az-v7-lane.you {
+        top: 49%;
+    }
+
+    .az-v7-main-action {
+        right: 14px;
+        top: 44%;
+        width: 82px;
+        height: 82px;
+        font-size: .76rem;
+    }
+
+    .az-v7-intents {
+        left: 50%;
+        right: auto;
+        bottom: 10px;
+        transform: translateX(-50%);
+        width: min(360px, calc(100vw - 18px));
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .az-v7-intents button {
+        min-height: 44px;
+        font-size: .72rem;
+    }
+
+    .az-v7-hand {
+        bottom: 66px;
+        width: min(520px, 88vw);
+        height: 118px;
+    }
+
+    .az-v7-hand-card {
+        width: 78px;
+        height: 108px;
+    }
+}
