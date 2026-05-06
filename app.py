@@ -1,3 +1,4 @@
+from services.economy.inventory_migration import migrate_legacy_collection_to_inventory, ensure_user_has_playable_inventory, repair_user_inventory_and_deck
 from services.economy.deck_inventory import owned_card_ids_for_user, validate_deck_against_inventory, build_auto_deck_from_inventory
 from services.economy.inventory_cards import build_collection_from_inventory, user_inventory_counts
 from services.economy.inventory_ownership import grant_card, remove_card, get_quantity
@@ -3474,6 +3475,42 @@ def admin_economy_audit():
     )
 
 
+
+@app.route("/inventory/repair", methods=["POST"])
+def inventory_repair():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    result = repair_user_inventory_and_deck(user)
+
+    flash(result.get("message", "Inventory repair complete."))
+
+    return redirect(url_for("inventory"))
+
+
+@app.route("/admin/users/<int:user_id>/repair-inventory", methods=["POST"])
+def admin_repair_user_inventory(user_id):
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    admin_user = current_user()
+
+    if not admin_user or not getattr(admin_user, "is_admin", False):
+        abort(403)
+
+    user = User.query.get_or_404(user_id)
+    result = repair_user_inventory_and_deck(user)
+
+    flash(f"{user.username}: {result.get('message', 'Inventory repair complete.')}")
+
+    return redirect(url_for("admin_economy_audit"))
+
+
 @app.route("/inventory")
 def inventory():
     auth_redirect = login_required_redirect()
@@ -3482,6 +3519,11 @@ def inventory():
         return auth_redirect
 
     user = current_user()
+
+    # FIRST_LOGIN_INVENTORY_RECOVERY_V1
+    ensure_user_has_playable_inventory(user)
+    db.session.commit()
+
     items = InventoryOwnership.query.filter_by(user_id=user.id).order_by(InventoryOwnership.id.desc()).all()
 
     return render_template("inventory.html", user=user, items=items)

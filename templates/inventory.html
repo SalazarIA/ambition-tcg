@@ -25,6 +25,16 @@
     {% with messages = get_flashed_messages() %}{% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}{% endwith %}
 
     <section class="deck-status">
+        <span class="progression-kicker">Repair</span>
+        <h2>Repair playable inventory</h2>
+        <p class="subtitle">Migrates legacy collection_json into real ownership and rebuilds a playable deck when needed.</p>
+        <form method="POST" action="{{ url_for('inventory_repair') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button class="btn" type="submit">Repair Inventory</button>
+        </form>
+    </section>
+
+    <section class="deck-status">
         <span class="progression-kicker">Test Grant</span>
         <h2>Grant one test card</h2>
         <form method="POST" action="{{ url_for(\'inventory_test_card_grant\') }}">
