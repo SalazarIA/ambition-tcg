@@ -8570,3 +8570,96 @@ button[disabled] {
     box-shadow: 0 0 26px rgba(154, 107, 255, 0.32);
 }
 
+
+/* =========================================================
+   Ambitionz Product Block — Leaderboard Local/Global
+   ========================================================= */
+
+.leaderboard-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    gap: 16px;
+    margin: 22px 0;
+}
+
+.leaderboard-summary-card {
+    padding: 20px;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top left, rgba(154, 107, 255, 0.16), transparent 38%),
+        rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+}
+
+.leaderboard-summary-card strong {
+    display: block;
+    font-size: 1.45rem;
+    margin: 8px 0;
+}
+
+.leaderboard-summary-card p {
+    margin: 0;
+    color: var(--text-muted, rgba(255,255,255,.68));
+    line-height: 1.45;
+}
+
+.leaderboard-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.leaderboard-section-head h2 {
+    margin: 4px 0 0;
+}
+
+.leaderboard-table {
+    display: grid;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.leaderboard-row {
+    min-width: 720px;
+    display: grid;
+    grid-template-columns: 80px 1.4fr 90px 90px 100px 120px;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.leaderboard-header {
+    background: rgba(255, 255, 255, 0.075);
+    color: rgba(255, 255, 255, 0.70);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 0.76rem;
+}
+
+.current-player-row {
+    background:
+        linear-gradient(135deg, rgba(154, 107, 255, 0.20), rgba(255, 199, 107, 0.10)),
+        rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 199, 107, 0.34);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.24);
+}
+
+@media (max-width: 720px) {
+    .leaderboard-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .leaderboard-row {
+        min-width: 660px;
+        grid-template-columns: 70px 1.4fr 80px 80px 90px 110px;
+    }
+}
+

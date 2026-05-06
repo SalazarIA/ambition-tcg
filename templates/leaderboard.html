@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Leaderboard - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#05050B">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="app-body" data-retention-page="leaderboard">
+    <main class="page-shell">
+        <section class="hero-card">
+            <div>
+                <span class="progression-kicker">Competitive Identity</span>
+                <h1>Leaderboard</h1>
+                <p class="subtitle">Global and local ranking foundation. Current score uses account level, XP and coins until ranked MMR is added.</p>
+            </div>
+            <div class="hero-actions">
+                <a href="{{ url_for('training') }}" class="btn">Play Training</a>
+                <a href="{{ url_for('ranking') }}" class="btn btn-secondary">Ranking</a>
+            </div>
+        </section>
+
+        <section class="leaderboard-summary-grid">
+            <article class="leaderboard-summary-card">
+                <span class="progression-kicker">Your Rank</span>
+                <strong>{% if current_rank %}#{{ current_rank }}{% else %}Unranked{% endif %}</strong>
+                <p>Play matches and complete missions to climb.</p>
+            </article>
+            <article class="leaderboard-summary-card">
+                <span class="progression-kicker">Global Pool</span>
+                <strong>{{ ranked_users|length }}</strong>
+                <p>Top accounts by current progression score.</p>
+            </article>
+            <article class="leaderboard-summary-card">
+                <span class="progression-kicker">Score Formula</span>
+                <strong>Level · XP · Coins</strong>
+                <p>Temporary beta formula before MMR seasons.</p>
+            </article>
+        </section>
+
+        <section class="panel-card">
+            <div class="leaderboard-section-head">
+                <div>
+                    <span class="progression-kicker">Local</span>
+                    <h2>Around You</h2>
+                </div>
+                <a href="{{ url_for('daily') }}" class="btn btn-secondary small-btn">Daily Quests</a>
+            </div>
+
+            <div class="leaderboard-table">
+                <div class="leaderboard-row leaderboard-header">
+                    <span>Rank</span>
+                    <span>Player</span>
+                    <span>Level</span>
+                    <span>XP</span>
+                    <span>Coins</span>
+                    <span>Score</span>
+                </div>
+
+                {% for row in local_rows %}
+                <div class="leaderboard-row {% if row.is_current_user %}current-player-row{% endif %}">
+                    <strong>#{{ row.rank }}</strong>
+                    <span>{{ row.user.username }}</span>
+                    <span>{{ row.user.level }}</span>
+                    <span>{{ row.user.xp }}</span>
+                    <span>{{ row.user.coins }}</span>
+                    <strong>{{ row.score }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="panel-card">
+            <div class="leaderboard-section-head">
+                <div>
+                    <span class="progression-kicker">Global</span>
+                    <h2>Top 100</h2>
+                </div>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary small-btn">Climb</a>
+            </div>
+
+            <div class="leaderboard-table">
+                <div class="leaderboard-row leaderboard-header">
+                    <span>Rank</span>
+                    <span>Player</span>
+                    <span>Level</span>
+                    <span>XP</span>
+                    <span>Coins</span>
+                    <span>Score</span>
+                </div>
+
+                {% for row in ranked_users %}
+                <div class="leaderboard-row {% if row.is_current_user %}current-player-row{% endif %}">
+                    <strong>#{{ row.rank }}</strong>
+                    <span>{{ row.user.username }}</span>
+                    <span>{{ row.user.level }}</span>
+                    <span>{{ row.user.xp }}</span>
+                    <span>{{ row.user.coins }}</span>
+                    <strong>{{ row.score }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="panel-card">
+            <span class="progression-kicker">Next Evolution</span>
+            <h2>Ranked MMR Season</h2>
+            <p class="subtitle">The next competitive layer should add ranked points, season IDs, placement matches, win/loss tracking and seasonal rewards.</p>
+        </section>
+
+        <nav class="bottom-nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}">Training</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
+            <a href="{{ url_for('leaderboard') }}" class="active">Leaders</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+        </nav>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>

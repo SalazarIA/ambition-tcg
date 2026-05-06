@@ -1643,6 +1643,49 @@ def profile():
     )
 
 
+
+@app.route("/leaderboard")
+def leaderboard():
+    users = (
+        User.query
+        .order_by(User.level.desc(), User.xp.desc(), User.coins.desc(), User.id.asc())
+        .limit(100)
+        .all()
+    )
+
+    ranked_users = []
+    current = current_user()
+    current_rank = None
+
+    for index, player in enumerate(users, start=1):
+        row = {
+            "rank": index,
+            "user": player,
+            "score": int(player.level or 1) * 10000 + int(player.xp or 0) * 10 + int(player.coins or 0),
+            "is_current_user": bool(current and player.id == current.id),
+        }
+
+        if row["is_current_user"]:
+            current_rank = index
+
+        ranked_users.append(row)
+
+    local_rows = ranked_users
+
+    if current and current_rank:
+        start = max(0, current_rank - 4)
+        end = min(len(ranked_users), current_rank + 3)
+        local_rows = ranked_users[start:end]
+
+    return render_template(
+        "leaderboard.html",
+        user=current,
+        ranked_users=ranked_users,
+        local_rows=local_rows,
+        current_rank=current_rank,
+    )
+
+
 @app.route("/ranking")
 def ranking():
     users = (
