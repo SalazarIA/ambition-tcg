@@ -1,3 +1,4 @@
+from services.match_rewards_v1 import preview_reward_for_match
 # =========================================================
 # Ambitionz Match State V1
 # Canonical payload contract for the rebuilt Arena frontend.
@@ -252,43 +253,7 @@ def build_message(me, legal_actions):
 
 
 def build_reward_preview(match, viewer_key):
-    winner = match.get("winner")
-    finished = match.get("phase") == "finished"
-
-    if not finished:
-        return {
-            "available": False,
-            "xp": 0,
-            "coins": 0,
-            "result": None,
-            "title": "Battle in progress",
-        }
-
-    if winner == "draw":
-        return {
-            "available": True,
-            "xp": 45,
-            "coins": 20,
-            "result": "draw",
-            "title": "Draw",
-        }
-
-    if winner == viewer_key:
-        return {
-            "available": True,
-            "xp": 70,
-            "coins": 35,
-            "result": "win",
-            "title": "Victory",
-        }
-
-    return {
-        "available": True,
-        "xp": 35,
-        "coins": 15,
-        "result": "loss",
-        "title": "Defeat",
-    }
+    return preview_reward_for_match(match, viewer_key)
 
 
 def build_match_state_v1(match, viewer_key="p1", message=None):

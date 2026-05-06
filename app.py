@@ -34,6 +34,7 @@ from services.battle_summary import build_match_summary_lines
 from services.card_stats import update_card_stats_after_match
 from services.arena_payload import build_arena_payloads_for_match, build_arena_state_payload
 from services.match_state_v1 import build_match_state_payloads, build_match_state_v1
+from services.match_rewards_v1 import persist_rewards_for_user
 from services.match_actions_v1 import create_training_match_v1, play_card as v1_play_card, set_intent as v1_set_intent, declare_ready as v1_declare_ready, ensure_match_shape
 from services.match_payloads import (
     build_game_state_payloads,
@@ -2626,6 +2627,19 @@ def emit_match_state_to_sid(match, sid, message=None):
         print("MATCH_STATE_TO_SID ERROR:", type(error).__name__, error)
 
 
+
+
+
+def persist_v1_reward_for_sid(match, sid):
+    try:
+        user = current_user()
+    except Exception:
+        user = None
+
+    viewer_key = viewer_key_for_sid(match, sid)
+    return persist_rewards_for_user(match, user, viewer_key)
+
+
 def emit_match_state_to_match(match, message=None):
     try:
         emit_match_state_v1(match, message=message)
@@ -3649,7 +3663,31 @@ def handle_declare_ready_v1(data=None):
     if not ok:
         socketio.emit("action_error", {"code": "READY_FAILED", "message": message}, room=sid)
 
+    # AUTO_PERSIST_ARENA_V1_REWARD
+    if match.get("phase") == "finished":
+        payload = persist_v1_reward_for_sid(match, sid)
+        socketio.emit("reward_result", payload, room=sid)
+
     emit_match_state_to_match(match, message=message)
+
+
+
+
+
+@socketio.on("claim_match_rewards_v1")
+def handle_claim_match_rewards_v1(data=None):
+    sid = request.sid
+
+    room, match = find_match_for_sid(sid)
+
+    if not match:
+        socketio.emit("action_error", {"code": "NO_ACTIVE_MATCH", "message": "No active match found."}, room=sid)
+        return
+
+    payload = persist_v1_reward_for_sid(match, sid)
+
+    socketio.emit("reward_result", payload, room=sid)
+    emit_match_state_to_sid(match, sid, message="Rewards processed.")
 
 
 @socketio.on("request_match_state")

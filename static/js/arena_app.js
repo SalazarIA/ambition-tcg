@@ -331,6 +331,10 @@
         if (boosterFill) boosterFill.style.width = boosterPct + "%";
 
         modal.classList.add("is-visible");
+
+        if (!reward.persisted && !reward.already_claimed) {
+            emit("claim_match_rewards_v1", {});
+        }
     }
 
     function showEndOverlay(match) {
@@ -776,6 +780,14 @@
             socket.on("action_error", (payload) => {
                 console.warn("[ArenaApp] action_error", payload);
                 setText("#az-message", payload && payload.message ? payload.message : "Action failed.");
+            });
+
+            socket.on("reward_result", (payload) => {
+                console.debug("[ArenaApp] reward_result", payload);
+                state.lastRewardResult = payload;
+                if (payload && payload.available) {
+                    setText("#az-message", payload.already_claimed ? "Rewards already claimed." : "Rewards saved to your account.");
+                }
             });
 
             if (window.location.pathname === "/training") {

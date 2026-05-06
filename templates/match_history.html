@@ -15,9 +15,46 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/card_system_v1.css') }}?v=1">
+
+<style>
+.match-history-v1-polish .deck-status,
+.match-history-v1-polish .panel-card {
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top left, rgba(255,220,145,.10), transparent 30%),
+        rgba(8,8,14,.76);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 24px 76px rgba(0,0,0,.34);
+}
+
+.match-history-v1-polish .deck-line {
+    min-height: 42px;
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,.045);
+    border: 1px solid rgba(255,255,255,.06);
+}
+
+.match-history-v1-polish .result-win,
+.match-history-v1-polish .WIN {
+    color: #7df09c;
+}
+
+.match-history-v1-polish .result-loss,
+.match-history-v1-polish .LOSS {
+    color: #ff8f9c;
+}
+
+.match-history-v1-polish .result-draw,
+.match-history-v1-polish .DRAW {
+    color: #ffe09c;
+}
+</style>
+
 </head>
 <body>
-    <main class="wide-page mobile-wide-page">
+    <main class="wide-page mobile-wide-page match-history-v1-polish">
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Match History</h1>
