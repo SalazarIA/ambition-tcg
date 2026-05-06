@@ -53,3 +53,12 @@ def test_arena_keeps_socket_critical_ids_after_ux_polish():
 
     for element_id in required_ids:
         assert f'id="{element_id}"' in template
+
+
+def test_arena_uses_single_screen_layout_module():
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_hud_v2.css").read_text()
+
+    assert "arena-page-v154" in template
+    assert "AMBITIONZ V1.54" in css
+    assert ".arena-page-v154 .arena-board-v103" in css
