@@ -530,3 +530,266 @@
         font-size: .64rem;
     }
 }
+
+
+/* =========================================================
+   Booster Opening Animation + Card Economy Navigation
+   ========================================================= */
+
+.az-card-nav-v1 {
+    position: sticky;
+    top: max(8px, env(safe-area-inset-top));
+    z-index: 90;
+    width: min(1120px, calc(100vw - 20px));
+    margin: 0 auto 14px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: rgba(8,8,14,.76);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 18px 54px rgba(0,0,0,.34);
+    backdrop-filter: blur(16px);
+}
+
+.az-card-nav-v1 a {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    display: inline-grid;
+    place-items: center;
+    color: rgba(255,255,255,.72);
+    text-decoration: none;
+    font-size: .72rem;
+    font-weight: 950;
+    border: 1px solid transparent;
+}
+
+.az-card-nav-v1 a:hover,
+.az-card-nav-v1 a.active {
+    color: #fff;
+    background: rgba(255,255,255,.075);
+    border-color: rgba(255,255,255,.12);
+}
+
+.az-card-nav-v1 a.primary {
+    color: #211400;
+    background: linear-gradient(135deg, #f1c56a, #ffe6a8);
+    border-color: rgba(255,234,172,.70);
+}
+
+.az-card-nav-v1 .az-card-nav-spacer {
+    width: 1px;
+    height: 22px;
+    background: rgba(255,255,255,.10);
+}
+
+.az-booster-opening-stage-v1 {
+    position: relative;
+    min-height: 310px;
+    border-radius: 30px;
+    padding: 26px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(255,220,145,.18), transparent 28%),
+        radial-gradient(circle at 50% 70%, rgba(142,98,255,.22), transparent 38%),
+        rgba(8,8,14,.76);
+    border: 1px solid rgba(255,255,255,.11);
+    box-shadow: 0 28px 90px rgba(0,0,0,.42);
+}
+
+.az-booster-opening-stage-v1::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    background:
+        conic-gradient(from 0deg, transparent, rgba(255,220,145,.16), transparent, rgba(142,98,255,.18), transparent);
+    animation: azBoosterAuraSpin 8s linear infinite;
+    opacity: .8;
+}
+
+@keyframes azBoosterAuraSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.az-booster-pack-v1 {
+    position: relative;
+    z-index: 3;
+    width: min(240px, 58vw);
+    aspect-ratio: 0.72;
+    border-radius: 28px;
+    padding: 18px;
+    display: grid;
+    align-content: end;
+    color: #fff;
+    background:
+        radial-gradient(circle at 50% 24%, rgba(255,255,255,.24), transparent 18%),
+        linear-gradient(145deg, #34254e, #10121a 72%);
+    border: 2px solid rgba(255,220,145,.58);
+    box-shadow:
+        0 34px 100px rgba(0,0,0,.55),
+        0 0 58px rgba(255,220,145,.18),
+        inset 0 0 0 1px rgba(255,255,255,.08);
+    transform-style: preserve-3d;
+    animation: azBoosterPackIdle 3.8s ease-in-out infinite;
+}
+
+.az-booster-pack-v1::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 18px;
+    height: 54%;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 50% 32%, rgba(255,255,255,.36), transparent 18%),
+        radial-gradient(circle at 50% 70%, rgba(255,220,145,.28), transparent 22%),
+        linear-gradient(135deg, rgba(142,98,255,.86), rgba(31,39,68,.96));
+    border: 1px solid rgba(255,255,255,.12);
+}
+
+.az-booster-pack-v1::after {
+    content: "A";
+    position: absolute;
+    left: 50%;
+    top: 41%;
+    transform: translate(-50%, -50%);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #211400;
+    background: linear-gradient(135deg, #f1c56a, #ffe6a8);
+    border: 2px solid rgba(255,255,255,.50);
+    font-size: 2rem;
+    font-weight: 1000;
+    box-shadow: 0 0 32px rgba(255,220,145,.36);
+}
+
+.az-booster-pack-v1 strong {
+    position: relative;
+    z-index: 2;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.az-booster-pack-v1 span {
+    position: relative;
+    z-index: 2;
+    margin-top: 7px;
+    color: rgba(255,255,255,.62);
+    font-size: .78rem;
+    font-weight: 850;
+}
+
+@keyframes azBoosterPackIdle {
+    0%, 100% {
+        transform: translateY(0) rotateX(0deg) rotateZ(-1deg);
+    }
+    50% {
+        transform: translateY(-8px) rotateX(4deg) rotateZ(1deg);
+    }
+}
+
+.az-booster-opening-stage-v1.is-opening .az-booster-pack-v1 {
+    animation: azBoosterOpen .92s cubic-bezier(.2,.9,.18,1) both;
+}
+
+@keyframes azBoosterOpen {
+    0% {
+        transform: translateY(0) rotateZ(0) scale(1);
+        filter: brightness(1);
+    }
+    42% {
+        transform: translateY(-18px) rotateZ(-4deg) scale(1.08);
+        filter: brightness(1.34);
+    }
+    72% {
+        transform: translateY(2px) rotateZ(3deg) scale(.96);
+        filter: brightness(1.1);
+    }
+    100% {
+        transform: translateY(0) rotateZ(0) scale(1);
+        filter: brightness(1);
+    }
+}
+
+.az-booster-opening-stage-v1.is-opening .az-booster-flash-v1 {
+    animation: azBoosterFlash .92s ease both;
+}
+
+.az-booster-flash-v1 {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(255,255,255,.88), rgba(255,220,145,.34) 18%, transparent 48%);
+}
+
+@keyframes azBoosterFlash {
+    0%, 100% { opacity: 0; transform: scale(.8); }
+    45% { opacity: 1; transform: scale(1.2); }
+}
+
+.az-booster-result-actions-v1 {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.az-booster-result-actions-v1 a {
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    display: inline-grid;
+    place-items: center;
+    color: #fff;
+    text-decoration: none;
+    background: rgba(255,255,255,.075);
+    border: 1px solid rgba(255,255,255,.13);
+    font-size: .78rem;
+    font-weight: 950;
+}
+
+.az-booster-result-actions-v1 a.primary {
+    color: #211400;
+    background: linear-gradient(135deg, #f1c56a, #ffe6a8);
+    border-color: rgba(255,234,172,.70);
+}
+
+.az-economy-page-polish-v1 {
+    padding-bottom: max(78px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 720px) {
+    .az-card-nav-v1 {
+        justify-content: flex-start;
+        overflow-x: auto;
+        border-radius: 22px;
+    }
+
+    .az-card-nav-v1 a {
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+
+    .az-booster-opening-stage-v1 {
+        min-height: 260px;
+        padding: 18px;
+    }
+
+    .az-booster-pack-v1 {
+        width: min(190px, 60vw);
+    }
+}

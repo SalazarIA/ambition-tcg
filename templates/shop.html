@@ -20,6 +20,17 @@
 </head>
 <body class="az-game-shop-page">
     <main class="wide-page mobile-wide-page">
+
+        <nav class="az-card-nav-v1">
+            <a href="{{ url_for('training') }}" class="primary">Play</a>
+            <a href="{{ url_for('collection') }}">Collection</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('shop') }}" class="active">Shop</a>
+            <span class="az-card-nav-spacer"></span>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('progression') }}">Progression</a>
+        </nav>
+
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Booster Shop</h1>
@@ -65,6 +76,15 @@
             </aside>
         </section>
 
+
+        <section class="az-booster-opening-stage-v1" id="az-booster-stage">
+            <div class="az-booster-flash-v1"></div>
+            <div class="az-booster-pack-v1">
+                <strong>Elemental Booster</strong>
+                <span>Open beta cards for your collection.</span>
+            </div>
+        </section>
+
         <section class="booster-pack-grid-v124">
             <article class="booster-pack-card-v124 active">
                 <div class="booster-pack-mark-v124">A</div>
@@ -79,7 +99,7 @@
                     <div class="deck-line"><span>Deck Rule</span><strong>30 Fixed</strong></div>
                 </div>
 
-                <form method="POST">
+                <form method="POST" data-booster-open-form>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     {% if can_afford_booster %}
                         <button type="submit" class="btn full-btn">Open Booster</button>
@@ -144,6 +164,14 @@
                 {% endfor %}
             </section>
 
+
+            <div class="az-booster-result-actions-v1">
+                <a class="primary" href="{{ url_for('deck_builder') }}">Use in Deck</a>
+                <a href="{{ url_for('training') }}">Test in Training</a>
+                <a href="{{ url_for('collection') }}">View Collection</a>
+                <a href="{{ url_for('booster_history') }}">History</a>
+            </div>
+
             <section class="deck-status">
                 <h2>Next Step</h2>
                 <div class="progression-action-row">
@@ -165,5 +193,7 @@
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/booster_opening.js') }}?v=1"></script>
 </body>
 </html>

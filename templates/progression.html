@@ -16,9 +16,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/card_system_v1.css') }}?v=1">
 </head>
 <body>
-    <main class="wide-page mobile-wide-page">
+    <main class="wide-page mobile-wide-page az-economy-page-polish-v1">
+
+        <nav class="az-card-nav-v1">
+            <a href="{{ url_for('training') }}" class="primary">Play</a>
+            <a href="{{ url_for('collection') }}">Collection</a>
+            <a href="{{ url_for('deck_builder') }}">Deck</a>
+            <a href="{{ url_for('shop') }}">Shop</a>
+            <span class="az-card-nav-spacer"></span>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('progression') }}" class="active">Progression</a>
+        </nav>
+
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Progression</h1>
