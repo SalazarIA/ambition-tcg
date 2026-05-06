@@ -1,3 +1,4 @@
+from services.economy.inventory_ownership import grant_card, remove_card
 from services.economy.premium_currency import credit_gems, debit_gems
 import json
 import hmac
@@ -28,7 +29,7 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic, RewardLedger, ensure_reward_ledger_schema, PremiumCurrencyLedger, ensure_premium_currency_schema
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic, RewardLedger, ensure_reward_ledger_schema, PremiumCurrencyLedger, ensure_premium_currency_schema, InventoryOwnership, InventoryOwnershipLedger, ensure_inventory_ownership_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
@@ -119,6 +120,7 @@ def create_database_tables():
         try:
             ensure_reward_ledger_schema()
             ensure_premium_currency_schema()
+            ensure_inventory_ownership_schema()
         except Exception as error:
             print("REWARD LEDGER INIT ERROR:", type(error).__name__, error)
 
@@ -3562,6 +3564,98 @@ def match_history_detail(history_id):
     )
 
 
+
+
+
+
+@app.route("/admin/economy-audit")
+def admin_economy_audit():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    if not user or not getattr(user, "is_admin", False):
+        abort(403)
+
+    source = request.args.get("source", "").strip()
+    q = request.args.get("q", "").strip()
+    user_id = request.args.get("user_id", "").strip()
+
+    premium_query = PremiumCurrencyLedger.query
+
+    if source:
+        premium_query = premium_query.filter(PremiumCurrencyLedger.source == source)
+
+    if user_id.isdigit():
+        premium_query = premium_query.filter(PremiumCurrencyLedger.user_id == int(user_id))
+
+    if q:
+        like = f"%{q}%"
+        premium_query = premium_query.filter(
+            db.or_(
+                PremiumCurrencyLedger.transaction_key.like(like),
+                PremiumCurrencyLedger.provider_receipt_id.like(like),
+                PremiumCurrencyLedger.idempotency_key.like(like),
+            )
+        )
+
+    premium_entries = premium_query.order_by(PremiumCurrencyLedger.id.desc()).limit(120).all()
+    inventory_entries = InventoryOwnershipLedger.query.order_by(InventoryOwnershipLedger.id.desc()).limit(80).all()
+
+    return render_template(
+        "admin_economy_audit.html",
+        user=user,
+        premium_entries=premium_entries,
+        inventory_entries=inventory_entries,
+        source=source,
+        q=q,
+        user_id=user_id,
+    )
+
+
+@app.route("/inventory")
+def inventory():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    items = InventoryOwnership.query.filter_by(user_id=user.id).order_by(InventoryOwnership.id.desc()).all()
+
+    return render_template("inventory.html", user=user, items=items)
+
+
+@app.route("/inventory/test-card-grant", methods=["POST"])
+def inventory_test_card_grant():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    card_id = request.form.get("card_id") or "base_test_card"
+
+    ok, payload = grant_card(
+        user=user,
+        card_id=card_id,
+        quantity=1,
+        source="test_grant",
+        idempotency_key=f"manual-card-grant-{user.id}-{card_id}",
+        metadata={"reason": "local beta inventory test"},
+    )
+
+    if ok:
+        db.session.commit()
+        flash("Inventory updated.")
+    else:
+        db.session.rollback()
+        flash(payload.get("message", "Inventory update failed."))
+
+    return redirect(url_for("inventory"))
 
 
 @app.route("/economy/premium-ledger")

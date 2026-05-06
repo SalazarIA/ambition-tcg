@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Economy Audit - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/style.css\') }}">
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/card_system_v1.css\') }}?v=1">
+</head>
+<body>
+<main class="wide-page mobile-wide-page az-economy-page-polish-v1">
+    <header class="top-bar mobile-top-bar">
+        <div><h1>Economy Audit</h1><p>Premium ledger and inventory ownership audit panel</p></div>
+        <a class="btn btn-secondary small-btn" href="{{ url_for(\'admin\') }}">Admin</a>
+    </header>
+
+    <section class="deck-status">
+        <span class="progression-kicker">Filters</span>
+        <form method="GET" class="deck-filter-grid">
+            <input name="q" value="{{ q }}" placeholder="transaction / receipt / idempotency">
+            <input name="source" value="{{ source }}" placeholder="source">
+            <input name="user_id" value="{{ user_id }}" placeholder="user id">
+            <button class="btn" type="submit">Filter</button>
+        </form>
+    </section>
+
+    <section class="deck-status">
+        <div class="section-title-row"><div><span class="progression-kicker">Premium</span><h2>Premium Currency Ledger</h2></div></div>
+        <div class="premium-ledger-grid-v1">
+            {% for entry in premium_entries %}
+                <article class="premium-ledger-entry-v1">
+                    <div><strong>{{ entry.source }}</strong><p class="subtitle">{{ entry.transaction_key }}</p></div>
+                    <span>{{ entry.user_id }}</span>
+                    <strong>{{ entry.amount }} {{ entry.currency }}</strong>
+                    <span>{{ entry.direction }} / balance {{ entry.balance_after }}</span>
+                </article>
+            {% else %}
+                <p class="subtitle">No premium entries.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="deck-status">
+        <div class="section-title-row"><div><span class="progression-kicker">Inventory</span><h2>Ownership Ledger</h2></div></div>
+        <div class="premium-ledger-grid-v1">
+            {% for entry in inventory_entries %}
+                <article class="premium-ledger-entry-v1">
+                    <div><strong>{{ entry.item_id }}</strong><p class="subtitle">{{ entry.transaction_key }}</p></div>
+                    <span>User {{ entry.user_id }}</span>
+                    <strong>{{ entry.delta }}</strong>
+                    <span>{{ entry.source }} / balance {{ entry.balance_after }}</span>
+                </article>
+            {% else %}
+                <p class="subtitle">No inventory entries.</p>
+            {% endfor %}
+        </div>
+    </section>
+</main>
+<script src="{{ url_for(\'static\', filename=\'js/pwa.js\') }}"></script>
+</body>
+</html>

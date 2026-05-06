@@ -229,6 +229,39 @@ class UserMission(db.Model):
 
 
 
+
+
+class InventoryOwnership(db.Model):
+    __tablename__ = "inventory_ownership"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    item_type = db.Column(db.String(40), nullable=False, default="card")
+    item_id = db.Column(db.String(160), nullable=False, index=True)
+    quantity = db.Column(db.Integer, nullable=False, default=0)
+    source = db.Column(db.String(80), nullable=False, default="system")
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class InventoryOwnershipLedger(db.Model):
+    __tablename__ = "inventory_ownership_ledger"
+
+    id = db.Column(db.Integer, primary_key=True)
+    transaction_key = db.Column(db.String(220), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    item_type = db.Column(db.String(40), nullable=False, default="card")
+    item_id = db.Column(db.String(160), nullable=False, index=True)
+    delta = db.Column(db.Integer, nullable=False, default=0)
+    balance_after = db.Column(db.Integer, nullable=False, default=0)
+    source = db.Column(db.String(80), nullable=False, default="system")
+    status = db.Column(db.String(40), nullable=False, default="posted")
+    idempotency_key = db.Column(db.String(220), nullable=True, index=True)
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
 class PremiumCurrencyLedger(db.Model):
     __tablename__ = "premium_currency_ledger"
 
@@ -632,3 +665,21 @@ def ensure_premium_currency_schema():
     except Exception as error:
         db.session.rollback()
         print("PREMIUM CURRENCY SCHEMA ERROR:", type(error).__name__, error)
+
+
+def ensure_inventory_ownership_schema():
+    try:
+        inspector = db.inspect(db.engine)
+        tables = inspector.get_table_names()
+
+        if "inventory_ownership" not in tables:
+            InventoryOwnership.__table__.create(db.engine, checkfirst=True)
+
+        if "inventory_ownership_ledger" not in tables:
+            InventoryOwnershipLedger.__table__.create(db.engine, checkfirst=True)
+
+        db.session.commit()
+
+    except Exception as error:
+        db.session.rollback()
+        print("INVENTORY OWNERSHIP SCHEMA ERROR:", type(error).__name__, error)

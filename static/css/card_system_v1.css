@@ -985,3 +985,10 @@
 .match-history-v1-polish strong a {
     color: #fff;
 }
+
+
+/* Economy Admin + Inventory Ownership Polish */
+.premium-ledger-grid-v1 { display: grid; gap: 10px; }
+.premium-ledger-entry-v1 { display: grid; grid-template-columns: minmax(0,1fr) auto auto auto; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 18px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.72); }
+.premium-ledger-entry-v1 strong { color: #fff; }
+@media (max-width: 720px) { .premium-ledger-entry-v1 { grid-template-columns: 1fr; } }
