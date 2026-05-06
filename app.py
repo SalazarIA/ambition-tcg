@@ -32,6 +32,7 @@ from game.progression import award_xp, claim_mission, ensure_daily_missions, inc
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
 from services.card_stats import update_card_stats_after_match
+from services.arena_payload import build_arena_payloads_for_match, build_arena_state_payload
 from services.match_payloads import (
     build_game_state_payloads,
     build_post_match_payload,
@@ -2534,6 +2535,10 @@ def emit_state(room_id):
 
     for sid, state in build_game_state_payloads(room_id, match):
         socketio.emit("game_state_update", state, to=sid)
+        try:
+            emit_arena_state_v8(match, phase="sync")
+        except Exception as error:
+            print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
 
 
 def create_player_object(user, sid):
@@ -2570,6 +2575,37 @@ def emit_v105_match_end_summary(room_id, match, winner_key):
     except Exception as error:
         print("V1.05 MATCH SUMMARY ERROR:", type(error).__name__, error)
 
+
+
+
+
+
+def emit_arena_state_v8(match, phase=None, message=None):
+    """Emit canonical Arena V8 state payloads without replacing legacy payloads."""
+    try:
+        payloads = build_arena_payloads_for_match(match, phase=phase, message=message)
+
+        p1_sid = (match.get("p1") or {}).get("sid")
+        p2_sid = (match.get("p2") or {}).get("sid")
+
+        if p1_sid:
+            socketio.emit("game_state_update", payloads["p1"], room=p1_sid)
+            try:
+                emit_arena_state_v8(match, phase="sync")
+            except Exception as error:
+                print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
+            socketio.emit("arena_state_update", payloads["p1"], room=p1_sid)
+
+        if p2_sid:
+            socketio.emit("game_state_update", payloads["p2"], room=p2_sid)
+            try:
+                emit_arena_state_v8(match, phase="sync")
+            except Exception as error:
+                print("ARENA V8 SYNC PATCH ERROR:", type(error).__name__, error)
+            socketio.emit("arena_state_update", payloads["p2"], room=p2_sid)
+
+    except Exception as error:
+        print("ARENA V8 PAYLOAD EMIT ERROR:", type(error).__name__, error)
 
 
 def emit_v107_post_match_summary(match, viewer_key, result, rewards):

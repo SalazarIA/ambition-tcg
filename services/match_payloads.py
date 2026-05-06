@@ -1,3 +1,4 @@
+from services.arena_payload import build_arena_state_payload, build_arena_payloads_for_match
 from game.match_utils import player_display_name
 
 
@@ -186,3 +187,14 @@ def history_result_for_ending(winner_key, ending_reason):
         return str(ending_reason).upper()[:20]
 
     return "FINISHED"
+
+
+
+def build_v8_arena_payloads(match, phase=None, message=None):
+    """Canonical Arena V8 payloads keyed by p1/p2."""
+    return build_arena_payloads_for_match(match, phase=phase, message=message)
+
+
+def build_v8_arena_payload(match, viewer_key="p1", phase=None, message=None):
+    """Canonical Arena V8 payload for one viewer."""
+    return build_arena_state_payload(match, viewer_key=viewer_key, phase=phase, message=message)

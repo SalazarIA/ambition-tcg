@@ -484,6 +484,10 @@
                 updateFromState(payload);
             });
 
+            window.socket.on("arena_state_update", function (payload) {
+                updateFromState(payload);
+            });
+
             log("socket patched");
             return true;
         };
