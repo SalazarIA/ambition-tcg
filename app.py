@@ -1,3 +1,4 @@
+from services.economy.premium_currency import credit_gems, debit_gems
 import json
 import hmac
 import hashlib
@@ -27,7 +28,7 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic, RewardLedger, ensure_reward_ledger_schema
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic, RewardLedger, ensure_reward_ledger_schema, PremiumCurrencyLedger, ensure_premium_currency_schema
 from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
@@ -117,6 +118,7 @@ def create_database_tables():
         db.create_all()
         try:
             ensure_reward_ledger_schema()
+            ensure_premium_currency_schema()
         except Exception as error:
             print("REWARD LEDGER INIT ERROR:", type(error).__name__, error)
 
@@ -3558,6 +3560,59 @@ def match_history_detail(history_id):
         history=history,
         summary=summary,
     )
+
+
+
+
+@app.route("/economy/premium-ledger")
+def premium_ledger():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    entries = (
+        PremiumCurrencyLedger.query
+        .filter_by(user_id=user.id)
+        .order_by(PremiumCurrencyLedger.id.desc())
+        .limit(50)
+        .all()
+    )
+
+    return render_template(
+        "premium_ledger.html",
+        user=user,
+        entries=entries,
+    )
+
+
+@app.route("/economy/test-premium-grant", methods=["POST"])
+def economy_test_premium_grant():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+
+    ok, payload = credit_gems(
+        user=user,
+        amount=10,
+        source="test_grant",
+        idempotency_key=f"manual-test-grant-{user.id}",
+        metadata={"reason": "local beta test grant"},
+    )
+
+    if ok:
+        db.session.commit()
+        flash(payload.get("message", "Premium currency updated."))
+    else:
+        db.session.rollback()
+        flash(payload.get("message", "Premium currency update failed."))
+
+    return redirect(url_for("premium_ledger"))
 
 
 @app.route("/progression")

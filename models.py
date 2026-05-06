@@ -227,12 +227,33 @@ class UserMission(db.Model):
 
 
 
+
+
+class PremiumCurrencyLedger(db.Model):
+    __tablename__ = "premium_currency_ledger"
+
+    id = db.Column(db.Integer, primary_key=True)
+    transaction_key = db.Column(db.String(220), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
+    currency = db.Column(db.String(40), nullable=False, default="gems")
+    amount = db.Column(db.Integer, nullable=False, default=0)
+    balance_after = db.Column(db.Integer, nullable=True)
+    direction = db.Column(db.String(20), nullable=False, default="credit")
+    source = db.Column(db.String(80), nullable=False, default="system")
+    status = db.Column(db.String(40), nullable=False, default="posted")
+    provider = db.Column(db.String(80), nullable=True)
+    provider_receipt_id = db.Column(db.String(220), nullable=True, index=True)
+    idempotency_key = db.Column(db.String(220), nullable=True, index=True)
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
 class RewardLedger(db.Model):
     __tablename__ = "reward_ledger"
 
     id = db.Column(db.Integer, primary_key=True)
     reward_key = db.Column(db.String(180), unique=True, nullable=False, index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     match_id = db.Column(db.String(180), nullable=True, index=True)
     source = db.Column(db.String(80), nullable=False, default="arena_v1")
     result = db.Column(db.String(40), nullable=True)
@@ -573,3 +594,41 @@ def ensure_reward_ledger_schema():
     except Exception as error:
         db.session.rollback()
         print("REWARD LEDGER SCHEMA ERROR:", type(error).__name__, error)
+
+
+def ensure_premium_currency_schema():
+    try:
+        inspector = db.inspect(db.engine)
+        tables = inspector.get_table_names()
+
+        if "premium_currency_ledger" not in tables:
+            PremiumCurrencyLedger.__table__.create(db.engine, checkfirst=True)
+            return
+
+        columns = {column["name"] for column in inspector.get_columns("premium_currency_ledger")}
+
+        required_columns = {
+            "transaction_key": "VARCHAR(220)",
+            "user_id": "INTEGER",
+            "currency": "VARCHAR(40) DEFAULT 'gems'",
+            "amount": "INTEGER DEFAULT 0",
+            "balance_after": "INTEGER",
+            "direction": "VARCHAR(20) DEFAULT 'credit'",
+            "source": "VARCHAR(80) DEFAULT 'system'",
+            "status": "VARCHAR(40) DEFAULT 'posted'",
+            "provider": "VARCHAR(80)",
+            "provider_receipt_id": "VARCHAR(220)",
+            "idempotency_key": "VARCHAR(220)",
+            "metadata_json": "TEXT",
+            "created_at": "DATETIME",
+        }
+
+        for column, definition in required_columns.items():
+            if column not in columns:
+                db.session.execute(db.text(f"ALTER TABLE premium_currency_ledger ADD COLUMN {column} {definition}"))
+
+        db.session.commit()
+
+    except Exception as error:
+        db.session.rollback()
+        print("PREMIUM CURRENCY SCHEMA ERROR:", type(error).__name__, error)
