@@ -1275,3 +1275,268 @@
         }
     });
 })();
+
+/* =========================================================
+   Arena V46 — Socket State Bridge
+   Bridges legacy game.js payloads and match_state_v1 payloads
+   into AmbitionzArenaV45.render().
+   ========================================================= */
+(function () {
+    const VERSION = "Arena V46 Socket State Bridge";
+
+    function log() {
+        try {
+            console.debug("[Ambitionz]", VERSION, ...arguments);
+        } catch (_) {}
+    }
+
+    function isObject(value) {
+        return value && typeof value === "object" && !Array.isArray(value);
+    }
+
+    function safeArray(value) {
+        return Array.isArray(value) ? value : [];
+    }
+
+    function normalizeLegacyPlayer(player, viewer) {
+        player = player || {};
+
+        const field = player.field || {};
+
+        return {
+            sid: player.sid,
+            user_id: player.user_id,
+            name: player.name || player.username || (viewer ? "You" : "Opponent"),
+            hp: player.hp || player.health || 3600,
+            energy: player.energy || player.current_energy || 0,
+            max_energy: player.max_energy || player.energy_max || player.energy || 0,
+            ambition: player.ambition || 0,
+            intent: player.intent || player.selected_intent || "",
+            ready: Boolean(player.ready || player.is_ready),
+            hand: viewer ? safeArray(player.hand || player.cards || []) : [],
+            hand_count: safeArray(player.hand || player.cards || []).length || player.hand_count || 0,
+            deck_count: safeArray(player.deck || []).length || player.deck_count || 0,
+            field: {
+                monster: player.field_m || player.monster || player.active_monster || field.monster || field.active_monster || null,
+                spell: player.field_st || player.spell || player.support || field.spell || field.support || null,
+                trap: player.trap || field.trap || null,
+            }
+        };
+    }
+
+    function normalizeAnyPayloadForV45(payload) {
+        payload = payload || {};
+
+        if (payload.me && payload.enemy) {
+            return payload;
+        }
+
+        if (payload.my_hand || payload.hand || payload.enemy_hand_count !== undefined) {
+            return {
+                schema: "ambitionz_bridge_flat_v46",
+                mode: payload.mode || "training",
+                phase: payload.phase || payload.status || "main",
+                round: payload.round || payload.turn || 1,
+                message: payload.message || payload.status_message || payload.hint || "",
+                me: {
+                    name: payload.my_name || payload.player_name || "You",
+                    hp: payload.my_hp || payload.hp || 3600,
+                    energy: payload.energy || payload.my_energy || 0,
+                    max_energy: payload.max_energy || payload.my_max_energy || payload.energy || 0,
+                    ambition: payload.ambition || payload.my_ambition || 0,
+                    intent: payload.intent || "",
+                    ready: Boolean(payload.ready),
+                    hand: safeArray(payload.my_hand || payload.hand),
+                    field: payload.my_field || payload.field || {},
+                    deck_count: payload.my_deck_count || payload.deck_count || 0,
+                },
+                enemy: {
+                    name: payload.enemy_name || "Opponent",
+                    hp: payload.enemy_hp || 3600,
+                    energy: payload.enemy_energy || 0,
+                    max_energy: payload.enemy_max_energy || payload.enemy_energy || 0,
+                    ambition: payload.enemy_ambition || 0,
+                    intent: payload.enemy_intent || "Hidden",
+                    ready: Boolean(payload.enemy_ready),
+                    hand_count: payload.enemy_hand_count || 0,
+                    field: payload.enemy_field || {},
+                    deck_count: payload.enemy_deck_count || 0,
+                },
+                legal_actions: payload.legal_actions || {
+                    playable_card_ids: payload.playable_card_ids || [],
+                    can_ready: true,
+                    can_play_cards: true,
+                }
+            };
+        }
+
+        const meRaw = payload.me || payload.player || payload.p1 || payload.self || {};
+        const enemyRaw = payload.enemy || payload.opponent || payload.p2 || {};
+
+        if (isObject(meRaw) || isObject(enemyRaw)) {
+            return {
+                schema: "ambitionz_bridge_legacy_v46",
+                mode: payload.mode || (payload.training ? "training" : "pvp"),
+                phase: payload.phase || payload.status || "main",
+                round: payload.round || payload.turn || 1,
+                message: payload.message || payload.status_message || payload.hint || "",
+                me: normalizeLegacyPlayer(meRaw, true),
+                enemy: normalizeLegacyPlayer(enemyRaw, false),
+                legal_actions: payload.legal_actions || {
+                    playable_card_ids: payload.playable_card_ids || [],
+                    can_ready: true,
+                    can_play_cards: true,
+                }
+            };
+        }
+
+        return payload;
+    }
+
+    function renderBridgePayload(payload, source) {
+        if (!window.AmbitionzArenaV45 || typeof window.AmbitionzArenaV45.render !== "function") {
+            log("V45 renderer not ready", source);
+            return;
+        }
+
+        const normalized = normalizeAnyPayloadForV45(payload);
+
+        window.__ambitionzLastArenaPayloadV46 = normalized;
+        log("render", source, {
+            schema: normalized.schema,
+            phase: normalized.phase,
+            meHand: normalized.me && normalized.me.hand ? normalized.me.hand.length : 0,
+            enemyHand: normalized.enemy && normalized.enemy.hand_count,
+        });
+
+        window.AmbitionzArenaV45.render(normalized);
+    }
+
+    function patchSocket(socket) {
+        if (!socket || socket.__ambitionzV46Patched) return socket;
+
+        const originalOn = socket.on ? socket.on.bind(socket) : null;
+
+        if (originalOn) {
+            socket.on = function (eventName, handler) {
+                const wrapped = function (payload) {
+                    const bridgeEvents = [
+                        "game_state_update",
+                        "match_state",
+                        "match_state_v1",
+                        "arena_state",
+                        "battle_state",
+                        "training_started",
+                        "start_training_result"
+                    ];
+
+                    if (bridgeEvents.includes(eventName)) {
+                        renderBridgePayload(payload, "socket:" + eventName);
+                    }
+
+                    return handler.apply(this, arguments);
+                };
+
+                return originalOn(eventName, wrapped);
+            };
+        }
+
+        const directEvents = [
+            "game_state_update",
+            "match_state",
+            "match_state_v1",
+            "arena_state",
+            "battle_state",
+            "training_started",
+            "start_training_result"
+        ];
+
+        directEvents.forEach((eventName) => {
+            try {
+                originalOn && originalOn(eventName, function (payload) {
+                    renderBridgePayload(payload, "socket-direct:" + eventName);
+                });
+            } catch (_) {}
+        });
+
+        socket.__ambitionzV46Patched = true;
+        log("socket patched");
+
+        return socket;
+    }
+
+    function discoverSockets() {
+        if (window.socket) patchSocket(window.socket);
+        if (window.__ambitionzSocket) patchSocket(window.__ambitionzSocket);
+
+        try {
+            if (window.io && !window.__ambitionzV46IoPatched) {
+                const originalIo = window.io;
+                window.io = function () {
+                    const socket = originalIo.apply(this, arguments);
+                    window.__ambitionzSocket = patchSocket(socket);
+                    return socket;
+                };
+                Object.assign(window.io, originalIo);
+                window.__ambitionzV46IoPatched = true;
+                log("io factory patched");
+            }
+        } catch (error) {
+            log("io patch failed", error);
+        }
+    }
+
+    function wireDomEvents() {
+        const domEvents = [
+            "game_state_update",
+            "match_state",
+            "match_state_v1",
+            "arena_state",
+            "battle_state",
+            "training_started",
+            "start_training_result",
+            "ambitionz:match-state",
+            "ambitionz:arena-state",
+        ];
+
+        domEvents.forEach((eventName) => {
+            document.addEventListener(eventName, function (event) {
+                renderBridgePayload(event.detail || {}, "dom:" + eventName);
+            });
+        });
+    }
+
+    function exposeDebug() {
+        window.AmbitionzArenaV46 = {
+            version: VERSION,
+            normalize: normalizeAnyPayloadForV45,
+            render: function (payload) {
+                renderBridgePayload(payload, "manual");
+            },
+            patchSocket,
+            discoverSockets,
+        };
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        exposeDebug();
+        wireDomEvents();
+        discoverSockets();
+
+        let tries = 0;
+        const timer = setInterval(function () {
+            discoverSockets();
+            tries += 1;
+
+            if (tries > 20 || window.socket || window.__ambitionzSocket) {
+                clearInterval(timer);
+            }
+        }, 250);
+
+        if (window.latestState) {
+            renderBridgePayload(window.latestState, "latestState");
+        }
+
+        log("ready");
+    });
+})();
