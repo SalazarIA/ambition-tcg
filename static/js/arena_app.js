@@ -847,3 +847,96 @@
         requestState: () => emit("request_match_state", {}),
     };
 })();
+
+
+
+/* Arena V40 — attach readable cost/power/type badges to rendered cards */
+(function () {
+    function textOf(value, fallback) {
+        if (value === undefined || value === null || value === "") return fallback;
+        return String(value);
+    }
+
+    function readCardData(el) {
+        const data = el.__ambitionzCard || {};
+        const cost =
+            data.cost ||
+            el.dataset.cost ||
+            el.getAttribute("data-cost") ||
+            el.querySelector("[data-cost]")?.textContent ||
+            "?";
+
+        const power =
+            data.power ||
+            data.attack ||
+            data.value ||
+            el.dataset.power ||
+            el.dataset.attack ||
+            el.getAttribute("data-power") ||
+            el.getAttribute("data-attack") ||
+            "";
+
+        const type =
+            data.type ||
+            el.dataset.type ||
+            el.getAttribute("data-type") ||
+            "";
+
+        return { cost, power, type };
+    }
+
+    function ensureBadge(el, className, text) {
+        if (!el || !text) return;
+
+        let badge = el.querySelector("." + className);
+
+        if (!badge) {
+            badge = document.createElement("span");
+            badge.className = className;
+            el.appendChild(badge);
+        }
+
+        badge.textContent = text;
+    }
+
+    function enhanceArenaCardsV40() {
+        const selectors = [
+            ".az-card",
+            ".arena-card",
+            ".hand-card",
+            ".card-shell",
+            "[data-card-id]"
+        ];
+
+        document.querySelectorAll(selectors.join(",")).forEach((el) => {
+            if (el.classList.contains("az-v40-enhanced")) return;
+
+            const card = readCardData(el);
+
+            ensureBadge(el, "az-card-cost-v40", textOf(card.cost, "?"));
+
+            if (card.power) {
+                ensureBadge(el, "az-card-power-v40", textOf(card.power, "0"));
+            }
+
+            if (card.type) {
+                ensureBadge(el, "az-card-type-v40", textOf(card.type, ""));
+            }
+
+            el.classList.add("az-v40-enhanced");
+        });
+    }
+
+    window.AmbitionzEnhanceArenaCardsV40 = enhanceArenaCardsV40;
+
+    document.addEventListener("DOMContentLoaded", enhanceArenaCardsV40);
+
+    const observer = new MutationObserver(() => {
+        window.requestAnimationFrame(enhanceArenaCardsV40);
+    });
+
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+    });
+})();
