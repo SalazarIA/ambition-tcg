@@ -105,6 +105,31 @@ def _count_cards(page):
         return 0
 
 
+
+
+def _count_field_cards(page):
+    try:
+        return page.locator("#az48-me-field .az48-card[data-card-id], #az48-me-field [data-card-id]").count()
+    except Exception:
+        return 0
+
+
+def _assert_not_stuck(text, stage):
+    forbidden = [
+        "Playing card...",
+        "Starting training...",
+        "Ready sent.",
+        "Socket connection error",
+        "Action failed",
+        "Card not found in hand",
+        "Card is no longer in hand",
+    ]
+
+    for phrase in forbidden:
+        if phrase in text:
+            raise AssertionError(f"{stage}: UI stuck/error phrase visible: {phrase}")
+
+
 def _visible_text_contains(page, text):
     try:
         return page.locator(f"text={text}").first.is_visible(timeout=1500)
@@ -185,7 +210,9 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
 
             cards_after_start = _count_cards(page)
             logs.append(f"cards_after_start: {cards_after_start}")
-            assert cards_after_start > 0, "No cards appeared after Start"
+            assert cards_after_start == 5, f"Expected exactly 5 cards after Start, got {cards_after_start}"
+
+            _assert_not_stuck(after_start_text, "after_start")
 
             ok_strike = _click_first(page, ["#az48-strike", "button:has-text('Strike')", "text=Strike"], "strike", logs, timeout=7000)
             assert ok_strike, "Could not click Strike"
@@ -204,10 +231,27 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
 
             cards_after_card = _count_cards(page)
             logs.append(f"cards_after_card: {cards_after_card}")
-            assert cards_after_card <= cards_after_start, "Card count did not decrease/stabilize after card play"
+
+            # A carta precisa sair da mão. Se continuar com o mesmo número,
+            # o frontend travou ou o backend não confirmou o play_card.
+            assert cards_after_card == cards_after_start - 1, (
+                f"Card was not removed from hand after play. "
+                f"Before={cards_after_start}, after={cards_after_card}"
+            )
+
+            # O campo precisa receber uma carta renderizada.
+            field_cards = page.locator("#az48-me-field .az48-card[data-card-id], #az48-me-field [data-card-id]").count()
+            logs.append(f"field_cards_after_card: {field_cards}")
+            assert field_cards >= 1, "No card appeared on player field after play"
+
+            if "Playing card..." in after_card_text:
+                raise AssertionError("UI got stuck on Playing card... after clicking card")
 
             if "Card not found in hand" in after_card_text:
                 raise AssertionError("UI shows Card not found in hand after clicking card")
+
+            if "Action failed" in after_card_text:
+                raise AssertionError("UI shows Action failed after clicking card")
 
             ok_ready = _click_first(page, ["#az48-ready", "button:has-text('Ready')", "text=Ready"], "ready", logs, timeout=7000)
             assert ok_ready, "Could not click Ready"
@@ -217,11 +261,12 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
             after_ready_text = _body_text(page)
             logs.append("body_after_ready:\n" + after_ready_text[:2600])
 
-            if "Socket connection error" in after_ready_text:
-                raise AssertionError("Socket connection error visible after Ready")
+            _assert_not_stuck(after_ready_text, "after_ready")
 
-            if "Action failed" in after_ready_text:
-                raise AssertionError("Action failed visible after Ready")
+            cards_after_ready = _count_cards(page)
+            logs.append(f"cards_after_ready: {cards_after_ready}")
+
+            assert cards_after_ready >= 1, "No cards visible after Ready/new round"
 
             browser.close()
 

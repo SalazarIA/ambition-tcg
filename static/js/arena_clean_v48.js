@@ -284,7 +284,7 @@
         }
 
         setMessage("Playing card...");
-        emit("play_to_field", { index });
+        emit("az48_play_card", { card_id: c.id, card_index: index });
     }
 
     function joinQueue() {
@@ -514,3 +514,6 @@
 
     document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+// ARENA_PLAY_CARD_AZ48_FIX_V56
