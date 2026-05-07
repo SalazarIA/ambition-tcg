@@ -2148,6 +2148,81 @@ def economy_test_gems():
     return redirect(url_for("economy"))
 
 
+
+
+# =========================================================
+# Booster Shop Helpers
+# Stable fallback for shop route.
+# =========================================================
+
+BOOSTER_PACKS = {
+    "elemental": {
+        "key": "elemental",
+        "name": "Elemental Booster",
+        "cost": 300,
+        "size": 5,
+        "description": "Common and Uncommon beta cards for collection growth.",
+        "rarities": {
+            "Common": 78,
+            "Uncommon": 22,
+        },
+    },
+}
+
+
+def get_booster_pack(pack_key=None):
+    key = str(pack_key or "elemental").strip().lower()
+
+    if key not in BOOSTER_PACKS:
+        key = "elemental"
+
+    return dict(BOOSTER_PACKS[key])
+
+
+def booster_pull_from_pack(pack):
+    import random
+
+    from game.cards import CARD_CATALOG
+
+    cards = list(CARD_CATALOG)
+
+    if not cards:
+        raise ValueError("Card catalog is empty.")
+
+    rarity_roll = random.randint(1, 100)
+    target_rarity = "Common"
+
+    rarities = (pack or {}).get("rarities") or {}
+
+    if rarity_roll > int(rarities.get("Common", 78)):
+        target_rarity = "Uncommon"
+
+    pool = [
+        card for card in cards
+        if str(card.get("rarity", "")).lower() == target_rarity.lower()
+    ]
+
+    if not pool:
+        pool = cards
+
+    card = dict(random.choice(pool))
+
+    element = str(card.get("element") or "Neutral")
+    rarity = str(card.get("rarity") or "Common")
+
+    card.setdefault("description", card.get("effect") or "Beta card.")
+    card.setdefault("effect", card.get("description") or "Beta card.")
+    card.setdefault("cost", 1)
+    card.setdefault("power", card.get("attack") or card.get("value") or 0)
+    card.setdefault("value", card.get("power") or 0)
+    card.setdefault("sigil", "Neutral")
+
+    card["element_css"] = "element-" + element.lower()
+    card["rarity_css"] = "rarity-" + rarity.lower()
+
+    return card
+
+
 @app.route("/shop", methods=["GET", "POST"])
 def shop():
     auth_redirect = login_required_redirect()
