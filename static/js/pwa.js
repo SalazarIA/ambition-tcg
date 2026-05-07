@@ -380,3 +380,15 @@
     });
 })();
 
+
+
+// PWA_FORCE_UPDATE_V1
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.getRegistration().then(function (registration) {
+      if (registration) {
+        registration.update();
+      }
+    }).catch(function () {});
+  });
+}
