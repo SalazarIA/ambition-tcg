@@ -15,6 +15,7 @@ from tools.qa.qa_routes_flow import run_routes_flow
 from tools.qa.qa_deck_inventory_flow import run_deck_inventory_flow
 from tools.qa.qa_economy_flow import run_economy_flow
 from tools.qa.qa_arena_matrix_flow import run_arena_matrix_flow
+from tools.qa.qa_production_flow import run_production_flow
 
 
 def format_result(result):
@@ -44,7 +45,7 @@ def format_result(result):
 def main():
     parser = argparse.ArgumentParser(description="Ambitionz QA Agent")
     parser.add_argument("--target", default="local", choices=["local"], help="QA target")
-    parser.add_argument("--suite", default="all", choices=["all", "backend", "socket", "browser", "systems", "routes", "deck", "economy", "arena_matrix"], help="Suite to run")
+    parser.add_argument("--suite", default="all", choices=["all", "backend", "socket", "browser", "systems", "routes", "deck", "economy", "arena_matrix", "production"], help="Suite to run")
     parser.add_argument("--base-url", default="http://127.0.0.1:8080", help="Base URL for browser QA")
     parser.add_argument("--headed", action="store_true", help="Run browser visibly")
     args = parser.parse_args()
@@ -76,6 +77,9 @@ def main():
 
     if args.suite in ("all", "arena_matrix"):
         results.append(run_arena_matrix_flow())
+
+    if args.suite in ("production",):
+        results.append(run_production_flow(base_url=args.base_url or "https://ambitionzgame.com"))
 
     passed = all(result.get("status") == "PASS" for result in results)
 
