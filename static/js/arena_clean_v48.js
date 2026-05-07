@@ -424,7 +424,7 @@
 
     function bindClicks() {
         document.addEventListener("click", (event) => {
-            const startBtn = event.target.closest("#az48-start");
+            const startBtn = event.target.closest("#az48-start, #join-queue-btn, [data-az48-action='start-training']");
             if (startBtn) {
                 event.preventDefault();
                 startTraining();
@@ -452,7 +452,7 @@
                 return;
             }
 
-            const readyBtn = event.target.closest("#az48-ready");
+            const readyBtn = event.target.closest("#az48-ready, #ready-btn");
             if (readyBtn) {
                 event.preventDefault();
                 ready();
