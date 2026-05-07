@@ -1,0 +1,87 @@
+from pathlib import Path
+import argparse
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from tools.qa.qa_config import qa_report_path, ensure_qa_dirs
+from tools.qa.qa_backend_flow import run_backend_flow
+from tools.qa.qa_socket_flow import run_socket_flow
+
+
+def format_result(result):
+    lines = []
+
+    status = result.get("status")
+    name = result.get("name")
+
+    lines.append(f"## {name}")
+    lines.append("")
+    lines.append(f"Status: **{status}**")
+    lines.append("")
+
+    if result.get("error"):
+        lines.append(f"Error: `{result['error']}`")
+        lines.append("")
+
+    lines.append("```text")
+    for log in result.get("logs") or []:
+        lines.append(str(log))
+    lines.append("```")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Ambitionz QA Agent")
+    parser.add_argument("--target", default="local", choices=["local"], help="QA target")
+    parser.add_argument("--suite", default="all", choices=["all", "backend", "socket"], help="Suite to run")
+    args = parser.parse_args()
+
+    ensure_qa_dirs()
+
+    results = []
+
+    if args.suite in ("all", "backend"):
+        results.append(run_backend_flow())
+
+    if args.suite in ("all", "socket"):
+        results.append(run_socket_flow())
+
+    passed = all(result.get("status") == "PASS" for result in results)
+
+    report_path = qa_report_path("qa_run")
+
+    lines = [
+        "# Ambitionz QA Agent Report",
+        "",
+        f"- Target: `{args.target}`",
+        f"- Suite: `{args.suite}`",
+        f"- Overall: `{'PASS' if passed else 'FAIL'}`",
+        "",
+    ]
+
+    for result in results:
+        lines.append(format_result(result))
+
+    report_path.write_text("\n".join(lines))
+
+    print("")
+    print("=== AMBITIONZ QA AGENT ===")
+    print("RESULT:", "PASS" if passed else "FAIL")
+    print("REPORT:", report_path)
+
+    for result in results:
+        print(f"- {result['name']}: {result['status']}")
+        if result.get("error"):
+            print(f"  ERROR: {result['error']}")
+
+    if not passed:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()
