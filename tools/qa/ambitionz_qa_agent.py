@@ -17,6 +17,7 @@ from tools.qa.qa_economy_flow import run_economy_flow
 from tools.qa.qa_arena_matrix_flow import run_arena_matrix_flow
 from tools.qa.qa_production_flow import run_production_flow
 from tools.qa.qa_pvp_socket_flow import run_pvp_socket_flow
+from tools.qa.qa_browser_full_match_flow import run_browser_full_match_flow
 
 
 def format_result(result):
@@ -45,7 +46,7 @@ def format_result(result):
 
 def main():
     parser = argparse.ArgumentParser(description="Ambitionz QA Agent")
-    parser.add_argument("--target", default="local", choices=["local"], help="QA target")
+    parser.add_argument("--target", default="local", choices=["all", "backend", "socket", "browser", "systems", "routes", "deck", "economy", "arena_matrix", "production", "pvp", "browser_full_match"], help="QA target")
     parser.add_argument("--suite", default="all", choices=["all", "backend", "socket", "browser", "systems", "routes", "deck", "economy", "arena_matrix", "production", "pvp"], help="Suite to run")
     parser.add_argument("--base-url", default="http://127.0.0.1:8080", help="Base URL for browser QA")
     parser.add_argument("--headed", action="store_true", help="Run browser visibly")
@@ -84,6 +85,9 @@ def main():
 
     if args.suite in ("all", "pvp"):
         results.append(run_pvp_socket_flow())
+
+    if args.suite in ("browser_full_match",):
+        results.append(run_browser_full_match_flow(base_url=args.base_url, headed=args.headed))
 
     passed = all(result.get("status") == "PASS" for result in results)
 
