@@ -137,6 +137,59 @@ def _visible_text_contains(page, text):
         return False
 
 
+
+
+def _safe_int_text(page, selector, default=0):
+    try:
+        raw = page.locator(selector).first.inner_text(timeout=1500)
+        digits = "".join(ch for ch in raw if ch.isdigit() or ch == "-")
+        return int(digits) if digits not in ("", "-") else default
+    except Exception:
+        return default
+
+
+def _visible_count(page, selector):
+    try:
+        return page.locator(selector).count()
+    except Exception:
+        return 0
+
+
+def _arena_snapshot(page, label, logs):
+    body = _body_text(page)
+    snapshot = {
+        "label": label,
+        "round": _safe_int_text(page, "#az48-round", 0),
+        "phase": page.locator("#az48-phase").first.inner_text(timeout=1500) if _visible_count(page, "#az48-phase") else "",
+        "message": page.locator("#az48-message").first.inner_text(timeout=1500) if _visible_count(page, "#az48-message") else "",
+        "me_hp": _safe_int_text(page, "#az48-me-hp", 0),
+        "enemy_hp": _safe_int_text(page, "#az48-enemy-hp", 0),
+        "me_energy": _safe_int_text(page, "#az48-me-energy", 0),
+        "enemy_energy": _safe_int_text(page, "#az48-enemy-energy", 0),
+        "hand_cards": _count_cards(page),
+        "field_cards": _count_field_cards(page) if "def _count_field_cards" in globals() else _visible_count(page, "#az48-me-field [data-card-id]"),
+        "body_has_playing_card": "Playing card..." in body,
+        "body_has_card_not_found": "Card not found in hand" in body,
+        "body_has_socket_error": "Socket connection error" in body,
+        "body_has_action_failed": "Action failed" in body,
+    }
+    logs.append(f"arena_snapshot_{label}: {snapshot}")
+    return snapshot
+
+
+def _assert_arena_healthy(snapshot, stage):
+    if snapshot.get("body_has_playing_card"):
+        raise AssertionError(f"{stage}: UI stuck on Playing card...")
+    if snapshot.get("body_has_card_not_found"):
+        raise AssertionError(f"{stage}: Card not found in hand visible")
+    if snapshot.get("body_has_socket_error"):
+        raise AssertionError(f"{stage}: Socket connection error visible")
+    if snapshot.get("body_has_action_failed"):
+        raise AssertionError(f"{stage}: Action failed visible")
+    if snapshot.get("me_hp", 0) <= 0 and snapshot.get("enemy_hp", 0) <= 0:
+        raise AssertionError(f"{stage}: both players appear dead/invalid HP")
+
+
 def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
     logs = []
     result = {
@@ -267,6 +320,89 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
             logs.append(f"cards_after_ready: {cards_after_ready}")
 
             assert cards_after_ready >= 1, "No cards visible after Ready/new round"
+
+            first_round_snapshot = _arena_snapshot(page, "after_ready_round_1", logs)
+            _assert_arena_healthy(first_round_snapshot, "after_ready_round_1")
+
+            # Eagle-eye full match loop.
+            # Plays up to 12 cycles or until victory/defeat/finished state appears.
+            max_cycles = 12
+            completed_cycles = 0
+
+            for cycle in range(2, max_cycles + 1):
+                snapshot_before = _arena_snapshot(page, f"cycle_{cycle}_before", logs)
+                _assert_arena_healthy(snapshot_before, f"cycle_{cycle}_before")
+
+                body_now = _body_text(page)
+                lower = body_now.lower()
+
+                if any(word in lower for word in ["victory", "defeat", "winner", "match finished", "rewards"]):
+                    logs.append(f"full_match_stop: finished text detected at cycle {cycle}")
+                    break
+
+                # Choose intent if buttons are visible.
+                if _visible_count(page, "#az48-strike") > 0:
+                    try:
+                        page.locator("#az48-strike").click(timeout=3000)
+                        logs.append(f"cycle_{cycle}: clicked Strike")
+                        time.sleep(1.2)
+                    except Exception as exc:
+                        logs.append(f"cycle_{cycle}: strike click skipped {type(exc).__name__}")
+
+                hand_count_before = _count_cards(page)
+                field_count_before = _count_field_cards(page)
+                logs.append(f"cycle_{cycle}: hand_before={hand_count_before} field_before={field_count_before}")
+
+                # Play first available card if possible.
+                if hand_count_before > 0:
+                    try:
+                        page.locator("#az48-hand .az48-card[data-card-id]").first.click(timeout=4000)
+                        logs.append(f"cycle_{cycle}: clicked first card")
+                        time.sleep(2.5)
+                    except Exception as exc:
+                        logs.append(f"cycle_{cycle}: card click skipped {type(exc).__name__}")
+
+                snapshot_after_card = _arena_snapshot(page, f"cycle_{cycle}_after_card", logs)
+                _assert_arena_healthy(snapshot_after_card, f"cycle_{cycle}_after_card")
+
+                # If a card click happened, the UI cannot remain identical and stuck.
+                hand_count_after = _count_cards(page)
+                field_count_after = _count_field_cards(page)
+
+                logs.append(
+                    f"cycle_{cycle}: hand_after={hand_count_after} field_after={field_count_after}"
+                )
+
+                if hand_count_before > 0 and field_count_before == 0:
+                    assert (
+                        hand_count_after == hand_count_before - 1 or field_count_after > field_count_before
+                    ), (
+                        f"cycle_{cycle}: card click did not change hand/field. "
+                        f"hand_before={hand_count_before}, hand_after={hand_count_after}, "
+                        f"field_before={field_count_before}, field_after={field_count_after}"
+                    )
+
+                # Ready should advance or resolve.
+                if _visible_count(page, "#az48-ready") > 0:
+                    page.locator("#az48-ready").click(timeout=4000)
+                    logs.append(f"cycle_{cycle}: clicked Ready")
+                    time.sleep(3.0)
+
+                snapshot_after_ready_loop = _arena_snapshot(page, f"cycle_{cycle}_after_ready", logs)
+                _assert_arena_healthy(snapshot_after_ready_loop, f"cycle_{cycle}_after_ready")
+
+                completed_cycles += 1
+
+                if snapshot_after_ready_loop.get("round", 0) >= 3:
+                    logs.append(f"full_match_progress_confirmed: reached round {snapshot_after_ready_loop.get('round')}")
+                    break
+
+            assert completed_cycles >= 1, "Full match loop did not complete any post-round cycle"
+
+            final_snapshot = _arena_snapshot(page, "final", logs)
+            _assert_arena_healthy(final_snapshot, "final")
+
+            logs.append("browser_full_match_flow_completed")
 
             browser.close()
 

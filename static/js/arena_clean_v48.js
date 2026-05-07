@@ -284,7 +284,7 @@
         }
 
         setMessage("Playing card...");
-        emit("az48_play_card", { card_id: c.id, card_index: index });
+        emit("az48_play_card", { card_id: id, card_index: index });
     }
 
     function joinQueue() {
@@ -517,3 +517,9 @@
 
 
 // ARENA_PLAY_CARD_AZ48_FIX_V56
+
+
+// ARENA_PLAY_CARD_AZ48_FIX_V57
+
+
+// ARENA_PLAY_CARD_ID_FIX_V58
