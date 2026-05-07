@@ -613,3 +613,35 @@ body.az48-has-actions .az48-hand .az48-card {
         display: none;
     }
 }
+
+/* Arena V54B — Button interaction hardening */
+.az48-actions {
+    position: relative;
+    z-index: 9999;
+    pointer-events: auto !important;
+}
+
+.az48-btn {
+    position: relative;
+    z-index: 10000;
+    pointer-events: auto !important;
+    user-select: none;
+}
+
+.az48-hand {
+    position: relative;
+    z-index: 50;
+}
+
+.az48-board {
+    position: relative;
+    z-index: 10;
+}
+
+.az48-field-card {
+    pointer-events: none;
+}
+
+#az48-hand .az48-card {
+    pointer-events: auto;
+}

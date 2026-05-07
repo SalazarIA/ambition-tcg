@@ -257,7 +257,7 @@
 
     function startTraining() {
         setMessage("Starting training...");
-        emit("join_training", { difficulty: "normal" });
+        emit("az48_start_training", {});
     }
 
     function requestState() {
@@ -424,59 +424,45 @@
 
     function bindClicks() {
         document.addEventListener("click", (event) => {
-            const card = event.target.closest(".az48-card[data-card-id]");
-            if (card && card.closest("#az48-hand")) {
-                playCard(card.dataset.cardId);
-                return;
-            }
-
-            if (card && card.closest("#hand")) {
-                playCard(card.dataset.cardId);
-                return;
-            }
-
-            if (event.target.closest("#join-queue-btn")) {
-                joinQueue();
-                return;
-            }
-
-            if (event.target.closest("#join-bot-match-btn")) {
-                joinBotMatch();
-                return;
-            }
-
-            if (event.target.closest("#join-private-room-btn")) {
-                joinPrivateRoom();
-                return;
-            }
-
-            if (event.target.closest("#cancel-queue-btn")) {
-                cancelQueue();
-                return;
-            }
-
-            if (event.target.closest("#az48-start")) {
+            const startBtn = event.target.closest("#az48-start");
+            if (startBtn) {
+                event.preventDefault();
                 startTraining();
                 return;
             }
 
-            if (event.target.closest("#az48-strike")) {
+            const strikeBtn = event.target.closest("#az48-strike");
+            if (strikeBtn) {
+                event.preventDefault();
                 setIntent("Strike");
                 return;
             }
 
-            if (event.target.closest("#az48-guard")) {
+            const guardBtn = event.target.closest("#az48-guard");
+            if (guardBtn) {
+                event.preventDefault();
                 setIntent("Guard");
                 return;
             }
 
-            if (event.target.closest("#az48-focus")) {
+            const focusBtn = event.target.closest("#az48-focus");
+            if (focusBtn) {
+                event.preventDefault();
                 setIntent("Focus");
                 return;
             }
 
-            if (event.target.closest("#az48-ready") || event.target.closest("#ready-btn")) {
+            const readyBtn = event.target.closest("#az48-ready");
+            if (readyBtn) {
+                event.preventDefault();
                 ready();
+                return;
+            }
+
+            const card = event.target.closest("#az48-hand .az48-card[data-card-id]");
+            if (card) {
+                event.preventDefault();
+                playCard(card.dataset.cardId);
             }
         });
     }
