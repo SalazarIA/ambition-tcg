@@ -48,8 +48,8 @@ def format_result(result):
 
 def main():
     parser = argparse.ArgumentParser(description="Ambitionz QA Agent")
-    parser.add_argument("--target", default="local", choices=["all", "backend", "socket", "browser", "systems", "routes", "deck", "economy", "arena_matrix", "production", "pvp", "browser_full_match", "browser_viewports", "browser_shop_deck"], help="QA target")
-    parser.add_argument("--suite", default="all", choices=["all", "backend", "socket", "browser", "systems", "routes", "deck", "economy", "arena_matrix", "production", "pvp"], help="Suite to run")
+    parser.add_argument("--target", choices=["local"], default="local", help="QA target")
+    parser.add_argument("--suite", choices=["all", "backend", "socket", "browser", "systems", "routes", "deck", "economy", "arena_matrix", "production", "pvp", "browser_full_match", "browser_viewports", "browser_shop_deck"], default="all", help="Suite to run")
     parser.add_argument("--base-url", default="http://127.0.0.1:8080", help="Base URL for browser QA")
     parser.add_argument("--headed", action="store_true", help="Run browser visibly")
     args = parser.parse_args()

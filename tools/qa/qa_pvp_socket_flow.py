@@ -25,14 +25,20 @@ def run_pvp_socket_flow():
 
                 user = User.query.filter_by(email=email).first()
 
+                password_hash = pbkdf2_sha256.hash("QaPvp123!")
+
                 if not user:
-                    user = User(username=username, email=email)
+                    user = User(
+                        username=username,
+                        email=email,
+                        password_hash=password_hash,
+                    )
                     db.session.add(user)
                     db.session.flush()
 
                 user.username = username
                 user.email = email
-                user.password_hash = pbkdf2_sha256.hash("QaPvp123!")
+                user.password_hash = password_hash
 
                 if hasattr(user, "is_verified"):
                     user.is_verified = True
@@ -87,8 +93,8 @@ def run_pvp_socket_flow():
         logs.append(f"private_room_c2_events={r2_private}")
 
         # Queue smoke fallback.
-        c1.emit("join_queue", {})
-        c2.emit("join_queue", {})
+        c1.emit("join_queue")
+        c2.emit("join_queue")
 
         r1_queue = c1.get_received()
         r2_queue = c2.get_received()
