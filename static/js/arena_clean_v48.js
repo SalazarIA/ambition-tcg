@@ -266,12 +266,12 @@
 
     function setIntent(intent) {
         setMessage(intent + " selected.");
-        emit("choose_intent", { intent });
+        emit("az48_set_intent", { intent });
     }
 
     function ready() {
         setMessage("Ready sent.");
-        emit("declare_ready", {});
+        emit("az48_declare_ready", {});
     }
 
     function playCard(id) {
@@ -342,7 +342,11 @@
         });
 
         socket.on("game_state_update", (payload) => {
-            if (isCanonical(payload)) render(payload);
+            if (isCanonical(payload)) {
+                render(payload);
+            } else {
+                console.debug("[Ambitionz AZ48] ignored legacy game_state_update", payload);
+            }
         });
 
         socket.on("arena_state_update", (payload) => {

@@ -215,7 +215,12 @@ def create_new_player_card_data():
 
 
 def build_playable_deck(deck_json):
-    deck_ids = load_card_ids(deck_json)
+    """Build a shuffled playable deck from either JSON text or a Python list of ids."""
+    if isinstance(deck_json, list):
+        deck_ids = deck_json
+    else:
+        deck_ids = load_card_ids(deck_json)
+
     deck = cards_from_ids(deck_ids)
     GAME_RNG.shuffle(deck)
     return deck
