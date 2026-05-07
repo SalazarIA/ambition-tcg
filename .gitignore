@@ -44,3 +44,9 @@ reports/audit_*/
 reports_*.txt
 *_scan.txt
 *_check.txt
+# Ambitionz QA local artifacts
+reports/qa/qa_run_*.md
+reports/qa/screenshots/
+reports/qa/local_server_browser_qa.log
+reports/prod_arena_browser_audit_*
+# Local Python/runtime artifacts
