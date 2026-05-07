@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from werkzeug.security import generate_password_hash
+from passlib.hash import pbkdf2_sha256
 
 from app import app, db
 from models import User
@@ -40,13 +40,13 @@ def _ensure_qa_user(logs):
             user = User(
                 username=QA_USERNAME,
                 email=QA_EMAIL,
-                password_hash=generate_password_hash(QA_PASSWORD, method="pbkdf2:sha256"),
+                password_hash=pbkdf2_sha256.hash(QA_PASSWORD),
             )
             db.session.add(user)
             logs.append("qa_user_created")
         else:
             user.username = QA_USERNAME
-            user.password_hash = generate_password_hash(QA_PASSWORD, method="pbkdf2:sha256")
+            user.password_hash = pbkdf2_sha256.hash(QA_PASSWORD)
             logs.append("qa_user_updated")
 
         if hasattr(user, "is_verified"):
