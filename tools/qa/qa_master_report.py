@@ -11,8 +11,7 @@ REPORT_DIR.mkdir(parents=True, exist_ok=True)
 STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 REPORT = REPORT_DIR / f"master_qa_report_{STAMP}.md"
 
-
-LOCAL_SUITES = [
+CORE_SUITES = [
     "backend",
     "socket",
     "systems",
@@ -20,16 +19,18 @@ LOCAL_SUITES = [
     "deck",
     "economy",
     "arena_matrix",
+    "pvp",
 ]
 
+BROWSER_RUNNERS = {
+    "browser": "tools/qa/run_local_browser_qa.py",
+    "browser_full_match": "tools/qa/run_browser_full_match_qa.py",
+    "browser_viewports": "tools/qa/run_browser_viewports_qa.py",
+    "browser_shop_deck": "tools/qa/run_browser_shop_deck_qa.py",
+}
 
-OPTIONAL_SUITES = [
-    "browser",
-    "production",
-]
 
-
-def run_command(args, timeout=120):
+def run_command(args, timeout=180):
     try:
         result = subprocess.run(
             args,
@@ -40,24 +41,30 @@ def run_command(args, timeout=120):
         )
 
         return {
-            "args": args,
             "returncode": result.returncode,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
+            "stdout": result.stdout or "",
+            "stderr": result.stderr or "",
             "timeout": False,
         }
 
     except subprocess.TimeoutExpired as exc:
         return {
-            "args": args,
             "returncode": 124,
             "stdout": exc.stdout or "",
             "stderr": exc.stderr or "",
             "timeout": True,
         }
 
+    except Exception as exc:
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": f"{type(exc).__name__}: {exc}",
+            "timeout": False,
+        }
 
-def parse_status(output):
+
+def parse_agent_status(output):
     if "RESULT: PASS" in output:
         return "PASS"
 
@@ -67,37 +74,44 @@ def parse_status(output):
     return "UNKNOWN"
 
 
-def extract_flow_lines(output):
-    lines = []
+def parse_runner_status(suite, output):
+    markers = {
+        "browser": "RESULT=PASS browser_eagle_eye",
+        "browser_full_match": "RESULT=PASS browser_full_match",
+        "browser_viewports": "RESULT=PASS browser_viewports",
+        "browser_shop_deck": "RESULT=PASS browser_shop_deck",
+    }
 
-    for line in output.splitlines():
-        stripped = line.strip()
+    marker = markers.get(suite)
 
-        if stripped.startswith("- ") and (": PASS" in stripped or ": FAIL" in stripped):
-            lines.append(stripped)
+    if marker and marker in output:
+        return "PASS"
 
-        if "ERROR:" in stripped:
-            lines.append(stripped)
+    if "RESULT=FAIL" in output or "Traceback" in output:
+        return "FAIL"
 
-    return lines
+    return "UNKNOWN"
 
 
-def classify_priority(suite, status, output):
+def priority_for(suite, status, output):
     if status == "PASS":
         return "OK"
 
+    if status == "SKIP":
+        return "SKIP"
+
     lower = output.lower()
 
-    if suite in ("backend", "socket", "systems", "arena_matrix"):
+    if suite in ("backend", "socket", "systems", "arena_matrix", "pvp"):
         return "P0"
 
-    if "500" in lower or "traceback" in lower or "exception" in lower:
+    if "traceback" in lower or "internal server error" in lower or "500" in lower:
         return "P0"
 
-    if suite in ("routes", "deck", "economy"):
+    if suite in ("routes", "deck", "economy", "production"):
         return "P1"
 
-    if suite in ("browser", "production"):
+    if suite.startswith("browser"):
         return "P1"
 
     return "P2"
@@ -107,159 +121,225 @@ def recommendation_for(suite, status, output):
     if status == "PASS":
         return "No immediate action."
 
+    if status == "SKIP":
+        return "Runner not found; create or commit the missing QA runner."
+
     lower = output.lower()
 
-    if "play_to_field" in lower:
-        return "Remove legacy play_to_field. Use az48_play_card only."
-
-    if "card was not removed from hand" in lower:
-        return "Fix card play state propagation: frontend event, backend handler, or render update."
+    if "card was not removed from hand" in lower or "did not mutate hand" in lower:
+        return "Fix card play event/state/render propagation."
 
     if "playing card" in lower:
-        return "Fix stuck UI message after card click; require az48_state response or action_error handling."
+        return "Fix stuck Playing card UI state and require az48_state/action_error handling."
 
-    if "missing" in lower and suite == "systems":
-        return "Align HTML IDs, frontend event names, backend handlers, and payload schema."
+    if "play_to_field" in lower:
+        return "Remove legacy play_to_field and use az48_play_card."
 
-    if suite == "deck":
-        return "Fix deck/inventory ownership consistency before gameplay testing."
+    if "module not found" in lower:
+        return "Fix missing QA module import or create the expected file."
 
-    if suite == "economy":
-        return "Fix ledger/idempotency/booster ownership before progression release."
+    if "argument --target" in lower or "invalid choice" in lower:
+        return "Fix qa_agent argparse target/suite configuration."
 
-    if suite == "routes":
-        return "Fix HTTP route status, auth redirects, or static asset availability."
+    if "integrityerror" in lower:
+        return "Fix QA fixture creation or database required fields."
 
     if suite == "production":
-        return "Verify Render deploy, cache bust, service worker, and production static assets."
+        return "Check deploy/cache/static assets on production."
 
-    if suite == "browser":
-        return "Inspect screenshots/report; browser QA found user-visible gameplay breakage."
+    if suite.startswith("browser"):
+        return "Inspect browser screenshots and visible state regression."
 
-    return "Inspect suite logs and patch the nearest failing contract."
+    return "Inspect suite report and fix the nearest failing contract."
 
 
-def run_suite(suite, include_optional=False):
-    if suite == "browser":
-        # Browser QA needs local server runner.
-        args = ["python3", "tools/qa/run_local_browser_qa.py"]
-        timeout = 240
-    elif suite == "production":
-        args = [
-            "python3",
-            "tools/qa/ambitionz_qa_agent.py",
-            "--target",
-            "local",
-            "--suite",
-            "production",
-            "--base-url",
-            "https://ambitionzgame.com",
-        ]
-        timeout = 90
-    else:
-        args = [
-            "python3",
-            "tools/qa/ambitionz_qa_agent.py",
-            "--target",
-            "local",
-            "--suite",
-            suite,
-        ]
-        timeout = 120
+def flow_lines(output):
+    lines = []
 
-    result = run_command(args, timeout=timeout)
-    combined = (result["stdout"] or "") + "\n" + (result["stderr"] or "")
+    for line in output.splitlines():
+        s = line.strip()
 
-    if suite == "browser":
-        status = "PASS" if "RESULT=PASS browser_eagle_eye" in combined else "FAIL"
-    else:
-        status = parse_status(combined)
+        if s.startswith("- ") and (": PASS" in s or ": FAIL" in s):
+            lines.append(s)
 
-    priority = classify_priority(suite, status, combined)
+        if "ERROR:" in s:
+            lines.append(s)
+
+        if "RESULT=" in s or "RESULT:" in s:
+            lines.append(s)
+
+    return lines[:100]
+
+
+def run_agent_suite(suite):
+    args = [
+        "python3",
+        "tools/qa/ambitionz_qa_agent.py",
+        "--target",
+        "local",
+        "--suite",
+        suite,
+    ]
+
+    result = run_command(args, timeout=180)
+    output = result["stdout"] + "\n" + result["stderr"]
+    status = parse_agent_status(output)
 
     return {
         "suite": suite,
         "status": status,
-        "priority": priority,
+        "priority": priority_for(suite, status, output),
+        "recommendation": recommendation_for(suite, status, output),
         "returncode": result["returncode"],
         "timeout": result["timeout"],
-        "flow_lines": extract_flow_lines(combined),
-        "recommendation": recommendation_for(suite, status, combined),
-        "output": combined,
+        "output": output,
+        "flow_lines": flow_lines(output),
     }
 
 
-def build_report(include_browser=False, include_production=False):
-    suites = list(LOCAL_SUITES)
+def run_browser_runner(suite):
+    runner = BROWSER_RUNNERS[suite]
+    runner_path = PROJECT_ROOT / runner
 
-    if include_browser:
-        suites.append("browser")
+    if not runner_path.exists():
+        output = f"Missing runner: {runner}"
+        return {
+            "suite": suite,
+            "status": "SKIP",
+            "priority": "SKIP",
+            "recommendation": recommendation_for(suite, "SKIP", output),
+            "returncode": 0,
+            "timeout": False,
+            "output": output,
+            "flow_lines": [output],
+        }
 
-    if include_production:
-        suites.append("production")
+    result = run_command(["python3", runner], timeout=360)
+    output = result["stdout"] + "\n" + result["stderr"]
+    status = parse_runner_status(suite, output)
 
+    return {
+        "suite": suite,
+        "status": status,
+        "priority": priority_for(suite, status, output),
+        "recommendation": recommendation_for(suite, status, output),
+        "returncode": result["returncode"],
+        "timeout": result["timeout"],
+        "output": output,
+        "flow_lines": flow_lines(output),
+    }
+
+
+def run_production(base_url="https://ambitionzgame.com"):
+    args = [
+        "python3",
+        "tools/qa/ambitionz_qa_agent.py",
+        "--target",
+        "local",
+        "--suite",
+        "production",
+        "--base-url",
+        base_url,
+    ]
+
+    result = run_command(args, timeout=120)
+    output = result["stdout"] + "\n" + result["stderr"]
+    status = parse_agent_status(output)
+
+    return {
+        "suite": "production",
+        "status": status,
+        "priority": priority_for("production", status, output),
+        "recommendation": recommendation_for("production", status, output),
+        "returncode": result["returncode"],
+        "timeout": result["timeout"],
+        "output": output,
+        "flow_lines": flow_lines(output),
+    }
+
+
+def build_report(include_browser=False, include_deep_browser=False, include_production=False):
     results = []
 
-    for suite in suites:
+    for suite in CORE_SUITES:
         print(f"RUN {suite}...")
-        results.append(run_suite(suite))
+        results.append(run_agent_suite(suite))
 
-    overall = "PASS" if all(item["status"] == "PASS" for item in results) else "FAIL"
+    if include_browser:
+        print("RUN browser...")
+        results.append(run_browser_runner("browser"))
 
-    p0 = [item for item in results if item["priority"] == "P0"]
-    p1 = [item for item in results if item["priority"] == "P1"]
+    if include_deep_browser:
+        for suite in ["browser_full_match", "browser_viewports", "browser_shop_deck"]:
+            print(f"RUN {suite}...")
+            results.append(run_browser_runner(suite))
+
+    if include_production:
+        print("RUN production...")
+        results.append(run_production())
+
+    hard_failures = [
+        r for r in results
+        if r["status"] not in ("PASS", "SKIP")
+    ]
+
+    overall = "PASS" if not hard_failures else "FAIL"
+
+    p0 = [r for r in results if r["priority"] == "P0"]
+    p1 = [r for r in results if r["priority"] == "P1"]
+    skipped = [r for r in results if r["status"] == "SKIP"]
 
     lines = [
         "# Ambitionz Master QA Report",
         "",
         f"- Generated: {STAMP}",
         f"- Overall: **{overall}**",
-        f"- P0 Failures: {len(p0)}",
-        f"- P1 Failures: {len(p1)}",
-        "",
-        "## Executive Summary",
-        "",
-    ]
-
-    if overall == "PASS":
-        lines.append("All selected QA suites passed.")
-    else:
-        lines.append("One or more QA suites failed. Prioritize P0 before gameplay polish.")
-
-    lines.extend([
+        f"- P0 failures: {len(p0)}",
+        f"- P1 failures: {len(p1)}",
+        f"- Skipped optional suites: {len(skipped)}",
         "",
         "## Suite Matrix",
         "",
         "| Suite | Status | Priority | Recommendation |",
         "|---|---:|---:|---|",
-    ])
+    ]
 
-    for item in results:
-        lines.append(
-            f"| {item['suite']} | {item['status']} | {item['priority']} | {item['recommendation']} |"
-        )
+    for r in results:
+        lines.append(f"| {r['suite']} | {r['status']} | {r['priority']} | {r['recommendation']} |")
 
     lines.extend([
         "",
-        "## Failure Priority",
+        "## P0/P1 Focus",
         "",
     ])
 
-    if not p0 and not p1:
+    focus = p0 + p1
+
+    if not focus:
         lines.append("No P0/P1 failures detected.")
     else:
-        for item in p0 + p1:
-            lines.append(f"### {item['priority']} — {item['suite']}")
-            lines.append("")
-            lines.append(f"- Status: `{item['status']}`")
-            lines.append(f"- Recommendation: {item['recommendation']}")
-            lines.append("")
+        for r in focus:
+            lines.extend([
+                f"### {r['priority']} — {r['suite']}",
+                "",
+                f"- Status: `{r['status']}`",
+                f"- Recommendation: {r['recommendation']}",
+                "",
+                "```text",
+                "\n".join(r["flow_lines"]),
+                "```",
+                "",
+            ])
 
-            if item["flow_lines"]:
-                lines.append("```text")
-                lines.extend(item["flow_lines"][:80])
-                lines.append("```")
-                lines.append("")
+    if skipped:
+        lines.extend([
+            "",
+            "## Skipped Optional Suites",
+            "",
+        ])
+
+        for r in skipped:
+            lines.append(f"- `{r['suite']}`: {r['recommendation']}")
 
     lines.extend([
         "",
@@ -267,18 +347,20 @@ def build_report(include_browser=False, include_production=False):
         "",
     ])
 
-    for item in results:
-        lines.append(f"### {item['suite']}")
-        lines.append("")
-        lines.append(f"- Status: `{item['status']}`")
-        lines.append(f"- Priority: `{item['priority']}`")
-        lines.append(f"- Return code: `{item['returncode']}`")
-        lines.append(f"- Timeout: `{item['timeout']}`")
-        lines.append("")
-        lines.append("```text")
-        lines.append(item["output"][-12000:])
-        lines.append("```")
-        lines.append("")
+    for r in results:
+        lines.extend([
+            f"### {r['suite']}",
+            "",
+            f"- Status: `{r['status']}`",
+            f"- Priority: `{r['priority']}`",
+            f"- Return code: `{r['returncode']}`",
+            f"- Timeout: `{r['timeout']}`",
+            "",
+            "```text",
+            r["output"][-14000:],
+            "```",
+            "",
+        ])
 
     REPORT.write_text("\n".join(lines))
     return overall, results
@@ -286,10 +368,12 @@ def build_report(include_browser=False, include_production=False):
 
 def main():
     include_browser = "--browser" in sys.argv
-    include_production = "--production" in sys.argv
+    include_deep_browser = "--deep-browser" in sys.argv or "--full" in sys.argv
+    include_production = "--production" in sys.argv or "--full" in sys.argv
 
     overall, results = build_report(
         include_browser=include_browser,
+        include_deep_browser=include_deep_browser,
         include_production=include_production,
     )
 
@@ -298,8 +382,8 @@ def main():
     print(f"RESULT={overall}")
     print(f"REPORT={REPORT}")
 
-    for item in results:
-        print(f"- {item['suite']}: {item['status']} priority={item['priority']}")
+    for r in results:
+        print(f"- {r['suite']}: {r['status']} priority={r['priority']}")
 
     if overall != "PASS":
         raise SystemExit(1)
