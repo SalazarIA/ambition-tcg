@@ -9,6 +9,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from tools.qa.qa_config import qa_report_path, ensure_qa_dirs
 from tools.qa.qa_backend_flow import run_backend_flow
 from tools.qa.qa_socket_flow import run_socket_flow
+from tools.qa.qa_browser_flow import run_browser_flow
 
 
 def format_result(result):
@@ -38,7 +39,9 @@ def format_result(result):
 def main():
     parser = argparse.ArgumentParser(description="Ambitionz QA Agent")
     parser.add_argument("--target", default="local", choices=["local"], help="QA target")
-    parser.add_argument("--suite", default="all", choices=["all", "backend", "socket"], help="Suite to run")
+    parser.add_argument("--suite", default="all", choices=["all", "backend", "socket", "browser"], help="Suite to run")
+    parser.add_argument("--base-url", default="http://127.0.0.1:8080", help="Base URL for browser QA")
+    parser.add_argument("--headed", action="store_true", help="Run browser visibly")
     args = parser.parse_args()
 
     ensure_qa_dirs()
@@ -50,6 +53,9 @@ def main():
 
     if args.suite in ("all", "socket"):
         results.append(run_socket_flow())
+
+    if args.suite in ("browser",):
+        results.append(run_browser_flow(base_url=args.base_url, headed=args.headed))
 
     passed = all(result.get("status") == "PASS" for result in results)
 
