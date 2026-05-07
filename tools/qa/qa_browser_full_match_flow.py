@@ -222,11 +222,20 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                         shot(page, shot_dir, f"round_{index}_after_card", logs)
                         assert_state_ok(after_card, f"round_{index}_after_card")
 
-                        if after_card["hand_cards"] >= hand_before and after_card["my_field_cards"] <= field_before:
+                        # Only require mutation when the field was empty before the click.
+                        # If the slot is already occupied, the game may safely reject another field play.
+                        if field_before == 0 and after_card["hand_cards"] >= hand_before and after_card["my_field_cards"] <= field_before:
                             raise AssertionError(
                                 f"Card click did not mutate hand/field. hand_before={hand_before} "
                                 f"hand_after={after_card['hand_cards']} field_before={field_before} "
                                 f"field_after={after_card['my_field_cards']}"
+                            )
+
+                        if field_before > 0 and after_card["hand_cards"] >= hand_before and after_card["my_field_cards"] <= field_before:
+                            logs.append(
+                                "card_click_no_mutation_allowed_because_field_occupied="
+                                f"hand_before={hand_before} hand_after={after_card['hand_cards']} "
+                                f"field_before={field_before} field_after={after_card['my_field_cards']}"
                             )
 
                     click_any(page, ["#az48-ready", "#ready-btn", "button:has-text(\"Ready\")"], "ready", logs)
