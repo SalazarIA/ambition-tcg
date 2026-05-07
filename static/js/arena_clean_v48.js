@@ -174,11 +174,16 @@
 
         const phase = str(state.phase || "start");
 
-        setVisible("az48-start", PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length));
-        setVisible("az48-strike", Boolean(legal.show_intents || legal.can_choose_intent));
-        setVisible("az48-guard", Boolean(legal.show_intents || legal.can_choose_intent));
-        setVisible("az48-focus", Boolean(legal.show_intents || legal.can_choose_intent));
-        setVisible("az48-ready", Boolean(legal.show_ready || legal.can_ready));
+        const showStart = PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length);
+        const showIntents = Boolean(legal.show_intents || legal.can_choose_intent);
+        const showReady = Boolean(legal.show_ready || legal.can_ready);
+
+        setVisible("az48-start", showStart);
+        setVisible("az48-strike", showIntents);
+        setVisible("az48-guard", showIntents);
+        setVisible("az48-focus", showIntents);
+        setVisible("az48-ready", showReady);
+        document.body.classList.toggle("az48-has-actions", showStart || showIntents || showReady);
 
         text("az48-mode", str(state.mode || "training"));
         text("az48-round", num(state.round || 1, 1));
