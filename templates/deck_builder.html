@@ -66,11 +66,23 @@
 }
 </style>
 
+<style>
+.deck-builder-invalid-state-v1 .deck-status-invalid-v1,
+.deck-builder-invalid-state-v1 .warning-flash {
+    border: 1px solid rgba(255, 110, 110, .55);
+    box-shadow: 0 18px 46px rgba(255, 60, 60, .10);
+}
+
+.deck-builder-invalid-state-v1 .progression-kicker {
+    letter-spacing: .08em;
+}
+</style>
+
 </head>
 
 <body class="az-game-deck-page">
 
-    <main class="wide-page mobile-wide-page deck-builder-unified-v1">
+    <main class="wide-page mobile-wide-page deck-builder-unified-v1 {% if deck_validation_errors %}deck-builder-invalid-state-v1{% endif %}">
 
 
         <nav class="az-card-nav-v1">
@@ -180,6 +192,19 @@
             </div>
 
         </section>
+
+        {% if deck_validation_errors %}
+        <section class="deck-status deck-status-invalid-v1">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">DECK INVALID</span>
+                    <h2>Inventory mismatch</h2>
+                </div>
+                <a href="{{ url_for('collection') }}" class="btn btn-secondary small-btn">Collection</a>
+            </div>
+            <p class="subtitle">This deck has 30 cards, but it uses cards you do not currently own enough copies of.</p>
+        </section>
+        {% endif %}
 
         <section class="deck-status">
 
@@ -575,3 +600,5 @@
 </body>
 
 </html>
+
+
