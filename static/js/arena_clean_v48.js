@@ -187,6 +187,8 @@
         setVisible("az48-focus", showIntents);
         setVisible("az48-ready", showReady);
         document.body.classList.toggle("az48-has-actions", showStart || showIntents || showReady);
+        document.body.classList.toggle("az48-has-hand", hand.length > 0);
+        document.body.classList.toggle("az48-match-started", hand.length > 0 || phase !== "start");
 
         text("az48-mode", str(state.mode || "training"));
         text("az48-round", num(state.round || 1, 1));
@@ -419,7 +421,7 @@
 
     function bindClicks() {
         document.addEventListener("click", (event) => {
-            const startBtn = event.target.closest("#az48-start, #join-queue-btn, [data-az48-action='start-training']");
+            const startBtn = event.target.closest("#az48-floating-start, #az48-start, #join-queue-btn, [data-az48-action='start-training']");
             if (startBtn) {
                 event.preventDefault();
                 startTraining();

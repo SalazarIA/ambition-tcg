@@ -660,3 +660,50 @@ body[data-page-kind="training"] .az48-training-hidden-actions {
     opacity: 0 !important;
     pointer-events: none !important;
 }
+
+/* ARENA_REAL_CLICK_FIX_V65
+   Botão Start flutuante acima da arena para evitar colisão de pointer-events/layout.
+*/
+.az48-floating-start {
+    display: none;
+}
+
+body[data-page-kind="training"] .az48-floating-start {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    left: 50% !important;
+    bottom: max(18px, env(safe-area-inset-bottom)) !important;
+    transform: translateX(-50%) !important;
+    width: min(320px, calc(100vw - 32px)) !important;
+    height: 56px !important;
+    border: 1px solid rgba(255, 214, 120, .78) !important;
+    border-radius: 18px !important;
+    background: linear-gradient(135deg, #ffd66f, #b8872b) !important;
+    color: #120d05 !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .72), 0 0 34px rgba(255, 214, 120, .28) !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+body[data-page-kind="training"].az48-has-hand .az48-floating-start,
+body[data-page-kind="training"].az48-match-started .az48-floating-start {
+    display: none !important;
+}
+
+/* ARENA_REAL_START_V66
+   No modo treino, o Start clicável oficial é o botão flutuante.
+   O botão antigo ficava dentro da área colidida por footer/hand.
+*/
+body[data-page-kind="training"]:not(.az48-match-started):not(.az48-has-hand) #az48-start {
+    display: none !important;
+    pointer-events: none !important;
+}
