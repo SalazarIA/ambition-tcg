@@ -344,14 +344,6 @@
             render(payload);
         });
 
-        socket.on("game_state_update", (payload) => {
-            if (isCanonical(payload)) {
-                render(payload);
-            } else {
-                console.debug("[Ambitionz AZ48] ignored legacy game_state_update", payload);
-            }
-        });
-
         socket.on("arena_state_update", (payload) => {
             if (isCanonical(payload)) render(payload);
         });
