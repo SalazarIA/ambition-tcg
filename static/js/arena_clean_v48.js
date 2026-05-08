@@ -457,6 +457,17 @@
             const card = event.target.closest("#az48-hand .az48-card[data-card-id]");
             if (card) {
                 event.preventDefault();
+
+                const cardIsPlayable =
+                    card.classList.contains("is-playable") ||
+                    card.classList.contains("playable") ||
+                    card.classList.contains("az48-playable");
+
+                if (!cardIsPlayable) {
+                    setMessage("This card cannot be played now. Choose another action or press Ready.");
+                    return;
+                }
+
                 playCard(card.dataset.cardId);
             }
         });

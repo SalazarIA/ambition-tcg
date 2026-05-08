@@ -178,8 +178,57 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                 fill_any(page, ["input[name=email]", "input[type=email]"], QA_EMAIL, "email", logs)
                 fill_any(page, ["input[name=password]", "input[type=password]"], QA_PASSWORD, "password", logs)
                 click_any(page, ["button:has-text(\"Login\")", "input[type=submit]"], "login", logs)
-                page.wait_for_timeout(1400)
+                page.wait_for_timeout(1800)
                 shot(page, shot_dir, "01_after_login", logs)
+
+                # Production fallback: local QA can create DB users directly, production cannot.
+                # If login did not leave the login page, try registering the QA user through the real UI.
+                if "/login" in page.url or "AMBITIONZ LOGIN" in body_text(page).upper():
+                    logs.append("login_still_on_login_page_try_register")
+                    page.goto(base_url.rstrip("/") + "/register", wait_until="networkidle")
+                    page.wait_for_timeout(800)
+
+                    try:
+                        fill_any(page, ["input[name=username]", "input[name=name]"], QA_USERNAME, "register_username", logs)
+                    except Exception as exc:
+                        logs.append(f"register_username_skip: {type(exc).__name__}: {exc}")
+
+                    fill_any(page, ["input[name=email]", "input[type=email]"], QA_EMAIL, "register_email", logs)
+                    fill_any(page, ["input[name=password]", "input[type=password]"], QA_PASSWORD, "register_password", logs)
+
+                    try:
+                        fill_any(
+                            page,
+                            ["input[name=confirm_password]", "input[name=password_confirm]", "input[name=confirm]"],
+                            QA_PASSWORD,
+                            "register_confirm_password",
+                            logs,
+                        )
+                    except Exception as exc:
+                        logs.append(f"register_confirm_skip: {type(exc).__name__}: {exc}")
+
+                    click_any(
+                        page,
+                        [
+                            "button:has-text(\"Create account\")",
+                            "button:has-text(\"Register\")",
+                            "button:has-text(\"Sign up\")",
+                            "input[type=submit]",
+                        ],
+                        "register_submit",
+                        logs,
+                    )
+                    page.wait_for_timeout(2200)
+                    shot(page, shot_dir, "01b_after_register", logs)
+
+                    # Try login again after register.
+                    page.goto(base_url.rstrip("/") + "/login", wait_until="networkidle")
+                    page.wait_for_timeout(700)
+                    fill_any(page, ["input[name=email]", "input[type=email]"], QA_EMAIL, "email_after_register", logs)
+                    fill_any(page, ["input[name=password]", "input[type=password]"], QA_PASSWORD, "password_after_register", logs)
+                    click_any(page, ["button:has-text(\"Login\")", "input[type=submit]"], "login_after_register", logs)
+                    page.wait_for_timeout(1800)
+                    shot(page, shot_dir, "01c_after_login_retry", logs)
 
                 page.goto(base_url.rstrip("/") + "/training", wait_until="networkidle")
                 page.wait_for_timeout(1400)
@@ -240,9 +289,15 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
 
                     if hand_before > 0:
                         click_any(page, [
-                            "#az48-hand .az48-card[data-card-id]",
-                            "#hand .az48-card[data-card-id]",
-                            ".az48-card[data-card-id]",
+                            "#az48-hand .az48-card.is-playable[data-card-id]",
+                            "#az48-hand .az48-card.playable[data-card-id]",
+                            "#az48-hand .az48-card.az48-playable[data-card-id]",
+                            "#hand .az48-card.is-playable[data-card-id]",
+                            "#hand .az48-card.playable[data-card-id]",
+                            "#hand .az48-card.az48-playable[data-card-id]",
+                            ".az48-card.is-playable[data-card-id]",
+                            ".az48-card.playable[data-card-id]",
+                            ".az48-card.az48-playable[data-card-id]",
                         ], "first_card", logs)
 
                         page.wait_for_timeout(2500)
