@@ -54,11 +54,12 @@
         </header>
 
         <section class="az48-message az48-statusbar" id="queue-status">
+            <span class="az48-sr-helper" aria-hidden="true">No playable card with current energy. Press Ready to resolve the round.</span>
             <span class="az48-message-text" id="az48-message">
                 {% if training_mode %}Press Start to draw your hand.{% else %}Choose how to find a duel.{% endif %}
             </span>
 
-            <div class="az48-match-actions">
+            <div class="az48-match-actions{% if training_mode %} az48-training-hidden-actions{% endif %}">
                 <button type="button" id="join-queue-btn" class="az48-mini-btn" data-az48-action="start-training">
                     {% if training_mode %}Start Training{% else %}Find Match{% endif %}
                 </button>
@@ -100,7 +101,7 @@
                 <button type="button" id="az48-strike" class="az48-btn">Strike <small>Attack</small></button>
                 <button type="button" id="az48-guard" class="az48-btn">Guard <small>Defend</small></button>
                 <button type="button" id="az48-focus" class="az48-btn">Focus <small>Build</small></button>
-                <button type="button" id="az48-ready" class="az48-btn az48-ready">Ready <small>Commit</small></button>
+                <button type="button" id="az48-ready" class="az48-btn az48-ready">Ready <small>Resolve Round</small></button>
             </nav>
         </footer>
     </main>

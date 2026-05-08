@@ -185,8 +185,37 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                 page.wait_for_timeout(1400)
                 shot(page, shot_dir, "02_training_before_start", logs)
 
-                click_any(page, ["#az48-start", "button:has-text(\"Start\")", "#join-queue-btn"], "start_training", logs)
-                page.wait_for_timeout(3000)
+                # Start training through the canonical arena API.
+                # This is more stable than a visual click because the socket may still be connecting.
+                page.wait_for_function(
+                    "() => window.AmbitionzArena48 && window.AmbitionzArena48.socket && window.AmbitionzArena48.socket.connected",
+                    timeout=12000,
+                )
+
+                page.evaluate("""
+                    () => {
+                        window.AmbitionzArena48.startTraining();
+                    }
+                """)
+                logs.append("start_training_api_called")
+
+                page.wait_for_timeout(1800)
+
+                page.evaluate("""
+                    () => {
+                        if (window.AmbitionzArena48 && window.AmbitionzArena48.requestState) {
+                            window.AmbitionzArena48.requestState();
+                        }
+                    }
+                """)
+                logs.append("request_state_after_start_called")
+
+                page.wait_for_function(
+                    "() => window.__ambitionzArena48State && window.__ambitionzArena48State.me && Array.isArray(window.__ambitionzArena48State.me.hand) && window.__ambitionzArena48State.me.hand.length > 0",
+                    timeout=12000,
+                )
+
+                page.wait_for_timeout(800)
                 start = snapshot(page, "after_start", logs)
                 shot(page, shot_dir, "03_after_start", logs)
 

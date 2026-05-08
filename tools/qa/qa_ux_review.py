@@ -49,7 +49,9 @@ def audit_arena(files):
     js = files["arena_js"]
     combined = html + "\n" + js
 
-    if "Start Training" in html and "Start</button>" in html:
+    secondary_start_hidden = "az48-training-hidden-actions" in html
+
+    if "Start Training" in html and "Start</button>" in html and not secondary_start_hidden:
         issues.append(issue(
             "P1",
             "Arena",

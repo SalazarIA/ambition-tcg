@@ -645,3 +645,18 @@ body.az48-has-actions .az48-hand .az48-card {
 #az48-hand .az48-card {
     pointer-events: auto;
 }
+
+
+/* QA-24 Arena UX polish */
+body[data-page-kind="training"] .az48-training-hidden-actions {
+    display: none !important;
+}
+
+.az48-sr-helper {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}

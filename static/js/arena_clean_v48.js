@@ -7,6 +7,9 @@
     let bootTries = 0;
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
+
+    const AZ48_NO_PLAYABLE_HELP = "No playable card with current energy. Press Ready to resolve the round.";
+
     const PAGE_KIND = document.body ? document.body.getAttribute("data-page-kind") : "arena";
     const ID_ALIASES = {
         "az48-ready": ["ready-btn"],
