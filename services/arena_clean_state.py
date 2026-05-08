@@ -300,17 +300,42 @@ def phase_from_match(match, me):
     return "waiting"
 
 
+def zone_for_card(card):
+    ctype = _str(card.get("type") or card.get("card_type") or "Monster").strip().title()
+
+    if ctype == "Spell":
+        return "spell"
+
+    if ctype == "Trap":
+        return "trap"
+
+    return "monster"
+
+
 def legal_actions_for(me, phase):
     hand = me.get("hand") or []
     energy = _int(me.get("energy"), 0)
     ready = _bool(me.get("ready"))
     intent = me.get("intent")
+    field = me.get("field") or {}
 
-    playable_ids = [
-        card["id"]
-        for card in hand
-        if _int(card.get("cost"), 1) <= energy
-    ]
+    playable_ids = []
+
+    for card in hand:
+        card_id = _str(card.get("id") or card.get("card_id") or card.get("name"), "")
+        cost = _int(card.get("cost"), 1)
+        zone = zone_for_card(card)
+
+        if not card_id:
+            continue
+
+        if cost > energy:
+            continue
+
+        if field.get(zone):
+            continue
+
+        playable_ids.append(card_id)
 
     can_start = phase == "start" or not hand
     can_choose_intent = bool(hand) and not ready and phase in ("intent", "main")
