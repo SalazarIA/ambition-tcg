@@ -42,6 +42,7 @@ from services.arena_payload import build_arena_payloads_for_match, build_arena_s
 from services.match_state_v1 import build_match_state_payloads, build_match_state_v1
 from services.match_rewards_v1 import persist_rewards_for_user
 from services.match_actions_v1 import create_training_match_v1, play_card as v1_play_card, set_intent as v1_set_intent, declare_ready as v1_declare_ready, ensure_match_shape, training_bot_auto_progress
+from services.battle_engine_v1_adapter import create_be1_training_match, build_be1_arena_payload, be1_start, be1_set_intent, be1_play_card, be1_ready
 from services.match_payloads import (
     build_game_state_payloads,
     build_post_match_payload,
@@ -3993,6 +3994,63 @@ def emit_az48_state_for_sid(sid=None, message=None):
         return None
 
 
+
+
+# =========================================================
+# BE1 Battle Engine Bridge
+# Parallel bridge for the isolated battle_engine_v1.
+# =========================================================
+
+def be1_room_for_sid(sid):
+    return f"be1_training_{sid}"
+
+
+def be1_match_for_sid(sid):
+    room_code = player_rooms.get(sid)
+
+    if room_code and room_code in active_matches:
+        match = active_matches.get(room_code)
+        if isinstance(match, dict) and match.get("be1"):
+            return room_code, match
+
+    room_code = be1_room_for_sid(sid)
+    match = active_matches.get(room_code)
+
+    if isinstance(match, dict) and match.get("be1"):
+        player_rooms[sid] = room_code
+        return room_code, match
+
+    return None, None
+
+
+def emit_be1_state(sid, message=None):
+    room_code, match = be1_match_for_sid(sid)
+
+    if not match:
+        return None
+
+    payload = build_be1_arena_payload(match, message=message)
+    socketio.emit("az48_state", payload, room=sid)
+    socketio.emit("game_state_update", payload, room=sid)
+
+    if payload.get("winner"):
+        result = "WIN" if payload.get("winner") == "player" else ("LOSE" if payload.get("winner") == "opponent" else "DRAW")
+        socketio.emit("game_over", {"result": result}, room=sid)
+
+    return payload
+
+
+def start_be1_for_sid(sid, user=None, message="Battle Engine V1 started."):
+    room_code = be1_room_for_sid(sid)
+    match = create_be1_training_match(user=user, sid=sid)
+    be1_start(match)
+
+    active_matches[room_code] = match
+    player_rooms[sid] = room_code
+
+    socketio.emit("battle_log", {"message": message}, room=sid)
+    return emit_be1_state(sid, message=message)
+
 # =========================================================
 # AZ48 Clean Arena Socket Aliases
 # Stable event names for the clean single-renderer arena.
@@ -4000,60 +4058,102 @@ def emit_az48_state_for_sid(sid=None, message=None):
 
 @socketio.on("az48_start_training")
 def az48_start_training(data=None):
-    handle_start_training_v1(data or {})
-    emit_az48_state_for_sid(message="Training started. Choose your intent.")
+    sid = request.sid
+
+    try:
+        user = current_user()
+    except Exception:
+        user = None
+
+    start_be1_for_sid(sid, user=user, message="Battle Engine V1 training started. Choose an intent.")
 
 
 @socketio.on("az48_request_state")
 def az48_request_state(data=None):
-    payload = emit_az48_state_for_sid()
+    sid = request.sid
+    payload = emit_be1_state(sid)
+
     if not payload:
-        handle_request_match_state(data or {})
+        try:
+            user = current_user()
+        except Exception:
+            user = None
+
+        start_be1_for_sid(sid, user=user, message="Battle Engine V1 training started. Choose an intent.")
 
 
 @socketio.on("az48_set_intent")
 def az48_set_intent(data=None):
-    handle_set_intent_v1(data or {})
-    intent = (data or {}).get("intent") or "Intent"
-    emit_az48_state_for_sid(message=f"{intent} selected. Play a card or press Ready.")
+    sid = request.sid
+    data = data or {}
+    intent = data.get("intent") or "Focus"
+
+    room, match = be1_match_for_sid(sid)
+
+    if not match:
+        try:
+            user = current_user()
+        except Exception:
+            user = None
+        start_be1_for_sid(sid, user=user, message="Battle Engine V1 training started.")
+
+    room, match = be1_match_for_sid(sid)
+
+    try:
+        be1_set_intent(match, intent)
+        emit_be1_state(sid, message=f"{intent} selected. Play a card or press Ready.")
+    except Exception as error:
+        socketio.emit("action_error", {"code": "BE1_SET_INTENT_FAILED", "message": str(error)}, room=sid)
+        emit_be1_state(sid)
 
 
 @socketio.on("az48_play_card")
 def az48_play_card(data=None):
     sid = request.sid
-    handle_play_card_v1(data or {})
+    data = data or {}
 
-    room, match = find_match_for_sid(sid)
-    if match:
-        ok, bot_message = training_bot_auto_progress(match)
-        if bot_message:
-            socketio.emit("battle_log", {"message": bot_message}, room=sid)
-        emit_match_state_to_match(match, message=bot_message)
-        emit_az48_state_for_sid(sid, message=bot_message)
-    else:
-        emit_az48_state_for_sid(sid)
+    room, match = be1_match_for_sid(sid)
+
+    if not match:
+        try:
+            user = current_user()
+        except Exception:
+            user = None
+        start_be1_for_sid(sid, user=user, message="Battle Engine V1 training started.")
+
+    room, match = be1_match_for_sid(sid)
+
+    try:
+        be1_play_card(match, card_id=data.get("card_id") or data.get("id"), card_index=data.get("card_index"))
+        emit_be1_state(sid, message="Card played. Press Ready to resolve.")
+    except Exception as error:
+        socketio.emit("action_error", {"code": "BE1_PLAY_CARD_FAILED", "message": str(error)}, room=sid)
+        emit_be1_state(sid)
 
 
 @socketio.on("az48_declare_ready")
 def az48_declare_ready(data=None):
     sid = request.sid
-    handle_declare_ready_v1(data or {})
 
-    room, match = find_match_for_sid(sid)
-    if match:
-        ok, bot_message = training_bot_auto_progress(match)
-        if bot_message:
-            socketio.emit("battle_log", {"message": bot_message}, room=sid)
+    room, match = be1_match_for_sid(sid)
 
-        # AUTO_PERSIST_ARENA_V1_REWARD after bot resolution
-        if match.get("phase") == "finished":
-            payload = persist_v1_reward_for_sid(match, sid)
-            socketio.emit("reward_result", payload, room=sid)
+    if not match:
+        try:
+            user = current_user()
+        except Exception:
+            user = None
+        start_be1_for_sid(sid, user=user, message="Battle Engine V1 training started.")
 
-        emit_match_state_to_match(match, message=bot_message)
-        emit_az48_state_for_sid(sid, message=bot_message)
-    else:
-        emit_az48_state_for_sid(sid, message="Ready. Waiting for battle resolution.")
+    room, match = be1_match_for_sid(sid)
+
+    try:
+        be1_ready(match)
+        payload = emit_be1_state(sid, message="Round resolved.")
+        if payload and payload.get("winner"):
+            socketio.emit("battle_log", {"message": payload.get("message")}, room=sid)
+    except Exception as error:
+        socketio.emit("action_error", {"code": "BE1_READY_FAILED", "message": str(error)}, room=sid)
+        emit_be1_state(sid)
 
 
 if __name__ == "__main__":
