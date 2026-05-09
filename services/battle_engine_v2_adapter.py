@@ -189,12 +189,16 @@ def build_be2_arena_payload(match: Dict[str, Any], message: Optional[str] = None
     final_message = message
 
     if not final_message:
+        summary = state.get("round_summary") or {}
+
         if state.get("winner"):
-            final_message = f"Match finished. Winner: {state.get('winner')}."
+            final_message = summary.get("short_result") or f"Match finished. Winner: {state.get('winner')}."
+        elif summary.get("short_result"):
+            final_message = summary["short_result"]
         elif enemy_preview.get("message"):
             final_message = enemy_preview["message"]
         else:
-            final_message = "Summon creatures, cast spells and press Ready."
+            final_message = "Choose a tactic: Strike attacks harder, Guard blocks damage, Focus charges Unleash."
 
     return {
         "schema": ARENA_CLEAN_SCHEMA,
@@ -206,6 +210,21 @@ def build_be2_arena_payload(match: Dict[str, Any], message: Optional[str] = None
         "winner": state.get("winner"),
         "reason": state.get("reason"),
         "enemy_preview": enemy_preview,
+        "round_summary": state.get("round_summary") or {},
+        "help": {
+            "turn_order": [
+                "1. Choose Strike, Guard or Focus.",
+                "2. Play one card if you can.",
+                "3. Press Ready to resolve combat.",
+            ],
+            "actions": {
+                "Strike": "+2 attack this round.",
+                "Guard": "+4 shield this round.",
+                "Focus": "+3 Ambition. Ambition charges Unleash.",
+                "Ready": "Resolves your action and the enemy action.",
+            },
+            "goal": "Destroy enemy creatures, damage enemy HP, and use Unleash to finish the duel.",
+        },
         "unleash_cost": UNLEASH_COST,
         "me": _player_payload(player, viewer=True),
         "enemy": _player_payload(enemy, viewer=False),

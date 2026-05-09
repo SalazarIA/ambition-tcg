@@ -511,12 +511,125 @@ def ambition_gain_from_intent(player: Dict[str, Any]) -> int:
     return 1
 
 
+def _card_name(card: Optional[Dict[str, Any]]) -> str:
+    return str((card or {}).get("name") or "No card")
+
+
+def _active_name(player: Dict[str, Any]) -> str:
+    creature = active_creature(player)
+    return str((creature or {}).get("name") or "no active creature")
+
+
+def _hp_delta(before: int, after: int) -> int:
+    return max(0, int(before or 0) - int(after or 0))
+
+
+def build_round_summary(
+    match: Dict[str, Any],
+    p_hp_before: int,
+    o_hp_before: int,
+    p_active_before: str,
+    o_active_before: str,
+    p_atk: int,
+    o_atk: int,
+) -> Dict[str, Any]:
+    player = match["player"]
+    opponent = match["opponent"]
+
+    p_hp_after = int(player.get("hp") or 0)
+    o_hp_after = int(opponent.get("hp") or 0)
+
+    player_card = _card_name(player.get("played_card"))
+    enemy_card = _card_name(opponent.get("played_card"))
+
+    player_lost = _hp_delta(p_hp_before, p_hp_after)
+    enemy_lost = _hp_delta(o_hp_before, o_hp_after)
+
+    lines = []
+
+    lines.append(f"You chose {player.get('intent') or 'Focus'} and played {player_card}.")
+    lines.append(f"Enemy chose {opponent.get('intent') or 'Focus'} and played {enemy_card}.")
+
+    if player.get("unleash"):
+        lines.append("You prepared Ambition Unleash and released a special attack.")
+    if opponent.get("unleash"):
+        lines.append("Enemy prepared Ambition Unleash and released a special attack.")
+
+    if p_active_before != "no active creature":
+        lines.append(f"Your {p_active_before} attacked with {p_atk} power.")
+    else:
+        lines.append(f"You had no active creature and pressured for {p_atk} power.")
+
+    if o_active_before != "no active creature":
+        lines.append(f"Enemy {o_active_before} attacked with {o_atk} power.")
+    else:
+        lines.append(f"Enemy had no active creature and pressured for {o_atk} power.")
+
+    if enemy_lost:
+        lines.append(f"Enemy lost {enemy_lost} HP: {o_hp_before} → {o_hp_after}.")
+    else:
+        lines.append(f"Enemy HP stayed at {o_hp_after}.")
+
+    if player_lost:
+        lines.append(f"You lost {player_lost} HP: {p_hp_before} → {p_hp_after}.")
+    else:
+        lines.append(f"Your HP stayed at {p_hp_after}.")
+
+    if p_active_before != _active_name(player):
+        if _active_name(player) == "no active creature":
+            lines.append(f"Your {p_active_before} was destroyed.")
+        else:
+            lines.append(f"Your active creature changed to {_active_name(player)}.")
+
+    if o_active_before != _active_name(opponent):
+        if _active_name(opponent) == "no active creature":
+            lines.append(f"Enemy {o_active_before} was destroyed.")
+        else:
+            lines.append(f"Enemy active creature changed to {_active_name(opponent)}.")
+
+    if match.get("winner"):
+        if match["winner"] == "player":
+            lines.append("You won the duel.")
+        elif match["winner"] == "opponent":
+            lines.append("You lost the duel.")
+        else:
+            lines.append("The duel ended in a draw.")
+
+    short_result = f"You dealt {enemy_lost} HP damage. Enemy dealt {player_lost} HP damage."
+
+    return {
+        "round": int(match.get("round") or 0),
+        "player_intent": player.get("intent") or "Focus",
+        "enemy_intent": opponent.get("intent") or "Focus",
+        "player_card": player_card,
+        "enemy_card": enemy_card,
+        "player_attack": int(p_atk or 0),
+        "enemy_attack": int(o_atk or 0),
+        "player_hp_before": p_hp_before,
+        "player_hp_after": p_hp_after,
+        "enemy_hp_before": o_hp_before,
+        "enemy_hp_after": o_hp_after,
+        "player_active_before": p_active_before,
+        "player_active_after": _active_name(player),
+        "enemy_active_before": o_active_before,
+        "enemy_active_after": _active_name(opponent),
+        "short_result": short_result,
+        "lines": lines,
+    }
+
+
+
 def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
     if match.get("winner"):
         return match
 
     player = match["player"]
     opponent = match["opponent"]
+
+    p_hp_before = int(player.get("hp") or 0)
+    o_hp_before = int(opponent.get("hp") or 0)
+    p_active_before = _active_name(player)
+    o_active_before = _active_name(opponent)
 
     if not player.get("intent"):
         choose_intent(match, "player", "Focus")
@@ -564,11 +677,23 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
     player["ambition"] += ambition_gain_from_intent(player)
     opponent["ambition"] += ambition_gain_from_intent(opponent)
 
-    match["log"].append(
-        f"Combat resolved: {player['name']} attack {p_atk}, {opponent['name']} attack {o_atk}."
+    check_winner(match)
+
+    summary = build_round_summary(
+        match,
+        p_hp_before=p_hp_before,
+        o_hp_before=o_hp_before,
+        p_active_before=p_active_before,
+        o_active_before=o_active_before,
+        p_atk=p_atk,
+        o_atk=o_atk,
     )
 
-    check_winner(match)
+    match["round_summary"] = summary
+    match["log"].append(f"Round {summary['round']}: {summary['short_result']}")
+
+    for line in summary["lines"][-4:]:
+        match["log"].append(line)
 
     if not match.get("winner"):
         match["phase"] = "round_start"

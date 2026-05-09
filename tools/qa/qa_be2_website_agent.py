@@ -94,6 +94,7 @@ class Agent:
         assert state.get("me"), "Missing me payload"
         assert state.get("enemy"), "Missing enemy payload"
         assert state.get("legal_actions"), "Missing legal_actions payload"
+        assert "help" in state, "Missing help payload"
 
     def choose_intent(self, state):
         me = state.get("me") or {}
@@ -211,6 +212,15 @@ class Agent:
 
         hp_changed = any(pair != hp_pairs[0] for pair in hp_pairs[1:]) if len(hp_pairs) > 1 else False
         assert hp_changed or state.get("winner"), "HP did not change during duel"
+
+        summaries = [
+            s.get("round_summary") for s in self.states
+            if isinstance(s.get("round_summary"), dict) and s.get("round_summary", {}).get("lines")
+        ]
+        assert summaries, "No round_summary with explanation lines was observed"
+        print("ROUND SUMMARY SAMPLE:", summaries[-1].get("short_result"))
+        for line in summaries[-1].get("lines", [])[:4]:
+            print("SUMMARY LINE:", line)
 
         if not active_seen:
             final_field = (state.get("me") or {}).get("field") or {}
