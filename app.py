@@ -41,7 +41,7 @@ from services.card_stats import update_card_stats_after_match
 from services.arena_payload import build_arena_payloads_for_match, build_arena_state_payload
 from services.match_state_v1 import build_match_state_payloads, build_match_state_v1
 from services.match_rewards_v1 import persist_rewards_for_user
-from services.match_actions_v1 import create_training_match_v1, play_card as v1_play_card, set_intent as v1_set_intent, declare_ready as v1_declare_ready, ensure_match_shape
+from services.match_actions_v1 import create_training_match_v1, play_card as v1_play_card, set_intent as v1_set_intent, declare_ready as v1_declare_ready, ensure_match_shape, training_bot_auto_progress
 from services.match_payloads import (
     build_game_state_payloads,
     build_post_match_payload,
@@ -4020,14 +4020,40 @@ def az48_set_intent(data=None):
 
 @socketio.on("az48_play_card")
 def az48_play_card(data=None):
+    sid = request.sid
     handle_play_card_v1(data or {})
-    emit_az48_state_for_sid()
+
+    room, match = find_match_for_sid(sid)
+    if match:
+        ok, bot_message = training_bot_auto_progress(match)
+        if bot_message:
+            socketio.emit("battle_log", {"message": bot_message}, room=sid)
+        emit_match_state_to_match(match, message=bot_message)
+        emit_az48_state_for_sid(sid, message=bot_message)
+    else:
+        emit_az48_state_for_sid(sid)
 
 
 @socketio.on("az48_declare_ready")
 def az48_declare_ready(data=None):
+    sid = request.sid
     handle_declare_ready_v1(data or {})
-    emit_az48_state_for_sid(message="Ready. Waiting for battle resolution.")
+
+    room, match = find_match_for_sid(sid)
+    if match:
+        ok, bot_message = training_bot_auto_progress(match)
+        if bot_message:
+            socketio.emit("battle_log", {"message": bot_message}, room=sid)
+
+        # AUTO_PERSIST_ARENA_V1_REWARD after bot resolution
+        if match.get("phase") == "finished":
+            payload = persist_v1_reward_for_sid(match, sid)
+            socketio.emit("reward_result", payload, room=sid)
+
+        emit_match_state_to_match(match, message=bot_message)
+        emit_az48_state_for_sid(sid, message=bot_message)
+    else:
+        emit_az48_state_for_sid(sid, message="Ready. Waiting for battle resolution.")
 
 
 if __name__ == "__main__":

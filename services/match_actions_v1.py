@@ -452,3 +452,189 @@ def declare_ready(match, player_key):
         return True, message
 
     return True, "Ready declared."
+
+
+
+# =========================================================
+# Training Bot Auto Progress V1
+# Keeps bot/training duel from stalling after player action.
+# =========================================================
+
+def _draw_one(player):
+    deck = player.get("deck") or []
+    hand = player.get("hand") or []
+
+    if deck:
+        hand.append(deck.pop(0))
+
+    player["deck"] = deck
+    player["hand"] = hand
+
+
+def _field_has_any_card(player):
+    field = ensure_field(player)
+    return bool(field.get("monster") or field.get("spell") or field.get("trap") or field.get("cards"))
+
+
+def _simple_card_power(card):
+    if not card:
+        return 0
+    return _card_power(card)
+
+
+def _total_field_power(player):
+    field = ensure_field(player)
+    total = 0
+
+    for zone in ("monster", "spell", "trap"):
+        total += _simple_card_power(field.get(zone))
+
+    cards = field.get("cards") or []
+    for card in cards:
+        total += _simple_card_power(card)
+
+    return total
+
+
+def _clear_field_to_graveyard(player):
+    field = ensure_field(player)
+    graveyard = player.get("graveyard") or []
+
+    for zone in ("monster", "spell", "trap"):
+        card = field.get(zone)
+        if card:
+            graveyard.append(card)
+        field[zone] = None
+
+    for card in field.get("cards") or []:
+        if card:
+            graveyard.append(card)
+
+    field["cards"] = []
+    player["graveyard"] = graveyard
+
+
+def _advance_round(match):
+    p1 = match.get("p1") or {}
+    p2 = match.get("p2") or {}
+
+    p1_power = _total_field_power(p1)
+    p2_power = _total_field_power(p2)
+
+    p1_intent = p1.get("intent") or "Strike"
+    p2_intent = p2.get("intent") or "Strike"
+
+    # Simple readable training resolver.
+    # Strike pushes damage. Guard mitigates. Focus banks ambition.
+    p1_damage = max(0, p1_power - (2 if p2_intent == "Guard" else 0))
+    p2_damage = max(0, p2_power - (2 if p1_intent == "Guard" else 0))
+
+    if p1_intent == "Focus":
+        p1["ambition"] = int(p1.get("ambition") or 0) + 1
+    if p2_intent == "Focus":
+        p2["ambition"] = int(p2.get("ambition") or 0) + 1
+
+    p2["hp"] = max(0, int(p2.get("hp") or 0) - p1_damage)
+    p1["hp"] = max(0, int(p1.get("hp") or 0) - p2_damage)
+
+    events = match.setdefault("events", [])
+    events.append({
+        "type": "round_resolved",
+        "round": match.get("round", 1),
+        "p1_power": p1_power,
+        "p2_power": p2_power,
+        "p1_damage": p1_damage,
+        "p2_damage": p2_damage,
+        "p1_intent": p1_intent,
+        "p2_intent": p2_intent,
+    })
+
+    _clear_field_to_graveyard(p1)
+    _clear_field_to_graveyard(p2)
+
+    if p1.get("hp", 0) <= 0 or p2.get("hp", 0) <= 0:
+        match["phase"] = "finished"
+        p1["ready"] = True
+        p2["ready"] = True
+
+        if p1.get("hp", 0) <= 0 and p2.get("hp", 0) <= 0:
+            match["winner"] = "draw"
+            return "Round resolved. Duel ended in a draw."
+
+        if p2.get("hp", 0) <= 0:
+            match["winner"] = "p1"
+            return "Round resolved. You won the training duel."
+
+        match["winner"] = "p2"
+        return "Round resolved. Bot won the training duel."
+
+    match["round"] = int(match.get("round") or 1) + 1
+    match["phase"] = "intent"
+
+    for player in (p1, p2):
+        player["ready"] = False
+        player["intent"] = None
+        player["max_energy"] = min(10, int(player.get("max_energy") or 2) + 1)
+        player["energy"] = int(player.get("max_energy") or 2)
+        _draw_one(player)
+
+    p2["intent"] = "Strike"
+
+    return "Round resolved. Choose your next intent."
+
+
+def _bot_choose_and_play_one(match):
+    bot = match.get("p2") or {}
+    ensure_match_shape(match)
+
+    if bot.get("ready"):
+        return "Bot is already ready."
+
+    # Keep bot predictable in training: set intent, then play first affordable valid card.
+    if not bot.get("intent"):
+        bot["intent"] = "Strike"
+
+    hand = bot.get("hand") or []
+    for card in list(hand):
+        ok, _message = can_play_card(bot, card)
+        if ok:
+            play_card(match, "p2", _card_id(card))
+            return f"Bot played {card.get('name') or 'a card'}."
+
+    return "Bot has no playable card."
+
+
+def training_bot_auto_progress(match):
+    """
+    Bot/training helper:
+    - after player card: bot plays one card if possible;
+    - after player ready: bot gets ready and resolves the round;
+    - never blocks the client waiting for a nonexistent human opponent.
+    """
+    ensure_match_shape(match)
+
+    if not (match.get("training") or match.get("is_bot_match")):
+        return False, "Not a bot match."
+
+    if match.get("phase") == "finished":
+        return True, "Duel already finished."
+
+    p1 = match.get("p1") or {}
+    p2 = match.get("p2") or {}
+
+    messages = []
+
+    if not _field_has_any_card(p2):
+        messages.append(_bot_choose_and_play_one(match))
+
+    if p1.get("ready"):
+        p2["ready"] = True
+
+        if not p2.get("intent"):
+            p2["intent"] = "Strike"
+
+        messages.append("Bot is ready.")
+        messages.append(_advance_round(match))
+        return True, " ".join([m for m in messages if m])
+
+    return True, " ".join([m for m in messages if m]) or "Bot waiting."
