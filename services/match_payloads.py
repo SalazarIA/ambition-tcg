@@ -3,10 +3,22 @@ from game.match_utils import player_display_name
 
 
 def find_player_key(match, sid):
-    if match["p1"]["sid"] == sid:
+    """
+    Return 'p1' or 'p2' if the sid belongs to a player in this match.
+    Return None for invalid/partial match payloads.
+
+    Defensive because disconnect events can happen while a match is being
+    created, cleaned up, or stored in a legacy/partial format.
+    """
+    if not isinstance(match, dict) or not sid:
+        return None
+
+    p1 = match.get("p1")
+    if isinstance(p1, dict) and p1.get("sid") == sid:
         return "p1"
 
-    if match["p2"]["sid"] == sid:
+    p2 = match.get("p2")
+    if isinstance(p2, dict) and p2.get("sid") == sid:
         return "p2"
 
     return None

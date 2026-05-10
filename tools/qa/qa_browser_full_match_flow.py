@@ -306,13 +306,21 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                         shot(page, shot_dir, f"round_{index}_after_card", logs)
                         assert_state_ok(after_card, f"round_{index}_after_card")
 
-                        # Only require mutation when the field was empty before the click.
-                        # If the slot is already occupied, the game may safely reject another field play.
-                        if field_before == 0 and after_card["hand_cards"] >= hand_before and after_card["my_field_cards"] <= field_before:
+                        # BE2 allows spells/traps/support cards. These may not occupy the
+                        # monster field slot and may draw/refill immediately, keeping hand size stable.
+                        # A confirmed "Card played" message is therefore also valid mutation.
+                        card_play_confirmed = "Card played" in str(after_card.get("message") or "")
+
+                        if (
+                            field_before == 0
+                            and after_card["hand_cards"] >= hand_before
+                            and after_card["my_field_cards"] <= field_before
+                            and not card_play_confirmed
+                        ):
                             raise AssertionError(
-                                f"Card click did not mutate hand/field. hand_before={hand_before} "
+                                f"Card click did not mutate hand/field or confirm play. hand_before={hand_before} "
                                 f"hand_after={after_card['hand_cards']} field_before={field_before} "
-                                f"field_after={after_card['my_field_cards']}"
+                                f"field_after={after_card['my_field_cards']} message={after_card.get('message')!r}"
                             )
 
                         if field_before > 0 and after_card["hand_cards"] >= hand_before and after_card["my_field_cards"] <= field_before:

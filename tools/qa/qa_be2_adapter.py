@@ -55,10 +55,15 @@ def main():
     playable = payload["legal_actions"]["playable_card_ids"]
     assert_true(len(playable) > 0, "expected playable cards")
 
-    be2_play_card(match, card_id=playable[0])
+    selected_card_id = playable[0]
+    be2_play_card(match, card_id=selected_card_id)
     payload = build_be2_arena_payload(match)
 
-    assert_true(payload["me"]["hand_count"] == hand_before - 1, "card should leave hand")
+    played = match["player"].get("played_card") or {}
+    assert_true(played.get("id") == selected_card_id, "selected card should be registered as played_card")
+
+    # Some cards draw immediately, so hand_count is not guaranteed to be hand_before - 1.
+    assert_true(payload["me"]["hand_count"] <= hand_before, "hand should not grow beyond previous count after a single play")
 
     be2_ready(match)
     payload = build_be2_arena_payload(match)

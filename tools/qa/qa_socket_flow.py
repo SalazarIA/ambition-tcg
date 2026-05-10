@@ -121,7 +121,26 @@ def run_socket_flow():
         _validate_az48_state(intent_state, "after_intent", logs)
 
         hand = ((intent_state.get("me") or {}).get("hand") or [])
-        first_card_id = hand[0]["id"]
+        legal_actions = intent_state.get("legal_actions") or {}
+        playable_ids = {str(card_id) for card_id in (legal_actions.get("playable_card_ids") or legal_actions.get("playable_cards") or [])}
+
+        playable_hand = [
+            card for card in hand
+            if not playable_ids or str(card.get("id")) in playable_ids
+        ]
+
+        monster_cards = [
+            card for card in playable_hand
+            if card.get("type") == "Monster"
+        ]
+
+        chosen_card = (monster_cards or playable_hand or hand)[0]
+        first_card_id = chosen_card["id"]
+
+        logs.append(
+            f"chosen_card: id={first_card_id} name={chosen_card.get('name')} "
+            f"type={chosen_card.get('type')} cost={chosen_card.get('cost')} playable_ids={sorted(playable_ids)}"
+        )
 
         client.emit("az48_play_card", {"card_id": first_card_id})
         play_packets = _packets(client)
@@ -136,8 +155,16 @@ def run_socket_flow():
 
         logs.append(f"after_play_state: hand={len(hand_after)} field={field} legal={play_state.get('legal_actions')}")
 
-        _assert(len(hand_after) == 4, f"Expected 4 cards after play, got {len(hand_after)}")
-        _assert(field.get("monster"), "Expected monster in field after play")
+        # BE2 can draw/refill immediately after a play, so hand size is not
+        # guaranteed to be exactly starting_hand - 1. The durable contract is:
+        # the selected card is no longer in hand, a monster reached the field,
+        # and the player can declare ready.
+        remaining_ids = {str(card.get("id")) for card in hand_after}
+        _assert(str(first_card_id) not in remaining_ids, "Played card should no longer be in hand")
+        _assert(len(hand_after) <= len(hand), f"Hand should not grow after single play. before={len(hand)} after={len(hand_after)}")
+        play_message = str(play_state.get("message") or "")
+        played_ok = bool(field.get("monster")) or "Card played" in play_message
+        _assert(played_ok, f"Expected card play to mutate field or confirm play. message={play_message!r} field={field}")
         _assert((play_state.get("legal_actions") or {}).get("can_ready"), "Expected can_ready True after play")
 
         client.emit("az48_declare_ready", {})

@@ -158,6 +158,111 @@
         if (el) el.style.display = visible ? "" : "none";
     }
 
+
+    function ensureClarityPanel() {
+        let panel = document.getElementById("az48-clarity-panel");
+        if (panel) return panel;
+
+        const app =
+            document.querySelector(".az48-arena") ||
+            document.querySelector(".az-arena-app") ||
+            document.querySelector("main") ||
+            document.body;
+
+        panel = document.createElement("section");
+        panel.id = "az48-clarity-panel";
+        panel.className = "az48-clarity-panel";
+        panel.innerHTML = [
+            '<div class="az48-clarity-card">',
+            '<h3>How to Play</h3>',
+            '<ul id="az48-help-lines"></ul>',
+            '</div>',
+            '<div class="az48-clarity-card">',
+            '<h3>Actions</h3>',
+            '<div id="az48-action-help"></div>',
+            '</div>',
+            '<div class="az48-clarity-card">',
+            '<h3>Enemy Plan</h3>',
+            '<p id="az48-enemy-plan">Enemy plan will appear here.</p>',
+            '</div>',
+            '<div class="az48-clarity-card az48-last-round-card">',
+            '<h3>Last Round</h3>',
+            '<p id="az48-round-result">No round resolved yet.</p>',
+            '<ul id="az48-round-lines"></ul>',
+            '</div>'
+        ].join("");
+
+        const hand = $("az48-hand");
+        if (hand && hand.parentNode) {
+            hand.parentNode.insertBefore(panel, hand);
+        } else {
+            app.appendChild(panel);
+        }
+
+        return panel;
+    }
+
+    function setList(id, values) {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const list = arr(values).filter(Boolean);
+        if (!list.length) {
+            el.innerHTML = '<li>No information yet.</li>';
+            return;
+        }
+
+        el.innerHTML = list.map((line) => '<li>' + esc(line) + '</li>').join("");
+    }
+
+    function renderActionHelp(actions) {
+        const el = document.getElementById("az48-action-help");
+        if (!el) return;
+
+        actions = actions || {};
+
+        const rows = [
+            ["Strike", actions.Strike || "+2 attack this round."],
+            ["Guard", actions.Guard || "+4 shield this round."],
+            ["Focus", actions.Focus || "+3 Ambition. Charges Unleash."],
+            ["Ready", actions.Ready || "Resolves combat."]
+        ];
+
+        el.innerHTML = rows.map((row) => {
+            return '<div class="az48-action-help-row"><strong>' + esc(row[0]) + '</strong><span>' + esc(row[1]) + '</span></div>';
+        }).join("");
+    }
+
+    function renderClarity(payload) {
+        ensureClarityPanel();
+
+        const help = payload.help || {};
+        const preview = payload.enemy_preview || {};
+        const summary = payload.round_summary || {};
+
+        setList("az48-help-lines", help.turn_order || [
+            "1. Choose Strike, Guard or Focus.",
+            "2. Play one card if you can.",
+            "3. Press Ready to resolve combat."
+        ]);
+
+        renderActionHelp(help.actions || {});
+
+        const enemyPlan = document.getElementById("az48-enemy-plan");
+        if (enemyPlan) {
+            const intent = preview.intent ? "[" + preview.intent + "] " : "";
+            enemyPlan.textContent = intent + (preview.message || "Watch the enemy field and prepare your next move.");
+        }
+
+        const result = document.getElementById("az48-round-result");
+        if (result) {
+            result.textContent = summary.short_result || "No round resolved yet.";
+        }
+
+        setList("az48-round-lines", summary.lines || []);
+    }
+
+
     function render(payload) {
         if (!isCanonical(payload)) {
             console.warn("[Ambitionz V51] ignored non-canonical state", payload);
@@ -176,6 +281,8 @@
         const hand = arr(me.hand);
 
         const phase = str(state.phase || "start");
+
+        renderClarity(state);
 
         const showStart = PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length);
         const showIntents = Boolean(legal.show_intents || legal.can_choose_intent);
