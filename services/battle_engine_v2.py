@@ -434,7 +434,8 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
             player["ambition"] += bonus
             match["log"].append(f"{player['name']} gained {bonus} Ambition from support.")
 
-        draw_cards(player, DRAW_PER_ROUND, match["log"])
+        if match["round"] > 1 or len(player.get("hand") or []) < STARTING_HAND_SIZE:
+            draw_cards(player, DRAW_PER_ROUND, match["log"])
 
     match["phase"] = "choose_action"
     match["enemy_preview"] = preview_bot_intent(match)

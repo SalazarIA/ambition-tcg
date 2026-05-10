@@ -642,7 +642,8 @@ body.az48-has-actions .az48-hand .az48-card {
     pointer-events: none;
 }
 
-#az48-hand .az48-card {
+#az48-hand .az48-card,
+#hand .az48-card {
     pointer-events: auto;
 }
 
@@ -784,5 +785,222 @@ body[data-page-kind="training"]:not(.az48-match-started):not(.az48-has-hand) #az
 @media (max-width: 620px) {
     .az48-clarity-panel {
         grid-template-columns: 1fr;
+    }
+}
+
+/* AZ48 official-card layout consolidation.
+   Keep the final arena sizing in the stylesheet instead of template-level
+   emergency overrides, while preserving the older DOM contract (#hand). */
+.az48-arena {
+    min-height: 100vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.az48-top,
+.az48-message {
+    flex: 0 0 auto;
+}
+
+.az48-board {
+    flex: 0 0 auto;
+    min-height: 245px;
+    max-height: 34vh;
+    overflow: hidden;
+    transition: max-height 0.2s ease, min-height 0.2s ease;
+}
+
+.az48-field-row,
+.az48-slot {
+    min-height: 92px;
+}
+
+.az48-bottom {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "handhead"
+        "hand"
+        "clarity"
+        "actions";
+    gap: 14px;
+    align-items: stretch;
+    padding: 12px 14px 18px;
+    z-index: 20;
+    overflow: visible;
+}
+
+.az48-hand-head {
+    grid-area: handhead;
+    min-height: 22px;
+    padding: 0 2px;
+}
+
+.az48-hand {
+    grid-area: hand;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 12px;
+    width: 100%;
+    min-height: 150px;
+    max-height: 168px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 8px 20px;
+    z-index: 10;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    contain: layout paint;
+}
+
+.az48-hand .az48-card {
+    position: relative;
+    flex: 0 0 118px;
+    width: 118px;
+    min-width: 118px;
+    max-width: 118px;
+    height: 126px;
+    min-height: 126px;
+    max-height: 126px;
+    margin: 0;
+    transform: none;
+    scroll-snap-align: start;
+    z-index: 1;
+}
+
+.az48-hand .az48-card:hover,
+.az48-hand .az48-card.selected,
+.az48-hand .az48-card.is-selected {
+    transform: translateY(-3px);
+    z-index: 4;
+}
+
+.az48-clarity-panel {
+    grid-area: clarity;
+    position: relative;
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 0.9fr)
+        minmax(330px, 1.35fr)
+        minmax(280px, 1fr)
+        minmax(300px, 1.1fr);
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    z-index: 20;
+    clear: both;
+}
+
+.az48-clarity-card {
+    min-width: 0;
+    min-height: 146px;
+    max-height: 190px;
+    overflow: auto;
+}
+
+.az48-action-help-row {
+    grid-template-columns: 68px 1fr;
+}
+
+.az48-last-round-card {
+    max-height: 190px;
+    overflow-y: auto;
+    border-color: rgba(255, 216, 120, 0.34);
+}
+
+#az48-round-result {
+    max-height: 132px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.az48-actions {
+    grid-area: actions;
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(130px, 1fr));
+    gap: 12px;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    opacity: 1;
+    z-index: 30;
+}
+
+.az48-btn {
+    width: 100%;
+    min-height: 58px;
+    white-space: normal;
+}
+
+@media (max-height: 850px) {
+    .az48-board {
+        min-height: 220px;
+        max-height: 30vh;
+    }
+
+    .az48-field-row,
+    .az48-slot {
+        min-height: 82px;
+    }
+
+    .az48-hand {
+        min-height: 138px;
+        max-height: 154px;
+    }
+
+    .az48-hand .az48-card {
+        flex-basis: 106px;
+        width: 106px;
+        min-width: 106px;
+        max-width: 106px;
+        height: 118px;
+        min-height: 118px;
+        max-height: 118px;
+    }
+
+    .az48-clarity-card,
+    .az48-last-round-card {
+        min-height: 132px;
+        max-height: 168px;
+    }
+
+    #az48-round-result {
+        max-height: 112px;
+    }
+
+    .az48-btn {
+        min-height: 52px;
+    }
+}
+
+@media (max-width: 1180px) {
+    .az48-clarity-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .az48-board {
+        min-height: 190px;
+        max-height: 28vh;
+    }
+
+    .az48-hand {
+        justify-content: flex-start;
+    }
+
+    .az48-clarity-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .az48-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
