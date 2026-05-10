@@ -2,7 +2,8 @@ from pathlib import Path
 import re
 
 files = [
-    Path("static/js/game.js"),
+    Path("static/js/arena_renderer_adapter.js"),
+    Path("static/js/arena_clean_v48.js"),
     Path("services/match_payloads.py"),
     Path("game/state.py"),
     Path("app.py"),
@@ -37,4 +38,4 @@ for path in files:
 
 print("Recommendation:")
 print("- If hand count is 0 in payload files, backend payload needs explicit `hand` export.")
-print("- If game.js renders hand but bridge does not, expose state to `window.AmbitionzArenaStateBridge.updateFromState(payload)`.")
+print("- If arena_clean_v48.js renders a different shape, update `static/js/arena_renderer_adapter.js` first.")

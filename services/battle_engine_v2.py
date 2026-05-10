@@ -322,11 +322,18 @@ def build_beta_deck(seed: Optional[int] = None) -> List[Dict[str, Any]]:
     return deck
 
 
-def create_player(name: str, seed: Optional[int] = None, sid: Optional[str] = None, user_id: Any = None) -> Dict[str, Any]:
+def create_player(
+    name: str,
+    seed: Optional[int] = None,
+    sid: Optional[str] = None,
+    user_id: Any = None,
+    is_bot: bool = False,
+) -> Dict[str, Any]:
     return {
         "name": name,
         "sid": sid,
         "user_id": user_id,
+        "is_bot": is_bot,
         "hp": STARTING_HP,
         "max_hp": STARTING_HP,
         "energy": STARTING_ENERGY,
@@ -341,6 +348,7 @@ def create_player(name: str, seed: Optional[int] = None, sid: Optional[str] = No
             "support": None,
         },
         "intent": None,
+        "ready": False,
         "played_card": None,
         "unleash": False,
         "last_damage_dealt": 0,
@@ -367,6 +375,9 @@ def create_match(
     seed: Optional[int] = None,
     player_sid: Optional[str] = None,
     user_id: Any = None,
+    opponent_sid: Optional[str] = None,
+    opponent_user_id: Any = None,
+    opponent_is_bot: bool = True,
 ) -> Dict[str, Any]:
     match = {
         "version": ENGINE_VERSION,
@@ -375,7 +386,13 @@ def create_match(
         "winner": None,
         "reason": None,
         "player": create_player(player_name, seed=seed, sid=player_sid, user_id=user_id),
-        "opponent": create_player(opponent_name, seed=None if seed is None else seed + 555),
+        "opponent": create_player(
+            opponent_name,
+            seed=None if seed is None else seed + 555,
+            sid=opponent_sid,
+            user_id=opponent_user_id,
+            is_bot=opponent_is_bot,
+        ),
         "enemy_preview": None,
         "log": [],
     }
@@ -425,6 +442,7 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
         player["energy"] = player["max_energy"]
         player["shield"] = 0
         player["intent"] = None
+        player["ready"] = False
         player["played_card"] = None
         player["unleash"] = False
         player["last_damage_dealt"] = 0
@@ -457,6 +475,7 @@ def _remove_card_from_hand(player: Dict[str, Any], card_id: Optional[str] = None
     hand = player.get("hand") or []
 
     index = None
+    has_explicit_card_id = card_id is not None and str(card_id) != ""
 
     if card_index is not None:
         try:
@@ -469,6 +488,9 @@ def _remove_card_from_hand(player: Dict[str, Any], card_id: Optional[str] = None
             if str(card.get("id")) == str(card_id):
                 index = idx
                 break
+
+    if index is None and has_explicit_card_id:
+        raise ValueError("Card not found in hand.")
 
     if index is None:
         cards = playable_cards(player)
@@ -990,7 +1012,10 @@ def player_auto_action(match: Dict[str, Any]) -> Dict[str, Any]:
 
 def resolve_round(match: Dict[str, Any]) -> Dict[str, Any]:
     if not match.get("opponent", {}).get("intent"):
-        bot_choose_action(match)
+        if match.get("opponent", {}).get("is_bot"):
+            bot_choose_action(match)
+        else:
+            choose_intent(match, "opponent", "Focus")
 
     resolve_combat(match)
 

@@ -17,7 +17,8 @@ FILES = [
     "services/arena_payload.py",
     "services/battle_summary.py",
     "services/match_telemetry.py",
-    "static/js/game.js",
+    "static/js/arena_renderer_adapter.js",
+    "static/js/arena_clean_v48.js",
     "templates/arena.html",
 ]
 
@@ -139,21 +140,21 @@ def build_contract_recommendation(socket_events):
         "missing_backend_listener_for_frontend_emit": sorted(frontend_emits - backend_listeners),
         "missing_frontend_listener_for_backend_emit": sorted((backend_emits - frontend_listeners) - {"connect", "disconnect"}),
         "target_client_to_server": [
-            "start_training",
-            "request_match_state",
-            "set_intent",
-            "play_card",
-            "declare_ready",
+            "az48_start_training",
+            "az48_request_state",
+            "az48_set_intent",
+            "az48_play_card",
+            "az48_declare_ready",
         ],
         "target_server_to_client": [
-            "match_state",
-            "battle_event",
+            "az48_state",
+            "game_state_update",
             "action_error",
-            "match_result",
-            "reward_result",
+            "game_over",
+            "post_match_summary",
         ],
         "target_payload_schema": {
-            "schema": "ambitionz_match_v1",
+            "schema": "ambitionz_arena_clean_v50",
             "match_id": "string",
             "mode": "training|pvp|bot",
             "round": "number",
@@ -282,13 +283,12 @@ def main():
 
     report.append("## Recommended Rebuild Order")
     report.append("")
-    report.append("1. Create `services/match_state_v1.py` as the only payload builder.")
-    report.append("2. Add `request_match_state` socket event.")
-    report.append("3. Emit `match_state` while keeping legacy `game_state_update` temporarily.")
-    report.append("4. Create `static/js/arena_app.js` to render only from `match_state`.")
-    report.append("5. Replace DOM-dependent card actions with `play_card(card_id)`.")
-    report.append("6. Remove V5/V7/V8 overlay fallback files from Arena only after stable QA.")
-    report.append("7. Reintroduce animations only after card movement is real.")
+    report.append("1. Keep BE2 as the canonical match engine for training, bot and PvP.")
+    report.append("2. Keep `static/js/arena_renderer_adapter.js` as the client render contract.")
+    report.append("3. Emit canonical `az48_state` for DOM and WebGL renderers.")
+    report.append("4. Keep `static/js/arena_clean_v48.js` as the only active DOM arena client.")
+    report.append("5. Add Three.js renderer features behind `?renderer=3d` without duplicating rules.")
+    report.append("6. Remove any new legacy fallback only after stable browser QA.")
     report.append("")
 
     Path("reports").mkdir(exist_ok=True)

@@ -1,20 +1,21 @@
 from pathlib import Path
 
-js = Path("static/js/arena_app.js").read_text(errors="ignore")
-css = Path("static/css/arena_app.css").read_text(errors="ignore")
-state = Path("services/match_state_v1.py").read_text(errors="ignore")
+js = Path("static/js/arena_clean_v48.js").read_text(errors="ignore")
+css = Path("static/css/arena_clean_v48.css").read_text(errors="ignore")
+adapter = Path("static/js/arena_renderer_adapter.js").read_text(errors="ignore")
+be2_adapter = Path("services/battle_engine_v2_adapter.py").read_text(errors="ignore")
 
 checks = {
-    "backend_element_css": '"element_css":' in state,
-    "backend_is_monster": '"is_monster":' in state,
-    "js_card_art_orb": "az-card-art-orb" in js,
-    "js_rarity_line": "az-card-rarity-line" in js,
-    "js_recalibrate_viewport": "function recalibrateArenaViewport()" in js,
-    "css_art_upgrade": "Card Art Placeholder Upgrade + AAA Layout QA" in css,
+    "backend_payload_contract": "build_be2_arena_payload" in be2_adapter,
+    "backend_is_monster": '"is_monster":' in be2_adapter,
+    "js_card_art_image": "az48-art-image" in js,
+    "js_rarity_line": "az48-rarity" in js,
+    "js_uses_adapter_art": "artUrl" in adapter,
+    "css_art_upgrade": ".az48-art-image" in css,
     "css_no_scroll_active": "overflow: hidden !important" in css,
-    "css_compact_height": "az-compact-height" in css,
+    "css_compact_height": "clamp(208px, 23dvh, 244px)" in css,
     "css_rarity_unique": "rarity-unique" in css,
-    "css_art_energy": "@keyframes azArtEnergySlow" in css,
+    "css_art_energy": "@keyframes az48CardEnergy" in css,
 }
 
 print("# Arena Card Art Layout Audit")

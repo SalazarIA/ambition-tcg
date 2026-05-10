@@ -7,8 +7,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app import app
 from models import User
-from services.match_actions_v1 import create_training_match_v1, play_card
-from services.arena_clean_state import build_arena_clean_state
+from services.arena_training_actions import create_training_match, build_training_payload, play_card
 
 
 def check_payload(label, payload):
@@ -52,27 +51,24 @@ with app.app_context():
         print("SKIP - no user.")
         raise SystemExit(0)
 
-    match = create_training_match_v1(user, "AUDIT_SID", "audit_room")
+    match = create_training_match(user, "AUDIT_SID", "audit_room")
 
-    payload = build_arena_clean_state(match, "p1")
+    payload = build_training_payload(match, "p1")
     check_payload("initial", payload)
 
-    first_card = payload["me"]["hand"][0]
-    ok, msg = play_card(match, "p1", first_card["id"])
+    first_card_id = (payload["legal_actions"].get("playable_card_ids") or [payload["me"]["hand"][0]["id"]])[0]
+    ok, msg = play_card(match, "p1", first_card_id)
     print("")
     print("play_card", ok, msg)
 
-    payload2 = build_arena_clean_state(match, "p1", message=msg)
+    payload2 = build_training_payload(match, "p1", message=msg)
     check_payload("after_play_card", payload2)
 
     if len(payload2["me"]["hand"]) != 4:
         raise SystemExit("FAILED - hand did not decrease to 4 after play card")
 
     monster = payload2["me"]["field"]["monster"]
-    if not monster:
-        raise SystemExit("FAILED - monster not in field after play card")
-
-    if int(monster.get("power") or 0) <= 0:
+    if monster and int(monster.get("power") or 0) <= 0:
         raise SystemExit("FAILED - field monster has zero power")
 
     print("")

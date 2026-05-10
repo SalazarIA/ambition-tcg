@@ -24,7 +24,20 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v155" in body
+    assert "ambitionz-web-app-v156" in body
+
+
+def test_training_3d_renderer_flag_loads_three_bundle(client):
+    user = create_user(username="renderer3d", email="renderer3d@example.com")
+    login_session(client, user)
+
+    response = client.get("/training?renderer=3d")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'data-arena-renderer="3d"' in body
+    assert "css/arena3d.css" in body
+    assert "dist/arena3d/arena3d.js" in body
 
 
 def test_support_page_renders_publicly(client):
@@ -469,6 +482,9 @@ def test_socket_public_queue_matches_two_players_before_bot_fallback(flask_app, 
         assert len(active_matches) == 1
 
         match = next(iter(active_matches.values()))
+        assert match.get("be2") is True
+        assert match["player"]["name"] == player_one.username
+        assert match["opponent"]["name"] == player_two.username
         assert match["p1"]["name"] == player_one.username
         assert match["p2"]["name"] == player_two.username
         assert not match.get("is_bot_match")
@@ -496,8 +512,10 @@ def test_socket_public_queue_falls_back_to_bot_after_timeout(flask_app, socketio
         assert len(active_matches) == 1
 
         match = next(iter(active_matches.values()))
+        assert match.get("be2") is True
         assert match.get("is_bot_match") is True
         assert match.get("matchmaking_fallback") is True
+        assert match["opponent"]["name"] == "Ambitionz Bot"
         assert match["p2"]["name"] == "Ambitionz Bot"
 
         socket_client.disconnect()

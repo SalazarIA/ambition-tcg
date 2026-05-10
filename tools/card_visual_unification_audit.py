@@ -7,7 +7,8 @@ checks = {
     "shop_loads_css": "card_system_v1.css" in Path("templates/shop.html").read_text(errors="ignore"),
     "collection_az_card": "az-card-v1" in Path("templates/collection.html").read_text(errors="ignore"),
     "starter_service": Path("services/starter_deck_v1.py").exists(),
-    "actions_uses_starter": "build_balanced_starter_deck" in Path("services/match_actions_v1.py").read_text(errors="ignore"),
+    "arena_uses_renderer_adapter": "AmbitionzArenaRendererAdapter" in Path("static/js/arena_clean_v48.js").read_text(errors="ignore"),
+    "be2_uses_official_catalog": "OFFICIAL_CARD_CATALOG" in Path("services/battle_engine_v2.py").read_text(errors="ignore"),
 }
 
 print("# Card Visual Unification Audit")

@@ -13,12 +13,15 @@ REPORT = PROJECT_ROOT / "reports" / f"arena_breakage_scan_{datetime.now().strfti
 FILES = [
     "app.py",
     "templates/arena.html",
-    "static/js/game.js",
-    "static/js/arena_app.js",
+    "static/js/arena_renderer_adapter.js",
+    "static/js/arena_clean_v48.js",
+    "static/dist/arena3d/arena3d.js",
     "static/js/arena_sound.js",
-    "static/css/arena_app.css",
-    "services/match_state_v1.py",
-    "services/match_actions_v1.py",
+    "static/css/arena_clean_v48.css",
+    "static/css/arena3d.css",
+    "services/battle_engine_v2.py",
+    "services/battle_engine_v2_adapter.py",
+    "services/match_engine_facade.py",
     "services/arena_payload.py",
     "sockets/game_socket.py",
 ]
@@ -57,11 +60,13 @@ def main():
 
     app = read("app.py")
     arena_html = read("templates/arena.html")
-    game_js = read("static/js/game.js")
-    arena_js = read("static/js/arena_app.js")
+    adapter_js = read("static/js/arena_renderer_adapter.js")
+    arena_js = read("static/js/arena_clean_v48.js")
+    arena3d_js = read("static/dist/arena3d/arena3d.js")
     socket_py = read("sockets/game_socket.py")
-    match_actions = read("services/match_actions_v1.py")
-    match_state = read("services/match_state_v1.py")
+    be2 = read("services/battle_engine_v2.py")
+    be2_adapter = read("services/battle_engine_v2_adapter.py")
+    facade = read("services/match_engine_facade.py")
 
     parts.append(section("Socket Events - Backend Listeners"))
     backend_events = []
@@ -76,7 +81,7 @@ def main():
 
     parts.append(section("Socket Events - Frontend Emits"))
     frontend_emits = []
-    for path in ["static/js/game.js", "static/js/arena_app.js"]:
+    for path in ["static/js/arena_clean_v48.js"]:
         text = read(path)
         for m in re.finditer(r'\.emit\(["\']([^"\']+)["\']', text):
             frontend_emits.append((path, m.group(1)))
@@ -96,66 +101,74 @@ def main():
 
     parts.append(section("Frontend Socket On Handlers"))
     frontend_on = []
-    for path in ["static/js/game.js", "static/js/arena_app.js"]:
+    for path in ["static/js/arena_clean_v48.js"]:
         text = read(path)
         for m in re.finditer(r'\.on\(["\']([^"\']+)["\']', text):
             frontend_on.append((path, m.group(1)))
     parts.append(code("\n".join(f"{p}: {e}" for p, e in sorted(set(frontend_on))) or "None found"))
 
     parts.append(section("Arena HTML Body / Script / CSS"))
-    body_lines = line_matches("templates/arena.html", ["<body", "arena_app.css", "arena_app.js", "game.js", "socket.io", "id=", "data-"])
+    body_lines = line_matches("templates/arena.html", ["<body", "arena_clean_v48.css", "arena3d.css", "arena_renderer_adapter.js", "arena_clean_v48.js", "arena3d.js", "socket.io", "id=", "data-"])
     parts.append(code("\n".join(body_lines[:240]) or "None"))
 
-    parts.append(section("Arena Renderer Definitions"))
-    renderer_lines = line_matches("static/js/arena_app.js", [
+    parts.append(section("Arena DOM Renderer Definitions"))
+    renderer_lines = line_matches("static/js/arena_clean_v48.js", [
         "function render",
-        "renderArenaV45",
-        "AmbitionzArenaV45",
-        "AmbitionzArenaV46",
-        "game_state_update",
-        "match_state",
-        "play_card",
-        "declare_ready",
-        "set_intent",
-        "start_training",
+        "AmbitionzArena48",
+        "az48_state",
+        "az48_play_card",
+        "az48_declare_ready",
+        "az48_set_intent",
+        "az48_start_training",
         "querySelector",
         "getElementById",
     ])
     parts.append(code("\n".join(renderer_lines[:260]) or "None"))
 
-    parts.append(section("Legacy game.js Renderer Definitions"))
-    game_lines = line_matches("static/js/game.js", [
-        "function render",
-        "socket.on",
-        "socket.emit",
-        "play_card",
-        "declare_ready",
-        "set_intent",
-        "start_training",
-        "getElementById",
-        "byId",
-        "hand",
+    parts.append(section("Renderer Adapter Definitions"))
+    adapter_lines = line_matches("static/js/arena_renderer_adapter.js", [
+        "function normalizeArenaState",
+        "function normalizeCard",
+        "function boardSlots",
+        "AmbitionzArenaRendererAdapter",
     ])
-    parts.append(code("\n".join(game_lines[:260]) or "None"))
+    parts.append(code("\n".join(adapter_lines[:260]) or "None"))
 
-    parts.append(section("Backend V1 Match Actions"))
-    action_lines = line_matches("services/match_actions_v1.py", [
-        "def create_training_match_v1",
+    parts.append(section("Arena 3D Renderer Definitions"))
+    arena3d_lines = line_matches("static/dist/arena3d/arena3d.js", [
+        "Arena3D",
+        "ambitionz:arena_state_rendered",
+        "manifest.json",
+        "boardSlots",
+    ])
+    parts.append(code("\n".join(arena3d_lines[:260]) or "None"))
+
+    parts.append(section("BE2 Match Engine"))
+    engine_lines = []
+    engine_lines.extend(line_matches("services/battle_engine_v2.py", [
+        "def create_match",
         "def play_card",
-        "def declare_ready",
-        "def set_intent",
-        "def",
-        "hand",
-        "field",
-        "events",
-    ])
-    parts.append(code("\n".join(action_lines[:260]) or "None"))
+        "def choose_intent",
+        "def resolve_round",
+        "def start_round",
+        "def _remove_card_from_hand",
+    ]))
+    engine_lines.extend(line_matches("services/match_engine_facade.py", [
+        "class MatchEngineFacade",
+        "def start_training",
+        "def start_bot_match",
+        "def start_pvp_match",
+        "def emit_state",
+        "def play_card",
+        "def ready",
+    ]))
+    parts.append(code("\n".join(engine_lines[:260]) or "None"))
 
-    parts.append(section("Payload Contract"))
-    payload_lines = line_matches("services/match_state_v1.py", [
-        "def build_match_state_v1",
-        "def build_match_state_payloads",
-        "def normalize_player",
+    parts.append(section("BE2 Payload Contract"))
+    payload_lines = line_matches("services/battle_engine_v2_adapter.py", [
+        "def build_be2_arena_payload",
+        "def _player_payload",
+        "def _battle_card_to_arena_card",
         '"me"',
         '"enemy"',
         '"hand"',
@@ -165,9 +178,9 @@ def main():
     parts.append(code("\n".join(payload_lines[:220]) or "None"))
 
     parts.append(section("CSS Arena Locks"))
-    css_lines = line_matches("static/css/arena_app.css", [
-        "az-arena-v45",
-        "az-arena-v40",
+    css_lines = line_matches("static/css/arena_clean_v48.css", [
+        "az48-renderer-3d",
+        "az48-card-v2",
         "display: none",
         "overflow",
         "position: fixed",
@@ -181,26 +194,35 @@ def main():
     parts.append(section("Potential Fatal Issues Detected"))
     issues = []
 
-    if 'body.az-arena-v45 > main:not(#az-arena-v45-root)' in read("static/css/arena_app.css"):
-        issues.append("CSS hides all existing main elements except #az-arena-v45-root. If V45 root does not receive socket state, the arena appears dead.")
+    if ("arena" + "_app.js") in arena_html or ("game" + ".js") in arena_html:
+        issues.append("Template still loads a legacy arena renderer.")
 
-    if "play_card_v1" in arena_js and "play_card_v1" not in app and "play_card_v1" not in socket_py:
-        issues.append("Frontend emits play_card_v1 but backend listener may not exist.")
+    if "az48_play_card" in arena_js and "az48_play_card" not in app and "az48_play_card" not in socket_py:
+        issues.append("Frontend emits az48_play_card but backend listener may not exist.")
 
-    if "declare_ready_v1" in arena_js and "declare_ready_v1" not in app and "declare_ready_v1" not in socket_py:
-        issues.append("Frontend emits declare_ready_v1 but backend listener may not exist.")
+    if "az48_declare_ready" in arena_js and "az48_declare_ready" not in app and "az48_declare_ready" not in socket_py:
+        issues.append("Frontend emits az48_declare_ready but backend listener may not exist.")
 
-    if "set_intent_v1" in arena_js and "set_intent_v1" not in app and "set_intent_v1" not in socket_py:
-        issues.append("Frontend emits set_intent_v1 but backend listener may not exist.")
+    if "az48_set_intent" in arena_js and "az48_set_intent" not in app and "az48_set_intent" not in socket_py:
+        issues.append("Frontend emits az48_set_intent but backend listener may not exist.")
 
-    if "start_training_v1" in arena_js and "start_training_v1" not in app and "start_training_v1" not in socket_py:
-        issues.append("Frontend emits start_training_v1 but backend listener may not exist.")
+    if "az48_start_training" in arena_js and "az48_start_training" not in app and "az48_start_training" not in socket_py:
+        issues.append("Frontend emits az48_start_training but backend listener may not exist.")
 
-    if "AmbitionzArenaV45" in arena_js and "game_state_update" in game_js:
-        issues.append("Multiple renderers likely active: game.js legacy renderer + arena_app.js V45 renderer. They may compete or listen to different payload contracts.")
+    if "function normalizeArenaState" not in adapter_js:
+        issues.append("Renderer adapter is missing normalizeArenaState.")
 
-    if "build_match_state_v1" in match_state and "me.hand" not in arena_js and "match.me.hand" in arena_js:
-        issues.append("Renderer may expect match.me.hand indirectly; verify normalize path.")
+    if arena_html.count("arena_clean_v48.js") != 1:
+        issues.append("Template should load the clean DOM arena exactly once.")
+
+    if "build_be2_arena_payload" not in be2_adapter:
+        issues.append("BE2 adapter is missing build_be2_arena_payload.")
+
+    if "class MatchEngineFacade" not in facade:
+        issues.append("Arena is missing the BE2 match-engine facade.")
+
+    if "def play_card" not in be2:
+        issues.append("BE2 engine is missing play_card.")
 
     parts.append(code("\n".join(f"- {i}" for i in issues) or "No obvious fatal issue detected by static scan."))
 

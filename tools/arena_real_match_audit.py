@@ -11,8 +11,7 @@ from models import User
 from game.deck import load_card_ids, build_playable_deck, draw_starting_hand
 from game.state import create_player_state
 from services.economy.deck_inventory import owned_card_ids_for_user, build_auto_deck_from_inventory
-from services.match_state_v1 import build_match_state_v1
-from services.match_actions_v1 import create_training_match_v1
+from services.arena_training_actions import create_training_match, build_training_payload
 
 
 def card_summary(card):
@@ -63,19 +62,19 @@ with app.app_context():
     print("player_hand_count", len(player.get("hand") or []))
     print("player_deck_count", len(player.get("deck") or []))
 
-    match = create_training_match_v1(user, "AUDIT_SID", "audit_room")
+    match = create_training_match(user, "AUDIT_SID", "audit_room")
 
     print("match_phase", match.get("phase"))
     print("match_round", match.get("round"))
 
     p1 = match.get("p1") or {}
-    print("v1_p1_hand_count", len(p1.get("hand") or []))
-    print("v1_p1_deck_count", len(p1.get("deck") or []))
+    print("be2_player_hand_count", len(p1.get("hand") or []))
+    print("be2_player_deck_count", len(p1.get("deck") or []))
 
     for index, card in enumerate((p1.get("hand") or [])[:5], start=1):
-        print("V1_HAND", index, card_summary(card))
+        print("BE2_HAND", index, card_summary(card))
 
-    payload = build_match_state_v1(match, "p1")
+    payload = build_training_payload(match, "p1")
 
     print("payload_keys", sorted(payload.keys()))
     print("payload_phase", payload.get("phase"))

@@ -22,6 +22,9 @@
     "desktop": "electron .",
     "desktop:prod": "AMBITION_DESKTOP_URL=https://ambition-tcg.onrender.com electron .",
     "desktop:local": "AMBITION_DESKTOP_URL=http://127.0.0.1:8080 electron .",
+    "arena3d:build": "vite build --config frontend/arena3d/vite.config.ts",
+    "arena3d:assets:inspect": "gltf-transform inspect static/assets/arena3d/models/*.glb",
+    "arena3d:assets:optimize": "gltf-transform optimize",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
@@ -39,12 +42,16 @@
     "@capacitor/ios": "^7.0.0",
     "@capacitor/keyboard": "^7.0.0",
     "@capacitor/splash-screen": "^7.0.0",
-    "@capacitor/status-bar": "^7.0.0"
+    "@capacitor/status-bar": "^7.0.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0",
+    "@gltf-transform/cli": "^4.3.0",
     "electron": "^41.5.0",
-    "electron-builder": "^26.0.0"
+    "electron-builder": "^26.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.11"
   },
   "build": {
     "appId": "com.elementra.ambitiontcg",

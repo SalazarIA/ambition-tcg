@@ -73,14 +73,13 @@ def run_arena_matrix_flow():
     try:
         from app import app
         from models import User
-        from services.match_actions_v1 import (
-            create_training_match_v1,
-            ensure_match_shape,
+        from services.arena_training_actions import (
+            create_training_match,
+            build_training_payload,
             set_intent,
             play_card,
             declare_ready,
         )
-        from services.arena_clean_state import build_arena_clean_state
 
         with app.app_context():
             user = User.query.first()
@@ -100,10 +99,9 @@ def run_arena_matrix_flow():
                 room = f"qa_matrix_{intent.lower()}"
                 sid = f"QA_MATRIX_{intent.upper()}"
 
-                match = create_training_match_v1(user, sid, room)
-                ensure_match_shape(match)
+                match = create_training_match(user, sid, room)
 
-                initial = build_arena_clean_state(match, "p1")
+                initial = build_training_payload(match, "p1")
                 _assert_clean_payload(initial, f"{intent}/initial", failures)
                 logs.append(f"{intent}/initial: {_summary(initial)}")
 
@@ -114,7 +112,7 @@ def run_arena_matrix_flow():
                     failures.append(f"{intent}: set_intent failed: {message}")
                     continue
 
-                after_intent = build_arena_clean_state(match, "p1", message=message)
+                after_intent = build_training_payload(match, "p1", message=message)
                 _assert_clean_payload(after_intent, f"{intent}/after_intent", failures)
                 logs.append(f"{intent}/after_intent: {_summary(after_intent)}")
 
@@ -123,7 +121,16 @@ def run_arena_matrix_flow():
                     failures.append(f"{intent}: no hand after intent")
                     continue
 
-                card_id = hand[0].get("id")
+                playable_ids = ((after_intent.get("legal_actions") or {}).get("playable_card_ids") or [])
+                card_id = next(
+                    (
+                        card.get("id")
+                        for card in hand
+                        if card.get("type") == "Monster" and card.get("id") in playable_ids
+                    ),
+                    playable_ids[0] if playable_ids else hand[0].get("id"),
+                )
+                selected_card = next((card for card in hand if card.get("id") == card_id), {})
                 ok, message = play_card(match, "p1", card_id)
                 logs.append(f"{intent}/play_card: card_id={card_id} ok={ok} message={message}")
 
@@ -131,7 +138,7 @@ def run_arena_matrix_flow():
                     failures.append(f"{intent}: play_card failed: {message}")
                     continue
 
-                after_play = build_arena_clean_state(match, "p1", message=message)
+                after_play = build_training_payload(match, "p1", message=message)
                 _assert_clean_payload(after_play, f"{intent}/after_play", failures)
                 logs.append(f"{intent}/after_play: {_summary(after_play)}")
 
@@ -141,7 +148,7 @@ def run_arena_matrix_flow():
                 if after_play_hand != len(hand) - 1:
                     failures.append(f"{intent}: hand did not decrease after play. before={len(hand)} after={after_play_hand}")
 
-                if not any([field.get("monster"), field.get("spell"), field.get("trap")]):
+                if selected_card.get("type") == "Monster" and not field.get("monster"):
                     failures.append(f"{intent}: no card appeared in field after play")
 
                 ok, message = declare_ready(match, "p1")
@@ -151,7 +158,7 @@ def run_arena_matrix_flow():
                     failures.append(f"{intent}: declare_ready failed: {message}")
                     continue
 
-                after_ready = build_arena_clean_state(match, "p1", message=message)
+                after_ready = build_training_payload(match, "p1", message=message)
                 _assert_clean_payload(after_ready, f"{intent}/after_ready", failures)
                 logs.append(f"{intent}/after_ready: {_summary(after_ready)}")
 
@@ -159,8 +166,7 @@ def run_arena_matrix_flow():
                     failures.append(f"{intent}: round did not advance after ready")
 
             # Scenario 2: ready without playing should still resolve safely.
-            match = create_training_match_v1(user, "QA_MATRIX_READY_ONLY", "qa_matrix_ready_only")
-            ensure_match_shape(match)
+            match = create_training_match(user, "QA_MATRIX_READY_ONLY", "qa_matrix_ready_only")
 
             ok, message = set_intent(match, "p1", "Strike")
             logs.append(f"ready_only/set_intent: ok={ok} message={message}")
@@ -168,7 +174,7 @@ def run_arena_matrix_flow():
             ok, message = declare_ready(match, "p1")
             logs.append(f"ready_only/declare_ready: ok={ok} message={message}")
 
-            after_ready_only = build_arena_clean_state(match, "p1", message=message)
+            after_ready_only = build_training_payload(match, "p1", message=message)
             _assert_clean_payload(after_ready_only, "ready_only/after_ready", failures)
             logs.append(f"ready_only/after_ready: {_summary(after_ready_only)}")
 
@@ -176,15 +182,14 @@ def run_arena_matrix_flow():
                 failures.append(f"ready_only: declare_ready failed: {message}")
 
             # Scenario 3: invalid card id should fail, not mutate hand.
-            match = create_training_match_v1(user, "QA_MATRIX_INVALID", "qa_matrix_invalid")
-            ensure_match_shape(match)
-            before_invalid = build_arena_clean_state(match, "p1")
+            match = create_training_match(user, "QA_MATRIX_INVALID", "qa_matrix_invalid")
+            before_invalid = build_training_payload(match, "p1")
             hand_before = len(((before_invalid.get("me") or {}).get("hand") or []))
 
             ok, message = play_card(match, "p1", "__invalid_card_id__")
             logs.append(f"invalid_card/play_card: ok={ok} message={message}")
 
-            after_invalid = build_arena_clean_state(match, "p1", message=message)
+            after_invalid = build_training_payload(match, "p1", message=message)
             hand_after = len(((after_invalid.get("me") or {}).get("hand") or []))
 
             if ok:
@@ -194,25 +199,26 @@ def run_arena_matrix_flow():
                 failures.append(f"invalid_card: hand mutated after invalid card. before={hand_before} after={hand_after}")
 
             # Scenario 4: second monster in occupied monster slot should not break state.
-            match = create_training_match_v1(user, "QA_MATRIX_SLOT", "qa_matrix_slot")
-            ensure_match_shape(match)
+            match = create_training_match(user, "QA_MATRIX_SLOT", "qa_matrix_slot")
             set_intent(match, "p1", "Strike")
 
-            state = build_arena_clean_state(match, "p1")
+            state = build_training_payload(match, "p1")
             hand = ((state.get("me") or {}).get("hand") or [])
 
-            first_card = hand[0].get("id") if hand else None
+            playable_ids = ((state.get("legal_actions") or {}).get("playable_card_ids") or [])
+            first_card = playable_ids[0] if playable_ids else (hand[0].get("id") if hand else None)
             ok1, msg1 = play_card(match, "p1", first_card)
             logs.append(f"slot_guard/first_play: card_id={first_card} ok={ok1} message={msg1}")
 
-            state_after_first = build_arena_clean_state(match, "p1", message=msg1)
+            state_after_first = build_training_payload(match, "p1", message=msg1)
             hand2 = ((state_after_first.get("me") or {}).get("hand") or [])
 
-            second_card = hand2[0].get("id") if hand2 else None
+            playable_ids2 = ((state_after_first.get("legal_actions") or {}).get("playable_card_ids") or [])
+            second_card = playable_ids2[0] if playable_ids2 else (hand2[0].get("id") if hand2 else None)
             ok2, msg2 = play_card(match, "p1", second_card)
             logs.append(f"slot_guard/second_play: card_id={second_card} ok={ok2} message={msg2}")
 
-            state_after_second = build_arena_clean_state(match, "p1", message=msg2)
+            state_after_second = build_training_payload(match, "p1", message=msg2)
             _assert_clean_payload(state_after_second, "slot_guard/after_second", failures)
             logs.append(f"slot_guard/after_second: {_summary(state_after_second)}")
 

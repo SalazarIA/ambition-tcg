@@ -21,10 +21,14 @@ __MACOSX/
 node_modules/
 
 dist/
+!static/dist/
+!static/dist/arena3d/
+!static/dist/arena3d/**
 build/
 .cache/
 
 *.log
+*.bak*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

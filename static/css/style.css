@@ -7278,7 +7278,7 @@ button.btn:disabled {
 }
 
 
-/* Arena-only room and matchmaking styles live in arena_hud_v2.css. */
+/* Arena-only room and matchmaking styles live in arena_clean_v48.css. */
 
 
 /* =========================================================
@@ -7405,7 +7405,7 @@ button.btn:disabled {
 }
 
 
-/* Arena clarity, matchmaking, and 2.5D field styles continue in arena_hud_v2.css. */
+/* Arena clarity, matchmaking, and 2.5D field styles continue in arena_clean_v48.css. */
 
 
 /* =========================================================
@@ -8662,4 +8662,3 @@ button[disabled] {
         grid-template-columns: 70px 1.4fr 80px 80px 90px 110px;
     }
 }
-

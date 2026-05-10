@@ -57,6 +57,16 @@
         text("az48-message", value);
     }
 
+    function playSound(name, payload) {
+        try {
+            if (window.AmbitionzSound && typeof window.AmbitionzSound.play === "function") {
+                window.AmbitionzSound.play(name, payload || {});
+            }
+        } catch (error) {
+            console.debug("[Ambitionz V51 sound skipped]", error);
+        }
+    }
+
     function appendLog(value) {
         const log = document.getElementById("battle-log");
         if (!log || !value) return;
@@ -97,7 +107,15 @@
         return payload && payload.schema === CANONICAL_SCHEMA && payload.me && payload.enemy;
     }
 
+    function adapter() {
+        return window.AmbitionzArenaRendererAdapter || null;
+    }
+
     function normalizeCard(card, index = 0) {
+        if (adapter()) {
+            return adapter().normalizeCard(card, index);
+        }
+
         card = card || {};
 
         const type = str(card.type || "Monster");
@@ -117,6 +135,15 @@
             cost: num(card.cost || card.energy_cost || 1, 1),
             stat,
             statLabel: str(card.combat_label || (isMonster ? "PWR" : "VAL")),
+            artUrl: "/static/img/cards/elemental/neutral.svg",
+            elementCss: "element-neutral",
+            typeCss: "type-" + type.toLowerCase().replaceAll(" ", "-"),
+            rarityCss: "rarity-common",
+            colors: {
+                primary: "#9ea7b7",
+                secondary: "#d9deea",
+                accent: "#f4f7ff",
+            },
         };
     }
 
@@ -132,16 +159,27 @@
 
     function renderCard(card, options = {}) {
         const c = normalizeCard(card);
-        const typeClass = "type-" + c.type.toLowerCase().replaceAll(" ", "-");
+        const typeClass = c.typeCss || ("type-" + c.type.toLowerCase().replaceAll(" ", "-"));
+        const elementClass = c.elementCss || "element-neutral";
+        const rarityClass = c.rarityCss || "rarity-common";
         const playable = options.playable ? " playable" : "";
         const field = options.field ? " az48-field-card" : "";
+        const colors = c.colors || {};
+        const style = [
+            "--az-card-primary:" + esc(colors.primary || "#9ea7b7"),
+            "--az-card-secondary:" + esc(colors.secondary || "#d9deea"),
+            "--az-card-accent:" + esc(colors.accent || "#f4f7ff"),
+            "--az-card-art-image:url('" + esc(c.artUrl || "/static/img/cards/elemental/neutral.svg") + "')",
+        ].join(";");
 
         return [
-            '<button type="button" class="az48-card ' + typeClass + playable + field + '" data-card-id="' + esc(c.id) + '">',
+            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + field + '" data-card-id="' + esc(c.id) + '" style="' + style + '">',
+            '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
-            '<div class="az48-art"><span>' + esc(c.element.slice(0, 2).toUpperCase()) + '</span></div>',
+            '<div class="az48-art"><span class="az48-art-image" aria-hidden="true"></span><span class="az48-art-glow" aria-hidden="true"></span></div>',
             '<strong class="az48-name">' + esc(c.name) + '</strong>',
+            '<p class="az48-effect">' + esc(c.effect || c.role || c.kind || "") + '</p>',
             '<div class="az48-tags"><span>' + esc(c.type) + '</span><span>' + esc(c.sigil) + '</span></div>',
             '<span class="az48-power">' + esc(c.statLabel) + ' ' + esc(c.stat) + '</span>',
             '</button>'
@@ -269,9 +307,21 @@
             return;
         }
 
+        const previousState = latestState;
+
         hasCanonicalState = true;
         latestState = payload;
         window.__ambitionzArena48State = payload;
+        window.__ambitionzArenaNormalizedState = adapter()
+            ? adapter().normalizeArenaState(payload)
+            : payload;
+
+        window.dispatchEvent(new CustomEvent("ambitionz:arena_state_rendered", {
+            detail: {
+                payload,
+                state: window.__ambitionzArenaNormalizedState,
+            },
+        }));
 
         const state = payload;
         const me = state.me || {};
@@ -282,6 +332,17 @@
         const hand = arr(me.hand);
 
         const phase = str(state.phase || "start");
+
+        if (previousState && isCanonical(previousState)) {
+            const previousMe = previousState.me || {};
+            const previousEnemy = previousState.enemy || {};
+            const meLostHp = num(previousMe.hp || 0) > num(me.hp || 0);
+            const enemyLostHp = num(previousEnemy.hp || 0) > num(enemy.hp || 0);
+
+            if (meLostHp || enemyLostHp) {
+                playSound("damage");
+            }
+        }
 
         renderClarity(state);
 
@@ -389,7 +450,9 @@
         }
 
         setMessage(intent + " selected.");
-        emit("az48_set_intent", { intent });
+        if (emit("az48_set_intent", { intent })) {
+            playSound("intent", { element: intent });
+        }
     }
 
     function ready() {
@@ -399,7 +462,9 @@
         }
 
         setMessage("Ready sent.");
-        emit("az48_declare_ready", {});
+        if (emit("az48_declare_ready", {})) {
+            playSound("ready");
+        }
     }
 
     function playCard(id) {
@@ -416,8 +481,13 @@
             return;
         }
 
+        const card = normalizeCard(hand[index], index);
+
         setMessage("Playing card...");
-        emit("az48_play_card", { card_id: id, card_index: index });
+        if (emit("az48_play_card", { card_id: id, card_index: index })) {
+            playSound("cardFly", { element: card.element });
+            window.setTimeout(() => playSound("cardImpact", { element: card.element }), 180);
+        }
     }
 
     function joinQueue() {

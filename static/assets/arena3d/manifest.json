@@ -1,0 +1,89 @@
+{
+  "schema": "ambitionz_arena3d_assets_v1",
+  "runtimeFormat": "glb",
+  "units": "meters",
+  "coordinateSystem": {
+    "up": "Y",
+    "forward": "-Z",
+    "tableCenter": [0, 0, 0]
+  },
+  "proceduralFallbacks": true,
+  "arenas": {
+    "default": {
+      "label": "Founder's Table",
+      "model": "models/arena_default.glb",
+      "required": false,
+      "fallback": "procedural-table"
+    }
+  },
+  "cardBacks": {
+    "default": {
+      "label": "Ambitionz Card Back",
+      "model": "models/card_back_default.glb",
+      "required": false,
+      "fallback": "procedural-card"
+    }
+  },
+  "tokens": {
+    "creature": {
+      "label": "Creature Token",
+      "model": "models/token_creature.glb",
+      "required": false,
+      "fallback": "procedural-card"
+    },
+    "support": {
+      "label": "Support Token",
+      "model": "models/token_support.glb",
+      "required": false,
+      "fallback": "procedural-card"
+    }
+  },
+  "fx": {
+    "strike": {
+      "label": "Strike Impact",
+      "model": "models/fx_strike.glb",
+      "required": false,
+      "fallback": "material-pulse"
+    },
+    "guard": {
+      "label": "Guard Barrier",
+      "model": "models/fx_guard.glb",
+      "required": false,
+      "fallback": "material-pulse"
+    },
+    "focus": {
+      "label": "Focus Charge",
+      "model": "models/fx_focus.glb",
+      "required": false,
+      "fallback": "material-pulse"
+    }
+  },
+  "textures": {
+    "environment": {
+      "label": "Arena Environment",
+      "file": "textures/arena_environment.ktx2",
+      "required": false,
+      "fallback": "three-lights"
+    }
+  },
+  "audio": {
+    "strike": {
+      "file": "audio/strike.webm",
+      "required": false
+    },
+    "guard": {
+      "file": "audio/guard.webm",
+      "required": false
+    },
+    "focus": {
+      "file": "audio/focus.webm",
+      "required": false
+    }
+  },
+  "budgets": {
+    "initialSceneKbGzip": 900,
+    "singleModelTriangleTarget": 12000,
+    "textureMaxSize": 1024,
+    "drawCallTarget": 80
+  }
+}

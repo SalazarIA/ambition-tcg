@@ -57,11 +57,17 @@ def test_arena_keeps_socket_critical_ids_after_ux_polish():
 
 def test_arena_uses_single_screen_layout_module():
     template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
-    css = (PROJECT_ROOT / "static" / "css" / "arena_hud_v2.css").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
 
     assert "arena-page-v154" in template
-    assert "AMBITIONZ V1.54" in css
-    assert ".arena-page-v154 .arena-board-v103" in css
+    assert "css/arena_clean_v48.css" in template
+    assert "css/arena3d.css" in template
+    assert "js/arena_renderer_adapter.js" in template
+    assert "js/arena_clean_v48.js" in template
+    assert "dist/arena3d/arena3d.js" in template
+    assert "data-arena-renderer" in template
+    assert ".az48-arena" in css
+    assert ".az48-card-v2" in css
 
 
 def test_pwa_install_assets_are_declared():
@@ -75,5 +81,8 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v155"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v156"' in service_worker
+    assert '"/static/js/arena_clean_v48.js"' in service_worker
+    assert '"/static/dist/arena3d/arena3d.js"' in service_worker
+    assert '"/static/assets/arena3d/manifest.json"' in service_worker
     assert "apple-touch-icon.png" in homepage

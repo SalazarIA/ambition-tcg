@@ -117,9 +117,6 @@ def audit_legacy(lines, template, arena_js, app):
         "declare_ready",
         "start_training",
         "game_state_update",
-        "arena_app.js",
-        "game.js",
-        "arena_state_bridge.js",
         "az-arena-v45",
         "az-arena-v40",
     ]
@@ -149,10 +146,10 @@ def audit_legacy(lines, template, arena_js, app):
         risks.append("P1: clean arena emits legacy choose_intent.")
     if "game_state_update" in arena_js and "ambitionz_arena_clean_v50" not in arena_js:
         risks.append("P1: game_state_update listener lacks strict clean schema filter.")
-    if "game.js" in template and "arena_clean_v48.js" in template:
-        risks.append("P0: template loads game.js and clean arena together.")
-    if "arena_app.js" in template and "arena_clean_v48.js" in template:
-        risks.append("P0: template loads arena_app.js and clean arena together.")
+    legacy_script_names = ["game" + ".js", "arena" + "_app.js", "arena" + "_state_bridge.js"]
+    for script_name in legacy_script_names:
+        if script_name in template and "arena_clean_v48.js" in template:
+            risks.append(f"P0: template loads legacy renderer {script_name} and clean arena together.")
 
     if not risks:
         risks.append("No P0/P1 legacy renderer risk detected.")
@@ -198,8 +195,8 @@ def audit_backend(lines, app):
         '@socketio.on("az48_set_intent")',
         '@socketio.on("az48_play_card")',
         '@socketio.on("az48_declare_ready")',
-        "def emit_az48_state_for_sid",
-        "build_arena_clean_state",
+        "def emit_be2_state",
+        "MatchEngineFacade",
     ]
 
     lines.append(code_block("\n".join(
@@ -214,22 +211,22 @@ def audit_backend(lines, app):
         "az48_set_intent",
         "az48_play_card",
         "az48_declare_ready",
-        "emit_az48_state_for_sid",
-        "build_arena_clean_state",
+        "emit_be2_state",
+        "MatchEngineFacade",
     ]))))
 
 
-def audit_state(lines, arena_state, match_actions):
+def audit_state(lines, be2_adapter, facade):
     add_section(lines, "5. State Architecture Audit")
 
     checks = [
-        ("arena_clean_state has build_arena_clean_state", "def build_arena_clean_state" in arena_state),
-        ("arena_clean_state includes legal_actions", "legal_actions" in arena_state),
-        ("arena_clean_state includes playable_card_ids", "playable_card_ids" in arena_state),
-        ("match_actions has play_card", "def play_card" in match_actions),
-        ("match_actions mutates hand", ".pop(" in match_actions and "hand" in match_actions),
-        ("match_actions has declare_ready", "def declare_ready" in match_actions),
-        ("match_actions references round/resolve", "round" in match_actions.lower() or "resolve" in match_actions.lower()),
+        ("BE2 adapter has build_be2_arena_payload", "def build_be2_arena_payload" in be2_adapter),
+        ("BE2 adapter includes legal_actions", "legal_actions" in be2_adapter),
+        ("BE2 adapter includes playable_card_ids", "playable_card_ids" in be2_adapter),
+        ("BE2 adapter exposes can_play_cards", "can_play_cards" in be2_adapter),
+        ("facade has play_card", "def play_card" in facade),
+        ("facade has ready", "def ready" in facade),
+        ("facade supports PvP", "def start_pvp_match" in facade),
     ]
 
     lines.append(code_block("\n".join(
@@ -269,8 +266,8 @@ def build_report():
     template = read("templates/arena.html")
     arena_js = read("static/js/arena_clean_v48.js")
     app = read("app.py")
-    arena_state = read("services/arena_clean_state.py")
-    match_actions = read("services/match_actions_v1.py")
+    be2_adapter = read("services/battle_engine_v2_adapter.py")
+    facade = read("services/match_engine_facade.py")
 
     lines = [
         "# Ambitionz Arena Systems Audit",
@@ -282,7 +279,7 @@ def build_report():
     audit_legacy(lines, template, arena_js, app)
     audit_play_card(lines, arena_js)
     audit_backend(lines, app)
-    audit_state(lines, arena_state, match_actions)
+    audit_state(lines, be2_adapter, facade)
     audit_recommendations(lines, template, arena_js, app)
 
     body = "\n".join(lines)

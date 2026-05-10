@@ -18,7 +18,7 @@ FILES = [
     "templates/privacy.html",
     "templates/terms.html",
     "templates/deck_builder.html",
-    "static/js/game.js",
+    "static/js/arena_clean_v48.js",
     "capacitor.config.json",
 ]
 
@@ -86,7 +86,7 @@ ui_files = [
     "templates/how_to_play.html",
     "templates/welcome.html",
     "templates/index.html",
-    "static/js/game.js",
+    "static/js/arena_clean_v48.js",
 ]
 for f in ui_files:
     path = ROOT / f

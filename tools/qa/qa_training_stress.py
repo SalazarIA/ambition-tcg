@@ -12,13 +12,13 @@ from app import app, db
 from models import User
 from passlib.hash import pbkdf2_sha256
 
-from services.match_actions_v1 import (
-    create_training_match_v1,
+from services.arena_training_actions import (
+    create_training_match,
+    build_training_payload,
     set_intent,
     play_card,
     declare_ready,
 )
-from services.arena_clean_state import build_arena_clean_state
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REPORT_DIR = PROJECT_ROOT / "reports" / "qa"
@@ -61,7 +61,7 @@ def get_or_create_user():
 
 
 def compact_state(match, label):
-    state = build_arena_clean_state(match, "p1", message=label)
+    state = build_training_payload(match, "p1", message=label)
     me = state.get("me") or {}
     enemy = state.get("enemy") or {}
     legal = state.get("legal_actions") or {}
@@ -101,7 +101,7 @@ def run_one_match(user, match_number):
     try:
         sid = f"qa_training_stress_sid_{match_number}"
         room_code = f"stress_{match_number:03d}"
-        match = create_training_match_v1(user, sid, room_code)
+        match = create_training_match(user, sid, room_code)
 
         state = compact_state(match, "initial")
         logs.append(f"initial: {state}")

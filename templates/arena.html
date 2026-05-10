@@ -15,12 +15,15 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=66">
+    {% if arena_renderer == "3d" %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
+    {% endif %}
 
 
 
 </head>
 
-<body class="az-clean-arena-v48 arena-page-v154" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
+<body class="az-clean-arena-v48 arena-page-v154 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}">
     <main class="az48-arena">
         <header class="az48-top">
             <section class="az48-player az48-enemy">
@@ -150,7 +153,13 @@
 
     <script>
         window.AMBITIONZ_ARENA_MODE = "{{ 'training' if training_mode else 'arena' }}";
+        window.AMBITIONZ_ARENA_RENDERER = "{{ arena_renderer|default('dom') }}";
     </script>
+    <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=1"></script>
+    {% if arena_renderer == "3d" %}
+    <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=66"></script>
 </body>
 </html>

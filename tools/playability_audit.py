@@ -1,3 +1,10 @@
+from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from app import app
 
 PUBLIC_OK = {
@@ -19,13 +26,14 @@ PUBLIC_OK = {
     "/match-history": [200, 302],
     "/manifest.webmanifest": [200],
     "/service-worker.js": [200],
-    "/static/css/arena_v7.css": [200],
-    "/static/css/arena_animations.css": [200],
+    "/static/css/arena_clean_v48.css": [200],
+    "/static/css/arena3d.css": [200],
     "/static/css/ambitionz_tutorial.css": [200],
-    "/static/js/arena_v7.js": [200],
-    "/static/js/arena_animations.js": [200],
+    "/static/js/arena_renderer_adapter.js": [200],
+    "/static/js/arena_clean_v48.js": [200],
+    "/static/js/arena_sound.js": [200],
+    "/static/dist/arena3d/arena3d.js": [200],
     "/static/js/ambitionz_tutorial.js": [200],
-    "/static/js/game.js": [200],
 }
 
 def run():
