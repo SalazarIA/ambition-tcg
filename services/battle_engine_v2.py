@@ -23,6 +23,7 @@ MAX_ENERGY = 10
 STARTING_HAND_SIZE = 5
 DRAW_PER_ROUND = 1
 MAX_ROUNDS = 40
+TRAINING_BOT_HP = 24
 
 UNLEASH_COST = 10
 UNLEASH_DAMAGE = 10
@@ -310,16 +311,81 @@ def build_beta_deck(seed: Optional[int] = None) -> List[Dict[str, Any]]:
     - 6 spells
     - 3 traps
     """
-    rng = random.Random(seed)
+    rng = random.Random(4248 if seed is None else seed)
 
-    monsters = _choose_official_cards(rng, _official_pool("Monster"), STARTER_MONSTER_COUNT)
-    spells = _choose_official_cards(rng, _official_pool("Spell"), STARTER_SPELL_COUNT)
-    traps = _choose_official_cards(rng, _official_pool("Trap"), STARTER_TRAP_COUNT)
+    monsters = _choose_curated_official_cards("Monster", STARTER_MONSTER_COUNT)
+    spells = _choose_curated_official_cards("Spell", STARTER_SPELL_COUNT)
+    traps = _choose_curated_official_cards("Trap", STARTER_TRAP_COUNT)
+
+    if len(monsters) < STARTER_MONSTER_COUNT:
+        monsters = _choose_official_cards(rng, _official_pool("Monster"), STARTER_MONSTER_COUNT)
+    if len(spells) < STARTER_SPELL_COUNT:
+        spells = _choose_official_cards(rng, _official_pool("Spell"), STARTER_SPELL_COUNT)
+    if len(traps) < STARTER_TRAP_COUNT:
+        traps = _choose_official_cards(rng, _official_pool("Trap"), STARTER_TRAP_COUNT)
 
     deck = [_official_card_to_be2(card) for card in monsters + spells + traps]
     rng.shuffle(deck)
 
     return deck
+
+
+def _choose_curated_official_cards(card_type: str, amount: int) -> List[Dict[str, Any]]:
+    """Return a stable starter slice with low early-turn friction.
+
+    The full catalog remains available, but a random starter deck can open with
+    too many expensive or unclear cards. This keeps training readable while the
+    engine matures.
+    """
+    pool = _official_pool(card_type)
+    if not pool or amount <= 0:
+        return []
+
+    if card_type == "Monster":
+        by_element: Dict[str, List[Dict[str, Any]]] = {}
+        for card in pool:
+            if int(card.get("cost") or 99) > 3:
+                continue
+            by_element.setdefault(str(card.get("element") or "Neutral"), []).append(card)
+
+        for cards in by_element.values():
+            cards.sort(key=lambda c: (int(c.get("cost") or 0), int(c.get("power") or 0), str(c.get("id") or "")))
+
+        selected: List[Dict[str, Any]] = []
+        element_order = ["Fire", "Water", "Earth", "Plant"]
+        index = 0
+
+        while len(selected) < amount and any(index < len(by_element.get(element, [])) for element in element_order):
+            for element in element_order:
+                cards = by_element.get(element, [])
+                if index < len(cards):
+                    selected.append(cards[index])
+                    if len(selected) >= amount:
+                        break
+            index += 1
+
+        return selected
+
+    preferred_effects = {
+        "Spell": ["Heal", "Boost", "Burn", "Weaken", "Draw", "Shield"],
+        "Trap": ["Burn", "Heal", "Counter"],
+    }.get(card_type, [])
+
+    selected = []
+    for effect in preferred_effects:
+        candidates = [
+            card for card in pool
+            if str(card.get("effect") or "") == effect and int(card.get("cost") or 99) <= 3
+        ]
+        candidates.sort(key=lambda c: (int(c.get("cost") or 0), str(c.get("rarity") or ""), str(c.get("id") or "")))
+        if candidates:
+            selected.append(candidates[0])
+        if len(selected) >= amount:
+            return selected
+
+    remaining = [card for card in pool if card not in selected]
+    remaining.sort(key=lambda c: (int(c.get("cost") or 0), str(c.get("id") or "")))
+    return (selected + remaining)[:amount]
 
 
 def create_player(
@@ -395,6 +461,8 @@ def create_match(
         ),
         "enemy_preview": None,
         "log": [],
+        "events": [],
+        "round_events": [],
     }
 
     draw_cards(match["player"], STARTING_HAND_SIZE, match["log"])
@@ -436,6 +504,7 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
         finish_by_tiebreak(match, reason="max_rounds_tiebreak")
         return match
 
+    match["round_events"] = []
     for side in ("player", "opponent"):
         player = match[side]
         player["max_energy"] = min(MAX_ENERGY, STARTING_ENERGY + match["round"] - 1)
@@ -451,6 +520,13 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
         if bonus:
             player["ambition"] += bonus
             match["log"].append(f"{player['name']} gained {bonus} Ambition from support.")
+            add_event(
+                match,
+                "ambition",
+                actor=side,
+                text=f"{player['name']} gained {bonus} Ambition from support.",
+                amount=bonus,
+            )
 
         if match["round"] > 1 or len(player.get("hand") or []) < STARTING_HAND_SIZE:
             draw_cards(player, DRAW_PER_ROUND, match["log"])
@@ -458,6 +534,7 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
     match["phase"] = "choose_action"
     match["enemy_preview"] = preview_bot_intent(match)
     match["log"].append(f"Round {match['round']} started.")
+    add_event(match, "round_start", text=f"Round {match['round']} started.")
     return match
 
 
@@ -466,8 +543,14 @@ def choose_intent(match: Dict[str, Any], side: str, intent: str) -> Dict[str, An
         raise ValueError(f"Invalid intent: {intent}")
 
     player = match[side]
+    if player.get("ready"):
+        raise ValueError("Round is already ready.")
+    if player.get("played_card"):
+        raise ValueError("Action is locked after playing a card.")
+
     player["intent"] = intent
     match["log"].append(f"{player['name']} chose {intent}.")
+    add_event(match, "intent", actor=side, text=f"{player['name']} chose {intent}.", intent=intent)
     return match
 
 
@@ -513,10 +596,17 @@ def _remove_card_from_hand(player: Dict[str, Any], card_id: Optional[str] = None
 
 def play_card(match: Dict[str, Any], side: str, card_id: Optional[str] = None, card_index: Optional[int] = None) -> Dict[str, Any]:
     player = match[side]
+
+    if player.get("ready"):
+        raise ValueError("Round is already ready.")
+    if player.get("played_card"):
+        raise ValueError("Only one card can be played each round.")
+
     card = _remove_card_from_hand(player, card_id=card_id, card_index=card_index)
 
     if not card:
         match["log"].append(f"{player['name']} had no playable card.")
+        add_event(match, "no_playable_card", actor=side, text=f"{player['name']} had no playable card.")
         return match
 
     kind = card.get("kind")
@@ -526,6 +616,7 @@ def play_card(match: Dict[str, Any], side: str, card_id: Optional[str] = None, c
         if old:
             player["discard"].append(old)
             match["log"].append(f"{player['name']} replaced {old['name']}.")
+            add_event(match, "card_replaced", actor=side, text=f"{player['name']} replaced {old['name']}.", card_id=old.get("id"))
 
         active = deepcopy(card)
         active["current_hp"] = int(active.get("hp") or 1)
@@ -533,23 +624,27 @@ def play_card(match: Dict[str, Any], side: str, card_id: Optional[str] = None, c
         player["played_card"] = card
         player["ambition"] += int(card.get("ambition") or 0)
         match["log"].append(f"{player['name']} summoned {card['name']}.")
+        add_event(match, "card_played", actor=side, text=f"{player['name']} summoned {card['name']}.", card_id=card.get("id"), card_name=card.get("name"), kind=kind)
 
     elif kind == "support":
         old = player["field"].get("support")
         if old:
             player["discard"].append(old)
             match["log"].append(f"{player['name']} replaced support {old['name']}.")
+            add_event(match, "card_replaced", actor=side, text=f"{player['name']} replaced support {old['name']}.", card_id=old.get("id"))
 
         player["field"]["support"] = deepcopy(card)
         player["played_card"] = card
         player["ambition"] += int(card.get("ambition") or 0)
         match["log"].append(f"{player['name']} played support {card['name']}.")
+        add_event(match, "card_played", actor=side, text=f"{player['name']} played support {card['name']}.", card_id=card.get("id"), card_name=card.get("name"), kind=kind)
 
     else:
         player["played_card"] = card
         player["discard"].append(card)
         apply_instant_card(match, side, card)
         match["log"].append(f"{player['name']} cast {card['name']}.")
+        add_event(match, "card_played", actor=side, text=f"{player['name']} cast {card['name']}.", card_id=card.get("id"), card_name=card.get("name"), kind=kind)
 
     return match
 
@@ -576,15 +671,20 @@ def apply_instant_card(match: Dict[str, Any], side: str, card: Dict[str, Any]) -
 
     if shield:
         actor["shield"] += shield
+        add_event(match, "shield", actor=side, text=f"{actor['name']} gained {shield} shield.", amount=shield, card_id=card.get("id"))
 
     if damage:
         deal_hero_damage(enemy, damage)
         actor["last_damage_dealt"] += damage
+        add_event(match, "direct_damage", actor=side, target=enemy_side, text=f"{actor['name']} dealt {damage} direct damage.", amount=damage, card_id=card.get("id"))
 
     actor["ambition"] += ambition
+    if ambition:
+        add_event(match, "ambition", actor=side, text=f"{actor['name']} gained {ambition} Ambition.", amount=ambition, card_id=card.get("id"))
 
     if draw:
         draw_cards(actor, draw, match["log"])
+        add_event(match, "draw", actor=side, text=f"{actor['name']} drew {draw} card.", amount=draw, card_id=card.get("id"))
 
 
 def request_unleash(match: Dict[str, Any], side: str) -> Dict[str, Any]:
@@ -596,6 +696,7 @@ def request_unleash(match: Dict[str, Any], side: str) -> Dict[str, Any]:
     player["ambition"] -= UNLEASH_COST
     player["unleash"] = True
     match["log"].append(f"{player['name']} prepared Ambition Unleash.")
+    add_event(match, "unleash_armed", actor=side, text=f"{player['name']} prepared Ambition Unleash.", amount=UNLEASH_COST)
     return match
 
 
@@ -676,6 +777,22 @@ def _active_name(player: Dict[str, Any]) -> str:
 
 def _hp_delta(before: int, after: int) -> int:
     return max(0, int(before or 0) - int(after or 0))
+
+
+def add_event(match: Dict[str, Any], event_type: str, **data: Any) -> Dict[str, Any]:
+    event = {
+        "round": int(match.get("round") or 0),
+        "type": event_type,
+        **{key: value for key, value in data.items() if value is not None},
+    }
+
+    events = match.setdefault("events", [])
+    events.append(event)
+    if len(events) > 100:
+        del events[:-100]
+
+    match.setdefault("round_events", []).append(event)
+    return event
 
 
 def build_round_summary(
@@ -769,6 +886,7 @@ def build_round_summary(
         "enemy_active_after": _active_name(opponent),
         "short_result": short_result,
         "lines": lines,
+        "events": list(match.get("round_events") or []),
     }
 
 
@@ -791,47 +909,68 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
     if not opponent.get("intent"):
         bot_choose_action(match)
 
-    player["shield"] += guard_value(player)
-    opponent["shield"] += guard_value(opponent)
+    player_guard = guard_value(player)
+    opponent_guard = guard_value(opponent)
+    player["shield"] += player_guard
+    opponent["shield"] += opponent_guard
+
+    if player_guard:
+        add_event(match, "shield", actor="player", text=f"{player['name']} guarded for {player_guard} shield.", amount=player_guard)
+    if opponent_guard:
+        add_event(match, "shield", actor="opponent", text=f"{opponent['name']} guarded for {opponent_guard} shield.", amount=opponent_guard)
 
     if player.get("unleash"):
         dealt = deal_hero_damage(opponent, UNLEASH_DAMAGE)
         player["shield"] += UNLEASH_SHIELD
         player["last_damage_dealt"] += dealt
         match["log"].append(f"{player['name']} used Unleash for {dealt} damage.")
+        add_event(match, "unleash", actor="player", target="opponent", text=f"{player['name']} used Unleash for {dealt} damage.", amount=dealt)
 
     if opponent.get("unleash"):
         dealt = deal_hero_damage(player, UNLEASH_DAMAGE)
         opponent["shield"] += UNLEASH_SHIELD
         opponent["last_damage_dealt"] += dealt
         match["log"].append(f"{opponent['name']} used Unleash for {dealt} damage.")
+        add_event(match, "unleash", actor="opponent", target="player", text=f"{opponent['name']} used Unleash for {dealt} damage.", amount=dealt)
 
     p_atk = attack_value(player)
     o_atk = attack_value(opponent)
 
     # Creature combat first. Overflow damage hits the hero.
     if active_creature(opponent):
-        _, overflow = damage_active_creature(opponent, p_atk)
+        target_name = _active_name(opponent)
+        dealt_to_creature, overflow = damage_active_creature(opponent, p_atk)
+        add_event(match, "attack", actor="player", target="opponent", text=f"{player['name']} attacked {target_name} for {dealt_to_creature}.", amount=p_atk)
         if overflow:
             dealt = deal_hero_damage(opponent, overflow)
             player["last_damage_dealt"] += dealt
+            add_event(match, "hero_damage", actor="player", target="opponent", text=f"{player['name']} overflowed {dealt} damage to the enemy.", amount=dealt)
     else:
         dealt = deal_hero_damage(opponent, p_atk)
         player["last_damage_dealt"] += dealt
+        add_event(match, "hero_damage", actor="player", target="opponent", text=f"{player['name']} attacked the enemy for {dealt}.", amount=dealt)
 
     if active_creature(player):
-        _, overflow = damage_active_creature(player, o_atk)
+        target_name = _active_name(player)
+        dealt_to_creature, overflow = damage_active_creature(player, o_atk)
+        add_event(match, "attack", actor="opponent", target="player", text=f"{opponent['name']} attacked {target_name} for {dealt_to_creature}.", amount=o_atk)
         if overflow:
             dealt = deal_hero_damage(player, overflow)
             opponent["last_damage_dealt"] += dealt
+            add_event(match, "hero_damage", actor="opponent", target="player", text=f"{opponent['name']} overflowed {dealt} damage to you.", amount=dealt)
     else:
         dealt = deal_hero_damage(player, o_atk)
         opponent["last_damage_dealt"] += dealt
+        add_event(match, "hero_damage", actor="opponent", target="player", text=f"{opponent['name']} attacked you for {dealt}.", amount=dealt)
 
     player["ambition"] += ambition_gain_from_intent(player)
     opponent["ambition"] += ambition_gain_from_intent(opponent)
+    add_event(match, "ambition", actor="player", text=f"{player['name']} gained Ambition from {player.get('intent') or 'Focus'}.", amount=ambition_gain_from_intent(player))
+    add_event(match, "ambition", actor="opponent", text=f"{opponent['name']} gained Ambition from {opponent.get('intent') or 'Focus'}.", amount=ambition_gain_from_intent(opponent))
 
     check_winner(match)
+    if match.get("winner"):
+        add_event(match, "match_end", text=f"Match finished. Winner: {match['winner']}.", winner=match.get("winner"), reason=match.get("reason"))
 
     summary = build_round_summary(
         match,
@@ -898,22 +1037,34 @@ def finish_by_tiebreak(match: Dict[str, Any], reason: str) -> None:
 def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
     bot = match["opponent"]
     player = match["player"]
+    difficulty = str(match.get("bot_difficulty") or ("training" if match.get("training") else "normal"))
+    is_training_bot = difficulty in {"training", "easy"}
 
-    if bot["ambition"] >= UNLEASH_COST and player["hp"] <= 14:
+    unleash_threshold = 8 if is_training_bot else 14
+    if bot["ambition"] >= UNLEASH_COST and player["hp"] <= unleash_threshold:
         request_unleash(match, "opponent")
 
     cards = playable_cards(bot)
+
+    if is_training_bot and int(match.get("round") or 0) in {2, 5, 8}:
+        choose_intent(match, "opponent", "Focus")
+        focus_cards = [card for card in cards if card.get("kind") == "spell" and int(card.get("damage") or 0) == 0]
+        if focus_cards and not bot.get("played_card"):
+            chosen = min(focus_cards, key=lambda c: (int(c.get("cost") or 0), str(c.get("id") or "")))
+            return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
+        return match
 
     # If no active creature, prioritize summoning one.
     if not active_creature(bot):
         creatures = [card for card in cards if card.get("kind") == "creature"]
         if creatures:
-            chosen = max(creatures, key=lambda c: (c.get("atk", 0) + c.get("hp", 0), -c.get("cost", 0)))
+            chooser = min if is_training_bot else max
+            chosen = chooser(creatures, key=lambda c: (c.get("atk", 0) + c.get("hp", 0), -c.get("cost", 0)))
             choose_intent(match, "opponent", "Strike")
             return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
     # Low HP: guard if possible.
-    if bot["hp"] <= 12:
+    if bot["hp"] <= (8 if is_training_bot else 12):
         guards = [card for card in cards if card.get("kind") == "guard"]
         if guards:
             chosen = max(guards, key=lambda c: c.get("shield", 0))
@@ -922,14 +1073,14 @@ def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
 
     # Lethal/direct pressure.
     damaging = [card for card in cards if card.get("damage", 0) > 0]
-    if player["hp"] <= 8 and damaging:
+    if player["hp"] <= (5 if is_training_bot else 8) and damaging:
         chosen = max(damaging, key=lambda c: c.get("damage", 0))
         choose_intent(match, "opponent", "Strike")
         return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
     # Build Ambition if no immediate pressure.
     focus_cards = [card for card in cards if card.get("id") == "focus_surge"]
-    if bot["ambition"] < 7 and focus_cards:
+    if bot["ambition"] < (5 if is_training_bot else 7) and focus_cards:
         chosen = focus_cards[0]
         choose_intent(match, "opponent", "Focus")
         return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
@@ -944,11 +1095,12 @@ def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
 
     # Default: aggressive card or just intent.
     if cards:
-        chosen = max(cards, key=lambda c: (
+        chooser = min if is_training_bot else max
+        chosen = chooser(cards, key=lambda c: (
             c.get("atk", 0) + c.get("damage", 0) + c.get("shield", 0),
             -c.get("cost", 0),
         ))
-        intent = "Strike" if (chosen.get("atk", 0) or chosen.get("damage", 0)) else "Guard"
+        intent = "Guard" if is_training_bot and int(match.get("round") or 0) % 3 == 0 else ("Strike" if (chosen.get("atk", 0) or chosen.get("damage", 0)) else "Guard")
         choose_intent(match, "opponent", intent)
         return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
@@ -1081,12 +1233,12 @@ def validate_match_integrity(match: Dict[str, Any]) -> Tuple[bool, List[str]]:
             for card in player.get(zone) or []:
                 if not isinstance(card, dict):
                     errors.append(f"{side} non-dict card in {zone}")
-                elif card.get("id") not in CARD_CATALOG_V2:
+                elif card.get("id") not in CARD_CATALOG_V2 and card.get("source") != "official_catalog":
                     errors.append(f"{side} invalid card {card.get('id')} in {zone}")
 
         for slot in ("active", "support"):
             card = field.get(slot)
-            if card and card.get("id") not in CARD_CATALOG_V2:
+            if card and card.get("id") not in CARD_CATALOG_V2 and card.get("source") != "official_catalog":
                 errors.append(f"{side} invalid field card {card.get('id')}")
 
     return len(errors) == 0, errors

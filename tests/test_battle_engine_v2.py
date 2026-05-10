@@ -9,10 +9,13 @@ from services.battle_engine_v2 import (
     start_round,
 )
 from services.battle_engine_v2_adapter import (
+    be2_play_card,
     be2_ready,
     be2_set_intent,
+    be2_start,
     build_be2_arena_payload,
     create_be2_match_from_players,
+    create_be2_training_match,
 )
 from services.match_engine_facade import MatchEngineFacade
 
@@ -82,6 +85,65 @@ def test_be2_arena_payload_flips_perspective_for_second_player():
     assert p2_payload["enemy"]["name"] == "Alice"
     assert len(p2_payload["me"]["hand"]) == STARTING_HAND_SIZE
     assert p2_payload["enemy"]["hand"] == []
+
+
+def test_be2_payload_exposes_clear_turn_contract():
+    match = create_be2_training_match(sid="contract-test")
+
+    created = build_be2_arena_payload(match)
+    assert created["phase"] == "start"
+    assert created["turn"]["primary_action"] == "start"
+    assert created["legal_actions"]["can_start"] is True
+
+    be2_start(match)
+    initial = build_be2_arena_payload(match)
+    assert initial["phase"] == "intent"
+    assert initial["turn"]["primary_action"] == "choose_intent"
+    assert initial["legal_actions"]["can_choose_intent"] is True
+    assert initial["legal_actions"]["can_play_cards"] is False
+
+    be2_set_intent(match, "Strike")
+    after_intent = build_be2_arena_payload(match)
+    assert after_intent["phase"] == "card"
+    assert after_intent["turn"]["primary_action"] in {"play_card", "ready"}
+    assert after_intent["legal_actions"]["can_ready"] is True
+    assert after_intent["legal_actions"]["card_states"]
+    assert after_intent["me"]["hand"][0]["preview"]
+
+    playable_id = after_intent["legal_actions"]["playable_card_ids"][0]
+    be2_play_card(match, card_id=playable_id)
+    after_play = build_be2_arena_payload(match)
+    assert after_play["phase"] == "ready"
+    assert after_play["turn"]["primary_action"] == "ready"
+    assert after_play["legal_actions"]["can_play_cards"] is False
+    assert after_play["legal_actions"]["can_ready"] is True
+
+    with pytest.raises(ValueError, match="Only one card"):
+        be2_play_card(match, card_id=after_play["me"]["hand"][0]["id"])
+
+
+def test_be2_payload_includes_structured_round_events():
+    match = create_be2_training_match(sid="events-test")
+    be2_start(match)
+    be2_set_intent(match, "Guard")
+    payload = build_be2_arena_payload(match)
+    playable_id = payload["legal_actions"]["playable_card_ids"][0]
+    be2_play_card(match, card_id=playable_id)
+    be2_ready(match)
+
+    resolved = build_be2_arena_payload(match)
+
+    assert resolved["round"] >= 2 or resolved["phase"] == "finished"
+    assert resolved["events"]
+    assert resolved["round_summary"]["events"]
+    assert any(event["type"] in {"attack", "hero_damage", "shield"} for event in resolved["round_summary"]["events"])
+
+
+def test_training_bot_uses_training_balance_profile():
+    match = create_be2_training_match(sid="balance-test")
+
+    assert match["bot_difficulty"] == "training"
+    assert match["opponent"]["max_hp"] == 24
 
 
 def test_be2_rejects_explicit_invalid_card_id():

@@ -33,16 +33,17 @@ def main():
 
     assert_true(payload["schema"] == "ambitionz_arena_clean_v50", "invalid schema")
     assert_true(payload["engine"] == "battle_engine_v2", "invalid engine")
-    assert_true(payload["phase"] == "created", "expected created phase")
+    assert_true(payload["phase"] == "start", "expected start phase")
+    assert_true(payload["legal_actions"]["primary_action"] == "start", "expected start primary action")
 
     be2_start(match)
     payload = build_be2_arena_payload(match)
 
-    assert_true(payload["phase"] == "choose_action", "expected choose_action after start")
-    assert_true(payload["me"]["hand_count"] >= 6, "expected hand after draw")
-    assert_true(payload["enemy"]["hand_count"] >= 6, "expected enemy hand count")
+    assert_true(payload["phase"] == "intent", "expected intent after start")
+    assert_true(payload["me"]["hand_count"] >= 5, "expected hand after start")
+    assert_true(payload["enemy"]["hand_count"] >= 5, "expected enemy hand count")
     assert_true(payload["legal_actions"]["can_choose_intent"], "expected intent action")
-    assert_true(payload["legal_actions"]["can_ready"], "expected ready action")
+    assert_true(not payload["legal_actions"]["can_ready"], "ready should wait until intent is chosen")
 
     hand_before = payload["me"]["hand_count"]
 

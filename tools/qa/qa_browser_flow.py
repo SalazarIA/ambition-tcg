@@ -245,7 +245,8 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
             logs.append("body_after_login:\n" + _body_text(page)[:1800])
 
             logs.append(f"goto_training: {training_url}")
-            page.goto(training_url, wait_until="networkidle", timeout=30000)
+            page.goto(training_url, wait_until="domcontentloaded", timeout=30000)
+            page.locator(".az48-arena").first.wait_for(state="visible", timeout=15000)
             time.sleep(2)
             _shot(page, shot_dir, "03_training_before_start", logs)
             logs.append("body_training_before_start:\n" + _body_text(page)[:2200])
@@ -253,7 +254,7 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
             if "LOGIN" in _body_text(page).upper() and "Start" not in _body_text(page):
                 raise AssertionError("Training redirected to login. Auth/session failed.")
 
-            ok_start = _click_first(page, ["#az48-start", "button:has-text('Start')", "text=Start"], "start", logs, timeout=7000)
+            ok_start = _click_first(page, ["#az48-floating-start", "#az48-start", "button:has-text('Start')", "text=Start"], "start", logs, timeout=7000)
             assert ok_start, "Could not click Start"
 
             time.sleep(4)

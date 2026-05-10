@@ -129,6 +129,8 @@ class Config:
             default_origins.extend([
                 "http://127.0.0.1:8080",
                 "http://localhost:8080",
+                "http://127.0.0.1:8090",
+                "http://localhost:8090",
                 "http://127.0.0.1:5000",
                 "http://localhost:5000",
             ])

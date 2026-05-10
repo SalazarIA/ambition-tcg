@@ -5,6 +5,7 @@
     let latestState = null;
     let hasCanonicalState = false;
     let bootTries = 0;
+    let previewCardId = null;
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
 
@@ -144,6 +145,10 @@
                 secondary: "#d9deea",
                 accent: "#f4f7ff",
             },
+            effect: str(card.effect || card.description || ""),
+            preview: str(card.preview || card.effect_summary || card.effect || card.description || ""),
+            disabledReason: str(card.disabled_reason || ""),
+            playable: Boolean(card.playable),
         };
     }
 
@@ -163,6 +168,7 @@
         const elementClass = c.elementCss || "element-neutral";
         const rarityClass = c.rarityCss || "rarity-common";
         const playable = options.playable ? " playable" : "";
+        const locked = options.disabledReason ? " is-locked" : "";
         const field = options.field ? " az48-field-card" : "";
         const colors = c.colors || {};
         const style = [
@@ -172,14 +178,17 @@
             "--az-card-art-image:url('" + esc(c.artUrl || "/static/img/cards/elemental/neutral.svg") + "')",
         ].join(";");
 
+        const title = options.disabledReason || c.preview || c.effect || c.name;
+
         return [
-            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + field + '" data-card-id="' + esc(c.id) + '" style="' + style + '">',
+            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + '" data-card-id="' + esc(c.id) + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" title="' + esc(title) + '" style="' + style + '">',
             '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
             '<div class="az48-art"><span class="az48-art-image" aria-hidden="true"></span><span class="az48-art-glow" aria-hidden="true"></span></div>',
             '<strong class="az48-name">' + esc(c.name) + '</strong>',
             '<p class="az48-effect">' + esc(c.effect || c.role || c.kind || "") + '</p>',
+            '<p class="az48-card-preview-line">' + esc(c.preview || "") + '</p>',
             '<div class="az48-tags"><span>' + esc(c.type) + '</span><span>' + esc(c.sigil) + '</span></div>',
             '<span class="az48-power">' + esc(c.statLabel) + ' ' + esc(c.stat) + '</span>',
             '</button>'
@@ -235,22 +244,21 @@
         panel.id = "az48-clarity-panel";
         panel.className = "az48-clarity-panel";
         panel.innerHTML = [
-            '<div class="az48-clarity-card az48-basic-help-card">',
-            '<h3>How to Play</h3>',
-            '<ul id="az48-help-lines"></ul>',
+            '<div class="az48-clarity-card az48-turn-card">',
+            '<span>Next</span>',
+            '<strong id="az48-next-action">Start</strong>',
+            '<p id="az48-turn-hint">Press Start to begin.</p>',
             '</div>',
-            '<div class="az48-clarity-card az48-basic-help-card">',
-            '<h3>Actions</h3>',
-            '<div id="az48-action-help"></div>',
+            '<div class="az48-clarity-card az48-preview-card">',
+            '<span>Card Preview</span>',
+            '<strong id="az48-card-preview-name">No card selected</strong>',
+            '<p id="az48-card-preview-text">Hover a card to preview its effect.</p>',
             '</div>',
-            '<div class="az48-clarity-card">',
-            '<h3>Enemy Plan</h3>',
-            '<p id="az48-enemy-plan">Enemy plan will appear here.</p>',
-            '</div>',
-            '<div class="az48-clarity-card az48-last-round-card">',
-            '<h3>Last Round</h3>',
-            '<p id="az48-round-result">No round resolved yet.</p>',
-            '<ul id="az48-round-lines"></ul>',
+            '<div class="az48-clarity-card az48-timeline-card">',
+            '<span>Timeline</span>',
+            '<strong id="az48-round-result">No round yet</strong>',
+            '<ol id="az48-event-lines"></ol>',
+            '<details class="az48-help-drawer"><summary>?</summary><ul id="az48-help-lines"></ul></details>',
             '</div>'
         ].join("");
 
@@ -295,12 +303,77 @@
         }).join("");
     }
 
+    function eventLine(event) {
+        if (!event) return "";
+        const label = event.actor_label ? event.actor_label + ": " : "";
+        return label + str(event.text || event.type || "");
+    }
+
+    function renderEvents(payload) {
+        const el = document.getElementById("az48-event-lines");
+        if (!el) return;
+
+        const summaryEvents = arr(payload.round_summary && payload.round_summary.events);
+        const events = summaryEvents.length ? summaryEvents : (arr(payload.round_events).length ? arr(payload.round_events) : arr(payload.events));
+        const lines = events.map(eventLine).filter(Boolean).slice(-4);
+
+        if (!lines.length) {
+            el.innerHTML = '<li>Choose a tactic to start the timeline.</li>';
+            return;
+        }
+
+        el.innerHTML = lines.map((line) => '<li>' + esc(line) + '</li>').join("");
+    }
+
+    function cardStateMap(payload) {
+        const legal = (payload && payload.legal_actions) || {};
+        const map = new Map();
+        arr(legal.card_states).forEach((state) => {
+            if (state && state.id) map.set(String(state.id), state);
+        });
+        return map;
+    }
+
+    function findPreviewCard(payload, playable) {
+        const hand = arr(payload && payload.me && payload.me.hand);
+        if (!hand.length) return null;
+
+        if (previewCardId) {
+            const selected = hand.find((card, index) => normalizeCard(card, index).id === String(previewCardId));
+            if (selected) return selected;
+        }
+
+        const playableSet = new Set(arr(playable).map(String));
+        return hand.find((card, index) => playableSet.has(normalizeCard(card, index).id)) || hand[0];
+    }
+
+    function renderCardPreview(payload, playable) {
+        const nameEl = document.getElementById("az48-card-preview-name");
+        const textEl = document.getElementById("az48-card-preview-text");
+        if (!nameEl || !textEl) return;
+
+        const card = findPreviewCard(payload, playable);
+        if (!card) {
+            nameEl.textContent = "No cards in hand";
+            textEl.textContent = emptyHandMessage(payload, payload.legal_actions || {});
+            return;
+        }
+
+        const normalized = normalizeCard(card);
+        const states = cardStateMap(payload);
+        const cardState = states.get(String(normalized.id)) || {};
+        nameEl.textContent = normalized.name;
+        textEl.textContent = cardState.disabled_reason || normalized.preview || normalized.effect || "No effect preview.";
+    }
+
     function renderClarity(payload) {
         ensureClarityPanel();
 
         const help = payload.help || {};
         const preview = payload.enemy_preview || {};
         const summary = payload.round_summary || {};
+        const turn = payload.turn || {};
+        const legal = payload.legal_actions || {};
 
         setList("az48-help-lines", help.turn_order || [
             "1. Choose Strike, Guard or Focus.",
@@ -308,20 +381,23 @@
             "3. Press Ready to resolve combat."
         ]);
 
-        renderActionHelp(help.actions || {});
+        const nextAction = document.getElementById("az48-next-action");
+        const turnHint = document.getElementById("az48-turn-hint");
 
-        const enemyPlan = document.getElementById("az48-enemy-plan");
-        if (enemyPlan) {
-            const intent = preview.intent ? "[" + preview.intent + "] " : "";
-            enemyPlan.textContent = intent + (preview.message || "Watch the enemy field and prepare your next move.");
+        if (nextAction) {
+            nextAction.textContent = str(legal.primary_action || turn.primary_action || "choose").replaceAll("_", " ");
+        }
+
+        if (turnHint) {
+            const enemyText = preview.message ? " Enemy: " + preview.message : "";
+            turnHint.textContent = str(turn.prompt || legal.prompt || payload.message || "Choose your next action.") + enemyText;
         }
 
         const result = document.getElementById("az48-round-result");
-        if (result) {
-            result.textContent = summary.short_result || "No round resolved yet.";
-        }
+        if (result) result.textContent = summary.short_result || "Current Round";
 
-        setList("az48-round-lines", summary.lines || []);
+        renderEvents(payload);
+        renderCardPreview(payload, legal.playable_card_ids || []);
     }
 
 
@@ -354,6 +430,7 @@
         const isFinished = String(state.phase || "").toLowerCase() === "finished" || Boolean(state.winner);
         const playable = isFinished ? [] : arr(legal.playable_card_ids).map(String);
         const hand = arr(me.hand);
+        const statesByCard = cardStateMap(state);
 
         const phase = str(state.phase || "start");
 
@@ -386,6 +463,8 @@
         document.body.classList.toggle("az48-can-ready", showReady);
         document.body.classList.toggle("az48-can-start", showStart);
         document.body.classList.toggle("az48-match-started", hand.length > 0 || !isStartPhase(phase));
+        document.body.dataset.az48Step = str((state.turn && state.turn.step) || phase);
+        document.body.dataset.az48PrimaryAction = str(legal.primary_action || "");
 
         text("az48-mode", str(state.mode || "training"));
         text("az48-round", num(state.round || 1, 1));
@@ -439,7 +518,11 @@
             } else {
                 handEl.innerHTML = hand.map((card, index) => {
                     const c = normalizeCard(card, index);
-                    return renderCard(c, { playable: playable.includes(String(c.id)) });
+                    const cardState = statesByCard.get(String(c.id)) || {};
+                    return renderCard(c, {
+                        playable: playable.includes(String(c.id)) || Boolean(cardState.playable),
+                        disabledReason: str(cardState.disabled_reason || c.disabledReason || ""),
+                    });
                 }).join("");
             }
         }
@@ -510,6 +593,15 @@
         }
 
         const card = normalizeCard(hand[index], index);
+        const legal = (latestState && latestState.legal_actions) || {};
+        const playable = arr(legal.playable_card_ids).map(String);
+
+        if (!playable.includes(String(card.id))) {
+            const states = cardStateMap(latestState);
+            const cardState = states.get(String(card.id)) || {};
+            setMessage(cardState.disabled_reason || "This card cannot be played now.");
+            return;
+        }
 
         setMessage("Playing card...");
         if (emit("az48_play_card", { card_id: id, card_index: index })) {
@@ -685,6 +777,8 @@
             const card = event.target.closest("#az48-hand .az48-card[data-card-id], #hand .az48-card[data-card-id]");
             if (card) {
                 event.preventDefault();
+                previewCardId = card.dataset.cardId;
+                if (latestState) renderClarity(latestState);
 
                 const cardIsPlayable =
                     card.classList.contains("is-playable") ||
@@ -698,6 +792,20 @@
 
                 playCard(card.dataset.cardId);
             }
+        });
+
+        document.addEventListener("mouseover", (event) => {
+            const card = event.target.closest("#az48-hand .az48-card[data-card-id], #hand .az48-card[data-card-id]");
+            if (!card) return;
+            previewCardId = card.dataset.cardId;
+            if (latestState) renderClarity(latestState);
+        });
+
+        document.addEventListener("focusin", (event) => {
+            const card = event.target.closest("#az48-hand .az48-card[data-card-id], #hand .az48-card[data-card-id]");
+            if (!card) return;
+            previewCardId = card.dataset.cardId;
+            if (latestState) renderClarity(latestState);
         });
     }
 
@@ -717,7 +825,8 @@
         }
 
         socket = window.io({
-            transports: ["websocket", "polling"],
+            transports: ["polling"],
+            upgrade: false,
             reconnection: true,
         });
 

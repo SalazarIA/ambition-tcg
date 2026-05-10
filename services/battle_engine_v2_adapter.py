@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from services.battle_engine_v2 import (
     ENGINE_VERSION,
+    TRAINING_BOT_HP,
     UNLEASH_COST,
     choose_intent,
     create_match,
@@ -21,6 +23,7 @@ from services.battle_engine_v2 import (
 )
 
 ARENA_CLEAN_SCHEMA = "ambitionz_arena_clean_v50"
+STATIC_IMG_DIR = Path(__file__).resolve().parents[1] / "static" / "img"
 
 
 def attach_legacy_match_aliases(match: Dict[str, Any]) -> Dict[str, Any]:
@@ -92,7 +95,93 @@ def _card_sigil(card: Dict[str, Any]) -> str:
     return "Focus"
 
 
-def _battle_card_to_arena_card(card: Optional[Dict[str, Any]], index: int = 0) -> Optional[Dict[str, Any]]:
+def _card_image(card: Dict[str, Any]) -> str:
+    image = str((card or {}).get("image") or "").strip().lstrip("/")
+    if image and (STATIC_IMG_DIR / image).exists():
+        return image
+
+    element = str((card or {}).get("element") or "Neutral").strip().lower()
+    if element not in {"fire", "water", "earth", "plant", "global", "neutral"}:
+        element = "neutral"
+    return f"cards/elemental/{element}.svg"
+
+
+def _card_effect_summary(card: Dict[str, Any]) -> str:
+    kind = (card or {}).get("kind")
+
+    if kind == "creature":
+        return f"Summon {int(card.get('atk') or 0)} ATK / {int(card.get('hp') or 0)} HP."
+    if kind == "support":
+        bonus = int(card.get("atk_bonus") or 0)
+        ambition = int(card.get("ambition_bonus") or 0)
+        parts = []
+        if bonus:
+            parts.append(f"+{bonus} ATK while in play")
+        if ambition:
+            parts.append(f"+{ambition} Ambition each round")
+        return "Support: " + (", ".join(parts) if parts else "stays on your spell slot.")
+    if kind == "guard":
+        parts = []
+        if int(card.get("shield") or 0):
+            parts.append(f"+{int(card.get('shield') or 0)} shield")
+        if int(card.get("damage") or 0):
+            parts.append(f"{int(card.get('damage') or 0)} counter damage")
+        return "Guard: " + (", ".join(parts) if parts else "defensive response.")
+
+    parts = []
+    if int(card.get("damage") or 0):
+        parts.append(f"{int(card.get('damage') or 0)} damage")
+    if int(card.get("shield") or 0):
+        parts.append(f"+{int(card.get('shield') or 0)} shield")
+    if int(card.get("ambition") or 0):
+        parts.append(f"+{int(card.get('ambition') or 0)} Ambition")
+    if int(card.get("draw") or 0):
+        parts.append(f"draw {int(card.get('draw') or 0)}")
+    return "Spell: " + (", ".join(parts) if parts else "instant effect.")
+
+
+def _card_preview(card: Dict[str, Any], intent: Optional[str] = None, owner: Optional[Dict[str, Any]] = None) -> str:
+    intent = intent or "Focus"
+    kind = (card or {}).get("kind")
+
+    if kind == "creature":
+        active = ((owner or {}).get("field") or {}).get("active")
+        replacement = f" Replaces {active.get('name')}." if active else ""
+        return f"Enters your monster slot with {int(card.get('atk') or 0)} attack and {int(card.get('hp') or 0)} HP.{replacement}"
+
+    damage = int(card.get("damage") or 0)
+    shield = int(card.get("shield") or 0)
+    ambition = int(card.get("ambition") or 0)
+
+    if card.get("id") == "pressure_move" and intent == "Strike":
+        damage += 1
+    if intent == "Guard":
+        shield += 2
+    if intent == "Focus":
+        ambition += 1
+
+    parts = []
+    if damage:
+        parts.append(f"deal {damage} damage")
+    if shield:
+        parts.append(f"gain {shield} shield")
+    if ambition:
+        parts.append(f"gain {ambition} Ambition")
+    if int(card.get("draw") or 0):
+        parts.append(f"draw {int(card.get('draw') or 0)}")
+
+    if not parts:
+        return _card_effect_summary(card)
+
+    return f"With {intent}: " + ", ".join(parts) + "."
+
+
+def _battle_card_to_arena_card(
+    card: Optional[Dict[str, Any]],
+    index: int = 0,
+    intent: Optional[str] = None,
+    owner: Optional[Dict[str, Any]] = None,
+) -> Optional[Dict[str, Any]]:
     if not card:
         return None
 
@@ -116,7 +205,8 @@ def _battle_card_to_arena_card(card: Optional[Dict[str, Any]], index: int = 0) -
         if card.get("ambition"):
             details.append(f"Ambition {card.get('ambition')}")
 
-    text = card.get("text") or " / ".join(details)
+    effect_summary = _card_effect_summary(card)
+    text = effect_summary or card.get("text") or " / ".join(details)
 
     return {
         "id": card_id,
@@ -134,8 +224,10 @@ def _battle_card_to_arena_card(card: Optional[Dict[str, Any]], index: int = 0) -
         "combat_label": _card_label(card),
         "display_stat": stat,
         "effect": text,
-        "description": text,
-        "image": str(card.get("image") or "cards/placeholders/card_placeholder.svg"),
+        "description": str(card.get("text") or text),
+        "effect_summary": effect_summary,
+        "preview": _card_preview(card, intent=intent, owner=owner),
+        "image": _card_image(card),
         "set_key": str(card.get("source") or "battle_engine_v2"),
         "set_name": "Official Catalog" if card.get("source") == "official_catalog" else "Battle Engine V2",
         "is_monster": card.get("kind") == "creature",
@@ -150,8 +242,8 @@ def _field_payload(player: Dict[str, Any]) -> Dict[str, Any]:
     field = player.get("field") or {}
 
     return {
-        "monster": _battle_card_to_arena_card(field.get("active"), 0),
-        "spell": _battle_card_to_arena_card(field.get("support"), 1),
+        "monster": _battle_card_to_arena_card(field.get("active"), 0, owner=player),
+        "spell": _battle_card_to_arena_card(field.get("support"), 1, owner=player),
         "trap": None,
     }
 
@@ -171,7 +263,7 @@ def _player_payload(player: Dict[str, Any], viewer: bool) -> Dict[str, Any]:
         "intent": str(player.get("intent") or "") if viewer else "Hidden",
         "ready": bool(player.get("ready") or player.get("intent")),
         "hand": [
-            _battle_card_to_arena_card(card, index=index)
+            _battle_card_to_arena_card(card, index=index, intent=player.get("intent"), owner=player)
             for index, card in enumerate(hand)
         ] if viewer else [],
         "hand_count": len(hand),
@@ -195,8 +287,14 @@ def _winner_for_viewer(winner: Optional[str], viewer_side: str) -> Optional[str]
 
 
 def _summary_for_viewer(summary: Dict[str, Any], viewer_side: str) -> Dict[str, Any]:
-    if viewer_side == "player" or not summary:
+    if not summary:
         return summary
+
+    if viewer_side == "player":
+        return {
+            **summary,
+            "events": _events_for_viewer(summary.get("events") or [], viewer_side),
+        }
 
     player_lost = max(0, int(summary.get("player_hp_before") or 0) - int(summary.get("player_hp_after") or 0))
     enemy_lost = max(0, int(summary.get("enemy_hp_before") or 0) - int(summary.get("enemy_hp_after") or 0))
@@ -215,7 +313,126 @@ def _summary_for_viewer(summary: Dict[str, Any], viewer_side: str) -> Dict[str, 
             f"Enemy chose {summary.get('player_intent') or 'Focus'} and played {summary.get('player_card') or 'No card'}.",
             f"You dealt {player_lost} HP damage. Enemy dealt {enemy_lost} HP damage.",
         ],
+        "events": _events_for_viewer(summary.get("events") or [], viewer_side),
     }
+
+
+def _event_actor_label(actor: Optional[str], viewer_side: str) -> str:
+    if actor == viewer_side:
+        return "You"
+    if actor in {"player", "opponent"}:
+        return "Enemy"
+    return ""
+
+
+def _events_for_viewer(events: List[Dict[str, Any]], viewer_side: str) -> List[Dict[str, Any]]:
+    mapped = []
+    for event in events:
+        actor = event.get("actor")
+        target = event.get("target")
+        mapped.append({
+            **event,
+            "actor_label": _event_actor_label(actor, viewer_side),
+            "target_label": _event_actor_label(target, viewer_side),
+        })
+    return mapped
+
+
+def _turn_step(raw_phase: str, player: Dict[str, Any], is_finished: bool) -> str:
+    if is_finished:
+        return "finished"
+    if raw_phase == "created":
+        return "start"
+    if player.get("ready"):
+        return "waiting"
+    if not player.get("intent"):
+        return "intent"
+    if player.get("played_card"):
+        return "ready"
+    return "card"
+
+
+def _card_state(card: Dict[str, Any], player: Dict[str, Any], step: str, is_finished: bool) -> Dict[str, Any]:
+    cost = int(card.get("cost") or 0)
+    energy = int(player.get("energy") or 0)
+    card_id = str(card.get("id") or "")
+
+    disabled_reason = ""
+    if is_finished:
+        disabled_reason = "Match finished."
+    elif player.get("ready"):
+        disabled_reason = "You are ready for this round."
+    elif not player.get("intent"):
+        disabled_reason = "Choose Strike, Guard or Focus first."
+    elif player.get("played_card"):
+        disabled_reason = "Only one card can be played each round."
+    elif cost > energy:
+        disabled_reason = f"Needs {cost} energy. You have {energy}."
+    elif step != "card":
+        disabled_reason = "Not the card step."
+
+    return {
+        "id": card_id,
+        "playable": disabled_reason == "",
+        "disabled_reason": disabled_reason,
+        "preview": _card_preview(card, intent=player.get("intent"), owner=player),
+    }
+
+
+def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_finished: bool) -> Dict[str, Any]:
+    card_states = [_card_state(card, player, step, is_finished) for card in (player.get("hand") or [])]
+    playable_ids = [state["id"] for state in card_states if state["playable"]]
+    has_intent = bool(player.get("intent"))
+    can_ready = step in {"card", "ready"} and has_intent and not player.get("ready") and not is_finished
+    can_play_cards = step == "card" and bool(playable_ids) and not player.get("ready") and not is_finished
+
+    if step == "start":
+        primary_action = "start"
+        prompt = "Press Start to begin the training duel."
+    elif step == "intent":
+        primary_action = "choose_intent"
+        prompt = "Choose one tactic for this round."
+    elif step == "card" and can_play_cards:
+        primary_action = "play_card"
+        prompt = "Play one highlighted card, or press Ready to skip the card."
+    elif step in {"card", "ready"}:
+        primary_action = "ready"
+        prompt = "Press Ready to resolve combat."
+    elif step == "waiting":
+        primary_action = "wait"
+        prompt = "Waiting for the opponent."
+    else:
+        primary_action = "finished"
+        prompt = "Match finished."
+
+    return {
+        "show_start": raw_phase == "created",
+        "can_start": raw_phase == "created" and not is_finished,
+        "show_intents": step == "intent",
+        "can_choose_intent": step == "intent",
+        "can_play_cards": can_play_cards,
+        "show_ready": can_ready,
+        "can_ready": can_ready,
+        "can_unleash": int(player.get("ambition") or 0) >= UNLEASH_COST and step in {"card", "ready"} and not is_finished,
+        "playable_card_ids": playable_ids,
+        "card_states": card_states,
+        "disabled_reasons_by_card": {
+            state["id"]: state["disabled_reason"]
+            for state in card_states
+            if state["disabled_reason"]
+        },
+        "primary_action": primary_action,
+        "next_required_action": primary_action,
+        "prompt": prompt,
+    }
+
+
+def _mode_for_state(state: Dict[str, Any]) -> str:
+    if state.get("training"):
+        return "training"
+    if state.get("is_bot_match"):
+        return "bot"
+    return "pvp"
 
 
 def side_for_sid(match: Dict[str, Any], sid: Optional[str]) -> str:
@@ -236,14 +453,13 @@ def build_be2_arena_payload(
     enemy = state[enemy_side]
 
     raw_phase = state.get("phase") or "start"
-    phase = "finished" if state.get("winner") else ("main" if raw_phase in {"created", "round_start", "choose_action"} else raw_phase)
-    is_finished = phase == "finished" or bool(state.get("winner"))
-
-    playable_ids = [] if is_finished or player.get("ready") else [str(card.get("id")) for card in playable_cards(player)]
-
-    can_act = raw_phase in {"created", "round_start", "choose_action"} and not is_finished and not player.get("ready")
-    can_play_cards = bool(playable_ids) and can_act
-    can_unleash = int(player.get("ambition") or 0) >= UNLEASH_COST and not is_finished
+    is_finished = raw_phase == "finished" or bool(state.get("winner"))
+    phase = _turn_step(str(raw_phase), player, is_finished)
+    legal_actions = _legal_actions_for(player, str(raw_phase), phase, is_finished)
+    card_state_by_id = {
+        str(card_state.get("id")): card_state
+        for card_state in legal_actions.get("card_states", [])
+    }
 
     enemy_preview = state.get("enemy_preview") or {}
     if not enemy.get("is_bot"):
@@ -252,6 +468,13 @@ def build_be2_arena_payload(
             "message": "Opponent is choosing their line.",
         }
 
+    me_payload = _player_payload(player, viewer=True)
+    for card in me_payload.get("hand") or []:
+        card_state = card_state_by_id.get(str(card.get("id"))) or {}
+        card["playable"] = bool(card_state.get("playable"))
+        card["disabled_reason"] = str(card_state.get("disabled_reason") or "")
+        card["preview"] = str(card_state.get("preview") or card.get("preview") or "")
+
     final_message = message
 
     if not final_message:
@@ -259,6 +482,8 @@ def build_be2_arena_payload(
 
         if state.get("winner"):
             final_message = summary.get("short_result") or f"Match finished. Winner: {_winner_for_viewer(state.get('winner'), viewer_side)}."
+        elif legal_actions.get("prompt"):
+            final_message = str(legal_actions["prompt"])
         elif summary.get("short_result"):
             final_message = summary["short_result"]
         elif enemy_preview.get("message"):
@@ -269,14 +494,26 @@ def build_be2_arena_payload(
     return {
         "schema": ARENA_CLEAN_SCHEMA,
         "engine": ENGINE_VERSION,
-        "mode": "training",
+        "mode": _mode_for_state(state),
         "phase": phase,
+        "raw_phase": raw_phase,
         "round": int(state.get("round") or 0),
         "message": final_message,
         "winner": _winner_for_viewer(state.get("winner"), viewer_side),
         "reason": state.get("reason"),
         "enemy_preview": enemy_preview,
         "round_summary": _summary_for_viewer(state.get("round_summary") or {}, viewer_side),
+        "events": _events_for_viewer(list(state.get("events") or [])[-24:], viewer_side),
+        "round_events": _events_for_viewer(list(state.get("round_events") or [])[-12:], viewer_side),
+        "turn": {
+            "step": phase,
+            "raw_phase": raw_phase,
+            "primary_action": legal_actions.get("primary_action"),
+            "prompt": legal_actions.get("prompt"),
+            "selected_intent": player.get("intent"),
+            "played_card_id": str((player.get("played_card") or {}).get("id") or ""),
+            "played_card_name": str((player.get("played_card") or {}).get("name") or ""),
+        },
         "help": {
             "turn_order": [
                 "1. Choose Strike, Guard or Focus.",
@@ -292,19 +529,9 @@ def build_be2_arena_payload(
             "goal": "Destroy enemy creatures, damage enemy HP, and use Unleash to finish the duel.",
         },
         "unleash_cost": UNLEASH_COST,
-        "me": _player_payload(player, viewer=True),
+        "me": me_payload,
         "enemy": _player_payload(enemy, viewer=False),
-        "legal_actions": {
-            "show_start": phase == "created",
-            "can_start": phase == "created",
-            "show_intents": can_act,
-            "can_choose_intent": can_act,
-            "can_play_cards": can_play_cards,
-            "show_ready": can_act,
-            "can_ready": can_act,
-            "can_unleash": can_unleash,
-            "playable_card_ids": playable_ids,
-        },
+        "legal_actions": legal_actions,
         "log": list(state.get("log") or [])[-10:],
     }
 
@@ -313,10 +540,12 @@ def create_be2_training_match(user=None, sid: Optional[str] = None) -> Dict[str,
     player_name = getattr(user, "username", None) or getattr(user, "email", None) or "Player"
     user_id = getattr(user, "id", None)
     match = create_match(player_name=player_name, opponent_name="Ambitionz Bot", player_sid=sid, user_id=user_id)
+    match["opponent"]["hp"] = TRAINING_BOT_HP
+    match["opponent"]["max_hp"] = TRAINING_BOT_HP
     match["be2"] = True
     match["training"] = True
     match["is_bot_match"] = True
-    match["bot_difficulty"] = "normal"
+    match["bot_difficulty"] = "training"
     match["room_code"] = f"be2_training_{sid}" if sid else "be2_training"
     return attach_legacy_match_aliases(match)
 
@@ -363,7 +592,11 @@ def be2_play_card(match: Dict[str, Any], card_id: Optional[str] = None, card_ind
     if match.get("phase") == "created":
         start_round(match)
 
-    play_card(match, side if side in {"player", "opponent"} else "player", card_id=card_id, card_index=card_index)
+    side = side if side in {"player", "opponent"} else "player"
+    if not (match.get(side) or {}).get("intent"):
+        raise ValueError("Choose Strike, Guard or Focus before playing a card.")
+
+    play_card(match, side, card_id=card_id, card_index=card_index)
     return match
 
 

@@ -1236,3 +1236,306 @@ body.az48-match-started .az48-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* =========================================================
+   Arena clarity patch V68
+   One clear turn contract, compact contextual HUD, protected board.
+   ========================================================= */
+
+.az48-arena {
+    grid-template-rows: 70px 48px minmax(250px, 1fr) clamp(340px, 38dvh, 400px);
+}
+
+.az48-message {
+    border-radius: 16px;
+    padding-block: 6px;
+}
+
+.az48-board {
+    border-radius: 26px;
+}
+
+.az48-bottom,
+body.az48-has-actions .az48-bottom,
+body.az48-match-started.az48-hand-empty .az48-bottom,
+body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
+    grid-template-rows: 22px minmax(112px, 1fr) 78px 54px;
+    grid-template-areas:
+        "handhead"
+        "hand"
+        "clarity"
+        "actions";
+    gap: 8px;
+    padding: 9px 14px 12px;
+}
+
+body.az48-match-started.az48-hand-empty .az48-bottom,
+body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
+    grid-template-rows: 20px 50px 104px 54px;
+}
+
+.az48-clarity-panel,
+body.az48-match-started .az48-clarity-panel {
+    grid-area: clarity;
+    display: grid;
+    grid-template-columns: minmax(220px, 0.95fr) minmax(260px, 1.1fr) minmax(320px, 1.25fr);
+    gap: 10px;
+    min-height: 0;
+    max-height: 78px;
+    margin: 0;
+    overflow: visible;
+}
+
+.az48-clarity-card,
+body.az48-match-started .az48-clarity-card {
+    min-height: 0;
+    max-height: 78px;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 8px 11px;
+    background: rgba(6, 8, 15, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.az48-clarity-card span {
+    display: block;
+    margin-bottom: 3px;
+    color: rgba(255, 222, 148, 0.78);
+    font-size: 0.58rem;
+    font-weight: 1000;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.az48-clarity-card strong {
+    display: block;
+    color: rgba(255, 255, 255, 0.94);
+    font-size: 0.82rem;
+    line-height: 1.08;
+    text-transform: capitalize;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-clarity-card p {
+    margin: 4px 0 0;
+    color: rgba(255, 255, 255, 0.70);
+    font-size: 0.68rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.az48-timeline-card {
+    position: relative;
+}
+
+#az48-event-lines {
+    margin: 4px 30px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+}
+
+#az48-event-lines li {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.64rem;
+    line-height: 1.16;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-help-drawer {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    z-index: 4;
+}
+
+.az48-help-drawer summary {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: rgba(12, 10, 5, 0.96);
+    background: linear-gradient(180deg, #fff1bb, #d6a84c);
+    font-size: 0.78rem;
+    font-weight: 1000;
+    cursor: pointer;
+    list-style: none;
+}
+
+.az48-help-drawer summary::-webkit-details-marker {
+    display: none;
+}
+
+.az48-help-drawer[open] ul {
+    position: absolute;
+    right: 0;
+    top: 30px;
+    width: 270px;
+    margin: 0;
+    padding: 10px 14px 10px 28px;
+    border-radius: 12px;
+    background: rgba(5, 5, 11, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+}
+
+.az48-help-drawer li {
+    color: rgba(255, 255, 255, 0.74);
+    font-size: 0.72rem;
+    line-height: 1.32;
+}
+
+.az48-actions {
+    align-items: stretch;
+}
+
+body[data-az48-primary-action="choose_intent"] .az48-actions {
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+}
+
+body[data-az48-primary-action="choose_intent"] #az48-ready,
+body[data-az48-primary-action="choose_intent"] #az48-start {
+    display: none !important;
+}
+
+body[data-az48-primary-action="play_card"] .az48-actions,
+body[data-az48-primary-action="ready"] .az48-actions {
+    grid-template-columns: minmax(190px, 0.7fr) minmax(240px, 1.3fr);
+}
+
+body[data-az48-primary-action="play_card"] #az48-strike,
+body[data-az48-primary-action="play_card"] #az48-guard,
+body[data-az48-primary-action="play_card"] #az48-focus,
+body[data-az48-primary-action="play_card"] #az48-start,
+body[data-az48-primary-action="ready"] #az48-strike,
+body[data-az48-primary-action="ready"] #az48-guard,
+body[data-az48-primary-action="ready"] #az48-focus,
+body[data-az48-primary-action="ready"] #az48-start {
+    display: none !important;
+}
+
+body[data-az48-primary-action="ready"] #az48-ready {
+    grid-column: 1 / -1;
+}
+
+.az48-btn {
+    min-height: 50px;
+    border-radius: 14px;
+}
+
+.az48-ready {
+    box-shadow: 0 0 0 1px rgba(255, 246, 198, 0.38), 0 10px 26px rgba(214, 168, 76, 0.18);
+}
+
+.az48-hand .az48-card {
+    flex-basis: 112px;
+    width: 112px;
+    min-width: 112px;
+    max-width: 112px;
+    height: 124px;
+    min-height: 124px;
+    max-height: 124px;
+}
+
+.az48-card.is-locked {
+    opacity: 0.48;
+    filter: saturate(0.72);
+}
+
+.az48-card.is-locked::before {
+    background:
+        linear-gradient(120deg, rgba(255, 255, 255, 0.10), transparent 20%, transparent 72%, rgba(0, 0, 0, 0.48)),
+        rgba(0, 0, 0, 0.24);
+}
+
+.az48-card.playable,
+.az48-card.is-playable {
+    outline: 2px solid rgba(255, 224, 142, 0.88);
+    box-shadow:
+        0 16px 42px rgba(0, 0, 0, 0.34),
+        0 0 24px color-mix(in srgb, var(--az-card-accent, #fff1bb) 28%, transparent);
+}
+
+.az48-card-preview-line {
+    display: none;
+}
+
+body[data-az48-primary-action="play_card"] .az48-preview-card {
+    border-color: rgba(255, 224, 142, 0.28);
+}
+
+@media (max-height: 850px) {
+    .az48-arena {
+        grid-template-rows: 62px 44px minmax(210px, 1fr) clamp(312px, 42dvh, 360px);
+    }
+
+    .az48-bottom,
+    body.az48-has-actions .az48-bottom,
+    body.az48-match-started.az48-hand-empty .az48-bottom,
+    body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
+        grid-template-rows: 20px minmax(98px, 1fr) 70px 50px;
+    }
+
+    .az48-clarity-panel,
+    body.az48-match-started .az48-clarity-panel {
+        max-height: 70px;
+    }
+
+    .az48-clarity-card,
+    body.az48-match-started .az48-clarity-card {
+        max-height: 70px;
+        padding: 7px 10px;
+    }
+
+    .az48-hand .az48-card {
+        flex-basis: 100px;
+        width: 100px;
+        min-width: 100px;
+        max-width: 100px;
+        height: 110px;
+        min-height: 110px;
+        max-height: 110px;
+    }
+}
+
+@media (max-width: 980px) {
+    .az48-arena {
+        grid-template-rows: 58px 60px minmax(220px, 1fr) clamp(300px, 43dvh, 390px);
+    }
+
+    .az48-clarity-panel,
+    body.az48-match-started .az48-clarity-panel {
+        grid-template-columns: 1fr;
+        max-height: 118px;
+        overflow-y: auto;
+    }
+
+    .az48-clarity-card,
+    body.az48-match-started .az48-clarity-card {
+        max-height: 74px;
+    }
+
+    .az48-bottom,
+    body.az48-has-actions .az48-bottom,
+    body.az48-match-started.az48-hand-empty .az48-bottom,
+    body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
+        grid-template-rows: 20px 106px 118px 104px;
+    }
+
+    body[data-az48-primary-action="choose_intent"] .az48-actions,
+    body[data-az48-primary-action="play_card"] .az48-actions,
+    body[data-az48-primary-action="ready"] .az48-actions,
+    .az48-actions {
+        grid-template-columns: 1fr;
+    }
+}

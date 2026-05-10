@@ -81,8 +81,19 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v156"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v159"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
     assert "apple-touch-icon.png" in homepage
+
+
+def test_arena_has_compact_turn_hud_contract():
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert "az48-next-action" in js
+    assert "az48-card-preview-name" in js
+    assert "az48-event-lines" in js
+    assert "data-az48-primary-action" in css
+    assert "az48-help-drawer" in css
