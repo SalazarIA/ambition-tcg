@@ -277,16 +277,17 @@
         const me = state.me || {};
         const enemy = state.enemy || {};
         const legal = state.legal_actions || {};
-        const playable = arr(legal.playable_card_ids).map(String);
+        const isFinished = String(state.phase || "").toLowerCase() === "finished" || Boolean(state.winner);
+        const playable = isFinished ? [] : arr(legal.playable_card_ids).map(String);
         const hand = arr(me.hand);
 
         const phase = str(state.phase || "start");
 
         renderClarity(state);
 
-        const showStart = PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length);
-        const showIntents = Boolean(legal.show_intents || legal.can_choose_intent);
-        const showReady = Boolean(legal.show_ready || legal.can_ready);
+        const showStart = !isFinished && PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length);
+        const showIntents = !isFinished && Boolean(legal.show_intents || legal.can_choose_intent);
+        const showReady = !isFinished && Boolean(legal.show_ready || legal.can_ready);
 
         setVisible("az48-start", showStart);
         setVisible("az48-strike", showIntents);
@@ -303,7 +304,7 @@
         text("az48-message", str(state.message || "Choose your action."));
 
         text("az48-me-name", str(me.name || "You"));
-        text("az48-me-hp", num(me.hp || 3600, 3600));
+        text("az48-me-hp", me.hp === 0 ? 0 : num(me.hp || 28, 28));
         text("az48-me-energy", num(me.energy || 0));
         text("az48-me-max-energy", num(me.max_energy || me.energy || 0));
         text("az48-me-ambition", num(me.ambition || 0));
@@ -311,7 +312,7 @@
         text("my-ready", me.ready ? "Ready" : "Not ready");
 
         text("az48-enemy-name", str(enemy.name || "Opponent"));
-        text("az48-enemy-hp", num(enemy.hp || 3600, 3600));
+        text("az48-enemy-hp", enemy.hp === 0 ? 0 : num(enemy.hp || 28, 28));
         text("az48-enemy-energy", num(enemy.energy || 0));
         text("az48-enemy-max-energy", num(enemy.max_energy || enemy.energy || 0));
         text("az48-enemy-hand", num(enemy.hand_count || 0));
@@ -376,17 +377,37 @@
         emit("az48_request_state", {});
     }
 
+    function matchIsFinished() {
+        const phase = String((latestState && latestState.phase) || "").toLowerCase();
+        return phase === "finished" || Boolean(latestState && latestState.winner);
+    }
+
     function setIntent(intent) {
+        if (matchIsFinished()) {
+            setMessage("Match finished. Start a new training match or go back to Arena.");
+            return;
+        }
+
         setMessage(intent + " selected.");
         emit("az48_set_intent", { intent });
     }
 
     function ready() {
+        if (matchIsFinished()) {
+            setMessage("Match finished. Start a new training match or go back to Arena.");
+            return;
+        }
+
         setMessage("Ready sent.");
         emit("az48_declare_ready", {});
     }
 
     function playCard(id) {
+        if (matchIsFinished()) {
+            setMessage("Match finished. Start a new training match or go back to Arena.");
+            return;
+        }
+
         const hand = arr((latestState && latestState.me && latestState.me.hand) || []);
         const index = hand.findIndex((card, cardIndex) => normalizeCard(card, cardIndex).id === String(id));
 

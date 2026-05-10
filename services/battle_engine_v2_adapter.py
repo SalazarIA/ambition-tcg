@@ -178,11 +178,13 @@ def build_be2_arena_payload(match: Dict[str, Any], message: Optional[str] = None
     player = state["player"]
     enemy = state["opponent"]
 
-    playable_ids = [str(card.get("id")) for card in playable_cards(player)]
     phase = "finished" if state.get("winner") else (state.get("phase") or "start")
+    is_finished = phase == "finished" or bool(state.get("winner"))
 
-    can_act = phase in {"created", "round_start", "choose_action"} and not state.get("winner")
-    can_unleash = int(player.get("ambition") or 0) >= UNLEASH_COST and not state.get("winner")
+    playable_ids = [] if is_finished else [str(card.get("id")) for card in playable_cards(player)]
+
+    can_act = phase in {"created", "round_start", "choose_action"} and not is_finished
+    can_unleash = int(player.get("ambition") or 0) >= UNLEASH_COST and not is_finished
 
     enemy_preview = state.get("enemy_preview") or {}
 

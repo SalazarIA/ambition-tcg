@@ -4081,6 +4081,14 @@ def be2_match_for_sid(sid):
     return None, None
 
 
+def be2_match_is_finished(match):
+    return bool(match and (match.get("winner") or str(match.get("phase") or "").lower() == "finished"))
+
+
+def emit_be2_finished_guard(sid, match):
+    return emit_be2_state(sid, message="Match finished. Start a new training match or go back to Arena.")
+
+
 def emit_be2_state(sid, message=None):
     room_code, match = be2_match_for_sid(sid)
 
@@ -4157,6 +4165,10 @@ def az48_set_intent(data=None):
 
     room, match = be2_match_for_sid(sid)
 
+    if be2_match_is_finished(match):
+        emit_be2_finished_guard(sid, match)
+        return
+
     try:
         be2_set_intent(match, intent)
         emit_be2_state(sid, message=f"{intent} selected. Play a creature, spell, guard or support.")
@@ -4181,6 +4193,10 @@ def az48_play_card(data=None):
 
     room, match = be2_match_for_sid(sid)
 
+    if be2_match_is_finished(match):
+        emit_be2_finished_guard(sid, match)
+        return
+
     try:
         be2_play_card(match, card_id=data.get("card_id") or data.get("id"), card_index=data.get("card_index"))
         emit_be2_state(sid, message="Card played. Press Ready to resolve combat.")
@@ -4203,6 +4219,10 @@ def az48_declare_ready(data=None):
         start_be2_for_sid(sid, user=user, message="Battle Engine V2 started.")
 
     room, match = be2_match_for_sid(sid)
+
+    if be2_match_is_finished(match):
+        emit_be2_finished_guard(sid, match)
+        return
 
     try:
         be2_ready(match)
@@ -4228,6 +4248,10 @@ def az48_unleash(data=None):
         start_be2_for_sid(sid, user=user, message="Battle Engine V2 started.")
 
     room, match = be2_match_for_sid(sid)
+
+    if be2_match_is_finished(match):
+        emit_be2_finished_guard(sid, match)
+        return
 
     try:
         be2_unleash(match)
