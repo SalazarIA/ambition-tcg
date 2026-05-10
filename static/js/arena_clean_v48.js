@@ -196,6 +196,30 @@
         if (el) el.style.display = visible ? "" : "none";
     }
 
+    function isStartPhase(phase) {
+        const key = String(phase || "").toLowerCase();
+        return key === "start" || key === "created";
+    }
+
+    function emptyHandMessage(state, legal) {
+        const phase = String((state && state.phase) || "").toLowerCase();
+        const me = (state && state.me) || {};
+
+        if (isStartPhase(phase) || legal.can_start || legal.show_start) {
+            return "No cards yet. Press Start.";
+        }
+
+        if (legal.can_ready || legal.show_ready) {
+            return "No cards in hand. Choose an intent, then press Ready.";
+        }
+
+        if (num(me.deck_count || 0) <= 0) {
+            return "Deck empty. Use intents and Unleash to finish the duel.";
+        }
+
+        return "No playable cards right now. Resolve the round to draw again.";
+    }
+
 
     function ensureClarityPanel() {
         let panel = document.getElementById("az48-clarity-panel");
@@ -211,11 +235,11 @@
         panel.id = "az48-clarity-panel";
         panel.className = "az48-clarity-panel";
         panel.innerHTML = [
-            '<div class="az48-clarity-card">',
+            '<div class="az48-clarity-card az48-basic-help-card">',
             '<h3>How to Play</h3>',
             '<ul id="az48-help-lines"></ul>',
             '</div>',
-            '<div class="az48-clarity-card">',
+            '<div class="az48-clarity-card az48-basic-help-card">',
             '<h3>Actions</h3>',
             '<div id="az48-action-help"></div>',
             '</div>',
@@ -346,9 +370,10 @@
 
         renderClarity(state);
 
-        const showStart = !isFinished && PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || phase === "start" || !hand.length);
+        const showStart = !isFinished && PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || isStartPhase(phase));
         const showIntents = !isFinished && Boolean(legal.show_intents || legal.can_choose_intent);
         const showReady = !isFinished && Boolean(legal.show_ready || legal.can_ready);
+        const handIsEmpty = hand.length === 0;
 
         setVisible("az48-start", showStart);
         setVisible("az48-strike", showIntents);
@@ -357,7 +382,10 @@
         setVisible("az48-ready", showReady);
         document.body.classList.toggle("az48-has-actions", showStart || showIntents || showReady);
         document.body.classList.toggle("az48-has-hand", hand.length > 0);
-        document.body.classList.toggle("az48-match-started", hand.length > 0 || phase !== "start");
+        document.body.classList.toggle("az48-hand-empty", handIsEmpty);
+        document.body.classList.toggle("az48-can-ready", showReady);
+        document.body.classList.toggle("az48-can-start", showStart);
+        document.body.classList.toggle("az48-match-started", hand.length > 0 || !isStartPhase(phase));
 
         text("az48-mode", str(state.mode || "training"));
         text("az48-round", num(state.round || 1, 1));
@@ -407,7 +435,7 @@
 
         if (handEl) {
             if (!hand.length) {
-                handEl.innerHTML = '<div class="az48-empty">No cards in hand. Press Start.</div>';
+                handEl.innerHTML = '<div class="az48-empty">' + esc(emptyHandMessage(state, legal)) + '</div>';
             } else {
                 handEl.innerHTML = hand.map((card, index) => {
                     const c = normalizeCard(card, index);
