@@ -254,6 +254,190 @@
 }
 </style>
 
+
+<style id="az48-arena-layout-fix-v3">
+/* =========================================================
+   AZ48 Arena Layout Fix V3
+   Structural visual correction after official catalog migration.
+   Goal: hand never overlaps clarity panels.
+   ========================================================= */
+
+.az48-board {
+    min-height: 245px !important;
+    max-height: 34vh !important;
+}
+
+.az48-bottom {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+        "handhead"
+        "hand"
+        "clarity"
+        "actions" !important;
+    gap: 14px !important;
+    padding: 12px 14px 18px !important;
+    overflow: visible !important;
+}
+
+/* Hand must own enough vertical space for real official card names. */
+.az48-hand {
+    grid-area: hand !important;
+    position: relative !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-height: 150px !important;
+    max-height: 168px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 10px 8px 20px !important;
+    contain: layout paint !important;
+    z-index: 10 !important;
+}
+
+/* Official cards need a slightly larger clean footprint. */
+.az48-hand .az48-card {
+    position: relative !important;
+    flex: 0 0 118px !important;
+    width: 118px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
+    height: 126px !important;
+    min-height: 126px !important;
+    max-height: 126px !important;
+    margin: 0 !important;
+    transform: none !important;
+    z-index: 1 !important;
+}
+
+.az48-hand .az48-card:hover,
+.az48-hand .az48-card.selected,
+.az48-hand .az48-card.is-selected {
+    transform: translateY(-3px) !important;
+    z-index: 4 !important;
+}
+
+/* Panels are below the hand and above buttons. */
+.az48-clarity-panel {
+    grid-area: clarity !important;
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns:
+        minmax(220px, 0.9fr)
+        minmax(330px, 1.35fr)
+        minmax(280px, 1fr)
+        minmax(300px, 1.1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    z-index: 20 !important;
+    margin-top: 0 !important;
+}
+
+.az48-clarity-card {
+    min-height: 146px !important;
+    max-height: 190px !important;
+    overflow: auto !important;
+}
+
+/* Last round needs readable scroll, not clipping. */
+.az48-last-round-card {
+    max-height: 190px !important;
+    overflow-y: auto !important;
+    border-color: rgba(255, 216, 120, 0.34) !important;
+}
+
+#az48-round-result {
+    max-height: 132px !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+}
+
+/* Buttons stay fixed below info panels. */
+.az48-actions {
+    grid-area: actions !important;
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(130px, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    z-index: 30 !important;
+}
+
+.az48-btn {
+    min-height: 58px !important;
+}
+
+/* Finished match: reduce board dominance and make result clearer. */
+.az48-arena:has(#az48-phase) .az48-board {
+    transition: max-height 0.2s ease, min-height 0.2s ease;
+}
+
+@media (max-height: 850px) {
+    .az48-board {
+        min-height: 220px !important;
+        max-height: 30vh !important;
+    }
+
+    .az48-hand {
+        min-height: 138px !important;
+        max-height: 154px !important;
+    }
+
+    .az48-hand .az48-card {
+        flex-basis: 106px !important;
+        width: 106px !important;
+        min-width: 106px !important;
+        max-width: 106px !important;
+        height: 118px !important;
+        min-height: 118px !important;
+        max-height: 118px !important;
+    }
+
+    .az48-clarity-card,
+    .az48-last-round-card {
+        min-height: 132px !important;
+        max-height: 168px !important;
+    }
+
+    #az48-round-result {
+        max-height: 112px !important;
+    }
+
+    .az48-btn {
+        min-height: 52px !important;
+    }
+}
+
+@media (max-width: 1180px) {
+    .az48-clarity-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 760px) {
+    .az48-board {
+        min-height: 190px !important;
+        max-height: 28vh !important;
+    }
+
+    .az48-hand {
+        justify-content: flex-start !important;
+    }
+
+    .az48-clarity-panel {
+        grid-template-columns: 1fr !important;
+    }
+
+    .az48-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+</style>
+
 </head>
 
 <body class="az-clean-arena-v48 arena-page-v154" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}">
