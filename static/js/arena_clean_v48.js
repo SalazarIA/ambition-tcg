@@ -584,7 +584,7 @@
                 return;
             }
 
-            const card = event.target.closest("#az48-hand .az48-card[data-card-id]");
+            const card = event.target.closest("#az48-hand .az48-card[data-card-id], #hand .az48-card[data-card-id]");
             if (card) {
                 event.preventDefault();
 
