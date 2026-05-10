@@ -11,6 +11,9 @@ import random
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
+from game.cards import CARD_CATALOG as OFFICIAL_CARD_CATALOG
+from game.deck import STARTER_MONSTER_COUNT, STARTER_SPELL_COUNT, STARTER_TRAP_COUNT
+
 
 ENGINE_VERSION = "battle_engine_v2"
 
@@ -184,10 +187,138 @@ def _copy_card(card_id: str) -> Dict[str, Any]:
     return deepcopy(CARD_CATALOG_V2[card_id])
 
 
+def _official_card_to_be2(card: Dict[str, Any]) -> Dict[str, Any]:
+    """Adapt official Ambitionz catalog cards into Battle Engine V2 combat cards."""
+    card_type = str(card.get("type") or "").strip()
+    effect = str(card.get("effect") or "")
+    cost = int(card.get("cost") or 1)
+    power = int(card.get("power") or card.get("value") or 1000)
+    value = int(card.get("value") or 0)
+
+    adapted = {
+        "id": str(card.get("id")),
+        "name": str(card.get("name") or card.get("id")),
+        "official_type": card_type,
+        "element": str(card.get("element") or "Neutral"),
+        "rarity": str(card.get("rarity") or "Common"),
+        "cost": max(1, min(10, cost)),
+        "ambition": 1,
+        "text": str(card.get("description") or card.get("tactical_hint") or card.get("type_identity") or ""),
+        "image": str(card.get("image") or "cards/placeholders/card_placeholder.svg"),
+        "sigil": str(card.get("sigil") or ""),
+        "role": str(card.get("role") or ""),
+        "archetype": str(card.get("archetype") or ""),
+        "effect_key": effect,
+        "source": "official_catalog",
+    }
+
+    if card_type == "Monster":
+        atk = max(2, min(9, round(power / 260)))
+        hp = max(3, min(10, round(power / 230)))
+
+        element = adapted["element"]
+
+        if element == "Fire":
+            atk += 1
+        elif element == "Earth":
+            hp += 1
+        elif element == "Water":
+            adapted["ambition"] = 2
+        elif element == "Plant":
+            hp += 1
+
+        adapted.update({
+            "kind": "creature",
+            "atk": max(1, min(10, atk)),
+            "hp": max(1, min(12, hp)),
+        })
+        return adapted
+
+    if card_type == "Spell":
+        damage = max(1, min(6, value or cost + 1))
+        shield = 0
+
+        if effect in {"Shield", "Heal"}:
+            damage = 0
+            shield = max(3, min(8, value or cost + 3))
+        elif effect in {"Boost", "Draw"}:
+            damage = max(0, min(3, value or cost))
+            adapted["ambition"] = 2
+        elif effect in {"Burn", "Drain", "Weaken"}:
+            damage = max(2, min(6, value or cost + 2))
+
+        adapted.update({
+            "kind": "spell",
+            "damage": damage,
+            "shield": shield,
+        })
+        return adapted
+
+    if card_type == "Trap":
+        shield = max(4, min(9, value or cost + 4))
+        damage = 0
+
+        if effect in {"Counter", "Burn"}:
+            damage = max(1, min(4, value or cost))
+        elif effect == "Weaken":
+            damage = 1
+        elif effect == "Heal":
+            adapted["ambition"] = 2
+
+        adapted.update({
+            "kind": "guard",
+            "shield": shield,
+            "damage": damage,
+        })
+        return adapted
+
+    adapted.update({
+        "kind": "spell",
+        "damage": max(1, min(4, cost)),
+    })
+    return adapted
+
+
+def _official_pool(card_type: str) -> List[Dict[str, Any]]:
+    return [
+        card for card in OFFICIAL_CARD_CATALOG
+        if str(card.get("type") or "") == card_type
+    ]
+
+
+def _choose_official_cards(rng: random.Random, pool: List[Dict[str, Any]], amount: int) -> List[Dict[str, Any]]:
+    if not pool or amount <= 0:
+        return []
+
+    if len(pool) >= amount:
+        return rng.sample(pool, amount)
+
+    selected = list(pool)
+
+    while len(selected) < amount:
+        selected.append(rng.choice(pool))
+
+    return selected
+
+
 def build_beta_deck(seed: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Build a BE2 combat deck from the official 250-card Ambitionz catalog.
+
+    Production rule:
+    - 30 cards
+    - 21 monsters
+    - 6 spells
+    - 3 traps
+    """
     rng = random.Random(seed)
-    deck = [_copy_card(card_id) for card_id in BETA_DECK_V2]
+
+    monsters = _choose_official_cards(rng, _official_pool("Monster"), STARTER_MONSTER_COUNT)
+    spells = _choose_official_cards(rng, _official_pool("Spell"), STARTER_SPELL_COUNT)
+    traps = _choose_official_cards(rng, _official_pool("Trap"), STARTER_TRAP_COUNT)
+
+    deck = [_official_card_to_be2(card) for card in monsters + spells + traps]
     rng.shuffle(deck)
+
     return deck
 
 
