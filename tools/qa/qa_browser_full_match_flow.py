@@ -11,6 +11,7 @@ SHOT_ROOT = PROJECT_ROOT / "reports" / "qa" / "screenshots"
 QA_EMAIL = "qa_browser_tester@ambitionz.local"
 QA_USERNAME = "qa_browser_tester"
 QA_PASSWORD = "QaBrowser123!"
+RAW_JSON_MARKERS = ['{"schema"', '"schema":', '"combat_log"', '"round_summary"', "combat_log:"]
 
 
 def ensure_browser_user():
@@ -129,9 +130,33 @@ def read_text(page, selector, default=""):
         return default
 
 
+def has_raw_json_marker(text):
+    return any(marker in (text or "") for marker in RAW_JSON_MARKERS)
+
+
 def snapshot(page, label, logs):
     text = body_text(page)
     summary_text = read_text(page, "#az48-round-summary", "")
+    guidance_text = " ".join([
+        read_text(page, "#az48-next-action", ""),
+        read_text(page, "#az48-turn-hint", ""),
+        read_text(page, "#az48-step-list", ""),
+    ]).strip()
+    card_detail_text = " ".join([
+        read_text(page, "#az48-card-preview-name", ""),
+        read_text(page, "#az48-card-detail-stats", ""),
+        read_text(page, "#az48-card-preview-text", ""),
+        read_text(page, "#az48-card-keyword-lines", ""),
+    ]).strip()
+    hud_text = " ".join([
+        read_text(page, "#az48-me-intent", ""),
+        read_text(page, "#az48-enemy-status", ""),
+        read_text(page, "#az48-me-ambition", ""),
+    ]).strip()
+    combat_feedback_visible = (
+        count_cards(page, ".az48-lane-resolved, .az48-card-damaged, .az48-card-defeated") > 0
+        or page.evaluate("() => document.body.classList.contains('az48-me-hero-hit') || document.body.classList.contains('az48-enemy-hero-hit')")
+    )
 
     snap = {
         "label": label,
@@ -140,15 +165,36 @@ def snapshot(page, label, logs):
         "message": read_text(page, "#az48-message", ""),
         "me_hp": read_int(page, "#az48-me-hp", 0),
         "enemy_hp": read_int(page, "#az48-enemy-hp", 0),
+        "me_ambition": read_int(page, "#az48-me-ambition", 0),
+        "hud_visible": all([
+            count_cards(page, "#az48-me-hp") > 0,
+            count_cards(page, "#az48-enemy-hp") > 0,
+            count_cards(page, "#az48-me-ambition") > 0,
+            count_cards(page, "#az48-round") > 0,
+            count_cards(page, "#az48-me-intent") > 0,
+            count_cards(page, "#az48-enemy-status") > 0,
+        ]),
+        "hud_text": hud_text,
+        "combat_feedback_visible": combat_feedback_visible,
         "hand_cards": count_cards(page, "#az48-hand .az48-card[data-card-id], #hand .az48-card[data-card-id]"),
         "my_field_cards": count_cards(page, "#az48-me-field .az48-card[data-card-id], #az48-me-field [data-card-id]"),
         "enemy_field_cards": count_cards(page, "#az48-enemy-field .az48-card[data-card-id], #az48-enemy-field [data-card-id]"),
         "stuck_playing": "Playing card..." in text,
         "socket_error": "Socket connection error" in text,
         "internal_error": "Internal server error" in text or "Traceback" in text,
+        "body_has_raw_json": has_raw_json_marker(text),
+        "finished_text_visible": any(
+            phrase in text.lower()
+            for phrase in ["victory", "defeat", "winner", "match finished", "game over", "venceu", "vitória", "vitoria"]
+        ),
         "round_summary_visible": count_cards(page, "#az48-round-summary") > 0,
         "round_summary_text": summary_text,
         "round_summary_has_raw_json": "{" in summary_text or "}" in summary_text,
+        "turn_guidance_visible": count_cards(page, "#az48-step-list") > 0 and count_cards(page, "#az48-next-action") > 0,
+        "turn_guidance_text": guidance_text,
+        "active_step_count": count_cards(page, "#az48-step-list .az48-step-active"),
+        "card_detail_visible": count_cards(page, "#az48-card-detail-stats span") > 0,
+        "card_detail_text": card_detail_text,
     }
 
     logs.append(f"snapshot_{label}: {snap}")
@@ -158,6 +204,9 @@ def snapshot(page, label, logs):
 def assert_state_ok(snap, label):
     if snap["internal_error"]:
         raise AssertionError(f"{label}: internal error visible")
+
+    if snap["body_has_raw_json"]:
+        raise AssertionError(f"{label}: raw JSON visible in arena body")
 
     if snap["socket_error"]:
         raise AssertionError(f"{label}: socket error visible")
@@ -171,11 +220,29 @@ def assert_state_ok(snap, label):
     if snap["round_summary_has_raw_json"]:
         raise AssertionError(f"{label}: Round Summary rendered raw JSON")
 
+    if not snap["turn_guidance_visible"]:
+        raise AssertionError(f"{label}: turn guidance panel missing")
+
+    if snap["active_step_count"] <= 0:
+        raise AssertionError(f"{label}: no active turn step visible")
+
+    if not snap["card_detail_visible"]:
+        raise AssertionError(f"{label}: card detail panel missing")
+
+    if not snap["hud_visible"]:
+        raise AssertionError(f"{label}: premium HUD missing")
+
+    if not snap["hud_text"]:
+        raise AssertionError(f"{label}: premium HUD text missing")
+
     if snap["me_hp"] <= 0 and snap["phase"].lower() != "finished":
         raise AssertionError(f"{label}: invalid player HP")
 
     if snap["enemy_hp"] <= 0 and snap["phase"].lower() != "finished":
         raise AssertionError(f"{label}: invalid enemy HP")
+
+    if snap["phase"].lower() == "finished" and not snap["finished_text_visible"]:
+        raise AssertionError(f"{label}: finished phase reached without visible end state")
 
 
 def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
@@ -257,7 +324,8 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                     page.wait_for_timeout(1800)
                     shot(page, shot_dir, "01c_after_login_retry", logs)
 
-                page.goto(base_url.rstrip("/") + "/training", wait_until="networkidle")
+                page.goto(base_url.rstrip("/") + "/training", wait_until="domcontentloaded", timeout=30000)
+                page.locator(".az48-arena").first.wait_for(state="visible", timeout=15000)
                 page.wait_for_timeout(1400)
                 shot(page, shot_dir, "02_training_before_start", logs)
 
@@ -302,7 +370,14 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                 last = start
                 intents = ["Strike", "Guard", "Focus"]
 
-                for index in range(1, 7):
+                target_round = int(start_round or 1) + 5
+                max_cycles = 10
+
+                for index in range(1, max_cycles + 1):
+                    if str(last.get("phase") or "").lower() == "finished" or last.get("finished_text_visible"):
+                        logs.append(f"finished_state_detected_before_round_{index}")
+                        break
+
                     intent = intents[(index - 1) % len(intents)]
 
                     click_any(page, [f"#az48-{intent.lower()}", f"button:has-text(\"{intent}\")"], f"intent_{intent}", logs)
@@ -315,7 +390,7 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                     field_before = after_intent["my_field_cards"]
 
                     if hand_before > 0:
-                        click_any(page, [
+                        played_card = click_any(page, [
                             "#az48-hand .az48-card.is-playable[data-card-id]",
                             "#az48-hand .az48-card.playable[data-card-id]",
                             "#az48-hand .az48-card.az48-playable[data-card-id]",
@@ -327,37 +402,40 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                             ".az48-card.az48-playable[data-card-id]",
                         ], "first_card", logs)
 
-                        page.wait_for_timeout(700)
-                        complete_pending_selection(page, logs)
-                        page.wait_for_timeout(2500)
+                        if not played_card:
+                            logs.append(f"round_{index}: no playable card to click")
+                        else:
+                            page.wait_for_timeout(700)
+                            complete_pending_selection(page, logs)
+                            page.wait_for_timeout(2500)
 
-                        after_card = snapshot(page, f"round_{index}_after_card", logs)
-                        shot(page, shot_dir, f"round_{index}_after_card", logs)
-                        assert_state_ok(after_card, f"round_{index}_after_card")
+                            after_card = snapshot(page, f"round_{index}_after_card", logs)
+                            shot(page, shot_dir, f"round_{index}_after_card", logs)
+                            assert_state_ok(after_card, f"round_{index}_after_card")
 
-                        # BE2 allows spells/traps/support cards. These may not occupy the
-                        # monster field slot and may draw/refill immediately, keeping hand size stable.
-                        # A confirmed "Card played" message is therefore also valid mutation.
-                        card_play_confirmed = "Card played" in str(after_card.get("message") or "")
+                            # BE2 allows spells/traps/support cards. These may not occupy the
+                            # monster field slot and may draw/refill immediately, keeping hand size stable.
+                            # A confirmed "Card played" message is therefore also valid mutation.
+                            card_play_confirmed = "Card played" in str(after_card.get("message") or "")
 
-                        if (
-                            field_before == 0
-                            and after_card["hand_cards"] >= hand_before
-                            and after_card["my_field_cards"] <= field_before
-                            and not card_play_confirmed
-                        ):
-                            raise AssertionError(
-                                f"Card click did not mutate hand/field or confirm play. hand_before={hand_before} "
-                                f"hand_after={after_card['hand_cards']} field_before={field_before} "
-                                f"field_after={after_card['my_field_cards']} message={after_card.get('message')!r}"
-                            )
+                            if (
+                                field_before == 0
+                                and after_card["hand_cards"] >= hand_before
+                                and after_card["my_field_cards"] <= field_before
+                                and not card_play_confirmed
+                            ):
+                                raise AssertionError(
+                                    f"Card click did not mutate hand/field or confirm play. hand_before={hand_before} "
+                                    f"hand_after={after_card['hand_cards']} field_before={field_before} "
+                                    f"field_after={after_card['my_field_cards']} message={after_card.get('message')!r}"
+                                )
 
-                        if field_before > 0 and after_card["hand_cards"] >= hand_before and after_card["my_field_cards"] <= field_before:
-                            logs.append(
-                                "card_click_no_mutation_allowed_because_field_occupied="
-                                f"hand_before={hand_before} hand_after={after_card['hand_cards']} "
-                                f"field_before={field_before} field_after={after_card['my_field_cards']}"
-                            )
+                            if field_before > 0 and after_card["hand_cards"] >= hand_before and after_card["my_field_cards"] <= field_before:
+                                logs.append(
+                                    "card_click_no_mutation_allowed_because_field_occupied="
+                                    f"hand_before={hand_before} hand_after={after_card['hand_cards']} "
+                                    f"field_before={field_before} field_after={after_card['my_field_cards']}"
+                                )
 
                     click_any(page, ["#az48-ready", "#ready-btn", "button:has-text(\"Ready\")"], "ready", logs)
                     page.wait_for_timeout(3200)
@@ -372,15 +450,28 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                         for phrase in ["Rodada", "atacou", "dano", "derrotado", "Guarded", "Focused"]
                     ):
                         raise AssertionError(f"Round Summary did not show readable events: {summary_text!r}")
+                    if not last["combat_feedback_visible"]:
+                        raise AssertionError("Combat feedback did not appear after resolved round.")
 
-                    if last["round"] >= start_round + 3:
-                        logs.append(f"progress_confirmed: start_round={start_round} current_round={last['round']}")
+                    if str(last.get("phase") or "").lower() == "finished" or last.get("finished_text_visible"):
+                        logs.append(f"finished_state_detected_after_round_{index}")
+                        break
+
+                    if last["round"] >= target_round:
+                        logs.append(
+                            "safe_round_limit_reached: "
+                            f"start_round={start_round} target_round={target_round} current_round={last['round']}"
+                        )
                         break
 
                 if last["round"] <= start_round:
                     raise AssertionError(f"Round did not advance. start={start_round} final={last['round']}")
 
-                fatal_console = [item for item in console_errors if item.startswith("error:")]
+                fatal_console = [
+                    item for item in console_errors
+                    if item.startswith("error:")
+                    and "Failed to load resource" not in item
+                ]
                 if fatal_console:
                     failures.append("console_errors=" + " | ".join(fatal_console[:6]))
 

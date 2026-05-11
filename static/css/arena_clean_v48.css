@@ -55,12 +55,37 @@ a {
 }
 
 .az48-player {
+    position: relative;
     min-width: 0;
     border-radius: 20px;
     padding: 10px 12px;
     display: grid;
+    grid-template-columns: minmax(86px, .9fr) minmax(0, 1.4fr);
+    align-items: center;
     align-content: center;
     gap: 7px;
+    overflow: hidden;
+}
+
+.az48-player::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    opacity: .9;
+}
+
+.az48-player > * {
+    position: relative;
+    z-index: 1;
+}
+
+.az48-enemy::before {
+    background: linear-gradient(180deg, #ff7370, #d65aff);
+}
+
+.az48-you::before {
+    background: linear-gradient(180deg, #70e8b7, #ffd66f);
 }
 
 .az48-player span,
@@ -84,9 +109,12 @@ a {
 }
 
 .az48-stats {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    justify-content: end;
     gap: 6px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .az48-stats b {
@@ -96,6 +124,53 @@ a {
     border: 1px solid rgba(255,255,255,.08);
     font-size: .68rem;
     line-height: 1;
+}
+
+.az48-hud-pill {
+    min-width: 0;
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-hud-pill span {
+    min-width: 0;
+    color: rgba(255, 255, 255, .96);
+    font-size: .8rem;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.az48-hud-pill small {
+    color: rgba(255, 255, 255, .58);
+    font-size: .54rem;
+    letter-spacing: .06em;
+}
+
+.az48-hp-pill {
+    border-color: rgba(255, 115, 112, .28);
+    background: linear-gradient(180deg, rgba(255, 115, 112, .18), rgba(0, 0, 0, .28));
+}
+
+.az48-ambition-pill {
+    border-color: rgba(255, 214, 111, .32);
+    background: linear-gradient(180deg, rgba(255, 214, 111, .20), rgba(0, 0, 0, .28));
+}
+
+.az48-intent-pill,
+.az48-opponent-status-pill {
+    border-color: rgba(112, 232, 183, .24);
+    background: linear-gradient(180deg, rgba(112, 232, 183, .14), rgba(0, 0, 0, .28));
+}
+
+body.az48-me-ready .az48-intent-pill,
+body.az48-enemy-ready .az48-opponent-status-pill {
+    border-color: rgba(255, 226, 151, .42);
+    background: linear-gradient(180deg, rgba(255, 226, 151, .24), rgba(0, 0, 0, .28));
 }
 
 .az48-center {
@@ -110,6 +185,15 @@ a {
 .az48-center strong {
     font-size: 1.05rem;
     line-height: 1;
+}
+
+.az48-round-badge {
+    width: 100%;
+    padding: 7px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 226, 151, .34);
+    background: linear-gradient(180deg, rgba(255, 226, 151, .22), rgba(0, 0, 0, .18));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .16);
 }
 
 .az48-back {
@@ -290,10 +374,56 @@ a {
     transform: translateY(-2px);
 }
 
+.az48-lane-resolved {
+    border-color: rgba(255, 226, 151, .56);
+    box-shadow:
+        0 0 0 2px rgba(255, 226, 151, .16),
+        0 14px 34px rgba(0, 0, 0, .28);
+    animation: az48LaneResolved .8s ease-out;
+}
+
+.az48-card-damaged {
+    outline: 2px solid rgba(255, 115, 112, .82);
+    animation: az48DamageFlash .82s ease-out;
+}
+
+.az48-card-defeated {
+    border-color: rgba(214, 90, 255, .72);
+    box-shadow:
+        0 0 0 2px rgba(214, 90, 255, .18),
+        0 16px 36px rgba(0, 0, 0, .34);
+    animation: az48DefeatedFlash .95s ease-out;
+}
+
+body.az48-me-hero-hit .az48-you,
+body.az48-enemy-hero-hit .az48-enemy {
+    animation: az48HeroPulse .9s ease-out;
+}
+
 .az48-selecting-target [data-az48-target].is-legal-target {
     outline: 2px solid rgba(255,220,140,.72);
     outline-offset: 3px;
     cursor: pointer;
+}
+
+@keyframes az48DamageFlash {
+    0% { filter: brightness(1.45) saturate(1.35); transform: translateY(-2px); }
+    100% { filter: none; transform: none; }
+}
+
+@keyframes az48DefeatedFlash {
+    0% { filter: brightness(1.55) grayscale(.1); transform: scale(.985); }
+    100% { filter: none; transform: none; }
+}
+
+@keyframes az48LaneResolved {
+    0% { box-shadow: 0 0 0 4px rgba(255, 226, 151, .34), 0 14px 34px rgba(0, 0, 0, .28); }
+    100% { box-shadow: 0 0 0 2px rgba(255, 226, 151, .16), 0 14px 34px rgba(0, 0, 0, .28); }
+}
+
+@keyframes az48HeroPulse {
+    0% { filter: brightness(1.35); box-shadow: 0 0 0 2px rgba(255, 115, 112, .34), 0 18px 50px rgba(0, 0, 0, .28); }
+    100% { filter: none; }
 }
 
 .az48-bottom {
@@ -623,6 +753,34 @@ body.az48-has-actions .az48-hand .az48-card {
     -webkit-box-orient: vertical;
 }
 
+.az48-card-stats {
+    grid-row: 4;
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.az48-card-stats span {
+    min-width: 0;
+    padding: 3px 4px;
+    border-radius: 7px;
+    color: rgba(255, 255, 255, 0.88);
+    background: rgba(0, 0, 0, 0.34);
+    font-size: 0.54rem;
+    font-weight: 950;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-card-v2 .az48-effect {
+    display: none;
+}
+
 .az48-tags {
     grid-row: 5;
     position: relative;
@@ -669,6 +827,11 @@ body.az48-has-actions .az48-hand .az48-card {
         padding: 6px;
     }
 
+    .az48-player {
+        grid-template-columns: minmax(38px, .72fr) minmax(0, 1.28fr);
+        gap: 4px;
+    }
+
     .az48-player span,
     .az48-center span,
     .az48-center em {
@@ -683,6 +846,18 @@ body.az48-has-actions .az48-hand .az48-card {
     .az48-stats b {
         font-size: .52rem;
         padding: 4px 5px;
+    }
+
+    .az48-hud-stats {
+        gap: 3px;
+    }
+
+    .az48-hud-pill span {
+        font-size: .56rem;
+    }
+
+    .az48-hud-pill small {
+        font-size: .45rem;
     }
 
     .az48-board {
@@ -1284,7 +1459,7 @@ body.az48-has-actions .az48-bottom,
 body.az48-match-started.az48-hand-empty .az48-bottom,
 body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 0.44fr);
-    grid-template-rows: 22px minmax(112px, 1fr) 78px 54px;
+    grid-template-rows: 22px minmax(104px, 1fr) 96px 54px;
     grid-template-areas:
         "handhead handhead"
         "hand hand"
@@ -1296,7 +1471,7 @@ body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
 
 body.az48-match-started.az48-hand-empty .az48-bottom,
 body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
-    grid-template-rows: 20px 50px 104px 54px;
+    grid-template-rows: 20px 48px 116px 54px;
 }
 
 .az48-clarity-panel,
@@ -1306,7 +1481,7 @@ body.az48-match-started .az48-clarity-panel {
     grid-template-columns: minmax(180px, 0.85fr) minmax(220px, 1.05fr) minmax(210px, 1fr);
     gap: 10px;
     min-height: 0;
-    max-height: 78px;
+    max-height: 96px;
     margin: 0;
     overflow: visible;
 }
@@ -1314,7 +1489,7 @@ body.az48-match-started .az48-clarity-panel {
 .az48-clarity-card,
 body.az48-match-started .az48-clarity-card {
     min-height: 0;
-    max-height: 78px;
+    max-height: 96px;
     overflow: hidden;
     border-radius: 12px;
     padding: 8px 11px;
@@ -1355,11 +1530,84 @@ body.az48-match-started .az48-clarity-card {
     overflow: hidden;
 }
 
+.az48-turn-card {
+    position: relative;
+}
+
+.az48-step-list {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.az48-step-item {
+    min-width: 0;
+    padding: 3px 4px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.045);
+    color: rgba(255, 255, 255, 0.52);
+    font-size: 0.55rem;
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-step-done {
+    color: rgba(210, 255, 235, 0.74);
+    border-color: rgba(112, 232, 183, 0.20);
+    background: rgba(112, 232, 183, 0.07);
+}
+
+.az48-step-active {
+    color: rgba(12, 10, 5, 0.96);
+    border-color: rgba(255, 226, 151, 0.48);
+    background: linear-gradient(180deg, #fff1bb, #d6a84c);
+}
+
+.az48-server-error {
+    margin-top: 6px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    border: 1px solid rgba(255, 115, 112, 0.42);
+    background: rgba(95, 20, 28, 0.62);
+}
+
+.az48-server-error[hidden] {
+    display: none !important;
+}
+
+.az48-server-error strong {
+    display: block;
+    color: rgba(255, 228, 228, 0.96);
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.az48-server-error p {
+    margin: 3px 0 0;
+    color: rgba(255, 241, 241, 0.86);
+    font-size: 0.66rem;
+    line-height: 1.18;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .az48-round-summary {
     grid-area: summary;
     min-width: 0;
     min-height: 0;
-    max-height: 78px;
+    max-height: 96px;
     overflow: hidden;
     border-radius: 12px;
     padding: 8px 11px;
@@ -1403,7 +1651,7 @@ body.az48-match-started .az48-clarity-card {
     list-style: none;
     display: grid;
     gap: 3px;
-    max-height: 48px;
+    max-height: 64px;
     overflow-y: auto;
 }
 
@@ -1584,8 +1832,69 @@ body[data-az48-primary-action="ready"] #az48-ready {
     display: none;
 }
 
+.az48-field-card {
+    pointer-events: auto;
+}
+
 body[data-az48-primary-action="play_card"] .az48-preview-card {
     border-color: rgba(255, 224, 142, 0.28);
+}
+
+.az48-card-detail-stats {
+    margin-top: 5px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.az48-card-detail-stats span {
+    min-width: 0;
+    padding: 4px 5px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.58rem;
+    font-weight: 850;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-card-detail-stats b {
+    display: block;
+    color: rgba(255, 222, 148, 0.78);
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.az48-card-keyword-lines {
+    margin: 5px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+}
+
+.az48-card-keyword-lines li {
+    color: rgba(210, 255, 235, 0.76);
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .az48-lane-resolved,
+    .az48-card-damaged,
+    .az48-card-defeated,
+    body.az48-me-hero-hit .az48-you,
+    body.az48-enemy-hero-hit .az48-enemy {
+        animation: none;
+    }
 }
 
 @media (max-height: 850px) {
@@ -1597,27 +1906,27 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
     body.az48-has-actions .az48-bottom,
     body.az48-match-started.az48-hand-empty .az48-bottom,
     body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
-        grid-template-rows: 20px minmax(98px, 1fr) 70px 50px;
+        grid-template-rows: 20px minmax(88px, 1fr) 84px 50px;
     }
 
     .az48-clarity-panel,
     body.az48-match-started .az48-clarity-panel {
-        max-height: 70px;
+        max-height: 84px;
     }
 
     .az48-clarity-card,
     body.az48-match-started .az48-clarity-card {
-        max-height: 70px;
+        max-height: 84px;
         padding: 7px 10px;
     }
 
     .az48-round-summary {
-        max-height: 70px;
+        max-height: 84px;
         padding: 7px 10px;
     }
 
     .az48-summary-list {
-        max-height: 42px;
+        max-height: 54px;
     }
 
     .az48-hand .az48-card {
@@ -1629,11 +1938,23 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
         min-height: 110px;
         max-height: 110px;
     }
+
+    .az48-card-detail-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 980px) {
     .az48-arena {
-        grid-template-rows: 58px 60px minmax(180px, 1fr) clamp(320px, 46dvh, 390px);
+        grid-template-rows: 68px 56px minmax(170px, 1fr) clamp(320px, 46dvh, 390px);
+    }
+
+    .az48-top {
+        grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr) 48px;
+    }
+
+    .az48-hand-pill {
+        display: none;
     }
 
     .az48-clarity-panel,
@@ -1653,7 +1974,7 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
     body.az48-match-started.az48-hand-empty .az48-bottom,
     body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
         grid-template-columns: 1fr;
-        grid-template-rows: 20px minmax(72px, 1fr) 74px 70px 92px;
+        grid-template-rows: 20px minmax(64px, 1fr) 88px 76px 92px;
         grid-template-areas:
             "handhead"
             "hand"
@@ -1664,15 +1985,28 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
 
     body.az48-match-started.az48-hand-empty .az48-bottom,
     body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
-        grid-template-rows: 20px 48px 74px 70px 92px;
+        grid-template-rows: 20px 44px 88px 76px 92px;
     }
 
     .az48-round-summary {
-        max-height: 70px;
+        max-height: 76px;
     }
 
     .az48-summary-list {
-        max-height: 42px;
+        max-height: 48px;
+    }
+
+    .az48-step-list {
+        gap: 3px;
+    }
+
+    .az48-step-item {
+        font-size: 0.5rem;
+        padding-inline: 2px;
+    }
+
+    .az48-card-detail-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     body[data-az48-primary-action="choose_intent"] .az48-actions,

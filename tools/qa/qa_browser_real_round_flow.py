@@ -12,6 +12,7 @@ from playwright.sync_api import sync_playwright
 QA_EMAIL = "qa_browser_tester@ambitionz.local"
 QA_PASSWORD = "QaBrowser123!"
 QA_USERNAME = "qa_browser_tester"
+RAW_JSON_MARKERS = ['{"schema"', '"schema":', '"combat_log"', '"round_summary"', "combat_log:"]
 
 
 def timestamp():
@@ -72,6 +73,10 @@ def complete_pending_selection(page, logs, timeout=4000):
     return False
 
 
+def has_raw_json_marker(text):
+    return any(marker in (text or "") for marker in RAW_JSON_MARKERS)
+
+
 def snapshot(page, label, logs):
     state = page.evaluate(
         """(label) => {
@@ -79,6 +84,17 @@ def snapshot(page, label, logs):
             const text = document.body ? document.body.innerText : "";
             const summary = document.querySelector("#az48-round-summary");
             const summaryText = summary ? summary.innerText : "";
+            const steps = document.querySelector("#az48-step-list");
+            const nextAction = document.querySelector("#az48-next-action");
+            const turnHint = document.querySelector("#az48-turn-hint");
+            const cardDetailStats = document.querySelector("#az48-card-detail-stats");
+            const cardKeywords = document.querySelector("#az48-card-keyword-lines");
+            const playerIntent = document.querySelector("#az48-me-intent");
+            const enemyStatus = document.querySelector("#az48-enemy-status");
+            const ambition = document.querySelector("#az48-me-ambition");
+            const combatFeedbackVisible = !!document.querySelector(".az48-lane-resolved, .az48-card-damaged, .az48-card-defeated")
+                || document.body.classList.contains("az48-me-hero-hit")
+                || document.body.classList.contains("az48-enemy-hero-hit");
             const hand = document.querySelectorAll("#az48-hand .az48-card[data-card-id]").length;
             const playable = document.querySelectorAll("#az48-hand .az48-card.playable[data-card-id], #az48-hand .az48-card.is-playable[data-card-id], #az48-hand .az48-card.az48-playable[data-card-id]").length;
             const myField = document.querySelectorAll("#az48-me-field .az48-card[data-card-id]").length;
@@ -97,6 +113,16 @@ def snapshot(page, label, logs):
                 round_summary_visible: !!summary,
                 round_summary_text: summaryText,
                 round_summary_has_raw_json: summaryText.includes("{") || summaryText.includes("}"),
+                turn_guidance_visible: !!steps && !!nextAction,
+                turn_guidance_text: [nextAction && nextAction.innerText, turnHint && turnHint.innerText, steps && steps.innerText].filter(Boolean).join(" "),
+                active_step_count: document.querySelectorAll("#az48-step-list .az48-step-active").length,
+                card_detail_visible: !!cardDetailStats && cardDetailStats.innerText.trim().length > 0,
+                card_detail_text: [cardDetailStats && cardDetailStats.innerText, cardKeywords && cardKeywords.innerText].filter(Boolean).join(" "),
+                hud_visible: !!playerIntent && !!enemyStatus && !!ambition && !!document.querySelector("#az48-round") && !!document.querySelector("#az48-me-hp") && !!document.querySelector("#az48-enemy-hp"),
+                hud_text: [playerIntent && playerIntent.innerText, enemyStatus && enemyStatus.innerText, ambition && ambition.innerText].filter(Boolean).join(" "),
+                combat_feedback_visible: combatFeedbackVisible,
+                body_has_raw_json: text.includes('{"schema"') || text.includes('"schema":') || text.includes('"combat_log"') || text.includes('"round_summary"') || text.includes("combat_log:"),
+                finished_text_visible: ["victory", "defeat", "winner", "match finished", "game over", "venceu", "vitória", "vitoria"].some((phrase) => text.toLowerCase().includes(phrase)),
                 body_preview: text.slice(0, 900),
             };
         }""",
@@ -158,9 +184,13 @@ def run(base_url):
         page.on("pageerror", lambda err: page_errors.append(str(err)))
 
         try:
+            from tools.qa.qa_browser_full_match_flow import ensure_browser_user
+            ensure_browser_user()
+
             login_or_register(page, base_url, shot_dir, logs)
 
-            page.goto(base_url.rstrip("/") + "/training", wait_until="networkidle")
+            page.goto(base_url.rstrip("/") + "/training", wait_until="domcontentloaded", timeout=30000)
+            page.locator(".az48-arena").first.wait_for(state="visible", timeout=15000)
             page.wait_for_timeout(1800)
             shot(page, shot_dir, "02_training_loaded", logs)
             logs.append("body_before_start_preview=" + body_text(page)[:1000])
@@ -186,14 +216,24 @@ def run(base_url):
             start_state = snapshot(page, "after_start", logs)
             if start_state["hand_cards"] <= 0:
                 raise AssertionError("Start clicked but no hand appeared.")
+            if start_state["body_has_raw_json"]:
+                raise AssertionError("Raw JSON visible after Start.")
+            if not start_state["turn_guidance_visible"] or start_state["active_step_count"] <= 0:
+                raise AssertionError("Turn guidance did not appear after Start.")
+            if not start_state["card_detail_visible"]:
+                raise AssertionError("Card detail panel did not appear after Start.")
+            if not start_state["hud_visible"]:
+                raise AssertionError("Premium HUD did not appear after Start.")
 
             click_any(page, ["#az48-strike"], "strike", logs)
             page.wait_for_timeout(900)
             shot(page, shot_dir, "04_after_strike", logs)
 
             after_intent = snapshot(page, "after_strike", logs)
-            if str(after_intent["phase"]).lower() != "main":
-                raise AssertionError(f"Expected phase MAIN after Strike. Got {after_intent['phase']}")
+            if str(after_intent["phase"]).lower() not in {"main", "card"}:
+                raise AssertionError(f"Expected phase MAIN/CARD after Strike. Got {after_intent['phase']}")
+            if "Card" not in str(after_intent["turn_guidance_text"]):
+                raise AssertionError(f"Turn guidance did not ask for card after intent: {after_intent['turn_guidance_text']!r}")
 
             playable_selector = "#az48-hand .az48-card.playable[data-card-id], #az48-hand .az48-card.is-playable[data-card-id], #az48-hand .az48-card.az48-playable[data-card-id]"
             playable_count = page.locator(playable_selector).count()
@@ -229,11 +269,17 @@ def run(base_url):
                 raise AssertionError("Round Summary panel is not visible after Ready.")
             if after_ready["round_summary_has_raw_json"]:
                 raise AssertionError("Round Summary rendered raw JSON after Ready.")
+            if after_ready["body_has_raw_json"]:
+                raise AssertionError("Raw JSON visible after Ready.")
             if not any(
                 phrase in str(after_ready["round_summary_text"])
                 for phrase in ["Rodada", "atacou", "dano", "derrotado", "Guarded", "Focused"]
             ):
                 raise AssertionError(f"Round Summary did not show readable events: {after_ready['round_summary_text']!r}")
+            if not after_ready["combat_feedback_visible"]:
+                raise AssertionError("Combat feedback did not appear after Ready.")
+            if str(after_ready["phase"]).lower() == "finished" and not after_ready["finished_text_visible"]:
+                raise AssertionError("Finished phase reached without visible end state.")
 
             if page_errors:
                 failures.append("page_errors=" + " | ".join(page_errors[:6]))

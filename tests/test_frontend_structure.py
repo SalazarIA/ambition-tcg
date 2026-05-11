@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v161"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v165"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -145,3 +145,115 @@ def test_arena_round_summary_text_panel_contract():
         ".az48-summary-item-end",
     ]:
         assert class_name in css
+
+
+def test_arena_turn_guidance_and_server_error_contract():
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert "function getArenaUiStep" in js
+    assert "function uiCopyForStep" in js
+    assert "function renderStepList" in js
+    assert "function setServerError" in js
+    assert "az48-step-list" in js
+    assert "az48-server-error" in js
+    assert "document.body.dataset.az48UiStep" in js
+    assert ".az48-step-list" in css
+    assert ".az48-step-active" in css
+    assert ".az48-server-error" in css
+
+
+def test_arena_card_detail_readability_contract():
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert "az48-card-detail-stats" in js
+    assert "az48-card-keyword-lines" in js
+    assert "function keywordDescription" in js
+    assert "Guarded: reduces incoming damage" in js
+    assert "Focused: generates Ambition" in js
+    assert "setCardDetailFromElement" in js
+    assert ".az48-card-stats" in css
+    assert ".az48-card-detail-stats" in css
+    assert ".az48-card-keyword-lines" in css
+
+
+def test_arena_premium_hud_contract():
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    adapter = (PROJECT_ROOT / "static" / "js" / "arena_renderer_adapter.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    for element_id in [
+        "az48-me-hp",
+        "az48-enemy-hp",
+        "az48-me-ambition",
+        "az48-round",
+        "az48-me-intent",
+        "az48-enemy-status",
+    ]:
+        assert f'id="{element_id}"' in template
+
+    assert "function intentLabel" in js
+    assert "function opponentStatusLabel" in js
+    assert "document.body.dataset.az48PlayerIntent" in js
+    assert "az48-me-ready" in js
+    assert "az48-enemy-ready" in js
+    assert "card.currentHp" in adapter
+    assert "card.maxHp" in adapter
+
+    for class_name in [
+        ".az48-hud-pill",
+        ".az48-hp-pill",
+        ".az48-ambition-pill",
+        ".az48-intent-pill",
+        ".az48-opponent-status-pill",
+        ".az48-round-badge",
+    ]:
+        assert class_name in css
+
+
+def test_arena_light_combat_feedback_contract():
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert "function combatFeedbackFromState" in js
+    assert "function feedbackClassesForLane" in js
+    assert "az48-lane-resolved" in js
+    assert "az48-card-damaged" in js
+    assert "az48-card-defeated" in js
+    assert "az48-me-hero-hit" in js
+    assert "az48-enemy-hero-hit" in js
+    assert "list.scrollTop = list.scrollHeight" in js
+
+    for class_name in [
+        ".az48-lane-resolved",
+        ".az48-card-damaged",
+        ".az48-card-defeated",
+        "az48HeroPulse",
+        "prefers-reduced-motion",
+    ]:
+        assert class_name in css
+
+
+def test_arena_browser_qa_regression_contract():
+    browser_flow = (PROJECT_ROOT / "tools" / "qa" / "qa_browser_flow.py").read_text()
+    full_match = (PROJECT_ROOT / "tools" / "qa" / "qa_browser_full_match_flow.py").read_text()
+    real_round = (PROJECT_ROOT / "tools" / "qa" / "qa_browser_real_round_flow.py").read_text()
+    runner = (PROJECT_ROOT / "tools" / "qa" / "run_local_browser_qa.py").read_text()
+
+    for required in [
+        "body_has_raw_json",
+        "Console errors detected",
+        "combat_feedback_visible",
+        "finished_text_visible",
+    ]:
+        assert required in browser_flow
+
+    assert "safe_round_limit_reached" in full_match
+    assert "body_has_raw_json" in full_match
+    assert "finished_text_visible" in full_match
+    assert "ensure_browser_user()" in real_round
+    assert "MOBILE REAL ROUND QA" in runner
+    assert "browser_full_match" in runner
+    assert "raise SystemExit(1)" in runner

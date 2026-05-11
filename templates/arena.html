@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=70">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=74">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -31,16 +31,17 @@
                     <span>Enemy</span>
                     <strong id="az48-enemy-name">Opponent</strong>
                 </div>
-                <div class="az48-stats">
-                    <b><span id="az48-enemy-hp">--</span> HP</b>
-                    <b><span id="az48-enemy-energy">0</span>/<span id="az48-enemy-max-energy">0</span> EN</b>
-                    <b>Hand <span id="az48-enemy-hand">0</span></b>
+                <div class="az48-stats az48-hud-stats">
+                    <b class="az48-hud-pill az48-hp-pill az48-enemy-hp-pill"><span id="az48-enemy-hp">--</span> <small>HP</small></b>
+                    <b class="az48-hud-pill az48-energy-pill"><span id="az48-enemy-energy">0</span>/<span id="az48-enemy-max-energy">0</span> <small>EN</small></b>
+                    <b class="az48-hud-pill az48-hand-pill"><small>Hand</small> <span id="az48-enemy-hand">0</span></b>
+                    <b class="az48-hud-pill az48-opponent-status-pill"><small>Status</small> <span id="az48-enemy-status">Choosing</span></b>
                 </div>
             </section>
 
             <section class="az48-center">
-                <span id="az48-mode">{% if training_mode %}Training{% else %}Arena{% endif %}</span>
-                <strong>Round <span id="az48-round">1</span></strong>
+                <span class="az48-round-mode" id="az48-mode">{% if training_mode %}Training{% else %}Arena{% endif %}</span>
+                <strong class="az48-round-badge">Round <span id="az48-round">1</span></strong>
                 <em id="az48-phase">Start</em>
             </section>
 
@@ -49,10 +50,11 @@
                     <span>You</span>
                     <strong id="az48-me-name">{{ user.username if user else "Player" }}</strong>
                 </div>
-                <div class="az48-stats">
-                    <b><span id="az48-me-hp">--</span> HP</b>
-                    <b><span id="az48-me-energy">0</span>/<span id="az48-me-max-energy">0</span> EN</b>
-                    <b><span id="az48-me-ambition">0</span> AMB</b>
+                <div class="az48-stats az48-hud-stats">
+                    <b class="az48-hud-pill az48-hp-pill az48-player-hp-pill"><span id="az48-me-hp">--</span> <small>HP</small></b>
+                    <b class="az48-hud-pill az48-energy-pill"><span id="az48-me-energy">0</span>/<span id="az48-me-max-energy">0</span> <small>EN</small></b>
+                    <b class="az48-hud-pill az48-ambition-pill"><span id="az48-me-ambition">0</span> <small>AMB</small></b>
+                    <b class="az48-hud-pill az48-intent-pill"><small>Intent</small> <span id="az48-me-intent">Choose</span></b>
                 </div>
             </section>
 
@@ -164,10 +166,10 @@
         window.AMBITIONZ_ARENA_RENDERER = "{{ arena_renderer|default('dom') }}";
     </script>
     <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=5"></script>
     {% if arena_renderer == "3d" %}
     <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
     {% endif %}
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=70"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=74"></script>
 </body>
 </html>

@@ -73,6 +73,26 @@ def print_report_tail(report, lines=280):
         print(line)
 
 
+def run_command(label, command, timeout=300):
+    print("")
+    print(f"=== RUN {label} ===")
+    result = subprocess.run(
+        command,
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        timeout=timeout,
+    )
+
+    print(result.stdout)
+
+    if result.stderr.strip():
+        print(f"=== {label} STDERR ===")
+        print(result.stderr)
+
+    return result
+
+
 def main():
     print("=== SAFE LOCAL BROWSER QA ===")
     print(f"project={PROJECT_ROOT}")
@@ -97,32 +117,50 @@ def main():
     try:
         if not wait_health():
             print("RESULT=FAIL reason=health")
-            return
+            raise SystemExit(1)
 
-        print("")
-        print("=== RUN BROWSER QA ===")
+        commands = [
+            (
+                "BROWSER QA",
+                [
+                    "python3",
+                    "tools/qa/ambitionz_qa_agent.py",
+                    "--target",
+                    "local",
+                    "--suite",
+                    "browser",
+                    "--base-url",
+                    BASE_URL,
+                ],
+                300,
+            ),
+            (
+                "FULL MATCH QA",
+                [
+                    "python3",
+                    "tools/qa/ambitionz_qa_agent.py",
+                    "--target",
+                    "local",
+                    "--suite",
+                    "browser_full_match",
+                    "--base-url",
+                    BASE_URL,
+                ],
+                360,
+            ),
+            (
+                "MOBILE REAL ROUND QA",
+                [
+                    "python3",
+                    "tools/qa/qa_browser_real_round_flow.py",
+                    "--base-url",
+                    BASE_URL,
+                ],
+                240,
+            ),
+        ]
 
-        qa = subprocess.run(
-            [
-                "python3",
-                "tools/qa/ambitionz_qa_agent.py",
-                "--target",
-                "local",
-                "--suite",
-                "browser",
-                "--base-url",
-                BASE_URL,
-            ],
-            cwd=PROJECT_ROOT,
-            text=True,
-            capture_output=True,
-        )
-
-        print(qa.stdout)
-
-        if qa.stderr.strip():
-            print("=== QA STDERR ===")
-            print(qa.stderr)
+        results = [run_command(label, command, timeout=timeout) for label, command, timeout in commands]
 
         report = latest_report()
         print_report_tail(report)
@@ -134,10 +172,12 @@ def main():
                 print(line)
 
         print("")
-        if qa.returncode == 0:
+        failed = [(commands[index][0], result.returncode) for index, result in enumerate(results) if result.returncode != 0]
+        if not failed:
             print("RESULT=PASS browser_eagle_eye")
         else:
-            print(f"RESULT=FAIL browser_eagle_eye returncode={qa.returncode}")
+            print("RESULT=FAIL browser_eagle_eye " + " ".join(f"{label}={code}" for label, code in failed))
+            raise SystemExit(1)
 
     finally:
         print("")

@@ -35,6 +35,10 @@
         return String(value);
     }
 
+    function firstValue(...values) {
+        return values.find((value) => value !== undefined && value !== null && value !== "");
+    }
+
     function slug(value, fallback = "neutral") {
         const text = str(value, fallback).toLowerCase();
         return text.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || fallback;
@@ -52,11 +56,11 @@
         const kind = str(card.kind || "").toLowerCase();
         const isMonster = type.toLowerCase() === "monster" || kind === "creature";
         const element = normalizeElement(card.element || (type === "Trap" ? "Global" : "Neutral"));
-        const power = num(card.power || card.attack || card.display_stat || card.value || card.atk || 0);
-        const value = num(card.value || card.display_stat || card.power || card.attack || card.shield || 0);
-        const currentHp = num(card.current_hp || card.hp || card.max_hp || 0);
-        const maxHp = num(card.max_hp || card.hp || currentHp || 0);
-        const stat = num(card.display_stat || (isMonster ? power : value) || card.cost || 1, 1);
+        const power = num(firstValue(card.power, card.attack, card.atk, card.display_stat, card.stat, card.value), 0);
+        const value = num(firstValue(card.value, card.display_stat, card.power, card.attack, card.shield, card.stat), 0);
+        const currentHp = num(firstValue(card.current_hp, card.currentHp, card.hp, card.max_hp, card.maxHp), 0);
+        const maxHp = num(firstValue(card.max_hp, card.maxHp, card.hp, currentHp), 0);
+        const stat = num(firstValue(card.display_stat, card.stat, isMonster ? power : value, card.cost), 1);
         const rawImage = str(card.image || "");
         const hasSpecificArt = rawImage && !rawImage.includes("placeholder");
         const artUrl = hasSpecificArt
@@ -75,7 +79,7 @@
             rarity: str(card.rarity || "Common"),
             sigil: str(card.sigil || "None"),
             role: str(card.role || card.kind || "Card"),
-            cost: num(card.cost || card.energy_cost || 1, 1),
+            cost: num(firstValue(card.cost, card.energy_cost, card.energyCost), 1),
             stat,
             statLabel: str(card.combat_label || (isMonster ? "PWR" : "VAL")),
             attack: num(card.attack || card.atk || power || 0),

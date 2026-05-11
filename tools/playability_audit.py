@@ -105,6 +105,101 @@ def run():
             PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
             ".az48-round-summary",
         ),
+        (
+            "turn_guidance_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "getArenaUiStep",
+        ),
+        (
+            "turn_guidance_css",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-step-list",
+        ),
+        (
+            "server_error_panel_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "az48-server-error",
+        ),
+        (
+            "card_detail_panel_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "az48-card-detail-stats",
+        ),
+        (
+            "card_detail_keywords_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "keywordDescription",
+        ),
+        (
+            "card_detail_css",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-card-keyword-lines",
+        ),
+        (
+            "premium_hud_template",
+            PROJECT_ROOT / "templates" / "arena.html",
+            'id="az48-me-intent"',
+        ),
+        (
+            "premium_hud_enemy_status",
+            PROJECT_ROOT / "templates" / "arena.html",
+            'id="az48-enemy-status"',
+        ),
+        (
+            "premium_hud_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "opponentStatusLabel",
+        ),
+        (
+            "premium_hud_css",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-round-badge",
+        ),
+        (
+            "combat_feedback_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "combatFeedbackFromState",
+        ),
+        (
+            "combat_feedback_classes_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "az48-card-damaged",
+        ),
+        (
+            "combat_feedback_css",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-lane-resolved",
+        ),
+        (
+            "combat_feedback_reduced_motion",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            "prefers-reduced-motion",
+        ),
+        (
+            "full_match_qa_safe_limit",
+            PROJECT_ROOT / "tools" / "qa" / "qa_browser_full_match_flow.py",
+            "safe_round_limit_reached",
+        ),
+        (
+            "browser_qa_raw_json_guard",
+            PROJECT_ROOT / "tools" / "qa" / "qa_browser_flow.py",
+            "raw JSON is visible",
+        ),
+        (
+            "browser_qa_console_guard",
+            PROJECT_ROOT / "tools" / "qa" / "qa_browser_flow.py",
+            "Console errors detected",
+        ),
+        (
+            "local_browser_qa_full_match",
+            PROJECT_ROOT / "tools" / "qa" / "run_local_browser_qa.py",
+            "browser_full_match",
+        ),
+        (
+            "local_browser_qa_mobile_round",
+            PROJECT_ROOT / "tools" / "qa" / "run_local_browser_qa.py",
+            "qa_browser_real_round_flow.py",
+        ),
     ]
 
     for label, path, needle in visual_contracts:
