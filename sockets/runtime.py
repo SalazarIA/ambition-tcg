@@ -2,6 +2,8 @@ import time
 
 from flask import has_app_context, request
 
+from services.match_engine_facade import MatchEngineFacade
+
 
 class GameSocketRuntime:
     def __init__(self, socketio, deps):
@@ -13,12 +15,11 @@ class GameSocketRuntime:
         self.socket_event_hits = deps.setdefault("socket_event_hits", {})
 
         self.app = deps.get("app")
-        self.bot_choose_play = deps["bot_choose_play"]
         self.create_player_object = deps["create_player_object"]
         self.emit_log = deps["emit_log"]
         self.emit_state = deps["emit_state"]
         self.log_rc_event = deps["log_rc_event"]
-        self.match_engine_factory = deps.get("match_engine_factory")
+        self.match_engine_factory = deps.get("match_engine_factory") or self.match_engine
         self.safe_user_id = deps["safe_user_id"]
 
         self.socket_state.setdefault("waiting_player", None)
@@ -76,6 +77,15 @@ class GameSocketRuntime:
 
         return self.log_rc_event(*args, **kwargs)
 
+    def emit_engine_event(self, event, payload, room=None):
+        try:
+            return self.socketio.emit(event, payload, room=room)
+        except TypeError:
+            return self.socketio.emit(event, payload, to=room)
+
+    def match_engine(self):
+        return MatchEngineFacade(self.active_matches, self.player_rooms, self.emit_engine_event)
+
     def add_sid_to_room(self, sid, room_id):
         self.socketio.server.enter_room(sid, room_id, namespace="/")
 
@@ -94,71 +104,29 @@ class GameSocketRuntime:
 
         self.emit_presence()
 
-    def create_ambitionz_bot(self, deck_json, sid, difficulty="normal"):
-        bot_user = type("BotUser", (), {})()
-        bot_user.id = 0
-        bot_user.username = "Ambitionz Bot"
-        bot_user.deck_json = deck_json
-
-        bot_object = self.create_player_object(bot_user, f"bot_{sid}")
-        bot_object["name"] = "Ambitionz Bot"
-        bot_object["sid"] = f"bot_{sid}"
-        bot_object["is_bot"] = True
-        bot_object["difficulty"] = difficulty
-        return bot_object
-
     def start_match_between_players(self, waiting_player, player_object, room_id, log_message="PvP match started"):
         self.add_sid_to_room(waiting_player["sid"], room_id)
         self.add_sid_to_room(player_object["sid"], room_id)
 
-        engine = self.match_engine_factory() if callable(self.match_engine_factory) else None
-
-        if engine:
-            engine.start_pvp_match(
-                waiting_player,
-                player_object,
-                room_id,
-                message="Battle Engine V2 PvP duel started. Choose an intent, play a card, then press Ready.",
-            )
-            self.set_presence_status(waiting_player["sid"], "in_match")
-            self.set_presence_status(player_object["sid"], "in_match")
-            self.socketio.emit("match_found", {"msg": "Opponent found. BE2 duel started."}, to=room_id)
-            self.emit_matchmaking_status(waiting_player["sid"], "matched", mode="pvp")
-            self.emit_matchmaking_status(player_object["sid"], "matched", mode="pvp")
-            self.log_event(
-                "match",
-                log_message,
-                details={"room_id": room_id, "engine": "be2"},
-                user_id=self.safe_user_id(waiting_player),
-            )
-            self.emit_presence()
-            return
-
-        self.active_matches[room_id] = {
-            "p1": waiting_player,
-            "p2": player_object,
-            "round": 1,
-            "phase": "Set Phase",
-            "resolving": False,
-            "logs": [],
-        }
-
-        self.player_rooms[waiting_player["sid"]] = room_id
-        self.player_rooms[player_object["sid"]] = room_id
+        engine = self.match_engine_factory()
+        engine.start_pvp_match(
+            waiting_player,
+            player_object,
+            room_id,
+            message="Battle Engine V2 PvP duel started. Choose an intent, play a card, then press Ready.",
+        )
         self.set_presence_status(waiting_player["sid"], "in_match")
         self.set_presence_status(player_object["sid"], "in_match")
 
-        self.socketio.emit("match_found", {"msg": "Opponent found. Duel started."}, to=room_id)
+        self.socketio.emit("match_found", {"msg": "Opponent found. BE2 duel started."}, to=room_id)
         self.emit_matchmaking_status(waiting_player["sid"], "matched", mode="pvp")
         self.emit_matchmaking_status(player_object["sid"], "matched", mode="pvp")
-        self.emit_log(room_id, "PvP duel started. Choose an Intent, set cards, then press Ready.")
         self.log_event(
             "match",
             log_message,
-            details={"room_id": room_id},
+            details={"room_id": room_id, "engine": "be2"},
             user_id=self.safe_user_id(waiting_player),
         )
-        self.emit_state(room_id)
         self.emit_presence()
 
     def start_bot_fallback_match(self, player_object, deck_json, sid, reason="timeout"):
@@ -167,81 +135,29 @@ class GameSocketRuntime:
 
         self.add_sid_to_room(sid, room_id)
 
-        engine = self.match_engine_factory() if callable(self.match_engine_factory) else None
-
-        if engine:
-            engine.start_bot_match_for_player(
-                player_object,
-                room_id,
-                message="No online opponent was available. Battle Engine V2 bot duel started.",
-                matchmaking_fallback=True,
-            )
-            self.set_presence_status(sid, "in_match")
-            self.socketio.emit("queue_status", {"msg": "No online opponent found. Starting BE2 bot duel..."}, to=sid)
-            self.socketio.emit("match_found", {"msg": "Bot opponent found. BE2 duel started."}, to=sid)
-            self.emit_matchmaking_status(sid, "fallback", mode="bot", reason=reason)
-            self.log_event(
-                "match",
-                "Matchmaking fallback BE2 bot match started",
-                details={"room_id": room_id, "difficulty": difficulty, "reason": reason, "engine": "be2"},
-                user_id=self.safe_user_id(player_object),
-            )
-            self.emit_presence()
-            return
-
-        bot_object = self.create_ambitionz_bot(deck_json, sid, difficulty)
-
-        self.active_matches[room_id] = {
-            "p1": player_object,
-            "p2": bot_object,
-            "round": 1,
-            "phase": "Set Phase",
-            "resolving": False,
-            "logs": [],
-            "training": True,
-            "is_bot_match": True,
-            "bot_difficulty": difficulty,
-            "matchmaking_fallback": True,
-        }
-
-        self.player_rooms[sid] = room_id
+        engine = self.match_engine_factory()
+        engine.start_bot_match_for_player(
+            player_object,
+            room_id,
+            message="No online opponent was available. Battle Engine V2 bot duel started.",
+            matchmaking_fallback=True,
+        )
         self.set_presence_status(sid, "in_match")
-
-        self.socketio.emit("queue_status", {"msg": "No online opponent found. Starting bot duel..."}, to=sid)
-        self.socketio.emit("match_found", {"msg": "Bot opponent found. Duel started."}, to=sid)
+        self.socketio.emit("queue_status", {"msg": "No online opponent found. Starting BE2 bot duel..."}, to=sid)
+        self.socketio.emit("match_found", {"msg": "Bot opponent found. BE2 duel started."}, to=sid)
         self.emit_matchmaking_status(sid, "fallback", mode="bot", reason=reason)
-        self.emit_log(room_id, "No online opponent was available. Bot duel started automatically.")
-        self.emit_log(room_id, "Choose an Intent, set cards, then press Ready.")
         self.log_event(
             "match",
-            "Matchmaking fallback bot match started",
-            details={"room_id": room_id, "difficulty": difficulty, "reason": reason},
+            "Matchmaking fallback BE2 bot match started",
+            details={"room_id": room_id, "difficulty": difficulty, "reason": reason, "engine": "be2"},
             user_id=self.safe_user_id(player_object),
         )
-        self.emit_state(room_id)
         self.emit_presence()
 
     def play_bot_turn_if_needed(self, match, room_id, player_key):
-        if not match.get("is_bot_match") or player_key != "p1" or match["p2"].get("ready"):
-            return
-
-        bot_result = self.bot_choose_play(
-            match["p2"],
-            match["p1"],
-            difficulty=match.get("bot_difficulty", "normal"),
-        )
-
-        self.emit_log(room_id, f"Ambitionz Bot difficulty: {bot_result.get('profile', match.get('bot_difficulty', 'normal'))}.")
-        self.emit_log(room_id, f"Ambitionz Bot chose {bot_result['intent']} intent.")
-
-        if bot_result.get("monster"):
-            self.emit_log(room_id, f"Ambitionz Bot set a monster: {bot_result['monster'].get('name', 'Unknown')}.")
-
-        if bot_result.get("spell_or_trap"):
-            self.emit_log(room_id, "Ambitionz Bot set a spell/trap.")
-
-        for line in bot_result.get("logs", []):
-            self.emit_log(room_id, line)
+        if isinstance(match, dict) and match.get("be2"):
+            return self.match_engine_factory().emit_match_state(room_id, message="BE2 bot turns resolve through the board engine.")
+        return None
 
     def run_fallback_after_timeout(self, sid, queue_generation, fallback_seconds):
         self.socketio.sleep(fallback_seconds)

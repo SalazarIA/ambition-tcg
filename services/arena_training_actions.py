@@ -12,6 +12,7 @@ from services.battle_engine_v2_adapter import (
     build_be2_arena_payload,
     create_be2_training_match,
 )
+from services.battle_engine_v2 import empty_lanes
 
 Match = Dict[str, Any]
 Payload = Dict[str, Any]
@@ -43,9 +44,31 @@ def set_intent(match: Match, side: str, intent: str) -> Result:
         return False, str(error)
 
 
-def play_card(match: Match, side: str, card_id: Optional[str] = None, card_index: Optional[int] = None) -> Result:
+def play_card(
+    match: Match,
+    side: str,
+    card_id: Optional[str] = None,
+    card_index: Optional[int] = None,
+    lane: Optional[str] = None,
+    target: Optional[str] = None,
+) -> Result:
     try:
-        be2_play_card(match, card_id=card_id, card_index=card_index, side=_side(side))
+        if lane is None:
+            side_key = _side(side)
+            player = match.get(side_key) or {}
+            hand = player.get("hand") or []
+            selected = None
+            if card_index is not None:
+                try:
+                    selected = hand[int(card_index)]
+                except Exception:
+                    selected = None
+            if selected is None and card_id:
+                selected = next((card for card in hand if str(card.get("id")) == str(card_id)), None)
+            if selected and selected.get("kind") == "creature":
+                lanes = empty_lanes(player)
+                lane = lanes[0] if lanes else None
+        be2_play_card(match, card_id=card_id, card_index=card_index, side=_side(side), lane=lane, target=target)
         return True, "Card played."
     except Exception as error:
         return False, str(error)

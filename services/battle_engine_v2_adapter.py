@@ -10,10 +10,13 @@ from typing import Any, Dict, List, Optional
 
 from services.battle_engine_v2 import (
     ENGINE_VERSION,
+    LANES,
     TRAINING_BOT_HP,
     UNLEASH_COST,
     choose_intent,
     create_match,
+    empty_lanes,
+    ensure_board,
     play_card,
     playable_cards,
     request_unleash,
@@ -145,9 +148,10 @@ def _card_preview(card: Dict[str, Any], intent: Optional[str] = None, owner: Opt
     kind = (card or {}).get("kind")
 
     if kind == "creature":
-        active = ((owner or {}).get("field") or {}).get("active")
-        replacement = f" Replaces {active.get('name')}." if active else ""
-        return f"Enters your monster slot with {int(card.get('atk') or 0)} attack and {int(card.get('hp') or 0)} HP.{replacement}"
+        lanes = empty_lanes(owner or {}) if owner is not None else list(LANES)
+        if not lanes:
+            return "No empty lane available for this creature."
+        return f"Enters an empty lane with {int(card.get('atk') or 0)} attack and {int(card.get('hp') or 0)} HP."
 
     damage = int(card.get("damage") or 0)
     shield = int(card.get("shield") or 0)
@@ -185,11 +189,12 @@ def _battle_card_to_arena_card(
     if not card:
         return None
 
-    card_id = str(card.get("id") or f"be2-card-{index}")
+    catalog_id = str(card.get("card_id") or card.get("id") or f"be2-card-{index}")
+    runtime_id = str(card.get("instance_id") or card.get("id") or catalog_id)
     stat = _card_stat(card)
 
-    hp = int(card.get("hp") or card.get("current_hp") or 0)
-    current_hp = int(card.get("current_hp") or hp or 0)
+    hp = int(card.get("max_hp") or card.get("hp") or card.get("current_hp") or 0)
+    current_hp = int(card.get("current_hp") if card.get("current_hp") is not None else (hp or 0))
     atk = int(card.get("atk") or card.get("damage") or 0)
 
     details = []
@@ -209,9 +214,10 @@ def _battle_card_to_arena_card(
     text = effect_summary or card.get("text") or " / ".join(details)
 
     return {
-        "id": card_id,
-        "card_id": card_id,
-        "name": str(card.get("name") or card_id),
+        "id": runtime_id,
+        "card_id": catalog_id,
+        "instance_id": str(card.get("instance_id") or ""),
+        "name": str(card.get("name") or catalog_id),
         "type": _card_type(card),
         "element": str(card.get("element") or "Neutral"),
         "rarity": str(card.get("rarity") or "Beta"),
@@ -235,21 +241,39 @@ def _battle_card_to_arena_card(
         "max_hp": hp,
         "atk": atk,
         "kind": card.get("kind"),
+        "owner": card.get("owner"),
+        "lane": card.get("lane"),
+        "keywords": list(card.get("keywords") or []),
+        "exhausted": bool(card.get("exhausted")),
+        "played_round": int(card.get("played_round") or 0),
     }
 
 
 def _field_payload(player: Dict[str, Any]) -> Dict[str, Any]:
     field = player.get("field") or {}
+    board = _board_payload(player)
+    first_creature = next((board[lane] for lane in LANES if board.get(lane)), None)
 
     return {
-        "monster": _battle_card_to_arena_card(field.get("active"), 0, owner=player),
+        "monster": board.get("center") or first_creature,
         "spell": _battle_card_to_arena_card(field.get("support"), 1, owner=player),
         "trap": None,
+        "lanes": board,
+        "board": board,
+    }
+
+
+def _board_payload(player: Dict[str, Any]) -> Dict[str, Optional[Dict[str, Any]]]:
+    board = ensure_board(player)
+    return {
+        lane: _battle_card_to_arena_card(board.get(lane), index=index, owner=player)
+        for index, lane in enumerate(LANES)
     }
 
 
 def _player_payload(player: Dict[str, Any], viewer: bool) -> Dict[str, Any]:
     hand = player.get("hand") or []
+    board = _board_payload(player)
 
     return {
         "sid": player.get("sid"),
@@ -261,16 +285,18 @@ def _player_payload(player: Dict[str, Any], viewer: bool) -> Dict[str, Any]:
         "ambition": int(player.get("ambition") or 0),
         "shield": int(player.get("shield") or 0),
         "intent": str(player.get("intent") or "") if viewer else "Hidden",
-        "ready": bool(player.get("ready") or player.get("intent")),
+        "ready": bool(player.get("ready")),
         "hand": [
             _battle_card_to_arena_card(card, index=index, intent=player.get("intent"), owner=player)
             for index, card in enumerate(hand)
         ] if viewer else [],
         "hand_count": len(hand),
         "field": _field_payload(player),
+        "board": board,
         "deck_count": len(player.get("deck") or []),
         "graveyard_count": len(player.get("discard") or []),
         "can_unleash": int(player.get("ambition") or 0) >= UNLEASH_COST,
+        "played_this_round": bool(player.get("played_this_round")),
     }
 
 
@@ -356,6 +382,7 @@ def _card_state(card: Dict[str, Any], player: Dict[str, Any], step: str, is_fini
     cost = int(card.get("cost") or 0)
     energy = int(player.get("energy") or 0)
     card_id = str(card.get("id") or "")
+    legal_lanes = empty_lanes(player) if card.get("kind") == "creature" else []
 
     disabled_reason = ""
     if is_finished:
@@ -364,10 +391,12 @@ def _card_state(card: Dict[str, Any], player: Dict[str, Any], step: str, is_fini
         disabled_reason = "You are ready for this round."
     elif not player.get("intent"):
         disabled_reason = "Choose Strike, Guard or Focus first."
-    elif player.get("played_card"):
+    elif player.get("played_this_round") or player.get("played_card"):
         disabled_reason = "Only one card can be played each round."
     elif cost > energy:
         disabled_reason = f"Needs {cost} energy. You have {energy}."
+    elif card.get("kind") == "creature" and not legal_lanes:
+        disabled_reason = "No empty lane available."
     elif step != "card":
         disabled_reason = "Not the card step."
 
@@ -376,6 +405,7 @@ def _card_state(card: Dict[str, Any], player: Dict[str, Any], step: str, is_fini
         "playable": disabled_reason == "",
         "disabled_reason": disabled_reason,
         "preview": _card_preview(card, intent=player.get("intent"), owner=player),
+        "legal_lanes": legal_lanes,
     }
 
 
@@ -385,6 +415,7 @@ def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_fin
     has_intent = bool(player.get("intent"))
     can_ready = step in {"card", "ready"} and has_intent and not player.get("ready") and not is_finished
     can_play_cards = step == "card" and bool(playable_ids) and not player.get("ready") and not is_finished
+    legal_lanes = empty_lanes(player) if step == "card" and has_intent and not player.get("ready") and not is_finished else []
 
     if step == "start":
         primary_action = "start"
@@ -414,6 +445,8 @@ def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_fin
         "show_ready": can_ready,
         "can_ready": can_ready,
         "can_unleash": int(player.get("ambition") or 0) >= UNLEASH_COST and step in {"card", "ready"} and not is_finished,
+        "legal_lanes": legal_lanes,
+        "legal_targets": ["enemy_hero", "self"],
         "playable_card_ids": playable_ids,
         "card_states": card_states,
         "disabled_reasons_by_card": {
@@ -536,7 +569,7 @@ def build_be2_arena_payload(
     }
 
 
-def create_be2_training_match(user=None, sid: Optional[str] = None) -> Dict[str, Any]:
+def create_be2_training_match(user=None, sid: Optional[str] = None, difficulty: str = "training") -> Dict[str, Any]:
     player_name = getattr(user, "username", None) or getattr(user, "email", None) or "Player"
     user_id = getattr(user, "id", None)
     match = create_match(player_name=player_name, opponent_name="Ambitionz Bot", player_sid=sid, user_id=user_id)
@@ -545,15 +578,23 @@ def create_be2_training_match(user=None, sid: Optional[str] = None) -> Dict[str,
     match["be2"] = True
     match["training"] = True
     match["is_bot_match"] = True
-    match["bot_difficulty"] = "training"
+    match["bot_difficulty"] = difficulty or "training"
     match["room_code"] = f"be2_training_{sid}" if sid else "be2_training"
     return attach_legacy_match_aliases(match)
 
 
-def create_be2_bot_match(user=None, sid: Optional[str] = None, room_code: Optional[str] = None, matchmaking_fallback: bool = False) -> Dict[str, Any]:
-    match = create_be2_training_match(user=user, sid=sid)
-    match["training"] = bool(matchmaking_fallback)
+def create_be2_bot_match(
+    user=None,
+    sid: Optional[str] = None,
+    room_code: Optional[str] = None,
+    matchmaking_fallback: bool = False,
+    training: bool = False,
+    difficulty: str = "normal",
+) -> Dict[str, Any]:
+    match = create_be2_training_match(user=user, sid=sid, difficulty="training" if training else difficulty)
+    match["training"] = bool(training)
     match["matchmaking_fallback"] = bool(matchmaking_fallback)
+    match["bot_difficulty"] = "training" if training else difficulty
     match["room_code"] = room_code or (f"be2_bot_{sid}" if sid else "be2_bot")
     return match
 
@@ -588,15 +629,20 @@ def be2_set_intent(match: Dict[str, Any], intent: str, side: str = "player") -> 
     return match
 
 
-def be2_play_card(match: Dict[str, Any], card_id: Optional[str] = None, card_index: Optional[int] = None, side: str = "player") -> Dict[str, Any]:
+def be2_play_card(
+    match: Dict[str, Any],
+    card_id: Optional[str] = None,
+    card_index: Optional[int] = None,
+    side: str = "player",
+    lane: Optional[str] = None,
+    target: Optional[str] = None,
+) -> Dict[str, Any]:
     if match.get("phase") == "created":
         start_round(match)
 
     side = side if side in {"player", "opponent"} else "player"
-    if not (match.get(side) or {}).get("intent"):
-        raise ValueError("Choose Strike, Guard or Focus before playing a card.")
 
-    play_card(match, side, card_id=card_id, card_index=card_index)
+    play_card(match, side, card_id=card_id, card_index=card_index, lane=lane, target=target)
     return match
 
 
@@ -616,17 +662,18 @@ def be2_ready(match: Dict[str, Any], side: str = "player") -> Dict[str, Any]:
     other_side = _opposite_side(side)
 
     if not match[side].get("intent"):
-        choose_intent(match, side, "Focus")
+        raise ValueError("Choose Strike, Guard or Focus before ready.")
 
     match[side]["ready"] = True
 
     if match[other_side].get("is_bot"):
+        if not match[other_side].get("ready"):
+            from services.battle_engine_v2 import bot_choose_action
+            bot_choose_action(match)
         resolve_round(match)
         return match
 
     if match[other_side].get("ready"):
-        if not match[other_side].get("intent"):
-            choose_intent(match, other_side, "Focus")
         resolve_round(match)
 
     return match

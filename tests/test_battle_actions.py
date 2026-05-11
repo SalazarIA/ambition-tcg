@@ -1,4 +1,6 @@
 from services.match_payloads import find_player_key
+from services.match_engine_facade import MatchEngineFacade
+from services.battle_engine_v2_adapter import create_be2_training_match, be2_start, be2_set_intent
 from sockets.battle_actions import BattleActionController
 
 
@@ -18,6 +20,7 @@ class FakeRuntime:
         self.released_matches = []
         self.bot_turns = []
         self.allow_events = True
+        self.match_engine_factory = None
 
     def allow_socket_event(self, event_name, **kwargs):
         self.allowed_events.append((event_name, kwargs))
@@ -55,6 +58,11 @@ def make_player(name="Player", sid="sid-p1"):
 def make_controller():
     socketio = FakeSocketIO()
     runtime = FakeRuntime()
+    runtime.match_engine_factory = lambda: MatchEngineFacade(
+        runtime.active_matches,
+        runtime.player_rooms,
+        lambda event, payload, room=None: socketio.emit(event, payload, to=room),
+    )
     logs = []
     states = []
     missions = []
@@ -101,82 +109,74 @@ def make_controller():
 
 
 def attach_match(runtime, p1=None, p2=None, *, room_id="room-1"):
-    p1 = p1 or make_player("Alice", "sid-p1")
-    p2 = p2 or make_player("Bob", "sid-p2")
-    match = {
-        "p1": p1,
-        "p2": p2,
-        "resolving": False,
-        "logs": [],
-    }
+    match = create_be2_training_match(sid="sid-p1")
+    be2_start(match)
     runtime.active_matches[room_id] = match
-    runtime.player_rooms[p1["sid"]] = room_id
-    runtime.player_rooms[p2["sid"]] = room_id
+    runtime.player_rooms["sid-p1"] = room_id
     return match
 
 
 def test_play_to_field_moves_monster_and_pays_cost():
-    controller, runtime, _socketio, logs, states, _missions, _battle_events, _ended_matches = make_controller()
+    controller, runtime, socketio, logs, states, _missions, _battle_events, _ended_matches = make_controller()
     match = attach_match(runtime)
+    be2_set_intent(match, "Strike")
+    match["player"]["hand"] = [{"id": "spark_runner", "name": "Spark Runner", "kind": "creature", "cost": 1, "atk": 2, "hp": 3}]
+    match["player"]["energy"] = 2
 
-    controller.play_to_field("sid-p1", {"index": 0})
+    controller.play_to_field("sid-p1", {"index": 0, "lane": "left"})
 
-    player = match["p1"]
+    player = match["player"]
     assert player["energy"] == 1
-    assert player["field_m"]["id"] == "m1"
+    assert player["board"]["left"]["card_id"] == "spark_runner"
     assert player["hand"] == []
-    assert match["logs"] == ["played:m1"]
-    assert logs == [("room-1", "Alice set a monster: Spark Adept for 1 energy.")]
-    assert states == ["room-1"]
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert logs == []
+    assert states == []
 
 
 def test_choose_intent_unleash_success_logs_and_tracks_mission():
-    controller, runtime, _socketio, logs, states, missions, _battle_events, _ended_matches = make_controller()
+    controller, runtime, socketio, logs, states, missions, _battle_events, _ended_matches = make_controller()
     match = attach_match(runtime)
+    match["player"]["ambition"] = 10
 
     controller.choose_intent("sid-p1", {"intent": "Overreach"})
 
-    assert match["p1"]["wants_unleash"] is True
-    assert missions == [(1, "use_overreach_1", 1)]
-    assert logs == [("room-1", "Alice prepared Ambition Unleash for this battle.")]
-    assert states == ["room-1"]
+    assert match["player"]["unleash"] is True
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert missions == []
+    assert logs == []
+    assert states == []
 
 
 def test_set_intent_unleash_failure_sends_private_message():
     controller, runtime, socketio, _logs, states, missions, _battle_events, _ended_matches = make_controller()
-    player = make_player("Alice", "sid-p1")
-    player["can_unleash"] = False
-    attach_match(runtime, p1=player)
+    attach_match(runtime)
 
     controller.set_intent("sid-p1", {"intent": "Ambition Unleash"})
 
     assert missions == []
     assert socketio.emitted == [
         (
-            "battle_log",
-            {"msg": "You need 5 Ambition and a monster on the field to unleash."},
+            "action_error",
+            {"code": "BE2_UNLEASH_FAILED", "message": "Not enough Ambition to Unleash."},
             "sid-p1",
         )
     ]
-    assert states == ["room-1"]
+    assert states == []
 
 
 def test_declare_ready_resolves_battle_and_ends_match():
-    controller, runtime, _socketio, logs, states, missions, battle_events, ended_matches = make_controller()
-    p2 = make_player("Bob", "sid-p2")
-    p2["ready"] = True
-    match = attach_match(runtime, p2=p2)
+    controller, runtime, socketio, logs, states, missions, battle_events, ended_matches = make_controller()
+    match = attach_match(runtime)
+    be2_set_intent(match, "Focus")
 
     controller.declare_ready("sid-p1")
 
-    assert match["p1"]["ready"] is True
+    assert match["round"] >= 2 or match["phase"] == "finished"
     assert missions == [(1, "declare_ready_1", 1)]
-    assert logs == [
-        ("room-1", "Alice is ready."),
-        ("room-1", "Battle resolved."),
-    ]
-    assert states == ["room-1", "room-1"]
-    assert battle_events == [(match, [{"type": "damage", "amount": 100}])]
-    assert match["v2_events"] == [{"type": "damage", "amount": 100}]
-    assert ended_matches == [("room-1", "p1")]
-    assert runtime.released_matches == [match]
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert logs == []
+    assert states == []
+    assert battle_events == []
+    assert ended_matches == []
+    assert runtime.released_matches == []

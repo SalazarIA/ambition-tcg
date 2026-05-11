@@ -137,9 +137,18 @@ class MatchEngineFacade:
         room_code: Optional[str] = None,
         message: str = "Battle Engine V2 bot match started.",
         matchmaking_fallback: bool = False,
+        training: bool = False,
+        difficulty: str = "normal",
     ) -> Optional[Payload]:
         room_code = room_code or f"be2_bot_{sid}"
-        match = create_be2_bot_match(user=user, sid=sid, room_code=room_code, matchmaking_fallback=matchmaking_fallback)
+        match = create_be2_bot_match(
+            user=user,
+            sid=sid,
+            room_code=room_code,
+            matchmaking_fallback=matchmaking_fallback,
+            training=training,
+            difficulty=difficulty,
+        )
         be2_start(match)
 
         self.active_matches[room_code] = match
@@ -189,6 +198,8 @@ class MatchEngineFacade:
     def set_intent(self, sid: str, intent: str, message: Optional[str] = None) -> Optional[Payload]:
         room_code, match = self.match_for_sid(sid)
 
+        if not match:
+            raise ValueError("No active BE2 match.")
         if self.is_finished(match):
             return self.emit_finished_guard(sid)
 
@@ -197,13 +208,23 @@ class MatchEngineFacade:
             self.emit_match_state(room_code, message=message)
         return self.emit_state(sid, message=message)
 
-    def play_card(self, sid: str, card_id: Optional[str] = None, card_index: Optional[int] = None, message: Optional[str] = None) -> Optional[Payload]:
+    def play_card(
+        self,
+        sid: str,
+        card_id: Optional[str] = None,
+        card_index: Optional[int] = None,
+        lane: Optional[str] = None,
+        target: Optional[str] = None,
+        message: Optional[str] = None,
+    ) -> Optional[Payload]:
         room_code, match = self.match_for_sid(sid)
 
+        if not match:
+            raise ValueError("No active BE2 match.")
         if self.is_finished(match):
             return self.emit_finished_guard(sid)
 
-        be2_play_card(match, card_id=card_id, card_index=card_index, side=side_for_sid(match, sid))
+        be2_play_card(match, card_id=card_id, card_index=card_index, side=side_for_sid(match, sid), lane=lane, target=target)
         if room_code:
             self.emit_match_state(room_code, message=message)
         return self.emit_state(sid, message=message)
@@ -211,6 +232,8 @@ class MatchEngineFacade:
     def ready(self, sid: str, message: Optional[str] = None) -> Optional[Payload]:
         room_code, match = self.match_for_sid(sid)
 
+        if not match:
+            raise ValueError("No active BE2 match.")
         if self.is_finished(match):
             return self.emit_finished_guard(sid)
 
@@ -238,6 +261,8 @@ class MatchEngineFacade:
     def unleash(self, sid: str, message: Optional[str] = None) -> Optional[Payload]:
         room_code, match = self.match_for_sid(sid)
 
+        if not match:
+            raise ValueError("No active BE2 match.")
         if self.is_finished(match):
             return self.emit_finished_guard(sid)
 

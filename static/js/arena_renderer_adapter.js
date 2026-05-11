@@ -66,6 +66,8 @@
         return {
             raw: card,
             id: str(card.id || card.card_id || card.runtime_id || card.name || ("card-" + index)),
+            cardId: str(card.card_id || card.id || ""),
+            instanceId: str(card.instance_id || ""),
             name: str(card.name || card.id || ("Card " + (index + 1))),
             type,
             kind: str(card.kind || type),
@@ -91,16 +93,23 @@
             rarityCss: "rarity-" + slug(card.rarity || "common"),
             colors: ELEMENT_COLORS[element] || ELEMENT_COLORS.Neutral,
             isMonster,
+            lane: str(card.lane || ""),
         };
     }
 
     function normalizeField(field) {
         field = field || {};
+        const lanes = field.lanes || field.board || {};
 
         return {
             trap: field.trap ? normalizeCard(field.trap, 0) : null,
             monster: field.monster ? normalizeCard(field.monster, 1) : null,
             spell: field.spell ? normalizeCard(field.spell, 2) : null,
+            lanes: {
+                left: lanes.left ? normalizeCard(lanes.left, 3) : null,
+                center: lanes.center ? normalizeCard(lanes.center, 4) : null,
+                right: lanes.right ? normalizeCard(lanes.right, 5) : null,
+            },
         };
     }
 
@@ -124,6 +133,7 @@
             graveyardCount: num(player.graveyard_count, 0),
             canUnleash: Boolean(player.can_unleash),
             field: normalizeField(player.field),
+            board: normalizeField({ lanes: player.board || (player.field && player.field.lanes) }).lanes,
         };
     }
 
@@ -165,6 +175,8 @@
                 showReady: Boolean(legal.show_ready || legal.can_ready),
                 canReady: Boolean(legal.can_ready),
                 canUnleash: Boolean(legal.can_unleash),
+                legalLanes: arr(legal.legal_lanes).map(String),
+                legalTargets: arr(legal.legal_targets).map(String),
                 playableCardIds: playable,
                 primaryAction: str(legal.primary_action || ""),
                 prompt: str(legal.prompt || ""),
@@ -181,12 +193,12 @@
         state = normalizeArenaState(state && state.raw ? state.raw : state);
 
         return [
-            { owner: "enemy", lane: 0, slot: "trap", card: state.enemy.field.trap },
-            { owner: "enemy", lane: 0, slot: "monster", card: state.enemy.field.monster },
-            { owner: "enemy", lane: 0, slot: "spell", card: state.enemy.field.spell },
-            { owner: "me", lane: 1, slot: "trap", card: state.me.field.trap },
-            { owner: "me", lane: 1, slot: "monster", card: state.me.field.monster },
-            { owner: "me", lane: 1, slot: "spell", card: state.me.field.spell },
+            { owner: "enemy", lane: "left", slot: "creature", card: state.enemy.board.left },
+            { owner: "enemy", lane: "center", slot: "creature", card: state.enemy.board.center },
+            { owner: "enemy", lane: "right", slot: "creature", card: state.enemy.board.right },
+            { owner: "me", lane: "left", slot: "creature", card: state.me.board.left },
+            { owner: "me", lane: "center", slot: "creature", card: state.me.board.center },
+            { owner: "me", lane: "right", slot: "creature", card: state.me.board.right },
         ];
     }
 

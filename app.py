@@ -3925,6 +3925,8 @@ def az48_play_card(data=None):
             sid,
             card_id=data.get("card_id") or data.get("id"),
             card_index=data.get("card_index"),
+            lane=data.get("lane"),
+            target=data.get("target"),
             message="Card played. Press Ready to resolve combat.",
         )
     except Exception as error:

@@ -128,6 +128,8 @@
 
         return {
             id: str(card.id || card.card_id || card.runtime_id || card.name || ("card-" + index)),
+            cardId: str(card.card_id || card.id || ""),
+            instanceId: str(card.instance_id || ""),
             name: str(card.name || card.id || ("Card " + (index + 1))),
             type,
             element: str(card.element || "Neutral"),
@@ -149,16 +151,24 @@
             preview: str(card.preview || card.effect_summary || card.effect || card.description || ""),
             disabledReason: str(card.disabled_reason || ""),
             playable: Boolean(card.playable),
+            isMonster,
+            lane: str(card.lane || ""),
         };
     }
 
     function normalizeField(field) {
         field = field || {};
+        const lanes = field.lanes || field.board || {};
 
         return {
             trap: field.trap || null,
             monster: field.monster || null,
             spell: field.spell || null,
+            lanes: {
+                left: lanes.left || null,
+                center: lanes.center || null,
+                right: lanes.right || null,
+            },
         };
     }
 
@@ -493,18 +503,18 @@
         const enemyFieldEl = $("az48-enemy-field");
         if (enemyFieldEl) {
             enemyFieldEl.innerHTML = [
-                fieldCard(enemyField.trap, "Enemy Trap"),
-                fieldCard(enemyField.monster, "Enemy Monster"),
-                fieldCard(enemyField.spell, "Enemy Spell"),
+                fieldCard(enemyField.lanes.left, "Enemy Left"),
+                fieldCard(enemyField.lanes.center, "Enemy Center"),
+                fieldCard(enemyField.lanes.right, "Enemy Right"),
             ].join("");
         }
 
         const meFieldEl = $("az48-me-field");
         if (meFieldEl) {
             meFieldEl.innerHTML = [
-                fieldCard(meField.trap, "Trap Slot"),
-                fieldCard(meField.monster, "Monster Slot"),
-                fieldCard(meField.spell, "Spell Slot"),
+                fieldCard(meField.lanes.left, "Left Lane"),
+                fieldCard(meField.lanes.center, "Center Lane"),
+                fieldCard(meField.lanes.right, "Right Lane"),
             ].join("");
         }
 
@@ -603,8 +613,18 @@
             return;
         }
 
+        const payload = { card_id: id, card_index: index };
+        if (card.isMonster) {
+            const legalLanes = arr(legal.legal_lanes);
+            if (!legalLanes.length) {
+                setMessage("No empty lane available.");
+                return;
+            }
+            payload.lane = legalLanes[0];
+        }
+
         setMessage("Playing card...");
-        if (emit("az48_play_card", { card_id: id, card_index: index })) {
+        if (emit("az48_play_card", payload)) {
             playSound("cardFly", { element: card.element });
             window.setTimeout(() => playSound("cardImpact", { element: card.element }), 180);
         }

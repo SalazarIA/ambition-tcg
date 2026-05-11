@@ -88,16 +88,18 @@ def test_join_training_starts_bot_training_room():
     controller.join_training("sid-a", user, {"difficulty": "hard"})
 
     match = runtime.active_matches["training_sid-a"]
+    assert match["be2"] is True
     assert match["training"] is True
     assert match["is_bot_match"] is True
-    assert match["bot_difficulty"] == "hard"
+    assert match["bot_difficulty"] == "training"
     assert match["p1"]["name"] == "Alice"
     assert match["p2"]["is_bot"] is True
     assert runtime.player_rooms["sid-a"] == "training_sid-a"
     assert runtime.online_players()["sid-a"]["status"] == "in_match"
     assert ("sid-a", "training_sid-a", "/") in socketio.server.rooms
-    assert logs == [("training_sid-a", "Training started. Choose an Intent, set cards, then press Ready.")]
-    assert states == ["training_sid-a"]
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert logs == []
+    assert states == []
     assert events
 
 
@@ -129,13 +131,16 @@ def test_join_queue_matches_second_player_with_waiting_player():
     room_id = "room_sid-a_sid-b"
     assert runtime.socket_state["waiting_player"] is None
     assert room_id in runtime.active_matches
+    assert runtime.active_matches[room_id]["be2"] is True
+    assert runtime.active_matches[room_id]["is_bot_match"] is False
     assert runtime.player_rooms == {"sid-a": room_id, "sid-b": room_id}
     assert runtime.online_players()["sid-a"]["status"] == "in_match"
     assert runtime.online_players()["sid-b"]["status"] == "in_match"
     assert ("sid-a", room_id, "/") in socketio.server.rooms
     assert ("sid-b", room_id, "/") in socketio.server.rooms
-    assert logs == [(room_id, "PvP duel started. Choose an Intent, set cards, then press Ready.")]
-    assert states == [room_id]
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert logs == []
+    assert states == []
 
 
 def test_cancel_queue_clears_waiting_player():
@@ -162,16 +167,15 @@ def test_join_bot_match_starts_direct_bot_match():
     controller.join_bot_match("sid-a", user)
 
     match = runtime.active_matches["bot_sid-a"]
+    assert match["be2"] is True
     assert match["is_bot_match"] is True
     assert match["p2"]["is_bot"] is True
     assert runtime.player_rooms["sid-a"] == "bot_sid-a"
     assert runtime.online_players()["sid-a"]["status"] == "in_match"
     assert ("sid-a", "bot_sid-a", "/") in socketio.server.rooms
-    assert logs == [
-        ("bot_sid-a", "Training match started."),
-        ("bot_sid-a", "Opponent: Ambitionz Bot."),
-    ]
-    assert states == ["bot_sid-a"]
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert logs == []
+    assert states == []
 
 
 def test_private_room_waits_then_matches_second_player():
@@ -194,4 +198,5 @@ def test_private_room_waits_then_matches_second_player():
     room_id = "private_ABCD_sid-a_sid-b"
     assert "ABCD" not in runtime.private_waiting_rooms
     assert room_id in runtime.active_matches
+    assert runtime.active_matches[room_id]["be2"] is True
     assert runtime.player_rooms == {"sid-a": room_id, "sid-b": room_id}

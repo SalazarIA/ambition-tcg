@@ -57,7 +57,9 @@ def main():
     assert_true(len(playable) > 0, "expected playable cards")
 
     selected_card_id = playable[0]
-    be2_play_card(match, card_id=selected_card_id)
+    selected_card = next((card for card in payload["me"]["hand"] if card["id"] == selected_card_id), {})
+    lane = (payload["legal_actions"].get("legal_lanes") or [None])[0] if selected_card.get("type") == "Monster" else None
+    be2_play_card(match, card_id=selected_card_id, lane=lane)
     payload = build_be2_arena_payload(match)
 
     played = match["player"].get("played_card") or {}

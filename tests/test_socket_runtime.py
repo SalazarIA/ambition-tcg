@@ -120,13 +120,16 @@ def test_runtime_starts_pvp_match_and_updates_presence():
     runtime.start_match_between_players(waiting_player, player_object, "room-1")
 
     assert "room-1" in runtime.active_matches
+    assert runtime.active_matches["room-1"]["be2"] is True
+    assert runtime.active_matches["room-1"]["is_bot_match"] is False
     assert runtime.player_rooms == {"sid-a": "room-1", "sid-b": "room-1"}
     assert runtime.online_players()["sid-a"]["status"] == "in_match"
     assert runtime.online_players()["sid-b"]["status"] == "in_match"
     assert ("sid-a", "room-1", "/") in socketio.server.rooms
     assert ("sid-b", "room-1", "/") in socketio.server.rooms
-    assert state_emits == ["room-1"]
-    assert logs == [("room-1", "PvP duel started. Choose an Intent, set cards, then press Ready.")]
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert state_emits == []
+    assert logs == []
     assert events
 
 
@@ -143,6 +146,8 @@ def test_runtime_fallback_starts_bot_match_after_timeout():
     assert socketio.sleeps == [5]
     assert runtime.socket_state["waiting_player"] is None
     assert runtime.player_rooms["sid-a"] == "quick_bot_sid-a"
+    assert runtime.active_matches["quick_bot_sid-a"]["be2"] is True
     assert runtime.active_matches["quick_bot_sid-a"]["matchmaking_fallback"] is True
     assert runtime.active_matches["quick_bot_sid-a"]["p2"]["is_bot"] is True
-    assert state_emits == ["quick_bot_sid-a"]
+    assert any(event == "az48_state" for event, _payload, _to in socketio.emitted)
+    assert state_emits == []

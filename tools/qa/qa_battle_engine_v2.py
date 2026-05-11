@@ -15,6 +15,7 @@ from services.battle_engine_v2 import (
     MAX_ROUNDS,
     choose_intent,
     create_match,
+    empty_lanes,
     play_card,
     play_full_bot_match,
     playable_cards,
@@ -39,7 +40,7 @@ def test_create_and_start():
 
     assert_true(match["phase"] == "choose_action", "phase should be choose_action")
     assert_true(match["round"] == 1, "round should be 1")
-    assert_true(len(match["player"]["hand"]) == 6, "player should draw on round start")
+    assert_true(len(match["player"]["hand"]) == 5, "player should preserve opening hand on round 1")
 
     ok, errors = validate_match_integrity(match)
     assert_true(ok, f"integrity errors: {errors}")
@@ -66,10 +67,11 @@ def test_play_creature_to_field():
 
     assert_true(creature is not None, "expected playable creature")
 
-    play_card(match, "player", card_id=creature["id"])
+    play_card(match, "player", card_id=creature["id"], lane=empty_lanes(match["player"])[0])
 
-    assert_true(match["player"]["field"]["active"] is not None, "creature should be active")
-    assert_true(match["player"]["field"]["active"]["current_hp"] > 0, "active creature should have hp")
+    creature_in_lane = next(card for card in match["player"]["board"].values() if card)
+    assert_true(creature_in_lane is not None, "creature should occupy a lane")
+    assert_true(creature_in_lane["current_hp"] > 0, "lane creature should have hp")
 
 
 def test_round_resolves():
@@ -79,8 +81,10 @@ def test_round_resolves():
     choose_intent(match, "player", "Strike")
     cards = playable_cards(match["player"])
     if cards:
-        play_card(match, "player", card_id=cards[0]["id"])
+        lane = empty_lanes(match["player"])[0] if cards[0].get("kind") == "creature" else None
+        play_card(match, "player", card_id=cards[0]["id"], lane=lane)
 
+    match["player"]["ready"] = True
     resolve_round(match)
 
     assert_true(match["phase"] in {"choose_action", "finished"}, "round should advance or finish")
