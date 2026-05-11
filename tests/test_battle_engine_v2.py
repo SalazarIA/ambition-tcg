@@ -264,6 +264,33 @@ def test_lane_to_lane_combat_damages_creatures():
     assert match["opponent"]["board"]["left"]["current_hp"] == 1
 
 
+def test_combat_log_records_lane_to_lane_events():
+    match = create_be2_match_from_players(
+        {"name": "Alice", "sid": "sid-a", "user_id": 1},
+        {"name": "Bob", "sid": "sid-b", "user_id": 2},
+        "room-combat-log-lane",
+    )
+    be2_start(match)
+    match["player"]["hand"] = [card("spark_runner")]
+    match["opponent"]["hand"] = [card("spark_runner")]
+    match["player"]["energy"] = 10
+    match["opponent"]["energy"] = 10
+    be2_set_intent(match, "Focus", side="player")
+    be2_set_intent(match, "Focus", side="opponent")
+    be2_play_card(match, card_id="spark_runner", side="player", lane="left")
+    be2_play_card(match, card_id="spark_runner", side="opponent", lane="left")
+
+    be2_ready(match, side="player")
+    be2_ready(match, side="opponent")
+
+    combat_log = match.get("combat_log") or []
+    event_types = {event.get("type") for event in combat_log}
+    assert combat_log
+    assert all(isinstance(event, dict) for event in combat_log)
+    assert {"lane_attack", "creature_damage"} & event_types
+    assert "round_end" in event_types
+
+
 def test_empty_lane_damage_hits_enemy_hero():
     match = create_be2_match_from_players(
         {"name": "Alice", "sid": "sid-a", "user_id": 1},
@@ -281,6 +308,30 @@ def test_empty_lane_damage_hits_enemy_hero():
     be2_ready(match, side="opponent")
 
     assert match["opponent"]["hp"] == STARTING_HP - 2
+
+
+def test_combat_log_records_direct_attack_events():
+    match = create_be2_match_from_players(
+        {"name": "Alice", "sid": "sid-a", "user_id": 1},
+        {"name": "Bob", "sid": "sid-b", "user_id": 2},
+        "room-combat-log-direct",
+    )
+    be2_start(match)
+    match["player"]["hand"] = [card("spark_runner")]
+    match["player"]["energy"] = 10
+    be2_set_intent(match, "Focus", side="player")
+    be2_set_intent(match, "Focus", side="opponent")
+    be2_play_card(match, card_id="spark_runner", side="player", lane="right")
+
+    be2_ready(match, side="player")
+    be2_ready(match, side="opponent")
+
+    combat_log = match.get("combat_log") or []
+    event_types = {event.get("type") for event in combat_log}
+    assert combat_log
+    assert all(isinstance(event, dict) for event in combat_log)
+    assert {"direct_attack", "hero_damage"} & event_types
+    assert "round_end" in event_types
 
 
 def test_dead_creature_moves_to_discard_and_lane_clears():

@@ -514,6 +514,7 @@ def create_match(
         "log": [],
         "events": [],
         "round_events": [],
+        "combat_log": [],
         "next_instance_id": 1,
     }
 
@@ -599,6 +600,7 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
     match["enemy_preview"] = preview_bot_intent(match)
     match["log"].append(f"Round {match['round']} started.")
     add_event(match, "round_start", text=f"Round {match['round']} started.")
+    add_combat_event(match, "round_start", phase=match["phase"])
     return match
 
 
@@ -958,6 +960,16 @@ def _cleanup_dead_creatures(match: Dict[str, Any], side: str) -> None:
             card_id=creature.get("card_id") or creature.get("id"),
             instance_id=creature.get("instance_id"),
         )
+        add_combat_event(
+            match,
+            "creature_death",
+            side=side,
+            lane=lane,
+            card_id=creature.get("card_id") or creature.get("id"),
+            instance_id=creature.get("instance_id"),
+            name=creature.get("name"),
+            current_hp=int(current_hp or 0),
+        )
 
 
 def _hp_delta(before: int, after: int) -> int:
@@ -977,6 +989,21 @@ def add_event(match: Dict[str, Any], event_type: str, **data: Any) -> Dict[str, 
         del events[:-100]
 
     match.setdefault("round_events", []).append(event)
+    return event
+
+
+def add_combat_event(match: Dict[str, Any], event_type: str, **data: Any) -> Dict[str, Any]:
+    event = {
+        "round": int(match.get("round") or 0),
+        "type": event_type,
+        **{key: value for key, value in data.items() if value is not None},
+    }
+
+    combat_log = match.setdefault("combat_log", [])
+    combat_log.append(event)
+    if len(combat_log) > 200:
+        del combat_log[:-200]
+
     return event
 
 
@@ -1079,6 +1106,14 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
     player = match["player"]
     opponent = match["opponent"]
 
+    def creature_ref(side: str, creature: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            "side": side,
+            "instance_id": creature.get("instance_id"),
+            "card_id": creature.get("card_id") or creature.get("id"),
+            "name": creature.get("name"),
+        }
+
     p_hp_before = int(player.get("hp") or 0)
     o_hp_before = int(opponent.get("hp") or 0)
     p_board_before = _board_snapshot(player)
@@ -1089,6 +1124,15 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
 
     if not opponent.get("intent"):
         raise ValueError("Opponent intent is required before resolving.")
+
+    add_combat_event(
+        match,
+        "round_resolve",
+        player_intent=player.get("intent"),
+        opponent_intent=opponent.get("intent"),
+        player_ready=bool(player.get("ready")),
+        opponent_ready=bool(opponent.get("ready")),
+    )
 
     player_guard = guard_value(player)
     opponent_guard = guard_value(opponent)
@@ -1101,18 +1145,42 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
         add_event(match, "shield", actor="opponent", text=f"{opponent['name']} guarded for {opponent_guard} shield.", amount=opponent_guard)
 
     if player.get("unleash"):
+        hp_before = int(opponent.get("hp") or 0)
         dealt = deal_hero_damage(opponent, UNLEASH_DAMAGE)
+        hp_after = int(opponent.get("hp") or 0)
         player["shield"] += UNLEASH_SHIELD
         player["last_damage_dealt"] += dealt
         match["log"].append(f"{player['name']} used Unleash for {dealt} damage.")
         add_event(match, "unleash", actor="player", target="opponent", text=f"{player['name']} used Unleash for {dealt} damage.", amount=dealt)
+        add_combat_event(
+            match,
+            "hero_damage",
+            source="unleash",
+            attacker_side="player",
+            target_side="opponent",
+            damage=dealt,
+            hp_before=hp_before,
+            hp_after=hp_after,
+        )
 
     if opponent.get("unleash"):
+        hp_before = int(player.get("hp") or 0)
         dealt = deal_hero_damage(player, UNLEASH_DAMAGE)
+        hp_after = int(player.get("hp") or 0)
         opponent["shield"] += UNLEASH_SHIELD
         opponent["last_damage_dealt"] += dealt
         match["log"].append(f"{opponent['name']} used Unleash for {dealt} damage.")
         add_event(match, "unleash", actor="opponent", target="player", text=f"{opponent['name']} used Unleash for {dealt} damage.", amount=dealt)
+        add_combat_event(
+            match,
+            "hero_damage",
+            source="unleash",
+            attacker_side="opponent",
+            target_side="player",
+            damage=dealt,
+            hp_before=hp_before,
+            hp_after=hp_after,
+        )
 
     p_atk = attack_value(player)
     o_atk = attack_value(opponent)
@@ -1138,8 +1206,46 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
             p_before = int(p_creature.get("current_hp") or p_creature.get("hp") or 1)
             o_creature["current_hp"] = o_before - p_lane_atk
             p_creature["current_hp"] = p_before - o_lane_atk
+            o_after = int(o_creature.get("current_hp") or 0)
+            p_after = int(p_creature.get("current_hp") or 0)
             result["player_damage"] = p_lane_atk
             result["enemy_damage"] = o_lane_atk
+            add_combat_event(
+                match,
+                "lane_attack",
+                lane=lane,
+                attacker=creature_ref("player", p_creature),
+                defender=creature_ref("opponent", o_creature),
+                damage=p_lane_atk,
+            )
+            add_combat_event(
+                match,
+                "lane_attack",
+                lane=lane,
+                attacker=creature_ref("opponent", o_creature),
+                defender=creature_ref("player", p_creature),
+                damage=o_lane_atk,
+            )
+            add_combat_event(
+                match,
+                "creature_damage",
+                lane=lane,
+                attacker=creature_ref("player", p_creature),
+                defender=creature_ref("opponent", o_creature),
+                damage=p_lane_atk,
+                hp_before=o_before,
+                hp_after=o_after,
+            )
+            add_combat_event(
+                match,
+                "creature_damage",
+                lane=lane,
+                attacker=creature_ref("opponent", o_creature),
+                defender=creature_ref("player", p_creature),
+                damage=o_lane_atk,
+                hp_before=p_before,
+                hp_after=p_after,
+            )
             add_event(
                 match,
                 "lane_clash",
@@ -1153,9 +1259,29 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 defender_instance_id=o_creature.get("instance_id"),
             )
         elif p_creature:
+            hp_before = int(opponent.get("hp") or 0)
             dealt = deal_hero_damage(opponent, p_lane_atk)
+            hp_after = int(opponent.get("hp") or 0)
             player["last_damage_dealt"] += dealt
             result["player_damage"] = dealt
+            add_combat_event(
+                match,
+                "direct_attack",
+                lane=lane,
+                attacker=creature_ref("player", p_creature),
+                target_side="opponent",
+                damage=p_lane_atk,
+            )
+            add_combat_event(
+                match,
+                "hero_damage",
+                lane=lane,
+                attacker=creature_ref("player", p_creature),
+                target_side="opponent",
+                damage=dealt,
+                hp_before=hp_before,
+                hp_after=hp_after,
+            )
             add_event(
                 match,
                 "lane_hero_damage",
@@ -1167,9 +1293,29 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 attacker_instance_id=p_creature.get("instance_id"),
             )
         elif o_creature:
+            hp_before = int(player.get("hp") or 0)
             dealt = deal_hero_damage(player, o_lane_atk)
+            hp_after = int(player.get("hp") or 0)
             opponent["last_damage_dealt"] += dealt
             result["enemy_damage"] = dealt
+            add_combat_event(
+                match,
+                "direct_attack",
+                lane=lane,
+                attacker=creature_ref("opponent", o_creature),
+                target_side="player",
+                damage=o_lane_atk,
+            )
+            add_combat_event(
+                match,
+                "hero_damage",
+                lane=lane,
+                attacker=creature_ref("opponent", o_creature),
+                target_side="player",
+                damage=dealt,
+                hp_before=hp_before,
+                hp_after=hp_after,
+            )
             add_event(
                 match,
                 "lane_hero_damage",
@@ -1212,6 +1358,15 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
 
     for line in summary["lines"][-4:]:
         match["log"].append(line)
+
+    add_combat_event(
+        match,
+        "round_end",
+        player_hp=player.get("hp"),
+        opponent_hp=opponent.get("hp"),
+        winner=match.get("winner"),
+        reason=match.get("reason"),
+    )
 
     if not match.get("winner"):
         match["phase"] = "round_start"
