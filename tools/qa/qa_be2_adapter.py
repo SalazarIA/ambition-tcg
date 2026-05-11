@@ -43,7 +43,7 @@ def main():
     assert_true(payload["me"]["hand_count"] >= 5, "expected hand after start")
     assert_true(payload["enemy"]["hand_count"] >= 5, "expected enemy hand count")
     assert_true(payload["legal_actions"]["can_choose_intent"], "expected intent action")
-    assert_true(not payload["legal_actions"]["can_ready"], "ready should wait until intent is chosen")
+    assert_true(payload["legal_actions"]["can_ready"], "ready should be legal even before intent")
 
     hand_before = payload["me"]["hand_count"]
 

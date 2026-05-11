@@ -538,6 +538,14 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
     return match
 
 
+def _record_intent(match: Dict[str, Any], side: str, intent: str) -> Dict[str, Any]:
+    player = match[side]
+    player["intent"] = intent
+    match["log"].append(f"{player['name']} chose {intent}.")
+    add_event(match, "intent", actor=side, text=f"{player['name']} chose {intent}.", intent=intent)
+    return match
+
+
 def choose_intent(match: Dict[str, Any], side: str, intent: str) -> Dict[str, Any]:
     if intent not in VALID_INTENTS:
         raise ValueError(f"Invalid intent: {intent}")
@@ -546,12 +554,9 @@ def choose_intent(match: Dict[str, Any], side: str, intent: str) -> Dict[str, An
     if player.get("ready"):
         raise ValueError("Round is already ready.")
     if player.get("played_card"):
-        raise ValueError("Action is locked after playing a card.")
+        raise ValueError("Intent is locked after playing a card.")
 
-    player["intent"] = intent
-    match["log"].append(f"{player['name']} chose {intent}.")
-    add_event(match, "intent", actor=side, text=f"{player['name']} chose {intent}.", intent=intent)
-    return match
+    return _record_intent(match, side, intent)
 
 
 def _remove_card_from_hand(player: Dict[str, Any], card_id: Optional[str] = None, card_index: Optional[int] = None) -> Optional[Dict[str, Any]]:
@@ -608,6 +613,9 @@ def play_card(match: Dict[str, Any], side: str, card_id: Optional[str] = None, c
         match["log"].append(f"{player['name']} had no playable card.")
         add_event(match, "no_playable_card", actor=side, text=f"{player['name']} had no playable card.")
         return match
+
+    if not player.get("intent"):
+        choose_intent(match, side, "Focus")
 
     kind = card.get("kind")
 
@@ -697,6 +705,20 @@ def request_unleash(match: Dict[str, Any], side: str) -> Dict[str, Any]:
     player["unleash"] = True
     match["log"].append(f"{player['name']} prepared Ambition Unleash.")
     add_event(match, "unleash_armed", actor=side, text=f"{player['name']} prepared Ambition Unleash.", amount=UNLEASH_COST)
+    return match
+
+
+def mark_ready(match: Dict[str, Any], side: str) -> Dict[str, Any]:
+    side = side if side in {"player", "opponent"} else "player"
+    player = match[side]
+
+    if player.get("ready"):
+        return match
+
+    _choose_intent_if_missing(match, side, "Focus")
+
+    player["ready"] = True
+    add_event(match, "ready", actor=side, text=f"{player['name']} is ready.")
     return match
 
 
@@ -907,7 +929,10 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
         choose_intent(match, "player", "Focus")
 
     if not opponent.get("intent"):
-        bot_choose_action(match)
+        if opponent.get("is_bot"):
+            bot_choose_action(match)
+        else:
+            choose_intent(match, "opponent", "Focus")
 
     player_guard = guard_value(player)
     opponent_guard = guard_value(opponent)
@@ -1034,11 +1059,28 @@ def finish_by_tiebreak(match: Dict[str, Any], reason: str) -> None:
     match["phase"] = "finished"
 
 
+def _choose_intent_if_missing(match: Dict[str, Any], side: str, intent: str) -> None:
+    player = match[side]
+    if player.get("intent"):
+        return
+    if player.get("played_card"):
+        _record_intent(match, side, intent)
+        return
+    choose_intent(match, side, intent)
+
+
 def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
     bot = match["opponent"]
     player = match["player"]
     difficulty = str(match.get("bot_difficulty") or ("training" if match.get("training") else "normal"))
     is_training_bot = difficulty in {"training", "easy"}
+
+    if bot.get("ready"):
+        return match
+
+    if bot.get("played_card"):
+        _choose_intent_if_missing(match, "opponent", "Focus")
+        return match
 
     unleash_threshold = 8 if is_training_bot else 14
     if bot["ambition"] >= UNLEASH_COST and player["hp"] <= unleash_threshold:
@@ -1047,7 +1089,7 @@ def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
     cards = playable_cards(bot)
 
     if is_training_bot and int(match.get("round") or 0) in {2, 5, 8}:
-        choose_intent(match, "opponent", "Focus")
+        _choose_intent_if_missing(match, "opponent", "Focus")
         focus_cards = [card for card in cards if card.get("kind") == "spell" and int(card.get("damage") or 0) == 0]
         if focus_cards and not bot.get("played_card"):
             chosen = min(focus_cards, key=lambda c: (int(c.get("cost") or 0), str(c.get("id") or "")))
@@ -1060,7 +1102,7 @@ def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
         if creatures:
             chooser = min if is_training_bot else max
             chosen = chooser(creatures, key=lambda c: (c.get("atk", 0) + c.get("hp", 0), -c.get("cost", 0)))
-            choose_intent(match, "opponent", "Strike")
+            _choose_intent_if_missing(match, "opponent", "Strike")
             return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
     # Low HP: guard if possible.
@@ -1068,21 +1110,21 @@ def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
         guards = [card for card in cards if card.get("kind") == "guard"]
         if guards:
             chosen = max(guards, key=lambda c: c.get("shield", 0))
-            choose_intent(match, "opponent", "Guard")
+            _choose_intent_if_missing(match, "opponent", "Guard")
             return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
     # Lethal/direct pressure.
     damaging = [card for card in cards if card.get("damage", 0) > 0]
     if player["hp"] <= (5 if is_training_bot else 8) and damaging:
         chosen = max(damaging, key=lambda c: c.get("damage", 0))
-        choose_intent(match, "opponent", "Strike")
+        _choose_intent_if_missing(match, "opponent", "Strike")
         return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
     # Build Ambition if no immediate pressure.
     focus_cards = [card for card in cards if card.get("id") == "focus_surge"]
     if bot["ambition"] < (5 if is_training_bot else 7) and focus_cards:
         chosen = focus_cards[0]
-        choose_intent(match, "opponent", "Focus")
+        _choose_intent_if_missing(match, "opponent", "Focus")
         return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
     # Support if no support.
@@ -1090,7 +1132,7 @@ def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
         supports = [card for card in cards if card.get("kind") == "support"]
         if supports:
             chosen = supports[0]
-            choose_intent(match, "opponent", "Focus")
+            _choose_intent_if_missing(match, "opponent", "Focus")
             return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
     # Default: aggressive card or just intent.
@@ -1101,10 +1143,27 @@ def bot_choose_action(match: Dict[str, Any]) -> Dict[str, Any]:
             -c.get("cost", 0),
         ))
         intent = "Guard" if is_training_bot and int(match.get("round") or 0) % 3 == 0 else ("Strike" if (chosen.get("atk", 0) or chosen.get("damage", 0)) else "Guard")
-        choose_intent(match, "opponent", intent)
+        _choose_intent_if_missing(match, "opponent", intent)
         return play_card(match, "opponent", card_index=bot["hand"].index(chosen))
 
-    choose_intent(match, "opponent", "Focus")
+    _choose_intent_if_missing(match, "opponent", "Focus")
+    return match
+
+
+def bot_take_turn(match: Dict[str, Any]) -> Dict[str, Any]:
+    bot = match["opponent"]
+
+    if match.get("winner") or bot.get("ready"):
+        return match
+
+    bot_choose_action(match)
+
+    if not bot.get("played_card"):
+        playable = playable_cards(bot)
+        if playable:
+            play_card(match, "opponent", card_index=bot["hand"].index(playable[0]))
+
+    mark_ready(match, "opponent")
     return match
 
 
@@ -1165,7 +1224,7 @@ def player_auto_action(match: Dict[str, Any]) -> Dict[str, Any]:
 def resolve_round(match: Dict[str, Any]) -> Dict[str, Any]:
     if not match.get("opponent", {}).get("intent"):
         if match.get("opponent", {}).get("is_bot"):
-            bot_choose_action(match)
+            bot_take_turn(match)
         else:
             choose_intent(match, "opponent", "Focus")
 

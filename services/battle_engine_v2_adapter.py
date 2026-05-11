@@ -12,10 +12,11 @@ from services.battle_engine_v2 import (
     ENGINE_VERSION,
     TRAINING_BOT_HP,
     UNLEASH_COST,
+    bot_take_turn,
     choose_intent,
     create_match,
+    mark_ready,
     play_card,
-    playable_cards,
     request_unleash,
     resolve_round,
     start_round,
@@ -261,7 +262,7 @@ def _player_payload(player: Dict[str, Any], viewer: bool) -> Dict[str, Any]:
         "ambition": int(player.get("ambition") or 0),
         "shield": int(player.get("shield") or 0),
         "intent": str(player.get("intent") or "") if viewer else "Hidden",
-        "ready": bool(player.get("ready") or player.get("intent")),
+        "ready": bool(player.get("ready")),
         "hand": [
             _battle_card_to_arena_card(card, index=index, intent=player.get("intent"), owner=player)
             for index, card in enumerate(hand)
@@ -352,24 +353,23 @@ def _turn_step(raw_phase: str, player: Dict[str, Any], is_finished: bool) -> str
     return "card"
 
 
-def _card_state(card: Dict[str, Any], player: Dict[str, Any], step: str, is_finished: bool) -> Dict[str, Any]:
+def _card_state(card: Dict[str, Any], player: Dict[str, Any], raw_phase: str, is_finished: bool) -> Dict[str, Any]:
     cost = int(card.get("cost") or 0)
     energy = int(player.get("energy") or 0)
     card_id = str(card.get("id") or "")
+    action_phase = raw_phase == "choose_action"
 
     disabled_reason = ""
     if is_finished:
         disabled_reason = "Match finished."
+    elif not action_phase:
+        disabled_reason = "Round is not accepting actions."
     elif player.get("ready"):
         disabled_reason = "You are ready for this round."
-    elif not player.get("intent"):
-        disabled_reason = "Choose Strike, Guard or Focus first."
     elif player.get("played_card"):
         disabled_reason = "Only one card can be played each round."
     elif cost > energy:
         disabled_reason = f"Needs {cost} energy. You have {energy}."
-    elif step != "card":
-        disabled_reason = "Not the card step."
 
     return {
         "id": card_id,
@@ -380,11 +380,14 @@ def _card_state(card: Dict[str, Any], player: Dict[str, Any], step: str, is_fini
 
 
 def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_finished: bool) -> Dict[str, Any]:
-    card_states = [_card_state(card, player, step, is_finished) for card in (player.get("hand") or [])]
+    action_phase = raw_phase == "choose_action" and not is_finished
+    ready = bool(player.get("ready"))
+    has_played_card = bool(player.get("played_card"))
+    card_states = [_card_state(card, player, raw_phase, is_finished) for card in (player.get("hand") or [])]
     playable_ids = [state["id"] for state in card_states if state["playable"]]
-    has_intent = bool(player.get("intent"))
-    can_ready = step in {"card", "ready"} and has_intent and not player.get("ready") and not is_finished
-    can_play_cards = step == "card" and bool(playable_ids) and not player.get("ready") and not is_finished
+    can_ready = action_phase and not ready
+    can_play_cards = action_phase and bool(playable_ids) and not ready and not has_played_card
+    can_choose_intent = action_phase and not ready and not has_played_card
 
     if step == "start":
         primary_action = "start"
@@ -409,11 +412,11 @@ def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_fin
         "show_start": raw_phase == "created",
         "can_start": raw_phase == "created" and not is_finished,
         "show_intents": step == "intent",
-        "can_choose_intent": step == "intent",
+        "can_choose_intent": can_choose_intent,
         "can_play_cards": can_play_cards,
         "show_ready": can_ready,
         "can_ready": can_ready,
-        "can_unleash": int(player.get("ambition") or 0) >= UNLEASH_COST and step in {"card", "ready"} and not is_finished,
+        "can_unleash": int(player.get("ambition") or 0) >= UNLEASH_COST and action_phase and not ready,
         "playable_card_ids": playable_ids,
         "card_states": card_states,
         "disabled_reasons_by_card": {
@@ -593,9 +596,6 @@ def be2_play_card(match: Dict[str, Any], card_id: Optional[str] = None, card_ind
         start_round(match)
 
     side = side if side in {"player", "opponent"} else "player"
-    if not (match.get(side) or {}).get("intent"):
-        raise ValueError("Choose Strike, Guard or Focus before playing a card.")
-
     play_card(match, side, card_id=card_id, card_index=card_index)
     return match
 
@@ -615,18 +615,12 @@ def be2_ready(match: Dict[str, Any], side: str = "player") -> Dict[str, Any]:
     side = side if side in {"player", "opponent"} else "player"
     other_side = _opposite_side(side)
 
-    if not match[side].get("intent"):
-        choose_intent(match, side, "Focus")
-
-    match[side]["ready"] = True
+    mark_ready(match, side)
 
     if match[other_side].get("is_bot"):
-        resolve_round(match)
-        return match
+        bot_take_turn(match)
 
-    if match[other_side].get("ready"):
-        if not match[other_side].get("intent"):
-            choose_intent(match, other_side, "Focus")
+    if match[side].get("ready") and match[other_side].get("ready"):
         resolve_round(match)
 
     return match
