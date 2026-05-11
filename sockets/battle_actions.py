@@ -16,6 +16,7 @@ class BattleActionController:
         self.end_match = deps["end_match"]
         self.find_player_key = deps["find_player_key"]
         self.increment_mission = deps["increment_mission"]
+        self.match_engine_factory = deps.get("match_engine_factory")
         self.normalize_intent = deps["normalize_intent"]
         self.pay_card_cost = deps["pay_card_cost"]
         self.register_card_played_for_ambition = deps["register_card_played_for_ambition"]
@@ -25,6 +26,9 @@ class BattleActionController:
 
     def set_intent(self, sid, data):
         if not self.allow_socket_event("set_intent", sid=sid):
+            return
+
+        if self._route_be2_legacy_action(sid, "set_intent", data or {}):
             return
 
         context = self._editable_player_context(sid)
@@ -54,6 +58,9 @@ class BattleActionController:
 
     def play_to_field(self, sid, data):
         if not self.allow_socket_event("play_to_field", sid=sid):
+            return
+
+        if self._route_be2_legacy_action(sid, "play_card", data or {}):
             return
 
         context = self._editable_player_context(sid)
@@ -110,6 +117,9 @@ class BattleActionController:
         if not self.allow_socket_event("choose_intent", sid=sid):
             return
 
+        if self._route_be2_legacy_action(sid, "set_intent", data or {}):
+            return
+
         context = self._editable_player_context(sid)
 
         if not context:
@@ -134,8 +144,11 @@ class BattleActionController:
         self.emit_log(room_id, f"{player['name']} selected {player['intent']} intent.")
         self.emit_state(room_id)
 
-    def toggle_unleash(self, sid):
+    def toggle_unleash(self, sid, data=None):
         if not self.allow_socket_event("toggle_unleash", sid=sid):
+            return
+
+        if self._route_be2_legacy_action(sid, "unleash", data or {}):
             return
 
         context = self._editable_player_context(sid)
@@ -159,8 +172,11 @@ class BattleActionController:
 
         self.emit_state(room_id)
 
-    def declare_ready(self, sid):
+    def declare_ready(self, sid, data=None):
         if not self.allow_socket_event("declare_ready", sid=sid):
+            return
+
+        if self._route_be2_legacy_action(sid, "ready", data or {}):
             return
 
         context = self._editable_player_context(sid)
@@ -226,6 +242,78 @@ class BattleActionController:
             return None
 
         return room_id, match, player_key, player
+
+    def _be2_context(self, sid):
+        room_id = self.player_rooms.get(sid)
+
+        if not room_id:
+            return None
+
+        match = self.active_matches.get(room_id)
+
+        if not isinstance(match, dict) or not match.get("be2"):
+            return None
+
+        return room_id, match
+
+    def _route_be2_legacy_action(self, sid, action, data):
+        context = self._be2_context(sid)
+
+        if not context:
+            return False
+
+        engine = self.match_engine_factory() if callable(self.match_engine_factory) else None
+
+        if not engine:
+            self.socketio.emit(
+                "action_error",
+                {
+                    "code": "BE2_ENGINE_UNAVAILABLE",
+                    "message": "Battle Engine V2 is active, but its action bridge is unavailable.",
+                },
+                to=sid,
+            )
+            return True
+
+        data = data or {}
+        action_id = data.get("action_id") or data.get("nonce")
+
+        try:
+            if action == "set_intent":
+                intent = data.get("intent") or "Focus"
+                if intent in ["Ambition Unleash", "Overreach"]:
+                    engine.unleash(sid, message="Ambition Unleash prepared. Press Ready to resolve.", action_id=action_id)
+                else:
+                    engine.set_intent(sid, intent, message=f"{intent} selected. Play a creature, spell, guard or support.", action_id=action_id)
+            elif action == "play_card":
+                engine.play_card(
+                    sid,
+                    card_id=data.get("card_id") or data.get("id"),
+                    card_index=data.get("card_index", data.get("index")),
+                    target_id=data.get("target_id"),
+                    lane=data.get("lane"),
+                    message="Card played. Press Ready to resolve combat.",
+                    action_id=action_id,
+                )
+            elif action == "unleash":
+                engine.unleash(sid, message="Ambition Unleash prepared. Press Ready to resolve.", action_id=action_id)
+            elif action == "ready":
+                engine.ready(sid, message="Round resolved.", action_id=action_id)
+        except Exception as error:
+            self.socketio.emit(
+                "action_error",
+                {
+                    "code": f"BE2_LEGACY_{action.upper()}_FAILED",
+                    "message": str(error),
+                },
+                to=sid,
+            )
+            try:
+                engine.emit_state(sid)
+            except Exception:
+                pass
+
+        return True
 
     def _prepare_unleash(self, room_id, sid, player, success_message, private_success=False):
         success = self.request_unleash(player)

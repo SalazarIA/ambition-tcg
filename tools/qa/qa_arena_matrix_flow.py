@@ -37,7 +37,7 @@ def _assert_clean_payload(payload, label, failures):
         failures.append(f"{label}: empty payload")
         return
 
-    if payload.get("schema") != "ambitionz_arena_clean_v50":
+    if payload.get("schema") not in {"arena_state_v50", "ambitionz_arena_clean_v50"}:
         failures.append(f"{label}: wrong schema {payload.get('schema')}")
 
     me = payload.get("me") or {}

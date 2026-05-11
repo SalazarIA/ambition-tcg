@@ -520,6 +520,50 @@ body.az48-has-actions .az48-hand .az48-card {
     background: linear-gradient(135deg, rgba(214, 168, 75, .52), rgba(140, 92, 255, .38));
 }
 
+.az48-card-v2.frame-arcane-fire,
+.az48-card-v2.faction-fire {
+    box-shadow:
+        0 18px 44px rgba(0,0,0,.38),
+        0 0 24px rgba(216,72,47,.20),
+        inset 0 0 0 1px rgba(255,226,163,.16);
+}
+
+.az48-card-v2.faction-water {
+    box-shadow:
+        0 18px 44px rgba(0,0,0,.38),
+        0 0 24px rgba(98,221,223,.16),
+        inset 0 0 0 1px rgba(216,251,255,.14);
+}
+
+.az48-card-v2.faction-earth {
+    box-shadow:
+        0 18px 44px rgba(0,0,0,.38),
+        0 0 20px rgba(200,170,100,.15),
+        inset 0 0 0 1px rgba(242,221,176,.14);
+}
+
+.az48-card-v2.faction-plant {
+    box-shadow:
+        0 18px 44px rgba(0,0,0,.38),
+        0 0 22px rgba(155,216,101,.14),
+        inset 0 0 0 1px rgba(225,255,209,.14);
+}
+
+.az48-card-v2.frame-mythic-fire::after,
+.az48-card-v2.frame-signature-fire::after,
+.az48-card-v2.frame-mythic-water::after,
+.az48-card-v2.frame-signature-water::after,
+.az48-card-v2.frame-mythic-earth::after,
+.az48-card-v2.frame-signature-earth::after,
+.az48-card-v2.frame-mythic-plant::after,
+.az48-card-v2.frame-signature-plant::after,
+.az48-card-v2.frame-mythic-global::after,
+.az48-card-v2.frame-signature-global::after {
+    height: 3px;
+    opacity: 1;
+    box-shadow: 0 0 16px var(--az-card-accent, #fff1bb);
+}
+
 .az48-art {
     grid-row: 3;
     margin-top: 0;
@@ -563,6 +607,64 @@ body.az48-has-actions .az48-hand .az48-card {
     background: color-mix(in srgb, var(--az-card-secondary, #fff) 42%, transparent);
     filter: blur(16px);
     opacity: .72;
+}
+
+.az48-combat-fx {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    z-index: 80;
+    min-width: 38px;
+    min-height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    pointer-events: none;
+    color: #fff7d8;
+    font-size: .9rem;
+    font-weight: 1000;
+    text-shadow: 0 2px 10px rgba(0,0,0,.65);
+    background:
+        radial-gradient(circle, rgba(255,255,255,.82), rgba(255,202,82,.34) 42%, transparent 72%);
+    animation: az48CombatFx .74s cubic-bezier(.2,.84,.24,1) forwards;
+}
+
+.az48-combat-fx-shield,
+.az48-combat-fx-unleash-armed {
+    color: #d8fbff;
+    background:
+        radial-gradient(circle, rgba(216,251,255,.78), rgba(98,221,223,.28) 44%, transparent 74%);
+}
+
+.az48-combat-fx-unleash {
+    color: #fff2c2;
+    background:
+        radial-gradient(circle, rgba(255,242,194,.90), rgba(140,120,216,.36) 46%, transparent 76%);
+}
+
+@keyframes az48CombatFx {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -16%) scale(.55);
+        filter: blur(2px);
+    }
+    24% {
+        opacity: 1;
+        transform: translate(-50%, -44%) scale(1.12);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -108%) scale(1.6);
+        filter: blur(5px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .az48-combat-fx,
+    .az48-card-sheen {
+        animation: none;
+    }
 }
 
 .az48-art span {
@@ -1537,5 +1639,30 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
     body[data-az48-primary-action="ready"] .az48-actions,
     .az48-actions {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .az48-actions,
+    body.az48-match-started .az48-actions {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+
+    body[data-az48-primary-action="play_card"] .az48-actions,
+    body[data-az48-primary-action="ready"] .az48-actions {
+        grid-template-columns: 1fr !important;
+    }
+
+    .az48-btn {
+        min-width: 0 !important;
+        width: 100% !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 6px 8px !important;
+        font-size: clamp(.58rem, 2.8vw, .72rem) !important;
     }
 }

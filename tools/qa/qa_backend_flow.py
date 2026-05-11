@@ -91,7 +91,7 @@ def run_backend_flow():
 
             initial = build_training_payload(match, "p1")
             logs.append(f"initial_state: {_state_summary(initial)}")
-            _assert(initial.get("schema") == "ambitionz_arena_clean_v50", "Initial state schema mismatch")
+            _assert(initial.get("schema") in {"arena_state_v50", "ambitionz_arena_clean_v50"}, "Initial state schema mismatch")
             _assert(initial.get("phase") in ("intent", "main", "start", "choose_action"), f"Unexpected initial phase {initial.get('phase')}")
             _validate_hand_cards(initial, "initial", logs)
 

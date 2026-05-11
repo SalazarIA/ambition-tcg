@@ -58,7 +58,7 @@ def _packet_summary(packet):
 
 def _validate_az48_state(payload, stage, logs):
     _assert(payload is not None, f"{stage}: missing az48_state")
-    _assert(payload.get("schema") == "ambitionz_arena_clean_v50", f"{stage}: wrong schema {payload.get('schema')}")
+    _assert(payload.get("schema") in {"arena_state_v50", "ambitionz_arena_clean_v50"}, f"{stage}: wrong schema {payload.get('schema')}")
 
     me = payload.get("me") or {}
     hand = me.get("hand") or []

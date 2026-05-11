@@ -1,7 +1,8 @@
 (function () {
     "use strict";
 
-    const SCHEMA = "ambitionz_arena_clean_v50";
+    const SCHEMA = "arena_state_v50";
+    const LEGACY_SCHEMA = "ambitionz_arena_clean_v50";
 
     const ELEMENT_ART = {
         Fire: "/static/img/cards/elemental/fire.svg",
@@ -58,10 +59,12 @@
         const maxHp = num(card.max_hp || card.hp || currentHp || 0);
         const stat = num(card.display_stat || (isMonster ? power : value) || card.cost || 1, 1);
         const rawImage = str(card.image || "");
+        const visual = card.visual || {};
+        const visualPalette = visual.palette || {};
         const hasSpecificArt = rawImage && !rawImage.includes("placeholder");
-        const artUrl = hasSpecificArt
+        const artUrl = str(card.art_url || visual.art_url || "") || (hasSpecificArt
             ? (rawImage.startsWith("/") ? rawImage : "/static/img/" + rawImage.replace(/^\/+/, ""))
-            : ELEMENT_ART[element];
+            : ELEMENT_ART[element]);
 
         return {
             raw: card,
@@ -85,11 +88,20 @@
             disabledReason: str(card.disabled_reason || ""),
             playable: Boolean(card.playable),
             artUrl,
+            artKey: str(card.art_key || visual.art_key || ""),
+            faction: str(card.faction || visual.faction || element),
+            frameKey: str(card.frame_key || visual.frame_key || ""),
+            visual,
             hasSpecificArt: Boolean(hasSpecificArt),
             elementCss: "element-" + slug(element),
+            factionCss: "faction-" + slug(card.faction || visual.faction || element),
+            frameCss: "frame-" + slug(card.frame_key || visual.frame_key || card.rarity || "common"),
             typeCss: "type-" + slug(type),
             rarityCss: "rarity-" + slug(card.rarity || "common"),
-            colors: ELEMENT_COLORS[element] || ELEMENT_COLORS.Neutral,
+            colors: {
+                ...(ELEMENT_COLORS[element] || ELEMENT_COLORS.Neutral),
+                ...visualPalette,
+            },
             isMonster,
         };
     }
@@ -143,7 +155,7 @@
         return {
             raw: payload,
             schema: str(payload.schema),
-            isCanonical: payload.schema === SCHEMA,
+            isCanonical: payload.schema === SCHEMA || payload.schema === LEGACY_SCHEMA || payload.schema_version === SCHEMA,
             engine: str(payload.engine || ""),
             mode: str(payload.mode || "training"),
             phase: str(payload.phase || "start"),
@@ -155,6 +167,8 @@
             roundSummary: payload.round_summary || {},
             events: arr(payload.events),
             roundEvents: arr(payload.round_events),
+            combatLog: arr(payload.combat_log),
+            balanceSnapshot: payload.balance_snapshot || {},
             turn: payload.turn || {},
             help: payload.help || {},
             legalActions: {
@@ -192,6 +206,7 @@
 
     window.AmbitionzArenaRendererAdapter = {
         SCHEMA,
+        LEGACY_SCHEMA,
         ELEMENT_ART,
         ELEMENT_COLORS,
         normalizeCard,

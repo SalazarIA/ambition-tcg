@@ -144,7 +144,7 @@ def audit_legacy(lines, template, arena_js, app):
         risks.append("P1: clean arena emits legacy declare_ready.")
     if "emit(\"choose_intent\"" in arena_js:
         risks.append("P1: clean arena emits legacy choose_intent.")
-    if "game_state_update" in arena_js and "ambitionz_arena_clean_v50" not in arena_js:
+    if "game_state_update" in arena_js and "arena_state_v50" not in arena_js:
         risks.append("P1: game_state_update listener lacks strict clean schema filter.")
     legacy_script_names = ["game" + ".js", "arena" + "_app.js", "arena" + "_state_bridge.js"]
     for script_name in legacy_script_names:

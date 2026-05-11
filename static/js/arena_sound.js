@@ -230,6 +230,29 @@
             noise({ start: t, duration: 0.11, gain: 0.045, filter: 520 });
         },
 
+        shield() {
+            unlock();
+            const t = now();
+            osc({ type: "triangle", freq: 180, endFreq: 260, start: t, duration: 0.16, gain: 0.045, decay: 0.14 });
+            osc({ type: "sine", freq: 520, endFreq: 760, start: t + 0.03, duration: 0.20, gain: 0.030, decay: 0.18 });
+            noise({ start: t, duration: 0.09, gain: 0.018, filter: 1800, type: "highpass" });
+        },
+
+        unleash() {
+            unlock();
+            const t = now();
+            osc({ type: "sawtooth", freq: 70, endFreq: 36, start: t, duration: 0.32, gain: 0.075, decay: 0.30 });
+            osc({ type: "triangle", freq: 440, endFreq: 880, start: t + 0.08, duration: 0.28, gain: 0.045, decay: 0.24 });
+            noise({ start: t + 0.04, duration: 0.22, gain: 0.050, filter: 760 });
+        },
+
+        summon() {
+            unlock();
+            const t = now();
+            osc({ type: "sine", freq: 220, endFreq: 330, start: t, duration: 0.20, gain: 0.036, decay: 0.18 });
+            osc({ type: "triangle", freq: 660, endFreq: 520, start: t + 0.05, duration: 0.18, gain: 0.028, decay: 0.16 });
+        },
+
         roundResolve() {
             unlock();
             const t = now();

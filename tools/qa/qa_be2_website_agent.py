@@ -89,7 +89,8 @@ class Agent:
         return self.states[-1]
 
     def assert_clean_state(self, state):
-        assert state.get("schema") == "ambitionz_arena_clean_v50", "Invalid schema"
+        assert state.get("schema") == "arena_state_v50", "Invalid schema"
+        assert state.get("legacy_schema") == "ambitionz_arena_clean_v50", "Missing legacy schema marker"
         assert state.get("engine") == "battle_engine_v2", f"Not using battle_engine_v2: {state.get('engine')}"
         assert state.get("me"), "Missing me payload"
         assert state.get("enemy"), "Missing enemy payload"

@@ -6,6 +6,8 @@ training, bot and future PvP renderers.
 
 from __future__ import annotations
 
+import threading
+from contextlib import contextmanager
 from typing import Any, Callable, Dict, Optional, Tuple
 
 from services.battle_engine_v2_adapter import (
@@ -24,6 +26,19 @@ from services.battle_engine_v2_adapter import (
 EmitFn = Callable[..., None]
 Match = Dict[str, Any]
 Payload = Dict[str, Any]
+
+
+_MATCH_LOCKS: Dict[str, threading.RLock] = {}
+_MATCH_LOCKS_GUARD = threading.Lock()
+
+
+def _lock_for_room(room_code: str) -> threading.RLock:
+    with _MATCH_LOCKS_GUARD:
+        lock = _MATCH_LOCKS.get(room_code)
+        if lock is None:
+            lock = threading.RLock()
+            _MATCH_LOCKS[room_code] = lock
+        return lock
 
 
 class MatchEngineFacade:
@@ -116,6 +131,57 @@ class MatchEngineFacade:
         match["be2_finalized"] = True
         self.finish_match(room_code, match)
 
+    @contextmanager
+    def match_lock(self, room_code: Optional[str]):
+        if not room_code:
+            yield
+            return
+
+        lock = _lock_for_room(room_code)
+        with lock:
+            yield
+
+    def _processed_actions(self, match: Match) -> Dict[str, Payload]:
+        actions = match.setdefault("processed_actions", {})
+        if not isinstance(actions, dict):
+            match["processed_actions"] = {}
+            return match["processed_actions"]
+        return actions
+
+    def _action_key(self, match: Match, sid: str, action: str, action_id: Optional[str]) -> Optional[str]:
+        if not action_id:
+            return None
+
+        side = side_for_sid(match, sid)
+        round_number = int(match.get("round") or 0)
+        return f"{round_number}:{side}:{action}:{action_id}"
+
+    def _emit_idempotent(self, sid: str, match: Match, action_key: Optional[str], message: Optional[str]) -> Optional[Payload]:
+        if not action_key:
+            return None
+
+        processed = self._processed_actions(match)
+        if action_key not in processed:
+            return None
+
+        return self.emit_state(sid, message=message or "Action already processed.")
+
+    def _mark_processed(self, match: Match, action_key: Optional[str]) -> None:
+        if not action_key:
+            return
+
+        processed = self._processed_actions(match)
+        processed[action_key] = {
+            "round": int(match.get("round") or 0),
+            "phase": str(match.get("phase") or ""),
+            "winner": match.get("winner"),
+        }
+
+        if len(processed) > 128:
+            keys = list(processed.keys())
+            for key in keys[:-128]:
+                processed.pop(key, None)
+
     def emit_finished_guard(self, sid: str) -> Optional[Payload]:
         return self.emit_state(sid, message="Match finished. Start a new training match or go back to Arena.")
 
@@ -186,62 +252,114 @@ class MatchEngineFacade:
         self.emit("battle_log", {"message": message}, room=room_code)
         return self.emit_match_state(room_code, message=message)
 
-    def set_intent(self, sid: str, intent: str, message: Optional[str] = None) -> Optional[Payload]:
+    def set_intent(self, sid: str, intent: str, message: Optional[str] = None, action_id: Optional[str] = None) -> Optional[Payload]:
         room_code, match = self.match_for_sid(sid)
 
-        if self.is_finished(match):
-            return self.emit_finished_guard(sid)
+        with self.match_lock(room_code):
+            if not match:
+                return None
+            if self.is_finished(match):
+                return self.emit_finished_guard(sid)
 
-        be2_set_intent(match, intent, side=side_for_sid(match, sid))
-        if room_code:
-            self.emit_match_state(room_code, message=message)
-        return self.emit_state(sid, message=message)
+            action_key = self._action_key(match, sid, "set_intent", action_id)
+            idempotent = self._emit_idempotent(sid, match, action_key, message)
+            if idempotent:
+                return idempotent
 
-    def play_card(self, sid: str, card_id: Optional[str] = None, card_index: Optional[int] = None, message: Optional[str] = None) -> Optional[Payload]:
-        room_code, match = self.match_for_sid(sid)
-
-        if self.is_finished(match):
-            return self.emit_finished_guard(sid)
-
-        be2_play_card(match, card_id=card_id, card_index=card_index, side=side_for_sid(match, sid))
-        if room_code:
-            self.emit_match_state(room_code, message=message)
-        return self.emit_state(sid, message=message)
-
-    def ready(self, sid: str, message: Optional[str] = None) -> Optional[Payload]:
-        room_code, match = self.match_for_sid(sid)
-
-        if self.is_finished(match):
-            return self.emit_finished_guard(sid)
-
-        before_round = int(match.get("round") or 0)
-        before_phase = str(match.get("phase") or "")
-        current_side = side_for_sid(match, sid)
-        other_side = "opponent" if current_side == "player" else "player"
-        other_was_ready = bool((match.get(other_side) or {}).get("ready") or (match.get(other_side) or {}).get("is_bot"))
-
-        be2_ready(match, side=current_side)
-
-        resolved = (
-            bool(match.get("winner")) or
-            int(match.get("round") or 0) != before_round or
-            str(match.get("phase") or "") != before_phase or
-            other_was_ready
-        )
-
-        if room_code and resolved:
-            self.emit_match_state(room_code, message=message)
+            be2_set_intent(match, intent, side=side_for_sid(match, sid))
+            self._mark_processed(match, action_key)
+            if room_code:
+                self.emit_match_state(room_code, message=message)
             return self.emit_state(sid, message=message)
 
-        return self.emit_state(sid, message=message)
-
-    def unleash(self, sid: str, message: Optional[str] = None) -> Optional[Payload]:
+    def play_card(
+        self,
+        sid: str,
+        card_id: Optional[str] = None,
+        card_index: Optional[int] = None,
+        message: Optional[str] = None,
+        action_id: Optional[str] = None,
+        target_id: Optional[str] = None,
+        lane: Optional[str] = None,
+    ) -> Optional[Payload]:
         room_code, match = self.match_for_sid(sid)
 
-        if self.is_finished(match):
-            return self.emit_finished_guard(sid)
+        with self.match_lock(room_code):
+            if not match:
+                return None
+            if self.is_finished(match):
+                return self.emit_finished_guard(sid)
 
-        be2_unleash(match, side=side_for_sid(match, sid))
-        if room_code:
-            self.emit_match_state(room_code, message=message)
-        return self.emit_state(sid, message=message)
+            action_key = self._action_key(match, sid, "play_card", action_id)
+            idempotent = self._emit_idempotent(sid, match, action_key, message)
+            if idempotent:
+                return idempotent
+
+            be2_play_card(
+                match,
+                card_id=card_id,
+                card_index=card_index,
+                side=side_for_sid(match, sid),
+                target_id=target_id,
+                lane=lane,
+            )
+            self._mark_processed(match, action_key)
+            if room_code:
+                self.emit_match_state(room_code, message=message)
+            return self.emit_state(sid, message=message)
+
+    def ready(self, sid: str, message: Optional[str] = None, action_id: Optional[str] = None) -> Optional[Payload]:
+        room_code, match = self.match_for_sid(sid)
+
+        with self.match_lock(room_code):
+            if not match:
+                return None
+            if self.is_finished(match):
+                return self.emit_finished_guard(sid)
+
+            action_key = self._action_key(match, sid, "ready", action_id)
+            idempotent = self._emit_idempotent(sid, match, action_key, message)
+            if idempotent:
+                return idempotent
+
+            before_round = int(match.get("round") or 0)
+            before_phase = str(match.get("phase") or "")
+            current_side = side_for_sid(match, sid)
+            other_side = "opponent" if current_side == "player" else "player"
+            other_was_ready = bool((match.get(other_side) or {}).get("ready") or (match.get(other_side) or {}).get("is_bot"))
+
+            be2_ready(match, side=current_side)
+            self._mark_processed(match, action_key)
+
+            resolved = (
+                bool(match.get("winner")) or
+                int(match.get("round") or 0) != before_round or
+                str(match.get("phase") or "") != before_phase or
+                other_was_ready
+            )
+
+            if room_code and resolved:
+                self.emit_match_state(room_code, message=message)
+                return self.emit_state(sid, message=message)
+
+            return self.emit_state(sid, message=message)
+
+    def unleash(self, sid: str, message: Optional[str] = None, action_id: Optional[str] = None) -> Optional[Payload]:
+        room_code, match = self.match_for_sid(sid)
+
+        with self.match_lock(room_code):
+            if not match:
+                return None
+            if self.is_finished(match):
+                return self.emit_finished_guard(sid)
+
+            action_key = self._action_key(match, sid, "unleash", action_id)
+            idempotent = self._emit_idempotent(sid, match, action_key, message)
+            if idempotent:
+                return idempotent
+
+            be2_unleash(match, side=side_for_sid(match, sid))
+            self._mark_processed(match, action_key)
+            if room_code:
+                self.emit_match_state(room_code, message=message)
+            return self.emit_state(sid, message=message)

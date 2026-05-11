@@ -9,7 +9,9 @@ from game.cards import CARD_CATALOG
 from game.card_sets import enrich_card_runtime
 
 
-ARENA_CLEAN_SCHEMA = "ambitionz_arena_clean_v50"
+ARENA_STATE_SCHEMA = "arena_state_v50"
+LEGACY_ARENA_SCHEMA = "ambitionz_arena_clean_v50"
+ARENA_CLEAN_SCHEMA = ARENA_STATE_SCHEMA
 
 
 def _int(value, default=0):
@@ -386,6 +388,12 @@ def build_arena_clean_state(match, viewer_key="p1", message=None):
 
     return {
         "schema": ARENA_CLEAN_SCHEMA,
+        "schema_version": ARENA_CLEAN_SCHEMA,
+        "legacy_schema": LEGACY_ARENA_SCHEMA,
+        "contract": {
+            "name": ARENA_CLEAN_SCHEMA,
+            "legacy": LEGACY_ARENA_SCHEMA,
+        },
         "match_id": _str(match.get("id") or match.get("match_id") or match.get("room"), ""),
         "viewer_key": me_key,
         "enemy_key": enemy_key,

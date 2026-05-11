@@ -52,12 +52,12 @@ def register_game_socket_handlers(socketio, deps):
         battle_actions.choose_intent(request.sid, data)
 
     @socketio.on("toggle_unleash")
-    def toggle_unleash():
-        battle_actions.toggle_unleash(request.sid)
+    def toggle_unleash(data=None):
+        battle_actions.toggle_unleash(request.sid, data)
 
     @socketio.on("declare_ready")
-    def declare_ready():
-        battle_actions.declare_ready(request.sid)
+    def declare_ready(data=None):
+        battle_actions.declare_ready(request.sid, data)
 
     @socketio.on("join_bot_match")
     def handle_join_bot_match():

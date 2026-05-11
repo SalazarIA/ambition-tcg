@@ -52,7 +52,27 @@ def make_player(name="Player", sid="sid-p1"):
     }
 
 
-def make_controller():
+class FakeBE2Engine:
+    def __init__(self):
+        self.calls = []
+
+    def set_intent(self, *args, **kwargs):
+        self.calls.append(("set_intent", args, kwargs))
+
+    def play_card(self, *args, **kwargs):
+        self.calls.append(("play_card", args, kwargs))
+
+    def unleash(self, *args, **kwargs):
+        self.calls.append(("unleash", args, kwargs))
+
+    def ready(self, *args, **kwargs):
+        self.calls.append(("ready", args, kwargs))
+
+    def emit_state(self, *args, **kwargs):
+        self.calls.append(("emit_state", args, kwargs))
+
+
+def make_controller(match_engine_factory=None):
     socketio = FakeSocketIO()
     runtime = FakeRuntime()
     logs = []
@@ -84,6 +104,7 @@ def make_controller():
         "end_match": lambda room_id, winner_key: ended_matches.append((room_id, winner_key)),
         "find_player_key": find_player_key,
         "increment_mission": lambda user, mission, amount: missions.append((user.id, mission, amount)),
+        "match_engine_factory": match_engine_factory,
         "normalize_intent": lambda intent: intent if intent in {"Strike", "Guard", "Focus"} else "Strike",
         "pay_card_cost": lambda player, card: player.update({"energy": player["energy"] - int(card.get("cost", 1))}),
         "register_card_played_for_ambition": lambda player, card, match_logs: match_logs.append(f"played:{card['id']}"),
@@ -180,3 +201,40 @@ def test_declare_ready_resolves_battle_and_ends_match():
     assert match["v2_events"] == [{"type": "damage", "amount": 100}]
     assert ended_matches == [("room-1", "p1")]
     assert runtime.released_matches == [match]
+
+
+def test_legacy_play_to_field_routes_to_be2_when_match_is_be2():
+    engine = FakeBE2Engine()
+    controller, runtime, _socketio, _logs, states, _missions, _battle_events, _ended_matches = make_controller(
+        match_engine_factory=lambda: engine
+    )
+    match = attach_match(runtime)
+    match["be2"] = True
+
+    controller.play_to_field(
+        "sid-p1",
+        {
+            "card_id": "spark_runner",
+            "card_index": 0,
+            "target_id": "enemy_active",
+            "lane": "left",
+            "action_id": "legacy-1",
+        },
+    )
+
+    assert engine.calls == [
+        (
+            "play_card",
+            ("sid-p1",),
+            {
+                "card_id": "spark_runner",
+                "card_index": 0,
+                "target_id": "enemy_active",
+                "lane": "left",
+                "message": "Card played. Press Ready to resolve combat.",
+                "action_id": "legacy-1",
+            },
+        )
+    ]
+    assert match["p1"]["hand"][0]["id"] == "m1"
+    assert states == []

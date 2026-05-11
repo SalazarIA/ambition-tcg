@@ -10,11 +10,14 @@ from typing import Any, Dict, List, Optional
 
 from services.battle_engine_v2 import (
     ENGINE_VERSION,
+    LANES,
     TRAINING_BOT_HP,
     UNLEASH_COST,
     bot_take_turn,
     choose_intent,
     create_match,
+    default_target_for_card,
+    legal_targets,
     mark_ready,
     play_card,
     request_unleash,
@@ -22,8 +25,11 @@ from services.battle_engine_v2 import (
     start_round,
     serialize_state,
 )
+from services.card_visuals import card_visual_profile
 
-ARENA_CLEAN_SCHEMA = "ambitionz_arena_clean_v50"
+ARENA_STATE_SCHEMA = "arena_state_v50"
+LEGACY_ARENA_SCHEMA = "ambitionz_arena_clean_v50"
+ARENA_CLEAN_SCHEMA = ARENA_STATE_SCHEMA
 STATIC_IMG_DIR = Path(__file__).resolve().parents[1] / "static" / "img"
 
 
@@ -208,6 +214,7 @@ def _battle_card_to_arena_card(
 
     effect_summary = _card_effect_summary(card)
     text = effect_summary or card.get("text") or " / ".join(details)
+    visual = card_visual_profile(card)
 
     return {
         "id": card_id,
@@ -229,6 +236,11 @@ def _battle_card_to_arena_card(
         "effect_summary": effect_summary,
         "preview": _card_preview(card, intent=intent, owner=owner),
         "image": _card_image(card),
+        "art_key": visual["art_key"],
+        "art_url": visual["art_url"],
+        "faction": visual["faction"],
+        "frame_key": visual["frame_key"],
+        "visual": visual,
         "set_key": str(card.get("source") or "battle_engine_v2"),
         "set_name": "Official Catalog" if card.get("source") == "official_catalog" else "Battle Engine V2",
         "is_monster": card.get("kind") == "creature",
@@ -236,16 +248,26 @@ def _battle_card_to_arena_card(
         "max_hp": hp,
         "atk": atk,
         "kind": card.get("kind"),
+        "keywords": list(card.get("keywords") or []),
+        "archetype": str(card.get("archetype") or ""),
+        "lane": card.get("lane") or card.get("selected_lane"),
+        "selected_target": card.get("selected_target"),
     }
 
 
 def _field_payload(player: Dict[str, Any]) -> Dict[str, Any]:
     field = player.get("field") or {}
+    lanes = field.get("lanes") or {}
 
     return {
         "monster": _battle_card_to_arena_card(field.get("active"), 0, owner=player),
         "spell": _battle_card_to_arena_card(field.get("support"), 1, owner=player),
         "trap": None,
+        "active_lane": field.get("active_lane"),
+        "lanes": {
+            lane: _battle_card_to_arena_card(lanes.get(lane), index=index, owner=player)
+            for index, lane in enumerate(LANES)
+        },
     }
 
 
@@ -353,7 +375,7 @@ def _turn_step(raw_phase: str, player: Dict[str, Any], is_finished: bool) -> str
     return "card"
 
 
-def _card_state(card: Dict[str, Any], player: Dict[str, Any], raw_phase: str, is_finished: bool) -> Dict[str, Any]:
+def _card_state(match: Dict[str, Any], side: str, card: Dict[str, Any], player: Dict[str, Any], raw_phase: str, is_finished: bool) -> Dict[str, Any]:
     cost = int(card.get("cost") or 0)
     energy = int(player.get("energy") or 0)
     card_id = str(card.get("id") or "")
@@ -376,14 +398,17 @@ def _card_state(card: Dict[str, Any], player: Dict[str, Any], raw_phase: str, is
         "playable": disabled_reason == "",
         "disabled_reason": disabled_reason,
         "preview": _card_preview(card, intent=player.get("intent"), owner=player),
+        "default_target": card.get("target_hint") or default_target_for_card(card),
+        "legal_targets": legal_targets(match, side, card),
+        "legal_lanes": list(LANES) if card.get("kind") == "creature" else [],
     }
 
 
-def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_finished: bool) -> Dict[str, Any]:
+def _legal_actions_for(match: Dict[str, Any], side: str, player: Dict[str, Any], raw_phase: str, step: str, is_finished: bool) -> Dict[str, Any]:
     action_phase = raw_phase == "choose_action" and not is_finished
     ready = bool(player.get("ready"))
     has_played_card = bool(player.get("played_card"))
-    card_states = [_card_state(card, player, raw_phase, is_finished) for card in (player.get("hand") or [])]
+    card_states = [_card_state(match, side, card, player, raw_phase, is_finished) for card in (player.get("hand") or [])]
     playable_ids = [state["id"] for state in card_states if state["playable"]]
     can_ready = action_phase and not ready
     can_play_cards = action_phase and bool(playable_ids) and not ready and not has_played_card
@@ -419,6 +444,7 @@ def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_fin
         "can_unleash": int(player.get("ambition") or 0) >= UNLEASH_COST and action_phase and not ready,
         "playable_card_ids": playable_ids,
         "card_states": card_states,
+        "lanes": list(LANES),
         "disabled_reasons_by_card": {
             state["id"]: state["disabled_reason"]
             for state in card_states
@@ -458,7 +484,7 @@ def build_be2_arena_payload(
     raw_phase = state.get("phase") or "start"
     is_finished = raw_phase == "finished" or bool(state.get("winner"))
     phase = _turn_step(str(raw_phase), player, is_finished)
-    legal_actions = _legal_actions_for(player, str(raw_phase), phase, is_finished)
+    legal_actions = _legal_actions_for(state, viewer_side, player, str(raw_phase), phase, is_finished)
     card_state_by_id = {
         str(card_state.get("id")): card_state
         for card_state in legal_actions.get("card_states", [])
@@ -496,6 +522,13 @@ def build_be2_arena_payload(
 
     return {
         "schema": ARENA_CLEAN_SCHEMA,
+        "schema_version": ARENA_CLEAN_SCHEMA,
+        "legacy_schema": LEGACY_ARENA_SCHEMA,
+        "contract": {
+            "name": ARENA_CLEAN_SCHEMA,
+            "legacy": LEGACY_ARENA_SCHEMA,
+            "engine": ENGINE_VERSION,
+        },
         "engine": ENGINE_VERSION,
         "mode": _mode_for_state(state),
         "phase": phase,
@@ -508,6 +541,9 @@ def build_be2_arena_payload(
         "round_summary": _summary_for_viewer(state.get("round_summary") or {}, viewer_side),
         "events": _events_for_viewer(list(state.get("events") or [])[-24:], viewer_side),
         "round_events": _events_for_viewer(list(state.get("round_events") or [])[-12:], viewer_side),
+        "combat_log": _events_for_viewer(list(state.get("combat_log") or [])[-48:], viewer_side),
+        "balance_snapshot": state.get("balance_snapshot") or {},
+        "balance_snapshots": list(state.get("balance_snapshots") or [])[-6:],
         "turn": {
             "step": phase,
             "raw_phase": raw_phase,
@@ -591,12 +627,19 @@ def be2_set_intent(match: Dict[str, Any], intent: str, side: str = "player") -> 
     return match
 
 
-def be2_play_card(match: Dict[str, Any], card_id: Optional[str] = None, card_index: Optional[int] = None, side: str = "player") -> Dict[str, Any]:
+def be2_play_card(
+    match: Dict[str, Any],
+    card_id: Optional[str] = None,
+    card_index: Optional[int] = None,
+    side: str = "player",
+    target_id: Optional[str] = None,
+    lane: Optional[str] = None,
+) -> Dict[str, Any]:
     if match.get("phase") == "created":
         start_round(match)
 
     side = side if side in {"player", "opponent"} else "player"
-    play_card(match, side, card_id=card_id, card_index=card_index)
+    play_card(match, side, card_id=card_id, card_index=card_index, target_id=target_id, lane=lane)
     return match
 
 

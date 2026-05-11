@@ -91,9 +91,26 @@ def test_pwa_install_assets_are_declared():
 def test_arena_has_compact_turn_hud_contract():
     js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
     css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+    adapter = (PROJECT_ROOT / "static" / "js" / "arena_renderer_adapter.js").read_text()
 
     assert "az48-next-action" in js
     assert "az48-card-preview-name" in js
     assert "az48-event-lines" in js
+    assert "arena_state_v50" in js
+    assert "ambitionz_arena_clean_v50" in js
+    assert "arena_state_v50" in adapter
+    assert "triggerCombatFx" in js
+    assert "action_id" in js
     assert "data-az48-primary-action" in css
     assert "az48-help-drawer" in css
+    assert "az48-combat-fx" in css
+
+
+def test_visual_qa_playwright_script_covers_desktop_and_mobile():
+    qa = (PROJECT_ROOT / "tools" / "qa" / "qa_visual_regression.py").read_text()
+
+    assert "sync_playwright" in qa
+    assert "\"desktop\"" in qa
+    assert "\"mobile\"" in qa
+    assert "page.screenshot" in qa
+    assert "arena_state_v50" in qa

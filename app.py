@@ -3894,7 +3894,12 @@ def az48_set_intent(data=None):
         return
 
     try:
-        be2_engine().set_intent(sid, intent, message=f"{intent} selected. Play a creature, spell, guard or support.")
+        be2_engine().set_intent(
+            sid,
+            intent,
+            message=f"{intent} selected. Play a creature, spell, guard or support.",
+            action_id=data.get("action_id") or data.get("nonce"),
+        )
     except Exception as error:
         socketio.emit("action_error", {"code": "BE2_SET_INTENT_FAILED", "message": str(error)}, room=sid)
         emit_be2_state(sid)
@@ -3925,7 +3930,10 @@ def az48_play_card(data=None):
             sid,
             card_id=data.get("card_id") or data.get("id"),
             card_index=data.get("card_index"),
+            target_id=data.get("target_id"),
+            lane=data.get("lane"),
             message="Card played. Press Ready to resolve combat.",
+            action_id=data.get("action_id") or data.get("nonce"),
         )
     except Exception as error:
         socketio.emit("action_error", {"code": "BE2_PLAY_CARD_FAILED", "message": str(error)}, room=sid)
@@ -3952,7 +3960,12 @@ def az48_declare_ready(data=None):
         return
 
     try:
-        payload = be2_engine().ready(sid, message="Round resolved.")
+        data = data or {}
+        payload = be2_engine().ready(
+            sid,
+            message="Round resolved.",
+            action_id=data.get("action_id") or data.get("nonce"),
+        )
         if payload and payload.get("winner"):
             socketio.emit("battle_log", {"message": payload.get("message")}, room=sid)
     except Exception as error:
@@ -3980,7 +3993,12 @@ def az48_unleash(data=None):
         return
 
     try:
-        be2_engine().unleash(sid, message="Ambition Unleash prepared. Press Ready to resolve.")
+        data = data or {}
+        be2_engine().unleash(
+            sid,
+            message="Ambition Unleash prepared. Press Ready to resolve.",
+            action_id=data.get("action_id") or data.get("nonce"),
+        )
     except Exception as error:
         socketio.emit("action_error", {"code": "BE2_UNLEASH_FAILED", "message": str(error)}, room=sid)
         emit_be2_state(sid)

@@ -5,7 +5,9 @@ import pytest
 from services.battle_engine_v2 import (
     CARD_CATALOG_V2,
     STARTING_HAND_SIZE,
+    TARGET_ENEMY_ACTIVE,
     bot_take_turn,
+    build_balance_snapshot,
     choose_intent,
     create_match,
     play_card,
@@ -99,6 +101,9 @@ def test_be2_payload_exposes_clear_turn_contract():
     match = create_be2_training_match(sid="contract-test")
 
     created = build_be2_arena_payload(match)
+    assert created["schema"] == "arena_state_v50"
+    assert created["legacy_schema"] == "ambitionz_arena_clean_v50"
+    assert created["contract"]["name"] == "arena_state_v50"
     assert created["phase"] == "start"
     assert created["turn"]["primary_action"] == "start"
     assert created["legal_actions"]["can_start"] is True
@@ -144,8 +149,47 @@ def test_be2_payload_includes_structured_round_events():
 
     assert resolved["round"] >= 2 or resolved["phase"] == "finished"
     assert resolved["events"]
+    assert all(event.get("id") for event in resolved["events"])
     assert resolved["round_summary"]["events"]
     assert any(event["type"] in {"attack", "hero_damage", "shield"} for event in resolved["round_summary"]["events"])
+    assert resolved["combat_log"]
+    assert resolved["balance_snapshot"]["round"] == resolved["round"]
+
+
+def test_be2_tracks_lanes_targets_keywords_and_balance_snapshot():
+    match = create_be2_training_match(sid="lanes-targets-test")
+    be2_start(match)
+    match["player"]["hand"] = [_v2_card("spark_runner")]
+    match["player"]["energy"] = 2
+
+    be2_play_card(match, card_id="spark_runner", lane="left")
+
+    active = match["player"]["field"]["active"]
+    assert active["lane"] == "left"
+    assert match["player"]["field"]["active_lane"] == "left"
+    assert match["player"]["field"]["lanes"]["left"]["id"] == "spark_runner"
+    assert "combatant" in active["keywords"]
+    assert build_balance_snapshot(match)["player"]["lanes"]["left"] == "spark_runner"
+
+
+def test_be2_spell_can_target_enemy_active_creature():
+    match = create_be2_training_match(sid="target-test")
+    be2_start(match)
+    match["player"]["hand"] = [_v2_card("clean_hit")]
+    match["player"]["energy"] = 5
+    match["opponent"]["field"]["active"] = _v2_card("spark_runner")
+    match["opponent"]["field"]["active"]["current_hp"] = 3
+    enemy_hp_before = match["opponent"]["hp"]
+
+    payload = build_be2_arena_payload(match)
+    card_state = next(state for state in payload["legal_actions"]["card_states"] if state["id"] == "clean_hit")
+    assert any(target["id"] == TARGET_ENEMY_ACTIVE for target in card_state["legal_targets"])
+
+    be2_play_card(match, card_id="clean_hit", target_id=TARGET_ENEMY_ACTIVE)
+
+    assert match["opponent"]["field"]["active"] is None
+    assert match["opponent"]["hp"] == enemy_hp_before - 1
+    assert any(event.get("target_id") == TARGET_ENEMY_ACTIVE for event in match["events"])
 
 
 def test_training_bot_uses_training_balance_profile():
@@ -293,3 +337,27 @@ def test_match_engine_facade_finalizes_finished_match_once():
 
     assert finalized == [(room_code, "player")]
     assert match["be2_finalized"] is True
+
+
+def test_match_engine_facade_idempotent_round_action_does_not_replay():
+    emits = []
+    active_matches = {}
+    player_rooms = {}
+
+    facade = MatchEngineFacade(
+        active_matches,
+        player_rooms,
+        lambda event, payload, room=None: emits.append((event, payload, room)),
+    )
+
+    facade.start_training("sid-idem")
+    _room_code, match = facade.match_for_sid("sid-idem")
+    match["player"]["hand"] = [_v2_card("spark_runner")]
+    match["player"]["energy"] = 2
+
+    facade.play_card("sid-idem", card_id="spark_runner", action_id="same-action")
+    facade.play_card("sid-idem", card_id="spark_runner", action_id="same-action")
+
+    assert match["player"]["field"]["active"]["id"] == "spark_runner"
+    assert match["player"]["hand"] == []
+    assert len([event for event in match["events"] if event.get("card_id") == "spark_runner"]) == 1

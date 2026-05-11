@@ -6,8 +6,11 @@
     let hasCanonicalState = false;
     let bootTries = 0;
     let previewCardId = null;
+    const seenEventIds = new Set();
+    const pendingActionIds = {};
 
-    const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
+    const CANONICAL_SCHEMA = "arena_state_v50";
+    const LEGACY_SCHEMA = "ambitionz_arena_clean_v50";
 
     const AZ48_NO_PLAYABLE_HELP = "No playable card with current energy. Press Ready to resolve the round.";
 
@@ -95,6 +98,14 @@
         return String(value);
     }
 
+    function actionId(scope) {
+        const key = String(scope || "action");
+        if (!pendingActionIds[key]) {
+            pendingActionIds[key] = key + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+        }
+        return pendingActionIds[key];
+    }
+
     function esc(value) {
         return str(value)
             .replaceAll("&", "&amp;")
@@ -105,7 +116,7 @@
     }
 
     function isCanonical(payload) {
-        return payload && payload.schema === CANONICAL_SCHEMA && payload.me && payload.enemy;
+        return payload && (payload.schema === CANONICAL_SCHEMA || payload.schema === LEGACY_SCHEMA || payload.schema_version === CANONICAL_SCHEMA) && payload.me && payload.enemy;
     }
 
     function adapter() {
@@ -125,6 +136,7 @@
         const power = num(card.power || card.attack || card.display_stat || card.value || 0);
         const value = num(card.value || card.display_stat || card.power || card.attack || 0);
         const stat = num(card.display_stat || (isMonster ? power : value) || card.cost || 1, 1);
+        const visual = card.visual || {};
 
         return {
             id: str(card.id || card.card_id || card.runtime_id || card.name || ("card-" + index)),
@@ -136,14 +148,17 @@
             cost: num(card.cost || card.energy_cost || 1, 1),
             stat,
             statLabel: str(card.combat_label || (isMonster ? "PWR" : "VAL")),
-            artUrl: "/static/img/cards/elemental/neutral.svg",
+            artUrl: str(card.art_url || visual.art_url || "/static/img/cards/elemental/neutral.svg"),
+            factionCss: "faction-" + str(card.faction || (visual && visual.faction) || "neutral").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+            frameCss: "frame-" + str(card.frame_key || (visual && visual.frame_key) || card.rarity || "common").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
             elementCss: "element-neutral",
             typeCss: "type-" + type.toLowerCase().replaceAll(" ", "-"),
             rarityCss: "rarity-common",
+            visual,
             colors: {
-                primary: "#9ea7b7",
-                secondary: "#d9deea",
-                accent: "#f4f7ff",
+                primary: (visual.palette && visual.palette.primary) || "#9ea7b7",
+                secondary: (visual.palette && visual.palette.secondary) || "#d9deea",
+                accent: (visual.palette && visual.palette.accent) || "#f4f7ff",
             },
             effect: str(card.effect || card.description || ""),
             preview: str(card.preview || card.effect_summary || card.effect || card.description || ""),
@@ -167,6 +182,8 @@
         const typeClass = c.typeCss || ("type-" + c.type.toLowerCase().replaceAll(" ", "-"));
         const elementClass = c.elementCss || "element-neutral";
         const rarityClass = c.rarityCss || "rarity-common";
+        const factionClass = c.factionCss || "";
+        const frameClass = c.frameCss || "";
         const playable = options.playable ? " playable" : "";
         const locked = options.disabledReason ? " is-locked" : "";
         const field = options.field ? " az48-field-card" : "";
@@ -181,7 +198,7 @@
         const title = options.disabledReason || c.preview || c.effect || c.name;
 
         return [
-            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + '" data-card-id="' + esc(c.id) + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" title="' + esc(title) + '" style="' + style + '">',
+            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + ' ' + factionClass + ' ' + frameClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + '" data-card-id="' + esc(c.id) + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" title="' + esc(title) + '" style="' + style + '">',
             '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
@@ -309,6 +326,55 @@
         return label + str(event.text || event.type || "");
     }
 
+    function eventKey(event, index) {
+        if (!event) return "missing-" + index;
+        return str(event.id || event.seq || [
+            event.round,
+            event.type,
+            event.actor,
+            event.target,
+            event.amount,
+            index,
+        ].join(":"));
+    }
+
+    function soundForEvent(event) {
+        const type = str(event && event.type).toLowerCase();
+        if (type.includes("unleash")) return "unleash";
+        if (type.includes("shield") || type.includes("guard")) return "shield";
+        if (type.includes("damage") || type.includes("attack")) return "damage";
+        if (type.includes("card_played")) return "cardImpact";
+        if (type.includes("round_start")) return "roundResolve";
+        return "";
+    }
+
+    function triggerCombatFx(payload) {
+        const board = document.querySelector(".az48-arena") || document.querySelector(".az-arena-app") || document.body;
+        if (!board) return;
+
+        const events = arr(payload.round_events).length ? arr(payload.round_events) : arr(payload.events);
+        events.forEach((event, index) => {
+            const key = eventKey(event, index);
+            if (seenEventIds.has(key)) return;
+            seenEventIds.add(key);
+
+            if (seenEventIds.size > 300) {
+                seenEventIds.clear();
+                seenEventIds.add(key);
+            }
+
+            const type = str(event.type || "event").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+            const fx = document.createElement("div");
+            fx.className = "az48-combat-fx az48-combat-fx-" + type;
+            fx.textContent = event.amount ? String(event.amount) : (event.type === "shield" ? "SHD" : "");
+            board.appendChild(fx);
+            window.setTimeout(() => fx.remove(), 760);
+
+            const sound = soundForEvent(event);
+            if (sound) playSound(sound, { element: event.element || event.faction });
+        });
+    }
+
     function renderEvents(payload) {
         const el = document.getElementById("az48-event-lines");
         if (!el) return;
@@ -411,6 +477,7 @@
 
         hasCanonicalState = true;
         latestState = payload;
+        Object.keys(pendingActionIds).forEach((key) => delete pendingActionIds[key]);
         window.__ambitionzArena48State = payload;
         window.__ambitionzArenaNormalizedState = adapter()
             ? adapter().normalizeArenaState(payload)
@@ -446,6 +513,7 @@
         }
 
         renderClarity(state);
+        triggerCombatFx(state);
 
         const showStart = !isFinished && PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || isStartPhase(phase));
         const showIntents = !isFinished && Boolean(legal.show_intents || legal.can_choose_intent);
@@ -561,7 +629,7 @@
         }
 
         setMessage(intent + " selected.");
-        if (emit("az48_set_intent", { intent })) {
+        if (emit("az48_set_intent", { intent, action_id: actionId("intent:" + intent) })) {
             playSound("intent", { element: intent });
         }
     }
@@ -573,7 +641,7 @@
         }
 
         setMessage("Ready sent.");
-        if (emit("az48_declare_ready", {})) {
+        if (emit("az48_declare_ready", { action_id: actionId("ready") })) {
             playSound("ready");
         }
     }
@@ -595,16 +663,20 @@
         const card = normalizeCard(hand[index], index);
         const legal = (latestState && latestState.legal_actions) || {};
         const playable = arr(legal.playable_card_ids).map(String);
+        const states = cardStateMap(latestState);
+        const cardState = states.get(String(card.id)) || {};
 
         if (!playable.includes(String(card.id))) {
-            const states = cardStateMap(latestState);
-            const cardState = states.get(String(card.id)) || {};
             setMessage(cardState.disabled_reason || "This card cannot be played now.");
             return;
         }
 
+        const legalLanes = arr(cardState.legal_lanes);
+        const lane = legalLanes.includes("center") ? "center" : (legalLanes[0] || undefined);
+        const target = cardState.default_target || (arr(cardState.legal_targets)[0] && arr(cardState.legal_targets)[0].id);
+
         setMessage("Playing card...");
-        if (emit("az48_play_card", { card_id: id, card_index: index })) {
+        if (emit("az48_play_card", { card_id: id, card_index: index, target_id: target, lane, action_id: actionId("play:" + id) })) {
             playSound("cardFly", { element: card.element });
             window.setTimeout(() => playSound("cardImpact", { element: card.element }), 180);
         }

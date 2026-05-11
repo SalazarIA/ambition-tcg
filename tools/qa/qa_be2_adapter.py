@@ -31,7 +31,8 @@ def main():
     match = create_be2_training_match(sid="adapter-smoke")
     payload = build_be2_arena_payload(match)
 
-    assert_true(payload["schema"] == "ambitionz_arena_clean_v50", "invalid schema")
+    assert_true(payload["schema"] == "arena_state_v50", "invalid schema")
+    assert_true(payload["legacy_schema"] == "ambitionz_arena_clean_v50", "missing legacy schema marker")
     assert_true(payload["engine"] == "battle_engine_v2", "invalid engine")
     assert_true(payload["phase"] == "start", "expected start phase")
     assert_true(payload["legal_actions"]["primary_action"] == "start", "expected start primary action")
@@ -69,7 +70,7 @@ def main():
     be2_ready(match)
     payload = build_be2_arena_payload(match)
 
-    assert_true(payload["schema"] == "ambitionz_arena_clean_v50", "schema after ready")
+    assert_true(payload["schema"] == "arena_state_v50", "schema after ready")
     assert_true(payload["round"] >= 1, "round should exist")
     assert_true(payload["me"]["hp"] >= 0, "player hp should be non-negative")
     assert_true(payload["enemy"]["hp"] >= 0, "enemy hp should be non-negative")
