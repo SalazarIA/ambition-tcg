@@ -47,6 +47,23 @@ def click_any(page, selectors, label, logs, timeout=6000):
     raise AssertionError(f"Could not click {label}")
 
 
+def complete_pending_selection(page, logs, timeout=4000):
+    for label, selector in [
+        ("lane", "#az48-me-field [data-az48-lane].is-legal-lane"),
+        ("target", "[data-az48-target].is-legal-target"),
+    ]:
+        try:
+            locator = page.locator(selector).first
+            if locator.count() <= 0:
+                continue
+            locator.click(timeout=timeout)
+            logs.append(f"selection_ok: {label}: {selector}")
+            return True
+        except Exception as exc:
+            logs.append(f"selection_skip: {label}: {selector}: {type(exc).__name__}")
+    return False
+
+
 def snapshot(page, label):
     return page.evaluate(
         """(label) => {
@@ -174,6 +191,8 @@ def main():
                 "playable_card",
                 logs,
             )
+            page.wait_for_timeout(700)
+            complete_pending_selection(page, logs)
             page.wait_for_timeout(1300)
             after_card = snapshot(page, "after_card")
             logs.append(f"snapshot_after_card: {after_card}")

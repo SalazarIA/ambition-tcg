@@ -84,6 +84,8 @@
             effect: str(card.effect || card.description || card.text || ""),
             effectSummary: str(card.effect_summary || card.effect || card.description || card.text || ""),
             preview: str(card.preview || card.effect_summary || card.effect || card.description || ""),
+            keywords: arr(card.keywords).map(String),
+            keywordText: arr(card.keyword_text).map(String),
             disabledReason: str(card.disabled_reason || ""),
             playable: Boolean(card.playable),
             artUrl,
@@ -165,6 +167,8 @@
             roundSummary: payload.round_summary || {},
             events: arr(payload.events),
             roundEvents: arr(payload.round_events),
+            cardRegistry: payload.card_registry || {},
+            keywordRegistry: payload.keyword_registry || {},
             turn: payload.turn || {},
             help: payload.help || {},
             legalActions: {

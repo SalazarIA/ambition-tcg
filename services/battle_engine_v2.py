@@ -16,6 +16,8 @@ from game.deck import STARTER_MONSTER_COUNT, STARTER_SPELL_COUNT, STARTER_TRAP_C
 
 
 ENGINE_VERSION = "battle_engine_v2"
+CARD_REGISTRY_SCHEMA = "be2_card_registry_v1"
+KEYWORD_REGISTRY_SCHEMA = "be2_keyword_registry_v1"
 
 STARTING_HP = 28
 STARTING_ENERGY = 2
@@ -31,6 +33,64 @@ UNLEASH_SHIELD = 3
 
 VALID_INTENTS = {"Strike", "Guard", "Focus"}
 LANES = ("left", "center", "right")
+
+
+KEYWORD_REGISTRY_V1 = {
+    "guarded": {
+        "id": "guarded",
+        "name": "Guarded",
+        "rules": "While its owner chose Guard, this creature takes 1 less combat damage.",
+        "implemented": True,
+    },
+    "focused": {
+        "id": "focused",
+        "name": "Focused",
+        "rules": "This card gains +1 Ambition when its instant effect resolves.",
+        "implemented": True,
+    },
+}
+
+
+def normalize_keywords(raw_keywords: Any) -> List[str]:
+    if raw_keywords is None:
+        return []
+
+    if isinstance(raw_keywords, str):
+        values = [raw_keywords]
+    elif isinstance(raw_keywords, (list, tuple, set)):
+        values = list(raw_keywords)
+    else:
+        values = []
+
+    normalized = []
+    for keyword in values:
+        key = str(keyword or "").strip().lower().replace(" ", "_")
+        if not key:
+            continue
+        if key not in KEYWORD_REGISTRY_V1:
+            raise ValueError(f"Unknown keyword: {key}")
+        if key not in normalized:
+            normalized.append(key)
+
+    return normalized
+
+
+def card_has_keyword(card: Optional[Dict[str, Any]], keyword: str) -> bool:
+    if not card:
+        return False
+    return str(keyword) in set(normalize_keywords(card.get("keywords") or []))
+
+
+def _finalize_card_registry(cards: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    registry = {}
+    for card_id, card in cards.items():
+        normalized = deepcopy(card)
+        normalized["id"] = str(normalized.get("id") or card_id)
+        normalized["keywords"] = normalize_keywords(normalized.get("keywords") or [])
+        normalized["registry"] = CARD_REGISTRY_SCHEMA
+        normalized["registry_version"] = "v1"
+        registry[card_id] = normalized
+    return registry
 
 
 CARD_CATALOG_V2 = {
@@ -65,6 +125,7 @@ CARD_CATALOG_V2 = {
         "atk": 2,
         "hp": 7,
         "ambition": 1,
+        "keywords": ["guarded"],
         "text": "Defensive creature with high HP.",
     },
     "spark_runner": {
@@ -117,6 +178,7 @@ CARD_CATALOG_V2 = {
         "damage": 0,
         "ambition": 4,
         "draw": 1,
+        "keywords": ["focused"],
         "text": "Gain Ambition and draw 1 card.",
     },
 
@@ -162,9 +224,14 @@ CARD_CATALOG_V2 = {
         "cost": 2,
         "ambition_bonus": 1,
         "ambition": 2,
+        "keywords": ["focused"],
         "text": "Support: gain +1 extra Ambition each round.",
     },
 }
+
+
+CARD_REGISTRY_V1 = _finalize_card_registry(CARD_CATALOG_V2)
+CARD_CATALOG_V2 = CARD_REGISTRY_V1
 
 
 BETA_DECK_V2 = [
@@ -187,6 +254,14 @@ def _copy_card(card_id: str) -> Dict[str, Any]:
     if card_id not in CARD_CATALOG_V2:
         raise ValueError(f"Invalid card id: {card_id}")
     return deepcopy(CARD_CATALOG_V2[card_id])
+
+
+def card_registry_snapshot() -> Dict[str, Dict[str, Any]]:
+    return deepcopy(CARD_REGISTRY_V1)
+
+
+def keyword_registry_snapshot() -> Dict[str, Dict[str, Any]]:
+    return deepcopy(KEYWORD_REGISTRY_V1)
 
 
 def _empty_board() -> Dict[str, Optional[Dict[str, Any]]]:
@@ -235,6 +310,18 @@ def first_empty_lane(player: Dict[str, Any]) -> Optional[str]:
     return lanes[0] if lanes else None
 
 
+def _official_keywords(card_type: str, effect: str, element: str) -> List[str]:
+    keywords = []
+
+    if card_type == "Monster" and effect in {"ShieldOnSummon", "BoostSelf"}:
+        keywords.append("guarded")
+
+    if effect in {"DrawOnSummon", "Draw", "Boost"} or element == "Water":
+        keywords.append("focused")
+
+    return normalize_keywords(keywords)
+
+
 def _official_card_to_be2(card: Dict[str, Any]) -> Dict[str, Any]:
     """Adapt official Ambitionz catalog cards into Battle Engine V2 combat cards."""
     card_type = str(card.get("type") or "").strip()
@@ -258,6 +345,9 @@ def _official_card_to_be2(card: Dict[str, Any]) -> Dict[str, Any]:
         "archetype": str(card.get("archetype") or ""),
         "effect_key": effect,
         "source": "official_catalog",
+        "registry": CARD_REGISTRY_SCHEMA,
+        "registry_version": "v1",
+        "keywords": _official_keywords(card_type, effect, str(card.get("element") or "Neutral")),
     }
 
     if card_type == "Monster":
@@ -681,9 +771,7 @@ def _next_instance_id(match: Dict[str, Any], side: str, lane: str, card: Dict[st
 def _field_creature_instance(match: Dict[str, Any], side: str, lane: str, card: Dict[str, Any]) -> Dict[str, Any]:
     hp = int(card.get("hp") or card.get("max_hp") or 1)
     attack = int(card.get("atk") or card.get("attack") or card.get("power") or 0)
-    keywords = card.get("keywords") or []
-    if isinstance(keywords, str):
-        keywords = [keywords]
+    keywords = normalize_keywords(card.get("keywords") or [])
 
     instance_id = _next_instance_id(match, side, lane, card)
     return {
@@ -701,7 +789,7 @@ def _field_creature_instance(match: Dict[str, Any], side: str, lane: str, card: 
         "max_hp": hp,
         "owner": side,
         "lane": lane,
-        "keywords": list(keywords),
+        "keywords": keywords,
         "exhausted": False,
         "played_round": int(match.get("round") or 0),
     }
@@ -815,6 +903,9 @@ def apply_instant_card(match: Dict[str, Any], side: str, card: Dict[str, Any]) -
     if intent == "Focus":
         ambition += 1
 
+    if card_has_keyword(card, "focused"):
+        ambition += 1
+
     if shield:
         actor["shield"] += shield
         add_event(match, "shield", actor=side, text=f"{actor['name']} gained {shield} shield.", amount=shield, card_id=card.get("id"))
@@ -886,6 +977,15 @@ def creature_attack_value(player: Dict[str, Any], creature: Optional[Dict[str, A
         value -= 1
 
     return max(0, value)
+
+
+def creature_combat_damage(defender_owner: Dict[str, Any], defender: Optional[Dict[str, Any]], amount: int) -> int:
+    damage = max(0, int(amount or 0))
+
+    if defender and card_has_keyword(defender, "guarded") and defender_owner.get("intent") == "Guard":
+        damage = max(0, damage - 1)
+
+    return damage
 
 
 def attack_value(player: Dict[str, Any]) -> int:
@@ -1204,19 +1304,21 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
         if p_creature and o_creature:
             o_before = int(o_creature.get("current_hp") or o_creature.get("hp") or 1)
             p_before = int(p_creature.get("current_hp") or p_creature.get("hp") or 1)
-            o_creature["current_hp"] = o_before - p_lane_atk
-            p_creature["current_hp"] = p_before - o_lane_atk
+            p_damage_to_o = creature_combat_damage(opponent, o_creature, p_lane_atk)
+            o_damage_to_p = creature_combat_damage(player, p_creature, o_lane_atk)
+            o_creature["current_hp"] = o_before - p_damage_to_o
+            p_creature["current_hp"] = p_before - o_damage_to_p
             o_after = int(o_creature.get("current_hp") or 0)
             p_after = int(p_creature.get("current_hp") or 0)
-            result["player_damage"] = p_lane_atk
-            result["enemy_damage"] = o_lane_atk
+            result["player_damage"] = p_damage_to_o
+            result["enemy_damage"] = o_damage_to_p
             add_combat_event(
                 match,
                 "lane_attack",
                 lane=lane,
                 attacker=creature_ref("player", p_creature),
                 defender=creature_ref("opponent", o_creature),
-                damage=p_lane_atk,
+                damage=p_damage_to_o,
             )
             add_combat_event(
                 match,
@@ -1224,7 +1326,7 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 lane=lane,
                 attacker=creature_ref("opponent", o_creature),
                 defender=creature_ref("player", p_creature),
-                damage=o_lane_atk,
+                damage=o_damage_to_p,
             )
             add_combat_event(
                 match,
@@ -1232,7 +1334,7 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 lane=lane,
                 attacker=creature_ref("player", p_creature),
                 defender=creature_ref("opponent", o_creature),
-                damage=p_lane_atk,
+                damage=p_damage_to_o,
                 hp_before=o_before,
                 hp_after=o_after,
             )
@@ -1242,7 +1344,7 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 lane=lane,
                 attacker=creature_ref("opponent", o_creature),
                 defender=creature_ref("player", p_creature),
-                damage=o_lane_atk,
+                damage=o_damage_to_p,
                 hp_before=p_before,
                 hp_after=p_after,
             )
@@ -1253,8 +1355,8 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 target="opponent",
                 text=f"{lane}: {p_creature['name']} and {o_creature['name']} traded damage.",
                 lane=lane,
-                amount=p_lane_atk,
-                counter_amount=o_lane_atk,
+                amount=p_damage_to_o,
+                counter_amount=o_damage_to_p,
                 attacker_instance_id=p_creature.get("instance_id"),
                 defender_instance_id=o_creature.get("instance_id"),
             )

@@ -156,7 +156,7 @@ class Agent:
     def run(self):
         self.connect()
 
-        self.emit("az48_start_training")
+        self.emit("arena_command_v1", {"action": "start_training"})
         state = self.latest_state()
         self.assert_clean_state(state)
 
@@ -185,20 +185,28 @@ class Agent:
             legal = state.get("legal_actions") or {}
 
             if legal.get("can_unleash"):
-                self.emit("az48_unleash")
+                self.emit("arena_command_v1", {"action": "unleash"})
 
             intent = self.choose_intent(state)
-            self.emit("az48_set_intent", {"intent": intent})
+            self.emit("arena_command_v1", {"action": "set_intent", "intent": intent})
 
             state = self.latest_state()
             card_id = self.choose_card(state)
 
             if card_id:
-                self.emit("az48_play_card", {"card_id": card_id})
+                hand = ((state.get("me") or {}).get("hand") or [])
+                selected = next((card for card in hand if str(card.get("id")) == str(card_id)), {})
+                legal = state.get("legal_actions") or {}
+                payload = {"action": "play_card", "card_id": card_id}
+                if selected.get("type") == "Monster":
+                    legal_lanes = legal.get("legal_lanes") or []
+                    if legal_lanes:
+                        payload["lane"] = legal_lanes[0]
+                self.emit("arena_command_v1", payload)
             else:
                 print("INFO no playable card this round; pressing ready")
 
-            self.emit("az48_declare_ready")
+            self.emit("arena_command_v1", {"action": "ready"})
 
             if self.errors:
                 raise AssertionError(f"Action errors received: {self.errors}")

@@ -55,6 +55,23 @@ def click_any(page, selectors, label, logs, timeout=5000):
     return False
 
 
+def complete_pending_selection(page, logs, timeout=4000):
+    for label, selector in [
+        ("lane", "#az48-me-field [data-az48-lane].is-legal-lane"),
+        ("target", "[data-az48-target].is-legal-target"),
+    ]:
+        try:
+            locator = page.locator(selector).first
+            if locator.count() <= 0:
+                continue
+            locator.click(timeout=timeout)
+            logs.append(f"selection_ok: {label}: {selector}")
+            return True
+        except Exception as exc:
+            logs.append(f"selection_skip: {label}: {selector}: {type(exc).__name__}")
+    return False
+
+
 def snapshot(page, label, logs):
     state = page.evaluate(
         """(label) => {
@@ -183,6 +200,8 @@ def run(base_url):
             before_card = snapshot(page, "before_card_click", logs)
             page.locator(playable_selector).first.click(timeout=5000)
             logs.append("real_click_playable_card_done")
+            page.wait_for_timeout(700)
+            complete_pending_selection(page, logs)
             page.wait_for_timeout(1500)
             shot(page, shot_dir, "05_after_card", logs)
 

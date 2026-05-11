@@ -77,6 +77,23 @@ def click_any(page, selectors, label, logs, timeout=3500):
     return False
 
 
+def complete_pending_selection(page, logs, timeout=3500):
+    for label, selector in [
+        ("lane", "#az48-me-field [data-az48-lane].is-legal-lane"),
+        ("target", "[data-az48-target].is-legal-target"),
+    ]:
+        try:
+            locator = page.locator(selector).first
+            if locator.count() <= 0:
+                continue
+            locator.click(timeout=timeout)
+            logs.append(f"selection_ok: {label}: {selector}")
+            return True
+        except Exception as exc:
+            logs.append(f"selection_skip: {label}: {selector}: {type(exc).__name__}")
+    return False
+
+
 def fill_any(page, selectors, value, label, logs, timeout=3500):
     for selector in selectors:
         try:
@@ -300,6 +317,8 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                             ".az48-card.az48-playable[data-card-id]",
                         ], "first_card", logs)
 
+                        page.wait_for_timeout(700)
+                        complete_pending_selection(page, logs)
                         page.wait_for_timeout(2500)
 
                         after_card = snapshot(page, f"round_{index}_after_card", logs)

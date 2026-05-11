@@ -6,8 +6,20 @@
     let hasCanonicalState = false;
     let bootTries = 0;
     let previewCardId = null;
+    let selectedCardId = null;
+    let selectionMode = "";
+    let commandSeq = 0;
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
+    const ARENA_COMMAND_SCHEMA = "arena_command_v1";
+    const LEGACY_EVENT_BY_ACTION = {
+        start_training: "az48_start_training",
+        request_state: "az48_request_state",
+        set_intent: "az48_set_intent",
+        play_card: "az48_play_card",
+        ready: "az48_declare_ready",
+        unleash: "az48_unleash",
+    };
 
     const AZ48_NO_PLAYABLE_HELP = "No playable card with current energy. Press Ready to resolve the round.";
 
@@ -132,6 +144,7 @@
             instanceId: str(card.instance_id || ""),
             name: str(card.name || card.id || ("Card " + (index + 1))),
             type,
+            kind: str(card.kind || type),
             element: str(card.element || "Neutral"),
             rarity: str(card.rarity || "Common"),
             sigil: str(card.sigil || "None"),
@@ -149,6 +162,8 @@
             },
             effect: str(card.effect || card.description || ""),
             preview: str(card.preview || card.effect_summary || card.effect || card.description || ""),
+            keywords: arr(card.keywords).map(String),
+            keywordText: arr(card.keyword_text).map(String),
             disabledReason: str(card.disabled_reason || ""),
             playable: Boolean(card.playable),
             isMonster,
@@ -180,7 +195,12 @@
         const playable = options.playable ? " playable" : "";
         const locked = options.disabledReason ? " is-locked" : "";
         const field = options.field ? " az48-field-card" : "";
+        const selected = options.selected ? " is-selected selected" : "";
+        const laneSlot = options.lane ? " az48-lane-slot" : "";
+        const legalLane = options.legalLane ? " is-legal-lane" : "";
         const colors = c.colors || {};
+        const keywordTags = arr(c.keywordText && c.keywordText.length ? c.keywordText : c.keywords).slice(0, 2);
+        const laneData = options.lane ? ' data-az48-lane="' + esc(options.lane) + '"' : "";
         const style = [
             "--az-card-primary:" + esc(colors.primary || "#9ea7b7"),
             "--az-card-secondary:" + esc(colors.secondary || "#d9deea"),
@@ -191,7 +211,7 @@
         const title = options.disabledReason || c.preview || c.effect || c.name;
 
         return [
-            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + '" data-card-id="' + esc(c.id) + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" title="' + esc(title) + '" style="' + style + '">',
+            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + '" data-card-id="' + esc(c.id) + '"' + laneData + ' data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
             '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
@@ -199,15 +219,17 @@
             '<strong class="az48-name">' + esc(c.name) + '</strong>',
             '<p class="az48-effect">' + esc(c.effect || c.role || c.kind || "") + '</p>',
             '<p class="az48-card-preview-line">' + esc(c.preview || "") + '</p>',
-            '<div class="az48-tags"><span>' + esc(c.type) + '</span><span>' + esc(c.sigil) + '</span></div>',
+            '<div class="az48-tags"><span>' + esc(c.type) + '</span><span>' + esc(c.sigil) + '</span>' + keywordTags.map((keyword) => '<span>' + esc(keyword) + '</span>').join("") + '</div>',
             '<span class="az48-power">' + esc(c.statLabel) + ' ' + esc(c.stat) + '</span>',
             '</button>'
         ].join("");
     }
 
-    function fieldCard(card, label) {
-        if (!card) return '<article class="az48-slot">' + esc(label) + '</article>';
-        return renderCard(card, { field: true });
+    function fieldCard(card, label, owner, lane, legalLane) {
+        if (!card) {
+            return '<button type="button" class="az48-slot az48-lane-slot' + (legalLane ? " is-legal-lane" : "") + '" data-az48-owner="' + esc(owner || "") + '" data-az48-lane="' + esc(lane || "") + '">' + esc(label) + '</button>';
+        }
+        return renderCard(card, { field: true, lane, legalLane });
     }
 
     function setVisible(id, visible) {
@@ -344,6 +366,55 @@
         return map;
     }
 
+    function selectedHandEntry(id) {
+        const hand = arr((latestState && latestState.me && latestState.me.hand) || []);
+        const index = hand.findIndex((card, cardIndex) => normalizeCard(card, cardIndex).id === String(id));
+        if (index < 0) return null;
+        return { raw: hand[index], card: normalizeCard(hand[index], index), index };
+    }
+
+    function selectedHandCard() {
+        if (!selectedCardId) return null;
+        return selectedHandEntry(selectedCardId);
+    }
+
+    function clearSelection() {
+        selectedCardId = null;
+        selectionMode = "";
+        document.body.classList.remove("az48-selecting-lane", "az48-selecting-target");
+    }
+
+    function setSelection(entry, mode) {
+        selectedCardId = entry.card.id;
+        selectionMode = mode;
+        previewCardId = entry.card.id;
+        document.body.classList.toggle("az48-selecting-lane", mode === "lane");
+        document.body.classList.toggle("az48-selecting-target", mode === "target");
+    }
+
+    function legalLanes() {
+        return arr(latestState && latestState.legal_actions && latestState.legal_actions.legal_lanes).map(String);
+    }
+
+    function legalTargets() {
+        return arr(latestState && latestState.legal_actions && latestState.legal_actions.legal_targets).map(String);
+    }
+
+    function defaultTargetFor(card) {
+        if (!card || card.isMonster) return "";
+        if (String(card.kind || "").toLowerCase() === "support") return "";
+        const targets = legalTargets();
+        if (num(card.attack || card.stat || 0) > 0 && targets.includes("enemy_hero")) return "enemy_hero";
+        if (targets.includes("self")) return "self";
+        return targets[0] || "";
+    }
+
+    function needsTargetSelection(card) {
+        if (!card || card.isMonster) return false;
+        if (String(card.kind || "").toLowerCase() === "support") return false;
+        return legalTargets().length > 1;
+    }
+
     function findPreviewCard(payload, playable) {
         const hand = arr(payload && payload.me && payload.me.hand);
         if (!hand.length) return null;
@@ -444,6 +515,10 @@
 
         const phase = str(state.phase || "start");
 
+        if (selectedCardId && !hand.some((card, index) => normalizeCard(card, index).id === String(selectedCardId))) {
+            clearSelection();
+        }
+
         if (previousState && isCanonical(previousState)) {
             const previousMe = previousState.me || {};
             const previousEnemy = previousState.enemy || {};
@@ -499,24 +574,31 @@
 
         const meField = normalizeField(me.field);
         const enemyField = normalizeField(enemy.field);
+        const legalLaneSet = new Set(selectionMode === "lane" ? legalLanes() : []);
 
         const enemyFieldEl = $("az48-enemy-field");
         if (enemyFieldEl) {
             enemyFieldEl.innerHTML = [
-                fieldCard(enemyField.lanes.left, "Enemy Left"),
-                fieldCard(enemyField.lanes.center, "Enemy Center"),
-                fieldCard(enemyField.lanes.right, "Enemy Right"),
+                fieldCard(enemyField.lanes.left, "Enemy Left", "enemy", "left", false),
+                fieldCard(enemyField.lanes.center, "Enemy Center", "enemy", "center", false),
+                fieldCard(enemyField.lanes.right, "Enemy Right", "enemy", "right", false),
             ].join("");
         }
 
         const meFieldEl = $("az48-me-field");
         if (meFieldEl) {
             meFieldEl.innerHTML = [
-                fieldCard(meField.lanes.left, "Left Lane"),
-                fieldCard(meField.lanes.center, "Center Lane"),
-                fieldCard(meField.lanes.right, "Right Lane"),
+                fieldCard(meField.lanes.left, "Left Lane", "me", "left", legalLaneSet.has("left")),
+                fieldCard(meField.lanes.center, "Center Lane", "me", "center", legalLaneSet.has("center")),
+                fieldCard(meField.lanes.right, "Right Lane", "me", "right", legalLaneSet.has("right")),
             ].join("");
         }
+
+        const targetSet = new Set(selectionMode === "target" ? legalTargets() : []);
+        document.querySelectorAll("[data-az48-target]").forEach((el) => {
+            const target = el.getAttribute("data-az48-target") || "";
+            el.classList.toggle("is-legal-target", targetSet.has(target));
+        });
 
         text("az48-hand-count", hand.length + " cards");
 
@@ -532,6 +614,7 @@
                     return renderCard(c, {
                         playable: playable.includes(String(c.id)) || Boolean(cardState.playable),
                         disabledReason: str(cardState.disabled_reason || c.disabledReason || ""),
+                        selected: selectedCardId === String(c.id),
                     });
                 }).join("");
             }
@@ -550,13 +633,26 @@
         return true;
     }
 
+    function emitCommand(action, payload) {
+        commandSeq += 1;
+        const legacyEvent = LEGACY_EVENT_BY_ACTION[action] || "";
+        const command = {
+            schema: ARENA_COMMAND_SCHEMA,
+            action,
+            client_command_id: "az48-" + commandSeq,
+            legacy_event: legacyEvent,
+            ...(payload || {}),
+        };
+        return emit("arena_command_v1", command);
+    }
+
     function startTraining() {
         setMessage("Starting training...");
-        emit("az48_start_training", {});
+        emitCommand("start_training", {});
     }
 
     function requestState() {
-        emit("az48_request_state", {});
+        emitCommand("request_state", {});
     }
 
     function matchIsFinished() {
@@ -571,7 +667,8 @@
         }
 
         setMessage(intent + " selected.");
-        if (emit("az48_set_intent", { intent })) {
+        clearSelection();
+        if (emitCommand("set_intent", { intent })) {
             playSound("intent", { element: intent });
         }
     }
@@ -583,26 +680,27 @@
         }
 
         setMessage("Ready sent.");
-        if (emit("az48_declare_ready", {})) {
+        clearSelection();
+        if (emitCommand("ready", {})) {
             playSound("ready");
         }
     }
 
-    function playCard(id) {
+    function playCard(id, choice = {}) {
         if (matchIsFinished()) {
             setMessage("Match finished. Start a new training match or go back to Arena.");
             return;
         }
 
-        const hand = arr((latestState && latestState.me && latestState.me.hand) || []);
-        const index = hand.findIndex((card, cardIndex) => normalizeCard(card, cardIndex).id === String(id));
+        const entry = selectedHandEntry(id);
 
-        if (index < 0) {
+        if (!entry) {
             setMessage("Card is no longer in hand.");
+            clearSelection();
             return;
         }
 
-        const card = normalizeCard(hand[index], index);
+        const card = entry.card;
         const legal = (latestState && latestState.legal_actions) || {};
         const playable = arr(legal.playable_card_ids).map(String);
 
@@ -610,21 +708,44 @@
             const states = cardStateMap(latestState);
             const cardState = states.get(String(card.id)) || {};
             setMessage(cardState.disabled_reason || "This card cannot be played now.");
+            clearSelection();
             return;
         }
 
-        const payload = { card_id: id, card_index: index };
+        const payload = { card_id: id, card_index: entry.index };
         if (card.isMonster) {
-            const legalLanes = arr(legal.legal_lanes);
-            if (!legalLanes.length) {
+            const legalLaneList = legalLanes();
+            if (!legalLaneList.length) {
                 setMessage("No empty lane available.");
+                clearSelection();
                 return;
             }
-            payload.lane = legalLanes[0];
+
+            if (!choice.lane) {
+                setSelection(entry, "lane");
+                setMessage("Choose an empty lane for " + card.name + ".");
+                if (latestState) render(latestState);
+                return;
+            }
+
+            if (!legalLaneList.includes(String(choice.lane))) {
+                setMessage("That lane is not available.");
+                return;
+            }
+
+            payload.lane = String(choice.lane);
+        } else if (needsTargetSelection(card) && !choice.target) {
+            setSelection(entry, "target");
+            setMessage("Choose a target for " + card.name + ".");
+            if (latestState) render(latestState);
+            return;
+        } else {
+            payload.target = choice.target || defaultTargetFor(card);
         }
 
         setMessage("Playing card...");
-        if (emit("az48_play_card", payload)) {
+        if (emitCommand("play_card", payload)) {
+            clearSelection();
             playSound("cardFly", { element: card.element });
             window.setTimeout(() => playSound("cardImpact", { element: card.element }), 180);
         }
@@ -791,6 +912,32 @@
             if (readyBtn) {
                 event.preventDefault();
                 ready();
+                return;
+            }
+
+            const laneSlot = event.target.closest("[data-az48-lane]");
+            if (laneSlot && selectionMode === "lane") {
+                event.preventDefault();
+                const entry = selectedHandCard();
+                if (!entry) {
+                    clearSelection();
+                    setMessage("Select a card first.");
+                    return;
+                }
+                playCard(entry.card.id, { lane: laneSlot.getAttribute("data-az48-lane") });
+                return;
+            }
+
+            const targetSlot = event.target.closest("[data-az48-target]");
+            if (targetSlot && selectionMode === "target") {
+                event.preventDefault();
+                const entry = selectedHandCard();
+                if (!entry) {
+                    clearSelection();
+                    setMessage("Select a card first.");
+                    return;
+                }
+                playCard(entry.card.id, { target: targetSlot.getAttribute("data-az48-target") });
                 return;
             }
 

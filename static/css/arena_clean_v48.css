@@ -258,6 +258,7 @@ a {
 }
 
 .az48-slot {
+    appearance: none;
     width: min(128px, 15vw);
     height: min(150px, 20dvh);
     min-height: 96px;
@@ -267,9 +268,31 @@ a {
     display: grid;
     place-items: center;
     color: rgba(255,255,255,.44);
+    font: inherit;
     font-weight: 900;
     text-align: center;
     padding: 8px;
+}
+
+.az48-lane-slot {
+    cursor: default;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.az48-selecting-lane .az48-lane-slot.is-legal-lane {
+    cursor: pointer;
+    border-color: rgba(255,220,140,.78);
+    box-shadow: 0 0 0 2px rgba(255,220,140,.18), 0 12px 26px rgba(0,0,0,.24);
+}
+
+.az48-selecting-lane .az48-lane-slot.is-legal-lane:hover {
+    transform: translateY(-2px);
+}
+
+.az48-selecting-target [data-az48-target].is-legal-target {
+    outline: 2px solid rgba(255,220,140,.72);
+    outline-offset: 3px;
+    cursor: pointer;
 }
 
 .az48-bottom {

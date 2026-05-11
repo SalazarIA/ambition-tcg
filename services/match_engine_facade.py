@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Optional, Tuple
 
+from services.arena_command_v1 import normalize_arena_command
 from services.battle_engine_v2_adapter import (
     be2_play_card,
     be2_ready,
@@ -270,3 +271,53 @@ class MatchEngineFacade:
         if room_code:
             self.emit_match_state(room_code, message=message)
         return self.emit_state(sid, message=message)
+
+    def run_command(
+        self,
+        sid: str,
+        payload: Optional[Dict[str, Any]] = None,
+        user: Any = None,
+    ) -> Optional[Payload]:
+        command = normalize_arena_command(payload)
+        action = command["action"]
+
+        if action == "start_training":
+            return self.start_training(
+                sid,
+                user=user,
+                message="Battle Engine V2 started. Choose an intent, then play a card or press Ready.",
+            )
+
+        if action == "request_state":
+            state = self.emit_state(sid)
+            if state:
+                return state
+            if user is not None:
+                return self.start_training(
+                    sid,
+                    user=user,
+                    message="Battle Engine V2 started. Choose an intent, then play a card or press Ready.",
+                )
+            raise ValueError("No active BE2 match.")
+
+        if action == "set_intent":
+            intent = str(command.get("intent") or "Focus")
+            return self.set_intent(sid, intent, message=f"{intent} selected. Play a creature, spell, guard or support.")
+
+        if action == "play_card":
+            return self.play_card(
+                sid,
+                card_id=command.get("card_id"),
+                card_index=command.get("card_index"),
+                lane=command.get("lane"),
+                target=command.get("target"),
+                message="Card played. Press Ready to resolve combat.",
+            )
+
+        if action == "ready":
+            return self.ready(sid, message="Round resolved.")
+
+        if action == "unleash":
+            return self.unleash(sid, message="Ambition Unleash prepared. Press Ready to resolve.")
+
+        raise ValueError("Invalid arena command.")

@@ -106,14 +106,14 @@ def run_socket_flow():
         initial_packets = _packets(client)
         logs.append(f"initial_packets: {[ _packet_summary(p) for p in initial_packets ]}")
 
-        client.emit("az48_start_training", {})
+        client.emit("arena_command_v1", {"action": "start_training"})
         start_packets = _packets(client)
         logs.append(f"after_start_packets: {[ _packet_summary(p) for p in start_packets ]}")
 
         start_state = _latest_event(start_packets, "az48_state")
         _validate_az48_state(start_state, "after_start", logs)
 
-        client.emit("az48_set_intent", {"intent": "Strike"})
+        client.emit("arena_command_v1", {"action": "set_intent", "intent": "Strike"})
         intent_packets = _packets(client)
         logs.append(f"after_intent_packets: {[ _packet_summary(p) for p in intent_packets ]}")
 
@@ -142,7 +142,13 @@ def run_socket_flow():
             f"type={chosen_card.get('type')} cost={chosen_card.get('cost')} playable_ids={sorted(playable_ids)}"
         )
 
-        client.emit("az48_play_card", {"card_id": first_card_id})
+        play_payload = {"action": "play_card", "card_id": first_card_id}
+        if chosen_card.get("type") == "Monster":
+            legal_lanes = legal_actions.get("legal_lanes") or []
+            _assert(legal_lanes, "No legal lane available for selected monster")
+            play_payload["lane"] = legal_lanes[0]
+
+        client.emit("arena_command_v1", play_payload)
         play_packets = _packets(client)
         logs.append(f"after_play_packets: {[ _packet_summary(p) for p in play_packets ]}")
 
@@ -167,7 +173,7 @@ def run_socket_flow():
         _assert(played_ok, f"Expected card play to mutate field or confirm play. message={play_message!r} field={field}")
         _assert((play_state.get("legal_actions") or {}).get("can_ready"), "Expected can_ready True after play")
 
-        client.emit("az48_declare_ready", {})
+        client.emit("arena_command_v1", {"action": "ready"})
         ready_packets = _packets(client)
         logs.append(f"after_ready_packets: {[ _packet_summary(p) for p in ready_packets ]}")
 

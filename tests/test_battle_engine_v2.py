@@ -3,9 +3,12 @@ from copy import deepcopy
 
 from services.battle_engine_v2 import (
     CARD_CATALOG_V2,
+    CARD_REGISTRY_SCHEMA,
+    KEYWORD_REGISTRY_V1,
     STARTING_HP,
     STARTING_HAND_SIZE,
     bot_choose_action,
+    card_has_keyword,
     choose_intent,
     create_match,
     empty_lanes,
@@ -13,6 +16,7 @@ from services.battle_engine_v2 import (
     resolve_round,
     start_round,
 )
+from services.arena_command_v1 import ARENA_COMMAND_SCHEMA, normalize_arena_command
 from services.battle_engine_v2_adapter import (
     be2_play_card,
     be2_ready,
@@ -139,6 +143,66 @@ def test_be2_payload_exposes_clear_turn_contract():
         be2_play_card(match, card_id=after_play["me"]["hand"][0]["id"], lane="left")
 
 
+def test_arena_command_v1_normalizes_play_card_payload():
+    command = normalize_arena_command({
+        "schema": ARENA_COMMAND_SCHEMA,
+        "action": "play-card",
+        "card_id": "spark_runner",
+        "card_index": "0",
+        "lane": "Left",
+        "target": "",
+    })
+
+    assert command["schema"] == ARENA_COMMAND_SCHEMA
+    assert command["action"] == "play_card"
+    assert command["card_id"] == "spark_runner"
+    assert command["card_index"] == 0
+    assert command["lane"] == "Left"
+    assert command["target"] is None
+
+
+def test_match_engine_facade_runs_arena_command_v1_flow():
+    emits = []
+    active_matches = {}
+    player_rooms = {}
+    facade = MatchEngineFacade(
+        active_matches,
+        player_rooms,
+        lambda event, payload, room=None: emits.append((event, payload, room)),
+    )
+
+    facade.run_command("sid-command", {"action": "start_training"})
+    room_code, match = facade.match_for_sid("sid-command")
+
+    assert room_code == "be2_training_sid-command"
+    assert match["be2"] is True
+
+    facade.run_command("sid-command", {"action": "set_intent", "intent": "Strike"})
+    match["player"]["hand"] = [card("spark_runner")]
+    match["player"]["energy"] = 10
+    facade.run_command("sid-command", {
+        "action": "play_card",
+        "card_id": "spark_runner",
+        "lane": "left",
+    })
+
+    assert match["player"]["board"]["left"]["card_id"] == "spark_runner"
+    assert any(event == "az48_state" for event, _payload, _room in emits)
+
+
+def test_be2_registry_and_keyword_metadata_are_explicit():
+    assert CARD_CATALOG_V2["silent_guardian"]["registry"] == CARD_REGISTRY_SCHEMA
+    assert card_has_keyword(CARD_CATALOG_V2["silent_guardian"], "guarded")
+    assert KEYWORD_REGISTRY_V1["guarded"]["implemented"] is True
+
+    match = create_be2_training_match(sid="registry-payload")
+    be2_start(match)
+    payload = build_be2_arena_payload(match)
+
+    assert payload["card_registry"]["schema"] == CARD_REGISTRY_SCHEMA
+    assert payload["keyword_registry"]["keywords"]["guarded"]["name"] == "Guarded"
+
+
 def test_be2_payload_includes_structured_round_events():
     match = create_be2_training_match(sid="events-test")
     be2_start(match)
@@ -262,6 +326,43 @@ def test_lane_to_lane_combat_damages_creatures():
 
     assert match["player"]["board"]["left"]["current_hp"] == 1
     assert match["opponent"]["board"]["left"]["current_hp"] == 1
+
+
+def test_guarded_keyword_reduces_combat_damage_on_guard_intent():
+    match = create_be2_match_from_players(
+        {"name": "Alice", "sid": "sid-a", "user_id": 1},
+        {"name": "Bob", "sid": "sid-b", "user_id": 2},
+        "room-keyword-guarded",
+    )
+    be2_start(match)
+    match["player"]["hand"] = [card("silent_guardian")]
+    match["opponent"]["hand"] = [card("spark_runner")]
+    match["player"]["energy"] = 10
+    match["opponent"]["energy"] = 10
+    be2_set_intent(match, "Guard", side="player")
+    be2_set_intent(match, "Focus", side="opponent")
+    be2_play_card(match, card_id="silent_guardian", side="player", lane="center")
+    be2_play_card(match, card_id="spark_runner", side="opponent", lane="center")
+
+    be2_ready(match, side="player")
+    be2_ready(match, side="opponent")
+
+    guardian = match["player"]["board"]["center"]
+    assert guardian["current_hp"] == 6
+    assert card_has_keyword(guardian, "guarded")
+
+
+def test_focused_keyword_adds_ambition_to_instant_effect():
+    match = create_match(seed=5)
+    start_round(match)
+    choose_intent(match, "player", "Strike")
+    match["player"]["hand"] = [card("focus_surge")]
+    match["player"]["energy"] = 10
+
+    play_card(match, "player", card_id="focus_surge")
+
+    assert match["player"]["ambition"] == 5
+    assert any(discard.get("id") == "focus_surge" for discard in match["player"]["discard"])
 
 
 def test_combat_log_records_lane_to_lane_events():

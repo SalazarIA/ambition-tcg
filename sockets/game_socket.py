@@ -1,5 +1,6 @@
 from flask import request, session
 
+from services.arena_command_v1 import arena_command_error_payload, normalize_arena_command
 from sockets.battle_actions import BattleActionController
 from sockets.lifecycle import SocketLifecycleController
 from sockets.matchmaking import MatchmakingController
@@ -38,6 +39,46 @@ def register_game_socket_handlers(socketio, deps):
     @socketio.on("cancel_queue")
     def handle_cancel_queue():
         matchmaking.cancel_queue(request.sid)
+
+    @socketio.on("arena_command_v1")
+    def arena_command_v1(data=None):
+        try:
+            command = normalize_arena_command(data or {})
+        except Exception as error:
+            socketio.emit("action_error", arena_command_error_payload(error), to=request.sid)
+            return
+
+        action = command["action"]
+
+        if action == "start_training":
+            user = lifecycle.user_from_id(session.get("user_id"))
+            if user:
+                matchmaking.join_training(request.sid, user, command)
+            return
+
+        if action == "request_state":
+            payload = runtime.match_engine_factory().emit_state(request.sid)
+            if not payload:
+                user = lifecycle.user_from_id(session.get("user_id"))
+                if user:
+                    matchmaking.join_training(request.sid, user, command)
+            return
+
+        if action == "set_intent":
+            battle_actions.set_intent(request.sid, {"intent": command.get("intent")})
+            return
+
+        if action == "play_card":
+            battle_actions.play_to_field(request.sid, command)
+            return
+
+        if action == "ready":
+            battle_actions.declare_ready(request.sid)
+            return
+
+        if action == "unleash":
+            battle_actions.toggle_unleash(request.sid)
+            return
 
     @socketio.on("set_intent")
     def set_intent(data):

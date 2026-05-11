@@ -39,6 +39,7 @@ from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin
 from services.battle_summary import build_match_summary_lines
 from services.card_stats import update_card_stats_after_match
 from services.arena_payload import build_arena_payloads_for_match, build_arena_state_payload
+from services.arena_command_v1 import arena_command_error_payload
 from services.match_engine_facade import MatchEngineFacade
 from services.match_payloads import (
     build_game_state_payloads,
@@ -3845,6 +3846,22 @@ def start_be2_for_sid(sid, user=None, message="Battle Engine V2 started."):
 # AZ48 Clean Arena Socket Aliases
 # Stable event names for the clean single-renderer arena.
 # =========================================================
+
+@socketio.on("arena_command_v1")
+def arena_command_v1(data=None):
+    sid = request.sid
+
+    try:
+        user = current_user()
+    except Exception:
+        user = None
+
+    try:
+        be2_engine().run_command(sid, data or {}, user=user)
+    except Exception as error:
+        socketio.emit("action_error", arena_command_error_payload(error), room=sid)
+        emit_be2_state(sid)
+
 
 @socketio.on("az48_start_training")
 def az48_start_training(data=None):

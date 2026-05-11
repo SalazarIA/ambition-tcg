@@ -114,6 +114,26 @@ def _count_field_cards(page):
         return 0
 
 
+def _complete_pending_selection(page, logs, timeout=4000):
+    selectors = [
+        ("lane", "#az48-me-field [data-az48-lane].is-legal-lane"),
+        ("target", "[data-az48-target].is-legal-target"),
+    ]
+
+    for label, selector in selectors:
+        try:
+            loc = page.locator(selector).first
+            if loc.count() <= 0:
+                continue
+            loc.click(timeout=timeout)
+            logs.append(f"selection_ok: {label}: {selector}")
+            return True
+        except Exception as exc:
+            logs.append(f"selection_skip: {label}: {selector}: {type(exc).__name__}")
+
+    return False
+
+
 def _assert_not_stuck(text, stage):
     forbidden = [
         "Playing card...",
@@ -278,6 +298,8 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
             ok_card = _click_first(page, ["#az48-hand .az48-card[data-card-id]", ".az48-card[data-card-id]"], "first_card", logs, timeout=7000)
             assert ok_card, "Could not click first card"
 
+            time.sleep(0.8)
+            _complete_pending_selection(page, logs)
             time.sleep(3)
             _shot(page, shot_dir, "06_after_card", logs)
             after_card_text = _body_text(page)
@@ -359,6 +381,8 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
                     try:
                         page.locator("#az48-hand .az48-card[data-card-id]").first.click(timeout=4000)
                         logs.append(f"cycle_{cycle}: clicked first card")
+                        time.sleep(0.8)
+                        _complete_pending_selection(page, logs)
                         time.sleep(2.5)
                     except Exception as exc:
                         logs.append(f"cycle_{cycle}: card click skipped {type(exc).__name__}")

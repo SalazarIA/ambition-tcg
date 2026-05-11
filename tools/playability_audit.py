@@ -64,6 +64,41 @@ def run():
     if not ok:
         failed = True
 
+    visual_contracts = [
+        (
+            "arena_command_v1_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "arena_command_v1",
+        ),
+        (
+            "lane_selection_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "data-az48-lane",
+        ),
+        (
+            "target_selection_template",
+            PROJECT_ROOT / "templates" / "arena.html",
+            'data-az48-target="enemy_hero"',
+        ),
+        (
+            "lane_selection_css",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-selecting-lane",
+        ),
+        (
+            "keyword_registry_adapter",
+            PROJECT_ROOT / "static" / "js" / "arena_renderer_adapter.js",
+            "keywordRegistry",
+        ),
+    ]
+
+    for label, path, needle in visual_contracts:
+        body = path.read_text(errors="ignore")
+        ok = needle in body
+        print(f"{'OK' if ok else 'FAIL'} {label:42s} {'contract':>3s} {path.relative_to(PROJECT_ROOT)}")
+        if not ok:
+            failed = True
+
     if failed:
         raise SystemExit(1)
 

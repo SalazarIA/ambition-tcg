@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from services.battle_engine_v2 import (
+    CARD_REGISTRY_SCHEMA,
     ENGINE_VERSION,
+    KEYWORD_REGISTRY_SCHEMA,
+    KEYWORD_REGISTRY_V1,
     LANES,
     TRAINING_BOT_HP,
     UNLEASH_COST,
@@ -212,6 +215,11 @@ def _battle_card_to_arena_card(
 
     effect_summary = _card_effect_summary(card)
     text = effect_summary or card.get("text") or " / ".join(details)
+    keywords = list(card.get("keywords") or [])
+    keyword_text = [
+        str((KEYWORD_REGISTRY_V1.get(keyword) or {}).get("name") or keyword)
+        for keyword in keywords
+    ]
 
     return {
         "id": runtime_id,
@@ -243,9 +251,12 @@ def _battle_card_to_arena_card(
         "kind": card.get("kind"),
         "owner": card.get("owner"),
         "lane": card.get("lane"),
-        "keywords": list(card.get("keywords") or []),
+        "keywords": keywords,
+        "keyword_text": keyword_text,
         "exhausted": bool(card.get("exhausted")),
         "played_round": int(card.get("played_round") or 0),
+        "registry": str(card.get("registry") or CARD_REGISTRY_SCHEMA),
+        "registry_version": str(card.get("registry_version") or "v1"),
     }
 
 
@@ -538,6 +549,15 @@ def build_be2_arena_payload(
         "round_summary": _summary_for_viewer(state.get("round_summary") or {}, viewer_side),
         "events": _events_for_viewer(list(state.get("events") or [])[-24:], viewer_side),
         "round_events": _events_for_viewer(list(state.get("round_events") or [])[-12:], viewer_side),
+        "card_registry": {
+            "schema": CARD_REGISTRY_SCHEMA,
+            "version": "v1",
+        },
+        "keyword_registry": {
+            "schema": KEYWORD_REGISTRY_SCHEMA,
+            "version": "v1",
+            "keywords": KEYWORD_REGISTRY_V1,
+        },
         "turn": {
             "step": phase,
             "raw_phase": raw_phase,

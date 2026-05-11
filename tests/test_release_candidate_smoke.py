@@ -24,7 +24,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v159" in body
+    assert "ambitionz-web-app-v160" in body
 
 
 def test_training_3d_renderer_flag_loads_three_bundle(client):
@@ -363,6 +363,7 @@ def test_legacy_socket_handlers_remain_bound_after_az48_aliases(flask_app):
 
     assert handlers["set_intent"].__name__ == "set_intent"
     assert handlers["declare_ready"].__name__ == "declare_ready"
+    assert handlers["arena_command_v1"].__name__ == "arena_command_v1"
     assert handlers["az48_set_intent"].__name__ == "az48_set_intent"
     assert handlers["az48_declare_ready"].__name__ == "az48_declare_ready"
 
