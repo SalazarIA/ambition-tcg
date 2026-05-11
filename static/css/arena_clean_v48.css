@@ -46,7 +46,8 @@ a {
 .az48-center,
 .az48-message,
 .az48-board,
-.az48-bottom {
+.az48-bottom,
+.az48-round-summary {
     border: 1px solid rgba(255,255,255,.10);
     background: rgba(255,255,255,.055);
     box-shadow: 0 18px 50px rgba(0,0,0,.28);
@@ -1282,12 +1283,13 @@ body.az48-match-started .az48-actions {
 body.az48-has-actions .az48-bottom,
 body.az48-match-started.az48-hand-empty .az48-bottom,
 body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.44fr);
     grid-template-rows: 22px minmax(112px, 1fr) 78px 54px;
     grid-template-areas:
-        "handhead"
-        "hand"
-        "clarity"
-        "actions";
+        "handhead handhead"
+        "hand hand"
+        "clarity summary"
+        "actions actions";
     gap: 8px;
     padding: 9px 14px 12px;
 }
@@ -1301,7 +1303,7 @@ body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
 body.az48-match-started .az48-clarity-panel {
     grid-area: clarity;
     display: grid;
-    grid-template-columns: minmax(220px, 0.95fr) minmax(260px, 1.1fr) minmax(320px, 1.25fr);
+    grid-template-columns: minmax(180px, 0.85fr) minmax(220px, 1.05fr) minmax(210px, 1fr);
     gap: 10px;
     min-height: 0;
     max-height: 78px;
@@ -1351,6 +1353,95 @@ body.az48-match-started .az48-clarity-card {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.az48-round-summary {
+    grid-area: summary;
+    min-width: 0;
+    min-height: 0;
+    max-height: 78px;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 8px 11px;
+    background: rgba(6, 8, 15, 0.78);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.az48-summary-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+}
+
+.az48-summary-title {
+    display: block;
+    color: rgba(255, 222, 148, 0.88);
+    font-size: 0.6rem;
+    font-weight: 1000;
+    letter-spacing: 0.1em;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.az48-summary-empty {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.66rem;
+    font-weight: 750;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.az48-summary-list {
+    margin: 5px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 3px;
+    max-height: 48px;
+    overflow-y: auto;
+}
+
+.az48-summary-item {
+    min-width: 0;
+    padding-left: 9px;
+    border-left: 2px solid rgba(255, 255, 255, 0.20);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.66rem;
+    font-weight: 760;
+    line-height: 1.18;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-summary-item-attack {
+    border-left-color: rgba(255, 208, 105, 0.78);
+    color: rgba(255, 235, 188, 0.9);
+}
+
+.az48-summary-item-damage {
+    border-left-color: rgba(255, 115, 112, 0.8);
+}
+
+.az48-summary-item-death {
+    border-left-color: rgba(214, 90, 255, 0.76);
+    color: rgba(241, 216, 255, 0.86);
+}
+
+.az48-summary-item-keyword {
+    border-left-color: rgba(112, 232, 183, 0.82);
+    color: rgba(210, 255, 235, 0.86);
+}
+
+.az48-summary-item-end {
+    border-left-color: rgba(145, 163, 190, 0.78);
+    color: rgba(226, 232, 242, 0.76);
 }
 
 .az48-timeline-card {
@@ -1520,6 +1611,15 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
         padding: 7px 10px;
     }
 
+    .az48-round-summary {
+        max-height: 70px;
+        padding: 7px 10px;
+    }
+
+    .az48-summary-list {
+        max-height: 42px;
+    }
+
     .az48-hand .az48-card {
         flex-basis: 100px;
         width: 100px;
@@ -1533,7 +1633,7 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
 
 @media (max-width: 980px) {
     .az48-arena {
-        grid-template-rows: 58px 60px minmax(220px, 1fr) clamp(300px, 43dvh, 390px);
+        grid-template-rows: 58px 60px minmax(180px, 1fr) clamp(320px, 46dvh, 390px);
     }
 
     .az48-clarity-panel,
@@ -1552,7 +1652,27 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
     body.az48-has-actions .az48-bottom,
     body.az48-match-started.az48-hand-empty .az48-bottom,
     body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
-        grid-template-rows: 20px 106px 118px 104px;
+        grid-template-columns: 1fr;
+        grid-template-rows: 20px minmax(72px, 1fr) 74px 70px 92px;
+        grid-template-areas:
+            "handhead"
+            "hand"
+            "clarity"
+            "summary"
+            "actions";
+    }
+
+    body.az48-match-started.az48-hand-empty .az48-bottom,
+    body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
+        grid-template-rows: 20px 48px 74px 70px 92px;
+    }
+
+    .az48-round-summary {
+        max-height: 70px;
+    }
+
+    .az48-summary-list {
+        max-height: 42px;
     }
 
     body[data-az48-primary-action="choose_intent"] .az48-actions,

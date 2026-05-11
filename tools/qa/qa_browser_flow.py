@@ -175,8 +175,16 @@ def _visible_count(page, selector):
         return 0
 
 
+def _round_summary_text(page):
+    try:
+        return page.locator("#az48-round-summary").first.inner_text(timeout=1500)
+    except Exception:
+        return ""
+
+
 def _arena_snapshot(page, label, logs):
     body = _body_text(page)
+    summary_text = _round_summary_text(page)
     snapshot = {
         "label": label,
         "round": _safe_int_text(page, "#az48-round", 0),
@@ -192,6 +200,9 @@ def _arena_snapshot(page, label, logs):
         "body_has_card_not_found": "Card not found in hand" in body,
         "body_has_socket_error": "Socket connection error" in body,
         "body_has_action_failed": "Action failed" in body,
+        "round_summary_visible": _visible_count(page, "#az48-round-summary") > 0,
+        "round_summary_text": summary_text,
+        "round_summary_has_raw_json": "{" in summary_text or "}" in summary_text,
     }
     logs.append(f"arena_snapshot_{label}: {snapshot}")
     return snapshot
@@ -206,6 +217,10 @@ def _assert_arena_healthy(snapshot, stage):
         raise AssertionError(f"{stage}: Socket connection error visible")
     if snapshot.get("body_has_action_failed"):
         raise AssertionError(f"{stage}: Action failed visible")
+    if not snapshot.get("round_summary_visible"):
+        raise AssertionError(f"{stage}: Round Summary panel is missing")
+    if snapshot.get("round_summary_has_raw_json"):
+        raise AssertionError(f"{stage}: Round Summary rendered raw JSON")
     if snapshot.get("me_hp", 0) <= 0 and snapshot.get("enemy_hp", 0) <= 0:
         raise AssertionError(f"{stage}: both players appear dead/invalid HP")
 
@@ -346,6 +361,13 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
 
             first_round_snapshot = _arena_snapshot(page, "after_ready_round_1", logs)
             _assert_arena_healthy(first_round_snapshot, "after_ready_round_1")
+            summary_text = first_round_snapshot.get("round_summary_text") or ""
+            assert "Round Summary" in summary_text, "Round Summary title is not visible after Ready"
+            assert "{" not in summary_text and "}" not in summary_text, "Round Summary rendered raw JSON"
+            assert any(
+                phrase in summary_text
+                for phrase in ["Rodada", "atacou", "dano", "derrotado", "Guarded", "Focused"]
+            ), f"Round Summary did not render readable events: {summary_text!r}"
 
             # Eagle-eye full match loop.
             # Plays up to 12 cycles or until victory/defeat/finished state appears.

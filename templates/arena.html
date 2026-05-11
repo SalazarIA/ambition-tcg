@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=69">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=70">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -102,6 +102,14 @@
                 <div class="az48-empty">No cards yet. Press Start.</div>
             </section>
 
+            <section class="az48-round-summary" id="az48-round-summary" aria-live="polite">
+                <div class="az48-summary-header">
+                    <strong class="az48-summary-title">Round Summary</strong>
+                    <p class="az48-summary-empty">A resolução da rodada aparecerá aqui.</p>
+                </div>
+                <ol class="az48-summary-list" aria-label="Round Summary events"></ol>
+            </section>
+
             <nav class="az48-actions">
                 <button type="button" id="az48-start" class="az48-btn az48-start">Start</button>
                 <button type="button" id="az48-strike" class="az48-btn">Strike <small>Attack</small></button>
@@ -156,10 +164,10 @@
         window.AMBITIONZ_ARENA_RENDERER = "{{ arena_renderer|default('dom') }}";
     </script>
     <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=4"></script>
     {% if arena_renderer == "3d" %}
     <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
     {% endif %}
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=69"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=70"></script>
 </body>
 </html>

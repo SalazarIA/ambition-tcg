@@ -107,6 +107,11 @@
         return String(value);
     }
 
+    function slug(value, fallback = "event") {
+        const text = str(value, fallback).toLowerCase();
+        return text.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || fallback;
+    }
+
     function esc(value) {
         return str(value)
             .replaceAll("&", "&amp;")
@@ -357,6 +362,106 @@
         el.innerHTML = lines.map((line) => '<li>' + esc(line) + '</li>').join("");
     }
 
+    function summaryEventsFrom(value) {
+        if (Array.isArray(value)) return value;
+        if (!value || typeof value !== "object") return [];
+        if (Array.isArray(value.combat_log)) return value.combat_log;
+        if (Array.isArray(value.combatLog)) return value.combatLog;
+        if (Array.isArray(value.combat_events)) return value.combat_events;
+        if (Array.isArray(value.events)) return value.events;
+        return [];
+    }
+
+    function getRoundCombatLog(state) {
+        state = state || {};
+
+        const sources = [
+            state.combat_log,
+            state.round_summary,
+            state.last_round_summary,
+            state.match && state.match.combat_log,
+        ];
+
+        for (const source of sources) {
+            const events = summaryEventsFrom(source);
+            if (events.length) return events.filter((event) => event && typeof event === "object");
+        }
+
+        return [];
+    }
+
+    function eventAmount(event) {
+        event = event || {};
+        if (event.amount !== undefined && event.amount !== null && event.amount !== "") return num(event.amount, 0);
+        if (event.damage !== undefined && event.damage !== null && event.damage !== "") return num(event.damage, 0);
+        if (event.value !== undefined && event.value !== null && event.value !== "") return num(event.value, 0);
+        return 0;
+    }
+
+    function eventName(value, fallback) {
+        if (value && typeof value === "object") {
+            return str(value.name || value.card_name || value.label, fallback);
+        }
+        return str(value, fallback);
+    }
+
+    function renderSummaryItem(kind, text) {
+        const safeKind = slug(kind || "event", "event");
+        return '<li class="az48-summary-item az48-summary-item-' + safeKind + '">' + esc(text) + '</li>';
+    }
+
+    function renderCombatEvent(event) {
+        event = event || {};
+        const type = str(event.type || event.kind || "").toLowerCase();
+        const amount = eventAmount(event);
+        const attackerName = eventName(event.attacker_name || event.attacker, "Carta");
+        const defenderName = eventName(event.defender_name || event.defender, "Carta");
+        const cardName = eventName(event.card_name || event.card || event.name, "Carta");
+        const targetName = eventName(event.target_name || event.target || event.defender_name || event.defender || event.name, "alvo");
+        const heroTarget = eventName(event.target_name || event.target || "", event.target_side ? "herói" : "alvo");
+
+        if (type === "round_start") return renderSummaryItem("event", "Rodada iniciada.");
+        if (type === "round_resolve") return renderSummaryItem("event", "Resolução da rodada.");
+        if (type === "lane_attack") return renderSummaryItem("attack", attackerName + " atacou " + defenderName + ".");
+        if (type === "direct_attack") return renderSummaryItem("attack", attackerName + " atacou diretamente o herói.");
+        if (type === "creature_damage") return renderSummaryItem("damage", targetName + " recebeu " + amount + " de dano.");
+        if (type === "hero_damage") return renderSummaryItem("damage", heroTarget + " recebeu " + amount + " de dano.");
+        if (type === "creature_death") return renderSummaryItem("death", cardName + " foi derrotado.");
+        if (type === "keyword_guarded") return renderSummaryItem("keyword", "Guarded reduziu " + amount + " de dano.");
+        if (type === "keyword_focused") return renderSummaryItem("keyword", "Focused gerou " + amount + " de Ambition.");
+        if (type === "round_end") return renderSummaryItem("end", "Rodada encerrada.");
+
+        return renderSummaryItem("event", str(event.message, "Evento da rodada."));
+    }
+
+    function renderRoundSummary(state) {
+        const panel = document.getElementById("az48-round-summary");
+        if (!panel) return;
+
+        const events = getRoundCombatLog(state);
+        const title = '<strong class="az48-summary-title">Round Summary</strong>';
+
+        if (!events.length) {
+            panel.innerHTML = [
+                '<div class="az48-summary-header">',
+                title,
+                '<p class="az48-summary-empty">A resolução da rodada aparecerá aqui.</p>',
+                '</div>',
+                '<ol class="az48-summary-list" aria-label="Round Summary events"></ol>',
+            ].join("");
+            return;
+        }
+
+        panel.innerHTML = [
+            '<div class="az48-summary-header">',
+            title,
+            '</div>',
+            '<ol class="az48-summary-list" aria-label="Round Summary events">',
+            events.map(renderCombatEvent).join(""),
+            '</ol>',
+        ].join("");
+    }
+
     function cardStateMap(payload) {
         const legal = (payload && payload.legal_actions) || {};
         const map = new Map();
@@ -531,6 +636,7 @@
         }
 
         renderClarity(state);
+        renderRoundSummary(state);
 
         const showStart = !isFinished && PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || isStartPhase(phase));
         const showIntents = !isFinished && Boolean(legal.show_intents || legal.can_choose_intent);
@@ -999,6 +1105,10 @@
 
         window.AmbitionzArena48 = {
             render,
+            getRoundCombatLog,
+            renderRoundSummary,
+            renderCombatEvent,
+            renderSummaryItem,
             startTraining,
             requestState,
             joinQueue,

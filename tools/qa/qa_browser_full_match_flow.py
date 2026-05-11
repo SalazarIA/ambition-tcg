@@ -131,6 +131,7 @@ def read_text(page, selector, default=""):
 
 def snapshot(page, label, logs):
     text = body_text(page)
+    summary_text = read_text(page, "#az48-round-summary", "")
 
     snap = {
         "label": label,
@@ -145,6 +146,9 @@ def snapshot(page, label, logs):
         "stuck_playing": "Playing card..." in text,
         "socket_error": "Socket connection error" in text,
         "internal_error": "Internal server error" in text or "Traceback" in text,
+        "round_summary_visible": count_cards(page, "#az48-round-summary") > 0,
+        "round_summary_text": summary_text,
+        "round_summary_has_raw_json": "{" in summary_text or "}" in summary_text,
     }
 
     logs.append(f"snapshot_{label}: {snap}")
@@ -160,6 +164,12 @@ def assert_state_ok(snap, label):
 
     if snap["stuck_playing"]:
         raise AssertionError(f"{label}: stuck Playing card message")
+
+    if not snap["round_summary_visible"]:
+        raise AssertionError(f"{label}: Round Summary panel missing")
+
+    if snap["round_summary_has_raw_json"]:
+        raise AssertionError(f"{label}: Round Summary rendered raw JSON")
 
     if snap["me_hp"] <= 0 and snap["phase"].lower() != "finished":
         raise AssertionError(f"{label}: invalid player HP")
@@ -355,6 +365,13 @@ def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):
                     last = snapshot(page, f"round_{index}_after_ready", logs)
                     shot(page, shot_dir, f"round_{index}_after_ready", logs)
                     assert_state_ok(last, f"round_{index}_after_ready")
+
+                    summary_text = str(last.get("round_summary_text") or "")
+                    if not any(
+                        phrase in summary_text
+                        for phrase in ["Rodada", "atacou", "dano", "derrotado", "Guarded", "Focused"]
+                    ):
+                        raise AssertionError(f"Round Summary did not show readable events: {summary_text!r}")
 
                     if last["round"] >= start_round + 3:
                         logs.append(f"progress_confirmed: start_round={start_round} current_round={last['round']}")

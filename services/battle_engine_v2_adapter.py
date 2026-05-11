@@ -375,6 +375,32 @@ def _events_for_viewer(events: List[Dict[str, Any]], viewer_side: str) -> List[D
     return mapped
 
 
+def _combat_log_for_payload(state: Dict[str, Any]) -> List[Dict[str, Any]]:
+    combat_log = [
+        event for event in (state.get("combat_log") or [])
+        if isinstance(event, dict)
+    ]
+
+    if not combat_log:
+        return []
+
+    completed_rounds = [
+        int(event.get("round") or 0)
+        for event in combat_log
+        if event.get("type") == "round_end"
+    ]
+
+    if not completed_rounds:
+        return []
+
+    last_completed_round = completed_rounds[-1]
+    return [
+        dict(event)
+        for event in combat_log
+        if int(event.get("round") or 0) == last_completed_round
+    ][-40:]
+
+
 def _turn_step(raw_phase: str, player: Dict[str, Any], is_finished: bool) -> str:
     if is_finished:
         return "finished"
@@ -535,6 +561,8 @@ def build_be2_arena_payload(
         else:
             final_message = "Choose a tactic: Strike attacks harder, Guard blocks damage, Focus charges Unleash."
 
+    round_summary = _summary_for_viewer(state.get("round_summary") or {}, viewer_side)
+
     return {
         "schema": ARENA_CLEAN_SCHEMA,
         "engine": ENGINE_VERSION,
@@ -546,7 +574,9 @@ def build_be2_arena_payload(
         "winner": _winner_for_viewer(state.get("winner"), viewer_side),
         "reason": state.get("reason"),
         "enemy_preview": enemy_preview,
-        "round_summary": _summary_for_viewer(state.get("round_summary") or {}, viewer_side),
+        "round_summary": round_summary,
+        "last_round_summary": round_summary,
+        "combat_log": _combat_log_for_payload(state),
         "events": _events_for_viewer(list(state.get("events") or [])[-24:], viewer_side),
         "round_events": _events_for_viewer(list(state.get("round_events") or [])[-12:], viewer_side),
         "card_registry": {

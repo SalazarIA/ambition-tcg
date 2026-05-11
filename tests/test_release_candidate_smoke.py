@@ -24,7 +24,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v160" in body
+    assert "ambitionz-web-app-v161" in body
 
 
 def test_training_3d_renderer_flag_loads_three_bundle(client):

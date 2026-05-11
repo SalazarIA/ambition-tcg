@@ -220,6 +220,35 @@ def test_be2_payload_includes_structured_round_events():
     assert any(event["type"] in {"attack", "hero_damage", "shield"} for event in resolved["round_summary"]["events"])
 
 
+def test_be2_payload_exposes_last_completed_combat_log_for_round_summary():
+    match = create_be2_match_from_players(
+        {"name": "Alice", "sid": "sid-a", "user_id": 1},
+        {"name": "Bob", "sid": "sid-b", "user_id": 2},
+        "room-round-summary-payload",
+    )
+    be2_start(match)
+    match["player"]["hand"] = [card("spark_runner")]
+    match["opponent"]["hand"] = [card("spark_runner")]
+    match["player"]["energy"] = 10
+    match["opponent"]["energy"] = 10
+    be2_set_intent(match, "Focus", side="player")
+    be2_set_intent(match, "Focus", side="opponent")
+    be2_play_card(match, card_id="spark_runner", side="player", lane="left")
+    be2_play_card(match, card_id="spark_runner", side="opponent", lane="left")
+
+    be2_ready(match, side="player")
+    be2_ready(match, side="opponent")
+
+    payload = build_be2_arena_payload(match)
+    event_types = {event.get("type") for event in payload["combat_log"]}
+
+    assert payload["combat_log"]
+    assert payload["last_round_summary"] == payload["round_summary"]
+    assert "round_end" in event_types
+    assert {"lane_attack", "creature_damage"} & event_types
+    assert {event.get("round") for event in payload["combat_log"]} == {1}
+
+
 def test_training_bot_uses_training_balance_profile():
     match = create_be2_training_match(sid="balance-test")
 

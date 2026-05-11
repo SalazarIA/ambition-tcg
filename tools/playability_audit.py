@@ -90,6 +90,21 @@ def run():
             PROJECT_ROOT / "static" / "js" / "arena_renderer_adapter.js",
             "keywordRegistry",
         ),
+        (
+            "round_summary_template",
+            PROJECT_ROOT / "templates" / "arena.html",
+            'id="az48-round-summary"',
+        ),
+        (
+            "round_summary_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "renderRoundSummary",
+        ),
+        (
+            "round_summary_css",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-round-summary",
+        ),
     ]
 
     for label, path, needle in visual_contracts:

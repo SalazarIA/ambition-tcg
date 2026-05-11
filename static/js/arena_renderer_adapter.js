@@ -165,6 +165,8 @@
             reason: payload.reason || null,
             enemyPreview: payload.enemy_preview || {},
             roundSummary: payload.round_summary || {},
+            lastRoundSummary: payload.last_round_summary || payload.round_summary || {},
+            combatLog: arr(payload.combat_log),
             events: arr(payload.events),
             roundEvents: arr(payload.round_events),
             cardRegistry: payload.card_registry || {},

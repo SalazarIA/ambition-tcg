@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v160"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v161"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -115,3 +115,33 @@ def test_arena_command_v1_and_lane_target_selection_contract():
     assert ".az48-selecting-lane" in css
     assert ".az48-selecting-target" in css
     assert "keywordRegistry" in adapter
+
+
+def test_arena_round_summary_text_panel_contract():
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    adapter = (PROJECT_ROOT / "static" / "js" / "arena_renderer_adapter.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert 'id="az48-round-summary"' in template
+    assert "Round Summary" in template
+    assert "A resolução da rodada aparecerá aqui." in template
+    assert "function getRoundCombatLog" in js
+    assert "function renderRoundSummary" in js
+    assert "function renderCombatEvent" in js
+    assert "function renderSummaryItem" in js
+    assert "JSON.stringify" not in js[js.index("function renderRoundSummary"):js.index("function cardStateMap")]
+    assert "combatLog" in adapter
+
+    for class_name in [
+        ".az48-round-summary",
+        ".az48-summary-title",
+        ".az48-summary-list",
+        ".az48-summary-item",
+        ".az48-summary-item-attack",
+        ".az48-summary-item-damage",
+        ".az48-summary-item-death",
+        ".az48-summary-item-keyword",
+        ".az48-summary-item-end",
+    ]:
+        assert class_name in css

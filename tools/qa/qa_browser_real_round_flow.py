@@ -77,6 +77,8 @@ def snapshot(page, label, logs):
         """(label) => {
             const s = window.__ambitionzArena48State || null;
             const text = document.body ? document.body.innerText : "";
+            const summary = document.querySelector("#az48-round-summary");
+            const summaryText = summary ? summary.innerText : "";
             const hand = document.querySelectorAll("#az48-hand .az48-card[data-card-id]").length;
             const playable = document.querySelectorAll("#az48-hand .az48-card.playable[data-card-id], #az48-hand .az48-card.is-playable[data-card-id], #az48-hand .az48-card.az48-playable[data-card-id]").length;
             const myField = document.querySelectorAll("#az48-me-field .az48-card[data-card-id]").length;
@@ -92,6 +94,9 @@ def snapshot(page, label, logs):
                 playable_cards: playable,
                 my_field_cards: myField,
                 enemy_field_cards: enemyField,
+                round_summary_visible: !!summary,
+                round_summary_text: summaryText,
+                round_summary_has_raw_json: summaryText.includes("{") || summaryText.includes("}"),
                 body_preview: text.slice(0, 900),
             };
         }""",
@@ -220,6 +225,15 @@ def run(base_url):
             after_ready = snapshot(page, "after_ready", logs)
             if int(after_ready["round"] or 0) <= int(start_state["round"] or 0):
                 raise AssertionError(f"Ready did not advance round. start={start_state['round']} after={after_ready['round']}")
+            if not after_ready["round_summary_visible"]:
+                raise AssertionError("Round Summary panel is not visible after Ready.")
+            if after_ready["round_summary_has_raw_json"]:
+                raise AssertionError("Round Summary rendered raw JSON after Ready.")
+            if not any(
+                phrase in str(after_ready["round_summary_text"])
+                for phrase in ["Rodada", "atacou", "dano", "derrotado", "Guarded", "Focused"]
+            ):
+                raise AssertionError(f"Round Summary did not show readable events: {after_ready['round_summary_text']!r}")
 
             if page_errors:
                 failures.append("page_errors=" + " | ".join(page_errors[:6]))
