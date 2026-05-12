@@ -121,6 +121,136 @@ def run():
             ".az-deck-validation-summary-v2",
         ),
         (
+            "art_direction_tokens_site",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            "--az-arcane",
+        ),
+        (
+            "art_direction_tokens_arena",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            "--az48-board-fog",
+        ),
+        (
+            "art_direction_components",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            ".az-rarity-badge",
+        ),
+        (
+            "premium_card_frame_collection",
+            PROJECT_ROOT / "templates" / "collection.html",
+            "az-premium-card-frame-v1",
+        ),
+        (
+            "premium_card_frame_deck_builder",
+            PROJECT_ROOT / "templates" / "deck_builder.html",
+            "az-premium-card-shell-v1",
+        ),
+        (
+            "premium_card_frame_arena_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "az48-card-frame-premium-v1",
+        ),
+        (
+            "premium_card_frame_css",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            ".az-premium-card-frame-v1",
+        ),
+        (
+            "faction_identity_home",
+            PROJECT_ROOT / "templates" / "index.html",
+            "Ember Court",
+        ),
+        (
+            "faction_identity_collection",
+            PROJECT_ROOT / "templates" / "collection.html",
+            'id="az-collection-factions"',
+        ),
+        (
+            "faction_identity_profile",
+            PROJECT_ROOT / "templates" / "profile.html",
+            'id="az-profile-faction-identity"',
+        ),
+        (
+            "faction_identity_arena_detail",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "function factionForElement",
+        ),
+        (
+            "faction_identity_css",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            ".az-faction-showcase-v1",
+        ),
+        (
+            "battle_presentation_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "az48-card-played-feedback",
+        ),
+        (
+            "battle_presentation_css_board",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-enemy-field::before",
+        ),
+        (
+            "battle_presentation_css_motion",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            "az48AmbitionPulseV1",
+        ),
+        (
+            "sound_haptics_sound_js",
+            PROJECT_ROOT / "static" / "js" / "arena_sound.js",
+            "function haptic",
+        ),
+        (
+            "sound_haptics_arena_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "playCombatLogFeedback",
+        ),
+        (
+            "tutorial_narrative_template",
+            PROJECT_ROOT / "templates" / "tutorial.html",
+            'id="az-tutorial-narrative"',
+        ),
+        (
+            "tutorial_narrative_steps",
+            PROJECT_ROOT / "app.py",
+            "Ready and Resolve",
+        ),
+        (
+            "tutorial_narrative_css",
+            PROJECT_ROOT / "static" / "css" / "ambitionz_tutorial.css",
+            ".az-tutorial-step-card-v1",
+        ),
+        (
+            "collection_desire_template",
+            PROJECT_ROOT / "templates" / "collection.html",
+            'id="az-collection-desire-loop"',
+        ),
+        (
+            "collection_desire_progress",
+            PROJECT_ROOT / "templates" / "collection.html",
+            "collection_stats.completion_percent",
+        ),
+        (
+            "collection_desire_locked_cards",
+            PROJECT_ROOT / "templates" / "collection.html",
+            "az-card-lock-overlay-v1",
+        ),
+        (
+            "collection_desire_css",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            ".az-collection-desire-v1",
+        ),
+        (
+            "collection_desire_backend",
+            PROJECT_ROOT / "app.py",
+            "include_zero=True",
+        ),
+        (
+            "collection_desire_reward_preview",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "Reward Preview",
+        ),
+        (
             "arena_command_v1_js",
             PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
             "arena_command_v1",

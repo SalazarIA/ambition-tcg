@@ -517,7 +517,7 @@
 
                     <article
 
-                        class="az-card-v1 is-deck-builder-card collection-card selectable-card builder-card"
+                        class="az-card-v1 az-premium-card-frame-v1 is-deck-builder-card collection-card selectable-card builder-card"
 
                         data-card-id="{{ card.id }}"
 
@@ -559,23 +559,23 @@
 
                         </div>
 
-                        <div class="card-shell">
+                        <div class="card-shell az-premium-card-shell-v1">
 
                             <div class="card-topline">
 
                                 <strong>{{ card.name }}</strong>
 
-                                <span>Cost {{ card.cost }}</span>
+                                <span class="az-card-cost-v1">E {{ card.cost }}</span>
 
                             </div>
 
-                            <div class="card-meta-row">
+                            <div class="card-meta-row az-premium-card-badges-v1">
 
-                                <span>{{ card.type }}</span>
+                                <span class="az-status-badge">{{ card.type }}</span>
 
-                                <span>{{ card.element }}</span>
+                                <span class="az-element-badge">{{ card.element }}</span>
 
-                                <span>{{ card.rarity }}</span>
+                                <span class="az-rarity-badge">{{ card.rarity }}</span>
 
                             </div>
 
@@ -601,7 +601,15 @@
 
                             {% if card.type == "Monster" %}
 
-                                <div class="card-power">Power {{ card.power }}</div>
+                                <div class="card-power az-premium-stat-row-v1">
+                                    <span class="az-premium-stat-attack-v1"><b>{{ card.power }}</b><small>ATK</small></span>
+                                    <span class="az-premium-stat-health-v1"><b>{{ card.value|default(card.power) }}</b><small>HP</small></span>
+                                </div>
+                            {% else %}
+                                <div class="card-power az-premium-stat-row-v1">
+                                    <span><b>{{ card.value|default(0) }}</b><small>{{ card.combat_label|default('VAL') }}</small></span>
+                                    <span><b>{{ card.cost }}</b><small>COST</small></span>
+                                </div>
 
                             {% endif %}
 

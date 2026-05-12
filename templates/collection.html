@@ -75,6 +75,61 @@
             </article>
         </section>
 
+        <section id="az-collection-desire-loop" class="az-collection-desire-v1" aria-label="Collection progress">
+            <div class="az-collection-progress-copy-v1">
+                <span class="progression-kicker">{{ collection_stats.catalog_label|default('Beta Catalog') }}</span>
+                <h2>Collection Progress</h2>
+                <p class="subtitle">Owned cards and locked catalog entries are shown from the current inventory ledger. This is a beta catalog view, not a shop or pack system.</p>
+            </div>
+            <div class="az-collection-progress-panel-v1">
+                <div class="az-collection-progress-row-v1">
+                    <span>{{ collection_stats.unique_cards|default(0) }} / {{ collection_stats.catalog_cards|default(0) }} unique cards</span>
+                    <strong>{{ collection_stats.completion_percent|default(0) }}%</strong>
+                </div>
+                <div class="az-collection-progress-bar-v1" aria-hidden="true">
+                    <span class="az-collection-progress-fill-v1" style="width: {{ collection_stats.completion_percent|default(0) }}%;"></span>
+                </div>
+                <div class="az-collection-breakdown-v1">
+                    <article>
+                        <h3>Elements</h3>
+                        <div class="az-collection-count-grid-v1">
+                            {% for item in collection_stats.element_counts|default([]) %}
+                                <span class="az-collection-count-pill-v1 {{ item.css }}">
+                                    <b>{{ item.name }}</b>
+                                    <small>{{ item.owned }} / {{ item.total }}</small>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </article>
+                    <article>
+                        <h3>Rarity</h3>
+                        <div class="az-collection-count-grid-v1">
+                            {% for item in collection_stats.rarity_counts|default([]) %}
+                                <span class="az-collection-count-pill-v1 {{ item.css }}">
+                                    <b>{{ item.name }}</b>
+                                    <small>{{ item.owned }} / {{ item.total }}</small>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="az-collection-factions" class="az-collection-factions-v1" aria-label="Collection factions">
+            <div>
+                <span class="progression-kicker">Faction Lens</span>
+                <h2>Read cards by identity</h2>
+                <p class="subtitle">Elements map into Ambitionz factions for presentation and collection clarity. No battle rule changes here.</p>
+            </div>
+            <div class="az-faction-chip-row-v1">
+                <span class="az-faction-chip-v1 faction-ember">Ember Court</span>
+                <span class="az-faction-chip-v1 faction-tideborn">Tideborn Order</span>
+                <span class="az-faction-chip-v1 faction-stonebound">Stonebound Clan</span>
+                <span class="az-faction-chip-v1 faction-verdant">Verdant Pact</span>
+                <span class="az-faction-chip-v1 faction-arcane">Arcane Neutral</span>
+            </div>
+        </section>
 
         <section class="deck-status deck-filter-panel">
             <h2>Filters</h2>
@@ -99,6 +154,30 @@
                     <option value="Global">Global</option>
                 </select>
 
+                <select id="filter-faction" onchange="filterCollectionCards()">
+                    <option value="">All Factions</option>
+                    <option value="Ember Court">Ember Court</option>
+                    <option value="Tideborn Order">Tideborn Order</option>
+                    <option value="Stonebound Clan">Stonebound Clan</option>
+                    <option value="Verdant Pact">Verdant Pact</option>
+                    <option value="Arcane Neutral">Arcane Neutral</option>
+                </select>
+
+                <select id="filter-rarity" onchange="filterCollectionCards()">
+                    <option value="">All Rarities</option>
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Legendary">Legendary</option>
+                </select>
+
+                <select id="filter-ownership" onchange="filterCollectionCards()">
+                    <option value="">Owned + Locked</option>
+                    <option value="owned">Owned</option>
+                    <option value="locked">Locked</option>
+                </select>
+
                 <select id="filter-role" onchange="filterCollectionCards()">
                     <option value="">All Roles</option>
                     <option value="Aggressor">Aggressor</option>
@@ -112,22 +191,53 @@
 
         <section class="az-card-grid-v1">
             {% for card in cards %}
+                {% set owned_count = card.count|default(0)|int %}
+                {% set ownership_state = 'owned' if owned_count > 0 else 'locked' %}
+                {% set card_element = card.element|default('Neutral') %}
+                {% set element_key = card_element|lower %}
+                {% if element_key == 'fire' %}
+                    {% set faction_name = 'Ember Court' %}
+                    {% set faction_css = 'faction-ember' %}
+                {% elif element_key == 'water' %}
+                    {% set faction_name = 'Tideborn Order' %}
+                    {% set faction_css = 'faction-tideborn' %}
+                {% elif element_key == 'earth' %}
+                    {% set faction_name = 'Stonebound Clan' %}
+                    {% set faction_css = 'faction-stonebound' %}
+                {% elif element_key == 'plant' %}
+                    {% set faction_name = 'Verdant Pact' %}
+                    {% set faction_css = 'faction-verdant' %}
+                {% else %}
+                    {% set faction_name = 'Arcane Neutral' %}
+                    {% set faction_css = 'faction-arcane' %}
+                {% endif %}
                 <article
-                    class="az-card-v1 collection-card {{ card.rarity_css|default('rarity-common') }} {{ card.element_css|default('element-neutral') }}"
+                    class="az-card-v1 az-premium-card-frame-v1 collection-card {{ card.rarity_css|default('rarity-common') }} {{ card.element_css|default('element-neutral') }} {{ faction_css }} is-{{ ownership_state }}"
+                    data-card-id="{{ card.id }}"
                     data-name="{{ card.name|lower }}"
                     data-type="{{ card.type }}"
+                    data-element="{{ card_element }}"
+                    data-rarity="{{ card.rarity|default('Common') }}"
+                    data-faction="{{ faction_name }}"
                     data-sigil="{{ card.sigil }}"
                     data-role="{{ card.role }}"
+                    data-owned="{{ owned_count }}"
+                    data-ownership="{{ ownership_state }}"
                 >
-                    <div class="az-card-tags-v1">
+                    <div class="az-card-tags-v1 az-premium-card-badges-v1">
+                        <span class="az-element-badge">{{ card_element }}</span>
+                        <span class="az-rarity-badge">{{ card.rarity|default('Common') }}</span>
+                        <span class="az-faction-badge-v1 {{ faction_css }}">{{ faction_name }}</span>
+                        <span class="az-ownership-badge-v1 is-{{ ownership_state }}">
+                            {% if owned_count > 0 %}Owned x{{ owned_count }}{% else %}Locked{% endif %}
+                        </span>
                         <span>{{ card.sigil }}</span>
-                        <span>{{ card.rarity }}</span>
                     </div>
                     <div class="az-card-cost-v1">{{ card.cost|default(1) }}</div>
                     <div class="az-card-rarity-v1"></div>
                     <div class="az-card-art-v1">
                         <div class="az-card-orb-v1"></div>
-                        <div class="az-card-mark-v1">{{ card.element[:1]|upper }}</div>
+                        <div class="az-card-mark-v1">{{ card_element[:1]|upper }}</div>
                     </div>
                     <div class="az-card-body-v1">
                         <strong>{{ card.name }}</strong>
@@ -135,20 +245,25 @@
                     </div>
                     <div class="az-card-stats-v1">
                         {% if card.type == "Monster" %}
-                            <div><b>{{ card.power }}</b><small>ATK</small></div>
-                            <div><b>{{ card.value|default(card.power) }}</b><small>DEF</small></div>
+                            <div class="az-premium-stat-attack-v1"><b>{{ card.power }}</b><small>ATK</small></div>
+                            <div class="az-premium-stat-health-v1"><b>{{ card.value|default(card.power) }}</b><small>HP</small></div>
                         {% else %}
                             <div><b>{{ card.value|default(0) }}</b><small>VALUE</small></div>
-                            <div><b>{{ card.count }}</b><small>OWNED</small></div>
+                            <div><b>{{ owned_count }}</b><small>OWNED</small></div>
                         {% endif %}
                     </div>
+                    {% if owned_count <= 0 %}
+                        <div class="az-card-lock-overlay-v1" aria-label="Locked card">
+                            <span>Locked in Beta Catalog</span>
+                        </div>
+                    {% endif %}
                 </article>
             {% else %}
                 <article class="az-empty-collection-v2">
                     <span class="progression-kicker">No cards yet</span>
                     <h2>Your collection is empty.</h2>
-                    <p>Open boosters or repair inventory before building a deck.</p>
-                    <a href="{{ url_for('shop') }}" class="btn">Open Shop</a>
+                    <p>Start Training or repair inventory before building a deck.</p>
+                    <a href="{{ url_for('training') }}" class="btn">Start Training</a>
                 </article>
             {% endfor %}
         </section>
@@ -160,18 +275,27 @@
             const type = document.getElementById("filter-type").value;
             const sigil = document.getElementById("filter-sigil").value;
             const role = document.getElementById("filter-role").value;
+            const faction = document.getElementById("filter-faction").value;
+            const rarity = document.getElementById("filter-rarity").value;
+            const ownership = document.getElementById("filter-ownership").value;
 
             document.querySelectorAll(".collection-card").forEach((card) => {
                 const matchesSearch = !search || card.dataset.name.includes(search);
                 const matchesType = !type || card.dataset.type === type;
                 const matchesSigil = !sigil || card.dataset.sigil === sigil;
                 const matchesRole = !role || card.dataset.role === role;
+                const matchesFaction = !faction || card.dataset.faction === faction;
+                const matchesRarity = !rarity || card.dataset.rarity === rarity;
+                const matchesOwnership = !ownership || card.dataset.ownership === ownership;
 
                 card.style.display = (
                     matchesSearch &&
                     matchesType &&
                     matchesSigil &&
-                    matchesRole
+                    matchesRole &&
+                    matchesFaction &&
+                    matchesRarity &&
+                    matchesOwnership
                 ) ? "" : "none";
             });
         }

@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v169"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v176"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -148,6 +148,25 @@ def test_collection_and_deck_builder_v2_contract():
     assert ".az-collection-summary-v2" in css
     assert ".az-deck-validation-summary-v2" in css
     assert "ensure_user_has_playable_inventory(user)" in app_py
+
+
+def test_collection_desire_loop_contract():
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+
+    assert 'id="az-collection-desire-loop"' in collection
+    assert "collection_stats.completion_percent" in collection
+    assert "collection_stats.element_counts" in collection
+    assert "collection_stats.rarity_counts" in collection
+    assert 'id="filter-ownership"' in collection
+    assert 'id="filter-rarity"' in collection
+    assert "data-ownership" in collection
+    assert "az-card-lock-overlay-v1" in collection
+    assert "include_zero=True" in app_py
+    assert '"catalog_cards"' in app_py
+    assert ".az-collection-desire-v1" in css
+    assert ".az-collection-progress-fill-v1" in css
 
 
 def test_arena_has_compact_turn_hud_contract():
@@ -345,3 +364,143 @@ def test_training_bot_polish_contract():
     assert ".az48-training-panel" in css
     assert ".az48-training-result" in css
     assert ".az48-result-actions" in css
+
+
+def test_art_direction_system_contract():
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    arena_css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+
+    for token in [
+        "--az-bg",
+        "--az-panel",
+        "--az-panel-strong",
+        "--az-gold",
+        "--az-gold-soft",
+        "--az-arcane",
+        "--az-danger",
+        "--az-success",
+        "--az-text",
+        "--az-muted",
+        "--az-border",
+        "--az-radius",
+        "--az-shadow",
+    ]:
+        assert token in css
+        assert token in arena_css
+
+    assert "Ambitionz Art Direction System V1" in css
+    assert "az-art-direction-v1" in css
+    assert "az-rarity-badge" in css
+    assert "az-element-badge" in css
+    assert "var(--az48-board-fog)" in arena_css
+    assert "arena_clean_v48.css') }}?v=79" in template
+
+
+def test_card_frame_premium_contract():
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    deck_builder = (PROJECT_ROOT / "templates" / "deck_builder.html").read_text()
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    arena_css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+    arena_template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+
+    assert "az-premium-card-frame-v1" in collection
+    assert "az-premium-card-frame-v1" in deck_builder
+    assert "az-premium-card-shell-v1" in deck_builder
+    assert "az-premium-stat-attack-v1" in collection
+    assert "az-premium-stat-health-v1" in deck_builder
+    assert "data-card-id" in deck_builder
+    assert "data-az48-lane" in js
+    assert "az48-card-frame-premium-v1" in js
+    assert "az48-card-stat-pair" in js
+    assert "az48-keyword-chip" in js
+    assert "data-rarity" in js
+    assert ".az-premium-card-frame-v1" in css
+    assert ".az-premium-card-shell-v1" in css
+    assert ".az48-card-frame-premium-v1" in arena_css
+    assert ".az48-card-element-mark" in arena_css
+    assert "arena_clean_v48.js') }}?v=79" in arena_template
+
+
+def test_faction_identity_layer_contract():
+    homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    profile = (PROJECT_ROOT / "templates" / "profile.html").read_text()
+    arena_js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+
+    for faction in [
+        "Ember Court",
+        "Tideborn Order",
+        "Stonebound Clan",
+        "Verdant Pact",
+        "Arcane Neutral",
+    ]:
+        assert faction in homepage
+
+    assert 'id="az-faction-identity"' in homepage
+    assert 'id="az-collection-factions"' in collection
+    assert 'id="filter-faction"' in collection
+    assert "data-faction" in collection
+    assert 'id="az-profile-faction-identity"' in profile
+    assert "function factionForElement" in arena_js
+    assert '["Faction", factionForElement(c.element)]' in arena_js
+    assert ".az-faction-showcase-v1" in css
+    assert ".az-faction-card-v1" in css
+    assert ".az-faction-badge-v1" in css
+    assert ".az-profile-faction-identity-v1" in css
+
+
+def test_battle_presentation_v1_contract():
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert "restartBodyPulse" in js
+    assert "az48-card-played-feedback" in js
+    assert "az48-ambition-gained" in js
+    assert "meGainedAmbition" in js
+    assert ".az48-enemy-field::before" in css
+    assert ".az48-me-field::before" in css
+    assert "az48CardPlayedV1" in css
+    assert "az48AmbitionPulseV1" in css
+    assert "body.az48-card-played-feedback .az48-me-field .az48-field-card" in css
+    assert "body.az48-ambition-gained .az48-ambition-pill" in css
+
+
+def test_sound_haptics_layer_contract():
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    sound = (PROJECT_ROOT / "static" / "js" / "arena_sound.js").read_text()
+
+    assert "arena_sound.js') }}?v=2" in template
+    assert "function haptic" in sound
+    assert "navigator.vibrate" in sound
+    assert "if (!Sound.unlocked) return;" in sound
+    assert "death()" in sound
+    assert "playCombatLogFeedback" in js
+    assert "lastCombatAudioSignature" in js
+    assert "cardSelect" in js
+    assert "victory" in js
+    assert "defeat" in js
+
+
+def test_narrative_onboarding_contract():
+    template = (PROJECT_ROOT / "templates" / "tutorial.html").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "ambitionz_tutorial.css").read_text()
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+
+    assert 'id="az-tutorial-narrative"' in template
+    assert "Start Training" in template
+    assert "View Collection" in template
+    assert "View Deck" in template
+    assert "Strike" in template
+    assert "Guard" in template
+    assert "Focus" in template
+    assert "Round Summary" in template
+    assert "az-tutorial-step-grid-v1" in template
+    assert "Ready and Resolve" in app_py
+    assert "Command Lanes" in app_py
+    assert "One card per round" in app_py
+    assert ".az-tutorial-narrative-v1" in css
+    assert ".az-tutorial-step-card-v1" in css

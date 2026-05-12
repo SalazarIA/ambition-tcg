@@ -191,6 +191,10 @@
             osc({ type: "triangle", freq: 430, endFreq: 520, start: t, duration: 0.07, gain: 0.040, decay: 0.06 });
         },
 
+        select() {
+            SFX.cardSelect();
+        },
+
         cardFly(element) {
             unlock();
             const t = now();
@@ -230,6 +234,13 @@
             noise({ start: t, duration: 0.11, gain: 0.045, filter: 520 });
         },
 
+        death() {
+            unlock();
+            const t = now();
+            osc({ type: "sawtooth", freq: 150, endFreq: 42, start: t, duration: 0.24, gain: 0.052, decay: 0.22 });
+            noise({ start: t + 0.02, duration: 0.18, gain: 0.038, filter: 420 });
+        },
+
         roundResolve() {
             unlock();
             const t = now();
@@ -253,6 +264,30 @@
             });
         },
     };
+
+    function haptic(name) {
+        if (!Sound.enabled || !Sound.unlocked || !navigator.vibrate) return;
+
+        const patterns = {
+            uiTap: 6,
+            intent: 8,
+            ready: 10,
+            cardSelect: 8,
+            select: 8,
+            cardImpact: 12,
+            damage: 18,
+            death: [28, 24, 28],
+            victory: [18, 24, 18],
+            defeat: [42, 36, 42],
+        };
+        const pattern = patterns[name];
+
+        if (!pattern) return;
+
+        try {
+            navigator.vibrate(pattern);
+        } catch (err) {}
+    }
 
     function createMuteButton() {
         if (document.querySelector("#az-sound-toggle")) return;
@@ -291,10 +326,13 @@
         setMuted,
         isMuted,
         play: function (name, payload) {
+            if (!Sound.unlocked) return;
             if (SFX[name]) {
                 SFX[name](payload && payload.element);
+                haptic(name);
             }
         },
+        haptic,
         sfx: SFX,
     };
 })();

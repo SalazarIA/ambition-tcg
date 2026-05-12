@@ -26,7 +26,22 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v169" in body
+    assert "ambitionz-web-app-v176" in body
+
+
+def test_tutorial_renders_narrative_onboarding(client):
+    response = client.get("/tutorial")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "First Oath" in body
+    assert "Strike" in body
+    assert "Guard" in body
+    assert "Focus" in body
+    assert "Ready and Resolve" in body
+    assert 'href="/training"' in body
+    assert 'href="/collection"' in body
+    assert 'href="/deck-builder"' in body
 
 
 def test_public_home_renders_product_entry_and_real_routes(client):
@@ -281,8 +296,10 @@ def test_collection_and_deck_builder_v2_render_and_save(client):
     collection_body = collection_response.get_data(as_text=True)
     assert collection_response.status_code == 200
     assert 'id="az-collection-summary"' in collection_body
+    assert 'id="az-collection-desire-loop"' in collection_body
     assert "Total Owned" in collection_body
     assert "Unique Cards" in collection_body
+    assert "Collection Progress" in collection_body
 
     deck_response = client.get("/deck-builder")
     deck_body = deck_response.get_data(as_text=True)

@@ -2,14 +2,34 @@
     box-sizing: border-box;
 }
 
+:root {
+    --az-bg: #05050b;
+    --az-panel: rgba(9, 10, 18, .82);
+    --az-panel-strong: rgba(13, 13, 24, .94);
+    --az-gold: #d6a84b;
+    --az-gold-soft: #f3d78a;
+    --az-arcane: #58d6c7;
+    --az-danger: #ff7460;
+    --az-success: #50ff96;
+    --az-text: #f7f4ec;
+    --az-muted: rgba(247, 244, 236, .66);
+    --az-border: rgba(248, 231, 186, .15);
+    --az-radius: 12px;
+    --az-shadow: 0 22px 70px rgba(0, 0, 0, .52);
+    --az48-board-fog:
+        linear-gradient(180deg, rgba(248, 231, 186, .055), transparent 36%),
+        linear-gradient(135deg, rgba(88, 214, 199, .08), transparent 44%),
+        rgba(6, 7, 13, .82);
+}
+
 html,
 body {
     width: 100%;
     height: 100%;
     margin: 0;
     overflow: hidden;
-    background: #05050b;
-    color: #fff;
+    background: var(--az-bg);
+    color: var(--az-text);
     font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -29,9 +49,9 @@ a {
     gap: 8px;
     padding: 8px;
     background:
-        radial-gradient(circle at 50% 18%, rgba(255, 220, 135, .15), transparent 28%),
-        radial-gradient(circle at 10% 80%, rgba(113, 75, 255, .18), transparent 30%),
-        radial-gradient(circle at 88% 75%, rgba(0, 170, 255, .12), transparent 32%),
+        radial-gradient(circle at 50% 10%, rgba(214, 168, 75, .16), transparent 30%),
+        radial-gradient(circle at 12% 82%, rgba(88, 214, 199, .12), transparent 32%),
+        radial-gradient(circle at 88% 78%, rgba(232, 111, 77, .10), transparent 34%),
         linear-gradient(180deg, #090914 0%, #05050b 100%);
 }
 
@@ -48,9 +68,9 @@ a {
 .az48-board,
 .az48-bottom,
 .az48-round-summary {
-    border: 1px solid rgba(255,255,255,.10);
-    background: rgba(255,255,255,.055);
-    box-shadow: 0 18px 50px rgba(0,0,0,.28);
+    border: 1px solid var(--az-border);
+    background: var(--az-panel);
+    box-shadow: var(--az-shadow);
     backdrop-filter: blur(14px);
 }
 
@@ -65,6 +85,9 @@ a {
     align-content: center;
     gap: 7px;
     overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(248, 231, 186, .055), rgba(255, 255, 255, .015)),
+        var(--az-panel-strong);
 }
 
 .az48-player::before {
@@ -179,7 +202,9 @@ body.az48-enemy-ready .az48-opponent-status-pill {
     place-items: center;
     text-align: center;
     padding: 8px;
-    background: linear-gradient(180deg, rgba(255,214,122,.16), rgba(255,255,255,.05));
+    background:
+        linear-gradient(180deg, rgba(248, 231, 186, .18), rgba(255,255,255,.04)),
+        rgba(8, 8, 16, .82);
 }
 
 .az48-center strong {
@@ -581,6 +606,44 @@ body.az48-has-actions .az48-hand .az48-card {
     isolation: isolate;
 }
 
+.az48-card-frame-premium-v1 {
+    border-radius: 17px;
+    border-width: 1px;
+    border-style: solid;
+    outline-offset: 2px;
+}
+
+.az48-card-frame-premium-v1.element-fire {
+    --az-card-primary: #6f241e;
+    --az-card-secondary: #e86f4d;
+    --az-card-accent: #ffd0a8;
+}
+
+.az48-card-frame-premium-v1.element-water {
+    --az-card-primary: #183d57;
+    --az-card-secondary: #4da9d9;
+    --az-card-accent: #c8f2ff;
+}
+
+.az48-card-frame-premium-v1.element-earth {
+    --az-card-primary: #51412d;
+    --az-card-secondary: #a9895e;
+    --az-card-accent: #f1d4a5;
+}
+
+.az48-card-frame-premium-v1.element-plant {
+    --az-card-primary: #244a34;
+    --az-card-secondary: #76c988;
+    --az-card-accent: #d8ffd9;
+}
+
+.az48-card-frame-premium-v1.element-global,
+.az48-card-frame-premium-v1.element-neutral {
+    --az-card-primary: #263a44;
+    --az-card-secondary: #58d6c7;
+    --az-card-accent: #d4fff8;
+}
+
 .az48-card-v2::before {
     content: "";
     position: absolute;
@@ -621,7 +684,8 @@ body.az48-has-actions .az48-hand .az48-card {
 
 .az48-cost,
 .az48-power,
-.az48-rarity {
+.az48-rarity,
+.az48-card-element-mark {
     position: absolute;
     z-index: 4;
     border-radius: 999px;
@@ -656,6 +720,20 @@ body.az48-has-actions .az48-hand .az48-card {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.az48-card-element-mark {
+    left: 7px;
+    bottom: 7px;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--az-card-accent, #fff1bb) 44%, transparent);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--az-card-secondary, #58d6c7) 42%, #10131b), #070910);
+    color: rgba(255, 255, 255, .92);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .28);
 }
 
 .az48-card-v2.rarity-uncommon .az48-rarity {
@@ -777,6 +855,28 @@ body.az48-has-actions .az48-hand .az48-card {
     text-overflow: ellipsis;
 }
 
+.az48-card-stats .az48-card-stat-pair {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 5px;
+}
+
+.az48-card-stat-pair b {
+    color: color-mix(in srgb, var(--az-card-accent, #fff1bb) 86%, #ffffff);
+    font-size: .46rem;
+    letter-spacing: .06em;
+}
+
+.az48-stat-attack {
+    border-color: rgba(232, 111, 77, .28);
+}
+
+.az48-stat-health {
+    border-color: rgba(88, 214, 199, .24);
+}
+
 .az48-card-v2 .az48-effect {
     display: none;
 }
@@ -788,6 +888,7 @@ body.az48-has-actions .az48-hand .az48-card {
     display: flex;
     gap: 4px;
     padding-right: 48px;
+    padding-left: 28px;
 }
 
 .az48-tags span {
@@ -800,6 +901,12 @@ body.az48-has-actions .az48-hand .az48-card {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.az48-keyword-chip {
+    border-color: rgba(88, 214, 199, .22);
+    color: rgba(216, 255, 249, .84) !important;
+    background: rgba(88, 214, 199, .10) !important;
 }
 
 .az48-field-card {
@@ -1148,6 +1255,14 @@ body[data-page-kind="training"] .az48-training-result {
 }
 
 .az48-result-rewards {
+    display: inline-flex;
+    width: fit-content;
+    min-height: 28px;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(80, 255, 150, .20);
+    background: rgba(80, 255, 150, .08);
     margin-top: 8px;
     color: rgba(210, 255, 235, .90);
     font-size: .72rem;
@@ -1631,6 +1746,199 @@ body.az48-match-started .az48-actions {
 
 .az48-board {
     border-radius: 26px;
+    background: var(--az48-board-fog);
+    border-color: rgba(248, 231, 186, .18);
+}
+
+.az48-btn,
+.az48-mini-btn,
+.az48-floating-start,
+.az48-result-action {
+    letter-spacing: .01em;
+}
+
+
+/* =========================================================
+   Block 21 — Battle Presentation V1
+   ========================================================= */
+
+.az48-player {
+    padding-left: 58px;
+}
+
+.az48-player::after {
+    content: "A";
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(248, 231, 186, .28);
+    border-radius: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, .92);
+    font-size: .8rem;
+    font-weight: 1000;
+    box-shadow: inset 0 0 18px rgba(255, 255, 255, .08), 0 10px 24px rgba(0, 0, 0, .32);
+    pointer-events: none;
+}
+
+.az48-enemy {
+    background:
+        linear-gradient(90deg, rgba(255, 115, 112, .12), transparent 44%),
+        linear-gradient(180deg, rgba(248, 231, 186, .055), rgba(255, 255, 255, .015)),
+        var(--az-panel-strong);
+}
+
+.az48-enemy::after {
+    content: "E";
+    background: linear-gradient(145deg, rgba(255, 115, 112, .42), rgba(120, 90, 255, .30));
+}
+
+.az48-you {
+    background:
+        linear-gradient(270deg, rgba(112, 232, 183, .12), transparent 44%),
+        linear-gradient(180deg, rgba(248, 231, 186, .055), rgba(255, 255, 255, .015)),
+        var(--az-panel-strong);
+}
+
+.az48-you::after {
+    content: "Y";
+    background: linear-gradient(145deg, rgba(112, 232, 183, .36), rgba(255, 214, 111, .30));
+}
+
+.az48-board {
+    position: relative;
+    isolation: isolate;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .04),
+        inset 0 22px 70px rgba(255, 115, 112, .06),
+        inset 0 -22px 70px rgba(112, 232, 183, .06),
+        0 24px 72px rgba(0, 0, 0, .42);
+}
+
+.az48-board::before,
+.az48-board::after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: 22px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.az48-board::before {
+    background:
+        linear-gradient(90deg, transparent 0 31%, rgba(248, 231, 186, .12) 31% 32%, transparent 32% 65%, rgba(248, 231, 186, .12) 65% 66%, transparent 66%),
+        linear-gradient(180deg, rgba(255, 115, 112, .06), transparent 44%, rgba(255, 214, 111, .08) 50%, transparent 56%, rgba(112, 232, 183, .06));
+}
+
+.az48-board::after {
+    border: 1px solid rgba(248, 231, 186, .12);
+    box-shadow: inset 0 0 46px rgba(214, 168, 75, .08);
+}
+
+.az48-board > * {
+    position: relative;
+    z-index: 1;
+}
+
+.az48-field-row {
+    position: relative;
+    padding: 12px 10px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .012)),
+        rgba(4, 4, 10, .22);
+}
+
+.az48-field-row::before {
+    position: absolute;
+    top: 6px;
+    left: 12px;
+    color: rgba(248, 231, 186, .56);
+    font-size: .52rem;
+    font-weight: 1000;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+.az48-enemy-field {
+    background:
+        linear-gradient(180deg, rgba(255, 115, 112, .10), rgba(255, 255, 255, .012)),
+        rgba(4, 4, 10, .26);
+}
+
+.az48-enemy-field::before {
+    content: "Enemy Line";
+}
+
+.az48-me-field {
+    background:
+        linear-gradient(180deg, rgba(112, 232, 183, .10), rgba(255, 255, 255, .012)),
+        rgba(4, 4, 10, .26);
+}
+
+.az48-me-field::before {
+    content: "Your Line";
+}
+
+.az48-slot,
+.az48-field-card {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .08),
+        0 16px 34px rgba(0, 0, 0, .30);
+}
+
+.az48-lane-resolved {
+    background-image:
+        linear-gradient(135deg, rgba(255, 226, 151, .10), transparent 56%);
+}
+
+body.az48-card-played-feedback .az48-me-field .az48-field-card {
+    animation: az48CardPlayedV1 .58s ease-out;
+}
+
+body.az48-ambition-gained .az48-ambition-pill {
+    animation: az48AmbitionPulseV1 .72s ease-out;
+}
+
+body.az48-me-hero-hit .az48-you,
+body.az48-enemy-hero-hit .az48-enemy {
+    border-color: rgba(255, 115, 112, .38);
+}
+
+@keyframes az48CardPlayedV1 {
+    0% { transform: translateY(8px) scale(.96); filter: brightness(1.24); }
+    100% { transform: translateY(0) scale(1); filter: none; }
+}
+
+@keyframes az48AmbitionPulseV1 {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 214, 111, .42); }
+    55% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(255, 214, 111, .08); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 214, 111, 0); }
+}
+
+.az48-btn,
+.az48-mini-btn {
+    border-color: rgba(248, 231, 186, .18);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .025)),
+        rgba(5, 6, 12, .78);
+}
+
+.az48-ready,
+.az48-start,
+.az48-mini-btn:first-child {
+    border-color: rgba(248, 231, 186, .42);
+    background:
+        linear-gradient(180deg, rgba(255, 244, 206, .24), transparent 45%),
+        linear-gradient(135deg, var(--az-gold-soft), var(--az-gold));
+    color: #151007;
 }
 
 .az48-bottom,
@@ -2070,6 +2378,8 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
     .az48-lane-resolved,
     .az48-card-damaged,
     .az48-card-defeated,
+    body.az48-card-played-feedback .az48-me-field .az48-field-card,
+    body.az48-ambition-gained .az48-ambition-pill,
     body.az48-me-hero-hit .az48-you,
     body.az48-enemy-hero-hit .az48-enemy {
         animation: none;

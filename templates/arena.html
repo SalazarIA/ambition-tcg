@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=75">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=79">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -191,11 +191,11 @@
         window.AMBITIONZ_ARENA_MODE = "{{ 'training' if training_mode else 'arena' }}";
         window.AMBITIONZ_ARENA_RENDERER = "{{ arena_renderer|default('dom') }}";
     </script>
-    <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=5"></script>
     {% if arena_renderer == "3d" %}
     <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
     {% endif %}
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=75"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=79"></script>
 </body>
 </html>

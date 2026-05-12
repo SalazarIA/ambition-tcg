@@ -2110,14 +2110,48 @@ def collection():
         print("COLLECTION INVENTORY RECOVERY ERROR:", type(error).__name__, error)
         db.session.rollback()
 
-    cards = build_collection_from_inventory(user, include_zero=False)
+    cards = build_collection_from_inventory(user, include_zero=True)
     inventory_counts = user_inventory_counts(user)
+    owned_cards = [card for card in cards if int(card.get("count") or 0) > 0]
+    catalog_total = len(cards)
+    unique_owned = len(owned_cards)
+    element_order = ["Fire", "Water", "Earth", "Plant", "Global", "Neutral"]
+    rarity_order = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+    owned_element_counts = Counter(str(card.get("element") or "Neutral") for card in owned_cards)
+    catalog_element_counts = Counter(str(card.get("element") or "Neutral") for card in cards)
+    owned_rarity_counts = Counter(str(card.get("rarity") or "Common") for card in owned_cards)
+    catalog_rarity_counts = Counter(str(card.get("rarity") or "Common") for card in cards)
+    element_names = [name for name in element_order if catalog_element_counts.get(name, 0)]
+    element_names.extend(sorted(name for name in catalog_element_counts if name not in element_names))
+    rarity_names = [name for name in rarity_order if catalog_rarity_counts.get(name, 0)]
+    rarity_names.extend(sorted(name for name in catalog_rarity_counts if name not in rarity_names))
     collection_stats = {
-        "unique_cards": len([card for card in cards if int(card.get("count") or 0) > 0]),
-        "total_cards": sum(int(card.get("count") or 0) for card in cards),
-        "monsters": sum(int(card.get("count") or 0) for card in cards if card.get("type") == "Monster"),
-        "spells": sum(int(card.get("count") or 0) for card in cards if card.get("type") == "Spell"),
-        "traps": sum(int(card.get("count") or 0) for card in cards if card.get("type") == "Trap"),
+        "unique_cards": unique_owned,
+        "total_cards": sum(int(card.get("count") or 0) for card in owned_cards),
+        "catalog_cards": catalog_total,
+        "completion_percent": int(round((unique_owned / catalog_total) * 100)) if catalog_total else 0,
+        "catalog_label": "Starter Collection" if unique_owned else "Beta Catalog",
+        "monsters": sum(int(card.get("count") or 0) for card in owned_cards if card.get("type") == "Monster"),
+        "spells": sum(int(card.get("count") or 0) for card in owned_cards if card.get("type") == "Spell"),
+        "traps": sum(int(card.get("count") or 0) for card in owned_cards if card.get("type") == "Trap"),
+        "element_counts": [
+            {
+                "name": name,
+                "owned": int(owned_element_counts.get(name, 0)),
+                "total": int(catalog_element_counts.get(name, 0)),
+                "css": "element-" + name.lower(),
+            }
+            for name in element_names
+        ],
+        "rarity_counts": [
+            {
+                "name": name,
+                "owned": int(owned_rarity_counts.get(name, 0)),
+                "total": int(catalog_rarity_counts.get(name, 0)),
+                "css": "rarity-" + name.lower(),
+            }
+            for name in rarity_names
+        ],
     }
 
     return render_template(
@@ -2916,33 +2950,53 @@ def tutorial():
     steps = [
         {
             "number": "01",
-            "title": "Intent Duel",
-            "subtitle": "Learn Strike, Guard and Focus.",
-            "description": "Every round starts with a decision. Strike pressures HP, Guard protects tempo, and Focus builds Ambition for bigger turns.",
-            "objective": "Understand the intent triangle before entering real matches.",
-            "reward": "+35 XP / +60 Coins through Training Grounds mission",
+            "title": "Enter the Duel",
+            "subtitle": "Ambitionz is a fantasy tactical card battler.",
+            "description": "You win by reading the board, protecting your hero and turning small round choices into lasting pressure.",
+            "objective": "Know the goal before entering Training.",
+            "rule": "Protect your HP. Break the enemy hero.",
             "cta_label": "Start Training",
             "cta_url": url_for("training"),
         },
         {
             "number": "02",
-            "title": "Card Basics",
-            "subtitle": "Learn Energy, Hand, Board and HP.",
-            "description": "Use Energy to play cards, build pressure on the board and manage your hand before committing the round.",
-            "objective": "Play cards without overextending your resources.",
-            "reward": "+40 XP / +80 Coins through Enter the Arena mission",
-            "cta_label": "Edit Deck",
-            "cta_url": url_for("deck_builder"),
+            "title": "Choose Intent",
+            "subtitle": "Strike, Guard or Focus defines the round.",
+            "description": "Strike pressures, Guard survives, and Focus builds Ambition for future turns. Pick one before committing cards.",
+            "objective": "Understand the intent triangle.",
+            "rule": "Intent first. Cards second.",
+            "cta_label": "Practice Intent",
+            "cta_url": url_for("training"),
         },
         {
             "number": "03",
-            "title": "Ambition Trial",
-            "subtitle": "Learn Ambition, Unleash and Overreach.",
-            "description": "Ambition is your comeback fuel. Build it with discipline, unleash it at the right time, and avoid reckless Overreach.",
-            "objective": "Win one training duel after understanding Ambition.",
-            "reward": "+80 XP / +120 Coins through Beat the Bot mission",
-            "cta_label": "Open Progression",
-            "cta_url": url_for("progression"),
+            "title": "Play Cards",
+            "subtitle": "Spend Energy on one card each round.",
+            "description": "Creatures claim lanes. Spells and traps apply their server-resolved effects. Your hand is a set of commitments, not a script.",
+            "objective": "Learn hand, Energy and card timing.",
+            "rule": "One card per round.",
+            "cta_label": "View Deck",
+            "cta_url": url_for("deck_builder"),
+        },
+        {
+            "number": "04",
+            "title": "Command Lanes",
+            "subtitle": "Left, center and right decide combat.",
+            "description": "Creatures fight across matching lanes. Empty enemy lanes let attackers hit the hero directly.",
+            "objective": "Read where pressure will land.",
+            "rule": "Lane-to-lane, then hero.",
+            "cta_label": "See Collection",
+            "cta_url": url_for("collection"),
+        },
+        {
+            "number": "05",
+            "title": "Ready and Resolve",
+            "subtitle": "Ready locks your choice and reveals the result.",
+            "description": "When both sides are ready, the backend resolves the round, updates HP, Ambition, deaths and the Round Summary.",
+            "objective": "Trust the server as the source of truth.",
+            "rule": "Ready resolves. Ambition grows.",
+            "cta_label": "Start Training",
+            "cta_url": url_for("training"),
         },
     ]
 

@@ -12,11 +12,19 @@
     --az-night: #080814;
     --az-deep: #17112A;
     --az-gold: #D6A84B;
+    --az-gold-soft: #F3D78A;
     --az-gold-light: #F8E7BA;
+    --az-arcane: #58D6C7;
+    --az-ember: #E86F4D;
+    --az-tide: #4DA9D9;
+    --az-stone: #A9895E;
+    --az-verdant: #76C988;
     --az-text: #F7F4EC;
+    --az-muted: rgba(247, 244, 236, 0.68);
     --az-muted-text: rgba(247, 244, 236, 0.68);
     --az-danger: #FF7460;
     --az-success: #50FF96;
+    --az-warning: #F0B65A;
     --az-focus: #4DB8FF;
     --az-special: #785AFF;
     --az-bg: var(--az-abyss);
@@ -29,6 +37,11 @@
     --az-gold-glow: rgba(214, 168, 75, 0.22);
     --az-radius: 10px;
     --az-radius-lg: 18px;
+    --az-radius-card: 16px;
+    --az-premium-border: linear-gradient(135deg, rgba(248, 231, 186, .55), rgba(88, 214, 199, .20), rgba(232, 111, 77, .22));
+    --az-fantasy-surface:
+        linear-gradient(180deg, rgba(248, 231, 186, 0.055), rgba(255, 255, 255, 0.018)),
+        rgba(11, 11, 22, 0.88);
 
     --app-bg: var(--az-bg);
     --app-panel: var(--az-panel);
@@ -51,12 +64,287 @@ body {
     padding-left: var(--safe-left);
     padding-right: var(--safe-right);
     background:
-        radial-gradient(circle at top, rgba(90, 35, 140, 0.35), transparent 35%),
-        linear-gradient(135deg, #070711, #10101f 55%, #050509);
+        radial-gradient(circle at 18% 0%, rgba(214, 168, 75, 0.16), transparent 34%),
+        radial-gradient(circle at 82% 12%, rgba(88, 214, 199, 0.11), transparent 30%),
+        linear-gradient(135deg, #070711, #11101d 55%, #050509);
     color: #f5f5f5;
     font-family: Arial, Helvetica, sans-serif;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+}
+
+/* Block 18 - Ambitionz Art Direction System V1
+   A shared fantasy card-game surface language for public pages, account
+   screens, collection/deck tools and Arena-adjacent flows. */
+.az-art-direction-v1,
+.az-home-page-v2,
+.az-game-collection-page,
+.az-game-deck-page,
+.az-economy-page-polish-v1 {
+    color: var(--az-text);
+}
+
+.az-home-page-v2,
+.az-game-collection-page,
+.az-game-deck-page {
+    background:
+        linear-gradient(180deg, rgba(248, 231, 186, .045), transparent 28%),
+        linear-gradient(135deg, #060611, #11101d 52%, #050509);
+}
+
+.panel,
+.shop-panel,
+.deck-status,
+.az-home-panel-v2,
+.az-home-player-v2,
+.az-home-public-cta-v2,
+.az-retention-snapshot-v1,
+.az-collection-summary-v2,
+.az-deck-validation-summary-v2,
+.az-profile-hero-v1,
+.profile-hero-v117,
+.progression-step-card,
+.progression-mission-card {
+    border: 1px solid var(--az-border);
+    background: var(--az-fantasy-surface);
+    box-shadow: var(--az-shadow);
+}
+
+.top-bar,
+.az-card-nav-v1,
+.az-home-nav-v2 {
+    border: 1px solid rgba(248, 231, 186, .12);
+    background:
+        linear-gradient(180deg, rgba(248, 231, 186, .055), rgba(255, 255, 255, .018)),
+        rgba(5, 5, 11, .78);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, .32);
+}
+
+.top-bar {
+    padding: 14px 16px;
+    border-radius: var(--az-radius-lg);
+}
+
+.btn,
+button.btn,
+a.btn,
+.az-nav-cta-v2,
+.az-home-primary-v2 {
+    border: 1px solid rgba(248, 231, 186, .38);
+    background:
+        linear-gradient(180deg, rgba(255, 244, 206, .26), transparent 48%),
+        linear-gradient(135deg, var(--az-gold-soft), var(--az-gold));
+    color: #151007;
+    box-shadow: 0 12px 34px rgba(214, 168, 75, .18);
+    letter-spacing: .01em;
+}
+
+.btn-secondary,
+a.btn-secondary,
+button.btn-secondary,
+.az-card-nav-v1 a:not(.primary):not(.active),
+.az-home-nav-links-v2 a:not(.az-nav-cta-v2) {
+    border: 1px solid rgba(248, 231, 186, .16);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025)),
+        rgba(8, 9, 18, .76);
+    color: rgba(247, 244, 236, .88);
+}
+
+.az-card-nav-v1 a.active,
+.az-card-nav-v1 a.primary,
+.mobile-bottom-nav a.active {
+    border: 1px solid rgba(248, 231, 186, .34);
+    background:
+        linear-gradient(180deg, rgba(255, 244, 206, .18), rgba(214, 168, 75, .12)),
+        rgba(15, 13, 23, .92);
+    color: var(--az-gold-light);
+}
+
+.progression-kicker,
+.az-home-kicker-v2 {
+    color: var(--az-gold-soft);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.flash,
+.danger-box {
+    border-color: rgba(255, 116, 96, .42);
+    background:
+        linear-gradient(180deg, rgba(255, 116, 96, .16), rgba(255, 116, 96, .06)),
+        rgba(12, 7, 10, .74);
+    color: #ffd2ca;
+}
+
+.success-box {
+    border-color: rgba(80, 255, 150, .32);
+    background:
+        linear-gradient(180deg, rgba(80, 255, 150, .13), rgba(80, 255, 150, .045)),
+        rgba(6, 13, 11, .74);
+    color: #c9ffe0;
+}
+
+.az-rarity-badge,
+.az-element-badge,
+.az-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(248, 231, 186, .18);
+    background: rgba(255, 255, 255, .055);
+    color: rgba(247, 244, 236, .82);
+    font-size: .72rem;
+    font-weight: 900;
+}
+
+/* Block 19 - Card Frame Premium V1 */
+.az-premium-card-frame-v1,
+.collection-card.az-premium-card-frame-v1,
+.builder-card.az-premium-card-frame-v1 {
+    position: relative;
+    border-radius: var(--az-radius-card);
+    border: 1px solid rgba(248, 231, 186, .20);
+    background:
+        linear-gradient(180deg, rgba(248, 231, 186, .075), rgba(255, 255, 255, .018)),
+        linear-gradient(145deg, rgba(20, 17, 30, .96), rgba(5, 5, 11, .96));
+    box-shadow:
+        0 22px 58px rgba(0, 0, 0, .42),
+        inset 0 0 0 1px rgba(255, 255, 255, .04);
+    overflow: hidden;
+}
+
+.az-premium-card-frame-v1::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(120deg, rgba(255, 255, 255, .16), transparent 18%, transparent 74%, rgba(0, 0, 0, .34)),
+        linear-gradient(180deg, rgba(248, 231, 186, .08), transparent 42%);
+    opacity: .86;
+}
+
+.az-premium-card-frame-v1 > * {
+    position: relative;
+    z-index: 1;
+}
+
+.az-premium-card-shell-v1,
+.collection-card .card-shell.az-premium-card-shell-v1 {
+    min-height: 248px;
+    border-radius: var(--az-radius-card);
+    border: 1px solid rgba(248, 231, 186, .18);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .018)),
+        rgba(7, 8, 15, .82);
+}
+
+.az-premium-card-badges-v1 {
+    gap: 6px;
+}
+
+.az-card-cost-v1 {
+    min-width: 34px;
+    min-height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(248, 231, 186, .42);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, #fff1bb, var(--az-gold));
+    color: #151007;
+    font-size: .8rem;
+    font-weight: 1000;
+    box-shadow: 0 10px 24px rgba(214, 168, 75, .18);
+}
+
+.az-premium-stat-row-v1 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.az-premium-stat-row-v1 span,
+.az-card-stats-v1 div {
+    min-height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(248, 231, 186, .14);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, .30);
+}
+
+.az-premium-stat-row-v1 b,
+.az-card-stats-v1 b {
+    color: var(--az-gold-light);
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.az-premium-stat-row-v1 small,
+.az-card-stats-v1 small {
+    color: var(--az-muted);
+    font-size: .58rem;
+    font-weight: 1000;
+    letter-spacing: .08em;
+}
+
+.az-premium-stat-attack-v1 {
+    border-color: rgba(232, 111, 77, .28) !important;
+}
+
+.az-premium-stat-health-v1 {
+    border-color: rgba(88, 214, 199, .24) !important;
+}
+
+.element-fire.az-premium-card-frame-v1,
+.element-fire .az-premium-card-shell-v1 {
+    --az-card-element: var(--az-ember);
+    border-color: rgba(232, 111, 77, .32);
+}
+
+.element-water.az-premium-card-frame-v1,
+.element-water .az-premium-card-shell-v1 {
+    --az-card-element: var(--az-tide);
+    border-color: rgba(77, 169, 217, .34);
+}
+
+.element-earth.az-premium-card-frame-v1,
+.element-earth .az-premium-card-shell-v1 {
+    --az-card-element: var(--az-stone);
+    border-color: rgba(169, 137, 94, .34);
+}
+
+.element-plant.az-premium-card-frame-v1,
+.element-plant .az-premium-card-shell-v1 {
+    --az-card-element: var(--az-verdant);
+    border-color: rgba(118, 201, 136, .34);
+}
+
+.element-global.az-premium-card-frame-v1,
+.element-neutral.az-premium-card-frame-v1,
+.element-global .az-premium-card-shell-v1,
+.element-neutral .az-premium-card-shell-v1 {
+    --az-card-element: var(--az-arcane);
+    border-color: rgba(88, 214, 199, .28);
+}
+
+.az-premium-card-frame-v1 .az-card-rarity-v1 {
+    background: linear-gradient(90deg, transparent, var(--az-card-element, var(--az-gold)), transparent);
+    opacity: .72;
+}
+
+.rarity-uncommon.az-premium-card-frame-v1,
+.rarity-rare.az-premium-card-frame-v1,
+.rarity-epic.az-premium-card-frame-v1,
+.rarity-legendary.az-premium-card-frame-v1 {
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, .46),
+        0 0 24px color-mix(in srgb, var(--az-card-element, var(--az-gold)) 16%, transparent);
 }
 
 button,
@@ -9254,5 +9542,413 @@ button[disabled] {
     .az-collection-summary-v2,
     .az-deck-count-grid-v2 {
         grid-template-columns: 1fr;
+    }
+}
+
+
+/* =========================================================
+   Block 20 — Factions / Heroes / Identity Layer
+   ========================================================= */
+
+.az-faction-showcase-v1,
+.az-collection-factions-v1,
+.az-profile-faction-identity-v1 {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--az-border, rgba(248, 231, 186, 0.18));
+    border-radius: var(--az-radius, 18px);
+    background:
+        radial-gradient(circle at 15% 0%, rgba(214, 168, 75, 0.16), transparent 34%),
+        linear-gradient(145deg, rgba(12, 11, 24, 0.92), rgba(24, 16, 36, 0.76));
+    box-shadow: var(--az-shadow, 0 22px 70px rgba(0, 0, 0, 0.32));
+}
+
+.az-faction-showcase-v1 {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.64fr) minmax(0, 1.36fr);
+    gap: 24px;
+    align-items: start;
+    margin: 18px 0;
+    padding: clamp(22px, 4vw, 34px);
+}
+
+.az-faction-showcase-copy-v1 h2,
+.az-collection-factions-v1 h2,
+.az-profile-faction-identity-v1 h2 {
+    margin: 10px 0 8px;
+    color: var(--az-text, #f7f4ec);
+}
+
+.az-faction-showcase-copy-v1 p,
+.az-collection-factions-v1 p,
+.az-profile-faction-identity-v1 p {
+    margin: 0;
+    color: var(--az-muted, rgba(247, 244, 236, 0.68));
+    line-height: 1.55;
+}
+
+.az-faction-grid-v1 {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.az-faction-card-v1 {
+    min-height: 188px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background:
+        linear-gradient(155deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+        rgba(5, 5, 11, 0.42);
+}
+
+.az-faction-card-v1 span,
+.az-faction-chip-v1,
+.az-faction-badge-v1,
+.az-profile-faction-roles-v1 span {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 28px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    color: var(--az-text, #f7f4ec);
+    background: rgba(255, 255, 255, 0.075);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.az-faction-card-v1 strong {
+    color: #fff;
+    font-size: 1.05rem;
+    line-height: 1.1;
+}
+
+.az-faction-card-v1 p {
+    margin: 0;
+    color: rgba(247, 244, 236, 0.72);
+    font-size: 0.9rem;
+    line-height: 1.38;
+}
+
+.az-faction-card-v1 small {
+    color: var(--az-gold-soft, #f8e7ba);
+    font-weight: 800;
+}
+
+.faction-ember {
+    --az-faction-color: var(--az-ember, #e45f3f);
+}
+
+.faction-tideborn {
+    --az-faction-color: var(--az-tide, #50d5ff);
+}
+
+.faction-stonebound {
+    --az-faction-color: var(--az-stone, #9fbd88);
+}
+
+.faction-verdant {
+    --az-faction-color: var(--az-verdant, #5be27d);
+}
+
+.faction-arcane {
+    --az-faction-color: var(--az-arcane, #785aff);
+}
+
+.az-faction-card-v1,
+.az-faction-chip-v1,
+.az-faction-badge-v1,
+.az-profile-faction-identity-v1 {
+    border-color: color-mix(in srgb, var(--az-faction-color, var(--az-gold)) 36%, transparent);
+}
+
+.az-faction-card-v1 span,
+.az-faction-chip-v1,
+.az-faction-badge-v1,
+.az-profile-faction-roles-v1 span {
+    color: color-mix(in srgb, var(--az-faction-color, var(--az-gold)) 72%, #fff);
+    background: color-mix(in srgb, var(--az-faction-color, var(--az-gold)) 14%, transparent);
+    border-color: color-mix(in srgb, var(--az-faction-color, var(--az-gold)) 26%, transparent);
+}
+
+.az-collection-factions-v1 {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.64fr) minmax(0, 1.36fr);
+    gap: 18px;
+    align-items: center;
+    margin: 18px 0;
+    padding: clamp(18px, 3vw, 26px);
+}
+
+.az-faction-chip-row-v1,
+.az-profile-faction-roles-v1 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.az-faction-badge-v1 {
+    max-width: 100%;
+}
+
+.az-profile-faction-identity-v1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 18px 0;
+    padding: clamp(18px, 3vw, 26px);
+}
+
+@media (max-width: 980px) {
+    .az-faction-showcase-v1,
+    .az-collection-factions-v1 {
+        grid-template-columns: 1fr;
+    }
+
+    .az-faction-grid-v1 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .az-faction-grid-v1 {
+        grid-template-columns: 1fr;
+    }
+
+    .az-profile-faction-identity-v1 {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+
+/* =========================================================
+   Block 24 — Collection Desire Loop
+   ========================================================= */
+
+.az-collection-desire-v1 {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.58fr) minmax(0, 1.42fr);
+    gap: 18px;
+    align-items: stretch;
+    margin: 18px 0;
+    padding: clamp(18px, 3vw, 28px);
+    border-radius: var(--az-radius, 18px);
+    border: 1px solid var(--az-border, rgba(248, 231, 186, 0.18));
+    background:
+        radial-gradient(circle at 0% 0%, rgba(214, 168, 75, 0.16), transparent 34%),
+        linear-gradient(145deg, rgba(13, 11, 24, 0.94), rgba(18, 14, 30, 0.78));
+    box-shadow: var(--az-shadow, 0 22px 70px rgba(0, 0, 0, 0.32));
+}
+
+.az-collection-progress-copy-v1 h2 {
+    margin: 10px 0 8px;
+}
+
+.az-collection-progress-copy-v1 p {
+    margin: 0;
+    color: var(--az-muted, rgba(247, 244, 236, 0.68));
+    line-height: 1.5;
+}
+
+.az-collection-progress-panel-v1 {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+.az-collection-progress-row-v1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.az-collection-progress-row-v1 span {
+    color: var(--az-muted, rgba(247, 244, 236, 0.68));
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.az-collection-progress-row-v1 strong {
+    color: var(--az-gold-soft, #f8e7ba);
+    font-size: clamp(1.32rem, 3vw, 2.05rem);
+}
+
+.az-collection-progress-bar-v1 {
+    position: relative;
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.085);
+    border: 1px solid rgba(248, 231, 186, 0.12);
+}
+
+.az-collection-progress-fill-v1 {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: inherit;
+    background:
+        linear-gradient(90deg, var(--az-arcane, #785aff), var(--az-gold, #d6a84b), var(--az-success, #50ff96));
+    box-shadow: 0 0 24px rgba(214, 168, 75, 0.24);
+}
+
+.az-collection-breakdown-v1 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.az-collection-breakdown-v1 article {
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(5, 5, 11, 0.36);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.az-collection-breakdown-v1 h3 {
+    margin: 0 0 10px;
+    color: var(--az-text, #f7f4ec);
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.az-collection-count-grid-v1 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.az-collection-count-pill-v1,
+.az-ownership-badge-v1 {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 30px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    color: var(--az-text, #f7f4ec);
+    background: rgba(255, 255, 255, 0.065);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+
+.az-collection-count-pill-v1 small,
+.az-ownership-badge-v1 {
+    color: var(--az-muted, rgba(247, 244, 236, 0.68));
+}
+
+.az-collection-count-pill-v1.element-fire {
+    border-color: rgba(232, 111, 77, 0.30);
+    color: #ffc0ad;
+}
+
+.az-collection-count-pill-v1.element-water {
+    border-color: rgba(77, 169, 217, 0.32);
+    color: #b8e8ff;
+}
+
+.az-collection-count-pill-v1.element-earth {
+    border-color: rgba(169, 137, 94, 0.32);
+    color: #e8d5b8;
+}
+
+.az-collection-count-pill-v1.element-plant {
+    border-color: rgba(118, 201, 136, 0.32);
+    color: #c7ffd0;
+}
+
+.az-collection-count-pill-v1.rarity-uncommon,
+.rarity-uncommon .az-rarity-badge {
+    border-color: rgba(80, 255, 150, 0.28);
+    color: #c9ffe0;
+}
+
+.rarity-common .az-rarity-badge {
+    border-color: rgba(248, 231, 186, 0.20);
+    color: #f8e7ba;
+}
+
+.rarity-rare .az-rarity-badge,
+.rarity-epic .az-rarity-badge,
+.rarity-legendary .az-rarity-badge {
+    border-color: color-mix(in srgb, var(--az-gold, #d6a84b) 46%, transparent);
+    color: #fff3ca;
+    box-shadow: 0 0 18px rgba(214, 168, 75, 0.14);
+}
+
+.az-ownership-badge-v1.is-owned {
+    color: #06130b;
+    background: var(--az-success, #50ff96);
+    border-color: rgba(80, 255, 150, 0.42);
+}
+
+.az-ownership-badge-v1.is-locked {
+    color: rgba(247, 244, 236, 0.70);
+    background: rgba(255, 255, 255, 0.052);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.collection-card.is-unowned {
+    filter: saturate(0.48);
+}
+
+.collection-card.is-unowned .az-card-art-v1,
+.collection-card.is-unowned .az-card-body-v1,
+.collection-card.is-unowned .az-card-stats-v1 {
+    opacity: 0.58;
+}
+
+.az-card-lock-overlay-v1 {
+    position: absolute;
+    inset: auto 10px 10px;
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.az-card-lock-overlay-v1 span {
+    display: inline-flex;
+    min-height: 28px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: rgba(247, 244, 236, 0.82);
+    background: rgba(5, 5, 11, 0.78);
+    border: 1px solid rgba(248, 231, 186, 0.16);
+    font-size: 0.68rem;
+    font-weight: 950;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+    .az-collection-desire-v1,
+    .az-collection-breakdown-v1 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .az-collection-progress-row-v1 {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }

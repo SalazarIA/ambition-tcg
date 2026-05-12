@@ -12,6 +12,9 @@
     let commandSeq = 0;
     let latestPostMatchSummary = null;
     let latestGameOverResult = "";
+    let lastCombatAudioSignature = "";
+    let lastGameOverAudioResult = "";
+    const pulseTimers = {};
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
     const ARENA_COMMAND_SCHEMA = "arena_command_v1";
@@ -93,6 +96,18 @@
         } catch (error) {
             console.debug("[Ambitionz V51 sound skipped]", error);
         }
+    }
+
+    function restartBodyPulse(className, duration) {
+        if (!document.body || !className) return;
+        const timeout = duration || 760;
+        document.body.classList.remove(className);
+        void document.body.offsetWidth;
+        document.body.classList.add(className);
+        window.clearTimeout(pulseTimers[className]);
+        pulseTimers[className] = window.setTimeout(() => {
+            if (document.body) document.body.classList.remove(className);
+        }, timeout);
     }
 
     function appendLog(value) {
@@ -232,8 +247,8 @@
         const colors = c.colors || {};
         const keywordTags = arr(c.keywordText && c.keywordText.length ? c.keywordText : c.keywords).slice(0, 2);
         const stats = c.isMonster
-            ? '<div class="az48-card-stats"><span>ATK ' + esc(c.attack || c.stat || 0) + '</span><span>HP ' + esc(c.currentHp || 0) + '/' + esc(c.maxHp || 0) + '</span></div>'
-            : '<div class="az48-card-stats"><span>' + esc(c.statLabel || "VAL") + ' ' + esc(c.stat || 0) + '</span><span>' + esc(c.element || "Neutral") + '</span></div>';
+            ? '<div class="az48-card-stats"><span class="az48-card-stat-pair az48-stat-attack"><b>ATK</b>' + esc(c.attack || c.stat || 0) + '</span><span class="az48-card-stat-pair az48-stat-health"><b>HP</b>' + esc(c.currentHp || 0) + '/' + esc(c.maxHp || 0) + '</span></div>'
+            : '<div class="az48-card-stats"><span class="az48-card-stat-pair"><b>' + esc(c.statLabel || "VAL") + '</b>' + esc(c.stat || 0) + '</span><span class="az48-card-stat-pair"><b>ELM</b>' + esc(c.element || "Neutral") + '</span></div>';
         const laneData = options.lane ? ' data-az48-lane="' + esc(options.lane) + '"' : "";
         const style = [
             "--az-card-primary:" + esc(colors.primary || "#9ea7b7"),
@@ -245,16 +260,17 @@
         const title = options.disabledReason || c.preview || c.effect || c.name;
 
         return [
-            '<button type="button" class="az48-card az48-card-v2 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + ' data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
+            '<button type="button" class="az48-card az48-card-v2 az48-card-frame-premium-v1 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + ' data-card-type="' + esc(c.type) + '" data-element="' + esc(c.element || "Neutral") + '" data-rarity="' + esc(c.rarity || "Common") + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
             '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
+            '<span class="az48-card-element-mark">' + esc((c.element || "N").slice(0, 1).toUpperCase()) + '</span>',
             '<div class="az48-art"><span class="az48-art-image" aria-hidden="true"></span><span class="az48-art-glow" aria-hidden="true"></span></div>',
             '<strong class="az48-name">' + esc(c.name) + '</strong>',
             stats,
             '<p class="az48-effect">' + esc(c.effect || c.role || c.kind || "") + '</p>',
             '<p class="az48-card-preview-line">' + esc(c.preview || "") + '</p>',
-            '<div class="az48-tags"><span>' + esc(c.element || "Neutral") + '</span><span>' + esc(c.type) + '</span>' + keywordTags.map((keyword) => '<span>' + esc(keyword) + '</span>').join("") + '</div>',
+            '<div class="az48-tags"><span>' + esc(c.element || "Neutral") + '</span><span>' + esc(c.type) + '</span>' + keywordTags.map((keyword) => '<span class="az48-keyword-chip">' + esc(keyword) + '</span>').join("") + '</div>',
             '<span class="az48-power">' + esc(c.statLabel) + ' ' + esc(c.stat) + '</span>',
             '</button>'
         ].join("");
@@ -746,7 +762,9 @@
         if (rewardsEl) {
             if (rewards.xp !== undefined && rewards.xp !== null) rewardLines.push("XP +" + num(rewards.xp));
             if (rewards.coins !== undefined && rewards.coins !== null) rewardLines.push("Coins +" + num(rewards.coins));
-            rewardsEl.textContent = rewardLines.join(" · ");
+            rewardsEl.textContent = rewardLines.length
+                ? "Reward Preview · " + rewardLines.join(" · ")
+                : "";
             rewardsEl.hidden = rewardLines.length === 0;
         }
 
@@ -814,6 +832,34 @@
         return feedback;
     }
 
+    function playCombatLogFeedback(state) {
+        const events = getRoundCombatLog(state);
+        if (!events.length) return;
+
+        const signature = [
+            num((state && state.round) || 0),
+            events.map((event) => {
+                return [
+                    str(event && (event.type || event.kind), ""),
+                    eventLane(event),
+                    eventAmount(event),
+                    str(event && (event.card_name || event.attacker_name || event.defender_name || event.target_side), ""),
+                ].join(":");
+            }).join("|"),
+        ].join("::");
+
+        if (signature === lastCombatAudioSignature) return;
+        lastCombatAudioSignature = signature;
+
+        const hasResolve = events.some((event) => ["round_resolve", "round_end"].includes(str(event && (event.type || event.kind), "").toLowerCase()));
+        const hasDamage = events.some((event) => ["creature_damage", "hero_damage", "direct_attack"].includes(str(event && (event.type || event.kind), "").toLowerCase()));
+        const hasDeath = events.some((event) => str(event && (event.type || event.kind), "").toLowerCase() === "creature_death");
+
+        if (hasResolve) playSound("roundResolve");
+        if (hasDamage) window.setTimeout(() => playSound("damage"), 90);
+        if (hasDeath) window.setTimeout(() => playSound("death"), 180);
+    }
+
     function feedbackClassesForLane(feedback, side, lane) {
         const classes = [];
         const key = feedbackKey(side, lane);
@@ -844,6 +890,16 @@
     function selectedHandCard() {
         if (!selectedCardId) return null;
         return selectedHandEntry(selectedCardId);
+    }
+
+    function factionForElement(element) {
+        const key = str(element || "").toLowerCase();
+        if (key === "fire") return "Ember Court";
+        if (key === "water") return "Tideborn Order";
+        if (key === "earth") return "Stonebound Clan";
+        if (key === "plant") return "Verdant Pact";
+        if (key === "global") return "Arcane Neutral";
+        return "Arcane Neutral";
     }
 
     function allKnownCards(payload) {
@@ -952,6 +1008,7 @@
             ["Cost", c.cost],
             ["Type", c.type],
             ["Element", c.element || "Neutral"],
+            ["Faction", factionForElement(c.element)],
         ];
 
         if (c.isMonster) {
@@ -1090,11 +1147,18 @@
             const previousEnemy = previousState.enemy || {};
             const meLostHp = num(previousMe.hp || 0) > num(me.hp || 0);
             const enemyLostHp = num(previousEnemy.hp || 0) > num(enemy.hp || 0);
+            const meGainedAmbition = num(me.ambition || 0) > num(previousMe.ambition || 0);
+            const handSpentCard = arr(previousMe.hand).length > hand.length;
 
-            if (meLostHp || enemyLostHp) {
+            if ((meLostHp || enemyLostHp) && !getRoundCombatLog(state).length) {
                 playSound("damage");
             }
+
+            if (meGainedAmbition) restartBodyPulse("az48-ambition-gained", 860);
+            if (handSpentCard) restartBodyPulse("az48-card-played-feedback", 720);
         }
+
+        playCombatLogFeedback(state);
 
         renderClarity(state);
         renderRoundSummary(state);
@@ -1229,7 +1293,9 @@
         renderTrainingResult(null);
         setMessage("Starting Training. Draw your hand, then practice intent, card, lane and Ready.");
         setServerError("");
-        emitCommand("start_training", {});
+        if (emitCommand("start_training", {})) {
+            playSound("uiTap");
+        }
     }
 
     function requestState() {
@@ -1299,6 +1365,10 @@
             setMessage(cardState.disabled_reason || "This card cannot be played now.");
             clearSelection();
             return;
+        }
+
+        if (!choice.lane && !choice.target) {
+            playSound("cardSelect", { element: card.element });
         }
 
         const payload = { card_id: id, card_index: entry.index };
@@ -1445,6 +1515,11 @@
         socket.on("game_over", (payload) => {
             latestGameOverResult = str(payload && payload.result, "");
             const message = "Game Over: " + str(payload && payload.result, "Unknown");
+            const key = resultKey(latestGameOverResult);
+            if (key && key !== lastGameOverAudioResult) {
+                lastGameOverAudioResult = key;
+                playSound(key === "win" ? "victory" : (key === "lose" ? "defeat" : "roundResolve"));
+            }
             setMessage(message);
             appendLog(message);
             renderTrainingResult(latestState || { phase: "finished", result: latestGameOverResult });
