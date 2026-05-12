@@ -81,11 +81,73 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v165"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v169"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
     assert "apple-touch-icon.png" in homepage
+
+
+def test_public_home_product_contract():
+    homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+
+    assert "https://ambitionzgame.com/" in homepage
+    assert "Jogar Agora" in homepage
+    assert "turn-based battles" in homepage
+    assert "intent choices" in homepage
+    assert "lane control" in homepage
+    assert "url_for('training')" in homepage
+    assert "url_for('arena')" in homepage
+    assert "url_for('collection')" in homepage
+    assert "url_for('deck_builder')" in homepage
+    assert "url_for('leaderboard')" in homepage
+    assert "url_for('login')" in homepage
+    assert "url_for('register')" in homepage
+    assert "az-home-page-v2" in homepage
+    assert ".az-home-hero-v2" in css
+    assert ".az-home-route-grid-v2" in css
+
+
+def test_profile_progression_snapshot_contract():
+    profile = (PROJECT_ROOT / "templates" / "profile.html").read_text()
+    progression = (PROJECT_ROOT / "templates" / "progression.html").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+
+    assert 'id="az-profile-summary"' in profile
+    assert "profile_stats.mode_most_played" in profile
+    assert "profile_stats.latest_result" in profile
+    assert "profile_stats.xp_to_next" in profile
+    assert 'id="az-progression-summary"' in progression
+    assert "progression_stats.total_matches" in progression
+    assert "progression_stats.first_training_completed" in progression
+    assert '"mode_most_played"' in app_py
+    assert '"latest_result"' in app_py
+    assert ".az-retention-snapshot-v1" in css
+    assert ".az-retention-stat-grid-v1" in css
+
+
+def test_collection_and_deck_builder_v2_contract():
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    deck_builder = (PROJECT_ROOT / "templates" / "deck_builder.html").read_text()
+    deck_js = (PROJECT_ROOT / "static" / "js" / "deck_builder.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+
+    assert 'id="az-collection-summary"' in collection
+    assert "collection_stats.total_cards" in collection
+    assert "collection_stats.monsters" in collection
+    assert "az-empty-collection-v2" in collection
+    assert 'id="az-deck-validation-summary"' in deck_builder
+    assert "deck_status.rules_label" in deck_builder
+    assert "az-deck-summary-duplicates" in deck_builder
+    assert "Save Active Deck" in deck_builder
+    assert "duplicates" in deck_js
+    assert "az-deck-validity-pill" in deck_js
+    assert ".az-collection-summary-v2" in css
+    assert ".az-deck-validation-summary-v2" in css
+    assert "ensure_user_has_playable_inventory(user)" in app_py
 
 
 def test_arena_has_compact_turn_hud_contract():
@@ -247,13 +309,39 @@ def test_arena_browser_qa_regression_contract():
         "Console errors detected",
         "combat_feedback_visible",
         "finished_text_visible",
+        "training_result_visible",
     ]:
         assert required in browser_flow
 
     assert "safe_round_limit_reached" in full_match
     assert "body_has_raw_json" in full_match
     assert "finished_text_visible" in full_match
+    assert "training_result_visible" in full_match
     assert "ensure_browser_user()" in real_round
     assert "MOBILE REAL ROUND QA" in runner
     assert "browser_full_match" in runner
     assert "raise SystemExit(1)" in runner
+
+
+def test_training_bot_polish_contract():
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert 'id="az48-training-panel"' in template
+    assert "Training Mode" in template
+    assert "Easy" in template
+    assert "Normal" in template
+    assert "Hard" in template
+    assert 'id="az48-training-result"' in template
+    assert 'id="az48-training-restart"' in template
+    assert "Jogar novamente" in template
+    assert "url_for('collection')" in template
+    assert "url_for('deck_builder')" in template
+    assert "post_match_summary" in js
+    assert "function renderTrainingResult" in js
+    assert "latestPostMatchSummary" in js
+    assert "Bot thinking" in js
+    assert ".az48-training-panel" in css
+    assert ".az48-training-result" in css
+    assert ".az48-result-actions" in css

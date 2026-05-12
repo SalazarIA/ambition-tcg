@@ -66,6 +66,61 @@ def run():
 
     visual_contracts = [
         (
+            "public_home_cta",
+            PROJECT_ROOT / "templates" / "index.html",
+            "Jogar Agora",
+        ),
+        (
+            "public_home_domain",
+            PROJECT_ROOT / "templates" / "index.html",
+            "ambitionzgame.com",
+        ),
+        (
+            "public_home_routes",
+            PROJECT_ROOT / "templates" / "index.html",
+            "url_for('deck_builder')",
+        ),
+        (
+            "public_home_css",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            ".az-home-hero-v2",
+        ),
+        (
+            "profile_summary_template",
+            PROJECT_ROOT / "templates" / "profile.html",
+            'id="az-profile-summary"',
+        ),
+        (
+            "progression_summary_template",
+            PROJECT_ROOT / "templates" / "progression.html",
+            'id="az-progression-summary"',
+        ),
+        (
+            "retention_snapshot_css",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            ".az-retention-snapshot-v1",
+        ),
+        (
+            "collection_summary_template",
+            PROJECT_ROOT / "templates" / "collection.html",
+            'id="az-collection-summary"',
+        ),
+        (
+            "deck_builder_validation_summary",
+            PROJECT_ROOT / "templates" / "deck_builder.html",
+            'id="az-deck-validation-summary"',
+        ),
+        (
+            "deck_builder_v2_js",
+            PROJECT_ROOT / "static" / "js" / "deck_builder.js",
+            "az-deck-validity-pill",
+        ),
+        (
+            "collection_deck_v2_css",
+            PROJECT_ROOT / "static" / "css" / "style.css",
+            ".az-deck-validation-summary-v2",
+        ),
+        (
             "arena_command_v1_js",
             PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
             "arena_command_v1",
@@ -174,6 +229,31 @@ def run():
             "combat_feedback_reduced_motion",
             PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
             "prefers-reduced-motion",
+        ),
+        (
+            "training_polish_template",
+            PROJECT_ROOT / "templates" / "arena.html",
+            'id="az48-training-panel"',
+        ),
+        (
+            "training_result_template",
+            PROJECT_ROOT / "templates" / "arena.html",
+            'id="az48-training-result"',
+        ),
+        (
+            "training_result_js",
+            PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js",
+            "renderTrainingResult",
+        ),
+        (
+            "training_result_css",
+            PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css",
+            ".az48-training-result",
+        ),
+        (
+            "training_result_qa",
+            PROJECT_ROOT / "tools" / "qa" / "qa_browser_full_match_flow.py",
+            "training_result_visible",
         ),
         (
             "full_match_qa_safe_limit",

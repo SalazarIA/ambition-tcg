@@ -1,3 +1,5 @@
+import re
+
 from models import MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, db
 
 from app import active_matches, emit_arena_state_v8, issue_password_reset_token, socket_state, socketio
@@ -24,7 +26,24 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v165" in body
+    assert "ambitionz-web-app-v169" in body
+
+
+def test_public_home_renders_product_entry_and_real_routes(client):
+    response = client.get("/")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Ambitionz" in body
+    assert "Jogar Agora" in body
+    assert "ambitionzgame.com" in body
+    assert 'href="/training"' in body
+    assert 'href="/arena"' in body
+    assert 'href="/collection"' in body
+    assert 'href="/deck-builder"' in body
+    assert 'href="/leaderboard"' in body
+    assert 'href="/login"' in body
+    assert 'href="/register"' in body
 
 
 def test_training_3d_renderer_flag_loads_three_bundle(client):
@@ -38,6 +57,27 @@ def test_training_3d_renderer_flag_loads_three_bundle(client):
     assert 'data-arena-renderer="3d"' in body
     assert "css/arena3d.css" in body
     assert "dist/arena3d/arena3d.js" in body
+
+
+def test_training_renders_bot_polish_and_result_contract(client):
+    user = create_user(username="trainingpolish", email="trainingpolish@example.com")
+    login_session(client, user)
+
+    response = client.get("/training")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'id="az48-training-panel"' in body
+    assert "Training Mode" in body
+    assert "Practice intent, card, lane, Ready." in body
+    assert "Easy" in body
+    assert "Normal" in body
+    assert "Hard" in body
+    assert 'id="az48-training-result"' in body
+    assert "Jogar novamente" in body
+    assert 'href="/collection"' in body
+    assert 'href="/deck-builder"' in body
+    assert 'href="/"' in body
 
 
 def test_support_page_renders_publicly(client):
@@ -188,6 +228,81 @@ def test_core_game_routes_require_login(client):
         response = client.get(path)
         assert response.status_code == 302
         assert response.headers["Location"].endswith("/login")
+
+
+def test_profile_and_progression_render_basic_retention_summary(client):
+    user = create_user(username="profilehero", email="profilehero@example.com")
+    user.wins = 2
+    user.losses = 1
+    user.xp = 45
+    user.level = 2
+    user.first_training_completed = True
+    db.session.add(
+        MatchHistory(
+            player1_id=user.id,
+            player2_id=None,
+            winner_id=user.id,
+            player1_name=user.username,
+            player2_name="Ambitionz Bot",
+            winner_name=user.username,
+            result="FINISHED",
+            player1_final_hp=12,
+            player2_final_hp=0,
+            total_rounds=4,
+            battle_log_json="[]",
+        )
+    )
+    db.session.commit()
+    login_session(client, user)
+
+    profile_response = client.get("/profile")
+    profile_body = profile_response.get_data(as_text=True)
+    assert profile_response.status_code == 200
+    assert 'id="az-profile-summary"' in profile_body
+    assert "profilehero" in profile_body
+    assert "Most Played" in profile_body
+    assert "Training" in profile_body
+    assert "Latest Result" in profile_body
+    assert "Win" in profile_body
+
+    progression_response = client.get("/progression")
+    progression_body = progression_response.get_data(as_text=True)
+    assert progression_response.status_code == 200
+    assert 'id="az-progression-summary"' in progression_body
+    assert "45/200 XP" in progression_body
+    assert "3 matches played" in progression_body
+
+
+def test_collection_and_deck_builder_v2_render_and_save(client):
+    user = create_user(username="deckv2", email="deckv2@example.com")
+    csrf_token = login_session(client, user)
+
+    collection_response = client.get("/collection")
+    collection_body = collection_response.get_data(as_text=True)
+    assert collection_response.status_code == 200
+    assert 'id="az-collection-summary"' in collection_body
+    assert "Total Owned" in collection_body
+    assert "Unique Cards" in collection_body
+
+    deck_response = client.get("/deck-builder")
+    deck_body = deck_response.get_data(as_text=True)
+    assert deck_response.status_code == 200
+    assert 'id="az-deck-validation-summary"' in deck_body
+    assert "30 cards" in deck_body
+    assert "Duplicate Cards" in deck_body
+    assert "Save Active Deck" in deck_body
+
+    selected_cards = re.findall(r'name="deck_cards" value="([^"]+)"', deck_body)
+    assert len(selected_cards) == 30
+
+    save_response = client.post(
+        "/deck-builder",
+        data={"_csrf_token": csrf_token, "deck_cards": selected_cards},
+        follow_redirects=True,
+    )
+    save_body = save_response.get_data(as_text=True)
+    assert save_response.status_code == 200
+    assert "Deck saved successfully." in save_body
 
 
 def test_admin_cannot_remove_own_or_last_admin(client):

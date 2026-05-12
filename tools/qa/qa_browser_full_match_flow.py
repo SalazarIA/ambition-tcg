@@ -148,6 +148,11 @@ def snapshot(page, label, logs):
         read_text(page, "#az48-card-preview-text", ""),
         read_text(page, "#az48-card-keyword-lines", ""),
     ]).strip()
+    training_result_text = " ".join([
+        read_text(page, "#az48-result-title", ""),
+        read_text(page, "#az48-result-text", ""),
+        read_text(page, "#az48-result-rewards", ""),
+    ]).strip()
     hud_text = " ".join([
         read_text(page, "#az48-me-intent", ""),
         read_text(page, "#az48-enemy-status", ""),
@@ -187,6 +192,8 @@ def snapshot(page, label, logs):
             phrase in text.lower()
             for phrase in ["victory", "defeat", "winner", "match finished", "game over", "venceu", "vitória", "vitoria"]
         ),
+        "training_result_visible": count_cards(page, "#az48-training-result:not([hidden])") > 0,
+        "training_result_text": training_result_text,
         "round_summary_visible": count_cards(page, "#az48-round-summary") > 0,
         "round_summary_text": summary_text,
         "round_summary_has_raw_json": "{" in summary_text or "}" in summary_text,
@@ -243,6 +250,9 @@ def assert_state_ok(snap, label):
 
     if snap["phase"].lower() == "finished" and not snap["finished_text_visible"]:
         raise AssertionError(f"{label}: finished phase reached without visible end state")
+
+    if snap["phase"].lower() == "finished" and not snap["training_result_visible"]:
+        raise AssertionError(f"{label}: finished training match did not show result panel")
 
 
 def run_browser_full_match_flow(base_url="http://127.0.0.1:8080", headed=False):

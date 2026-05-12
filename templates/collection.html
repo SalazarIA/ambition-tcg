@@ -52,6 +52,29 @@
             </div>
         </section>
 
+        <section id="az-collection-summary" class="az-collection-summary-v2" aria-label="Collection summary">
+            <article>
+                <span>Total Owned</span>
+                <strong>{{ collection_stats.total_cards|default(0) }}</strong>
+            </article>
+            <article>
+                <span>Unique Cards</span>
+                <strong>{{ collection_stats.unique_cards|default(0) }}</strong>
+            </article>
+            <article>
+                <span>Monsters</span>
+                <strong>{{ collection_stats.monsters|default(0) }}</strong>
+            </article>
+            <article>
+                <span>Spells</span>
+                <strong>{{ collection_stats.spells|default(0) }}</strong>
+            </article>
+            <article>
+                <span>Traps</span>
+                <strong>{{ collection_stats.traps|default(0) }}</strong>
+            </article>
+        </section>
+
 
         <section class="deck-status deck-filter-panel">
             <h2>Filters</h2>
@@ -119,6 +142,13 @@
                             <div><b>{{ card.count }}</b><small>OWNED</small></div>
                         {% endif %}
                     </div>
+                </article>
+            {% else %}
+                <article class="az-empty-collection-v2">
+                    <span class="progression-kicker">No cards yet</span>
+                    <h2>Your collection is empty.</h2>
+                    <p>Open boosters or repair inventory before building a deck.</p>
+                    <a href="{{ url_for('shop') }}" class="btn">Open Shop</a>
                 </article>
             {% endfor %}
         </section>

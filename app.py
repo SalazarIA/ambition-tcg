@@ -9,6 +9,7 @@ import hmac
 import hashlib
 import os
 import secrets
+from collections import Counter
 from datetime import datetime, timezone, timedelta
 
 import itsdangerous
@@ -1634,26 +1635,56 @@ def profile():
         beta_tier = "Unranked"
 
     recent_matches = []
+    user_matches = []
+    history_draws = 0
+    mode_counts = {}
+    latest_result = "No matches yet"
 
     try:
-        recent_matches = (
+        user_matches = (
             MatchHistory.query
             .filter(
                 (MatchHistory.player1_id == user.id) |
                 (MatchHistory.player2_id == user.id)
             )
             .order_by(MatchHistory.id.desc())
-            .limit(5)
             .all()
         )
+
+        recent_matches = user_matches[:5]
+
+        for match in user_matches:
+            opponent_name = match.player2_name if match.player1_id == user.id else match.player1_name
+            mode_label = "Training" if "bot" in str(opponent_name or "").lower() else "PvP"
+            mode_counts[mode_label] = mode_counts.get(mode_label, 0) + 1
+
+            if match.result == "DRAW" or not match.winner_id:
+                history_draws += 1
+
+        if user_matches:
+            latest = user_matches[0]
+            if latest.result == "DRAW" or not latest.winner_id:
+                latest_result = "Draw"
+            elif latest.winner_id == user.id:
+                latest_result = "Win"
+            else:
+                latest_result = "Loss"
     except Exception as error:
         print("PROFILE MATCH QUERY ERROR:", type(error).__name__, error)
         recent_matches = []
+        user_matches = []
+
+    played_matches = max(total_matches, len(user_matches))
+    mode_most_played = "Not played yet" if not mode_counts else max(
+        mode_counts.items(),
+        key=lambda item: (item[1], item[0]),
+    )[0]
 
     profile_stats = {
-        "total_matches": total_matches,
+        "total_matches": played_matches,
         "wins": int(user.wins or 0),
         "losses": int(user.losses or 0),
+        "draws": history_draws,
         "winrate": winrate,
         "beta_tier": beta_tier,
         "level": int(user.level or 1),
@@ -1661,6 +1692,9 @@ def profile():
         "next_level_xp": user.next_level_xp,
         "level_progress_percent": user.level_progress_percent,
         "coins": int(user.coins or 0),
+        "mode_most_played": mode_most_played,
+        "latest_result": latest_result,
+        "xp_to_next": max(0, int(user.next_level_xp or 0) - int(user.xp or 0)),
     }
 
     identity = {
@@ -2069,13 +2103,29 @@ def collection():
     user = current_user()
 
     # COLLECTION_REAL_OWNERSHIP_V1
+    try:
+        ensure_user_has_playable_inventory(user)
+        db.session.commit()
+    except Exception as error:
+        print("COLLECTION INVENTORY RECOVERY ERROR:", type(error).__name__, error)
+        db.session.rollback()
+
     cards = build_collection_from_inventory(user, include_zero=False)
+    inventory_counts = user_inventory_counts(user)
+    collection_stats = {
+        "unique_cards": len([card for card in cards if int(card.get("count") or 0) > 0]),
+        "total_cards": sum(int(card.get("count") or 0) for card in cards),
+        "monsters": sum(int(card.get("count") or 0) for card in cards if card.get("type") == "Monster"),
+        "spells": sum(int(card.get("count") or 0) for card in cards if card.get("type") == "Spell"),
+        "traps": sum(int(card.get("count") or 0) for card in cards if card.get("type") == "Trap"),
+    }
 
     return render_template(
         "collection.html",
         user=user,
         cards=cards,
-        inventory_counts=user_inventory_counts(user),
+        inventory_counts=inventory_counts,
+        collection_stats=collection_stats,
     )
 
 
@@ -2374,6 +2424,13 @@ def deck_builder():
 
     user = current_user()
 
+    try:
+        ensure_user_has_playable_inventory(user)
+        db.session.commit()
+    except Exception as error:
+        print("DECK BUILDER INVENTORY RECOVERY ERROR:", type(error).__name__, error)
+        db.session.rollback()
+
     collection_ids = owned_card_ids_for_user(user)
     deck_ids = load_card_ids(user.deck_json)
 
@@ -2405,6 +2462,16 @@ def deck_builder():
 
     deck_validation_errors = validate_deck(deck_ids, collection_ids)
     deck_analysis = full_deck_analysis(deck_ids)
+    deck_counter = Counter(deck_ids)
+    deck_status = {
+        "is_valid": len(deck_validation_errors) == 0,
+        "error_count": len(deck_validation_errors),
+        "total": len(deck_ids),
+        "duplicates": len([card_id for card_id, amount in deck_counter.items() if amount > 1]),
+        "max_copies_used": max(deck_counter.values()) if deck_counter else 0,
+        "max_copies_allowed": 3,
+        "rules_label": "30 cards · 21 monsters · 6 spells · 3 traps · max 3 copies",
+    }
 
     return render_template(
         "deck_builder.html",
@@ -2414,6 +2481,7 @@ def deck_builder():
         deck_ids=deck_ids,
         deck_validation_errors=deck_validation_errors,
         deck_analysis=deck_analysis_v115(deck_ids),
+        deck_status=deck_status,
     )
 
 
@@ -3687,6 +3755,17 @@ def progression():
 
     user = current_user()
     missions = []
+    progression_stats = {
+        "username": user.username,
+        "level": int(user.level or 1),
+        "xp": int(user.xp or 0),
+        "next_level_xp": int(user.next_level_xp or 100),
+        "level_progress_percent": user.level_progress_percent,
+        "wins": int(user.wins or 0),
+        "losses": int(user.losses or 0),
+        "total_matches": int(user.wins or 0) + int(user.losses or 0),
+        "first_training_completed": bool(getattr(user, "first_training_completed", False)),
+    }
 
     try:
         ensure_daily_missions(user)
@@ -3734,6 +3813,7 @@ def progression():
         user=user,
         missions=missions,
         next_steps=next_steps,
+        progression_stats=progression_stats,
     )
 
 

@@ -10,6 +10,8 @@
     let selectedCardId = null;
     let selectionMode = "";
     let commandSeq = 0;
+    let latestPostMatchSummary = null;
+    let latestGameOverResult = "";
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
     const ARENA_COMMAND_SCHEMA = "arena_command_v1";
@@ -314,13 +316,13 @@
         const phase = str((state && state.phase) || "").toLowerCase();
 
         if (phase === "finished" || (state && state.winner)) return "Finished";
-        if (enemy && enemy.ready) return "Ready";
-        if (enemy && enemy.intent) return intentLabel(enemy.intent, "Intent set");
-        if (preview && preview.ready) return "Ready";
-        if (preview && preview.intent) return intentLabel(preview.intent, "Intent set");
+        if (enemy && enemy.ready) return PAGE_KIND === "training" ? "Bot ready" : "Ready";
+        if (enemy && enemy.intent) return PAGE_KIND === "training" ? "Bot chose " + intentLabel(enemy.intent, "Intent") : intentLabel(enemy.intent, "Intent set");
+        if (preview && preview.ready) return PAGE_KIND === "training" ? "Bot ready" : "Ready";
+        if (preview && preview.intent) return PAGE_KIND === "training" ? "Bot chose " + intentLabel(preview.intent, "Intent") : intentLabel(preview.intent, "Intent set");
         if (preview && preview.message) return str(preview.message);
 
-        return "Choosing";
+        return PAGE_KIND === "training" ? "Bot thinking" : "Choosing";
     }
 
 
@@ -673,6 +675,87 @@
         if (list) list.scrollTop = list.scrollHeight;
     }
 
+    function resultKey(value) {
+        const key = str(value || "").toLowerCase();
+        if (["win", "winner", "victory", "player", "you"].includes(key)) return "win";
+        if (["lose", "loss", "defeat", "opponent", "enemy", "bot"].includes(key)) return "lose";
+        if (["draw", "tie"].includes(key)) return "draw";
+        return "";
+    }
+
+    function trainingResultCopy(summary, state) {
+        summary = summary || {};
+        state = state || {};
+        const summaryText = summary.summary || {};
+        const key = resultKey(summary.result || latestGameOverResult || state.result || state.winner);
+        const rounds = num(summary.rounds || state.round || 0);
+        const mode = str(summary.mode || state.mode || "training");
+
+        const titleByKey = {
+            win: "Victory",
+            lose: "Defeat",
+            draw: "Draw",
+        };
+        const messageByKey = {
+            win: "You won the training duel.",
+            lose: "You were defeated in training.",
+            draw: "The training duel ended in a draw.",
+        };
+
+        return {
+            title: str(summaryText.title || titleByKey[key] || "Training Complete"),
+            message: str(summaryText.message || state.message || messageByKey[key] || "Training match finished."),
+            rounds,
+            mode,
+            key,
+        };
+    }
+
+    function renderTrainingResult(state) {
+        const panel = document.getElementById("az48-training-result");
+        if (!panel) return;
+
+        const phase = str((state && state.phase) || "").toLowerCase();
+        const finished = phase === "finished" || Boolean(state && state.winner) || Boolean(latestGameOverResult);
+
+        if (PAGE_KIND !== "training" || !finished) {
+            panel.hidden = true;
+            panel.classList.remove("is-visible");
+            document.body.classList.remove("az48-training-finished");
+            return;
+        }
+
+        const summary = latestPostMatchSummary || {};
+        const copy = trainingResultCopy(summary, state);
+        const titleEl = document.getElementById("az48-result-title");
+        const textEl = document.getElementById("az48-result-text");
+        const rewardsEl = document.getElementById("az48-result-rewards");
+        const rewards = summary.rewards || {};
+        const rewardLines = [];
+
+        if (titleEl) titleEl.textContent = copy.title;
+        if (textEl) {
+            const detail = [
+                copy.message,
+                copy.rounds ? ("Rounds: " + copy.rounds + ".") : "",
+                copy.mode ? ("Mode: " + copy.mode + ".") : "",
+            ].filter(Boolean).join(" ");
+            textEl.textContent = detail;
+        }
+
+        if (rewardsEl) {
+            if (rewards.xp !== undefined && rewards.xp !== null) rewardLines.push("XP +" + num(rewards.xp));
+            if (rewards.coins !== undefined && rewards.coins !== null) rewardLines.push("Coins +" + num(rewards.coins));
+            rewardsEl.textContent = rewardLines.join(" · ");
+            rewardsEl.hidden = rewardLines.length === 0;
+        }
+
+        panel.hidden = false;
+        panel.classList.add("is-visible");
+        panel.dataset.result = copy.key || "finished";
+        document.body.classList.add("az48-training-finished");
+    }
+
     function eventSide(value) {
         const side = str(value || "").toLowerCase();
         if (["player", "me", "self", "you"].includes(side)) return "me";
@@ -1015,6 +1098,7 @@
 
         renderClarity(state);
         renderRoundSummary(state);
+        renderTrainingResult(state);
 
         const showStart = !isFinished && PAGE_KIND === "training" && Boolean(legal.show_start || legal.can_start || isStartPhase(phase));
         const showIntents = !isFinished && Boolean(legal.show_intents || legal.can_choose_intent);
@@ -1140,7 +1224,10 @@
     }
 
     function startTraining() {
-        setMessage("Starting training...");
+        latestPostMatchSummary = null;
+        latestGameOverResult = "";
+        renderTrainingResult(null);
+        setMessage("Starting Training. Draw your hand, then practice intent, card, lane and Ready.");
         setServerError("");
         emitCommand("start_training", {});
     }
@@ -1154,9 +1241,15 @@
         return phase === "finished" || Boolean(latestState && latestState.winner);
     }
 
+    function finishedActionMessage() {
+        return PAGE_KIND === "training"
+            ? "Training finished. Review the result, play again, or return to the menu."
+            : "Match finished. Start a new match or go back to Arena.";
+    }
+
     function setIntent(intent) {
         if (matchIsFinished()) {
-            setMessage("Match finished. Start a new training match or go back to Arena.");
+            setMessage(finishedActionMessage());
             return;
         }
 
@@ -1170,7 +1263,7 @@
 
     function ready() {
         if (matchIsFinished()) {
-            setMessage("Match finished. Start a new training match or go back to Arena.");
+            setMessage(finishedActionMessage());
             return;
         }
 
@@ -1184,7 +1277,7 @@
 
     function playCard(id, choice = {}) {
         if (matchIsFinished()) {
-            setMessage("Match finished. Start a new training match or go back to Arena.");
+            setMessage(finishedActionMessage());
             return;
         }
 
@@ -1350,9 +1443,16 @@
         });
 
         socket.on("game_over", (payload) => {
+            latestGameOverResult = str(payload && payload.result, "");
             const message = "Game Over: " + str(payload && payload.result, "Unknown");
             setMessage(message);
             appendLog(message);
+            renderTrainingResult(latestState || { phase: "finished", result: latestGameOverResult });
+        });
+
+        socket.on("post_match_summary", (payload) => {
+            latestPostMatchSummary = payload || {};
+            renderTrainingResult(latestState || { phase: "finished", result: latestGameOverResult || latestPostMatchSummary.result });
         });
 
         socket.on("opponent_left", (payload) => {
@@ -1386,6 +1486,13 @@
         document.addEventListener("click", (event) => {
             const startBtn = event.target.closest("#az48-floating-start, #az48-start, #join-queue-btn, [data-az48-action='start-training']");
             if (startBtn) {
+                event.preventDefault();
+                startTraining();
+                return;
+            }
+
+            const restartBtn = event.target.closest("#az48-training-restart");
+            if (restartBtn) {
                 event.preventDefault();
                 startTraining();
                 return;
@@ -1512,6 +1619,7 @@
             renderRoundSummary,
             renderCombatEvent,
             renderSummaryItem,
+            renderTrainingResult,
             startTraining,
             requestState,
             joinQueue,

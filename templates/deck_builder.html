@@ -193,6 +193,36 @@
 
         </section>
 
+        <section id="az-deck-validation-summary" class="az-deck-validation-summary-v2 {% if deck_status.is_valid %}az-deck-valid-v2{% else %}az-deck-invalid-v2{% endif %}" aria-label="Deck validation summary">
+            <div>
+                <span class="progression-kicker">Active Deck Status</span>
+                <h2>{% if deck_status.is_valid %}Deck valid{% else %}Deck needs attention{% endif %}</h2>
+                <p>{{ deck_status.rules_label }}</p>
+            </div>
+
+            <div class="az-deck-count-grid-v2">
+                <article><span>Total</span><strong id="az-deck-summary-total">{{ deck_status.total }}/30</strong></article>
+                <article><span>Monsters</span><strong id="az-deck-summary-monsters">{{ deck_analysis.stats.monsters if deck_analysis is defined else 0 }}/21</strong></article>
+                <article><span>Spells</span><strong id="az-deck-summary-spells">{{ deck_analysis.stats.spells if deck_analysis is defined else 0 }}/6</strong></article>
+                <article><span>Traps</span><strong id="az-deck-summary-traps">{{ deck_analysis.stats.traps if deck_analysis is defined else 0 }}/3</strong></article>
+                <article><span>Duplicate Cards</span><strong id="az-deck-summary-duplicates">{{ deck_status.duplicates }}</strong></article>
+                <article><span>Max Copies Used</span><strong id="az-deck-summary-max-copies">{{ deck_status.max_copies_used }}/{{ deck_status.max_copies_allowed }}</strong></article>
+            </div>
+
+            <div class="az-deck-save-row-v2">
+                <strong id="az-deck-validity-pill" class="az-deck-validity-pill-v2 {% if deck_status.is_valid %}is-valid{% else %}is-invalid{% endif %}">
+                    {% if deck_status.is_valid %}Ready to save{% else %}Fix deck first{% endif %}
+                </strong>
+                <span id="az-deck-save-hint">
+                    {% if deck_status.is_valid %}
+                        Backend validation accepts this beta deck.
+                    {% else %}
+                        Backend validation found {{ deck_status.error_count }} issue{% if deck_status.error_count != 1 %}s{% endif %}.
+                    {% endif %}
+                </span>
+            </div>
+        </section>
+
         {% if deck_validation_errors %}
         <section class="deck-status deck-status-invalid-v1">
             <div class="section-title-row">
@@ -585,7 +615,7 @@
 
             </section>
 
-            <button type="submit" class="btn full-btn sticky-save-btn">Save Deck</button>
+            <button type="submit" class="btn full-btn sticky-save-btn">Save Active Deck</button>
 
         </form>
 
@@ -600,5 +630,3 @@
 </body>
 
 </html>
-
-

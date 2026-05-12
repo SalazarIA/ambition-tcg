@@ -42,6 +42,39 @@
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
+        <section id="az-profile-summary" class="az-retention-snapshot-v1" aria-label="Player progression summary">
+            <div class="az-retention-identity-v1">
+                <span class="az-retention-avatar-v1">{{ user.username[:1]|upper }}</span>
+                <div>
+                    <span class="progression-kicker">Player Snapshot</span>
+                    <h2>{{ user.username }}</h2>
+                    <p>
+                        Level {{ profile_stats.level }} · {{ profile_stats.xp }}/{{ profile_stats.next_level_xp }} XP ·
+                        {{ profile_stats.xp_to_next }} XP to next level
+                    </p>
+                </div>
+            </div>
+
+            <div class="az-retention-stat-grid-v1">
+                <article><span>Played</span><strong>{{ profile_stats.total_matches }}</strong></article>
+                <article><span>Wins</span><strong>{{ profile_stats.wins }}</strong></article>
+                <article><span>Losses</span><strong>{{ profile_stats.losses }}</strong></article>
+                <article><span>Draws</span><strong>{{ profile_stats.draws }}</strong></article>
+                <article><span>Most Played</span><strong>{{ profile_stats.mode_most_played }}</strong></article>
+                <article><span>Latest Result</span><strong>{{ profile_stats.latest_result }}</strong></article>
+            </div>
+
+            <div class="az-retention-progress-v1">
+                <div class="deck-progress-label">
+                    <span>Level {{ profile_stats.level }} progress</span>
+                    <strong>{{ profile_stats.level_progress_percent }}%</strong>
+                </div>
+                <div class="deck-progress-bar">
+                    <div class="deck-progress-fill" style="width: {{ profile_stats.level_progress_percent }}%;"></div>
+                </div>
+            </div>
+        </section>
+
 
         <section class="az-profile-hero-v1">
             <div class="az-profile-identity-v1">

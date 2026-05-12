@@ -38,7 +38,9 @@ function getCurrentCounts() {
         Monster: 0,
         Spell: 0,
         Trap: 0,
-        totalCost: 0
+        totalCost: 0,
+        duplicates: 0,
+        maxCopiesUsed: 0
     };
 
     getBuilderCards().forEach((card) => {
@@ -49,6 +51,12 @@ function getCurrentCounts() {
         counts.total += selected;
         counts[type] += selected;
         counts.totalCost += selected * cost;
+
+        if (selected > 1) {
+            counts.duplicates += 1;
+        }
+
+        counts.maxCopiesUsed = Math.max(counts.maxCopiesUsed, selected);
     });
 
     return counts;
@@ -86,10 +94,16 @@ function updateDeckLiveStatus() {
     const averageCost = counts.total > 0 ? (counts.totalCost / counts.total).toFixed(2) : "0.00";
 
     setText("selected-count", counts.total);
-    setText("live-total-count", counts.total);
-    setText("live-monster-count", counts.Monster);
-    setText("live-spell-count", counts.Spell);
-    setText("live-trap-count", counts.Trap);
+    setText("live-total-count", `${counts.total}/${DECK_LIMITS.total}`);
+    setText("live-monster-count", `${counts.Monster}/${DECK_LIMITS.Monster}`);
+    setText("live-spell-count", `${counts.Spell}/${DECK_LIMITS.Spell}`);
+    setText("live-trap-count", `${counts.Trap}/${DECK_LIMITS.Trap}`);
+    setText("az-deck-summary-total", `${counts.total}/${DECK_LIMITS.total}`);
+    setText("az-deck-summary-monsters", `${counts.Monster}/${DECK_LIMITS.Monster}`);
+    setText("az-deck-summary-spells", `${counts.Spell}/${DECK_LIMITS.Spell}`);
+    setText("az-deck-summary-traps", `${counts.Trap}/${DECK_LIMITS.Trap}`);
+    setText("az-deck-summary-duplicates", counts.duplicates);
+    setText("az-deck-summary-max-copies", `${counts.maxCopiesUsed}/${DECK_LIMITS.maxCopies}`);
     setText("live-average-cost", averageCost);
 
     const totalBar = document.getElementById("live-total-bar");
@@ -116,8 +130,31 @@ function updateDeckLiveStatus() {
         message.textContent = "Deck is valid for beta.";
         message.className = "deck-live-message valid";
     } else {
-        message.textContent = `Need ${DECK_LIMITS.total - counts.total} more total cards. Target: 21 monsters, 6 spells, 3 traps.`;
+        const remaining = DECK_LIMITS.total - counts.total;
+        message.textContent = remaining >= 0
+            ? `Need ${remaining} more total cards. Target: 21 monsters, 6 spells, 3 traps.`
+            : `Remove ${Math.abs(remaining)} card(s). Target: 21 monsters, 6 spells, 3 traps.`;
         message.className = "deck-live-message invalid";
+    }
+
+    const validityPill = document.getElementById("az-deck-validity-pill");
+    const saveHint = document.getElementById("az-deck-save-hint");
+    const validationSummary = document.getElementById("az-deck-validation-summary");
+
+    if (validityPill) {
+        validityPill.textContent = isValid ? "Ready to save" : "Fix deck first";
+        validityPill.className = `az-deck-validity-pill-v2 ${isValid ? "is-valid" : "is-invalid"}`;
+    }
+
+    if (saveHint) {
+        saveHint.textContent = isValid
+            ? "Backend validation should accept this beta deck."
+            : "Match the beta rule: 30 cards, 21 monsters, 6 spells, 3 traps, max 3 copies.";
+    }
+
+    if (validationSummary) {
+        validationSummary.classList.toggle("az-deck-valid-v2", isValid);
+        validationSummary.classList.toggle("az-deck-invalid-v2", !isValid);
     }
 
     getBuilderCards().forEach((card) => {

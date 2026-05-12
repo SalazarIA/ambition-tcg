@@ -213,6 +213,11 @@ def _arena_snapshot(page, label, logs):
         _safe_text(page, "#az48-card-preview-text", ""),
         _safe_text(page, "#az48-card-keyword-lines", ""),
     ]).strip()
+    training_result_text = " ".join([
+        _safe_text(page, "#az48-result-title", ""),
+        _safe_text(page, "#az48-result-text", ""),
+        _safe_text(page, "#az48-result-rewards", ""),
+    ]).strip()
     snapshot = {
         "label": label,
         "round": _safe_int_text(page, "#az48-round", 0),
@@ -244,6 +249,8 @@ def _arena_snapshot(page, label, logs):
             phrase in body.lower()
             for phrase in ["victory", "defeat", "winner", "match finished", "game over", "venceu", "vitória", "vitoria"]
         ),
+        "training_result_visible": _visible_count(page, "#az48-training-result:not([hidden])") > 0,
+        "training_result_text": training_result_text,
         "round_summary_visible": _visible_count(page, "#az48-round-summary") > 0,
         "round_summary_text": summary_text,
         "round_summary_has_raw_json": "{" in summary_text or "}" in summary_text,
@@ -294,6 +301,8 @@ def _assert_arena_healthy(snapshot, stage):
         raise AssertionError(f"{stage}: both players appear dead/invalid HP")
     if str(snapshot.get("phase") or "").lower() == "finished" and not snapshot.get("finished_text_visible"):
         raise AssertionError(f"{stage}: finished phase reached without visible end state")
+    if str(snapshot.get("phase") or "").lower() == "finished" and not snapshot.get("training_result_visible"):
+        raise AssertionError(f"{stage}: finished training match did not show result panel")
 
 
 def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):

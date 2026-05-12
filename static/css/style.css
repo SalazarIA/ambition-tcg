@@ -8662,3 +8662,597 @@ button[disabled] {
         grid-template-columns: 70px 1.4fr 80px 80px 90px 110px;
     }
 }
+
+
+/* =========================================================
+   Block 14 — Public Product Home
+   ========================================================= */
+
+.az-home-page-v2 {
+    background:
+        linear-gradient(180deg, rgba(5, 5, 11, 0.96), rgba(8, 8, 20, 0.98)),
+        #05050b;
+}
+
+.az-home-shell-v2 {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    padding: 22px clamp(16px, 4vw, 32px) calc(92px + var(--safe-bottom));
+}
+
+.az-home-nav-v2 {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.az-home-brand-v2,
+.az-home-nav-links-v2,
+.az-home-proof-v2,
+.az-home-actions-v2,
+.az-home-player-actions-v2,
+.az-home-footer-v2 nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.az-home-brand-v2 {
+    gap: 12px;
+    font-weight: 900;
+}
+
+.az-home-brand-v2 span {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #d6a84b, #785aff);
+    color: #fff;
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32);
+}
+
+.az-home-nav-links-v2 {
+    justify-content: flex-end;
+    color: rgba(247, 244, 236, 0.76);
+    font-size: 0.92rem;
+}
+
+.az-home-nav-links-v2 a,
+.az-home-footer-v2 a {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 10px;
+    border-radius: 999px;
+}
+
+.az-home-nav-links-v2 a:hover,
+.az-home-footer-v2 a:hover,
+.az-nav-cta-v2 {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.az-home-hero-v2 {
+    position: relative;
+    min-height: clamp(470px, 68vh, 680px);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    border-radius: 18px;
+    padding: clamp(26px, 6vw, 64px);
+    border: 1px solid rgba(248, 231, 186, 0.18);
+    background:
+        linear-gradient(90deg, rgba(5, 5, 11, 0.94), rgba(5, 5, 11, 0.58) 58%, rgba(5, 5, 11, 0.82)),
+        url("/static/img/cards/elemental/fire.svg") right 8% center / min(44vw, 500px) auto no-repeat,
+        #070711;
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.44);
+}
+
+.az-home-hero-bg-v2 {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        url("/static/img/cards/elemental/water.svg") right 28% top 18% / 190px auto no-repeat,
+        url("/static/img/cards/elemental/earth.svg") right 18% bottom 10% / 180px auto no-repeat;
+    opacity: 0.34;
+}
+
+.az-home-card-token-v2 {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 86px;
+    min-height: 34px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.az-home-card-fire-v2 {
+    top: 18%;
+    right: 12%;
+}
+
+.az-home-card-water-v2 {
+    top: 46%;
+    right: 34%;
+}
+
+.az-home-card-earth-v2 {
+    right: 18%;
+    bottom: 18%;
+}
+
+.az-home-hero-copy-v2 {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+}
+
+.az-home-kicker-v2 {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: #f8e7ba;
+    background: rgba(214, 168, 75, 0.12);
+    border: 1px solid rgba(214, 168, 75, 0.22);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az-home-hero-copy-v2 h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(3.4rem, 11vw, 7.8rem);
+    line-height: 0.88;
+    letter-spacing: 0;
+}
+
+.az-home-hero-copy-v2 p,
+.az-home-panel-v2 p,
+.az-home-public-cta-v2 p,
+.az-home-player-v2 p,
+.az-home-loop-v2 p {
+    color: rgba(247, 244, 236, 0.74);
+    line-height: 1.55;
+}
+
+.az-home-hero-copy-v2 p {
+    max-width: 620px;
+    font-size: clamp(1.05rem, 2.3vw, 1.34rem);
+}
+
+.az-home-actions-v2 {
+    margin-top: 24px;
+}
+
+.az-home-primary-v2 {
+    min-width: 168px;
+    background: linear-gradient(135deg, #d6a84b, #8e44ad);
+    box-shadow: 0 16px 40px rgba(214, 168, 75, 0.22);
+}
+
+.az-home-proof-v2 {
+    margin-top: 22px;
+}
+
+.az-home-proof-v2 span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.82rem;
+}
+
+.az-home-loop-v2,
+.az-home-route-grid-v2 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.az-home-loop-v2 {
+    margin: 18px 0;
+}
+
+.az-home-loop-v2 article,
+.az-home-panel-v2,
+.az-home-player-v2,
+.az-home-public-cta-v2 {
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 18px 58px rgba(0, 0, 0, 0.24);
+}
+
+.az-home-loop-v2 article {
+    padding: 20px;
+}
+
+.az-home-loop-v2 strong {
+    color: #d6a84b;
+    font-size: 0.86rem;
+    letter-spacing: 0.08em;
+}
+
+.az-home-loop-v2 h2 {
+    margin: 10px 0 8px;
+    font-size: 1.05rem;
+}
+
+.az-home-loop-v2 p {
+    margin: 0;
+    font-size: 0.94rem;
+}
+
+.az-home-panel-v2,
+.az-home-player-v2,
+.az-home-public-cta-v2 {
+    padding: clamp(22px, 4vw, 34px);
+    margin-top: 18px;
+}
+
+.az-home-panel-v2 {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.78fr) minmax(0, 1.22fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.az-home-route-grid-v2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.az-home-route-grid-v2 a {
+    display: grid;
+    gap: 4px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(5, 5, 11, 0.34);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-weight: 900;
+}
+
+.az-home-route-grid-v2 span {
+    color: rgba(247, 244, 236, 0.64);
+    font-weight: 500;
+    font-size: 0.88rem;
+}
+
+.az-home-player-v2,
+.az-home-public-cta-v2,
+.az-home-footer-v2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.az-home-footer-v2 {
+    color: rgba(247, 244, 236, 0.58);
+    padding: 26px 2px 0;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+    .az-home-nav-v2,
+    .az-home-panel-v2,
+    .az-home-player-v2,
+    .az-home-public-cta-v2,
+    .az-home-footer-v2 {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .az-home-loop-v2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .az-home-panel-v2 {
+        display: flex;
+    }
+}
+
+@media (max-width: 620px) {
+    .az-home-shell-v2 {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .az-home-hero-v2 {
+        min-height: 560px;
+        align-items: flex-end;
+        padding: 24px 18px;
+        background:
+            linear-gradient(180deg, rgba(5, 5, 11, 0.55), rgba(5, 5, 11, 0.96)),
+            url("/static/img/cards/elemental/fire.svg") center 10% / min(82vw, 360px) auto no-repeat,
+            #070711;
+    }
+
+    .az-home-hero-bg-v2,
+    .az-home-card-token-v2 {
+        display: none;
+    }
+
+    .az-home-nav-links-v2 {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .az-home-loop-v2,
+    .az-home-route-grid-v2 {
+        grid-template-columns: 1fr;
+    }
+
+    .az-home-actions-v2 .btn,
+    .az-home-player-actions-v2 .btn {
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   Block 15 — Player Profile / Progression Snapshot
+   ========================================================= */
+
+.az-retention-snapshot-v1 {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.92fr) minmax(0, 1.3fr);
+    gap: 18px;
+    align-items: stretch;
+    margin: 18px 0;
+    padding: clamp(18px, 3vw, 26px);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(80, 255, 150, 0.08), rgba(214, 168, 75, 0.08)),
+        rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(248, 231, 186, 0.15);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+}
+
+.az-retention-identity-v1 {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.az-retention-avatar-v1 {
+    flex: 0 0 auto;
+    width: 66px;
+    height: 66px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    color: #fff;
+    font-size: 1.75rem;
+    font-weight: 950;
+    background: linear-gradient(135deg, #d6a84b, #4db8ff);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.az-retention-identity-v1 h2 {
+    margin: 8px 0 6px;
+}
+
+.az-retention-identity-v1 p {
+    margin: 0;
+    color: rgba(247, 244, 236, 0.70);
+    line-height: 1.45;
+}
+
+.az-retention-stat-grid-v1 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.az-retention-stat-grid-v1 article {
+    min-height: 82px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(5, 5, 11, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.az-retention-stat-grid-v1 span {
+    color: rgba(247, 244, 236, 0.62);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az-retention-stat-grid-v1 strong {
+    color: #fff;
+    font-size: clamp(1rem, 2vw, 1.28rem);
+}
+
+.az-retention-progress-v1 {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 840px) {
+    .az-retention-snapshot-v1 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .az-retention-identity-v1 {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .az-retention-stat-grid-v1 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* =========================================================
+   Block 16 — Collection / Deck Builder V2 Clarity
+   ========================================================= */
+
+.az-collection-summary-v2,
+.az-deck-validation-summary-v2 {
+    display: grid;
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.az-collection-summary-v2 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.az-collection-summary-v2 article,
+.az-deck-count-grid-v2 article {
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 16px 46px rgba(0, 0, 0, 0.22);
+}
+
+.az-collection-summary-v2 span,
+.az-deck-count-grid-v2 span {
+    color: rgba(247, 244, 236, 0.62);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az-collection-summary-v2 strong,
+.az-deck-count-grid-v2 strong {
+    color: #fff;
+    font-size: 1.38rem;
+}
+
+.az-empty-collection-v2 {
+    grid-column: 1 / -1;
+    padding: 28px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(248, 231, 186, 0.15);
+}
+
+.az-empty-collection-v2 p {
+    color: rgba(247, 244, 236, 0.70);
+}
+
+.az-deck-validation-summary-v2 {
+    grid-template-columns: minmax(230px, 0.74fr) minmax(0, 1.26fr);
+    align-items: start;
+    padding: clamp(18px, 3vw, 26px);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.055);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.26);
+}
+
+.az-deck-validation-summary-v2 h2 {
+    margin: 8px 0;
+}
+
+.az-deck-validation-summary-v2 p,
+.az-deck-save-row-v2 span {
+    color: rgba(247, 244, 236, 0.70);
+    line-height: 1.45;
+}
+
+.az-deck-valid-v2 {
+    border-color: rgba(80, 255, 150, 0.28);
+    background:
+        linear-gradient(135deg, rgba(80, 255, 150, 0.08), rgba(255, 255, 255, 0.04)),
+        rgba(255, 255, 255, 0.045);
+}
+
+.az-deck-invalid-v2 {
+    border-color: rgba(255, 116, 96, 0.28);
+    background:
+        linear-gradient(135deg, rgba(255, 116, 96, 0.09), rgba(255, 255, 255, 0.04)),
+        rgba(255, 255, 255, 0.045);
+}
+
+.az-deck-count-grid-v2 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.az-deck-save-row-v2 {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.az-deck-validity-pill-v2 {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az-deck-validity-pill-v2.is-valid {
+    color: #06130b;
+    background: #50ff96;
+}
+
+.az-deck-validity-pill-v2.is-invalid {
+    color: #fff;
+    background: rgba(255, 116, 96, 0.22);
+    border: 1px solid rgba(255, 116, 96, 0.36);
+}
+
+@media (max-width: 900px) {
+    .az-collection-summary-v2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .az-deck-validation-summary-v2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .az-collection-summary-v2,
+    .az-deck-count-grid-v2 {
+        grid-template-columns: 1fr;
+    }
+}

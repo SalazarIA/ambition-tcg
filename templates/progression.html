@@ -47,6 +47,40 @@
             {% endif %}
         {% endwith %}
 
+        <section id="az-progression-summary" class="az-retention-snapshot-v1 az-progression-snapshot-v1" aria-label="Progression summary">
+            <div class="az-retention-identity-v1">
+                <span class="az-retention-avatar-v1">{{ progression_stats.username[:1]|upper }}</span>
+                <div>
+                    <span class="progression-kicker">Progression Summary</span>
+                    <h2>Level {{ progression_stats.level }}</h2>
+                    <p>
+                        {{ progression_stats.xp }}/{{ progression_stats.next_level_xp }} XP ·
+                        {{ progression_stats.total_matches }} matches played
+                    </p>
+                </div>
+            </div>
+
+            <div class="az-retention-stat-grid-v1">
+                <article><span>Wins</span><strong>{{ progression_stats.wins }}</strong></article>
+                <article><span>Losses</span><strong>{{ progression_stats.losses }}</strong></article>
+                <article>
+                    <span>Training</span>
+                    <strong>{% if progression_stats.first_training_completed %}Done{% else %}Ready{% endif %}</strong>
+                </article>
+                <article><span>Next Step</span><strong>{% if progression_stats.total_matches > 0 %}Improve Deck{% else %}Play Training{% endif %}</strong></article>
+            </div>
+
+            <div class="az-retention-progress-v1">
+                <div class="deck-progress-label">
+                    <span>XP progress</span>
+                    <strong>{{ progression_stats.level_progress_percent }}%</strong>
+                </div>
+                <div class="deck-progress-bar">
+                    <div class="deck-progress-fill" style="width: {{ progression_stats.level_progress_percent }}%;"></div>
+                </div>
+            </div>
+        </section>
+
         <section class="progression-hub-hero az-loop-hero"><div class="az-loop-hero-inner">
             <div>
                 <span class="progression-kicker">Ambition Loop</span>

@@ -994,6 +994,67 @@ body[data-page-kind="training"] .az48-training-hidden-actions {
     display: none !important;
 }
 
+.az48-training-panel {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(150px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 1px solid rgba(255, 222, 148, .22);
+    border-radius: 12px;
+    background: rgba(8, 10, 18, .58);
+    color: rgba(255, 255, 255, .72);
+    font-size: .68rem;
+    line-height: 1;
+}
+
+.az48-training-panel strong {
+    color: rgba(255, 222, 148, .92);
+    font-size: .66rem;
+    font-weight: 1000;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.az48-training-panel span {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-training-difficulties {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.az48-training-difficulties b {
+    padding: 3px 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(255, 255, 255, .05);
+    color: rgba(255, 255, 255, .58);
+    font-size: .54rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.az48-training-difficulties .is-active {
+    border-color: rgba(112, 232, 183, .30);
+    background: rgba(112, 232, 183, .12);
+    color: rgba(210, 255, 235, .90);
+}
+
+body[data-page-kind="training"].az48-match-started .az48-training-panel,
+body[data-page-kind="training"].az48-training-finished .az48-training-panel {
+    display: none;
+}
+
 .az48-sr-helper {
     position: absolute !important;
     width: 1px !important;
@@ -1039,6 +1100,89 @@ body[data-page-kind="training"] .az48-floating-start {
 body[data-page-kind="training"].az48-has-hand .az48-floating-start,
 body[data-page-kind="training"].az48-match-started .az48-floating-start {
     display: none !important;
+}
+
+.az48-training-result[hidden] {
+    display: none !important;
+}
+
+body[data-page-kind="training"] .az48-training-result {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 2147483646;
+    width: min(460px, calc(100vw - 32px));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid rgba(255, 222, 148, .30);
+    border-radius: 18px;
+    background: rgba(6, 8, 15, .94);
+    box-shadow: 0 22px 52px rgba(0, 0, 0, .58), inset 0 0 0 1px rgba(255, 255, 255, .04);
+    backdrop-filter: blur(16px);
+}
+
+.az48-result-copy span {
+    display: block;
+    margin-bottom: 5px;
+    color: rgba(255, 222, 148, .76);
+    font-size: .64rem;
+    font-weight: 1000;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.az48-result-copy strong {
+    display: block;
+    color: rgba(255, 255, 255, .96);
+    font-size: 1.1rem;
+    line-height: 1.1;
+}
+
+.az48-result-copy p {
+    margin: 7px 0 0;
+    color: rgba(255, 255, 255, .74);
+    font-size: .82rem;
+    line-height: 1.35;
+}
+
+.az48-result-rewards {
+    margin-top: 8px;
+    color: rgba(210, 255, 235, .90);
+    font-size: .72rem;
+    font-weight: 900;
+}
+
+.az48-result-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.az48-result-action {
+    min-width: 0;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 9px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .07);
+    color: rgba(255, 255, 255, .84);
+    text-align: center;
+    text-decoration: none;
+    font-size: .72rem;
+    font-weight: 950;
+    line-height: 1.05;
+    cursor: pointer;
+}
+
+.az48-result-primary {
+    border-color: rgba(255, 222, 148, .46);
+    background: linear-gradient(180deg, #fff1bb, #d6a84c);
+    color: #120d05;
 }
 
 /* ARENA_REAL_START_V66
@@ -1120,6 +1264,41 @@ body[data-page-kind="training"]:not(.az48-match-started):not(.az48-has-hand) #az
 @media (max-width: 980px) {
     .az48-clarity-panel {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .az48-training-panel {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 6px;
+        padding: 4px 7px;
+        font-size: .62rem;
+    }
+
+    .az48-training-difficulties {
+        display: none;
+    }
+
+    body[data-page-kind="training"] .az48-training-result {
+        left: 12px;
+        right: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        width: auto;
+        padding: 13px;
+    }
+
+    .az48-result-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 430px) {
+    .az48-training-panel span {
+        display: none;
+    }
+
+    .az48-result-actions {
+        grid-template-columns: 1fr;
     }
 }
 
