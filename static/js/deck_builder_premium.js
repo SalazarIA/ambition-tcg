@@ -115,6 +115,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         if (window.location.pathname.indexOf("/deck-builder") === -1) return;
+        if (qs("#az-deck-validation-summary")) return;
 
         createDeckPanel();
         updateDeckPanel();

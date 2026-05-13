@@ -75,6 +75,35 @@
             </div>
         </section>
 
+        <section id="az-profile-progress-preview" class="az-profile-progress-preview-v28" aria-label="Progress preview">
+            <div>
+                <span class="progression-kicker">Progress Preview</span>
+                <h2>Next reward beat</h2>
+                <p>
+                    Training and PvP rewards update this profile when a completed match summary reaches the server.
+                    Keep the loop simple: play, review progress, tune the deck.
+                </p>
+            </div>
+            <div class="az-profile-progress-grid-v28">
+                <article>
+                    <span>XP to Level {{ profile_stats.level + 1 }}</span>
+                    <strong>{{ profile_stats.xp_to_next }}</strong>
+                </article>
+                <article>
+                    <span>Record</span>
+                    <strong>{{ profile_stats.wins }}W / {{ profile_stats.losses }}L / {{ profile_stats.draws }}D</strong>
+                </article>
+                <article>
+                    <span>Preferred Mode</span>
+                    <strong>{{ profile_stats.mode_most_played }}</strong>
+                </article>
+                <article>
+                    <span>Next Step</span>
+                    <a href="{{ url_for('training') }}" class="btn btn-secondary small-btn">Play Training</a>
+                </article>
+            </div>
+        </section>
+
         <section id="az-profile-faction-identity" class="az-profile-faction-identity-v1 faction-arcane" aria-label="Starter identity preview">
             <div>
                 <span class="progression-kicker">Starter Identity</span>

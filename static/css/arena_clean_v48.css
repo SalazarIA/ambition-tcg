@@ -1382,6 +1382,205 @@ body[data-page-kind="training"]:not(.az48-match-started):not(.az48-has-hand) #az
     }
 }
 
+
+/* =========================================================
+   Blocks 25-32 — Arena Premium UX Clarity
+   Scoped final layer; preserves AZ48 events and BE2 payload contract.
+   ========================================================= */
+
+.az48-message {
+    border-color: rgba(248, 231, 186, .22);
+}
+
+.az48-message-text {
+    color: rgba(255, 247, 222, .94);
+}
+
+.az48-hp-pill span,
+.az48-ambition-pill span,
+.az48-intent-pill span,
+.az48-opponent-status-pill span {
+    font-weight: 1000;
+}
+
+.az48-slot {
+    grid-template-rows: auto auto;
+    gap: 5px;
+    border-style: solid;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012)),
+        rgba(0, 0, 0, .24);
+}
+
+.az48-slot-label {
+    color: rgba(255, 255, 255, .68);
+    font-size: .72rem;
+    font-weight: 1000;
+    line-height: 1.05;
+}
+
+.az48-slot small {
+    color: rgba(248, 231, 186, .56);
+    font-size: .54rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.az48-selecting-lane .az48-lane-slot.is-legal-lane,
+.az48-selecting-target [data-az48-target].is-legal-target,
+.az48-card.is-selected {
+    outline: 2px solid rgba(255, 226, 151, .92);
+    outline-offset: 3px;
+}
+
+.az48-card.is-selected {
+    box-shadow:
+        0 18px 44px rgba(0, 0, 0, .38),
+        0 0 0 3px rgba(255, 226, 151, .18),
+        0 0 28px rgba(255, 226, 151, .20);
+}
+
+.az48-btn:disabled,
+.az48-floating-start:disabled {
+    opacity: .46;
+    cursor: not-allowed !important;
+    filter: saturate(.7);
+    transform: none !important;
+}
+
+.az48-btn.is-primary-action,
+.az48-mini-btn.is-primary-action,
+.az48-floating-start.is-primary-action {
+    border-color: rgba(255, 238, 177, .62) !important;
+    box-shadow:
+        0 0 0 1px rgba(255, 246, 198, .32),
+        0 14px 34px rgba(214, 168, 76, .24),
+        0 0 28px rgba(214, 168, 76, .14);
+}
+
+body[data-az48-primary-action="choose_card"] .az48-actions,
+body[data-az48-primary-action="play_card"] .az48-actions,
+body[data-az48-primary-action="ready"] .az48-actions {
+    grid-template-columns: minmax(190px, .7fr) minmax(240px, 1.3fr);
+}
+
+body[data-az48-primary-action="choose_card"] #az48-strike,
+body[data-az48-primary-action="choose_card"] #az48-guard,
+body[data-az48-primary-action="choose_card"] #az48-focus,
+body[data-az48-primary-action="choose_card"] #az48-start {
+    display: none !important;
+}
+
+.az48-card.is-locked {
+    cursor: help;
+}
+
+.az48-card.is-locked .az48-name,
+.az48-card.is-locked .az48-tags {
+    opacity: .72;
+}
+
+body[data-page-kind="training"]:not(.az48-match-started):not(.az48-can-start) .az48-actions {
+    display: none;
+}
+
+body[data-page-kind="training"]:not(.az48-has-hand):not(.az48-match-started) .az-sound-toggle {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+}
+
+.az48-result-progress {
+    display: grid;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.az48-result-progress[hidden] {
+    display: none !important;
+}
+
+.az48-result-progress > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.az48-result-progress span {
+    color: rgba(255, 222, 148, .78);
+    font-size: .62rem;
+    font-weight: 1000;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.az48-result-progress strong {
+    color: rgba(255, 255, 255, .95);
+    font-size: .82rem;
+}
+
+.az48-result-progress i {
+    height: 9px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .10);
+}
+
+.az48-result-progress b {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #58d6c7, #d6a84b);
+    transition: width .28s ease;
+}
+
+body[data-page-kind="training"] .az48-training-result[data-result="win"] {
+    border-color: rgba(80, 255, 150, .32);
+}
+
+body[data-page-kind="training"] .az48-training-result[data-result="lose"] {
+    border-color: rgba(255, 116, 96, .32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .az48-result-progress b,
+    .az48-card.is-selected,
+    .az48-btn.is-primary-action,
+    .az48-floating-start.is-primary-action {
+        transition: none;
+        animation: none;
+    }
+}
+
+@media (max-width: 980px) {
+    body[data-az48-primary-action="choose_card"] .az48-actions,
+    body[data-az48-primary-action="play_card"] .az48-actions,
+    body[data-az48-primary-action="ready"] .az48-actions,
+    .az48-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 540px) {
+    .az48-arena {
+        grid-template-rows: 58px 68px minmax(154px, 1fr) clamp(330px, 50dvh, 390px);
+    }
+
+    .az48-card-detail-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .az48-slot-label {
+        font-size: .58rem;
+    }
+
+    .az48-slot small {
+        font-size: .46rem;
+    }
+}
+
 @media (max-width: 760px) {
     .az48-training-panel {
         grid-template-columns: auto minmax(0, 1fr);

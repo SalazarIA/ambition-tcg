@@ -220,6 +220,10 @@
                         Backend validation found {{ deck_status.error_count }} issue{% if deck_status.error_count != 1 %}s{% endif %}.
                     {% endif %}
                 </span>
+                <form class="az-inline-action-form-v25" method="POST" action="{{ url_for('auto_build_deck') }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-secondary small-btn">Auto Build Legal Deck</button>
+                </form>
             </div>
         </section>
 
@@ -464,6 +468,12 @@
 
                     <option value="Uncommon">Uncommon</option>
 
+                    <option value="Rare">Rare</option>
+
+                    <option value="Epic">Epic</option>
+
+                    <option value="Legendary">Legendary</option>
+
                 </select>
 
                 <select id="builder-cost-filter">
@@ -508,6 +518,20 @@
 
         </section>
 
+        <section id="az-deck-card-preview" class="az-deck-card-preview-v30" aria-live="polite">
+            <div>
+                <span class="progression-kicker">Card Preview</span>
+                <h2 id="az-deck-preview-name">Select a card</h2>
+                <p id="az-deck-preview-text">Hover or tap a card to inspect cost, type, identity and deck copies.</p>
+            </div>
+            <div class="az-deck-preview-stat-grid-v30" id="az-deck-preview-stats">
+                <span><b>Cost</b>--</span>
+                <span><b>Type</b>--</span>
+                <span><b>Owned</b>--</span>
+                <span><b>In Deck</b>--</span>
+            </div>
+        </section>
+
         <form method="POST">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
@@ -536,6 +560,10 @@
                         data-rarity="{{ card.rarity }}"
 
                         data-cost="{{ card.cost }}"
+
+                        data-effect="{{ card.description or card.effect or '' }}"
+
+                        data-lore="{{ card.lore|default(card.tactical_hint|default(card.type_identity|default('Ambitionz beta card identity.'))) }}"
 
                     >
 
@@ -613,7 +641,7 @@
 
                             {% endif %}
 
-                            <p class="card-effect">{{ card.description or card.effect }}</p>
+                            <p class="card-effect">{{ card.lore|default(card.tactical_hint|default(card.description or card.effect)) }}</p>
 
                         </div>
 
@@ -621,20 +649,27 @@
 
                 {% endfor %}
 
+                <article id="az-deck-no-results" class="az-empty-collection-v2 az-filter-empty-v25" hidden>
+                    <span class="progression-kicker">No cards found</span>
+                    <h2>No cards match these deck filters.</h2>
+                    <p>Clear filters, search another name, or use Auto Build to restore a legal beta deck.</p>
+                    <button type="button" class="btn btn-secondary small-btn" data-clear-deck-filters>Clear Filters</button>
+                </article>
+
             </section>
 
-            <button type="submit" class="btn full-btn sticky-save-btn">Save Active Deck</button>
+            <button type="submit" id="az-save-deck-btn" class="btn full-btn sticky-save-btn">Save Active Deck</button>
 
         </form>
 
     </main>
-    <script src="{{ url_for('static', filename='js/deck_builder.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/deck_builder.js') }}?v=2"></script>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 
-    <script src="{{ url_for('static', filename='js/deck_builder_premium.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/deck_builder_premium.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=2"></script>
 </body>
 
 </html>

@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v176"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v177"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -167,6 +167,32 @@ def test_collection_desire_loop_contract():
     assert '"catalog_cards"' in app_py
     assert ".az-collection-desire-v1" in css
     assert ".az-collection-progress-fill-v1" in css
+
+
+def test_blocks_25_32_product_polish_contract():
+    homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    deck_builder = (PROJECT_ROOT / "templates" / "deck_builder.html").read_text()
+    profile = (PROJECT_ROOT / "templates" / "profile.html").read_text()
+    arena = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    cards_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_cards.js").read_text()
+    deck_js = (PROJECT_ROOT / "static" / "js" / "deck_builder.js").read_text()
+    arena_js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    arena_css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert "url_for('tutorial')" in homepage
+    assert 'id="az-collection-no-results"' in collection
+    assert "filterCollectionCards" in cards_js
+    assert 'id="az-deck-card-preview"' in deck_builder
+    assert "Auto Build Legal Deck" in deck_builder
+    assert "updateDeckPreview" in deck_js
+    assert 'id="az-profile-progress-preview"' in profile
+    assert 'id="az48-result-progress"' in arena
+    assert "renderResultProgress" in arena_js
+    assert "dataset.az48PrimaryAction = primaryAction" in arena_js
+    assert "Blocks 25-32" in css
+    assert "Arena Premium UX Clarity" in arena_css
 
 
 def test_arena_has_compact_turn_hud_contract():
@@ -394,7 +420,7 @@ def test_art_direction_system_contract():
     assert "az-rarity-badge" in css
     assert "az-element-badge" in css
     assert "var(--az48-board-fog)" in arena_css
-    assert "arena_clean_v48.css') }}?v=79" in template
+    assert "arena_clean_v48.css') }}?v=80" in template
 
 
 def test_card_frame_premium_contract():
@@ -420,7 +446,7 @@ def test_card_frame_premium_contract():
     assert ".az-premium-card-shell-v1" in css
     assert ".az48-card-frame-premium-v1" in arena_css
     assert ".az48-card-element-mark" in arena_css
-    assert "arena_clean_v48.js') }}?v=79" in arena_template
+    assert "arena_clean_v48.js') }}?v=80" in arena_template
 
 
 def test_faction_identity_layer_contract():

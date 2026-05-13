@@ -14,6 +14,15 @@ function setText(id, value) {
     }
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 function getBuilderCards() {
     return Array.from(document.querySelectorAll(".builder-card"));
 }
@@ -62,6 +71,31 @@ function getCurrentCounts() {
     return counts;
 }
 
+function isDeckValid(counts) {
+    return (
+        counts.total === DECK_LIMITS.total &&
+        counts.Monster === DECK_LIMITS.Monster &&
+        counts.Spell === DECK_LIMITS.Spell &&
+        counts.Trap === DECK_LIMITS.Trap &&
+        counts.maxCopiesUsed <= DECK_LIMITS.maxCopies
+    );
+}
+
+function updateCardSelectionStates() {
+    getBuilderCards().forEach((card) => {
+        const selected = getSelectedInputs(card.dataset.cardId).length;
+        const countEl = document.getElementById(`count-${card.dataset.cardId}`);
+
+        if (countEl) {
+            countEl.textContent = selected;
+        }
+
+        card.dataset.selected = selected;
+        card.classList.toggle("is-in-deck", selected > 0);
+        card.classList.toggle("is-at-copy-limit", selected >= DECK_LIMITS.maxCopies);
+    });
+}
+
 function updateCopyButtons() {
     const counts = getCurrentCounts();
 
@@ -90,8 +124,8 @@ function updateCopyButtons() {
 
 function updateDeckLiveStatus() {
     const counts = getCurrentCounts();
-
     const averageCost = counts.total > 0 ? (counts.totalCost / counts.total).toFixed(2) : "0.00";
+    const isValid = isDeckValid(counts);
 
     setText("selected-count", counts.total);
     setText("live-total-count", `${counts.total}/${DECK_LIMITS.total}`);
@@ -115,26 +149,17 @@ function updateDeckLiveStatus() {
 
     const message = document.getElementById("live-deck-message");
 
-    if (!message) {
-        updateCopyButtons();
-        return;
-    }
-
-    const isValid =
-        counts.total === DECK_LIMITS.total &&
-        counts.Monster === DECK_LIMITS.Monster &&
-        counts.Spell === DECK_LIMITS.Spell &&
-        counts.Trap === DECK_LIMITS.Trap;
-
-    if (isValid) {
-        message.textContent = "Deck is valid for beta.";
-        message.className = "deck-live-message valid";
-    } else {
-        const remaining = DECK_LIMITS.total - counts.total;
-        message.textContent = remaining >= 0
-            ? `Need ${remaining} more total cards. Target: 21 monsters, 6 spells, 3 traps.`
-            : `Remove ${Math.abs(remaining)} card(s). Target: 21 monsters, 6 spells, 3 traps.`;
-        message.className = "deck-live-message invalid";
+    if (message) {
+        if (isValid) {
+            message.textContent = "Deck is valid for beta.";
+            message.className = "deck-live-message valid";
+        } else {
+            const remaining = DECK_LIMITS.total - counts.total;
+            message.textContent = remaining >= 0
+                ? `Need ${remaining} more total cards. Target: 21 monsters, 6 spells, 3 traps.`
+                : `Remove ${Math.abs(remaining)} card(s). Target: 21 monsters, 6 spells, 3 traps.`;
+            message.className = "deck-live-message invalid";
+        }
     }
 
     const validityPill = document.getElementById("az-deck-validity-pill");
@@ -157,18 +182,17 @@ function updateDeckLiveStatus() {
         validationSummary.classList.toggle("az-deck-invalid-v2", !isValid);
     }
 
-    getBuilderCards().forEach((card) => {
-        const selected = getSelectedInputs(card.dataset.cardId).length;
-        const countEl = document.getElementById(`count-${card.dataset.cardId}`);
+    const saveButton = document.getElementById("az-save-deck-btn");
+    if (saveButton) {
+        saveButton.classList.toggle("is-ready-to-save", isValid);
+        saveButton.classList.toggle("is-needs-fixes", !isValid);
+        saveButton.setAttribute("aria-disabled", isValid ? "false" : "true");
+        saveButton.textContent = isValid ? "Save Active Deck" : "Save Deck / Show Errors";
+    }
 
-        if (countEl) {
-            countEl.textContent = selected;
-        }
-
-        card.dataset.selected = selected;
-    });
-
+    updateCardSelectionStates();
     updateCopyButtons();
+    updateDeckPreview();
 }
 
 function addCardToDeck(cardId) {
@@ -229,6 +253,8 @@ function filterBuilderCards() {
     const cost = document.getElementById("builder-cost-filter")?.value || "";
     const rarity = document.getElementById("builder-rarity-filter")?.value || "";
 
+    let visibleCount = 0;
+
     getBuilderCards().forEach((card) => {
         const cardName = (card.dataset.name || "").toLowerCase();
         const cardType = card.dataset.type || "";
@@ -246,7 +272,7 @@ function filterBuilderCards() {
         const matchesCost = !cost || cardCost === cost;
         const matchesRarity = !rarity || cardRarity === rarity;
 
-        card.style.display = (
+        const visible = (
             matchesSearch &&
             matchesType &&
             matchesElement &&
@@ -254,8 +280,69 @@ function filterBuilderCards() {
             matchesRole &&
             matchesCost &&
             matchesRarity
-        ) ? "" : "none";
+        );
+
+        card.hidden = !visible;
+        card.style.display = visible ? "" : "none";
+        if (visible) {
+            visibleCount += 1;
+        }
     });
+
+    const empty = document.getElementById("az-deck-no-results");
+    if (empty) {
+        empty.hidden = visibleCount !== 0;
+    }
+
+    updateDeckPreview();
+}
+
+function selectedPreviewCard() {
+    const selected = getBuilderCards().find((card) => Number(card.dataset.selected || 0) > 0);
+    return selected || getBuilderCards().find((card) => !card.hidden && card.style.display !== "none") || null;
+}
+
+function deckPreviewStats(card) {
+    if (!card) {
+        return [
+            ["Cost", "--"],
+            ["Type", "--"],
+            ["Owned", "--"],
+            ["In Deck", "--"]
+        ];
+    }
+
+    return [
+        ["Cost", card.dataset.cost || "--"],
+        ["Type", card.dataset.type || "Card"],
+        ["Owned", card.dataset.owned || "0"],
+        ["In Deck", card.dataset.selected || "0"]
+    ];
+}
+
+function updateDeckPreview(card) {
+    const previewName = document.getElementById("az-deck-preview-name");
+    const previewText = document.getElementById("az-deck-preview-text");
+    const previewStats = document.getElementById("az-deck-preview-stats");
+    const target = card || selectedPreviewCard();
+
+    if (!previewName || !previewText || !previewStats) {
+        return;
+    }
+
+    if (!target) {
+        previewName.textContent = "No cards available";
+        previewText.textContent = "Your collection has no cards to preview yet.";
+    } else {
+        const name = target.querySelector(".card-topline strong")?.textContent || "Selected card";
+        const lore = target.dataset.lore || target.dataset.effect || "Ambitionz beta card identity.";
+        previewName.textContent = name;
+        previewText.textContent = lore;
+    }
+
+    previewStats.innerHTML = deckPreviewStats(target).map((row) => {
+        return `<span><b>${escapeHtml(row[0])}</b>${escapeHtml(row[1])}</span>`;
+    }).join("");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -306,6 +393,12 @@ function bindDeckBuilderControls() {
             }
         });
     });
+
+    getBuilderCards().forEach((card) => {
+        card.addEventListener("mouseover", () => updateDeckPreview(card));
+        card.addEventListener("focusin", () => updateDeckPreview(card));
+        card.addEventListener("click", () => updateDeckPreview(card));
+    });
 }
 
 
@@ -327,6 +420,7 @@ function quickDeckFilter(kind, value) {
     }
 
     filterBuilderCards();
+    updateDeckPreview();
 }
 
 function clearDeckFilters() {

@@ -8,6 +8,96 @@
         return window.location.pathname === "/training" || window.location.pathname === "/arena";
     }
 
+    function collectionFilterValues() {
+        function value(id) {
+            var element = document.getElementById(id);
+            return element ? element.value : "";
+        }
+
+        return {
+            search: value("collection-search").toLowerCase().trim(),
+            type: value("filter-type"),
+            sigil: value("filter-sigil"),
+            role: value("filter-role"),
+            faction: value("filter-faction"),
+            rarity: value("filter-rarity"),
+            ownership: value("filter-ownership")
+        };
+    }
+
+    function filterCollectionCards() {
+        var controlsExist = document.getElementById("collection-search");
+        if (!controlsExist) return;
+
+        var filters = collectionFilterValues();
+        var visibleCount = 0;
+
+        document.querySelectorAll(".az-game-collection-page .collection-card").forEach(function (card) {
+            var matchesSearch = !filters.search || (card.dataset.name || "").indexOf(filters.search) !== -1;
+            var matchesType = !filters.type || card.dataset.type === filters.type;
+            var matchesSigil = !filters.sigil || card.dataset.sigil === filters.sigil;
+            var matchesRole = !filters.role || card.dataset.role === filters.role;
+            var matchesFaction = !filters.faction || card.dataset.faction === filters.faction;
+            var matchesRarity = !filters.rarity || card.dataset.rarity === filters.rarity;
+            var matchesOwnership = !filters.ownership || card.dataset.ownership === filters.ownership;
+            var visible = (
+                matchesSearch &&
+                matchesType &&
+                matchesSigil &&
+                matchesRole &&
+                matchesFaction &&
+                matchesRarity &&
+                matchesOwnership
+            );
+
+            card.hidden = !visible;
+            card.style.display = visible ? "" : "none";
+            if (visible) visibleCount += 1;
+        });
+
+        var empty = document.getElementById("az-collection-no-results");
+        if (empty) {
+            empty.hidden = visibleCount !== 0;
+        }
+    }
+
+    function bindCollectionFilters() {
+        [
+            "collection-search",
+            "filter-type",
+            "filter-sigil",
+            "filter-role",
+            "filter-faction",
+            "filter-rarity",
+            "filter-ownership"
+        ].forEach(function (id) {
+            var element = document.getElementById(id);
+            if (!element) return;
+
+            var eventName = element.tagName === "INPUT" ? "input" : "change";
+            element.addEventListener(eventName, filterCollectionCards);
+        });
+
+        document.querySelectorAll("[data-clear-collection-filters]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                [
+                    "collection-search",
+                    "filter-type",
+                    "filter-sigil",
+                    "filter-role",
+                    "filter-faction",
+                    "filter-rarity",
+                    "filter-ownership"
+                ].forEach(function (id) {
+                    var element = document.getElementById(id);
+                    if (element) element.value = "";
+                });
+
+                filterCollectionCards();
+            });
+        });
+    }
+
     function enhanceCards() {
         if (isArenaPage()) return;
 
@@ -36,4 +126,6 @@
     }
 
     document.addEventListener("DOMContentLoaded", enhanceCards);
+    document.addEventListener("DOMContentLoaded", bindCollectionFilters);
+    window.filterCollectionCards = filterCollectionCards;
 })();

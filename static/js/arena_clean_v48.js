@@ -280,7 +280,8 @@
         const feedback = feedbackClass ? " " + feedbackClass : "";
 
         if (!card) {
-            return '<button type="button" class="az48-slot az48-lane-slot' + (legalLane ? " is-legal-lane" : "") + feedback + '" data-az48-owner="' + esc(owner || "") + '" data-az48-lane="' + esc(lane || "") + '">' + esc(label) + '</button>';
+            const hint = legalLane ? "Playable lane" : "Empty lane";
+            return '<button type="button" class="az48-slot az48-lane-slot' + (legalLane ? " is-legal-lane" : "") + feedback + '" data-az48-owner="' + esc(owner || "") + '" data-az48-lane="' + esc(lane || "") + '"><span class="az48-slot-label">' + esc(label) + '</span><small>' + esc(hint) + '</small></button>';
         }
         return renderCard(card, { field: true, lane, legalLane, feedbackClass });
     }
@@ -535,6 +536,29 @@
         }
     }
 
+    function syncActionControls(step, legal) {
+        legal = legal || {};
+
+        const available = {
+            "az48-start": step === "start" && Boolean(legal.can_start || legal.show_start),
+            "az48-floating-start": step === "start" && PAGE_KIND === "training",
+            "az48-strike": step === "choose_intent",
+            "az48-guard": step === "choose_intent",
+            "az48-focus": step === "choose_intent",
+            "az48-ready": ["choose_card", "ready"].includes(step) && Boolean(legal.can_ready || legal.show_ready),
+        };
+
+        Object.entries(available).forEach(([id, isAvailable]) => {
+            const button = document.getElementById(id);
+            if (!button) return;
+
+            button.disabled = !isAvailable;
+            button.classList.toggle("is-primary-action", isAvailable);
+            button.setAttribute("aria-disabled", isAvailable ? "false" : "true");
+            button.dataset.az48ActionState = isAvailable ? "available" : "unavailable";
+        });
+    }
+
     function setList(id, values) {
         const el = document.getElementById(id);
         if (!el) return;
@@ -727,6 +751,31 @@
         };
     }
 
+    function estimatedTrainingXp(key) {
+        if (key === "win") return 70;
+        if (key === "lose") return 35;
+        if (key === "draw") return 45;
+        return 35;
+    }
+
+    function renderResultProgress(copy, rewards) {
+        const panel = document.getElementById("az48-result-progress");
+        const label = document.getElementById("az48-result-progress-label");
+        const value = document.getElementById("az48-result-progress-value");
+        const fill = document.getElementById("az48-result-progress-fill");
+
+        if (!panel || !label || !value || !fill) return;
+
+        const hasServerXp = rewards && rewards.xp !== undefined && rewards.xp !== null;
+        const xp = hasServerXp ? num(rewards.xp) : estimatedTrainingXp(copy.key);
+        const percent = Math.max(10, Math.min(100, Math.round((xp / 120) * 100)));
+
+        label.textContent = hasServerXp ? "Training reward" : "Progress preview";
+        value.textContent = hasServerXp ? ("XP +" + xp) : ("Estimated XP +" + xp);
+        fill.style.width = percent + "%";
+        panel.hidden = false;
+    }
+
     function renderTrainingResult(state) {
         const panel = document.getElementById("az48-training-result");
         if (!panel) return;
@@ -767,6 +816,8 @@
                 : "";
             rewardsEl.hidden = rewardLines.length === 0;
         }
+
+        renderResultProgress(copy, rewards);
 
         panel.hidden = false;
         panel.classList.add("is-visible");
@@ -1102,6 +1153,7 @@
         renderCardPreview(payload, legal.playable_card_ids || []);
         renderStepList(uiStep);
         updateActionButtons(uiStep);
+        syncActionControls(uiStep, legal);
     }
 
 
@@ -1137,6 +1189,8 @@
         const statesByCard = cardStateMap(state);
 
         const phase = str(state.phase || "start");
+        const uiStep = getArenaUiStep(state);
+        const primaryAction = str(legal.primary_action || (uiStep === "choose_card" ? "play_card" : uiStep));
 
         if (selectedCardId && !hand.some((card, index) => normalizeCard(card, index).id === String(selectedCardId))) {
             clearSelection();
@@ -1183,8 +1237,9 @@
         document.body.classList.toggle("az48-me-ready", Boolean(me.ready));
         document.body.classList.toggle("az48-enemy-ready", Boolean(enemy.ready));
         document.body.dataset.az48Step = str((state.turn && state.turn.step) || phase);
-        document.body.dataset.az48PrimaryAction = str(legal.primary_action || "");
-        document.body.dataset.az48UiStep = getArenaUiStep(state);
+        document.body.dataset.az48PrimaryAction = primaryAction;
+        document.body.dataset.az48ServerPrimaryAction = str(legal.primary_action || "");
+        document.body.dataset.az48UiStep = uiStep;
         document.body.dataset.az48PlayerIntent = slug(me.intent || "none", "none");
 
         text("az48-mode", str(state.mode || "training"));
@@ -1319,7 +1374,7 @@
             return;
         }
 
-        setMessage(intent + " selected.");
+        setMessage("Intent set: " + intent + ". Play a highlighted card or press Ready.");
         setServerError("");
         clearSelection();
         if (emitCommand("set_intent", { intent })) {
@@ -1333,7 +1388,7 @@
             return;
         }
 
-        setMessage("Ready sent.");
+        setMessage("Ready sent. Resolving the round when the opponent is ready.");
         setServerError("");
         clearSelection();
         if (emitCommand("ready", {})) {

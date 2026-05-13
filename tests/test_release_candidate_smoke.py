@@ -26,7 +26,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v176" in body
+    assert "ambitionz-web-app-v177" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -320,6 +320,27 @@ def test_collection_and_deck_builder_v2_render_and_save(client):
     save_body = save_response.get_data(as_text=True)
     assert save_response.status_code == 200
     assert "Deck saved successfully." in save_body
+
+
+def test_main_product_routes_smoke(client):
+    user = create_user(username="routesmoke", email="routesmoke@example.com")
+    login_session(client, user)
+
+    route_expectations = {
+        "/": "Ambitionz",
+        "/health": "Ambitionz",
+        "/training": "Training Mode",
+        "/collection": "Collection Progress",
+        "/deck-builder": "Active Deck Status",
+        "/profile": "Player Snapshot",
+    }
+
+    for path, expected_text in route_expectations.items():
+        response = client.get(path)
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert expected_text in body
 
 
 def test_admin_cannot_remove_own_or_last_admin(client):

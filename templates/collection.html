@@ -135,16 +135,16 @@
             <h2>Filters</h2>
 
             <div class="deck-filter-grid">
-                <input id="collection-search" type="text" placeholder="Search card..." oninput="filterCollectionCards()">
+                <input id="collection-search" type="search" placeholder="Search card..." autocomplete="off">
 
-                <select id="filter-type" onchange="filterCollectionCards()">
+                <select id="filter-type">
                     <option value="">All Types</option>
                     <option value="Monster">Monster</option>
                     <option value="Spell">Spell</option>
                     <option value="Trap">Trap</option>
                 </select>
 
-                <select id="filter-sigil" onchange="filterCollectionCards()">
+                <select id="filter-sigil">
                     <option value="">All Sigils</option>
                     <option value="Fury">Fury</option>
                     <option value="Resolve">Resolve</option>
@@ -154,7 +154,7 @@
                     <option value="Global">Global</option>
                 </select>
 
-                <select id="filter-faction" onchange="filterCollectionCards()">
+                <select id="filter-faction">
                     <option value="">All Factions</option>
                     <option value="Ember Court">Ember Court</option>
                     <option value="Tideborn Order">Tideborn Order</option>
@@ -163,7 +163,7 @@
                     <option value="Arcane Neutral">Arcane Neutral</option>
                 </select>
 
-                <select id="filter-rarity" onchange="filterCollectionCards()">
+                <select id="filter-rarity">
                     <option value="">All Rarities</option>
                     <option value="Common">Common</option>
                     <option value="Uncommon">Uncommon</option>
@@ -172,13 +172,13 @@
                     <option value="Legendary">Legendary</option>
                 </select>
 
-                <select id="filter-ownership" onchange="filterCollectionCards()">
+                <select id="filter-ownership">
                     <option value="">Owned + Locked</option>
                     <option value="owned">Owned</option>
                     <option value="locked">Locked</option>
                 </select>
 
-                <select id="filter-role" onchange="filterCollectionCards()">
+                <select id="filter-role">
                     <option value="">All Roles</option>
                     <option value="Aggressor">Aggressor</option>
                     <option value="Defender">Defender</option>
@@ -221,10 +221,13 @@
                     data-faction="{{ faction_name }}"
                     data-sigil="{{ card.sigil }}"
                     data-role="{{ card.role }}"
+                    data-effect="{{ card.effect|default(card.description|default('')) }}"
+                    data-lore="{{ card.lore|default(card.tactical_hint|default('Ambitionz beta card identity.')) }}"
                     data-owned="{{ owned_count }}"
                     data-ownership="{{ ownership_state }}"
                 >
                     <div class="az-card-tags-v1 az-premium-card-badges-v1">
+                        <span class="az-status-badge">{{ card.type|default('Card') }}</span>
                         <span class="az-element-badge">{{ card_element }}</span>
                         <span class="az-rarity-badge">{{ card.rarity|default('Common') }}</span>
                         <span class="az-faction-badge-v1 {{ faction_css }}">{{ faction_name }}</span>
@@ -241,7 +244,7 @@
                     </div>
                     <div class="az-card-body-v1">
                         <strong>{{ card.name }}</strong>
-                        <p>{{ card.effect }}</p>
+                        <p>{{ card.lore|default(card.tactical_hint|default(card.effect|default(card.description|default('Ambitionz beta card.')))) }}</p>
                     </div>
                     <div class="az-card-stats-v1">
                         {% if card.type == "Monster" %}
@@ -266,43 +269,18 @@
                     <a href="{{ url_for('training') }}" class="btn">Start Training</a>
                 </article>
             {% endfor %}
+
+            <article id="az-collection-no-results" class="az-empty-collection-v2 az-filter-empty-v25" hidden>
+                <span class="progression-kicker">No cards found</span>
+                <h2>No cards match these filters.</h2>
+                <p>Clear a filter or search by another card name, element, rarity or faction.</p>
+                <button type="button" class="btn btn-secondary small-btn" data-clear-collection-filters>Clear Filters</button>
+            </article>
         </section>
     </main>
 
-    <script>
-        function filterCollectionCards() {
-            const search = document.getElementById("collection-search").value.toLowerCase();
-            const type = document.getElementById("filter-type").value;
-            const sigil = document.getElementById("filter-sigil").value;
-            const role = document.getElementById("filter-role").value;
-            const faction = document.getElementById("filter-faction").value;
-            const rarity = document.getElementById("filter-rarity").value;
-            const ownership = document.getElementById("filter-ownership").value;
-
-            document.querySelectorAll(".collection-card").forEach((card) => {
-                const matchesSearch = !search || card.dataset.name.includes(search);
-                const matchesType = !type || card.dataset.type === type;
-                const matchesSigil = !sigil || card.dataset.sigil === sigil;
-                const matchesRole = !role || card.dataset.role === role;
-                const matchesFaction = !faction || card.dataset.faction === faction;
-                const matchesRarity = !rarity || card.dataset.rarity === rarity;
-                const matchesOwnership = !ownership || card.dataset.ownership === ownership;
-
-                card.style.display = (
-                    matchesSearch &&
-                    matchesType &&
-                    matchesSigil &&
-                    matchesRole &&
-                    matchesFaction &&
-                    matchesRarity &&
-                    matchesOwnership
-                ) ? "" : "none";
-            });
-        }
-    </script>
-
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=2"></script>
 </body>
 </html>

@@ -9952,3 +9952,321 @@ button[disabled] {
         flex-direction: column;
     }
 }
+
+
+/* =========================================================
+   Blocks 25-32 — Product Polish, Progression and QA Guardrails
+   Final scoped layer over legacy beta CSS. No rule or socket changes.
+   ========================================================= */
+
+:root {
+    --az-control-radius-v25: 12px;
+    --az-panel-radius-v25: 16px;
+    --az-focus-ring-v25: 0 0 0 3px rgba(214, 168, 75, 0.26);
+}
+
+.btn,
+button.btn,
+a.btn,
+.small-btn,
+.full-btn {
+    min-height: 42px;
+    border-radius: var(--az-control-radius-v25) !important;
+    line-height: 1.05;
+}
+
+.btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: none;
+    box-shadow: var(--az-focus-ring-v25) !important;
+    border-color: rgba(248, 231, 186, 0.48) !important;
+}
+
+.btn-secondary,
+a.btn-secondary,
+button.btn-secondary {
+    color: rgba(247, 244, 236, 0.92) !important;
+}
+
+.top-bar,
+.mobile-top-bar,
+.deck-status,
+.az-home-panel-v2,
+.az-home-player-v2,
+.az-home-public-cta-v2,
+.az-retention-snapshot-v1,
+.az-profile-progress-preview-v28,
+.az-collection-summary-v2 article,
+.az-collection-desire-v1,
+.az-collection-factions-v1,
+.az-deck-validation-summary-v2,
+.az-deck-card-preview-v30 {
+    border-radius: var(--az-panel-radius-v25) !important;
+}
+
+.az-card-nav-v1 {
+    position: sticky;
+    top: max(8px, env(safe-area-inset-top));
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 52px;
+    margin-bottom: 14px;
+    padding: 8px;
+    border-radius: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    backdrop-filter: blur(16px);
+}
+
+.az-card-nav-v1::-webkit-scrollbar {
+    display: none;
+}
+
+.az-card-nav-v1 a {
+    flex: 0 0 auto;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 11px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.az-card-nav-spacer {
+    flex: 1 0 24px;
+    width: auto !important;
+    height: auto !important;
+    background: transparent !important;
+}
+
+.section-title-row h2,
+.top-bar h1,
+.mobile-top-bar h1,
+.az-home-panel-v2 h2,
+.az-profile-progress-preview-v28 h2,
+.az-deck-card-preview-v30 h2 {
+    letter-spacing: 0;
+}
+
+.deck-filter-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.deck-filter-grid,
+.deck-filter-grid-v115 {
+    grid-template-columns: minmax(180px, 1.35fr) repeat(auto-fit, minmax(138px, 1fr)) !important;
+}
+
+.deck-filter-grid input,
+.deck-filter-grid select {
+    width: 100%;
+    min-width: 0;
+}
+
+.az-filter-empty-v25[hidden],
+.collection-card[hidden],
+.builder-card[hidden] {
+    display: none !important;
+}
+
+.az-filter-empty-v25 {
+    min-height: 190px;
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 8px;
+}
+
+.az-game-collection-page .collection-card.is-locked,
+.az-game-collection-page .collection-card.is-locked .az-card-art-v1,
+.az-game-collection-page .collection-card.is-locked .az-card-body-v1,
+.az-game-collection-page .collection-card.is-locked .az-card-stats-v1 {
+    filter: saturate(0.58);
+}
+
+.az-game-collection-page .collection-card.is-locked .az-card-art-v1,
+.az-game-collection-page .collection-card.is-locked .az-card-body-v1,
+.az-game-collection-page .collection-card.is-locked .az-card-stats-v1 {
+    opacity: 0.58;
+}
+
+.az-game-collection-page .az-card-v1 .az-card-tags-v1 {
+    flex-wrap: wrap;
+    max-height: 48px;
+    overflow: hidden;
+}
+
+.az-game-collection-page .az-card-v1 .az-card-tags-v1 span {
+    max-width: 104px;
+}
+
+.az-profile-progress-preview-v28 {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+    gap: 16px;
+    align-items: stretch;
+    margin: 18px 0;
+    padding: clamp(18px, 3vw, 26px);
+    border: 1px solid rgba(248, 231, 186, 0.16);
+    background:
+        linear-gradient(135deg, rgba(88, 214, 199, 0.08), rgba(214, 168, 75, 0.08)),
+        rgba(255, 255, 255, 0.05);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.26);
+}
+
+.az-profile-progress-preview-v28 p {
+    margin: 0;
+    color: rgba(247, 244, 236, 0.70);
+    line-height: 1.48;
+}
+
+.az-profile-progress-grid-v28,
+.az-deck-preview-stat-grid-v30 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 10px;
+}
+
+.az-profile-progress-grid-v28 article,
+.az-deck-preview-stat-grid-v30 span {
+    min-height: 72px;
+    display: grid;
+    align-content: center;
+    gap: 6px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(5, 5, 11, 0.34);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.az-profile-progress-grid-v28 span,
+.az-deck-preview-stat-grid-v30 b {
+    color: rgba(247, 244, 236, 0.62);
+    font-size: 0.68rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az-profile-progress-grid-v28 strong,
+.az-deck-preview-stat-grid-v30 span {
+    color: #fff;
+    font-weight: 950;
+}
+
+.az-inline-action-form-v25 {
+    margin: 0;
+    display: inline-flex;
+}
+
+.az-deck-card-preview-v30 {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.88fr) minmax(0, 1.12fr);
+    gap: 14px;
+    margin: 14px 0;
+    padding: clamp(16px, 3vw, 22px);
+    border: 1px solid rgba(248, 231, 186, 0.16);
+    background:
+        linear-gradient(135deg, rgba(214, 168, 75, 0.10), rgba(88, 214, 199, 0.06)),
+        rgba(255, 255, 255, 0.048);
+    box-shadow: 0 18px 52px rgba(0, 0, 0, 0.24);
+}
+
+.az-deck-card-preview-v30 p {
+    margin: 0;
+    color: rgba(247, 244, 236, 0.70);
+    line-height: 1.45;
+}
+
+.builder-card.is-in-deck .card-shell {
+    border-color: rgba(80, 255, 150, 0.34) !important;
+    box-shadow:
+        0 22px 58px rgba(0, 0, 0, 0.42),
+        0 0 0 2px rgba(80, 255, 150, 0.10);
+}
+
+.builder-card.is-at-copy-limit .deck-copy-count {
+    color: #06130b;
+    background: var(--az-success, #50ff96);
+}
+
+.sticky-save-btn {
+    bottom: max(78px, calc(18px + env(safe-area-inset-bottom)));
+    z-index: 90;
+}
+
+.sticky-save-btn.is-needs-fixes {
+    border-color: rgba(255, 116, 96, 0.36) !important;
+    background:
+        linear-gradient(180deg, rgba(255, 116, 96, 0.16), rgba(255, 116, 96, 0.08)),
+        rgba(8, 8, 14, 0.88) !important;
+    color: #ffd2ca !important;
+}
+
+.az-home-nav-links-v2 a[aria-current="page"],
+.az-home-brand-v2[aria-current="page"] {
+    color: var(--az-gold-light, #f8e7ba);
+}
+
+.az-home-route-grid-v2 a:hover,
+.az-card-nav-v1 a:hover,
+.quick-filter-row-v115 button:hover {
+    border-color: rgba(248, 231, 186, 0.34);
+}
+
+@media (max-width: 900px) {
+    .az-profile-progress-preview-v28,
+    .az-deck-card-preview-v30 {
+        grid-template-columns: 1fr;
+    }
+
+    .az-card-nav-spacer {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .wide-page,
+    .mobile-wide-page,
+    .az-home-shell-v2 {
+        width: min(100vw - 14px, 1180px);
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+
+    .top-bar,
+    .mobile-top-bar {
+        gap: 10px;
+    }
+
+    .top-bar .btn,
+    .mobile-top-bar .btn,
+    .section-title-row .btn {
+        width: 100%;
+    }
+
+    .deck-filter-grid,
+    .deck-filter-grid-v115,
+    .az-profile-progress-grid-v28,
+    .az-deck-preview-stat-grid-v30 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .az-card-grid-v1,
+    .card-grid,
+    .deck-builder-grid {
+        grid-template-columns: repeat(auto-fill, minmax(142px, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    .az-home-hero-copy-v2 h1 {
+        font-size: clamp(3rem, 18vw, 4.6rem);
+    }
+}
