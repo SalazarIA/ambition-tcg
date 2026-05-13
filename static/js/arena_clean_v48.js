@@ -14,6 +14,7 @@
     let latestGameOverResult = "";
     let lastCombatAudioSignature = "";
     let lastGameOverAudioResult = "";
+    let reportedTrainingResult = false;
     const pulseTimers = {};
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
@@ -86,6 +87,30 @@
         panel.hidden = !value;
         panel.classList.toggle("is-visible", Boolean(value));
         textEl.textContent = value;
+    }
+
+    function trackRetentionEvent(eventKey, metadata) {
+        try {
+            if (window.AmbitionzRetention && typeof window.AmbitionzRetention.track === "function") {
+                window.AmbitionzRetention.track(eventKey, metadata || {});
+                return;
+            }
+
+            if (!window.fetch) return;
+
+            fetch("/api/retention/event", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "same-origin",
+                body: JSON.stringify({
+                    event_key: eventKey,
+                    page: window.location.pathname,
+                    metadata: metadata || {},
+                }),
+            }).catch(function () {});
+        } catch (err) {}
     }
 
     function playSound(name, payload) {
@@ -823,6 +848,15 @@
         panel.classList.add("is-visible");
         panel.dataset.result = copy.key || "finished";
         document.body.classList.add("az48-training-finished");
+
+        if (!reportedTrainingResult) {
+            reportedTrainingResult = true;
+            trackRetentionEvent("training_result_view", {
+                result: copy.key || "finished",
+                rounds: copy.rounds || 0,
+                has_server_reward: Boolean(rewards && (rewards.xp !== undefined || rewards.coins !== undefined)),
+            });
+        }
     }
 
     function eventSide(value) {
@@ -1343,9 +1377,14 @@
     }
 
     function startTraining() {
+        reportedTrainingResult = false;
         latestPostMatchSummary = null;
         latestGameOverResult = "";
         renderTrainingResult(null);
+        trackRetentionEvent("training_start_click", {
+            mode: PAGE_KIND,
+            source: "arena_clean_v48",
+        });
         setMessage("Starting Training. Draw your hand, then practice intent, card, lane and Ready.");
         setServerError("");
         if (emitCommand("start_training", {})) {

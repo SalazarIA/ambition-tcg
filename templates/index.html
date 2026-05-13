@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
 </head>
-<body class="az-home-page-v2">
+<body class="az-home-page-v2" data-retention-page="home">
     <main class="az-home-shell-v2">
         <nav class="az-home-nav-v2" aria-label="Main navigation">
                 <a href="{{ url_for('index') }}" class="az-home-brand-v2" aria-label="Ambitionz home" aria-current="page">
@@ -59,11 +59,11 @@
 
                 <div class="az-home-actions-v2">
                     {% if user %}
-                        <a href="{{ url_for('training') }}" class="btn az-home-primary-v2">Jogar Agora</a>
+                        <a href="{{ url_for('training') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
                         <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Ajustar Deck</a>
                         <a href="{{ url_for('collection') }}" class="btn btn-secondary">Ver Collection</a>
                     {% else %}
-                        <a href="{{ url_for('register') }}" class="btn az-home-primary-v2">Jogar Agora</a>
+                        <a href="{{ url_for('register') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
                         <a href="{{ url_for('tutorial') }}" class="btn btn-secondary">Tutorial</a>
                     {% endif %}
                 </div>
@@ -98,6 +98,24 @@
                 <h2>Improve</h2>
                 <p>Review your collection, tune the 30-card deck and climb your profile.</p>
             </article>
+        </section>
+
+        <section id="az-beta-journey" class="az-beta-journey-v1" aria-label="Beta journey">
+            <div class="az-beta-journey-head-v1">
+                <span class="az-home-kicker-v2">Beta Journey</span>
+                <h2>One clean path from first click to the next match.</h2>
+                <p>Enter, learn, train, review progress, inspect cards, tune the fixed 30-card deck and play again.</p>
+            </div>
+            <div class="az-beta-journey-grid-v1">
+                {% for step in beta_journey %}
+                    <a href="{{ step.url }}" class="az-beta-step-v1" data-state="{{ step.status|lower|replace(' ', '-') }}">
+                        <span>{{ step.number }}</span>
+                        <strong>{{ step.title }}</strong>
+                        <small>{{ step.status }}</small>
+                        <p>{{ step.description }}</p>
+                    </a>
+                {% endfor %}
+            </div>
         </section>
 
         <section id="az-faction-identity" class="az-faction-showcase-v1" aria-label="Ambitionz factions">
@@ -160,6 +178,12 @@
                 <a href="{{ url_for('collection') }}">Collection<span>Inspect owned cards</span></a>
                 <a href="{{ url_for('deck_builder') }}">Deck Builder<span>Build the beta deck</span></a>
                 <a href="{{ url_for('tutorial') }}">Tutorial<span>Learn intent, lanes and Ready</span></a>
+                <a href="{{ url_for('campaign') }}">Campaign<span>Follow the beta chapter path</span></a>
+                <a href="{{ url_for('daily') }}">Daily<span>Check today's beta reward preview</span></a>
+                {% if user %}
+                    <a href="{{ url_for('missions') }}">Missions<span>Complete loop objectives</span></a>
+                    <a href="{{ url_for('match_history') }}">Match History<span>Review recent battles</span></a>
+                {% endif %}
                 <a href="{{ url_for('ranking') }}">Ranking<span>Track competitive records</span></a>
                 <a href="{{ url_for('leaderboard') }}">Leaderboard<span>Compare progression</span></a>
                 {% if user %}

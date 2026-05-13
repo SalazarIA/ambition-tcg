@@ -23,7 +23,7 @@
 
 </head>
 
-<body class="az-clean-arena-v48 arena-page-v154 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}">
+<body class="az-clean-arena-v48 arena-page-v154 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}" data-retention-page="{% if training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}">
     <main class="az48-arena">
         <header class="az48-top">
             <section class="az48-player az48-enemy" data-az48-target="enemy_hero">
@@ -79,7 +79,7 @@
             {% endif %}
 
             <div class="az48-match-actions{% if training_mode %} az48-training-hidden-actions{% endif %}">
-                <button type="button" id="join-queue-btn" class="az48-mini-btn" data-az48-action="start-training">
+                <button type="button" id="join-queue-btn" class="az48-mini-btn" data-az48-action="start-training" data-retention-event="training_start_click">
                     {% if training_mode %}Start Training{% else %}Find Match{% endif %}
                 </button>
                 <button type="button" id="join-bot-match-btn" class="az48-mini-btn">Bot</button>
@@ -139,6 +139,7 @@
         id="az48-floating-start"
         class="az48-floating-start"
         data-az48-action="start-training"
+        data-retention-event="training_start_click"
         aria-label="Start training match"
     >
         Start Training
@@ -163,6 +164,7 @@
             <a href="{{ url_for('index') }}" class="az48-result-action">Voltar ao menu</a>
             <a href="{{ url_for('collection') }}" class="az48-result-action">Collection</a>
             <a href="{{ url_for('deck_builder') }}" class="az48-result-action">Deck</a>
+            <a href="{{ url_for('match_history') }}" class="az48-result-action">History</a>
         </nav>
     </aside>
     {% endif %}

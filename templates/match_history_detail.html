@@ -113,9 +113,9 @@
         </header>
 
         <section class="match-detail-hero-v1">
-            <span class="progression-kicker">{{ summary.get("mode", history.mode)|upper }}</span>
+            <span class="progression-kicker">{{ summary.get("mode", "training")|upper }}</span>
             <h1>{{ history.result }}</h1>
-            <p class="subtitle">Against {{ history.opponent_name }}.</p>
+            <p class="subtitle">Against {{ summary.get("opponent_name", "Ambitionz Bot") }}.</p>
 
             <div class="match-detail-grid-v1">
                 <div class="match-detail-stat-v1">
@@ -155,6 +155,9 @@
                 {% for event in summary.get("events", []) %}
                     <article class="match-event-v1">
                         <strong>{{ event.get("type", "event") }}</strong>
+                        {% if event.get("message") %}
+                            <span> — {{ event.get("message") }}</span>
+                        {% endif %}
                         {% if event.get("card_name") %}
                             <span> — {{ event.get("card_name") }}</span>
                         {% endif %}

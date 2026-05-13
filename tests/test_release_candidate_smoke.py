@@ -26,7 +26,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v177" in body
+    assert "ambitionz-web-app-v178" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -252,20 +252,21 @@ def test_profile_and_progression_render_basic_retention_summary(client):
     user.xp = 45
     user.level = 2
     user.first_training_completed = True
+    history = MatchHistory(
+        player1_id=user.id,
+        player2_id=None,
+        winner_id=user.id,
+        player1_name=user.username,
+        player2_name="Ambitionz Bot",
+        winner_name=user.username,
+        result="FINISHED",
+        player1_final_hp=12,
+        player2_final_hp=0,
+        total_rounds=4,
+        battle_log_json='["Round started", "Training complete"]',
+    )
     db.session.add(
-        MatchHistory(
-            player1_id=user.id,
-            player2_id=None,
-            winner_id=user.id,
-            player1_name=user.username,
-            player2_name="Ambitionz Bot",
-            winner_name=user.username,
-            result="FINISHED",
-            player1_final_hp=12,
-            player2_final_hp=0,
-            total_rounds=4,
-            battle_log_json="[]",
-        )
+        history
     )
     db.session.commit()
     login_session(client, user)
@@ -286,6 +287,13 @@ def test_profile_and_progression_render_basic_retention_summary(client):
     assert 'id="az-progression-summary"' in progression_body
     assert "45/200 XP" in progression_body
     assert "3 matches played" in progression_body
+
+    history_response = client.get(f"/match-history/{history.id}")
+    history_body = history_response.get_data(as_text=True)
+    assert history_response.status_code == 200
+    assert "Match Details" in history_body
+    assert "Ambitionz Bot" in history_body
+    assert "Round started" in history_body
 
 
 def test_collection_and_deck_builder_v2_render_and_save(client):
@@ -333,6 +341,11 @@ def test_main_product_routes_smoke(client):
         "/collection": "Collection Progress",
         "/deck-builder": "Active Deck Status",
         "/profile": "Player Snapshot",
+        "/campaign": "Beta Campaign",
+        "/daily": "Daily Check-In",
+        "/missions": "Beta Journey Missions",
+        "/progression": "Beta Journey",
+        "/match-history": "No matches yet",
     }
 
     for path, expected_text in route_expectations.items():
@@ -452,6 +465,40 @@ def test_retention_event_filters_unknown_events_and_rate_limits(client, flask_ap
     assert unknown_response.status_code == 200
     assert len(logs) == 2
     assert all(log.event_key == "page_view" for log in logs)
+
+
+def test_beta_retention_product_events_are_accepted(client):
+    for event_key in [
+        "home_cta_play",
+        "tutorial_start",
+        "training_start_click",
+        "training_result_view",
+        "collection_view",
+        "deck_builder_view",
+        "deck_save_attempt",
+        "campaign_view",
+        "mission_cta_click",
+        "daily_view",
+    ]:
+        response = client.post(
+            "/api/retention/event",
+            json={"event_key": event_key, "page": "/beta", "metadata": {"source": "test"}},
+        )
+        assert response.status_code == 200
+
+    logs = RetentionEvent.query.order_by(RetentionEvent.id.asc()).all()
+    assert [log.event_key for log in logs] == [
+        "home_cta_play",
+        "tutorial_start",
+        "training_start_click",
+        "training_result_view",
+        "collection_view",
+        "deck_builder_view",
+        "deck_save_attempt",
+        "campaign_view",
+        "mission_cta_click",
+        "daily_view",
+    ]
 
 
 def test_test_grant_routes_require_admin_dev_tools(client, flask_app):

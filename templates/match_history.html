@@ -14,7 +14,7 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/card_system_v1.css') }}?v=1">
 
 <style>
@@ -53,7 +53,7 @@
 </style>
 
 </head>
-<body>
+<body data-retention-page="match_history">
     <main class="wide-page mobile-wide-page match-history-v1-polish">
         <header class="top-bar mobile-top-bar">
             <div>
@@ -62,6 +62,7 @@
             </div>
 
             <a href="{{ url_for('ranking') }}" class="btn btn-secondary small-btn">Ranking</a>
+            <a href="{{ url_for('training') }}" class="btn btn-secondary small-btn">Play</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
@@ -87,6 +88,10 @@
                 <div>
                     <span>Losses</span>
                     <strong>{{ stats.losses if stats is defined else 0 }}</strong>
+                </div>
+                <div>
+                    <span>Draws</span>
+                    <strong>{{ stats.draws if stats is defined else 0 }}</strong>
                 </div>
                 <div>
                     <span>Winrate</span>
@@ -142,16 +147,27 @@
                         </div>
 
                         <footer>
-                            <span>{{ match.created_at }}</span>
+                            <span>{{ match.created_at.strftime('%Y-%m-%d %H:%M') if match.created_at else 'Recent match' }}</span>
+                            <span>XP / reward preview tracked in the match result panel.</span>
                         </footer>
                     </article>
                 {% else %}
-                    <p class="subtitle">No matches recorded yet.</p>
+                    <article class="panel-card az-empty-beta-state-v1">
+                        <span class="progression-kicker">No matches yet</span>
+                        <h2>Your recent battles will appear here.</h2>
+                        <p class="subtitle">Play Training to create your first recorded result. The page stays useful as the future home for rounds, rewards and season context.</p>
+                        <div class="progression-action-row">
+                            <a href="{{ url_for('training') }}" class="btn">Play Training</a>
+                            <a href="{{ url_for('campaign') }}" class="btn btn-secondary">Campaign</a>
+                            <a href="{{ url_for('progression') }}" class="btn btn-secondary">Progression</a>
+                        </div>
+                    </article>
                 {% endfor %}
             </div>
         </section>
     </main>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=2"></script>
 </body>
 </html>

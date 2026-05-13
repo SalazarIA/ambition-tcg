@@ -80,7 +80,7 @@
 
 </head>
 
-<body class="az-game-deck-page">
+<body class="az-game-deck-page" data-retention-page="deck_builder">
 
     <main class="wide-page mobile-wide-page deck-builder-unified-v1 {% if deck_validation_errors %}deck-builder-invalid-state-v1{% endif %}">
 
@@ -532,7 +532,7 @@
             </div>
         </section>
 
-        <form method="POST">
+        <form method="POST" data-retention-event="deck_save_attempt">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <section class="card-grid deck-builder-grid">

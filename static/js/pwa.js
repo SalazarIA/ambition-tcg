@@ -337,6 +337,13 @@
 
 
 (function () {
+    var pageEventMap = {
+        "/campaign": "campaign_view",
+        "/collection": "collection_view",
+        "/daily": "daily_view",
+        "/deck-builder": "deck_builder_view"
+    };
+
     function trackRetentionEvent(eventKey, metadata) {
         try {
             if (!window.fetch) return;
@@ -362,18 +369,46 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         var page = document.body ? document.body.getAttribute("data-retention-page") : null;
+        var path = window.location.pathname || "";
+        var pageEvent = pageEventMap[path];
+
         trackRetentionEvent("page_view", {
-            page: page || window.location.pathname,
+            page: page || path,
             standalone: window.matchMedia && window.matchMedia("(display-mode: standalone)").matches
         });
+
+        if (pageEvent) {
+            trackRetentionEvent(pageEvent, {
+                page: page || path,
+                source: "auto_page_view"
+            });
+        }
 
         document.querySelectorAll("a[href], button").forEach(function (el) {
             el.addEventListener("click", function () {
                 var label = (el.textContent || "").trim().slice(0, 80);
                 var href = el.getAttribute("href") || "";
+                var eventTarget = el.closest("[data-retention-event]");
+
+                if (eventTarget) {
+                    trackRetentionEvent(eventTarget.getAttribute("data-retention-event"), {
+                        label: label,
+                        href: href
+                    });
+                }
+
                 trackRetentionEvent("ui_click", {
                     label: label,
                     href: href
+                });
+            });
+        });
+
+        document.querySelectorAll("form[data-retention-event]").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                trackRetentionEvent(form.getAttribute("data-retention-event"), {
+                    action: form.getAttribute("action") || path,
+                    method: form.getAttribute("method") || "POST"
                 });
             });
         });

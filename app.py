@@ -119,7 +119,17 @@ retention_event_limiter = SlidingWindowRateLimiter()
 CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event"}
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 ALLOWED_RETENTION_EVENTS = {
+    "campaign_view",
+    "collection_view",
+    "daily_view",
+    "deck_builder_view",
+    "deck_save_attempt",
+    "home_cta_play",
+    "mission_cta_click",
     "page_view",
+    "training_result_view",
+    "training_start_click",
+    "tutorial_start",
     "ui_click",
 }
 
@@ -385,6 +395,320 @@ def login_required_redirect():
         return redirect("/login")
 
     return None
+
+
+def beta_deck_status(user):
+    status = {
+        "is_valid": False,
+        "selected_count": 0,
+        "errors": [],
+        "label": "Login required",
+    }
+
+    if not user:
+        return status
+
+    try:
+        collection_ids = owned_card_ids_for_user(user)
+        deck_ids = load_card_ids(user.deck_json)
+        errors = validate_deck(deck_ids, collection_ids)
+        status.update(
+            {
+                "is_valid": len(errors) == 0,
+                "selected_count": len(deck_ids),
+                "errors": errors,
+                "label": "Valid 30-card beta deck" if len(errors) == 0 else "Deck needs attention",
+            }
+        )
+    except Exception as error:
+        print("BETA DECK STATUS ERROR:", type(error).__name__, error)
+        status["errors"] = ["Deck status unavailable."]
+        status["label"] = "Deck status unavailable"
+
+    return status
+
+
+def beta_collection_progress(user):
+    progress = {
+        "owned_unique": 0,
+        "catalog_total": len(CARD_CATALOG),
+        "completion_percent": 0,
+        "total_owned": 0,
+        "label": "Collection preview",
+    }
+
+    if not user:
+        return progress
+
+    try:
+        ensure_user_has_playable_inventory(user)
+        db.session.commit()
+        cards = build_collection_from_inventory(user, include_zero=True)
+        owned_cards = [card for card in cards if int(card.get("count") or 0) > 0]
+        catalog_total = len(cards) or len(CARD_CATALOG)
+        owned_unique = len(owned_cards)
+        progress.update(
+            {
+                "owned_unique": owned_unique,
+                "catalog_total": catalog_total,
+                "completion_percent": int(round((owned_unique / catalog_total) * 100)) if catalog_total else 0,
+                "total_owned": sum(int(card.get("count") or 0) for card in owned_cards),
+                "label": "Starter collection" if owned_unique else "Beta catalog",
+            }
+        )
+    except Exception as error:
+        print("BETA COLLECTION PROGRESS ERROR:", type(error).__name__, error)
+        db.session.rollback()
+
+    return progress
+
+
+def build_beta_journey(user=None, deck_status=None):
+    deck_status = deck_status or beta_deck_status(user)
+    total_matches = int(getattr(user, "wins", 0) or 0) + int(getattr(user, "losses", 0) or 0) if user else 0
+    trained = bool(getattr(user, "first_training_completed", False)) if user else False
+    onboarded = bool(getattr(user, "has_completed_onboarding", False)) if user else False
+    deck_ready = bool(deck_status.get("is_valid"))
+
+    return [
+        {
+            "number": "01",
+            "title": "Enter",
+            "description": "Create or open your beta account so progress can be saved.",
+            "url": url_for("progression") if user else url_for("login"),
+            "cta": "Open Progression" if user else "Login",
+            "status": "Done" if user else "Next",
+        },
+        {
+            "number": "02",
+            "title": "Learn",
+            "description": "Read the intent, lane and Ready flow before the first duel.",
+            "url": url_for("tutorial"),
+            "cta": "Tutorial",
+            "status": "Done" if onboarded else "Recommended",
+        },
+        {
+            "number": "03",
+            "title": "Play Training",
+            "description": "Run a quick BE2 training match against the bot.",
+            "url": url_for("training"),
+            "cta": "Play Training",
+            "status": "Done" if trained else "Next",
+        },
+        {
+            "number": "04",
+            "title": "Review Reward",
+            "description": "Check XP, coins and the post-match reward preview.",
+            "url": url_for("progression") if user else url_for("login"),
+            "cta": "Progression",
+            "status": "Done" if total_matches > 0 else "After match",
+        },
+        {
+            "number": "05",
+            "title": "Inspect Collection",
+            "description": "See owned and locked cards before tuning the deck.",
+            "url": url_for("collection"),
+            "cta": "Collection",
+            "status": "Available" if user else "Login",
+        },
+        {
+            "number": "06",
+            "title": "Tune Deck",
+            "description": "Keep the fixed beta deck legal at 30 cards.",
+            "url": url_for("deck_builder"),
+            "cta": "Deck Builder",
+            "status": "Done" if deck_ready else "Check deck",
+        },
+        {
+            "number": "07",
+            "title": "Play Again",
+            "description": "Return to Training with a clearer plan.",
+            "url": url_for("training"),
+            "cta": "Play Again",
+            "status": "Recommended" if total_matches > 0 else "Future",
+        },
+    ]
+
+
+def build_campaign_chapters(user=None, deck_status=None):
+    deck_status = deck_status or beta_deck_status(user)
+    trained = bool(getattr(user, "first_training_completed", False)) if user else False
+    deck_ready = bool(deck_status.get("is_valid"))
+
+    return [
+        {
+            "number": "01",
+            "title": "First Signal",
+            "description": "Learn the rhythm of intent, card, lane and Ready in a short bot duel.",
+            "lore": "A quiet signal rises from the first arena floor, asking for discipline before glory.",
+            "difficulty": "Easy",
+            "status": "Complete" if trained else "Recommended",
+            "reward": "Training reward preview: XP, coins and mission progress.",
+            "url": url_for("training"),
+            "cta_label": "Play Training",
+            "locked": False,
+        },
+        {
+            "number": "02",
+            "title": "Vault Survey",
+            "description": "Inspect your starter collection and learn which cards are owned or locked.",
+            "lore": "The vault does not promise riches; it shows what your current deck can actually use.",
+            "difficulty": "Easy",
+            "status": "Available",
+            "reward": "Collection clarity and deck planning.",
+            "url": url_for("collection"),
+            "cta_label": "Open Collection",
+            "locked": not bool(user),
+        },
+        {
+            "number": "03",
+            "title": "Thirty-Card Oath",
+            "description": "Confirm your beta deck is legal before returning to battle.",
+            "lore": "A deck is not a pile of power. It is a promise: thirty cards, one plan.",
+            "difficulty": "Easy",
+            "status": "Complete" if deck_ready else "Available",
+            "reward": "Deck validity confidence.",
+            "url": url_for("deck_builder"),
+            "cta_label": "Tune Deck",
+            "locked": not bool(user),
+        },
+        {
+            "number": "04",
+            "title": "Ambition Trial",
+            "description": "Use Focus and tempo to set up a stronger round in Training.",
+            "lore": "Ambition grows when patience survives the first strike.",
+            "difficulty": "Normal",
+            "status": "Available" if trained else "Future",
+            "reward": "Progress preview toward the next level.",
+            "url": url_for("training"),
+            "cta_label": "Practice Focus",
+            "locked": not trained,
+        },
+        {
+            "number": "05",
+            "title": "Rival at the Gate",
+            "description": "A scripted rival encounter belongs here once campaign persistence lands.",
+            "lore": "A rival waits beyond the beta gate, not yet bound to the current ruleset.",
+            "difficulty": "Hard",
+            "status": "Coming Next",
+            "reward": "Future campaign chapter reward preview.",
+            "url": url_for("training"),
+            "cta_label": "Coming Next",
+            "locked": True,
+        },
+    ]
+
+
+def build_beta_mission_guides(user, missions, deck_status=None):
+    deck_status = deck_status or beta_deck_status(user)
+    mission_by_key = {mission.mission_key: mission for mission in missions or []}
+    total_matches = int(getattr(user, "wins", 0) or 0) + int(getattr(user, "losses", 0) or 0) if user else 0
+
+    def mission_progress(key, fallback=0):
+        mission = mission_by_key.get(key)
+        if mission:
+            return int(mission.progress or 0), int(mission.target or 1), bool(mission.is_complete)
+        return fallback, 1, fallback >= 1
+
+    training_progress, training_target, training_complete = mission_progress(
+        "play_1_training",
+        1 if getattr(user, "first_training_completed", False) else 0,
+    )
+
+    return [
+        {
+            "title": "Play one Training match",
+            "description": "Complete the core beta loop: intent, card, lane, Ready and result.",
+            "progress": training_progress,
+            "target": training_target,
+            "percent": min(100, round((training_progress / max(1, training_target)) * 100)),
+            "reward": "Training XP and mission progress",
+            "status": "Complete" if training_complete else "Active",
+            "url": url_for("training"),
+            "cta": "Play Training",
+        },
+        {
+            "title": "Open the Collection",
+            "description": "Review owned, locked, rarity and element distribution.",
+            "progress": 0,
+            "target": 1,
+            "percent": 0,
+            "reward": "Collection planning preview",
+            "status": "Beta guide",
+            "url": url_for("collection"),
+            "cta": "Open Collection",
+        },
+        {
+            "title": "Validate the beta deck",
+            "description": "Keep the fixed 30-card deck legal before queueing again.",
+            "progress": 1 if deck_status.get("is_valid") else 0,
+            "target": 1,
+            "percent": 100 if deck_status.get("is_valid") else 0,
+            "reward": "Deck confidence preview",
+            "status": "Complete" if deck_status.get("is_valid") else "Active",
+            "url": url_for("deck_builder"),
+            "cta": "Check Deck",
+        },
+        {
+            "title": "Complete onboarding",
+            "description": "Use the tutorial path to understand the first session.",
+            "progress": 1 if getattr(user, "has_completed_onboarding", False) else 0,
+            "target": 1,
+            "percent": 100 if getattr(user, "has_completed_onboarding", False) else 0,
+            "reward": "First-session clarity",
+            "status": "Complete" if getattr(user, "has_completed_onboarding", False) else "Active",
+            "url": url_for("tutorial"),
+            "cta": "Open Tutorial",
+        },
+        {
+            "title": "Play again",
+            "description": "Return after one match and test a sharper plan.",
+            "progress": min(total_matches, 2),
+            "target": 2,
+            "percent": min(100, round((min(total_matches, 2) / 2) * 100)),
+            "reward": "Retention loop preview",
+            "status": "Complete" if total_matches >= 2 else "Future" if total_matches == 0 else "Active",
+            "url": url_for("training"),
+            "cta": "Play Again",
+        },
+    ]
+
+
+def build_daily_checkin(user, missions):
+    complete_count = sum(1 for mission in missions or [] if mission.is_complete)
+    claimed_count = sum(1 for mission in missions or [] if mission.is_claimed)
+    claimable_count = sum(1 for mission in missions or [] if mission.is_complete and not mission.is_claimed)
+    active_count = len(missions or [])
+
+    if not user:
+        state = "Beta preview"
+        message = "Login to activate daily missions and reward previews."
+    elif claimable_count:
+        state = "Reward ready"
+        message = "Claim completed daily missions before your next match."
+    elif active_count and claimed_count == active_count:
+        state = "Checked in"
+        message = "Today's visible mission board is complete."
+    else:
+        state = "Available today"
+        message = "Play Training to move the daily board forward."
+
+    return {
+        "state": state,
+        "message": message,
+        "active_count": active_count,
+        "complete_count": complete_count,
+        "claimed_count": claimed_count,
+        "claimable_count": claimable_count,
+        "streak_label": "Today active" if user else "Preview only",
+        "calendar": [
+            {"day": "Day 1", "reward": "Training XP preview", "status": state},
+            {"day": "Day 2", "reward": "Coins preview", "status": "Future"},
+            {"day": "Day 3", "reward": "Mission XP preview", "status": "Future"},
+            {"day": "Day 4", "reward": "Collection preview", "status": "Future"},
+            {"day": "Day 5", "reward": "Campaign preview", "status": "Future"},
+        ],
+    }
 
 
 
@@ -1388,7 +1712,12 @@ def admin_release_candidate():
 @app.route("/")
 def index():
     user = current_user()
-    return render_template("index.html", user=user)
+    deck_status = beta_deck_status(user)
+    return render_template(
+        "index.html",
+        user=user,
+        beta_journey=build_beta_journey(user, deck_status),
+    )
 
 
 
@@ -3000,60 +3329,28 @@ def tutorial():
         },
     ]
 
-    return render_template("tutorial.html", user=current_user(), steps=steps)
+    user = current_user()
+
+    return render_template(
+        "tutorial.html",
+        user=user,
+        steps=steps,
+        beta_journey=build_beta_journey(user, beta_deck_status(user)),
+    )
 
 
 @app.route("/campaign")
 def campaign():
-    chapters = [
-        {
-            "number": "01",
-            "title": "The First Spark",
-            "difficulty": "Beginner",
-            "status": "Available",
-            "objective": "Play your first training match and learn the basic duel rhythm.",
-            "reward": "Starter XP, Coins and Training mission progress.",
-            "url": url_for("training"),
-        },
-        {
-            "number": "02",
-            "title": "Broken Arena",
-            "difficulty": "Beginner",
-            "status": "Available",
-            "objective": "Test your 30-card beta deck against the bot.",
-            "reward": "Deck confidence and match reward progress.",
-            "url": url_for("deck_builder"),
-        },
-        {
-            "number": "03",
-            "title": "The Ambition Trial",
-            "difficulty": "Normal",
-            "status": "Available",
-            "objective": "Use Focus and Ambition to prepare a stronger round.",
-            "reward": "Progression loop momentum.",
-            "url": url_for("progression"),
-        },
-        {
-            "number": "04",
-            "title": "Rival Duel",
-            "difficulty": "Normal",
-            "status": "Coming Soon",
-            "objective": "Face a stronger scripted rival with a clearer strategy.",
-            "reward": "Future campaign chest.",
-            "url": url_for("training"),
-        },
-        {
-            "number": "05",
-            "title": "Ascension Gate",
-            "difficulty": "Hard",
-            "status": "Coming Soon",
-            "objective": "Clear the first campaign arc and prepare for ranked play.",
-            "reward": "Future Founder cosmetic track.",
-            "url": url_for("ranking"),
-        },
-    ]
+    user = current_user()
+    deck_status = beta_deck_status(user)
+    chapters = build_campaign_chapters(user, deck_status)
 
-    return render_template("campaign.html", user=current_user(), chapters=chapters)
+    return render_template(
+        "campaign.html",
+        user=user,
+        chapters=chapters,
+        beta_journey=build_beta_journey(user, deck_status),
+    )
 
 
 @app.route("/training")
@@ -3401,6 +3698,7 @@ def missions():
 
     user = current_user()
     missions = []
+    deck_status = beta_deck_status(user)
 
     try:
         ensure_daily_missions(user)
@@ -3420,6 +3718,9 @@ def missions():
         "missions.html",
         user=user,
         missions=missions,
+        mission_guides=build_beta_mission_guides(user, missions, deck_status),
+        deck_status=deck_status,
+        beta_journey=build_beta_journey(user, deck_status),
     )
 
 
@@ -3470,7 +3771,7 @@ def match_history():
 
     try:
         if "MatchHistory" in globals():
-            matches = (
+            all_matches = (
                 MatchHistory.query
                 .order_by(MatchHistory.id.desc())
                 .limit(50)
@@ -3479,10 +3780,11 @@ def match_history():
 
             user_matches = []
 
-            for match in matches:
+            for match in all_matches:
                 if match.player1_id == user.id or match.player2_id == user.id:
                     user_matches.append(match)
 
+            matches = user_matches
             stats["total"] = len(user_matches)
 
             for match in user_matches:
@@ -3534,11 +3836,14 @@ def welcome():
 def daily():
     user = current_user()
     missions = ensure_daily_missions(user) if user else []
+    deck_status = beta_deck_status(user)
 
     return render_template(
         "daily.html",
         user=user,
         missions=missions,
+        daily_checkin=build_daily_checkin(user, missions),
+        beta_journey=build_beta_journey(user, deck_status),
     )
 
 
@@ -3605,14 +3910,38 @@ def match_history_detail(history_id):
 
     user = current_user()
 
-    history = MatchHistory.query.filter_by(id=history_id, user_id=user.id).first_or_404()
-
-    summary = {}
+    history = (
+        MatchHistory.query
+        .filter(
+            MatchHistory.id == history_id,
+            (MatchHistory.player1_id == user.id) | (MatchHistory.player2_id == user.id),
+        )
+        .first_or_404()
+    )
 
     try:
-        summary = json.loads(history.summary_json or "{}")
+        raw_events = json.loads(history.battle_log_json or "[]")
     except Exception:
-        summary = {}
+        raw_events = []
+
+    events = []
+
+    for item in raw_events[:60]:
+        if isinstance(item, dict):
+            events.append(item)
+        else:
+            events.append({"type": "log", "message": str(item)})
+
+    opponent_name = history.player2_name if history.player1_id == user.id else history.player1_name
+    mode = "training" if "bot" in str(opponent_name or "").lower() else "pvp"
+    summary = {
+        "mode": mode,
+        "round": history.total_rounds,
+        "reward": {},
+        "winner": history.winner_name or "Draw",
+        "opponent_name": opponent_name,
+        "events": events,
+    }
 
     return render_template(
         "match_history_detail.html",
@@ -3809,6 +4138,8 @@ def progression():
 
     user = current_user()
     missions = []
+    deck_status = beta_deck_status(user)
+    collection_progress = beta_collection_progress(user)
     progression_stats = {
         "username": user.username,
         "level": int(user.level or 1),
@@ -3832,9 +4163,15 @@ def progression():
     next_steps = [
         {
             "title": "Play a Match",
-            "description": "Earn XP and coins from training or PvP.",
+            "description": "Earn XP and coins from the fastest beta loop.",
             "url": url_for("training"),
             "cta": "Play Training",
+        },
+        {
+            "title": "Daily Check-In",
+            "description": "See today's defensive reward preview.",
+            "url": url_for("daily"),
+            "cta": "Open Daily",
         },
         {
             "title": "Claim Missions",
@@ -3843,22 +4180,22 @@ def progression():
             "cta": "View Missions",
         },
         {
-            "title": "Open Booster",
-            "description": "Spend coins to grow your card collection.",
-            "url": url_for("shop"),
-            "cta": "Open Shop",
+            "title": "Start Campaign",
+            "description": "Follow the first beta chapter path without a separate ruleset.",
+            "url": url_for("campaign"),
+            "cta": "Campaign",
         },
         {
             "title": "Improve Deck",
-            "description": "Tune your 30-card beta deck after pulling new cards.",
+            "description": "Tune your 30-card beta deck and return to Training.",
             "url": url_for("deck_builder"),
             "cta": "Edit Deck",
         },
         {
-            "title": "Climb Ranking",
-            "description": "Track your wins and sharpen your strategy.",
-            "url": url_for("ranking"),
-            "cta": "View Ranking",
+            "title": "Review History",
+            "description": "Check recent outcomes and plan the next run.",
+            "url": url_for("match_history"),
+            "cta": "Match History",
         },
     ]
 
@@ -3868,6 +4205,9 @@ def progression():
         missions=missions,
         next_steps=next_steps,
         progression_stats=progression_stats,
+        collection_progress=collection_progress,
+        deck_status=deck_status,
+        beta_journey=build_beta_journey(user, deck_status),
     )
 
 

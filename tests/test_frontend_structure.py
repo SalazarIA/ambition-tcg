@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v177"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v178"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -193,6 +193,56 @@ def test_blocks_25_32_product_polish_contract():
     assert "dataset.az48PrimaryAction = primaryAction" in arena_js
     assert "Blocks 25-32" in css
     assert "Arena Premium UX Clarity" in arena_css
+
+
+def test_blocks_33_40_beta_retention_loop_contract():
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+    homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
+    campaign = (PROJECT_ROOT / "templates" / "campaign.html").read_text()
+    missions = (PROJECT_ROOT / "templates" / "missions.html").read_text()
+    daily = (PROJECT_ROOT / "templates" / "daily.html").read_text()
+    progression = (PROJECT_ROOT / "templates" / "progression.html").read_text()
+    match_history = (PROJECT_ROOT / "templates" / "match_history.html").read_text()
+    arena = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    pwa_js = (PROJECT_ROOT / "static" / "js" / "pwa.js").read_text()
+    arena_js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    progression_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_progression.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+
+    for event_name in [
+        "home_cta_play",
+        "tutorial_start",
+        "training_start_click",
+        "training_result_view",
+        "collection_view",
+        "deck_builder_view",
+        "deck_save_attempt",
+        "campaign_view",
+        "mission_cta_click",
+        "daily_view",
+    ]:
+        assert event_name in app_py
+
+    assert 'id="az-beta-journey"' in homepage
+    assert "build_beta_journey" in app_py
+    assert "build_campaign_chapters" in app_py
+    assert "First Signal" in app_py
+    assert "Beta Campaign" in campaign
+    assert "Reward Preview" in campaign
+    assert "mission_guides" in missions
+    assert "Beta Journey Missions" in missions
+    assert "daily_checkin.state" in daily
+    assert "az-daily-checkin-track-v1" in daily
+    assert "collection_progress.completion_percent" in progression
+    assert "deck_status.is_valid" in progression
+    assert "No matches yet" in match_history
+    assert "url_for('match_history')" in arena
+    assert "pageEventMap" in pwa_js
+    assert "data-retention-event" in pwa_js
+    assert "training_result_view" in arena_js
+    assert "/campaign" in progression_js
+    assert ".az-beta-journey-v1" in css
+    assert ".az-beta-guide-grid-v1" in css
 
 
 def test_arena_has_compact_turn_hud_contract():

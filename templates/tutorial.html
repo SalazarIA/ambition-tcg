@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_tutorial.css') }}?v=2">
 </head>
-<body class="az-themed-page">
+<body class="az-themed-page" data-retention-page="tutorial">
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
@@ -33,7 +33,7 @@
                 </p>
 
                 <div class="az-loop-actions">
-                    <a href="{{ url_for('training') }}" class="btn">Start Training</a>
+                    <a href="{{ url_for('training') }}" class="btn" data-retention-event="tutorial_start">Start Training</a>
                     <a href="{{ url_for('collection') }}" class="btn btn-secondary">View Collection</a>
                     <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">View Deck</a>
                 </div>
@@ -66,7 +66,7 @@
                 <p>Combat math stays on the server. The Arena shows what happened through HUD, lanes and Round Summary.</p>
             </div>
             <div class="az-loop-actions">
-                <a href="{{ url_for('training') }}" class="btn">Start Training</a>
+                <a href="{{ url_for('training') }}" class="btn" data-retention-event="tutorial_start">Start Training</a>
                 <a href="{{ url_for('collection') }}" class="btn btn-secondary">Collection</a>
                 <a href="{{ url_for('index') }}" class="btn btn-secondary">Home</a>
             </div>

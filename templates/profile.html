@@ -15,7 +15,7 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/card_system_v1.css') }}?v=1">
 </head>
 <body>
@@ -347,6 +347,16 @@
                     <span>Claim XP and coin rewards.</span>
                 </a>
 
+                <a class="menu-card clickable-menu-card" href="{{ url_for('daily') }}">
+                    <strong>Daily Check-In</strong>
+                    <span>See today's beta reward preview.</span>
+                </a>
+
+                <a class="menu-card clickable-menu-card" href="{{ url_for('campaign') }}">
+                    <strong>Campaign</strong>
+                    <span>Follow the first beta chapter path.</span>
+                </a>
+
                 <a class="menu-card clickable-menu-card" href="{{ url_for('match_history') }}">
                     <strong>Match History</strong>
                     <span>Review recent battles.</span>
@@ -435,6 +445,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=2"></script>
 </body>
 </html>

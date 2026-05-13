@@ -7,6 +7,7 @@
     function isProgressionPage() {
         return [
             "/profile",
+            "/campaign",
             "/daily",
             "/missions",
             "/progression",
@@ -52,7 +53,7 @@
     }
 
     function addLoopStrip() {
-        if (!["/progression", "/daily", "/missions"].includes(window.location.pathname)) return;
+        if (!["/progression", "/daily", "/missions", "/campaign"].includes(window.location.pathname)) return;
         if (document.querySelector(".az-loop-strip")) return;
 
         var anchor = document.querySelector(".progression-hub-hero, .progression-hero, .hero-card, .deck-status");
@@ -61,12 +62,12 @@
         var strip = document.createElement("section");
         strip.className = "az-loop-strip";
         strip.innerHTML = [
-            '<article class="az-loop-step"><b>1</b><strong>Play</strong><span>Enter a duel.</span></article>',
-            '<article class="az-loop-step"><b>2</b><strong>Earn</strong><span>Gain XP and coins.</span></article>',
-            '<article class="az-loop-step"><b>3</b><strong>Claim</strong><span>Complete missions.</span></article>',
-            '<article class="az-loop-step"><b>4</b><strong>Open</strong><span>Use boosters.</span></article>',
-            '<article class="az-loop-step"><b>5</b><strong>Improve</strong><span>Upgrade deck identity.</span></article>',
-            '<article class="az-loop-step"><b>6</b><strong>Climb</strong><span>Rise in ranking.</span></article>'
+            '<article class="az-loop-step"><b>1</b><strong>Learn</strong><span>Open tutorial.</span></article>',
+            '<article class="az-loop-step"><b>2</b><strong>Train</strong><span>Play BE2 bot duel.</span></article>',
+            '<article class="az-loop-step"><b>3</b><strong>Review</strong><span>Read result and XP.</span></article>',
+            '<article class="az-loop-step"><b>4</b><strong>Collect</strong><span>Inspect cards.</span></article>',
+            '<article class="az-loop-step"><b>5</b><strong>Tune</strong><span>Validate 30 cards.</span></article>',
+            '<article class="az-loop-step"><b>6</b><strong>Return</strong><span>Play again.</span></article>'
         ].join("");
 
         anchor.parentNode.insertBefore(strip, anchor.nextSibling);

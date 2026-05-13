@@ -16,9 +16,9 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=2">
 </head>
-<body>
+<body data-retention-page="missions">
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
@@ -27,6 +27,7 @@
             </div>
 
             <a href="{{ url_for('progression') }}" class="btn btn-secondary small-btn">Progression</a>
+            <a href="{{ url_for('daily') }}" class="btn btn-secondary small-btn">Daily</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
@@ -63,58 +64,108 @@
             </div>
 
             <div class="progression-action-row">
-                <a href="{{ url_for('training') }}" class="btn">Play Training</a>
-                <a href="{{ url_for('shop') }}" class="btn btn-secondary">Open Booster</a>
-                <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Improve Deck</a>
+                <a href="{{ url_for('training') }}" class="btn" data-retention-event="mission_cta_click">Play Training</a>
+                <a href="{{ url_for('campaign') }}" class="btn btn-secondary" data-retention-event="mission_cta_click">Campaign</a>
+                <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary" data-retention-event="mission_cta_click">Improve Deck</a>
             </div>
         </section>
 
-        {% for mission in missions %}
-            <section class="deck-status mission-card-v113">
-                <h2>{{ mission.title }}</h2>
-                <p>{{ mission.description }}</p>
+        <section class="deck-status az-beta-mission-board-v1">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Beta Journey Missions</span>
+                    <h2>Objectives that teach the current product loop</h2>
+                </div>
+                <a href="{{ url_for('campaign') }}" class="btn btn-secondary small-btn">Campaign</a>
+            </div>
 
-                <div class="deck-progress-shell">
-                    <div class="deck-progress-label">
-                        <span>Progress</span>
+            <div class="az-beta-guide-grid-v1">
+                {% for guide in mission_guides %}
+                    <article class="az-beta-guide-card-v1" data-status="{{ guide.status|lower|replace(' ', '-') }}">
+                        <div class="mission-card-head">
+                            <span class="progression-kicker">{{ guide.status }}</span>
+                            <strong>{{ guide.progress }}/{{ guide.target }}</strong>
+                        </div>
+                        <h3>{{ guide.title }}</h3>
+                        <p>{{ guide.description }}</p>
+                        <div class="deck-progress-bar">
+                            <div class="deck-progress-fill" style="width: {{ guide.percent }}%;"></div>
+                        </div>
+                        <div class="az-reward-pill">
+                            <span>Reward Preview</span>
+                            <strong>{{ guide.reward }}</strong>
+                        </div>
+                        <a href="{{ guide.url }}" class="btn btn-secondary full-btn" data-retention-event="mission_cta_click">{{ guide.cta }}</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Daily Mission Board</span>
+                    <h2>Claim real beta rewards when objectives complete</h2>
+                </div>
+                <a href="{{ url_for('daily') }}" class="btn btn-secondary small-btn">Daily</a>
+            </div>
+
+            {% for mission in missions %}
+                <article class="mission-card-v113">
+                    <div class="mission-card-head">
+                        <span class="progression-kicker">{{ "Claimed" if mission.is_claimed else "Complete" if mission.is_complete else "Active" }}</span>
                         <strong>{{ mission.progress }}/{{ mission.target }}</strong>
                     </div>
-                    <div class="deck-progress-bar">
-                        <div class="deck-progress-fill" style="width: {{ mission.progress_percent }}%;"></div>
+                    <h2>{{ mission.title }}</h2>
+                    <p>{{ mission.description }}</p>
+
+                    <div class="deck-progress-shell">
+                        <div class="deck-progress-label">
+                            <span>Progress</span>
+                            <strong>{{ mission.progress_percent }}%</strong>
+                        </div>
+                        <div class="deck-progress-bar">
+                            <div class="deck-progress-fill" style="width: {{ mission.progress_percent }}%;"></div>
+                        </div>
                     </div>
-                </div>
 
-                <p>
-                    Reward:
-                    <strong>{{ mission.xp_reward }} XP</strong>
-                    +
-                    <strong>{{ mission.coin_reward }} coins</strong>
-                </p>
+                    <div class="az-reward-pill">
+                        <span>Reward</span>
+                        <strong>{{ mission.xp_reward }} XP + {{ mission.coin_reward }} coins</strong>
+                    </div>
 
-                {% if mission.is_claimed %}
-                    <button type="button" class="btn btn-secondary full-btn" disabled>Claimed</button>
-                {% elif mission.is_complete %}
-                    <form method="POST" action="{{ url_for('claim_user_mission', mission_id=mission.id) }}">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn full-btn">Claim Reward</button>
-                    </form>
-                {% else %}
-                    <button type="button" class="btn btn-secondary full-btn" disabled>Incomplete</button>
-                {% endif %}
-            </section>
-        {% endfor %}
+                    {% if mission.is_claimed %}
+                        <button type="button" class="btn btn-secondary full-btn" disabled>Claimed</button>
+                    {% elif mission.is_complete %}
+                        <form method="POST" action="{{ url_for('claim_user_mission', mission_id=mission.id) }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn full-btn">Claim Reward</button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('training') }}" class="btn btn-secondary full-btn" data-retention-event="mission_cta_click">Progress Mission</a>
+                    {% endif %}
+                </article>
+            {% else %}
+                <article class="panel-card az-empty-beta-state-v1">
+                    <span class="progression-kicker">No missions loaded</span>
+                    <h2>Open Daily to generate today's mission board.</h2>
+                    <p class="subtitle">Beta journey missions above stay available as a guide even when daily persistence has not loaded.</p>
+                    <a href="{{ url_for('daily') }}" class="btn">Open Daily</a>
+                </article>
+            {% endfor %}
+        </section>
 
         <nav class="mobile-bottom-nav">
             <a href="{{ url_for('index') }}">Home</a>
             <a href="{{ url_for('arena') }}">Arena</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
             <a href="{{ url_for('deck_builder') }}">Deck</a>
-            <a href="{{ url_for('shop') }}">Shop</a>
         </nav>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=2"></script>
 </body>
 </html>

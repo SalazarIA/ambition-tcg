@@ -15,17 +15,18 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_progression.css') }}?v=2">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/card_system_v1.css') }}?v=1">
 </head>
-<body>
+<body data-retention-page="progression">
     <main class="wide-page mobile-wide-page az-economy-page-polish-v1">
 
         <nav class="az-card-nav-v1">
             <a href="{{ url_for('training') }}" class="primary">Play</a>
             <a href="{{ url_for('collection') }}">Collection</a>
             <a href="{{ url_for('deck_builder') }}">Deck</a>
-            <a href="{{ url_for('shop') }}">Shop</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
+            <a href="{{ url_for('missions') }}">Missions</a>
             <span class="az-card-nav-spacer"></span>
             <a href="{{ url_for('profile') }}">Profile</a>
             <a href="{{ url_for('progression') }}" class="active">Progression</a>
@@ -63,11 +64,12 @@
             <div class="az-retention-stat-grid-v1">
                 <article><span>Wins</span><strong>{{ progression_stats.wins }}</strong></article>
                 <article><span>Losses</span><strong>{{ progression_stats.losses }}</strong></article>
+                <article><span>Collection</span><strong>{{ collection_progress.completion_percent }}%</strong></article>
                 <article>
                     <span>Training</span>
                     <strong>{% if progression_stats.first_training_completed %}Done{% else %}Ready{% endif %}</strong>
                 </article>
-                <article><span>Next Step</span><strong>{% if progression_stats.total_matches > 0 %}Improve Deck{% else %}Play Training{% endif %}</strong></article>
+                <article><span>Deck</span><strong>{% if deck_status.is_valid %}Valid{% else %}Check{% endif %}</strong></article>
             </div>
 
             <div class="az-retention-progress-v1">
@@ -78,6 +80,23 @@
                 <div class="deck-progress-bar">
                     <div class="deck-progress-fill" style="width: {{ progression_stats.level_progress_percent }}%;"></div>
                 </div>
+            </div>
+        </section>
+
+        <section class="az-beta-journey-v1 az-beta-journey-compact-v1" aria-label="Beta journey">
+            <div class="az-beta-journey-head-v1">
+                <span class="progression-kicker">Beta Journey</span>
+                <h2>Where your next session should go</h2>
+                <p>Progression is the map: Daily, Missions, Campaign, Collection, Deck and the next Training run.</p>
+            </div>
+            <div class="az-beta-journey-grid-v1">
+                {% for step in beta_journey %}
+                    <a href="{{ step.url }}" class="az-beta-step-v1" data-state="{{ step.status|lower|replace(' ', '-') }}">
+                        <span>{{ step.number }}</span>
+                        <strong>{{ step.title }}</strong>
+                        <small>{{ step.status }}</small>
+                    </a>
+                {% endfor %}
             </div>
         </section>
 
@@ -101,8 +120,8 @@
                     <strong>{{ user.xp }}/{{ user.next_level_xp }}</strong>
                 </div>
                 <div>
-                    <span>Coins</span>
-                    <strong>{{ user.coins }}</strong>
+                    <span>Collection</span>
+                    <strong>{{ collection_progress.owned_unique }}/{{ collection_progress.catalog_total }}</strong>
                 </div>
             </div>
         </div></section>
@@ -110,21 +129,42 @@
         <section class="deck-status final-beta-loop-v128">
             <div class="section-title-row">
                 <div>
-                    <span class="progression-kicker">Final Beta Loop</span>
-                    <h2>Play → Earn → Claim → Open → Improve → Report</h2>
+                    <span class="progression-kicker">Beta Retention Loop</span>
+                    <h2>Train → Review → Collect → Tune → Return</h2>
                 </div>
                 <a href="{{ url_for('feedback') }}" class="btn btn-secondary small-btn">Send Feedback</a>
             </div>
         </section>
 
-        <section class="deck-status">
-            <div class="deck-progress-label">
-                <span>Level Progress</span>
-                <strong>{{ user.level_progress_percent }}%</strong>
-            </div>
-            <div class="deck-progress-bar">
-                <div class="deck-progress-fill" style="width: {{ user.level_progress_percent }}%;"></div>
-            </div>
+        <section class="az-progression-hub-grid-v2">
+            <article class="deck-status">
+                <span class="progression-kicker">Level Progress</span>
+                <div class="deck-progress-label">
+                    <span>{{ user.xp }}/{{ user.next_level_xp }} XP</span>
+                    <strong>{{ user.level_progress_percent }}%</strong>
+                </div>
+                <div class="deck-progress-bar">
+                    <div class="deck-progress-fill" style="width: {{ user.level_progress_percent }}%;"></div>
+                </div>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary full-btn">Earn XP</a>
+            </article>
+            <article class="deck-status">
+                <span class="progression-kicker">{{ collection_progress.label }}</span>
+                <div class="deck-progress-label">
+                    <span>{{ collection_progress.owned_unique }} unique cards</span>
+                    <strong>{{ collection_progress.completion_percent }}%</strong>
+                </div>
+                <div class="deck-progress-bar">
+                    <div class="deck-progress-fill" style="width: {{ collection_progress.completion_percent }}%;"></div>
+                </div>
+                <a href="{{ url_for('collection') }}" class="btn btn-secondary full-btn">View Collection</a>
+            </article>
+            <article class="deck-status">
+                <span class="progression-kicker">Deck Status</span>
+                <h3>{{ deck_status.label }}</h3>
+                <p class="subtitle">{{ deck_status.selected_count }} / 30 cards selected.</p>
+                <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary full-btn">Edit Deck</a>
+            </article>
         </section>
 
         <section class="progression-loop-grid">
@@ -198,6 +238,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=2"></script>
 </body>
 </html>

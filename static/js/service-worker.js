@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-web-app-v177";
+const CACHE_NAME = "ambitionz-web-app-v178";
 
 const CORE_ASSETS = [
     "/",
