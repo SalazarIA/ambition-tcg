@@ -116,7 +116,9 @@
                             <span class="progression-kicker">Match #{{ match.id }}</span>
                             <h3>{{ match.player1_name }} vs {{ match.player2_name }}</h3>
                             <p>
-                                Winner:
+                                {{ (match.mode or 'training')|title }}
+                                {% if match.campaign_chapter_id %}· Chapter {{ match.campaign_chapter_id }}{% endif %}
+                                · Winner:
                                 <strong>
                                     {% if match.winner_name %}
                                         {{ match.winner_name }}
@@ -137,6 +139,10 @@
                                 <strong>{{ match.total_rounds }}</strong>
                             </div>
                             <div>
+                                <span>XP</span>
+                                <strong>{{ match.xp_gained or 0 }}</strong>
+                            </div>
+                            <div>
                                 <span>P1 HP</span>
                                 <strong>{{ match.player1_final_hp }}</strong>
                             </div>
@@ -148,7 +154,7 @@
 
                         <footer>
                             <span>{{ match.created_at.strftime('%Y-%m-%d %H:%M') if match.created_at else 'Recent match' }}</span>
-                            <span>XP / reward preview tracked in the match result panel.</span>
+                            <span>{% if match.campaign_chapter_id %}Campaign result saved{% else %}Reward summary saved{% endif %}.</span>
                         </footer>
                     </article>
                 {% else %}

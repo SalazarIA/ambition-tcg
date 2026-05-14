@@ -34,8 +34,8 @@ from game.deck import (
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
-from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, RetentionEvent, EconomyLedger, UserCosmetic, RewardLedger, ensure_reward_ledger_schema, PremiumCurrencyLedger, ensure_premium_currency_schema, InventoryOwnership, InventoryOwnershipLedger, ensure_inventory_ownership_schema
-from game.progression import award_xp, claim_mission, ensure_daily_missions, increment_mission
+from models import ensure_liveops_schema, BetaInvite, SystemLog, BoosterHistory, FeedbackReport, MatchHistory, User, UserMission, db, ensure_database_schema, ensure_beta_loop_schema, RetentionEvent, EconomyLedger, UserCosmetic, RewardLedger, ensure_reward_ledger_schema, PremiumCurrencyLedger, ensure_premium_currency_schema, InventoryOwnership, InventoryOwnershipLedger, ensure_inventory_ownership_schema
+from game.progression import BETA_MISSION_DEFINITIONS, award_xp, claim_mission, ensure_beta_missions, ensure_daily_missions, increment_beta_mission, increment_mission, today_key
 from services.admin.cleanup_service import clear_gameplay_data, delete_non_admin_users
 from services.battle_summary import build_match_summary_lines
 from services.card_stats import update_card_stats_after_match
@@ -119,18 +119,26 @@ retention_event_limiter = SlidingWindowRateLimiter()
 CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event"}
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 ALLOWED_RETENTION_EVENTS = {
+    "campaign_result",
+    "campaign_start",
     "campaign_view",
     "collection_view",
     "daily_view",
+    "daily_claim",
     "deck_builder_view",
     "deck_save_attempt",
     "home_cta_play",
+    "match_recorded",
+    "mission_complete",
     "mission_cta_click",
+    "mission_progress",
     "page_view",
+    "post_match_summary_view",
     "training_result_view",
     "training_start_click",
     "tutorial_start",
     "ui_click",
+    "xp_awarded",
 }
 
 
@@ -138,6 +146,8 @@ def create_database_tables():
     with app.app_context():
         db.create_all()
         try:
+            ensure_database_schema()
+            ensure_beta_loop_schema()
             ensure_reward_ledger_schema()
             ensure_premium_currency_schema()
             ensure_inventory_ownership_schema()
@@ -532,146 +542,177 @@ def build_beta_journey(user=None, deck_status=None):
 
 def build_campaign_chapters(user=None, deck_status=None):
     deck_status = deck_status or beta_deck_status(user)
-    trained = bool(getattr(user, "first_training_completed", False)) if user else False
-    deck_ready = bool(deck_status.get("is_valid"))
+    completed_chapters = set()
 
-    return [
+    if user:
+        try:
+            completed_chapters = {
+                str(chapter_id)
+                for (chapter_id,) in (
+                    db.session.query(MatchHistory.campaign_chapter_id)
+                    .filter(
+                        MatchHistory.player1_id == user.id,
+                        MatchHistory.campaign_chapter_id.isnot(None),
+                    )
+                    .distinct()
+                    .all()
+                )
+                if chapter_id
+            }
+        except Exception as error:
+            print("CAMPAIGN CHAPTER STATE ERROR:", type(error).__name__, error)
+            completed_chapters = set()
+
+    chapter_defs = [
         {
             "number": "01",
+            "chapter_id": "first_signal",
             "title": "First Signal",
             "description": "Learn the rhythm of intent, card, lane and Ready in a short bot duel.",
             "lore": "A quiet signal rises from the first arena floor, asking for discipline before glory.",
-            "difficulty": "Easy",
-            "status": "Complete" if trained else "Recommended",
-            "reward": "Training reward preview: XP, coins and mission progress.",
-            "url": url_for("training"),
-            "cta_label": "Play Training",
-            "locked": False,
+            "difficulty": "easy",
+            "reward": "35 XP beta + campaign mission progress.",
+            "cta_label": "Start Chapter",
         },
         {
             "number": "02",
-            "title": "Vault Survey",
-            "description": "Inspect your starter collection and learn which cards are owned or locked.",
+            "chapter_id": "ember_vault",
+            "title": "Ember Vault",
+            "description": "Play a short duel after reviewing how owned cards shape the starter plan.",
             "lore": "The vault does not promise riches; it shows what your current deck can actually use.",
-            "difficulty": "Easy",
-            "status": "Available",
-            "reward": "Collection clarity and deck planning.",
-            "url": url_for("collection"),
-            "cta_label": "Open Collection",
-            "locked": not bool(user),
+            "difficulty": "easy",
+            "reward": "40 XP beta + reward preview in match summary.",
+            "cta_label": "Play Chapter",
         },
         {
             "number": "03",
+            "chapter_id": "thirty_card_oath",
             "title": "Thirty-Card Oath",
-            "description": "Confirm your beta deck is legal before returning to battle.",
+            "description": "Confirm your beta deck discipline in a normal training encounter.",
             "lore": "A deck is not a pile of power. It is a promise: thirty cards, one plan.",
-            "difficulty": "Easy",
-            "status": "Complete" if deck_ready else "Available",
-            "reward": "Deck validity confidence.",
-            "url": url_for("deck_builder"),
-            "cta_label": "Tune Deck",
-            "locked": not bool(user),
+            "difficulty": "normal",
+            "reward": "45 XP beta + deck confidence checkpoint.",
+            "cta_label": "Play Chapter",
         },
         {
             "number": "04",
+            "chapter_id": "ambition_trial",
             "title": "Ambition Trial",
-            "description": "Use Focus and tempo to set up a stronger round in Training.",
+            "description": "Use Focus and tempo to set up a stronger round in a campaign-marked duel.",
             "lore": "Ambition grows when patience survives the first strike.",
-            "difficulty": "Normal",
-            "status": "Available" if trained else "Future",
-            "reward": "Progress preview toward the next level.",
-            "url": url_for("training"),
-            "cta_label": "Practice Focus",
-            "locked": not trained,
+            "difficulty": "normal",
+            "reward": "55 XP beta + mission progress.",
+            "cta_label": "Play Chapter",
         },
         {
             "number": "05",
-            "title": "Rival at the Gate",
-            "description": "A scripted rival encounter belongs here once campaign persistence lands.",
-            "lore": "A rival waits beyond the beta gate, not yet bound to the current ruleset.",
-            "difficulty": "Hard",
-            "status": "Coming Next",
-            "reward": "Future campaign chapter reward preview.",
-            "url": url_for("training"),
-            "cta_label": "Coming Next",
-            "locked": True,
+            "chapter_id": "gate_rival",
+            "title": "Gate Rival",
+            "description": "A hard beta duel that marks the end of the first campaign path.",
+            "lore": "A rival waits beyond the beta gate, testing whether the first plan can hold.",
+            "difficulty": "hard",
+            "reward": "70 XP beta + first arc completion preview.",
+            "cta_label": "Play Chapter",
         },
     ]
+
+    chapters = []
+    previous_complete = True
+
+    for definition in chapter_defs:
+        chapter = dict(definition)
+        chapter["completed"] = chapter["chapter_id"] in completed_chapters
+        chapter["locked"] = not bool(user) or not previous_complete
+        chapter["url"] = url_for("campaign_start", chapter_id=chapter["chapter_id"]) if not chapter["locked"] else url_for("campaign")
+
+        if chapter["completed"]:
+            chapter["status"] = "completed"
+        elif not user:
+            chapter["status"] = "login"
+        elif chapter["locked"]:
+            chapter["status"] = "locked"
+        else:
+            chapter["status"] = "recommended" if previous_complete else "available"
+
+        chapter["difficulty_label"] = chapter["difficulty"].title()
+        chapter["requires_deck_check"] = chapter["chapter_id"] == "thirty_card_oath" and not bool(deck_status.get("is_valid"))
+
+        if chapter["requires_deck_check"] and not chapter["completed"]:
+            chapter["status"] = "deck check"
+            chapter["url"] = url_for("deck_builder")
+            chapter["cta_label"] = "Check Deck"
+            chapter["locked"] = False
+
+        chapters.append(chapter)
+        previous_complete = chapter["completed"]
+
+    return chapters
+
+
+def get_campaign_chapter(chapter_id, user=None, deck_status=None):
+    chapter_id = str(chapter_id or "").strip()
+
+    for chapter in build_campaign_chapters(user, deck_status):
+        if chapter.get("chapter_id") == chapter_id:
+            return chapter
+
+    return None
 
 
 def build_beta_mission_guides(user, missions, deck_status=None):
     deck_status = deck_status or beta_deck_status(user)
     mission_by_key = {mission.mission_key: mission for mission in missions or []}
-    total_matches = int(getattr(user, "wins", 0) or 0) + int(getattr(user, "losses", 0) or 0) if user else 0
 
-    def mission_progress(key, fallback=0):
+    def mission_progress(definition):
+        key = definition["key"]
         mission = mission_by_key.get(key)
+
         if mission:
-            return int(mission.progress or 0), int(mission.target or 1), bool(mission.is_complete)
-        return fallback, 1, fallback >= 1
+            progress = int(mission.progress or 0)
+            target = int(mission.target or definition.get("target", 1) or 1)
+            complete = bool(mission.is_complete)
+        elif key == "complete_tutorial":
+            progress = 1 if getattr(user, "has_completed_onboarding", False) else 0
+            target = int(definition.get("target", 1) or 1)
+            complete = progress >= target
+        elif key == "save_or_validate_deck":
+            progress = 1 if deck_status.get("is_valid") else 0
+            target = int(definition.get("target", 1) or 1)
+            complete = progress >= target
+        else:
+            progress = 0
+            target = int(definition.get("target", 1) or 1)
+            complete = False
 
-    training_progress, training_target, training_complete = mission_progress(
-        "play_1_training",
-        1 if getattr(user, "first_training_completed", False) else 0,
-    )
+        return progress, target, complete
 
-    return [
-        {
-            "title": "Play one Training match",
-            "description": "Complete the core beta loop: intent, card, lane, Ready and result.",
-            "progress": training_progress,
-            "target": training_target,
-            "percent": min(100, round((training_progress / max(1, training_target)) * 100)),
-            "reward": "Training XP and mission progress",
-            "status": "Complete" if training_complete else "Active",
-            "url": url_for("training"),
-            "cta": "Play Training",
-        },
-        {
-            "title": "Open the Collection",
-            "description": "Review owned, locked, rarity and element distribution.",
-            "progress": 0,
-            "target": 1,
-            "percent": 0,
-            "reward": "Collection planning preview",
-            "status": "Beta guide",
-            "url": url_for("collection"),
-            "cta": "Open Collection",
-        },
-        {
-            "title": "Validate the beta deck",
-            "description": "Keep the fixed 30-card deck legal before queueing again.",
-            "progress": 1 if deck_status.get("is_valid") else 0,
-            "target": 1,
-            "percent": 100 if deck_status.get("is_valid") else 0,
-            "reward": "Deck confidence preview",
-            "status": "Complete" if deck_status.get("is_valid") else "Active",
-            "url": url_for("deck_builder"),
-            "cta": "Check Deck",
-        },
-        {
-            "title": "Complete onboarding",
-            "description": "Use the tutorial path to understand the first session.",
-            "progress": 1 if getattr(user, "has_completed_onboarding", False) else 0,
-            "target": 1,
-            "percent": 100 if getattr(user, "has_completed_onboarding", False) else 0,
-            "reward": "First-session clarity",
-            "status": "Complete" if getattr(user, "has_completed_onboarding", False) else "Active",
-            "url": url_for("tutorial"),
-            "cta": "Open Tutorial",
-        },
-        {
-            "title": "Play again",
-            "description": "Return after one match and test a sharper plan.",
-            "progress": min(total_matches, 2),
-            "target": 2,
-            "percent": min(100, round((min(total_matches, 2) / 2) * 100)),
-            "reward": "Retention loop preview",
-            "status": "Complete" if total_matches >= 2 else "Future" if total_matches == 0 else "Active",
-            "url": url_for("training"),
-            "cta": "Play Again",
-        },
-    ]
+    guides = []
+
+    for definition in BETA_MISSION_DEFINITIONS:
+        progress, target, complete = mission_progress(definition)
+        endpoint = str(definition.get("cta_endpoint") or "training")
+        mission = mission_by_key.get(definition["key"])
+        claimed = bool(mission and mission.is_claimed)
+
+        if endpoint not in {"training", "tutorial", "collection", "deck_builder", "campaign", "daily"}:
+            endpoint = "training"
+
+        guides.append({
+            "id": definition["key"],
+            "mission_id": mission.id if mission else None,
+            "title": definition["title"],
+            "description": definition["description"],
+            "progress": progress,
+            "target": target,
+            "percent": min(100, round((progress / max(1, target)) * 100)),
+            "reward": definition.get("reward_preview") or f"{definition.get('xp_reward', 0)} XP",
+            "status": "Preview" if not user else "Claimed" if claimed else "Complete" if complete else "Active",
+            "claimable": bool(mission and complete and not claimed),
+            "url": url_for(endpoint),
+            "cta": definition.get("cta_label") or "Open",
+        })
+
+    return guides
 
 
 def build_daily_checkin(user, missions):
@@ -679,36 +720,102 @@ def build_daily_checkin(user, missions):
     claimed_count = sum(1 for mission in missions or [] if mission.is_claimed)
     claimable_count = sum(1 for mission in missions or [] if mission.is_complete and not mission.is_claimed)
     active_count = len(missions or [])
+    today = today_key()
+    last_claim = str(getattr(user, "daily_last_checkin_date", "") or "") if user else ""
+    claimed_today = bool(user and last_claim == today)
+    streak = int(getattr(user, "daily_streak", 0) or 0) if user else 0
+    best_streak = int(getattr(user, "daily_best_streak", 0) or 0) if user else 0
 
     if not user:
         state = "Beta preview"
         message = "Login to activate daily missions and reward previews."
+    elif claimed_today:
+        state = "Checked in"
+        message = "Daily XP claimed. Play Training or continue Campaign before tomorrow's reset."
     elif claimable_count:
         state = "Reward ready"
-        message = "Claim completed daily missions before your next match."
-    elif active_count and claimed_count == active_count:
-        state = "Checked in"
-        message = "Today's visible mission board is complete."
+        message = "Daily check-in is ready, and completed missions can still be claimed."
     else:
         state = "Available today"
-        message = "Play Training to move the daily board forward."
+        message = "Claim today's beta XP, then play Training to move the mission board forward."
 
     return {
         "state": state,
         "message": message,
+        "today": today,
+        "claimed_today": claimed_today,
+        "can_claim": bool(user and not claimed_today),
+        "claim_reward": "35 XP beta",
         "active_count": active_count,
         "complete_count": complete_count,
         "claimed_count": claimed_count,
         "claimable_count": claimable_count,
-        "streak_label": "Today active" if user else "Preview only",
+        "streak": streak,
+        "best_streak": best_streak,
+        "streak_label": f"{streak} day streak" if user else "Preview only",
+        "reset_label": "Resets tomorrow at local midnight",
         "calendar": [
-            {"day": "Day 1", "reward": "Training XP preview", "status": state},
-            {"day": "Day 2", "reward": "Coins preview", "status": "Future"},
-            {"day": "Day 3", "reward": "Mission XP preview", "status": "Future"},
-            {"day": "Day 4", "reward": "Collection preview", "status": "Future"},
-            {"day": "Day 5", "reward": "Campaign preview", "status": "Future"},
+            {"day": "Day 1", "reward": "35 XP beta", "status": "Claimed" if claimed_today and streak >= 1 else state},
+            {"day": "Day 2", "reward": "35 XP beta", "status": "Current streak" if streak >= 2 else "Future"},
+            {"day": "Day 3", "reward": "40 XP preview", "status": "Current streak" if streak >= 3 else "Future"},
+            {"day": "Day 4", "reward": "40 XP preview", "status": "Current streak" if streak >= 4 else "Future"},
+            {"day": "Day 5", "reward": "45 XP preview", "status": "Current streak" if streak >= 5 else "Future"},
         ],
     }
+
+
+def record_retention_event(user, event_key, page="", metadata=None, commit=False):
+    event_key = str(event_key or "").strip()[:120]
+
+    if event_key not in ALLOWED_RETENTION_EVENTS:
+        return None
+
+    metadata = metadata if isinstance(metadata, dict) else {}
+
+    try:
+        event = RetentionEvent(
+            user_id=getattr(user, "id", None),
+            event_key=event_key,
+            page=str(page or "")[:220],
+            metadata_json=json.dumps(metadata, ensure_ascii=False)[:4000],
+        )
+        db.session.add(event)
+
+        if commit:
+            db.session.commit()
+
+        return event
+    except Exception as error:
+        print("RETENTION EVENT RECORD ERROR:", type(error).__name__, error)
+        if commit:
+            db.session.rollback()
+        return None
+
+
+def track_beta_mission(user, mission_key, amount=1, page="", metadata=None):
+    if not user:
+        return None
+
+    try:
+        update = increment_beta_mission(user, mission_key, amount)
+
+        if update:
+            retention_payload = dict(metadata or {})
+            retention_payload.update({
+                "mission_key": mission_key,
+                "progress": update.get("progress"),
+                "target": update.get("target"),
+                "completed": update.get("completed"),
+            })
+            record_retention_event(user, "mission_progress", page=page, metadata=retention_payload)
+
+            if update.get("just_completed"):
+                record_retention_event(user, "mission_complete", page=page, metadata=retention_payload)
+
+        return update
+    except Exception as error:
+        print("BETA MISSION TRACK ERROR:", type(error).__name__, error)
+        return None
 
 
 
@@ -1984,7 +2091,13 @@ def profile():
 
         for match in user_matches:
             opponent_name = match.player2_name if match.player1_id == user.id else match.player1_name
-            mode_label = "Training" if "bot" in str(opponent_name or "").lower() else "PvP"
+            match_mode_label = str(getattr(match, "mode", "") or "").strip().lower()
+            if match_mode_label == "campaign":
+                mode_label = "Campaign"
+            elif match_mode_label:
+                mode_label = match_mode_label.title()
+            else:
+                mode_label = "Training" if "bot" in str(opponent_name or "").lower() else "PvP"
             mode_counts[mode_label] = mode_counts.get(mode_label, 0) + 1
 
             if match.result == "DRAW" or not match.winner_id:
@@ -2018,6 +2131,7 @@ def profile():
         "beta_tier": beta_tier,
         "level": int(user.level or 1),
         "xp": int(user.xp or 0),
+        "total_xp": int(getattr(user, "total_xp", 0) or 0),
         "next_level_xp": user.next_level_xp,
         "level_progress_percent": user.level_progress_percent,
         "coins": int(user.coins or 0),
@@ -2483,6 +2597,14 @@ def collection():
         ],
     }
 
+    try:
+        track_beta_mission(user, "view_collection", page="/collection", metadata={"unique_owned": unique_owned})
+        record_retention_event(user, "collection_view", page="/collection", metadata={"unique_owned": unique_owned})
+        db.session.commit()
+    except Exception as error:
+        print("COLLECTION BETA TRACK ERROR:", type(error).__name__, error)
+        db.session.rollback()
+
     return render_template(
         "collection.html",
         user=user,
@@ -2800,12 +2922,20 @@ def deck_builder():
     if request.method == "POST":
         selected_cards = request.form.getlist("deck_cards")
         errors = validate_deck(selected_cards, collection_ids)
+        record_retention_event(
+            user,
+            "deck_save_attempt",
+            page="/deck-builder",
+            metadata={"cards": len(selected_cards), "valid": not bool(errors)},
+        )
 
         if errors:
             for error in errors:
                 flash(error)
+            db.session.commit()
         else:
             user.deck_json = json.dumps(selected_cards)
+            track_beta_mission(user, "save_or_validate_deck", page="/deck-builder", metadata={"cards": len(selected_cards)})
             log_rc_event(
                 "deck",
                 "Deck saved",
@@ -2835,6 +2965,15 @@ def deck_builder():
         "max_copies_allowed": 3,
         "rules_label": "30 cards · 21 monsters · 6 spells · 3 traps · max 3 copies",
     }
+
+    try:
+        record_retention_event(user, "deck_builder_view", page="/deck-builder", metadata={"deck_valid": deck_status["is_valid"]})
+        if deck_status["is_valid"]:
+            track_beta_mission(user, "save_or_validate_deck", page="/deck-builder", metadata={"validated": True})
+        db.session.commit()
+    except Exception as error:
+        print("DECK BUILDER BETA TRACK ERROR:", type(error).__name__, error)
+        db.session.rollback()
 
     return render_template(
         "deck_builder.html",
@@ -3067,12 +3206,127 @@ def end_match(room_id, winner_key, ending_reason="completed"):
     if not match:
         return
 
+    if match.get("_end_match_recorded"):
+        return
+
+    match["_end_match_recorded"] = True
+
     p1 = match["p1"]
     p2 = match["p2"]
 
     battle_logs = match.get("logs", [])
+    campaign_context = match.get("campaign") or {}
+    campaign_chapter_id = str(match.get("campaign_chapter_id") or campaign_context.get("chapter_id") or "").strip()[:80]
     is_bot_match = bool(match.get("is_bot_match") or match.get("training"))
-    reward_difficulty = match.get("bot_difficulty")
+    is_campaign_match = bool(campaign_chapter_id)
+    reward_difficulty = str(campaign_context.get("difficulty") or match.get("bot_difficulty") or "normal").lower()
+    match_mode = (
+        "campaign"
+        if is_campaign_match
+        else "fallback_bot"
+        if match.get("matchmaking_fallback")
+        else "training"
+        if is_bot_match
+        else "pvp"
+    )
+    post_match_extras = {}
+    mission_updates = {}
+
+    if is_campaign_match:
+        is_bot_match = True
+
+    def apply_rewards_for(user, player_key, result_label, did_win):
+        rewards = {"coins": 0, "xp": 0}
+
+        if not user:
+            return rewards
+
+        rewards = apply_match_rewards(
+            user,
+            is_bot_match=is_bot_match,
+            did_win=did_win,
+            award_xp_function=award_xp,
+            difficulty=reward_difficulty,
+            result="draw" if result_label == "DRAW" else None,
+            source="campaign_match" if is_campaign_match else "training_match" if is_bot_match else "match_reward",
+            metadata={
+                "room_id": room_id,
+                "result": result_label,
+                "mode": match_mode,
+                "campaign_chapter_id": campaign_chapter_id or None,
+            },
+            reward_key=f"match:{room_id}:{player_key}:{user.id}:{result_label}",
+        )
+
+        if is_campaign_match:
+            campaign_bonus = {"easy": 20, "normal": 30, "hard": 45}.get(reward_difficulty, 30)
+            bonus_result = award_xp(
+                user,
+                campaign_bonus,
+                source="campaign_chapter",
+                metadata={
+                    "room_id": room_id,
+                    "chapter_id": campaign_chapter_id,
+                    "result": result_label,
+                },
+                reward_key=f"campaign:{room_id}:{player_key}:{user.id}:{campaign_chapter_id}",
+            )
+            rewards["campaign_bonus_xp"] = int(bonus_result.get("xp", 0) or 0)
+            rewards["xp"] = int(rewards.get("xp", 0) or 0) + int(bonus_result.get("xp", 0) or 0)
+            rewards["campaign_xp_result"] = bonus_result
+
+        record_retention_event(
+            user,
+            "xp_awarded",
+            page="/arena",
+            metadata={
+                "source": "match",
+                "mode": match_mode,
+                "xp": int(rewards.get("xp", 0) or 0),
+                "campaign_chapter_id": campaign_chapter_id or None,
+            },
+        )
+
+        return rewards
+
+    def track_after_match(user, player_key, result_label):
+        if not user:
+            return
+
+        updates = []
+
+        if is_bot_match:
+            user.first_training_completed = True
+            increment_mission(user, "play_1_training", 1)
+            updates.append(track_beta_mission(
+                user,
+                "play_training_match",
+                page="/arena",
+                metadata={"room_id": room_id, "result": result_label, "mode": match_mode},
+            ))
+
+            if result_label == "WIN":
+                increment_mission(user, "win_1_training", 1)
+
+        if is_campaign_match:
+            updates.append(track_beta_mission(
+                user,
+                "play_campaign_chapter",
+                page="/campaign",
+                metadata={"room_id": room_id, "chapter_id": campaign_chapter_id, "result": result_label},
+            ))
+            record_retention_event(
+                user,
+                "campaign_result",
+                page="/campaign",
+                metadata={
+                    "room_id": room_id,
+                    "chapter_id": campaign_chapter_id,
+                    "result": result_label,
+                },
+            )
+
+        mission_updates[player_key] = [update for update in updates if update]
 
     if winner_key == "DRAW":
         socketio.emit("game_over", {"result": "DRAW"}, to=p1["sid"])
@@ -3087,43 +3341,21 @@ def end_match(room_id, winner_key, ending_reason="completed"):
         p1_user = db.session.get(User, safe_user_id(p1)) if safe_user_id(p1) else None
         p2_user = db.session.get(User, safe_user_id(p2)) if safe_user_id(p2) else None
 
-        p1_rewards = {"coins": 0, "xp": 0}
-        p2_rewards = {"coins": 0, "xp": 0}
-
         if p1_user:
-            p1_rewards = apply_match_rewards(
-                p1_user,
-                is_bot_match=is_bot_match,
-                did_win=False,
-                award_xp_function=award_xp,
-                difficulty=reward_difficulty,
-                result="draw",
-            )
             increment_mission(p1_user, "play_1_match", 1)
             increment_mission(p1_user, "play_3_matches", 1)
 
         if p2_user:
-            p2_rewards = apply_match_rewards(
-                p2_user,
-                is_bot_match=is_bot_match,
-                did_win=False,
-                award_xp_function=award_xp,
-                difficulty=reward_difficulty,
-                result="draw",
-            )
             increment_mission(p2_user, "play_1_match", 1)
             increment_mission(p2_user, "play_3_matches", 1)
 
-        emit_v107_post_match_summary(match, "p1", "DRAW", p1_rewards)
+        p1_rewards = apply_rewards_for(p1_user, "p1", "DRAW", False)
+        p2_rewards = apply_rewards_for(p2_user, "p2", "DRAW", False)
+        track_after_match(p1_user, "p1", "DRAW")
+        track_after_match(p2_user, "p2", "DRAW")
 
-        if not p2.get("is_bot"):
-            emit_v107_post_match_summary(match, "p2", "DRAW", p2_rewards)
-
-        if is_bot_match:
-            for training_user in [p1_user, p2_user]:
-                if training_user:
-                    training_user.first_training_completed = True
-                    increment_mission(training_user, "play_1_training", 1)
+        result_by_key = {"p1": "DRAW", "p2": "DRAW"}
+        rewards_by_key = {"p1": p1_rewards, "p2": p2_rewards}
 
     else:
         loser_key = "p2" if winner_key == "p1" else "p1"
@@ -3149,42 +3381,23 @@ def end_match(room_id, winner_key, ending_reason="completed"):
 
         if winner_user:
             winner_user.wins += 1
-            winner_rewards = apply_match_rewards(
-                winner_user,
-                is_bot_match=is_bot_match,
-                did_win=True,
-                award_xp_function=award_xp,
-                difficulty=reward_difficulty,
-            )
+            winner_rewards = apply_rewards_for(winner_user, winner_key, "WIN", True)
 
             increment_mission(winner_user, "play_1_match", 1)
             increment_mission(winner_user, "play_3_matches", 1)
             increment_mission(winner_user, "win_1_match", 1)
-
-            if is_bot_match:
-                winner_user.first_training_completed = True
-                increment_mission(winner_user, "play_1_training", 1)
-                increment_mission(winner_user, "win_1_training", 1)
+            track_after_match(winner_user, winner_key, "WIN")
 
         if loser_user:
             loser_user.losses += 1
-            loser_rewards = apply_match_rewards(
-                loser_user,
-                is_bot_match=is_bot_match,
-                did_win=False,
-                award_xp_function=award_xp,
-                difficulty=reward_difficulty,
-            )
+            loser_rewards = apply_rewards_for(loser_user, loser_key, "LOSE", False)
 
             increment_mission(loser_user, "play_1_match", 1)
             increment_mission(loser_user, "play_3_matches", 1)
+            track_after_match(loser_user, loser_key, "LOSE")
 
-            if is_bot_match:
-                loser_user.first_training_completed = True
-                increment_mission(loser_user, "play_1_training", 1)
-
-        emit_v107_post_match_summary(match, winner_key, "WIN", winner_rewards)
-        emit_v107_post_match_summary(match, loser_key, "LOSE", loser_rewards)
+        result_by_key = {winner_key: "WIN", loser_key: "LOSE"}
+        rewards_by_key = {winner_key: winner_rewards, loser_key: loser_rewards}
 
     history = MatchHistory(
         player1_id=safe_user_id(p1),
@@ -3197,10 +3410,65 @@ def end_match(room_id, winner_key, ending_reason="completed"):
         player1_final_hp=max(0, int(p1.get("hp", 0))),
         player2_final_hp=max(0, int(p2.get("hp", 0))),
         total_rounds=int(match.get("round", 1)),
+        mode=match_mode,
+        xp_gained=int((rewards_by_key.get("p1") or {}).get("xp", 0) or 0),
+        reward_summary=json.dumps({
+            "p1": rewards_by_key.get("p1") or {},
+            "p2": rewards_by_key.get("p2") or {},
+        }, ensure_ascii=False),
+        campaign_chapter_id=campaign_chapter_id or None,
+        campaign_result=result_by_key.get("p1") if is_campaign_match else None,
         battle_log_json=json.dumps(battle_logs),
     )
 
     db.session.add(history)
+    db.session.flush()
+
+    for player_key, rewards in rewards_by_key.items():
+        user_id = safe_user_id(match.get(player_key) or {})
+        viewer_user = db.session.get(User, user_id) if user_id else None
+        xp_result = (rewards or {}).get("xp_result") or (rewards or {}).get("campaign_xp_result") or {}
+        post_match_extras[player_key] = {
+            "history_id": history.id,
+            "history_url": url_for("match_history_detail", history_id=history.id),
+            "xp_gained": int((rewards or {}).get("xp", 0) or 0),
+            "level": int(getattr(viewer_user, "level", 1) or 1) if viewer_user else 1,
+            "level_progress_percent": getattr(viewer_user, "level_progress_percent", 0) if viewer_user else 0,
+            "next_level_xp": getattr(viewer_user, "next_level_xp", 100) if viewer_user else 100,
+            "mission_progress": mission_updates.get(player_key, []),
+            "campaign_chapter_id": campaign_chapter_id or None,
+            "campaign_result": result_by_key.get(player_key),
+            "campaign_reward_preview": campaign_context.get("reward") if is_campaign_match else None,
+            "xp_result": xp_result,
+            "next_actions": {
+                "play_again": url_for("training"),
+                "campaign": url_for("campaign"),
+                "deck": url_for("deck_builder"),
+                "collection": url_for("collection"),
+                "history": url_for("match_history_detail", history_id=history.id),
+            },
+        }
+
+        if viewer_user:
+            record_retention_event(
+                viewer_user,
+                "match_recorded",
+                page="/arena",
+                metadata={
+                    "match_history_id": history.id,
+                    "mode": match_mode,
+                    "result": result_by_key.get(player_key),
+                    "campaign_chapter_id": campaign_chapter_id or None,
+                },
+            )
+
+    match["post_match_extras_by_key"] = post_match_extras
+
+    emit_v107_post_match_summary(match, "p1", result_by_key.get("p1", "DRAW"), rewards_by_key.get("p1") or {"coins": 0, "xp": 0})
+
+    if not p2.get("is_bot"):
+        emit_v107_post_match_summary(match, "p2", result_by_key.get("p2", "DRAW"), rewards_by_key.get("p2") or {"coins": 0, "xp": 0})
+
     if winner_key == "DRAW":
         telemetry_reason = "draw" if ending_reason == "completed" else ending_reason
         record_match_telemetry(room_id, match, "p1", "p2", ending_reason=telemetry_reason)
@@ -3216,7 +3484,8 @@ def end_match(room_id, winner_key, ending_reason="completed"):
         details={
             "room_id": room_id,
             "winner_key": winner_key,
-            "mode": "fallback_bot" if match.get("matchmaking_fallback") else "training" if match.get("training") else "bot" if match.get("is_bot_match") else "pvp",
+            "mode": match_mode,
+            "campaign_chapter_id": campaign_chapter_id or None,
             "round": match.get("round"),
         },
         user_id=safe_user_id(p1),
@@ -3345,12 +3614,57 @@ def campaign():
     deck_status = beta_deck_status(user)
     chapters = build_campaign_chapters(user, deck_status)
 
+    if user:
+        record_retention_event(user, "campaign_view", page="/campaign", metadata={"chapters": len(chapters)}, commit=True)
+
     return render_template(
         "campaign.html",
         user=user,
         chapters=chapters,
         beta_journey=build_beta_journey(user, deck_status),
     )
+
+
+@app.route("/campaign/start/<chapter_id>")
+def campaign_start(chapter_id):
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    deck_status = beta_deck_status(user)
+    chapter = get_campaign_chapter(chapter_id, user, deck_status)
+
+    if not chapter:
+        flash("Campaign chapter not found.")
+        return redirect(url_for("campaign"))
+
+    if chapter.get("locked"):
+        flash("Complete the previous beta chapter before starting this one.")
+        return redirect(url_for("campaign"))
+
+    if chapter.get("requires_deck_check"):
+        flash("Check your 30-card beta deck before this chapter.")
+        return redirect(url_for("deck_builder"))
+
+    session["campaign_chapter_id"] = chapter["chapter_id"]
+    session["campaign_chapter_title"] = chapter["title"]
+    session["campaign_chapter_difficulty"] = chapter["difficulty"]
+    session["campaign_chapter_reward"] = chapter["reward"]
+
+    record_retention_event(
+        user,
+        "campaign_start",
+        page="/campaign",
+        metadata={
+            "chapter_id": chapter["chapter_id"],
+            "difficulty": chapter["difficulty"],
+        },
+        commit=True,
+    )
+
+    return redirect(url_for("training", campaign_chapter_id=chapter["chapter_id"]))
 
 
 @app.route("/training")
@@ -3360,13 +3674,41 @@ def training():
     if auth_redirect:
         return auth_redirect
 
+    user = current_user()
     arena_renderer = "3d" if request.args.get("renderer") == "3d" else "dom"
+    campaign_context = None
+    chapter_id = str(request.args.get("campaign_chapter_id") or "").strip()
+
+    if chapter_id:
+        chapter = get_campaign_chapter(chapter_id, user, beta_deck_status(user))
+        if chapter and not chapter.get("locked") and not chapter.get("requires_deck_check"):
+            session["campaign_chapter_id"] = chapter["chapter_id"]
+            session["campaign_chapter_title"] = chapter["title"]
+            session["campaign_chapter_difficulty"] = chapter["difficulty"]
+            session["campaign_chapter_reward"] = chapter["reward"]
+            campaign_context = {
+                "chapter_id": chapter["chapter_id"],
+                "title": chapter["title"],
+                "difficulty": chapter["difficulty"],
+                "reward": chapter["reward"],
+            }
+        else:
+            session.pop("campaign_chapter_id", None)
+            session.pop("campaign_chapter_title", None)
+            session.pop("campaign_chapter_difficulty", None)
+            session.pop("campaign_chapter_reward", None)
+    else:
+        session.pop("campaign_chapter_id", None)
+        session.pop("campaign_chapter_title", None)
+        session.pop("campaign_chapter_difficulty", None)
+        session.pop("campaign_chapter_reward", None)
 
     return render_template(
         "arena.html",
-        user=current_user(),
+        user=user,
         training_mode=True,
         arena_renderer=arena_renderer,
+        campaign_context=campaign_context,
     )
 
 
@@ -3679,6 +4021,7 @@ def complete_onboarding():
     if user:
         try:
             user.has_completed_onboarding = True
+            track_beta_mission(user, "complete_tutorial", page="/tutorial")
             log_rc_event("onboarding", "Onboarding completed", user_id=user.id)
             db.session.commit()
         except Exception as error:
@@ -3698,27 +4041,32 @@ def missions():
 
     user = current_user()
     missions = []
+    beta_missions = []
     deck_status = beta_deck_status(user)
 
     try:
+        ensure_beta_missions(user)
         ensure_daily_missions(user)
-        missions = (
+        all_missions = (
             UserMission.query
             .filter_by(user_id=user.id)
             .order_by(UserMission.id.desc())
             .all()
         )
+        missions = [mission for mission in all_missions if mission.mission_date != "beta"]
+        beta_missions = [mission for mission in all_missions if mission.mission_date == "beta"]
 
     except Exception as error:
         print("MISSIONS PAGE ERROR:", type(error).__name__, error)
         db.session.rollback()
         missions = []
+        beta_missions = []
 
     return render_template(
         "missions.html",
         user=user,
         missions=missions,
-        mission_guides=build_beta_mission_guides(user, missions, deck_status),
+        mission_guides=build_beta_mission_guides(user, beta_missions, deck_status),
         deck_status=deck_status,
         beta_journey=build_beta_journey(user, deck_status),
     )
@@ -3737,6 +4085,8 @@ def claim_user_mission(mission_id):
         success, message = claim_mission(user, mission_id)
 
         if success:
+            record_retention_event(user, "xp_awarded", page="/missions", metadata={"source": "mission_claim", "mission_id": mission_id})
+            db.session.commit()
             flash(message)
         else:
             flash(message)
@@ -3771,18 +4121,16 @@ def match_history():
 
     try:
         if "MatchHistory" in globals():
-            all_matches = (
+            user_matches = (
                 MatchHistory.query
+                .filter(
+                    (MatchHistory.player1_id == user.id) |
+                    (MatchHistory.player2_id == user.id)
+                )
                 .order_by(MatchHistory.id.desc())
                 .limit(50)
                 .all()
             )
-
-            user_matches = []
-
-            for match in all_matches:
-                if match.player1_id == user.id or match.player2_id == user.id:
-                    user_matches.append(match)
 
             matches = user_matches
             stats["total"] = len(user_matches)
@@ -3838,6 +4186,9 @@ def daily():
     missions = ensure_daily_missions(user) if user else []
     deck_status = beta_deck_status(user)
 
+    if user:
+        record_retention_event(user, "daily_view", page="/daily", metadata={"today": today_key()}, commit=True)
+
     return render_template(
         "daily.html",
         user=user,
@@ -3845,6 +4196,73 @@ def daily():
         daily_checkin=build_daily_checkin(user, missions),
         beta_journey=build_beta_journey(user, deck_status),
     )
+
+
+@app.route("/daily/claim", methods=["POST"])
+def claim_daily_checkin():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    today = today_key()
+    last_claim = str(getattr(user, "daily_last_checkin_date", "") or "")
+
+    if last_claim == today:
+        flash("Daily check-in already claimed today.")
+        return redirect(url_for("daily"))
+
+    try:
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+        previous_streak = int(getattr(user, "daily_streak", 0) or 0)
+
+        if last_claim == yesterday:
+            user.daily_streak = previous_streak + 1
+        else:
+            user.daily_streak = 1
+
+        user.daily_best_streak = max(int(getattr(user, "daily_best_streak", 0) or 0), int(user.daily_streak or 0))
+        user.daily_last_checkin_date = today
+
+        xp_result = award_xp(
+            user,
+            35,
+            source="daily_checkin",
+            metadata={"date": today, "streak": user.daily_streak},
+            reward_key=f"daily:{user.id}:{today}",
+        )
+        mission_update = track_beta_mission(
+            user,
+            "return_daily",
+            page="/daily",
+            metadata={"date": today, "streak": user.daily_streak},
+        )
+        record_retention_event(
+            user,
+            "daily_claim",
+            page="/daily",
+            metadata={
+                "date": today,
+                "streak": user.daily_streak,
+                "xp": xp_result.get("xp", 0),
+                "mission_completed": bool(mission_update and mission_update.get("completed")),
+            },
+        )
+        record_retention_event(
+            user,
+            "xp_awarded",
+            page="/daily",
+            metadata={"source": "daily_checkin", "xp": xp_result.get("xp", 0)},
+        )
+        db.session.commit()
+        flash(f"Daily check-in claimed: +{xp_result.get('xp', 0)} XP.")
+    except Exception as error:
+        print("DAILY CLAIM ERROR:", type(error).__name__, error)
+        db.session.rollback()
+        flash("Daily check-in could not be claimed. Try again.")
+
+    return redirect(url_for("daily"))
 
 
 @app.route("/api/retention/event", methods=["POST"])
@@ -3932,12 +4350,30 @@ def match_history_detail(history_id):
         else:
             events.append({"type": "log", "message": str(item)})
 
-    opponent_name = history.player2_name if history.player1_id == user.id else history.player1_name
-    mode = "training" if "bot" in str(opponent_name or "").lower() else "pvp"
+    viewer_key = "p1" if history.player1_id == user.id else "p2"
+    opponent_name = history.player2_name if viewer_key == "p1" else history.player1_name
+    mode = str(getattr(history, "mode", "") or "").strip().lower()
+
+    if not mode:
+        mode = "training" if "bot" in str(opponent_name or "").lower() else "pvp"
+
+    try:
+        reward_summary = json.loads(history.reward_summary or "{}")
+    except Exception:
+        reward_summary = {}
+
+    perspective_reward = {}
+
+    if isinstance(reward_summary, dict):
+        perspective_reward = reward_summary.get(viewer_key) or reward_summary
+
     summary = {
         "mode": mode,
         "round": history.total_rounds,
-        "reward": {},
+        "reward": perspective_reward if isinstance(perspective_reward, dict) else {},
+        "xp_gained": int((perspective_reward or {}).get("xp", getattr(history, "xp_gained", 0)) or 0) if isinstance(perspective_reward, dict) else int(getattr(history, "xp_gained", 0) or 0),
+        "campaign_chapter_id": getattr(history, "campaign_chapter_id", None),
+        "campaign_result": getattr(history, "campaign_result", None),
         "winner": history.winner_name or "Draw",
         "opponent_name": opponent_name,
         "events": events,
@@ -4144,6 +4580,7 @@ def progression():
         "username": user.username,
         "level": int(user.level or 1),
         "xp": int(user.xp or 0),
+        "total_xp": int(getattr(user, "total_xp", 0) or 0),
         "next_level_xp": int(user.next_level_xp or 100),
         "level_progress_percent": user.level_progress_percent,
         "wins": int(user.wins or 0),
@@ -4153,8 +4590,15 @@ def progression():
     }
 
     try:
+        ensure_beta_missions(user)
         ensure_daily_missions(user)
-        missions = UserMission.query.filter_by(user_id=user.id).order_by(UserMission.id.desc()).limit(6).all()
+        missions = (
+            UserMission.query
+            .filter(UserMission.user_id == user.id, UserMission.mission_date != "beta")
+            .order_by(UserMission.id.desc())
+            .limit(6)
+            .all()
+        )
     except Exception as error:
         print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
         db.session.rollback()

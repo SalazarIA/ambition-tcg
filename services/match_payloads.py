@@ -25,6 +25,9 @@ def find_player_key(match, sid):
 
 
 def match_mode(match):
+    if match.get("campaign_chapter_id") or str(match.get("mode") or "").lower() == "campaign":
+        return "campaign"
+
     if match.get("matchmaking_fallback"):
         return "fallback_bot"
 
@@ -136,17 +139,20 @@ def build_post_match_payload(match, viewer_key, result, rewards):
     try:
         p1 = match.get("p1", {})
         p2 = match.get("p2", {})
+        extras = (match.get("post_match_extras_by_key") or {}).get(viewer_key) or {}
 
         opponent_key = "p2" if viewer_key == "p1" else "p1"
         viewer = match.get(viewer_key, {})
         opponent = match.get(opponent_key, {})
 
-        return {
+        payload = {
             "result": result,
             "mode": match_mode(match),
             "bot_difficulty": match.get("bot_difficulty"),
             "rounds": int(match.get("round", 1) or 1),
             "rewards": rewards or {"coins": 0, "xp": 0},
+            "campaign_chapter_id": match.get("campaign_chapter_id"),
+            "campaign": match.get("campaign") or {},
             "viewer": {
                 "name": player_display_name(viewer),
                 "hp": _safe_hp(viewer),
@@ -170,6 +176,11 @@ def build_post_match_payload(match, viewer_key, result, rewards):
                 "message": "You won the duel." if result == "WIN" else "You were defeated." if result == "LOSE" else "The duel ended in a draw.",
             },
         }
+
+        if isinstance(extras, dict):
+            payload.update(extras)
+
+        return payload
     except Exception as error:
         print("V1.07 POST MATCH PAYLOAD ERROR:", type(error).__name__, error)
         return {

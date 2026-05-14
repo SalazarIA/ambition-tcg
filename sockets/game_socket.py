@@ -14,6 +14,18 @@ def register_game_socket_handlers(socketio, deps):
     lifecycle = SocketLifecycleController(socketio, deps, runtime)
     matchmaking = MatchmakingController(socketio, deps, runtime)
 
+    def with_campaign_context(data=None):
+        payload = dict(data or {})
+        chapter_id = str(session.get("campaign_chapter_id") or "").strip()
+
+        if chapter_id and not payload.get("campaign_chapter_id"):
+            payload["campaign_chapter_id"] = chapter_id
+            payload["campaign_title"] = session.get("campaign_chapter_title")
+            payload["campaign_difficulty"] = session.get("campaign_chapter_difficulty")
+            payload["campaign_reward"] = session.get("campaign_chapter_reward")
+
+        return payload
+
     @socketio.on("connect")
     def handle_connect(auth=None):
         lifecycle.connect(request.sid, session.get("user_id"))
@@ -25,7 +37,7 @@ def register_game_socket_handlers(socketio, deps):
         if not user:
             return
 
-        matchmaking.join_training(request.sid, user, data)
+        matchmaking.join_training(request.sid, user, with_campaign_context(data))
 
     @socketio.on("join_queue")
     def handle_join_queue():
@@ -53,7 +65,7 @@ def register_game_socket_handlers(socketio, deps):
         if action == "start_training":
             user = lifecycle.user_from_id(session.get("user_id"))
             if user:
-                matchmaking.join_training(request.sid, user, command)
+                matchmaking.join_training(request.sid, user, with_campaign_context(command))
             return
 
         if action == "request_state":
@@ -61,7 +73,7 @@ def register_game_socket_handlers(socketio, deps):
             if not payload:
                 user = lifecycle.user_from_id(session.get("user_id"))
                 if user:
-                    matchmaking.join_training(request.sid, user, command)
+                    matchmaking.join_training(request.sid, user, with_campaign_context(command))
             return
 
         if action == "set_intent":

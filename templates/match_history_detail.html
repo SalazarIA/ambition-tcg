@@ -115,7 +115,10 @@
         <section class="match-detail-hero-v1">
             <span class="progression-kicker">{{ summary.get("mode", "training")|upper }}</span>
             <h1>{{ history.result }}</h1>
-            <p class="subtitle">Against {{ summary.get("opponent_name", "Ambitionz Bot") }}.</p>
+            <p class="subtitle">
+                Against {{ summary.get("opponent_name", "Ambitionz Bot") }}.
+                {% if summary.get("campaign_chapter_id") %}Campaign chapter {{ summary.get("campaign_chapter_id") }} was recorded.{% endif %}
+            </p>
 
             <div class="match-detail-grid-v1">
                 <div class="match-detail-stat-v1">
@@ -123,7 +126,7 @@
                     <span>Round</span>
                 </div>
                 <div class="match-detail-stat-v1">
-                    <strong>{{ summary.get("reward", {}).get("xp", 0) }}</strong>
+                    <strong>{{ summary.get("xp_gained", summary.get("reward", {}).get("xp", 0)) }}</strong>
                     <span>XP</span>
                 </div>
                 <div class="match-detail-stat-v1">
@@ -138,8 +141,8 @@
 
             <div class="az-profile-action-grid-v1">
                 <a class="primary" href="{{ url_for('training') }}">Train Again</a>
+                <a href="{{ url_for('campaign') }}">Campaign</a>
                 <a href="{{ url_for('deck_builder') }}">Improve Deck</a>
-                <a href="{{ url_for('shop') }}">Open Booster</a>
             </div>
         </section>
 

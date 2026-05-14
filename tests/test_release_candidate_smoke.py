@@ -1,11 +1,12 @@
 import re
 
-from models import MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, db
+from models import MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, UserMission, db
 
-from app import active_matches, emit_arena_state_v8, issue_password_reset_token, socket_state, socketio
+from app import active_matches, emit_arena_state_v8, end_match, issue_password_reset_token, player_rooms, socket_state, socketio
 from conftest import create_user, csrf_token_from_response, login_session
 from game.balance import STARTING_HP
 from game.bot_ai import DIFFICULTY_PROFILES, choose_intent
+from game.progression import today_key
 from game.state import VALID_INTENTS
 
 
@@ -26,7 +27,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v178" in body
+    assert "ambitionz-web-app-v179" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -499,6 +500,206 @@ def test_beta_retention_product_events_are_accepted(client):
         "mission_cta_click",
         "daily_view",
     ]
+
+
+def test_beta_loop_v1_events_are_accepted(client):
+    for event_key in [
+        "campaign_start",
+        "campaign_result",
+        "mission_progress",
+        "mission_complete",
+        "daily_claim",
+        "match_recorded",
+        "xp_awarded",
+        "post_match_summary_view",
+    ]:
+        response = client.post(
+            "/api/retention/event",
+            json={"event_key": event_key, "page": "/beta-loop", "metadata": {"source": "test"}},
+        )
+        assert response.status_code == 200
+
+    logs = RetentionEvent.query.order_by(RetentionEvent.id.asc()).all()
+    assert [log.event_key for log in logs] == [
+        "campaign_start",
+        "campaign_result",
+        "mission_progress",
+        "mission_complete",
+        "daily_claim",
+        "match_recorded",
+        "xp_awarded",
+        "post_match_summary_view",
+    ]
+
+
+def test_campaign_start_sets_training_context(client):
+    user = create_user(username="campaignv1", email="campaignv1@example.com")
+    login_session(client, user)
+
+    campaign_response = client.get("/campaign")
+    campaign_body = campaign_response.get_data(as_text=True)
+    assert campaign_response.status_code == 200
+    assert 'data-chapter-id="first_signal"' in campaign_body
+    assert "/campaign/start/first_signal" in campaign_body
+
+    start_response = client.get("/campaign/start/first_signal", follow_redirects=False)
+    assert start_response.status_code == 302
+    assert "campaign_chapter_id=first_signal" in start_response.headers["Location"]
+
+    training_response = client.get(start_response.headers["Location"])
+    training_body = training_response.get_data(as_text=True)
+    assert training_response.status_code == 200
+    assert 'data-page-kind="campaign"' in training_body
+    assert '"chapter_id": "first_signal"' in training_body
+    assert "First Signal" in training_body
+
+    event_keys = [event.event_key for event in RetentionEvent.query.order_by(RetentionEvent.id.asc()).all()]
+    assert "campaign_view" in event_keys
+    assert "campaign_start" in event_keys
+
+
+def test_daily_claim_is_persistent_and_once_per_day(client):
+    user = create_user(username="dailyv1", email="dailyv1@example.com")
+    csrf_token = login_session(client, user)
+
+    first_response = client.post(
+        "/daily/claim",
+        data={"_csrf_token": csrf_token},
+        follow_redirects=True,
+    )
+
+    db.session.refresh(user)
+    first_total_xp = int(user.total_xp or 0)
+    assert first_response.status_code == 200
+    assert user.daily_last_checkin_date == today_key()
+    assert user.daily_streak == 1
+    assert user.daily_best_streak == 1
+    assert first_total_xp == 35
+
+    mission = UserMission.query.filter_by(user_id=user.id, mission_key="return_daily", mission_date="beta").first()
+    assert mission is not None
+    assert mission.progress == 1
+    assert mission.is_complete is True
+
+    second_response = client.post(
+        "/daily/claim",
+        data={"_csrf_token": csrf_token},
+        follow_redirects=True,
+    )
+    db.session.refresh(user)
+    assert second_response.status_code == 200
+    assert int(user.total_xp or 0) == first_total_xp
+    assert user.daily_streak == 1
+
+    event_keys = [event.event_key for event in RetentionEvent.query.order_by(RetentionEvent.id.asc()).all()]
+    assert "daily_claim" in event_keys
+    assert "xp_awarded" in event_keys
+
+
+def test_beta_missions_progress_from_real_routes(client):
+    user = create_user(username="missionv1", email="missionv1@example.com")
+    csrf_token = login_session(client, user)
+
+    assert client.get("/collection").status_code == 200
+    assert client.get("/deck-builder").status_code == 200
+    assert client.post(
+        "/complete-onboarding",
+        data={"_csrf_token": csrf_token},
+        follow_redirects=False,
+    ).status_code == 302
+
+    missions = {
+        mission.mission_key: mission
+        for mission in UserMission.query.filter_by(user_id=user.id, mission_date="beta").all()
+    }
+
+    assert missions["view_collection"].progress == 1
+    assert missions["view_collection"].is_complete is True
+    assert missions["save_or_validate_deck"].progress == 1
+    assert missions["save_or_validate_deck"].is_complete is True
+    assert missions["complete_tutorial"].progress == 1
+    assert missions["complete_tutorial"].is_complete is True
+
+    claim_response = client.post(
+        f"/missions/claim/{missions['view_collection'].id}",
+        data={"_csrf_token": csrf_token},
+        follow_redirects=True,
+    )
+    db.session.refresh(user)
+    db.session.refresh(missions["view_collection"])
+    assert claim_response.status_code == 200
+    assert missions["view_collection"].is_claimed is True
+    assert user.total_xp == 20
+
+
+def test_campaign_match_end_records_history_xp_missions_and_summary(client, monkeypatch):
+    user = create_user(username="matchv1", email="matchv1@example.com")
+    emitted = []
+
+    def fake_emit(event, payload=None, **kwargs):
+        emitted.append((event, payload, kwargs))
+
+    monkeypatch.setattr(socketio, "emit", fake_emit)
+
+    room_id = "training_test_campaign"
+    active_matches[room_id] = {
+        "p1": {
+            "sid": "sid-campaign",
+            "user_id": user.id,
+            "name": user.username,
+            "hp": 18,
+            "deck": [],
+            "hand": [],
+            "graveyard": [],
+        },
+        "p2": {
+            "sid": "bot-campaign",
+            "name": "Ambitionz Bot",
+            "is_bot": True,
+            "hp": 0,
+            "deck": [],
+            "hand": [],
+            "graveyard": [],
+        },
+        "round": 3,
+        "training": True,
+        "is_bot_match": True,
+        "bot_difficulty": "normal",
+        "campaign_chapter_id": "first_signal",
+        "campaign": {
+            "chapter_id": "first_signal",
+            "title": "First Signal",
+            "difficulty": "easy",
+            "reward": "35 XP beta + campaign mission progress.",
+        },
+        "logs": [{"type": "log", "message": "Campaign finished"}],
+    }
+    player_rooms["sid-campaign"] = room_id
+
+    end_match(room_id, "p1")
+    db.session.refresh(user)
+
+    history = MatchHistory.query.order_by(MatchHistory.id.desc()).first()
+    assert history is not None
+    assert history.mode == "campaign"
+    assert history.campaign_chapter_id == "first_signal"
+    assert history.xp_gained > 0
+    assert user.total_xp >= history.xp_gained
+    assert room_id not in active_matches
+
+    training_mission = UserMission.query.filter_by(user_id=user.id, mission_key="play_training_match", mission_date="beta").first()
+    campaign_mission = UserMission.query.filter_by(user_id=user.id, mission_key="play_campaign_chapter", mission_date="beta").first()
+    assert training_mission is not None and training_mission.progress == 1
+    assert campaign_mission is not None and campaign_mission.progress == 1
+
+    summaries = [payload for event, payload, _kwargs in emitted if event == "post_match_summary"]
+    assert summaries
+    assert summaries[0]["history_id"] == history.id
+    assert summaries[0]["campaign_chapter_id"] == "first_signal"
+    assert summaries[0]["xp_gained"] == history.xp_gained
+
+    event_keys = {event.event_key for event in RetentionEvent.query.all()}
+    assert {"campaign_result", "match_recorded", "xp_awarded", "mission_progress"}.issubset(event_keys)
 
 
 def test_test_grant_routes_require_admin_dev_tools(client, flask_app):

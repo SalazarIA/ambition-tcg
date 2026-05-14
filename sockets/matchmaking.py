@@ -44,6 +44,21 @@ class MatchmakingController:
             if difficulty not in {"easy", "normal", "hard"}:
                 difficulty = "normal"
 
+            campaign_chapter_id = str(data.get("campaign_chapter_id") or "").strip()[:80]
+            campaign_context = None
+
+            if campaign_chapter_id:
+                campaign_context = {
+                    "chapter_id": campaign_chapter_id,
+                    "title": data.get("campaign_title") or "Campaign Chapter",
+                    "difficulty": data.get("campaign_difficulty") or difficulty,
+                    "reward": data.get("campaign_reward") or "Campaign reward preview.",
+                }
+                difficulty = str(campaign_context.get("difficulty") or difficulty).lower()
+
+                if difficulty not in {"easy", "normal", "hard"}:
+                    difficulty = "normal"
+
             player_object = self.create_player_object(user, sid)
             room_id = f"training_{sid}"
 
@@ -54,17 +69,31 @@ class MatchmakingController:
                 sid,
                 user=user,
                 room_code=room_id,
-                message="Battle Engine V2 training started. Choose an intent, play a card, then press Ready.",
+                message=(
+                    "Campaign chapter started. Choose an intent, play a card, then press Ready."
+                    if campaign_context
+                    else "Battle Engine V2 training started. Choose an intent, play a card, then press Ready."
+                ),
                 training=True,
-                difficulty="training",
+                difficulty=difficulty,
+                campaign_context=campaign_context,
             )
             self.set_presence_status(sid, "in_match")
-            self.socketio.emit("match_found", {"msg": "Training started against Ambitionz Bot on BE2."}, to=sid)
-            self.emit_matchmaking_status(sid, "matched", mode="training")
+            self.socketio.emit(
+                "match_found",
+                {"msg": "Campaign training started on BE2." if campaign_context else "Training started against Ambitionz Bot on BE2."},
+                to=sid,
+            )
+            self.emit_matchmaking_status(sid, "matched", mode="campaign" if campaign_context else "training")
             self.log_event(
                 "match",
-                "BE2 training match started",
-                details={"room_id": room_id, "difficulty": difficulty, "engine": "be2"},
+                "BE2 campaign match started" if campaign_context else "BE2 training match started",
+                details={
+                    "room_id": room_id,
+                    "difficulty": difficulty,
+                    "engine": "be2",
+                    "campaign_chapter_id": campaign_chapter_id or None,
+                },
                 user_id=user.id,
             )
             self.emit_presence()

@@ -21,6 +21,9 @@ def safe_player_hp(player):
 
 
 def match_mode(match):
+    if match.get("campaign_chapter_id") or str(match.get("mode") or "").lower() == "campaign":
+        return "campaign"
+
     if match.get("matchmaking_fallback"):
         return "fallback_bot"
 

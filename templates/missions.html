@@ -95,7 +95,16 @@
                             <span>Reward Preview</span>
                             <strong>{{ guide.reward }}</strong>
                         </div>
-                        <a href="{{ guide.url }}" class="btn btn-secondary full-btn" data-retention-event="mission_cta_click">{{ guide.cta }}</a>
+                        {% if guide.claimable %}
+                            <form method="POST" action="{{ url_for('claim_user_mission', mission_id=guide.mission_id) }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn full-btn">Claim Reward</button>
+                            </form>
+                        {% elif guide.status == "Claimed" %}
+                            <button type="button" class="btn btn-secondary full-btn" disabled>Claimed</button>
+                        {% else %}
+                            <a href="{{ guide.url }}" class="btn btn-secondary full-btn" data-retention-event="mission_cta_click">{{ guide.cta }}</a>
+                        {% endif %}
                     </article>
                 {% endfor %}
             </div>

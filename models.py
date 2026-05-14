@@ -37,7 +37,11 @@ class User(db.Model):
     losses = db.Column(db.Integer, default=0, nullable=False)
 
     xp = db.Column(db.Integer, default=0, nullable=False)
+    total_xp = db.Column(db.Integer, default=0, nullable=False)
     level = db.Column(db.Integer, default=1, nullable=False)
+    daily_last_checkin_date = db.Column(db.String(20), nullable=True)
+    daily_streak = db.Column(db.Integer, default=0, nullable=False)
+    daily_best_streak = db.Column(db.Integer, default=0, nullable=False)
 
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
@@ -125,6 +129,11 @@ class MatchHistory(db.Model):
     player2_final_hp = db.Column(db.Integer, default=0, nullable=False)
 
     total_rounds = db.Column(db.Integer, default=0, nullable=False)
+    mode = db.Column(db.String(40), default="training", nullable=False, index=True)
+    xp_gained = db.Column(db.Integer, default=0, nullable=False)
+    reward_summary = db.Column(db.Text, nullable=True)
+    campaign_chapter_id = db.Column(db.String(80), nullable=True, index=True)
+    campaign_result = db.Column(db.String(40), nullable=True)
 
     battle_log_json = db.Column(db.Text, nullable=False, default="[]")
 
@@ -207,6 +216,12 @@ class UserMission(db.Model):
         db.DateTime,
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=True,
     )
 
     user = db.relationship("User")
@@ -309,7 +324,11 @@ def ensure_database_schema():
     if dialect == "postgresql":
         statements = [
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS xp INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_xp INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS level INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_last_checkin_date VARCHAR(20)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_streak INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_best_streak INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(256)",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires_at TIMESTAMP",
@@ -323,7 +342,11 @@ def ensure_database_schema():
     existing_columns = {column["name"] for column in inspect(engine).get_columns("users")}
     sqlite_columns = {
         "xp": "xp INTEGER NOT NULL DEFAULT 0",
+        "total_xp": "total_xp INTEGER NOT NULL DEFAULT 0",
         "level": "level INTEGER NOT NULL DEFAULT 1",
+        "daily_last_checkin_date": "daily_last_checkin_date VARCHAR(20)",
+        "daily_streak": "daily_streak INTEGER NOT NULL DEFAULT 0",
+        "daily_best_streak": "daily_best_streak INTEGER NOT NULL DEFAULT 0",
         "is_admin": "is_admin BOOLEAN NOT NULL DEFAULT 0",
         "reset_token": "reset_token VARCHAR(256)",
         "reset_token_expires_at": "reset_token_expires_at DATETIME",
@@ -334,6 +357,60 @@ def ensure_database_schema():
         for column_name, ddl in sqlite_columns.items():
             if column_name not in existing_columns:
                 connection.execute(text(f"ALTER TABLE users ADD COLUMN {ddl}"))
+
+
+def ensure_beta_loop_schema():
+    """Add minimal persistent beta-loop columns without requiring a migration run."""
+    engine = db.engine
+    inspector = inspect(engine)
+    dialect = engine.dialect.name
+
+    if dialect == "postgresql":
+        statements = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_xp INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_last_checkin_date VARCHAR(20)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_streak INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_best_streak INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE user_missions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP",
+            "ALTER TABLE match_history ADD COLUMN IF NOT EXISTS mode VARCHAR(40) NOT NULL DEFAULT 'training'",
+            "ALTER TABLE match_history ADD COLUMN IF NOT EXISTS xp_gained INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE match_history ADD COLUMN IF NOT EXISTS reward_summary TEXT",
+            "ALTER TABLE match_history ADD COLUMN IF NOT EXISTS campaign_chapter_id VARCHAR(80)",
+            "ALTER TABLE match_history ADD COLUMN IF NOT EXISTS campaign_result VARCHAR(40)",
+        ]
+        with engine.begin() as connection:
+            for statement in statements:
+                connection.execute(text(statement))
+        return
+
+    table_names = set(inspector.get_table_names())
+
+    def add_missing_columns(table_name, columns):
+        if table_name not in table_names:
+            return
+
+        existing = {column["name"] for column in inspector.get_columns(table_name)}
+        with engine.begin() as connection:
+            for column_name, ddl in columns.items():
+                if column_name not in existing:
+                    connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {ddl}"))
+
+    add_missing_columns("users", {
+        "total_xp": "total_xp INTEGER NOT NULL DEFAULT 0",
+        "daily_last_checkin_date": "daily_last_checkin_date VARCHAR(20)",
+        "daily_streak": "daily_streak INTEGER NOT NULL DEFAULT 0",
+        "daily_best_streak": "daily_best_streak INTEGER NOT NULL DEFAULT 0",
+    })
+    add_missing_columns("user_missions", {
+        "updated_at": "updated_at DATETIME",
+    })
+    add_missing_columns("match_history", {
+        "mode": "mode VARCHAR(40) NOT NULL DEFAULT 'training'",
+        "xp_gained": "xp_gained INTEGER NOT NULL DEFAULT 0",
+        "reward_summary": "reward_summary TEXT",
+        "campaign_chapter_id": "campaign_chapter_id VARCHAR(80)",
+        "campaign_result": "campaign_result VARCHAR(40)",
+    })
 
 
 

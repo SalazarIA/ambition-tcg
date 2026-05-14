@@ -140,6 +140,7 @@ class MatchEngineFacade:
         matchmaking_fallback: bool = False,
         training: bool = False,
         difficulty: str = "normal",
+        campaign_context: Optional[Dict[str, Any]] = None,
     ) -> Optional[Payload]:
         room_code = room_code or f"be2_bot_{sid}"
         match = create_be2_bot_match(
@@ -150,6 +151,15 @@ class MatchEngineFacade:
             training=training,
             difficulty=difficulty,
         )
+        if campaign_context:
+            match["mode"] = "campaign"
+            match["campaign_chapter_id"] = str(campaign_context.get("chapter_id") or "")[:80]
+            match["campaign"] = {
+                "chapter_id": match["campaign_chapter_id"],
+                "title": str(campaign_context.get("title") or "Campaign Chapter")[:120],
+                "difficulty": str(campaign_context.get("difficulty") or difficulty or "normal")[:40],
+                "reward": str(campaign_context.get("reward") or "Campaign reward preview.")[:220],
+            }
         be2_start(match)
 
         self.active_matches[room_code] = match

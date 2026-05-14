@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=80">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=81">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -23,7 +23,7 @@
 
 </head>
 
-<body class="az-clean-arena-v48 arena-page-v154 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if training_mode %}training{% else %}arena{% endif %}" data-retention-page="{% if training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}">
+<body class="az-clean-arena-v48 arena-page-v154 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-retention-page="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}"{% if campaign_context %} data-campaign-chapter-id="{{ campaign_context.chapter_id }}"{% endif %}>
     <main class="az48-arena">
         <header class="az48-top">
             <section class="az48-player az48-enemy" data-az48-target="enemy_hero">
@@ -40,7 +40,7 @@
             </section>
 
             <section class="az48-center">
-                <span class="az48-round-mode" id="az48-mode">{% if training_mode %}Training{% else %}Arena{% endif %}</span>
+                <span class="az48-round-mode" id="az48-mode">{% if campaign_context %}Campaign{% elif training_mode %}Training{% else %}Arena{% endif %}</span>
                 <strong class="az48-round-badge">Round <span id="az48-round">1</span></strong>
                 <em id="az48-phase">Start</em>
             </section>
@@ -64,12 +64,12 @@
         <section class="az48-message az48-statusbar" id="queue-status">
             <span class="az48-sr-helper" aria-hidden="true">No playable card with current energy. Press Ready to resolve the round.</span>
             <span class="az48-message-text" id="az48-message">
-                {% if training_mode %}Press Start to draw your hand.{% else %}Choose how to find a duel.{% endif %}
+	                {% if campaign_context %}Start {{ campaign_context.title }} to enter a campaign Training duel.{% elif training_mode %}Press Start to draw your hand.{% else %}Choose how to find a duel.{% endif %}
             </span>
             {% if training_mode %}
             <aside class="az48-training-panel" id="az48-training-panel" aria-label="Training overview">
-                <strong>Training Mode</strong>
-                <span>Practice intent, card, lane, Ready. Normal bot · one clear beta flow.</span>
+	                <strong>{% if campaign_context %}{{ campaign_context.title }}{% else %}Training Mode{% endif %}</strong>
+	                <span>{% if campaign_context %}Campaign chapter · {{ campaign_context.difficulty|title }} · {{ campaign_context.reward }}{% else %}Practice intent, card, lane, Ready. Normal bot · one clear beta flow.{% endif %}</span>
                 <div class="az48-training-difficulties" aria-label="Bot difficulty presentation">
                     <b>Easy: learn</b>
                     <b class="is-active">Normal: beta</b>
@@ -80,7 +80,7 @@
 
             <div class="az48-match-actions{% if training_mode %} az48-training-hidden-actions{% endif %}">
                 <button type="button" id="join-queue-btn" class="az48-mini-btn" data-az48-action="start-training" data-retention-event="training_start_click">
-                    {% if training_mode %}Start Training{% else %}Find Match{% endif %}
+                    {% if campaign_context %}Start Chapter{% elif training_mode %}Start Training{% else %}Find Match{% endif %}
                 </button>
                 <button type="button" id="join-bot-match-btn" class="az48-mini-btn">Bot</button>
                 <input id="private-room-code" class="az48-room-input" type="text" maxlength="5" placeholder="ROOM">
@@ -142,12 +142,12 @@
         data-retention-event="training_start_click"
         aria-label="Start training match"
     >
-        Start Training
+        {% if campaign_context %}Start Chapter{% else %}Start Training{% endif %}
     </button>
 
     <aside class="az48-training-result" id="az48-training-result" aria-live="polite" hidden>
         <div class="az48-result-copy">
-            <span>Training Result</span>
+	            <span>{% if campaign_context %}Campaign Result{% else %}Training Result{% endif %}</span>
             <strong id="az48-result-title">Training Complete</strong>
             <p id="az48-result-text">The match result will appear here.</p>
             <div class="az48-result-rewards" id="az48-result-rewards" hidden></div>
@@ -162,9 +162,10 @@
         <nav class="az48-result-actions" aria-label="Training result actions">
             <button type="button" id="az48-training-restart" class="az48-result-action az48-result-primary">Jogar novamente</button>
             <a href="{{ url_for('index') }}" class="az48-result-action">Voltar ao menu</a>
-            <a href="{{ url_for('collection') }}" class="az48-result-action">Collection</a>
-            <a href="{{ url_for('deck_builder') }}" class="az48-result-action">Deck</a>
-            <a href="{{ url_for('match_history') }}" class="az48-result-action">History</a>
+	            <a href="{{ url_for('collection') }}" class="az48-result-action">Collection</a>
+	            <a href="{{ url_for('deck_builder') }}" class="az48-result-action">Deck</a>
+	            <a href="{{ url_for('campaign') }}" class="az48-result-action">Campaign</a>
+	            <a href="{{ url_for('match_history') }}" class="az48-result-action">History</a>
         </nav>
     </aside>
     {% endif %}
@@ -197,14 +198,15 @@
     </script>
 
     <script>
-        window.AMBITIONZ_ARENA_MODE = "{{ 'training' if training_mode else 'arena' }}";
-        window.AMBITIONZ_ARENA_RENDERER = "{{ arena_renderer|default('dom') }}";
-    </script>
+	        window.AMBITIONZ_ARENA_MODE = "{{ 'training' if training_mode else 'arena' }}";
+	        window.AMBITIONZ_ARENA_RENDERER = "{{ arena_renderer|default('dom') }}";
+	        window.AMBITIONZ_CAMPAIGN_CONTEXT = {{ (campaign_context or {})|tojson }};
+	    </script>
     <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=5"></script>
     {% if arena_renderer == "3d" %}
     <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
     {% endif %}
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=80"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=81"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@
             <div>
                 <span class="progression-kicker">Beta Campaign</span>
                 <h1>First Arc</h1>
-                <p class="subtitle">A defensive campaign path for the current beta: real CTAs, honest reward previews and no separate campaign economy yet.</p>
+                <p class="subtitle">A playable beta path: each chapter launches Training with campaign context, real XP, mission progress and match history.</p>
             </div>
             <div class="hero-actions">
                 <a href="{{ url_for('tutorial') }}" class="btn">Tutorial</a>
@@ -29,7 +29,7 @@
             <div class="az-beta-journey-head-v1">
                 <span class="progression-kicker">Beta Journey</span>
                 <h2>Campaign guides the same playable loop.</h2>
-                <p>These chapters point into Training, Collection and Deck Builder until scripted encounters are ready.</p>
+                <p>These chapters use the live BE2 Training flow while campaign-specific encounters mature behind the same loop.</p>
             </div>
             <div class="az-beta-journey-grid-v1">
                 {% for step in beta_journey %}
@@ -44,11 +44,11 @@
 
         <section class="campaign-timeline">
             {% for chapter in chapters %}
-            <article class="campaign-card az-campaign-chapter-v2 {% if chapter.locked %}locked-card{% endif %}" data-status="{{ chapter.status|lower|replace(' ', '-') }}">
+            <article class="campaign-card az-campaign-chapter-v2 {% if chapter.locked %}locked-card{% endif %}" data-status="{{ chapter.status|lower|replace(' ', '-') }}" data-chapter-id="{{ chapter.chapter_id }}">
                 <div class="campaign-number">{{ chapter.number }}</div>
                 <div class="campaign-content">
                     <div class="campaign-meta">
-                        <span>{{ chapter.difficulty }}</span>
+                        <span>{{ chapter.difficulty_label }}</span>
                         <strong>{{ chapter.status }}</strong>
                     </div>
                     <h2>{{ chapter.title }}</h2>
@@ -60,7 +60,7 @@
                     </div>
 
                     {% if not chapter.locked %}
-                        <a href="{{ chapter.url }}" class="btn full-btn">{{ chapter.cta_label }}</a>
+                        <a href="{{ chapter.url }}" class="btn full-btn" data-retention-event="campaign_start">{{ chapter.cta_label }}</a>
                     {% else %}
                         <button class="btn btn-secondary full-btn" disabled>{{ chapter.cta_label }}</button>
                     {% endif %}
@@ -71,8 +71,8 @@
 
         <section class="panel-card">
             <span class="progression-kicker">Beta Notice</span>
-            <h2>Campaign progression is a guided layer.</h2>
-            <p class="subtitle">Current chapters do not grant separate persistent campaign rewards. They route into the live beta systems: Training, Collection, Deck Builder, Daily and Progression.</p>
+            <h2>Campaign rewards are intentionally simple.</h2>
+            <p class="subtitle">Chapter runs grant beta XP, update missions and appear in Match History. No separate currency, shop promise or complex economy is attached to this V1.</p>
             <div class="progression-action-row">
                 <a href="{{ url_for('missions') }}" class="btn btn-secondary">Missions</a>
                 <a href="{{ url_for('daily') }}" class="btn btn-secondary">Daily</a>

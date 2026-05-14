@@ -7,7 +7,17 @@ def get_match_rewards(is_bot_match, did_win, difficulty=None, result=None):
     return calculate_reward(mode, outcome, difficulty)
 
 
-def apply_match_rewards(user, is_bot_match, did_win, award_xp_function, difficulty=None, result=None):
+def apply_match_rewards(
+    user,
+    is_bot_match,
+    did_win,
+    award_xp_function,
+    difficulty=None,
+    result=None,
+    source=None,
+    metadata=None,
+    reward_key=None,
+):
     if not user:
         return {
             "coins": 0,
@@ -17,7 +27,14 @@ def apply_match_rewards(user, is_bot_match, did_win, award_xp_function, difficul
     rewards = get_match_rewards(is_bot_match, did_win, difficulty=difficulty, result=result)
 
     user.coins += rewards["coins"]
-    award_xp_function(user, rewards["xp"])
+    xp_result = award_xp_function(
+        user,
+        rewards["xp"],
+        source=source or "match_reward",
+        metadata=metadata or {},
+        reward_key=reward_key,
+    )
+    rewards["xp_result"] = xp_result
 
     return rewards
 

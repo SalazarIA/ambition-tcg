@@ -31,6 +31,7 @@
     const AZ48_NO_PLAYABLE_HELP = "No playable card with current energy. Press Ready to resolve the round.";
 
     const PAGE_KIND = document.body ? document.body.getAttribute("data-page-kind") : "arena";
+    const CAMPAIGN_CONTEXT = window.AMBITIONZ_CAMPAIGN_CONTEXT || {};
     const ID_ALIASES = {
         "az48-ready": ["ready-btn"],
         "az48-hand": ["hand"],
@@ -160,6 +161,10 @@
     function str(value, fallback = "") {
         if (value === undefined || value === null || value === "") return fallback;
         return String(value);
+    }
+
+    function isTrainingLikePage() {
+        return PAGE_KIND === "training" || PAGE_KIND === "campaign";
     }
 
     function firstValue(...values) {
@@ -358,13 +363,13 @@
         const phase = str((state && state.phase) || "").toLowerCase();
 
         if (phase === "finished" || (state && state.winner)) return "Finished";
-        if (enemy && enemy.ready) return PAGE_KIND === "training" ? "Bot ready" : "Ready";
-        if (enemy && enemy.intent) return PAGE_KIND === "training" ? "Bot chose " + intentLabel(enemy.intent, "Intent") : intentLabel(enemy.intent, "Intent set");
-        if (preview && preview.ready) return PAGE_KIND === "training" ? "Bot ready" : "Ready";
-        if (preview && preview.intent) return PAGE_KIND === "training" ? "Bot chose " + intentLabel(preview.intent, "Intent") : intentLabel(preview.intent, "Intent set");
+        if (enemy && enemy.ready) return isTrainingLikePage() ? "Bot ready" : "Ready";
+        if (enemy && enemy.intent) return isTrainingLikePage() ? "Bot chose " + intentLabel(enemy.intent, "Intent") : intentLabel(enemy.intent, "Intent set");
+        if (preview && preview.ready) return isTrainingLikePage() ? "Bot ready" : "Ready";
+        if (preview && preview.intent) return isTrainingLikePage() ? "Bot chose " + intentLabel(preview.intent, "Intent") : intentLabel(preview.intent, "Intent set");
         if (preview && preview.message) return str(preview.message);
 
-        return PAGE_KIND === "training" ? "Bot thinking" : "Choosing";
+        return isTrainingLikePage() ? "Bot thinking" : "Choosing";
     }
 
 
@@ -452,9 +457,9 @@
 
         if (step === "start") {
             return {
-                title: "1. Start Training",
-                hint: "Press Start to draw your opening hand.",
-                button: "Start Training",
+                title: PAGE_KIND === "campaign" ? "1. Start Chapter" : "1. Start Training",
+                hint: PAGE_KIND === "campaign" ? "Press Start to enter this campaign-marked duel." : "Press Start to draw your opening hand.",
+                button: PAGE_KIND === "campaign" ? "Start Chapter" : "Start Training",
                 detail: "Draw Hand",
             };
         }
@@ -547,7 +552,7 @@
     }
 
     function updateActionButtons(step) {
-        setButtonContent("az48-start", "Start Training", "Draw Hand");
+        setButtonContent("az48-start", PAGE_KIND === "campaign" ? "Start Chapter" : "Start Training", "Draw Hand");
         setButtonContent("az48-strike", "Strike", "Attack");
         setButtonContent("az48-guard", "Guard", "Defend");
         setButtonContent("az48-focus", "Focus", "Build");
@@ -566,7 +571,7 @@
 
         const available = {
             "az48-start": step === "start" && Boolean(legal.can_start || legal.show_start),
-            "az48-floating-start": step === "start" && PAGE_KIND === "training",
+            "az48-floating-start": step === "start" && isTrainingLikePage(),
             "az48-strike": step === "choose_intent",
             "az48-guard": step === "choose_intent",
             "az48-focus": step === "choose_intent",
@@ -757,14 +762,14 @@
         const mode = str(summary.mode || state.mode || "training");
 
         const titleByKey = {
-            win: "Victory",
-            lose: "Defeat",
-            draw: "Draw",
+            win: mode === "campaign" ? "Chapter Cleared" : "Victory",
+            lose: mode === "campaign" ? "Chapter Attempted" : "Defeat",
+            draw: mode === "campaign" ? "Chapter Draw" : "Draw",
         };
         const messageByKey = {
-            win: "You won the training duel.",
-            lose: "You were defeated in training.",
-            draw: "The training duel ended in a draw.",
+            win: mode === "campaign" ? "Campaign progress recorded." : "You won the training duel.",
+            lose: mode === "campaign" ? "Campaign attempt recorded. Tune and return." : "You were defeated in training.",
+            draw: mode === "campaign" ? "Campaign chapter ended in a draw and was recorded." : "The training duel ended in a draw.",
         };
 
         return {
@@ -795,7 +800,7 @@
         const xp = hasServerXp ? num(rewards.xp) : estimatedTrainingXp(copy.key);
         const percent = Math.max(10, Math.min(100, Math.round((xp / 120) * 100)));
 
-        label.textContent = hasServerXp ? "Training reward" : "Progress preview";
+        label.textContent = hasServerXp ? (copy.mode === "campaign" ? "Campaign reward" : "Training reward") : "Progress preview";
         value.textContent = hasServerXp ? ("XP +" + xp) : ("Estimated XP +" + xp);
         fill.style.width = percent + "%";
         panel.hidden = false;
@@ -808,7 +813,7 @@
         const phase = str((state && state.phase) || "").toLowerCase();
         const finished = phase === "finished" || Boolean(state && state.winner) || Boolean(latestGameOverResult);
 
-        if (PAGE_KIND !== "training" || !finished) {
+        if (!isTrainingLikePage() || !finished) {
             panel.hidden = true;
             panel.classList.remove("is-visible");
             document.body.classList.remove("az48-training-finished");
@@ -835,7 +840,11 @@
 
         if (rewardsEl) {
             if (rewards.xp !== undefined && rewards.xp !== null) rewardLines.push("XP +" + num(rewards.xp));
+            if (rewards.campaign_bonus_xp) rewardLines.push("Campaign +" + num(rewards.campaign_bonus_xp) + " XP");
             if (rewards.coins !== undefined && rewards.coins !== null) rewardLines.push("Coins +" + num(rewards.coins));
+            if (summary.campaign_chapter_id) rewardLines.push("Chapter " + str(summary.campaign_chapter_id));
+            if (summary.history_id) rewardLines.push("History #" + str(summary.history_id));
+            if (arr(summary.mission_progress).length) rewardLines.push("Mission progress");
             rewardsEl.textContent = rewardLines.length
                 ? "Reward Preview · " + rewardLines.join(" · ")
                 : "";
@@ -855,6 +864,12 @@
                 result: copy.key || "finished",
                 rounds: copy.rounds || 0,
                 has_server_reward: Boolean(rewards && (rewards.xp !== undefined || rewards.coins !== undefined)),
+            });
+            trackRetentionEvent("post_match_summary_view", {
+                result: copy.key || "finished",
+                mode: copy.mode || PAGE_KIND,
+                history_id: summary.history_id || null,
+                campaign_chapter_id: summary.campaign_chapter_id || null,
             });
         }
     }
@@ -1373,6 +1388,14 @@
             legacy_event: legacyEvent,
             ...(payload || {}),
         };
+
+        if ((action === "start_training" || action === "request_state") && CAMPAIGN_CONTEXT && CAMPAIGN_CONTEXT.chapter_id) {
+            command.campaign_chapter_id = CAMPAIGN_CONTEXT.chapter_id;
+            command.campaign_title = CAMPAIGN_CONTEXT.title || "Campaign Chapter";
+            command.campaign_difficulty = CAMPAIGN_CONTEXT.difficulty || "normal";
+            command.campaign_reward = CAMPAIGN_CONTEXT.reward || "";
+        }
+
         return emit("arena_command_v1", command);
     }
 
@@ -1381,11 +1404,14 @@
         latestPostMatchSummary = null;
         latestGameOverResult = "";
         renderTrainingResult(null);
-        trackRetentionEvent("training_start_click", {
+        trackRetentionEvent(PAGE_KIND === "campaign" ? "campaign_start" : "training_start_click", {
             mode: PAGE_KIND,
             source: "arena_clean_v48",
+            campaign_chapter_id: CAMPAIGN_CONTEXT && CAMPAIGN_CONTEXT.chapter_id ? CAMPAIGN_CONTEXT.chapter_id : null,
         });
-        setMessage("Starting Training. Draw your hand, then practice intent, card, lane and Ready.");
+        setMessage(PAGE_KIND === "campaign"
+            ? "Starting campaign chapter. Draw your hand, then play through the Training flow."
+            : "Starting Training. Draw your hand, then practice intent, card, lane and Ready.");
         setServerError("");
         if (emitCommand("start_training", {})) {
             playSound("uiTap");
