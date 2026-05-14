@@ -28,7 +28,7 @@
             <div>
                 <span class="progression-kicker">Competitive Identity</span>
                 <h1>Leaderboard</h1>
-                <p class="subtitle">Global and local ranking foundation. Current score uses account level, XP and coins until ranked MMR is added.</p>
+                <p class="subtitle">Global and local ranking foundation. Current score uses account level, XP and Gold until ranked MMR is added.</p>
             </div>
             <div class="hero-actions">
                 <a href="{{ url_for('training') }}" class="btn">Play Training</a>
@@ -49,7 +49,7 @@
             </article>
             <article class="leaderboard-summary-card">
                 <span class="progression-kicker">Score Formula</span>
-                <strong>Level · XP · Coins</strong>
+                <strong>Level · XP · Gold</strong>
                 <p>Temporary beta formula before MMR seasons.</p>
             </article>
         </section>
@@ -69,7 +69,7 @@
                     <span>Player</span>
                     <span>Level</span>
                     <span>XP</span>
-                    <span>Coins</span>
+                    <span>Gold</span>
                     <span>Score</span>
                 </div>
 
@@ -86,7 +86,7 @@
                 <article class="panel-card az-empty-beta-state-v1">
                     <span class="progression-kicker">No local leaderboard rows yet</span>
                     <h3>Play Training to put your account into the beta pool.</h3>
-                    <p class="subtitle">Leaderboard score currently uses level, XP and coins while ranked MMR is still on the roadmap.</p>
+                    <p class="subtitle">Leaderboard score currently uses level, XP and Gold while ranked MMR is still on the roadmap.</p>
                     <a href="{{ url_for('training') }}" class="btn">Play Training</a>
                 </article>
                 {% endfor %}
@@ -108,7 +108,7 @@
                     <span>Player</span>
                     <span>Level</span>
                     <span>XP</span>
-                    <span>Coins</span>
+                    <span>Gold</span>
                     <span>Score</span>
                 </div>
 

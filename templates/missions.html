@@ -59,8 +59,8 @@
                 </div>
 
                 <div class="menu-card">
-                    <strong>{{ user.coins }}</strong>
-                    <span>Coins</span>
+                    <strong>{{ wallet.balance|default(user.coins) }}</strong>
+                    <span>Gold</span>
                 </div>
             </div>
 
@@ -175,7 +175,7 @@
 
                     <div class="az-reward-pill">
                         <span>Reward</span>
-                        <strong>{{ mission.xp_reward }} XP + {{ mission.coin_reward }} coins</strong>
+                        <strong>{{ mission.xp_reward }} XP + {{ mission.coin_reward }} Gold</strong>
                     </div>
 
                     {% if mission.is_claimed %}

@@ -173,8 +173,8 @@
                     <span>XP</span>
                 </div>
                 <div class="az-profile-stat-v1">
-                    <strong>{{ user.coins }}</strong>
-                    <span>Coins</span>
+                    <strong>{{ wallet.balance|default(user.coins) }}</strong>
+                    <span>Gold</span>
                 </div>
                 <div class="az-profile-stat-v1">
                     <strong>{{ user.gems|default(0) }}</strong>
@@ -200,6 +200,26 @@
                 <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
             </div>
         </section>
+
+        {% if wallet.recent_rewards %}
+        <section class="deck-status">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Recent Gold</span>
+                    <h2>Latest wallet activity</h2>
+                </div>
+                <a href="{{ url_for('shop') }}" class="btn btn-secondary small-btn">Open Shop</a>
+            </div>
+            <div class="deck-list">
+                {% for entry in wallet.recent_rewards[:3] %}
+                    <div class="deck-line">
+                        <span>{{ entry.reason or entry.source }}</span>
+                        <strong>{% if entry.amount > 0 %}+{% endif %}{{ entry.amount }} Gold</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
 
 
         <section class="profile-hero-v117">
@@ -227,8 +247,8 @@
 
             <aside class="profile-wallet-v117">
                 <div>
-                    <span>Coins</span>
-                    <strong>{{ profile_stats.coins }}</strong>
+                    <span>Gold</span>
+                    <strong>{{ wallet.balance|default(profile_stats.coins) }}</strong>
                 </div>
                 <div>
                     <span>XP</span>
@@ -360,7 +380,7 @@
             <div class="menu-grid">
                 <a class="menu-card clickable-menu-card" href="{{ url_for('training') }}">
                     <strong>Play Training</strong>
-                    <span>Earn XP, coins and mission progress.</span>
+                    <span>Earn XP, Gold and mission progress.</span>
                 </a>
 
                 <a class="menu-card clickable-menu-card" href="{{ url_for('deck_builder') }}">

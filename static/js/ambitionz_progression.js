@@ -16,6 +16,8 @@
             "/match-history",
             "/roadmap",
             "/feedback",
+            "/shop",
+            "/booster-history",
             "/"
         ].indexOf(window.location.pathname) !== -1;
     }
@@ -26,7 +28,7 @@
 
         var toast = document.createElement("div");
         toast.className = "az-reward-toast";
-        toast.innerHTML = "<strong>Reward Ready</strong><span>Complete missions and claim your progress.</span>";
+        toast.innerHTML = "<strong>Reward Ready</strong><span>Complete missions, claim Gold and open boosters.</span>";
         document.body.appendChild(toast);
 
         document.querySelectorAll("button, .btn").forEach(function (button) {
@@ -105,7 +107,7 @@
             card.classList.toggle("is-available", !claimed && serverState !== "preview");
 
             if (claimed && title) title.textContent = "Collected Today";
-            if (claimed && copy) copy.textContent = "Next reward tomorrow. Play Training to progress missions now.";
+            if (claimed && copy) copy.textContent = "Next Gold reward tomorrow. Play Training to progress missions now.";
         });
     }
 

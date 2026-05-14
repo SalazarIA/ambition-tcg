@@ -1,6 +1,6 @@
 import re
 
-from models import FeedbackReport, MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, UserMission, db
+from models import BoosterHistory, EconomyLedger, FeedbackReport, InventoryOwnership, MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, UserMission, db
 
 from app import active_matches, emit_arena_state_v8, end_match, issue_password_reset_token, player_rooms, socket_state, socketio
 from conftest import create_user, csrf_token_from_response, login_session
@@ -28,7 +28,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v183" in body
+    assert "ambitionz-web-app-v184" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -570,7 +570,13 @@ def test_beta_loop_v1_events_are_accepted(client):
         "mission_progress",
         "mission_complete",
         "daily_claim",
+        "daily_claimed",
         "match_recorded",
+        "mission_reward_claimed",
+        "shop_purchase",
+        "booster_opened",
+        "currency_credit",
+        "currency_debit",
         "xp_awarded",
         "post_match_summary_view",
     ]:
@@ -587,7 +593,13 @@ def test_beta_loop_v1_events_are_accepted(client):
         "mission_progress",
         "mission_complete",
         "daily_claim",
+        "daily_claimed",
         "match_recorded",
+        "mission_reward_claimed",
+        "shop_purchase",
+        "booster_opened",
+        "currency_credit",
+        "currency_debit",
         "xp_awarded",
         "post_match_summary_view",
     ]
@@ -631,11 +643,13 @@ def test_daily_claim_is_persistent_and_once_per_day(client):
 
     db.session.refresh(user)
     first_total_xp = int(user.total_xp or 0)
+    first_gold = int(user.coins or 0)
     assert first_response.status_code == 200
     assert user.daily_last_checkin_date == today_key()
     assert user.daily_streak == 1
     assert user.daily_best_streak == 1
     assert first_total_xp == 35
+    assert first_gold == 1075
 
     mission = UserMission.query.filter_by(user_id=user.id, mission_key="return_daily", mission_date="beta").first()
     assert mission is not None
@@ -650,11 +664,157 @@ def test_daily_claim_is_persistent_and_once_per_day(client):
     db.session.refresh(user)
     assert second_response.status_code == 200
     assert int(user.total_xp or 0) == first_total_xp
+    assert int(user.coins or 0) == first_gold
     assert user.daily_streak == 1
 
     event_keys = [event.event_key for event in RetentionEvent.query.order_by(RetentionEvent.id.asc()).all()]
     assert "daily_claim" in event_keys
+    assert "daily_claimed" in event_keys
+    assert "currency_credit" in event_keys
     assert "xp_awarded" in event_keys
+
+
+def test_wallet_gold_api_contract_for_guest_and_logged_user(client):
+    guest_response = client.get("/api/wallet")
+    guest_payload = guest_response.get_json()
+
+    assert guest_response.status_code == 200
+    assert guest_payload["ok"] is True
+    assert guest_payload["currency"] == "Gold"
+    assert guest_payload["is_guest"] is True
+    assert guest_payload["balance"] == 300
+
+    user = create_user(username="walletv1", email="walletv1@example.com")
+    user.coins = 125
+    db.session.commit()
+    csrf_token = login_session(client, user)
+
+    balance_response = client.get("/api/wallet")
+    balance_payload = balance_response.get_json()
+    assert balance_payload["balance"] == 125
+    assert balance_payload["currency"] == "Gold"
+
+    credit_response = client.post(
+        "/api/wallet/credit",
+        json={"amount": 25},
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert credit_response.status_code == 200
+    assert credit_response.get_json()["balance"] == 150
+
+    debit_response = client.post(
+        "/api/wallet/debit",
+        json={"amount": 70},
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert debit_response.status_code == 200
+    assert debit_response.get_json()["balance"] == 80
+
+    invalid_response = client.post(
+        "/api/wallet/debit",
+        json={"amount": 999},
+        headers={"X-CSRFToken": csrf_token},
+    )
+    invalid_payload = invalid_response.get_json()
+    db.session.refresh(user)
+
+    assert invalid_response.status_code == 400
+    assert invalid_payload["error"] == "insufficient_gold"
+    assert invalid_payload["balance"] == 80
+    assert int(user.coins or 0) == 80
+    assert EconomyLedger.query.filter_by(user_id=user.id).count() >= 2
+
+
+def test_shop_purchase_spends_gold_and_opens_booster_once(client):
+    user = create_user(username="shopv2", email="shopv2@example.com")
+    user.coins = 1000
+    db.session.commit()
+    csrf_token = login_session(client, user)
+
+    shop_response = client.get("/shop")
+    shop_body = shop_response.get_data(as_text=True)
+    token_match = re.search(r'name="purchase_token" value="([^"]+)"', shop_body)
+    assert shop_response.status_code == 200
+    assert token_match
+    assert "Basic Booster Pack" in shop_body
+    assert "Daily Deal" in shop_body
+    assert "Founder / Supporter Pack" in shop_body
+    assert "No real-money checkout is active" in shop_body
+
+    response = client.post(
+        "/shop/purchase",
+        data={
+            "_csrf_token": csrf_token,
+            "purchase_token": token_match.group(1),
+            "offer_key": "basic_booster",
+        },
+        follow_redirects=True,
+    )
+    body = response.get_data(as_text=True)
+    db.session.refresh(user)
+
+    assert response.status_code == 200
+    assert "Cards Pulled" in body
+    assert "Gold" in body
+    assert int(user.coins or 0) == 700
+    assert BoosterHistory.query.filter_by(user_id=user.id).count() == 1
+    assert InventoryOwnership.query.filter_by(user_id=user.id).count() >= 1
+
+    duplicate_response = client.post(
+        "/shop/purchase",
+        data={
+            "_csrf_token": csrf_token,
+            "purchase_token": token_match.group(1),
+            "offer_key": "basic_booster",
+        },
+        follow_redirects=True,
+    )
+    db.session.refresh(user)
+
+    assert duplicate_response.status_code == 200
+    assert BoosterHistory.query.filter_by(user_id=user.id).count() == 1
+    assert int(user.coins or 0) == 700
+
+    event_keys = [event.event_key for event in RetentionEvent.query.order_by(RetentionEvent.id.asc()).all()]
+    assert "shop_purchase" in event_keys
+    assert "booster_opened" in event_keys
+    assert "currency_debit" in event_keys
+
+
+def test_booster_open_api_returns_cards_and_prevents_negative_gold(client):
+    user = create_user(username="boosterv1", email="boosterv1@example.com")
+    user.coins = 300
+    db.session.commit()
+    csrf_token = login_session(client, user)
+
+    response = client.post(
+        "/api/booster/open",
+        json={"offer_key": "basic_booster", "seed": 81088},
+        headers={"X-CSRFToken": csrf_token},
+    )
+    payload = response.get_json()
+    db.session.refresh(user)
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["balance"] == 0
+    assert len(payload["cards"]) == 5
+    assert all(card.get("id") for card in payload["cards"])
+    assert BoosterHistory.query.filter_by(user_id=user.id).count() == 1
+    assert int(user.coins or 0) == 0
+
+    second_response = client.post(
+        "/api/booster/open",
+        json={"offer_key": "basic_booster", "seed": 81088},
+        headers={"X-CSRFToken": csrf_token},
+    )
+    second_payload = second_response.get_json()
+    db.session.refresh(user)
+
+    assert second_response.status_code == 402
+    assert second_payload["error"] == "insufficient_gold"
+    assert second_payload["balance"] == 0
+    assert int(user.coins or 0) == 0
 
 
 def test_beta_missions_progress_from_real_routes(client):
@@ -691,6 +851,8 @@ def test_beta_missions_progress_from_real_routes(client):
     assert claim_response.status_code == 200
     assert missions["view_collection"].is_claimed is True
     assert user.total_xp == 20
+    assert user.coins == 1020
+    assert EconomyLedger.query.filter_by(user_id=user.id, source="mission_claim").count() == 1
 
 
 def test_match_end_tracks_mission_v2_combat_progress(client, monkeypatch):

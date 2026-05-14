@@ -154,7 +154,8 @@ def build_post_match_payload(match, viewer_key, result, rewards):
             "reward_preview": {
                 "xp": int((rewards or {}).get("xp", 0) or 0),
                 "coins": int((rewards or {}).get("coins", 0) or 0),
-                "label": "Reward summary",
+                "gold": int((rewards or {}).get("coins", 0) or 0),
+                "label": "XP + Gold reward",
             },
             "campaign_chapter_id": match.get("campaign_chapter_id"),
             "campaign": match.get("campaign") or {},
@@ -196,7 +197,8 @@ def build_post_match_payload(match, viewer_key, result, rewards):
             "reward_preview": {
                 "xp": int((rewards or {}).get("xp", 0) or 0),
                 "coins": int((rewards or {}).get("coins", 0) or 0),
-                "label": "Reward summary",
+                "gold": int((rewards or {}).get("coins", 0) or 0),
+                "label": "XP + Gold reward",
             },
             "summary": {
                 "title": result,

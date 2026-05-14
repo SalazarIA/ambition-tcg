@@ -138,6 +138,18 @@
     function markRecentlyUnlockedCards() {
         var cards = Array.from(document.querySelectorAll(".az-game-collection-page .collection-card[data-card-id]"));
         if (!cards.length) return;
+        var serverRecent = [];
+        var serverData = document.getElementById("az-recent-unlocks-data");
+
+        if (serverData) {
+            try {
+                serverRecent = JSON.parse(serverData.textContent || "[]");
+                if (!Array.isArray(serverRecent)) serverRecent = [];
+                serverRecent = serverRecent.map(String).filter(Boolean);
+            } catch (error) {
+                serverRecent = [];
+            }
+        }
 
         var ownedIds = cards
             .filter(function (card) {
@@ -163,7 +175,13 @@
             return !previousSet.has(id);
         });
 
-        if (!previous.length) {
+        if (serverRecent.length) {
+            newlyOwned = ownedIds.filter(function (id) {
+                return serverRecent.indexOf(id) !== -1;
+            });
+        }
+
+        if (!previous.length && !serverRecent.length) {
             newlyOwned = ownedIds.slice(0, 3);
         }
 

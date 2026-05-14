@@ -91,7 +91,7 @@
             <div class="az-collection-progress-copy-v1">
                 <span class="progression-kicker">{{ collection_stats.catalog_label|default('Beta Catalog') }}</span>
                 <h2>Collection Progress</h2>
-                <p class="subtitle">Owned cards and locked catalog entries are shown from the current inventory ledger. This is a beta catalog view, not a shop or pack system.</p>
+                <p class="subtitle">Owned cards and locked catalog entries are shown from the current inventory ledger. Booster unlocks appear here as collection progress.</p>
             </div>
             <div class="az-collection-progress-panel-v1">
                 <div class="az-collection-progress-row-v1">
@@ -142,6 +142,19 @@
                 <span class="az-faction-chip-v1 faction-arcane">Arcane Neutral</span>
             </div>
         </section>
+
+        {% if recent_unlocks %}
+        <section id="az-collection-reward-context" class="deck-status az-collection-unlock-feedback-v1" aria-label="Recently unlocked cards">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">New Unlocks</span>
+                    <h2>{{ recent_unlocks|length }} card{{ '' if recent_unlocks|length == 1 else 's' }} just entered your collection</h2>
+                    <p class="subtitle">Fresh booster pulls are marked with a New badge below. Use filters or Deck Builder to inspect them.</p>
+                </div>
+                <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary small-btn">Improve Deck</a>
+            </div>
+        </section>
+        {% endif %}
 
         <section class="deck-status deck-filter-panel">
             <h2>Filters</h2>
@@ -306,6 +319,7 @@
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script type="application/json" id="az-recent-unlocks-data">{{ recent_unlocks|default([])|tojson }}</script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=4"></script>
 </body>

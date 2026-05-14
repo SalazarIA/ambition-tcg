@@ -38,8 +38,8 @@
 
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Booster Shop</h1>
-                <p>Coins: <strong>{{ user.coins }}</strong></p>
+                <h1>Beta Shop</h1>
+                <p>Gold: <strong>{{ wallet.balance|default(user.coins) }}</strong> · earned in play only</p>
             </div>
 
             <a href="{{ url_for('booster_history') }}" class="btn btn-secondary small-btn">History</a>
@@ -56,15 +56,14 @@
 
         <section class="shop-hero-v124">
             <div>
-                <span class="progression-kicker">Booster Economy</span>
-                <h2>Open packs to expand strategy, not to break balance.</h2>
+                <span class="progression-kicker">Gold Economy Beta</span>
+                <h2>Spend earned Gold on boosters. No real-money checkout is active.</h2>
                 <p>
-                    Boosters add beta cards to your collection. The deck remains capped at 30 cards:
-                    21 monsters, 6 spells and 3 traps.
+                    Gold comes from Daily, Missions and match rewards. Boosters add beta cards to your collection while the deck remains capped at 30 cards.
                 </p>
 
                 <div class="progression-action-row">
-                    <a href="{{ url_for('training') }}" class="btn">Earn Coins</a>
+                    <a href="{{ url_for('training') }}" class="btn">Earn Gold</a>
                     <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Improve Deck</a>
                     <a href="{{ url_for('feedback') }}" class="btn btn-secondary">Suggest Pack</a>
                 </div>
@@ -73,10 +72,10 @@
             <aside class="shop-wallet-v124">
                 <span class="progression-kicker">Wallet</span>
                 <div class="shop-wallet-grid-v124">
-                    <div><span>Coins</span><strong>{{ user.coins }}</strong></div>
-                    <div><span>Pack Cost</span><strong>{{ booster_cost|default(300) }}</strong></div>
+                    <div><span>Gold</span><strong>{{ wallet.balance|default(user.coins) }}</strong></div>
+                    <div><span>Basic Pack</span><strong>{{ booster_cost|default(300) }}</strong></div>
                     <div><span>Cards</span><strong>{{ booster_size|default(5) }}</strong></div>
-                    <div><span>Status</span><strong>{% if can_afford_booster %}Ready{% else %}Need Coins{% endif %}</strong></div>
+                    <div><span>Status</span><strong>{% if can_afford_booster %}Ready{% else %}Need Gold{% endif %}</strong></div>
                 </div>
             </aside>
         </section>
@@ -90,54 +89,44 @@
             </div>
         </section>
 
-        <section class="booster-pack-grid-v124">
-            <article class="booster-pack-card-v124 active">
-                <div class="booster-pack-mark-v124">A</div>
-                <span class="progression-kicker">Active Pack</span>
-                <h2>Elemental Booster</h2>
-                <p>Contains <strong>{{ booster_size|default(5) }}</strong> Common/Uncommon beta cards from the current 250-card catalog.</p>
+        <section class="booster-pack-grid-v124" aria-label="Beta shop offers">
+            {% for offer in shop_offers %}
+            <article class="booster-pack-card-v124 {% if offer.status == 'available' %}active{% else %}locked{% endif %}" data-shop-offer="{{ offer.key }}" data-shop-status="{{ offer.status }}">
+                <div class="booster-pack-mark-v124">{{ offer.title[:1] }}</div>
+                <span class="progression-kicker">{{ offer.status_label }}</span>
+                <h2>{{ offer.title }}</h2>
+                <p>{{ offer.description }}</p>
 
                 <div class="deck-list">
-                    <div class="deck-line"><span>Common Odds</span><strong>High</strong></div>
-                    <div class="deck-line"><span>Uncommon Odds</span><strong>Beta Tuned</strong></div>
-                    <div class="deck-line"><span>Purpose</span><strong>Collection Growth</strong></div>
-                    <div class="deck-line"><span>Deck Rule</span><strong>30 Fixed</strong></div>
+                    <div class="deck-line"><span>Cost</span><strong>{{ offer.cost_label }}</strong></div>
+                    <div class="deck-line"><span>Reward</span><strong>{{ offer.reward_preview }}</strong></div>
+                    <div class="deck-line"><span>Cards</span><strong>{{ offer.cards }}</strong></div>
+                    <div class="deck-line"><span>State</span><strong>{{ offer.status_label }}</strong></div>
                 </div>
 
-                <form method="POST" data-booster-open-form>
+                <p class="subtitle">{{ offer.message }}</p>
+
+                {% if not offer.disabled %}
+                <form method="POST" action="{{ url_for('shop_purchase') }}" data-booster-open-form data-shop-purchase-form>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                    {% if can_afford_booster %}
-                        <button type="submit" class="btn full-btn">Open Booster</button>
-                    {% else %}
-                        <button type="button" class="btn btn-secondary full-btn" disabled>Not Enough Coins</button>
-                    {% endif %}
+                    <input type="hidden" name="purchase_token" value="{{ purchase_token }}">
+                    <input type="hidden" name="offer_key" value="{{ offer.key }}">
+                    <button type="submit" class="btn full-btn">{{ offer.cta }}</button>
                 </form>
+                {% else %}
+                    <button type="button" class="btn btn-secondary full-btn" disabled>{{ offer.cta }}</button>
+                {% endif %}
             </article>
-
-            <article class="booster-pack-card-v124 locked">
-                <div class="booster-pack-mark-v124">F</div>
-                <span class="progression-kicker">Roadmap Teaser</span>
-                <h2>Fury Pack</h2>
-                <p>Roadmap preview for Fire/Fury pressure decks. The active Elemental Booster remains the current beta pack.</p>
-                <button type="button" class="btn btn-secondary full-btn" disabled>Roadmap Preview</button>
-            </article>
-
-            <article class="booster-pack-card-v124 locked">
-                <div class="booster-pack-mark-v124">S</div>
-                <span class="progression-kicker">Roadmap Teaser</span>
-                <h2>Sigil Pack</h2>
-                <p>Roadmap preview by playstyle: Burst, Control, Comeback and Synergy. Not part of the current beta economy.</p>
-                <button type="button" class="btn btn-secondary full-btn" disabled>Roadmap Preview</button>
-            </article>
+            {% endfor %}
         </section>
 
         {% if not can_afford_booster %}
             <section class="deck-status az-empty-beta-state-v1">
                 <span class="progression-kicker">Shop unavailable for this wallet</span>
-                <h2>You need more beta coins before opening a booster.</h2>
+                <h2>You need more Gold before opening a booster.</h2>
                 <p class="subtitle">This is not a real-money store. Earn progression through Training, Daily and Missions, then return when ready.</p>
                 <div class="progression-action-row">
-                    <a href="{{ url_for('training') }}" class="btn">Earn Coins</a>
+                    <a href="{{ url_for('training') }}" class="btn">Earn Gold</a>
                     <a href="{{ url_for('daily') }}" class="btn btn-secondary">Daily Reward</a>
                     <a href="{{ url_for('roadmap') }}" class="btn btn-secondary">Roadmap</a>
                 </div>
@@ -148,7 +137,13 @@
             <section class="deck-status booster-result-v124">
                 <span class="progression-kicker">Booster Result</span>
                 <h2>Cards Pulled</h2>
-                <p class="subtitle">These cards were added to your collection. Open the deck builder to use them.</p>
+                <p class="subtitle">
+                    {% if last_opening %}
+                        {{ last_opening.offer.title|default('Booster') }} opened for {{ last_opening.spent|default(0) }} Gold. Balance now {{ last_opening.balance|default(wallet.balance) }} Gold.
+                    {% else %}
+                        These cards were added to your collection. Open the deck builder to use them.
+                    {% endif %}
+                </p>
             </section>
 
             <section class="az-card-grid-v1">

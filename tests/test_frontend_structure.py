@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v183"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -444,7 +444,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v183"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -503,7 +503,54 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".az-public-onboarding-v1" in css
     assert ".az-roadmap-card-v3" in css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v183"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
+
+
+def test_blocks_81_88_beta_economy_contract():
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+    progression_py = (PROJECT_ROOT / "game" / "progression.py").read_text()
+    shop = (PROJECT_ROOT / "templates" / "shop.html").read_text()
+    daily = (PROJECT_ROOT / "templates" / "daily.html").read_text()
+    missions = (PROJECT_ROOT / "templates" / "missions.html").read_text()
+    profile = (PROJECT_ROOT / "templates" / "profile.html").read_text()
+    progression = (PROJECT_ROOT / "templates" / "progression.html").read_text()
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    booster_history = (PROJECT_ROOT / "templates" / "booster_history.html").read_text()
+    roadmap = (PROJECT_ROOT / "templates" / "roadmap.html").read_text()
+    arena_js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    cards_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_cards.js").read_text()
+    service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
+
+    assert "GOLD_DISPLAY_NAME = \"Gold\"" in app_py
+    assert '@app.route("/api/wallet"' in app_py
+    assert '@app.route("/api/wallet/credit"' in app_py
+    assert '@app.route("/api/wallet/debit"' in app_py
+    assert '@app.route("/shop/purchase"' in app_py
+    assert '@app.route("/api/booster/open"' in app_py
+    assert "purchase_shop_offer" in app_py
+    assert "open_booster_for_user" in app_py
+    assert '"shop_purchase"' in app_py
+    assert '"booster_opened"' in app_py
+    assert '"currency_credit"' in app_py
+    assert '"currency_debit"' in app_py
+    assert "45 XP + 40 Gold" in progression_py
+    assert "35 XP + 75 Gold" in progression_py
+    assert "Basic Booster Pack" in app_py
+    assert "Daily Deal" in app_py
+    assert "Founder / Supporter Pack" in app_py
+    assert "No real-money checkout is active" in shop
+    assert "data-shop-offer" in shop
+    assert "Gold" in daily
+    assert "Gold" in missions
+    assert "Recent Gold" in profile
+    assert "Gold Ledger" in progression
+    assert 'id="az-collection-reward-context"' in collection
+    assert 'id="az-recent-unlocks-data"' in collection
+    assert "Earn Gold" in booster_history
+    assert "Gold is beta currency only" in roadmap
+    assert "Gold +" in arena_js
+    assert "az-recent-unlocks-data" in cards_js
+    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
 
 
 def test_arena_premium_hud_contract():

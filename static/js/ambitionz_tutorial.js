@@ -51,7 +51,7 @@
         {
             key: "reward",
             title: "Progress after every match",
-            copy: "Training gives XP, coins and mission progress. After the duel, open Daily Quests or improve your deck.",
+            copy: "Training gives XP, Gold and mission progress. After the duel, open Daily Quests or improve your deck.",
             target: '.az-v7-hand, .az-v7-root',
             actionLabel: "Got it"
         }

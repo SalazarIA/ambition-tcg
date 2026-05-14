@@ -57,10 +57,11 @@
                 <div>
                     <span class="progression-kicker">Progression Summary</span>
                     <h2>Level {{ progression_stats.level }}</h2>
-                    <p>
-                        {{ progression_stats.xp }}/{{ progression_stats.next_level_xp }} XP ·
-                        {{ progression_stats.total_matches }} matches played
-                    </p>
+                <p>
+                    {{ progression_stats.xp }}/{{ progression_stats.next_level_xp }} XP ·
+                        {{ progression_stats.total_matches }} matches played ·
+                        {{ wallet.balance|default(progression_stats.gold_balance) }} Gold
+                </p>
                 </div>
             </div>
 
@@ -73,6 +74,7 @@
                     <strong>{% if progression_stats.first_training_completed %}Done{% else %}Ready{% endif %}</strong>
                 </article>
                 <article><span>Deck</span><strong>{% if deck_status.is_valid %}Valid{% else %}Check{% endif %}</strong></article>
+                <article><span>Gold</span><strong>{{ wallet.balance|default(progression_stats.gold_balance) }}</strong></article>
             </div>
 
             <div class="az-retention-progress-v1">
@@ -85,6 +87,26 @@
                 </div>
             </div>
         </section>
+
+        {% if wallet.recent_rewards %}
+        <section class="deck-status az-wallet-recent-rewards-v1">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Gold Ledger</span>
+                    <h2>Recent reward flow</h2>
+                </div>
+                <a href="{{ url_for('shop') }}" class="btn btn-secondary small-btn">Spend Gold</a>
+            </div>
+            <div class="deck-list">
+                {% for entry in wallet.recent_rewards[:4] %}
+                    <div class="deck-line">
+                        <span>{{ entry.reason or entry.source }}</span>
+                        <strong>{% if entry.amount > 0 %}+{% endif %}{{ entry.amount }} Gold</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
 
         <section class="az-beta-journey-v1 az-beta-journey-compact-v1" aria-label="Beta journey">
             <div class="az-beta-journey-head-v1">
@@ -108,7 +130,7 @@
                 <span class="progression-kicker">Ambition Loop</span>
                 <h2>Every match should push your account forward.</h2>
                 <p>
-                    Your loop is simple: play a quick duel, earn XP and coins, claim missions,
+                    Your loop is simple: play a quick duel, earn XP and Gold, claim missions,
                     open boosters, improve your deck and climb the ranking.
                 </p>
             </div>
@@ -125,6 +147,10 @@
                 <div>
                     <span>Collection</span>
                     <strong>{{ collection_progress.owned_unique }}/{{ collection_progress.catalog_total }}</strong>
+                </div>
+                <div>
+                    <span>Gold</span>
+                    <strong>{{ wallet.balance|default(progression_stats.gold_balance) }}</strong>
                 </div>
             </div>
         </div></section>
@@ -248,7 +274,7 @@
 
                             <div class="progression-mission-reward">
                                 <span>Reward</span>
-                                <strong>{{ mission.xp_reward }} XP + {{ mission.coin_reward }} coins</strong>
+                                <strong>{{ mission.xp_reward }} XP + {{ mission.coin_reward }} Gold</strong>
                             </div>
 
                             {% if mission.is_claimed %}

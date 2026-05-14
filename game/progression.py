@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from models import RewardLedger, UserMission, db
+from models import EconomyLedger, RewardLedger, UserMission, db
 
 
 BETA_MISSION_DATE = "beta"
@@ -14,8 +14,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Finish 1 Training match.",
         "target": 1,
         "xp_reward": 45,
-        "coin_reward": 0,
-        "reward_preview": "45 XP",
+        "coin_reward": 40,
+        "reward_preview": "45 XP + 40 Gold",
         "cta_endpoint": "training",
         "cta_label": "Play Training",
         "category": "Battle",
@@ -26,8 +26,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Win 1 Training match against the beta bot.",
         "target": 1,
         "xp_reward": 50,
-        "coin_reward": 0,
-        "reward_preview": "50 XP",
+        "coin_reward": 50,
+        "reward_preview": "50 XP + 50 Gold",
         "cta_endpoint": "training",
         "cta_label": "Play Training",
         "category": "Battle",
@@ -38,8 +38,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Deal 25 hero damage across completed matches.",
         "target": 25,
         "xp_reward": 40,
-        "coin_reward": 0,
-        "reward_preview": "40 XP",
+        "coin_reward": 35,
+        "reward_preview": "40 XP + 35 Gold",
         "cta_endpoint": "training",
         "cta_label": "Deal Damage",
         "category": "Combat",
@@ -50,8 +50,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Play 5 cards across completed matches.",
         "target": 5,
         "xp_reward": 35,
-        "coin_reward": 0,
-        "reward_preview": "35 XP",
+        "coin_reward": 30,
+        "reward_preview": "35 XP + 30 Gold",
         "cta_endpoint": "training",
         "cta_label": "Play Cards",
         "category": "Combat",
@@ -62,8 +62,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Play a Fire card to apply pressure.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 15,
+        "reward_preview": "20 XP + 15 Gold",
         "cta_endpoint": "training",
         "cta_label": "Use Fire",
         "category": "Element",
@@ -74,8 +74,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Play a Water card to build focus and resources.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 15,
+        "reward_preview": "20 XP + 15 Gold",
         "cta_endpoint": "training",
         "cta_label": "Use Water",
         "category": "Element",
@@ -86,8 +86,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Play an Earth card to lean into defense and board presence.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 15,
+        "reward_preview": "20 XP + 15 Gold",
         "cta_endpoint": "training",
         "cta_label": "Use Earth",
         "category": "Element",
@@ -98,8 +98,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Play a Plant card to practice control and growth.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 15,
+        "reward_preview": "20 XP + 15 Gold",
         "cta_endpoint": "training",
         "cta_label": "Use Plant",
         "category": "Element",
@@ -110,8 +110,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Gain 10 Ambition from intents or card effects.",
         "target": 10,
         "xp_reward": 35,
-        "coin_reward": 0,
-        "reward_preview": "35 XP",
+        "coin_reward": 25,
+        "reward_preview": "35 XP + 25 Gold",
         "cta_endpoint": "training",
         "cta_label": "Build Ambition",
         "category": "Intent",
@@ -122,8 +122,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Use Strike to push offensive pressure.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 15,
+        "reward_preview": "20 XP + 15 Gold",
         "cta_endpoint": "training",
         "cta_label": "Use Strike",
         "category": "Intent",
@@ -134,8 +134,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Use Guard to survive a dangerous exchange.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 15,
+        "reward_preview": "20 XP + 15 Gold",
         "cta_endpoint": "training",
         "cta_label": "Use Guard",
         "category": "Intent",
@@ -146,8 +146,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Use Focus to scale Ambition for later turns.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 15,
+        "reward_preview": "20 XP + 15 Gold",
         "cta_endpoint": "training",
         "cta_label": "Use Focus",
         "category": "Intent",
@@ -158,8 +158,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Complete the tutorial/onboarding step.",
         "target": 1,
         "xp_reward": 25,
-        "coin_reward": 0,
-        "reward_preview": "25 XP",
+        "coin_reward": 20,
+        "reward_preview": "25 XP + 20 Gold",
         "cta_endpoint": "tutorial",
         "cta_label": "Open Tutorial",
         "category": "Journey",
@@ -170,8 +170,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Open your Collection and inspect owned cards.",
         "target": 1,
         "xp_reward": 20,
-        "coin_reward": 0,
-        "reward_preview": "20 XP",
+        "coin_reward": 20,
+        "reward_preview": "20 XP + 20 Gold",
         "cta_endpoint": "collection",
         "cta_label": "Open Collection",
         "category": "Journey",
@@ -182,8 +182,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Save or validate the fixed 30-card beta deck.",
         "target": 1,
         "xp_reward": 30,
-        "coin_reward": 0,
-        "reward_preview": "30 XP",
+        "coin_reward": 25,
+        "reward_preview": "30 XP + 25 Gold",
         "cta_endpoint": "deck_builder",
         "cta_label": "Check Deck",
         "category": "Journey",
@@ -194,8 +194,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Finish 1 contextual Campaign chapter duel.",
         "target": 1,
         "xp_reward": 60,
-        "coin_reward": 0,
-        "reward_preview": "60 XP",
+        "coin_reward": 55,
+        "reward_preview": "60 XP + 55 Gold",
         "cta_endpoint": "campaign",
         "cta_label": "Start Campaign",
         "category": "Journey",
@@ -206,8 +206,8 @@ BETA_MISSION_DEFINITIONS = [
         "description": "Claim today's Daily Check-In.",
         "target": 1,
         "xp_reward": 35,
-        "coin_reward": 0,
-        "reward_preview": "35 XP",
+        "coin_reward": 75,
+        "reward_preview": "35 XP + 75 Gold",
         "cta_endpoint": "daily",
         "cta_label": "Claim Daily",
         "category": "Return",
@@ -355,11 +355,28 @@ def award_xp(user, amount, source="system", metadata=None, reward_key=None):
     }
 
 
-def award_coins(user, amount):
+def award_coins(user, amount, source="mission_claim", reason=None, metadata=None):
     if not user:
         return
 
-    user.coins += int(amount)
+    amount = max(0, int(amount or 0))
+
+    if amount <= 0:
+        return
+
+    user.coins = max(0, int(user.coins or 0) + amount)
+    db.session.add(
+        EconomyLedger(
+            user_id=user.id,
+            currency="coins",
+            amount=amount,
+            balance_after=int(user.coins or 0),
+            source=str(source or "mission_claim")[:80],
+            reason=str(reason or "Mission Gold reward.")[:180],
+            reference_type="mission",
+            metadata_json=json.dumps(metadata or {}, ensure_ascii=False)[:4000],
+        )
+    )
 
 
 def ensure_daily_missions(user):
@@ -497,7 +514,13 @@ def increment_beta_mission(user, mission_key, amount=1):
         "is_complete": mission.is_complete,
         "just_completed": mission.is_complete and not before_complete,
         "changed": int(mission.progress or 0) != before_progress,
-        "reward_preview": f"{mission.xp_reward} XP" if int(mission.xp_reward or 0) else "Progress",
+        "reward_preview": (
+            f"{mission.xp_reward} XP + {mission.coin_reward} Gold"
+            if int(mission.coin_reward or 0)
+            else f"{mission.xp_reward} XP"
+            if int(mission.xp_reward or 0)
+            else "Progress"
+        ),
     }
 
 
@@ -526,8 +549,14 @@ def claim_mission(user, mission_id):
         metadata={"mission_key": mission.mission_key, "mission_id": mission.id},
         reward_key=f"mission:{user.id}:{mission.id}",
     )
-    award_coins(user, mission.coin_reward)
+    award_coins(
+        user,
+        mission.coin_reward,
+        source="mission_claim",
+        reason=f"Mission reward: {mission.title}",
+        metadata={"mission_key": mission.mission_key, "mission_id": mission.id},
+    )
 
     db.session.commit()
 
-    return True, f"Mission claimed: +{mission.xp_reward} XP and +{mission.coin_reward} coins."
+    return True, f"Mission claimed: +{mission.xp_reward} XP and +{mission.coin_reward} Gold."

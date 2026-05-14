@@ -45,14 +45,14 @@
             <div>
                 <span class="progression-kicker">Pack Memory</span>
                 <h2>Review what entered your collection.</h2>
-                <p>Use this page to understand your pulls, rarity spread and future deck-building options.</p>
+                <p>Use this page to understand your pulls, rarity spread and future deck-building options. Boosters use earned Gold only.</p>
             </div>
 
             <aside class="booster-history-odds-v125">
                 <div><span>Common</span><strong>78%</strong></div>
                 <div><span>Uncommon</span><strong>22%</strong></div>
                 <div><span>Cards / Pack</span><strong>5</strong></div>
-                <div><span>Cost</span><strong>300</strong></div>
+                <div><span>Cost</span><strong>300 Gold</strong></div>
             </aside>
         </section>
 
@@ -69,7 +69,7 @@
                         </header>
 
                         <div class="booster-history-stats-v125">
-                            <div><span>Cost</span><strong>{{ history.cost }}</strong></div>
+                            <div><span>Cost</span><strong>{{ history.cost }} Gold</strong></div>
                             <div><span>Common</span><strong>{{ history.common_count }}</strong></div>
                             <div><span>Uncommon</span><strong>{{ history.uncommon_count }}</strong></div>
                         </div>
@@ -97,9 +97,9 @@
             <section class="deck-status az-empty-beta-state-v1">
                 <span class="progression-kicker">No booster history yet</span>
                 <h2>Your pack memory starts after the first opening.</h2>
-                <p class="subtitle">Play Training, earn beta currency, then return to review cards added to your collection.</p>
+                <p class="subtitle">Play Training, earn Gold, then return to review cards added to your collection.</p>
                 <div class="progression-action-row">
-                    <a href="{{ url_for('training') }}" class="btn">Earn Coins</a>
+                    <a href="{{ url_for('training') }}" class="btn">Earn Gold</a>
                     <a href="{{ url_for('shop') }}" class="btn btn-secondary">Open Booster</a>
                 </div>
             </section>

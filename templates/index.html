@@ -111,7 +111,7 @@
             <article>
                 <span>Rewards</span>
                 <h2>Missões e recompensas</h2>
-                <p>Complete objetivos simples de batalha e mantenha o retorno diário em beta.</p>
+                <p>Complete objetivos simples, ganhe XP e Gold, e abra boosters sem pagamento real.</p>
                 <a href="{{ url_for('missions') }}">Ver Missões</a>
             </article>
             <article>
@@ -246,6 +246,7 @@
                 <a href="{{ url_for('tutorial') }}">Tutorial<span>Learn intent, lanes and Ready</span></a>
                 <a href="{{ url_for('campaign') }}">Campaign<span>Follow the beta chapter path</span></a>
                 <a href="{{ url_for('daily') }}">Daily<span>Check today's beta reward preview</span></a>
+                <a href="{{ url_for('shop') }}">Shop<span>Spend earned Gold on beta boosters</span></a>
                 {% if user %}
                     <a href="{{ url_for('missions') }}">Missions<span>Complete loop objectives</span></a>
                     <a href="{{ url_for('match_history') }}">Match History<span>Review recent battles</span></a>

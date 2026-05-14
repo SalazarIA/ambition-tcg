@@ -62,7 +62,7 @@ from game.state import create_player_state, set_player_intent
 from game.matchmaking import generate_private_room_code, is_valid_room_code, normalize_room_code
 from game.bot_ai import bot_choose_play
 from game.rewards import apply_match_rewards
-from services.economy_service import cosmetic_catalog_for_user, grant_cosmetic, spend_currency, add_currency, PREMIUM_CURRENCY_KEY
+from services.economy_service import cosmetic_catalog_for_user, grant_cosmetic, spend_currency, add_currency, get_balance, record_ledger, PREMIUM_CURRENCY_KEY, SOFT_CURRENCY_KEY
 from game.match_utils import safe_user_id, player_display_name, get_match_result_label
 from game.card_view import enrich_cards_for_view
 from game.state import create_player_state, normalize_intent
@@ -115,6 +115,14 @@ socket_event_hits = {}
 private_waiting_rooms = {}
 login_attempts = {}
 retention_event_limiter = SlidingWindowRateLimiter()
+wallet_event_limiter = SlidingWindowRateLimiter()
+economy_action_limiter = SlidingWindowRateLimiter()
+
+GOLD_CURRENCY_KEY = SOFT_CURRENCY_KEY
+GOLD_DISPLAY_NAME = "Gold"
+GUEST_GOLD_SESSION_KEY = "ambitionz_guest_gold_balance"
+GUEST_GOLD_STARTING_BALANCE = 300
+DAILY_GOLD_REWARD = 75
 
 CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event"}
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
@@ -125,19 +133,25 @@ ALLOWED_RETENTION_EVENTS = {
     "collection_view",
     "daily_view",
     "daily_claim",
+    "daily_claimed",
     "deck_builder_view",
     "deck_save_attempt",
     "feedback_submit",
     "feedback_view",
+    "booster_opened",
+    "currency_credit",
+    "currency_debit",
     "home_cta_play",
     "match_recorded",
     "mission_complete",
     "mission_cta_click",
     "mission_progress",
+    "mission_reward_claimed",
     "onboarding_view",
     "page_view",
     "post_match_summary_view",
     "roadmap_view",
+    "shop_purchase",
     "training_result_view",
     "training_start_click",
     "tutorial_start",
@@ -512,7 +526,7 @@ def build_beta_journey(user=None, deck_status=None):
         {
             "number": "04",
             "title": "Review Reward",
-            "description": "Check XP, coins and the post-match reward preview.",
+            "description": "Check XP, Gold and the post-match reward preview.",
             "url": url_for("progression") if user else url_for("login"),
             "cta": "Progression",
             "status": "Done" if total_matches > 0 else "After match",
@@ -754,16 +768,16 @@ def build_daily_checkin(user, missions):
 
     if not user:
         state = "Beta preview"
-        message = "Login to activate daily missions and reward previews."
+        message = "Login to activate daily missions, XP and Gold reward previews."
     elif claimed_today:
         state = "Checked in"
-        message = "Daily XP claimed. Play Training or continue Campaign before tomorrow's reset."
+        message = "Daily XP and Gold claimed. Play Training or continue Campaign before tomorrow's reset."
     elif claimable_count:
         state = "Reward ready"
         message = "Daily check-in is ready, and completed missions can still be claimed."
     else:
         state = "Available today"
-        message = "Claim today's beta XP, then play Training to move the mission board forward."
+        message = "Claim today's beta XP and Gold, then play Training to move the mission board forward."
 
     return {
         "state": state,
@@ -771,13 +785,13 @@ def build_daily_checkin(user, missions):
         "today": today,
         "claimed_today": claimed_today,
         "can_claim": bool(user and not claimed_today),
-        "claim_reward": "35 XP beta",
-        "next_reward": "Tomorrow: 35 XP beta + mission progress",
+        "claim_reward": f"35 XP + {DAILY_GOLD_REWARD} Gold",
+        "next_reward": f"Tomorrow: 35 XP + {DAILY_GOLD_REWARD} Gold + mission progress",
         "reward_card": {
             "label": "Daily Reward",
             "available": bool(user and not claimed_today),
             "claimed": claimed_today,
-            "preview": "35 XP beta",
+            "preview": f"35 XP + {DAILY_GOLD_REWARD} Gold",
             "tomorrow": "Next reward tomorrow",
         },
         "active_count": active_count,
@@ -789,11 +803,11 @@ def build_daily_checkin(user, missions):
         "streak_label": f"{streak} day streak" if user else "Preview only",
         "reset_label": "Resets tomorrow at local midnight",
         "calendar": [
-            {"day": "Day 1", "reward": "35 XP beta", "status": "Claimed" if claimed_today and streak >= 1 else state},
-            {"day": "Day 2", "reward": "35 XP beta", "status": "Current streak" if streak >= 2 else "Future"},
-            {"day": "Day 3", "reward": "40 XP preview", "status": "Current streak" if streak >= 3 else "Future"},
-            {"day": "Day 4", "reward": "40 XP preview", "status": "Current streak" if streak >= 4 else "Future"},
-            {"day": "Day 5", "reward": "45 XP preview", "status": "Current streak" if streak >= 5 else "Future"},
+            {"day": "Day 1", "reward": f"35 XP + {DAILY_GOLD_REWARD} Gold", "status": "Claimed" if claimed_today and streak >= 1 else state},
+            {"day": "Day 2", "reward": f"35 XP + {DAILY_GOLD_REWARD} Gold", "status": "Current streak" if streak >= 2 else "Future"},
+            {"day": "Day 3", "reward": "40 XP + 90 Gold preview", "status": "Current streak" if streak >= 3 else "Future"},
+            {"day": "Day 4", "reward": "40 XP + 90 Gold preview", "status": "Current streak" if streak >= 4 else "Future"},
+            {"day": "Day 5", "reward": "45 XP + 120 Gold preview", "status": "Current streak" if streak >= 5 else "Future"},
         ],
     }
 
@@ -950,6 +964,286 @@ def record_retention_event(user, event_key, page="", metadata=None, commit=False
         if commit:
             db.session.rollback()
         return None
+
+
+def normalize_gold_amount(amount, default=0, maximum=100000):
+    try:
+        value = int(amount)
+    except (TypeError, ValueError):
+        value = int(default)
+
+    return max(0, min(int(maximum), value))
+
+
+def get_guest_gold_balance():
+    balance = session.get(GUEST_GOLD_SESSION_KEY)
+
+    try:
+        balance = int(balance)
+    except (TypeError, ValueError):
+        balance = GUEST_GOLD_STARTING_BALANCE
+
+    balance = max(0, balance)
+    session[GUEST_GOLD_SESSION_KEY] = balance
+    return balance
+
+
+def set_guest_gold_balance(balance):
+    balance = max(0, int(balance or 0))
+    session[GUEST_GOLD_SESSION_KEY] = balance
+    return balance
+
+
+def get_gold_balance(user=None):
+    if user:
+        return max(0, int(get_balance(user, GOLD_CURRENCY_KEY) or 0))
+
+    return get_guest_gold_balance()
+
+
+def gold_wallet_payload(user=None, message=None, ok=True):
+    balance = get_gold_balance(user)
+    recent = []
+
+    if user:
+        try:
+            recent = (
+                EconomyLedger.query
+                .filter_by(user_id=user.id, currency=GOLD_CURRENCY_KEY)
+                .order_by(EconomyLedger.id.desc())
+                .limit(5)
+                .all()
+            )
+        except Exception as error:
+            print("GOLD WALLET RECENT ERROR:", type(error).__name__, error)
+            recent = []
+
+    return {
+        "ok": bool(ok),
+        "currency": GOLD_DISPLAY_NAME,
+        "currency_key": GOLD_CURRENCY_KEY,
+        "balance": balance,
+        "is_guest": not bool(user),
+        "message": message or f"{balance} {GOLD_DISPLAY_NAME} available.",
+        "recent_rewards": [
+            {
+                "amount": int(entry.amount or 0),
+                "source": entry.source,
+                "reason": entry.reason or "",
+                "balance_after": int(entry.balance_after or 0),
+            }
+            for entry in recent
+        ],
+    }
+
+
+def wallet_mutation_allowed(user=None):
+    return bool(
+        app.config.get("TESTING")
+        or app.config.get("DEV_TOOLS_ENABLED")
+        or getattr(user, "is_admin", False)
+    )
+
+
+def wallet_rate_limited(action, limit=12, window_seconds=60):
+    key = request_rate_limit_key(
+        request,
+        session,
+        app.config.get("SECRET_KEY", ""),
+        f"wallet:{action}",
+        identity=str(getattr(current_user(), "id", None) or "guest"),
+    )
+    return not wallet_event_limiter.allow(key, limit, window_seconds)
+
+
+def economy_rate_limited(action, limit=8, window_seconds=20):
+    key = request_rate_limit_key(
+        request,
+        session,
+        app.config.get("SECRET_KEY", ""),
+        f"economy:{action}",
+        identity=str(getattr(current_user(), "id", None) or "guest"),
+    )
+    return not economy_action_limiter.allow(key, limit, window_seconds)
+
+
+def credit_gold(user, amount, source="system", reason=None, reference_type=None, reference_id=None, metadata=None, commit=False):
+    amount = normalize_gold_amount(amount)
+
+    if amount <= 0:
+        return {
+            "ok": False,
+            "error": "invalid_amount",
+            "message": "Gold amount must be positive.",
+            "balance": get_gold_balance(user),
+        }
+
+    if user:
+        ok, message = add_currency(
+            user=user,
+            currency=GOLD_CURRENCY_KEY,
+            amount=amount,
+            source=source,
+            reason=reason or f"{GOLD_DISPLAY_NAME} credited.",
+            reference_type=reference_type,
+            reference_id=reference_id,
+            metadata=metadata or {},
+            commit=False,
+        )
+
+        if not ok:
+            return {
+                "ok": False,
+                "error": "credit_failed",
+                "message": message,
+                "balance": get_gold_balance(user),
+            }
+    else:
+        set_guest_gold_balance(get_guest_gold_balance() + amount)
+
+    balance = get_gold_balance(user)
+    record_retention_event(
+        user,
+        "currency_credit",
+        page=str((metadata or {}).get("page") or getattr(request, "path", "")),
+        metadata={
+            "currency": GOLD_DISPLAY_NAME,
+            "amount": amount,
+            "source": source,
+            "balance": balance,
+            **(metadata or {}),
+        },
+    )
+
+    if commit and user:
+        db.session.commit()
+
+    return {
+        "ok": True,
+        "amount": amount,
+        "balance": balance,
+        "currency": GOLD_DISPLAY_NAME,
+        "message": f"+{amount} {GOLD_DISPLAY_NAME}",
+    }
+
+
+def debit_gold(user, amount, source="system", reason=None, reference_type=None, reference_id=None, metadata=None, commit=False):
+    amount = normalize_gold_amount(amount)
+    balance_before = get_gold_balance(user)
+
+    if amount <= 0:
+        return {
+            "ok": False,
+            "error": "invalid_amount",
+            "message": "Gold amount must be positive.",
+            "balance": balance_before,
+        }
+
+    if balance_before < amount:
+        return {
+            "ok": False,
+            "error": "insufficient_gold",
+            "message": "Not enough Gold.",
+            "balance": balance_before,
+        }
+
+    if user:
+        ok, message = spend_currency(
+            user=user,
+            currency=GOLD_CURRENCY_KEY,
+            amount=amount,
+            source=source,
+            reason=reason or f"{GOLD_DISPLAY_NAME} spent.",
+            reference_type=reference_type,
+            reference_id=reference_id,
+            metadata=metadata or {},
+            commit=False,
+        )
+
+        if not ok:
+            return {
+                "ok": False,
+                "error": "debit_failed",
+                "message": message,
+                "balance": get_gold_balance(user),
+            }
+    else:
+        set_guest_gold_balance(balance_before - amount)
+
+    balance = get_gold_balance(user)
+    record_retention_event(
+        user,
+        "currency_debit",
+        page=str((metadata or {}).get("page") or getattr(request, "path", "")),
+        metadata={
+            "currency": GOLD_DISPLAY_NAME,
+            "amount": amount,
+            "source": source,
+            "balance": balance,
+            **(metadata or {}),
+        },
+    )
+
+    if commit and user:
+        db.session.commit()
+
+    return {
+        "ok": True,
+        "amount": amount,
+        "balance": balance,
+        "currency": GOLD_DISPLAY_NAME,
+        "message": f"-{amount} {GOLD_DISPLAY_NAME}",
+    }
+
+
+@app.route("/api/wallet", methods=["GET"])
+def api_wallet_balance():
+    user = current_user()
+    return jsonify(gold_wallet_payload(user))
+
+
+@app.route("/api/wallet/credit", methods=["POST"])
+def api_wallet_credit():
+    user = current_user()
+
+    if wallet_rate_limited("credit"):
+        return jsonify({"ok": False, "error": "rate_limited", "message": "Too many wallet requests."}), 429
+
+    if not wallet_mutation_allowed(user):
+        return jsonify({"ok": False, "error": "forbidden", "message": "Wallet credit is disabled outside controlled beta tools."}), 403
+
+    payload = request.get_json(silent=True) or request.form or {}
+    result = credit_gold(
+        user,
+        payload.get("amount", 0),
+        source="wallet_api_controlled",
+        reason="Controlled beta wallet credit.",
+        metadata={"page": "/api/wallet/credit", "controlled": True},
+        commit=bool(user),
+    )
+    return jsonify(result), 200 if result.get("ok") else 400
+
+
+@app.route("/api/wallet/debit", methods=["POST"])
+def api_wallet_debit():
+    user = current_user()
+
+    if wallet_rate_limited("debit"):
+        return jsonify({"ok": False, "error": "rate_limited", "message": "Too many wallet requests."}), 429
+
+    if not wallet_mutation_allowed(user):
+        return jsonify({"ok": False, "error": "forbidden", "message": "Wallet debit is disabled outside controlled beta tools."}), 403
+
+    payload = request.get_json(silent=True) or request.form or {}
+    result = debit_gold(
+        user,
+        payload.get("amount", 0),
+        source="wallet_api_controlled",
+        reason="Controlled beta wallet debit.",
+        metadata={"page": "/api/wallet/debit", "controlled": True},
+        commit=bool(user),
+    )
+    return jsonify(result), 200 if result.get("ok") else 400
 
 
 def track_beta_mission(user, mission_key, amount=1, page="", metadata=None):
@@ -1983,6 +2277,7 @@ def index():
     return render_template(
         "index.html",
         user=user,
+        wallet=gold_wallet_payload(user),
         beta_journey=build_beta_journey(user, deck_status),
         beta_version="Public Beta RC V3",
     )
@@ -2338,6 +2633,7 @@ def profile():
         recent_matches=recent_matches,
         profile_mission_guides=profile_mission_guides,
         daily_checkin=daily_checkin,
+        wallet=gold_wallet_payload(user),
     )
 
 
@@ -2463,7 +2759,7 @@ def first_session():
     steps = [
         {
             "title": "Create your account",
-            "text": "Start with registration or login so your XP, coins, missions and deck progress can be saved.",
+            "text": "Start with registration or login so your XP, Gold, missions and deck progress can be saved.",
             "cta": "Create Account",
             "endpoint": "register",
         },
@@ -2475,7 +2771,7 @@ def first_session():
         },
         {
             "title": "Check rewards",
-            "text": "After the match, confirm XP, coins, missions and profile progress updated correctly.",
+            "text": "After the match, confirm XP, Gold, missions and profile progress updated correctly.",
             "cta": "Open Profile",
             "endpoint": "profile",
         },
@@ -2797,6 +3093,11 @@ def collection():
     rarity_names.extend(sorted(name for name in catalog_rarity_counts if name not in rarity_names))
     faction_names = sorted(name for name in catalog_faction_counts if name)
     role_names = sorted(name for name in catalog_role_counts if name)
+    recent_unlocks = [
+        str(card_id)
+        for card_id in (session.pop("recent_unlocked_cards", []) or [])
+        if str(card_id or "").strip()
+    ]
     collection_stats = {
         "unique_cards": unique_owned,
         "total_cards": sum(int(card.get("count") or 0) for card in owned_cards),
@@ -2857,6 +3158,7 @@ def collection():
         cards=cards,
         inventory_counts=inventory_counts,
         collection_stats=collection_stats,
+        recent_unlocks=recent_unlocks,
     )
 
 
@@ -2959,17 +3261,18 @@ def get_booster_pack(pack_key=None):
     return dict(BOOSTER_PACKS[key])
 
 
-def booster_pull_from_pack(pack):
+def booster_pull_from_pack(pack, rng=None):
     import random
 
     from game.cards import CARD_CATALOG
 
+    rng = rng or random
     cards = list(CARD_CATALOG)
 
     if not cards:
         raise ValueError("Card catalog is empty.")
 
-    rarity_roll = random.randint(1, 100)
+    rarity_roll = rng.randint(1, 100)
     target_rarity = "Common"
 
     rarities = (pack or {}).get("rarities") or {}
@@ -2985,7 +3288,7 @@ def booster_pull_from_pack(pack):
     if not pool:
         pool = cards
 
-    card = dict(random.choice(pool))
+    card = dict(rng.choice(pool))
 
     element = str(card.get("element") or "Neutral")
     rarity = str(card.get("rarity") or "Common")
@@ -3003,6 +3306,287 @@ def booster_pull_from_pack(pack):
     return card
 
 
+def shop_offer_catalog():
+    pack = get_booster_pack("elemental")
+
+    return [
+        {
+            "key": "basic_booster",
+            "title": "Basic Booster Pack",
+            "kind": "booster",
+            "pack_key": pack["key"],
+            "cost": int(pack.get("cost", 300)),
+            "cards": int(pack.get("size", 5)),
+            "description": "Open 5 beta catalog cards using Gold earned in play.",
+            "reward_preview": "5 cards from the current beta catalog",
+            "cta": "Buy Booster",
+        },
+        {
+            "key": "daily_deal",
+            "title": "Daily Deal",
+            "kind": "daily_deal",
+            "pack_key": pack["key"],
+            "cost": 120,
+            "cards": 2,
+            "description": "A once-per-day small pull for returning beta players.",
+            "reward_preview": "2 bonus cards today",
+            "cta": "Claim Deal",
+        },
+        {
+            "key": "founder_supporter",
+            "title": "Founder / Supporter Pack",
+            "kind": "coming_soon",
+            "pack_key": None,
+            "cost": None,
+            "cards": 0,
+            "description": "A future supporter bundle. No real-money checkout is active in this beta.",
+            "reward_preview": "Coming soon",
+            "cta": "Coming Soon",
+            "locked": True,
+        },
+    ]
+
+
+def daily_deal_claimed(user):
+    if not user:
+        return False
+
+    return bool(
+        EconomyLedger.query
+        .filter_by(
+            user_id=user.id,
+            source="shop_daily_deal",
+            reference_type="daily_deal",
+            reference_id=today_key(),
+        )
+        .first()
+    )
+
+
+def build_shop_purchase_token():
+    token = secrets.token_urlsafe(24)
+    session["shop_purchase_token"] = token
+    return token
+
+
+def consume_shop_purchase_token(token):
+    expected = session.pop("shop_purchase_token", "")
+    return bool(expected and token and hmac.compare_digest(str(expected), str(token)))
+
+
+def build_shop_offers(user, wallet=None):
+    wallet = wallet or gold_wallet_payload(user)
+    balance = int(wallet.get("balance", 0) or 0)
+    offers = []
+
+    for offer in shop_offer_catalog():
+        item = dict(offer)
+        cost = item.get("cost")
+        locked = bool(item.get("locked"))
+        claimed = item["key"] == "daily_deal" and daily_deal_claimed(user)
+
+        if locked:
+            status = "coming_soon"
+            status_label = "Coming soon"
+            disabled = True
+            message = "No real-money checkout is active in this beta."
+        elif claimed:
+            status = "claimed"
+            status_label = "Claimed today"
+            disabled = True
+            message = "This Daily Deal refreshes tomorrow."
+        elif balance < int(cost or 0):
+            status = "insufficient"
+            status_label = "Need more Gold"
+            disabled = True
+            message = f"Earn {int(cost or 0) - balance} more Gold through Daily, Missions or Training."
+        else:
+            status = "available"
+            status_label = "Available"
+            disabled = False
+            message = "Spend earned Gold. This is beta currency, not real money."
+
+        item.update({
+            "status": status,
+            "status_label": status_label,
+            "disabled": disabled,
+            "message": message,
+            "cost_label": f"{cost} Gold" if cost is not None else "No checkout",
+        })
+        offers.append(item)
+
+    return offers
+
+
+def open_booster_for_user(user, pack_key="elemental", size_override=None, seed=None, source="booster_open", cost=0, metadata=None):
+    if not user:
+        return {"ok": False, "error": "login_required", "message": "Login required to open boosters."}
+
+    import random
+
+    selected_pack = get_booster_pack(pack_key)
+    booster_size = max(1, min(10, int(size_override or selected_pack.get("size", 5) or 5)))
+    seed_material = seed if seed is not None else f"{user.id}:{selected_pack['key']}:{datetime.utcnow().isoformat()}:{source}"
+    rng = random.Random(str(seed_material))
+    pulled_cards = []
+    collection_ids = owned_card_ids_for_user(user)
+
+    for _ in range(booster_size):
+        card = booster_pull_from_pack(selected_pack, rng=rng)
+        pulled_cards.append(card)
+        collection_ids.append(card["id"])
+
+    user.collection_json = json.dumps(collection_ids)
+
+    common_count = len([card for card in pulled_cards if card.get("rarity") == "Common"])
+    uncommon_count = len([card for card in pulled_cards if card.get("rarity") == "Uncommon"])
+
+    history_payload = [
+        {
+            **card,
+            "pack_key": selected_pack["key"],
+            "pack_name": selected_pack["name"],
+        }
+        for card in pulled_cards
+    ]
+
+    history = BoosterHistory(
+        user_id=user.id,
+        username=user.username,
+        cost=int(cost or 0),
+        cards_json=json.dumps(history_payload),
+        common_count=common_count,
+        uncommon_count=uncommon_count,
+    )
+
+    db.session.add(history)
+    db.session.flush()
+
+    for index, card in enumerate(pulled_cards):
+        grant_card(
+            user=user,
+            card_id=card["id"],
+            quantity=1,
+            source=source,
+            idempotency_key=f"booster-{history.id}-{index}-{card['id']}",
+            metadata={
+                "pack_key": selected_pack["key"],
+                "pack_name": selected_pack["name"],
+                "card_name": card.get("name"),
+                "rarity": card.get("rarity"),
+                "element": card.get("element"),
+                **(metadata or {}),
+            },
+        )
+
+    increment_mission(user, "open_1_booster", 1)
+    record_retention_event(
+        user,
+        "booster_opened",
+        page="/shop",
+        metadata={
+            "pack_key": selected_pack["key"],
+            "size": booster_size,
+            "history_id": history.id,
+            "source": source,
+            **(metadata or {}),
+        },
+    )
+
+    return {
+        "ok": True,
+        "pack": selected_pack,
+        "cards": pulled_cards,
+        "history_id": history.id,
+        "count": booster_size,
+        "common_count": common_count,
+        "uncommon_count": uncommon_count,
+    }
+
+
+def purchase_shop_offer(user, offer_key, seed=None):
+    if not user:
+        return {"ok": False, "error": "login_required", "message": "Login required to use the beta shop."}
+
+    offer_key = str(offer_key or "").strip()
+    offer = next((item for item in shop_offer_catalog() if item["key"] == offer_key), None)
+
+    if not offer:
+        return {"ok": False, "error": "unknown_offer", "message": "Shop offer not found.", "balance": get_gold_balance(user)}
+
+    if offer.get("locked"):
+        return {
+            "ok": False,
+            "error": "locked_offer",
+            "message": "That offer is coming soon. No real-money checkout is active.",
+            "balance": get_gold_balance(user),
+        }
+
+    if offer_key == "daily_deal" and daily_deal_claimed(user):
+        return {
+            "ok": False,
+            "error": "already_claimed",
+            "message": "Daily Deal already claimed today.",
+            "balance": get_gold_balance(user),
+        }
+
+    cost = int(offer.get("cost") or 0)
+    source = "shop_daily_deal" if offer_key == "daily_deal" else "shop_purchase"
+    reference_type = "daily_deal" if offer_key == "daily_deal" else "shop_offer"
+    reference_id = today_key() if offer_key == "daily_deal" else offer_key
+    metadata = {"page": "/shop", "offer_key": offer_key, "pack_key": offer.get("pack_key")}
+
+    debit_result = debit_gold(
+        user,
+        cost,
+        source=source,
+        reason=f"Purchased {offer['title']} with beta Gold.",
+        reference_type=reference_type,
+        reference_id=reference_id,
+        metadata=metadata,
+    )
+
+    if not debit_result.get("ok"):
+        return debit_result
+
+    open_result = open_booster_for_user(
+        user,
+        pack_key=offer.get("pack_key") or "elemental",
+        size_override=offer.get("cards") or None,
+        seed=seed,
+        source=source,
+        cost=cost,
+        metadata=metadata,
+    )
+
+    if not open_result.get("ok"):
+        db.session.rollback()
+        return open_result
+
+    balance = get_gold_balance(user)
+    record_retention_event(
+        user,
+        "shop_purchase",
+        page="/shop",
+        metadata={
+            "offer_key": offer_key,
+            "cost": cost,
+            "balance": balance,
+            "history_id": open_result.get("history_id"),
+        },
+    )
+    db.session.commit()
+
+    return {
+        "ok": True,
+        "message": f"{offer['title']} opened.",
+        "offer": offer,
+        "spent": cost,
+        "balance": balance,
+        **open_result,
+    }
+
+
 @app.route("/shop", methods=["GET", "POST"])
 def shop():
     auth_redirect = login_required_redirect()
@@ -3012,90 +3596,97 @@ def shop():
 
     user = current_user()
 
-    selected_pack_key = request.form.get("pack_key") or request.args.get("pack") or "elemental"
-    selected_pack = get_booster_pack(selected_pack_key)
-
-    booster_cost = int(selected_pack.get("cost", 300))
-    booster_size = int(selected_pack.get("size", 5))
-    pulled_cards = []
-    can_afford_booster = int(user.coins or 0) >= booster_cost
-
     if request.method == "POST":
-        if not can_afford_booster:
-            flash("Not enough coins to open this booster.")
-            return redirect(f"/shop?pack={selected_pack['key']}")
+        return shop_purchase()
 
-        user.coins -= booster_cost
-
-        collection_ids = owned_card_ids_for_user(user)
-
-        for _ in range(booster_size):
-            card = booster_pull_from_pack(selected_pack)
-            pulled_cards.append(card)
-            collection_ids.append(card["id"])
-
-        user.collection_json = json.dumps(collection_ids)
-
-        common_count = len([card for card in pulled_cards if card.get("rarity") == "Common"])
-        uncommon_count = len([card for card in pulled_cards if card.get("rarity") == "Uncommon"])
-
-        history_payload = []
-        for card in pulled_cards:
-            history_payload.append({
-                **card,
-                "pack_key": selected_pack["key"],
-                "pack_name": selected_pack["name"],
-            })
-
-        history = BoosterHistory(
-            user_id=user.id,
-            username=user.username,
-            cost=booster_cost,
-            cards_json=json.dumps(history_payload),
-            common_count=common_count,
-            uncommon_count=uncommon_count,
-        )
-
-        db.session.add(history)
-
-        # BOOSTER_TO_INVENTORY_V1
-        for index, card in enumerate(pulled_cards):
-            grant_card(
-                user=user,
-                card_id=card["id"],
-                quantity=1,
-                source="booster",
-                idempotency_key=f"booster-{user.id}-{selected_pack['key']}-{datetime.utcnow().timestamp()}-{index}-{card['id']}",
-                metadata={
-                    "pack_key": selected_pack["key"],
-                    "pack_name": selected_pack["name"],
-                    "card_name": card.get("name"),
-                    "rarity": card.get("rarity"),
-                    "element": card.get("element"),
-                },
-            )
-
-        increment_mission(user, "open_1_booster", 1)
-        log_rc_event(
-            "progression",
-            "Booster opened",
-            details={"pack": selected_pack["key"], "size": booster_size, "cost": booster_cost},
-            user_id=user.id,
-        )
-        db.session.commit()
-
-        flash(f"{selected_pack['name']} opened: {booster_size} cards added to your collection.")
+    wallet = gold_wallet_payload(user)
+    last_opening = session.pop("last_booster_opening", None)
+    pulled_cards = (last_opening or {}).get("cards") or []
+    selected_pack = get_booster_pack("elemental")
 
     return render_template(
         "shop.html",
         user=user,
         pulled_cards=pulled_cards,
-        booster_cost=booster_cost,
-        booster_size=booster_size,
-        can_afford_booster=can_afford_booster,
+        booster_cost=selected_pack.get("cost", 300),
+        booster_size=selected_pack.get("size", 5),
+        can_afford_booster=int(wallet.get("balance", 0) or 0) >= int(selected_pack.get("cost", 300)),
         booster_packs=list(BOOSTER_PACKS.values()),
         selected_pack=selected_pack,
+        wallet=wallet,
+        shop_offers=build_shop_offers(user, wallet),
+        purchase_token=build_shop_purchase_token(),
+        last_opening=last_opening,
     )
+
+
+@app.route("/shop/purchase", methods=["POST"])
+def shop_purchase():
+    auth_redirect = login_required_redirect()
+
+    if auth_redirect:
+        return auth_redirect
+
+    user = current_user()
+    is_json = request.is_json
+    payload = request.get_json(silent=True) or request.form or {}
+
+    if economy_rate_limited("shop_purchase"):
+        response = {"ok": False, "error": "rate_limited", "message": "Too many shop actions. Try again shortly.", "balance": get_gold_balance(user)}
+        return (jsonify(response), 429) if is_json else (flash(response["message"]) or redirect(url_for("shop")))
+
+    if not is_json and not consume_shop_purchase_token(payload.get("purchase_token")):
+        flash("Shop request expired. Please try again.")
+        return redirect(url_for("shop"))
+
+    try:
+        result = purchase_shop_offer(user, payload.get("offer_key"), seed=payload.get("seed"))
+
+        if result.get("ok"):
+            cards = result.get("cards") or []
+            session["last_booster_opening"] = {
+                "cards": cards,
+                "offer": result.get("offer") or {},
+                "spent": result.get("spent", 0),
+                "balance": result.get("balance", 0),
+                "history_id": result.get("history_id"),
+            }
+            session["recent_unlocked_cards"] = [str(card.get("id")) for card in cards if card.get("id")]
+            flash(f"{result.get('message', 'Offer opened')} - {len(cards)} cards added to your Collection.")
+            return jsonify(result) if is_json else redirect(url_for("shop"))
+
+        status = 400 if result.get("error") != "insufficient_gold" else 402
+        if is_json:
+            return jsonify(result), status
+
+        flash(result.get("message") or "Shop purchase failed.")
+        return redirect(url_for("shop"))
+    except Exception as error:
+        print("SHOP PURCHASE ERROR:", type(error).__name__, error)
+        db.session.rollback()
+        result = {"ok": False, "error": "purchase_failed", "message": "Shop purchase failed safely. No Gold was spent.", "balance": get_gold_balance(user)}
+        return (jsonify(result), 500) if is_json else (flash(result["message"]) or redirect(url_for("shop")))
+
+
+@app.route("/api/booster/open", methods=["POST"])
+def api_booster_open():
+    user = current_user()
+
+    if not user:
+        return jsonify({"ok": False, "error": "login_required", "message": "Login required to open boosters."}), 401
+
+    if economy_rate_limited("booster_open"):
+        return jsonify({"ok": False, "error": "rate_limited", "message": "Too many booster actions. Try again shortly.", "balance": get_gold_balance(user)}), 429
+
+    payload = request.get_json(silent=True) or {}
+    result = purchase_shop_offer(user, payload.get("offer_key") or "basic_booster", seed=payload.get("seed"))
+
+    if result.get("ok"):
+        session["recent_unlocked_cards"] = [str(card.get("id")) for card in result.get("cards") or [] if card.get("id")]
+        return jsonify(result)
+
+    status = 402 if result.get("error") == "insufficient_gold" else 400
+    return jsonify(result), status
 
 
 
@@ -3534,6 +4125,37 @@ def end_match(room_id, winner_key, ending_reason="completed"):
             },
         )
 
+        gold_awarded = int(rewards.get("coins", 0) or 0)
+
+        if gold_awarded > 0:
+            record_ledger(
+                user=user,
+                currency=GOLD_CURRENCY_KEY,
+                amount=gold_awarded,
+                source="match_reward",
+                reason="Post-match Gold reward.",
+                reference_type="match",
+                reference_id=room_id,
+                metadata={
+                    "room_id": room_id,
+                    "result": result_label,
+                    "mode": match_mode,
+                    "campaign_chapter_id": campaign_chapter_id or None,
+                },
+            )
+            record_retention_event(
+                user,
+                "currency_credit",
+                page="/arena",
+                metadata={
+                    "currency": GOLD_DISPLAY_NAME,
+                    "amount": gold_awarded,
+                    "source": "match_reward",
+                    "mode": match_mode,
+                    "balance": get_gold_balance(user),
+                },
+            )
+
         return rewards
 
     def track_after_match(user, player_key, result_label):
@@ -3680,6 +4302,8 @@ def end_match(room_id, winner_key, ending_reason="completed"):
             "history_id": history.id,
             "history_url": url_for("match_history_detail", history_id=history.id),
             "xp_gained": int((rewards or {}).get("xp", 0) or 0),
+            "gold_gained": int((rewards or {}).get("coins", 0) or 0),
+            "gold_balance": get_gold_balance(viewer_user) if viewer_user else 0,
             "level": int(getattr(viewer_user, "level", 1) or 1) if viewer_user else 1,
             "level_progress_percent": getattr(viewer_user, "level_progress_percent", 0) if viewer_user else 0,
             "next_level_xp": getattr(viewer_user, "next_level_xp", 100) if viewer_user else 100,
@@ -4331,6 +4955,7 @@ def missions():
         mission_board_summary=build_mission_board_summary(mission_guides, missions),
         deck_status=deck_status,
         beta_journey=build_beta_journey(user, deck_status),
+        wallet=gold_wallet_payload(user),
     )
 
 
@@ -4344,10 +4969,38 @@ def claim_user_mission(mission_id):
     user = current_user()
 
     try:
+        mission = UserMission.query.filter_by(id=mission_id, user_id=user.id).first()
+        gold_reward = int(getattr(mission, "coin_reward", 0) or 0) if mission else 0
+        mission_key = str(getattr(mission, "mission_key", "") or "")
         success, message = claim_mission(user, mission_id)
 
         if success:
             record_retention_event(user, "xp_awarded", page="/missions", metadata={"source": "mission_claim", "mission_id": mission_id})
+            record_retention_event(
+                user,
+                "mission_reward_claimed",
+                page="/missions",
+                metadata={
+                    "mission_id": mission_id,
+                    "mission_key": mission_key,
+                    "gold": gold_reward,
+                },
+            )
+
+            if gold_reward > 0:
+                record_retention_event(
+                    user,
+                    "currency_credit",
+                    page="/missions",
+                    metadata={
+                        "currency": GOLD_DISPLAY_NAME,
+                        "amount": gold_reward,
+                        "source": "mission_claim",
+                        "mission_key": mission_key,
+                        "balance": get_gold_balance(user),
+                    },
+                )
+
             db.session.commit()
             flash(message)
         else:
@@ -4457,6 +5110,7 @@ def daily():
         missions=missions,
         daily_checkin=build_daily_checkin(user, missions),
         beta_journey=build_beta_journey(user, deck_status),
+        wallet=gold_wallet_payload(user),
     )
 
 
@@ -4494,6 +5148,15 @@ def claim_daily_checkin():
             metadata={"date": today, "streak": user.daily_streak},
             reward_key=f"daily:{user.id}:{today}",
         )
+        gold_result = credit_gold(
+            user,
+            DAILY_GOLD_REWARD,
+            source="daily_checkin",
+            reason="Daily check-in Gold reward.",
+            reference_type="daily",
+            reference_id=today,
+            metadata={"page": "/daily", "date": today, "streak": user.daily_streak},
+        )
         mission_update = track_beta_mission(
             user,
             "return_daily",
@@ -4508,7 +5171,19 @@ def claim_daily_checkin():
                 "date": today,
                 "streak": user.daily_streak,
                 "xp": xp_result.get("xp", 0),
+                "gold": gold_result.get("amount", 0) if gold_result.get("ok") else 0,
                 "mission_completed": bool(mission_update and mission_update.get("completed")),
+            },
+        )
+        record_retention_event(
+            user,
+            "daily_claimed",
+            page="/daily",
+            metadata={
+                "date": today,
+                "streak": user.daily_streak,
+                "xp": xp_result.get("xp", 0),
+                "gold": gold_result.get("amount", 0) if gold_result.get("ok") else 0,
             },
         )
         record_retention_event(
@@ -4518,7 +5193,7 @@ def claim_daily_checkin():
             metadata={"source": "daily_checkin", "xp": xp_result.get("xp", 0)},
         )
         db.session.commit()
-        flash(f"Daily check-in claimed: +{xp_result.get('xp', 0)} XP.")
+        flash(f"Daily check-in claimed: +{xp_result.get('xp', 0)} XP and +{gold_result.get('amount', 0) if gold_result.get('ok') else 0} Gold.")
     except Exception as error:
         print("DAILY CLAIM ERROR:", type(error).__name__, error)
         db.session.rollback()
@@ -4850,6 +5525,7 @@ def progression():
         "losses": int(user.losses or 0),
         "total_matches": int(user.wins or 0) + int(user.losses or 0),
         "first_training_completed": bool(getattr(user, "first_training_completed", False)),
+        "gold_balance": get_gold_balance(user),
     }
 
     try:
@@ -4872,7 +5548,7 @@ def progression():
     next_steps = [
         {
             "title": "Play a Match",
-            "description": "Earn XP and coins from the fastest beta loop.",
+            "description": "Earn XP and Gold from the fastest beta loop.",
             "url": url_for("training"),
             "cta": "Play Training",
         },
@@ -4884,7 +5560,7 @@ def progression():
         },
         {
             "title": "Claim Missions",
-            "description": "Convert completed objectives into XP and coins.",
+            "description": "Convert completed objectives into XP and Gold.",
             "url": url_for("missions"),
             "cta": "View Missions",
         },
@@ -4918,6 +5594,7 @@ def progression():
         deck_status=deck_status,
         daily_checkin=build_daily_checkin(user, daily_missions),
         beta_journey=build_beta_journey(user, deck_status),
+        wallet=gold_wallet_payload(user),
     )
 
 

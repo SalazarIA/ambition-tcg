@@ -1071,7 +1071,7 @@
         if (rewardsEl) {
             if (rewards.xp !== undefined && rewards.xp !== null) rewardLines.push("XP +" + num(rewards.xp));
             if (rewards.campaign_bonus_xp) rewardLines.push("Campaign +" + num(rewards.campaign_bonus_xp) + " XP");
-            if (rewards.coins !== undefined && rewards.coins !== null) rewardLines.push("Coins +" + num(rewards.coins));
+            if (rewards.coins !== undefined && rewards.coins !== null) rewardLines.push("Gold +" + num(rewards.coins));
             if (summary.campaign_chapter_id) rewardLines.push("Chapter " + str(summary.campaign_chapter_id));
             if (summary.history_id) rewardLines.push("History #" + str(summary.history_id));
             if (arr(summary.mission_progress).length) rewardLines.push("Mission progress");
