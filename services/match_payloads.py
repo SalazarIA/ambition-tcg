@@ -151,6 +151,11 @@ def build_post_match_payload(match, viewer_key, result, rewards):
             "bot_difficulty": match.get("bot_difficulty"),
             "rounds": int(match.get("round", 1) or 1),
             "rewards": rewards or {"coins": 0, "xp": 0},
+            "reward_preview": {
+                "xp": int((rewards or {}).get("xp", 0) or 0),
+                "coins": int((rewards or {}).get("coins", 0) or 0),
+                "label": "Reward summary",
+            },
             "campaign_chapter_id": match.get("campaign_chapter_id"),
             "campaign": match.get("campaign") or {},
             "viewer": {
@@ -188,6 +193,11 @@ def build_post_match_payload(match, viewer_key, result, rewards):
             "mode": match_mode(match),
             "rounds": int(match.get("round", 1) or 1),
             "rewards": rewards or {"coins": 0, "xp": 0},
+            "reward_preview": {
+                "xp": int((rewards or {}).get("xp", 0) or 0),
+                "coins": int((rewards or {}).get("coins", 0) or 0),
+                "label": "Reward summary",
+            },
             "summary": {
                 "title": result,
                 "message": "Match finished.",

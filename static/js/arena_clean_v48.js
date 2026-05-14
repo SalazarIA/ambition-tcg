@@ -610,7 +610,7 @@
 
         const rows = [
             ["Strike", actions.Strike || "+2 attack this round."],
-            ["Guard", actions.Guard || "+4 shield this round."],
+            ["Guard", actions.Guard || "+5 shield this round."],
             ["Focus", actions.Focus || "+3 Ambition. Charges Unleash."],
             ["Ready", actions.Ready || "Resolves combat."]
         ];
@@ -702,6 +702,10 @@
 
         if (type === "round_start") return renderSummaryItem("event", "Rodada iniciada.");
         if (type === "round_resolve") return renderSummaryItem("event", "Resolução da rodada.");
+        if (type === "intent_selected") return renderSummaryItem("event", str(event.message || event.text, "Intenção escolhida."));
+        if (type === "card_played") return renderSummaryItem("event", cardName + " entrou na rodada.");
+        if (type === "shield_gain") return renderSummaryItem("keyword", "Escudo +" + amount + ".");
+        if (type === "ambition_gain") return renderSummaryItem("keyword", "Ambition +" + amount + ".");
         if (type === "lane_attack") return renderSummaryItem("attack", attackerName + " atacou " + defenderName + ".");
         if (type === "direct_attack") return renderSummaryItem("attack", attackerName + " atacou diretamente o herói.");
         if (type === "creature_damage") return renderSummaryItem("damage", targetName + " recebeu " + amount + " de dano.");
@@ -710,6 +714,7 @@
         if (type === "keyword_guarded") return renderSummaryItem("keyword", "Guarded reduziu " + amount + " de dano.");
         if (type === "keyword_focused") return renderSummaryItem("keyword", "Focused gerou " + amount + " de Ambition.");
         if (type === "round_end") return renderSummaryItem("end", "Rodada encerrada.");
+        if (type === "match_finished") return renderSummaryItem("end", "Partida encerrada.");
 
         return renderSummaryItem("event", str(event.message, "Evento da rodada."));
     }

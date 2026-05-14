@@ -217,7 +217,7 @@ def test_be2_payload_includes_structured_round_events():
     assert resolved["round"] >= 2 or resolved["phase"] == "finished"
     assert resolved["events"]
     assert resolved["round_summary"]["events"]
-    assert any(event["type"] in {"attack", "hero_damage", "shield"} for event in resolved["round_summary"]["events"])
+    assert any(event["type"] in {"hero_damage", "shield_gain", "ambition_gain", "lane_hero_damage"} for event in resolved["round_summary"]["events"])
 
 
 def test_be2_payload_exposes_last_completed_combat_log_for_round_summary():

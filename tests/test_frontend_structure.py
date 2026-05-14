@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v179"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v180"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -289,6 +289,10 @@ def test_arena_round_summary_text_panel_contract():
     assert "function renderSummaryItem" in js
     assert "JSON.stringify" not in js[js.index("function renderRoundSummary"):js.index("function cardStateMap")]
     assert "combatLog" in adapter
+    assert "shield_gain" in js
+    assert "ambition_gain" in js
+    assert "intent_selected" in js
+    assert "match_finished" in js
 
     for class_name in [
         ".az48-round-summary",
@@ -302,6 +306,23 @@ def test_arena_round_summary_text_panel_contract():
         ".az48-summary-item-end",
     ]:
         assert class_name in css
+
+
+def test_blocks_49_56_battle_core_polish_contract():
+    rulebook = (PROJECT_ROOT / "docs" / "BE2_RULEBOOK.md").read_text()
+    engine = (PROJECT_ROOT / "services" / "battle_engine_v2.py").read_text()
+    resolver = (PROJECT_ROOT / "services" / "card_effect_resolver.py").read_text()
+    balance_sim = (PROJECT_ROOT / "tools" / "qa" / "battle_balance_sim.py").read_text()
+    gauntlet = (PROJECT_ROOT / "tools" / "qa" / "qa_battle_gauntlet.py").read_text()
+
+    assert "Battle Engine V2 Rulebook Snapshot" in rulebook
+    assert "def stable_match_snapshot" in engine
+    assert "random.shuffle" not in engine
+    assert "resolve_card_effect" in resolver
+    assert "--matches" in balance_sim
+    assert "--seed" in balance_sim
+    assert "--max-rounds" in balance_sim
+    assert "PASS battle_gauntlet" in gauntlet
 
 
 def test_arena_turn_guidance_and_server_error_contract():

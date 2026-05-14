@@ -605,7 +605,7 @@ def build_be2_arena_payload(
             ],
             "actions": {
                 "Strike": "+2 attack this round.",
-                "Guard": "+4 shield this round.",
+                "Guard": "+5 shield this round.",
                 "Focus": "+3 Ambition. Ambition charges Unleash.",
                 "Ready": "Resolves your action and the enemy action.",
             },
