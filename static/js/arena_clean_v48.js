@@ -33,6 +33,12 @@
 
     const AZ48_NO_PLAYABLE_HELP = "No playable card with current energy. Press Ready to resolve the round.";
     const COMMAND_TIMEOUT_MS = 2600;
+    const FIRST_PLAYER_STORAGE_KEY = "ambitionz_first_battle_flow_seen_v1";
+    const TRAINING_DIFFICULTY_COPY = {
+        easy: "Easy: learning bot with a more tolerant practice rhythm.",
+        normal: "Normal: standard competitive beta training.",
+        hard: "Hard: aggressive tactical pressure for sharper testing.",
+    };
 
     const PAGE_KIND = document.body ? document.body.getAttribute("data-page-kind") : "arena";
     const CAMPAIGN_CONTEXT = window.AMBITIONZ_CAMPAIGN_CONTEXT || {};
@@ -169,6 +175,28 @@
 
     function isTrainingLikePage() {
         return PAGE_KIND === "training" || PAGE_KIND === "campaign";
+    }
+
+    function selectedTrainingDifficulty() {
+        if (CAMPAIGN_CONTEXT && CAMPAIGN_CONTEXT.difficulty) {
+            return str(CAMPAIGN_CONTEXT.difficulty, "normal").toLowerCase();
+        }
+
+        const checked = document.querySelector('input[name="training_difficulty"]:checked');
+        const value = str(checked && checked.value, "normal").toLowerCase();
+        return TRAINING_DIFFICULTY_COPY[value] ? value : "normal";
+    }
+
+    function updateTrainingDifficultyUi() {
+        const difficulty = selectedTrainingDifficulty();
+        const label = document.getElementById("az48-training-difficulty-label");
+        if (label) label.textContent = (difficulty.slice(0, 1).toUpperCase() + difficulty.slice(1)) + (PAGE_KIND === "campaign" ? " Campaign" : " Training");
+
+        document.querySelectorAll("[data-training-difficulty]").forEach((item) => {
+            item.classList.toggle("is-active", item.getAttribute("data-training-difficulty") === difficulty);
+        });
+
+        if (document.body) document.body.dataset.trainingDifficulty = difficulty;
     }
 
     function firstValue(...values) {
@@ -939,6 +967,7 @@
             deck: actions.deck,
             history: actions.history,
             missions: actions.missions || "/missions",
+            menu: actions.menu || "/",
         };
 
         Object.entries(mapping).forEach(([key, href]) => {
@@ -959,17 +988,18 @@
         }
 
         el.innerHTML = missions.slice(0, 3).map((mission) => {
-            const name = str(mission.name || mission.mission_name || mission.mission_id || mission.id || "Mission progress");
-            const progress = mission.progress !== undefined && mission.target_count !== undefined
-                ? " " + num(mission.progress) + "/" + num(mission.target_count)
+            const name = str(mission.name || mission.title || mission.mission_name || mission.mission_key || mission.mission_id || mission.id || "Mission progress");
+            const target = firstValue(mission.target_count, mission.target);
+            const progress = mission.progress !== undefined && target !== undefined
+                ? " " + num(mission.progress) + "/" + num(target)
                 : "";
-            const status = mission.is_complete || mission.complete ? " complete" : " progressed";
+            const status = mission.is_complete || mission.complete || mission.completed ? " complete" : " progressed";
             return '<li><b>' + esc(name) + '</b><span>' + esc(progress + status) + '</span></li>';
         }).join("");
         el.hidden = false;
     }
 
-    function renderResultProgress(copy, rewards) {
+    function renderResultProgress(copy, rewards, summary) {
         const panel = document.getElementById("az48-result-progress");
         const label = document.getElementById("az48-result-progress-label");
         const value = document.getElementById("az48-result-progress-value");
@@ -977,12 +1007,18 @@
 
         if (!panel || !label || !value || !fill) return;
 
-        const hasServerXp = rewards && rewards.xp !== undefined && rewards.xp !== null;
-        const xp = hasServerXp ? num(rewards.xp) : estimatedTrainingXp(copy.key);
-        const percent = Math.max(10, Math.min(100, Math.round((xp / 120) * 100)));
+        summary = summary || {};
+        const xpValue = firstValue(summary.xp_gained, rewards && rewards.xp);
+        const hasServerXp = xpValue !== undefined && xpValue !== null && xpValue !== "";
+        const xp = hasServerXp ? num(xpValue) : estimatedTrainingXp(copy.key);
+        const serverPercent = summary.level_progress_percent !== undefined ? num(summary.level_progress_percent) : null;
+        const percent = serverPercent !== null
+            ? Math.max(0, Math.min(100, Math.round(serverPercent)))
+            : Math.max(10, Math.min(100, Math.round((xp / 120) * 100)));
+        const level = summary.level ? "Level " + num(summary.level, 1) + " progress" : (copy.mode === "campaign" ? "Campaign reward" : "Training reward");
 
-        label.textContent = hasServerXp ? (copy.mode === "campaign" ? "Campaign reward" : "Training reward") : "Progress preview";
-        value.textContent = hasServerXp ? ("XP +" + xp) : ("Estimated XP +" + xp);
+        label.textContent = hasServerXp ? level : "Progress preview";
+        value.textContent = hasServerXp ? ("XP +" + xp + " · " + percent + "%") : ("Estimated XP +" + xp);
         fill.style.width = percent + "%";
         panel.hidden = false;
     }
@@ -1045,7 +1081,7 @@
             rewardsEl.hidden = rewardLines.length === 0;
         }
 
-        renderResultProgress(copy, rewards);
+        renderResultProgress(copy, rewards, summary);
         renderResultMissions(summary);
         updateResultActionLinks(summary);
 
@@ -1676,6 +1712,10 @@
             ...(payload || {}),
         };
 
+        if ((action === "start_training" || action === "request_state") && isTrainingLikePage() && !command.difficulty) {
+            command.difficulty = selectedTrainingDifficulty();
+        }
+
         if ((action === "start_training" || action === "request_state") && CAMPAIGN_CONTEXT && CAMPAIGN_CONTEXT.chapter_id) {
             command.campaign_chapter_id = CAMPAIGN_CONTEXT.chapter_id;
             command.campaign_title = CAMPAIGN_CONTEXT.title || "Campaign Chapter";
@@ -1698,13 +1738,14 @@
         trackRetentionEvent(PAGE_KIND === "campaign" ? "campaign_start" : "training_start_click", {
             mode: PAGE_KIND,
             source: "arena_clean_v48",
+            difficulty: selectedTrainingDifficulty(),
             campaign_chapter_id: CAMPAIGN_CONTEXT && CAMPAIGN_CONTEXT.chapter_id ? CAMPAIGN_CONTEXT.chapter_id : null,
         });
         setMessage(PAGE_KIND === "campaign"
             ? "Starting campaign chapter. Draw your hand, then play through the Training flow."
-            : "Starting Training. Draw your hand, then practice intent, card, lane and Ready.");
+            : "Starting " + selectedTrainingDifficulty() + " Training. Draw your hand, then practice intent, card, lane and Ready.");
         setServerError("");
-        if (emitCommand("start_training", {})) {
+        if (emitCommand("start_training", { difficulty: selectedTrainingDifficulty() })) {
             playSound("uiTap");
         }
     }
@@ -2087,6 +2128,78 @@
         });
     }
 
+    function shouldShowFirstPlayerCoach() {
+        if (!isTrainingLikePage()) return false;
+        try {
+            return window.localStorage.getItem(FIRST_PLAYER_STORAGE_KEY) !== "1";
+        } catch (error) {
+            return true;
+        }
+    }
+
+    function setFirstPlayerCoachSeen() {
+        try {
+            window.localStorage.setItem(FIRST_PLAYER_STORAGE_KEY, "1");
+        } catch (error) {}
+    }
+
+    function closeFirstPlayerCoach(permanent) {
+        const coach = document.getElementById("az48-first-player-flow");
+        if (coach) coach.remove();
+        if (permanent) setFirstPlayerCoachSeen();
+    }
+
+    function ensureFirstPlayerCoach() {
+        if (!shouldShowFirstPlayerCoach()) return;
+        if (document.getElementById("az48-first-player-flow")) return;
+
+        const coach = document.createElement("aside");
+        coach.id = "az48-first-player-flow";
+        coach.className = "az48-first-player-flow";
+        coach.setAttribute("aria-label", "First-time player flow");
+        coach.innerHTML = [
+            '<span>First Duel Guide</span>',
+            '<strong>Reduce enemy HP, one clear round at a time.</strong>',
+            '<ol>',
+            '<li>Choose Strike, Guard or Focus.</li>',
+            '<li>Play one card if the server highlights it.</li>',
+            '<li>Click Ready to resolve combat.</li>',
+            '<li>Read Battle Highlights and Round Summary.</li>',
+            '<li>Use Collection and Deck after the match.</li>',
+            '</ol>',
+            '<div>',
+            '<button type="button" data-first-flow-close>Entendi</button>',
+            '<button type="button" data-first-flow-never>Não mostrar novamente</button>',
+            '</div>'
+        ].join("");
+
+        document.body.appendChild(coach);
+    }
+
+    function bindFirstPlayerCoach() {
+        document.addEventListener("click", (event) => {
+            const close = event.target.closest("[data-first-flow-close]");
+            if (close) {
+                event.preventDefault();
+                closeFirstPlayerCoach(false);
+                return;
+            }
+
+            const never = event.target.closest("[data-first-flow-never]");
+            if (never) {
+                event.preventDefault();
+                closeFirstPlayerCoach(true);
+            }
+        });
+    }
+
+    function bindTrainingDifficulty() {
+        updateTrainingDifficultyUi();
+        document.querySelectorAll('input[name="training_difficulty"]').forEach((input) => {
+            input.addEventListener("change", updateTrainingDifficultyUi);
+        });
+    }
+
     function boot() {
         bootTries += 1;
 
@@ -2134,6 +2247,9 @@
 
         bindSocketEvents();
         bindClicks();
+        bindTrainingDifficulty();
+        bindFirstPlayerCoach();
+        ensureFirstPlayerCoach();
 
         setMessage("Connecting...");
     }

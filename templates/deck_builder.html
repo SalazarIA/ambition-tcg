@@ -227,6 +227,29 @@
             </div>
         </section>
 
+        <section id="az-deck-guidance-v1" class="az-deck-guidance-v1" aria-label="Deck builder guidance">
+            <div>
+                <span class="progression-kicker">Deck Guidance</span>
+                <h2>Make the beta deck easy to trust.</h2>
+                <p>Target 30 cards, enough creatures to contest lanes, a small spell/trap package and a cost curve that can play on round one.</p>
+            </div>
+            <div class="az-deck-guidance-grid-v1">
+                <article><span>Total</span><strong id="az-guidance-total">{{ deck_status.total }}/30</strong></article>
+                <article><span>Average Cost</span><strong id="az-guidance-average-cost">{{ deck_analysis.energy.average_cost if deck_analysis is defined else '0.00' }}</strong></article>
+                <article><span>Elements</span><strong id="az-guidance-element-balance">{{ deck_analysis.elements|length if deck_analysis is defined else 0 }}</strong></article>
+                <article><span>Copies</span><strong id="az-guidance-copy-health">{{ deck_status.max_copies_used }}/3</strong></article>
+            </div>
+            <ul id="az-deck-guidance-list" class="az-deck-guidance-list-v1">
+                <li>Use exactly 30 cards.</li>
+                <li>Keep 21 monsters, 6 spells and 3 traps for the beta rule.</li>
+                <li>Prefer enough cost 1-2 cards so the first rounds are playable.</li>
+            </ul>
+            <div class="progression-action-row">
+                <button type="submit" form="az-deck-builder-form" class="btn">Save Deck</button>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary">Test in Training</a>
+            </div>
+        </section>
+
         {% if deck_validation_errors %}
         <section class="deck-status deck-status-invalid-v1">
             <div class="section-title-row">
@@ -532,7 +555,7 @@
             </div>
         </section>
 
-        <form method="POST" data-retention-event="deck_save_attempt">
+        <form id="az-deck-builder-form" method="POST" data-retention-event="deck_save_attempt">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <section class="card-grid deck-builder-grid">
@@ -663,13 +686,13 @@
         </form>
 
     </main>
-    <script src="{{ url_for('static', filename='js/deck_builder.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/deck_builder.js') }}?v=3"></script>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 
     <script src="{{ url_for('static', filename='js/deck_builder_premium.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=3"></script>
 </body>
 
 </html>

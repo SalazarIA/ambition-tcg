@@ -120,9 +120,46 @@ class MatchEngineFacade:
     def emit_finished_guard(self, sid: str) -> Optional[Payload]:
         return self.emit_state(sid, message="Match finished. Start a new training match or go back to Arena.")
 
-    def start_training(self, sid: str, user: Any = None, message: str = "Battle Engine V2 started.") -> Optional[Payload]:
+    @staticmethod
+    def normalize_difficulty(value: Optional[str]) -> str:
+        difficulty = str(value or "normal").strip().lower()
+        return difficulty if difficulty in {"easy", "normal", "hard"} else "normal"
+
+    @staticmethod
+    def campaign_context_from_command(command: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        chapter_id = str(command.get("campaign_chapter_id") or "").strip()[:80]
+        if not chapter_id:
+            return None
+        return {
+            "chapter_id": chapter_id,
+            "title": str(command.get("campaign_title") or "Campaign Chapter")[:120],
+            "difficulty": MatchEngineFacade.normalize_difficulty(command.get("campaign_difficulty") or command.get("difficulty")),
+            "reward": str(command.get("campaign_reward") or "Campaign reward preview.")[:220],
+        }
+
+    def start_training(
+        self,
+        sid: str,
+        user: Any = None,
+        message: str = "Battle Engine V2 started.",
+        difficulty: str = "normal",
+        campaign_context: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Payload]:
         room_code = self.room_for_sid(sid)
-        match = create_be2_training_match(user=user, sid=sid)
+        difficulty = self.normalize_difficulty(difficulty)
+        match = create_be2_training_match(user=user, sid=sid, difficulty=difficulty)
+
+        if campaign_context:
+            match["mode"] = "campaign"
+            match["campaign_chapter_id"] = str(campaign_context.get("chapter_id") or "")[:80]
+            match["campaign"] = {
+                "chapter_id": match["campaign_chapter_id"],
+                "title": str(campaign_context.get("title") or "Campaign Chapter")[:120],
+                "difficulty": self.normalize_difficulty(campaign_context.get("difficulty") or difficulty),
+                "reward": str(campaign_context.get("reward") or "Campaign reward preview.")[:220],
+            }
+            match["bot_difficulty"] = match["campaign"]["difficulty"]
+
         be2_start(match)
 
         self.active_matches[room_code] = match
@@ -292,10 +329,18 @@ class MatchEngineFacade:
         action = command["action"]
 
         if action == "start_training":
+            difficulty = self.normalize_difficulty(command.get("difficulty"))
+            campaign_context = self.campaign_context_from_command(command)
             return self.start_training(
                 sid,
                 user=user,
-                message="Battle Engine V2 started. Choose an intent, then play a card or press Ready.",
+                message=(
+                    "Campaign chapter started. Choose an intent, then play a card or press Ready."
+                    if campaign_context
+                    else f"{difficulty.title()} Training started. Choose an intent, then play a card or press Ready."
+                ),
+                difficulty=difficulty,
+                campaign_context=campaign_context,
             )
 
         if action == "request_state":
@@ -303,10 +348,18 @@ class MatchEngineFacade:
             if state:
                 return state
             if user is not None:
+                difficulty = self.normalize_difficulty(command.get("difficulty"))
+                campaign_context = self.campaign_context_from_command(command)
                 return self.start_training(
                     sid,
                     user=user,
-                    message="Battle Engine V2 started. Choose an intent, then play a card or press Ready.",
+                    message=(
+                        "Campaign chapter started. Choose an intent, then play a card or press Ready."
+                        if campaign_context
+                        else f"{difficulty.title()} Training started. Choose an intent, then play a card or press Ready."
+                    ),
+                    difficulty=difficulty,
+                    campaign_context=campaign_context,
                 )
             raise ValueError("No active BE2 match.")
 

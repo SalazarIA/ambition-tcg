@@ -17,6 +17,7 @@
         return {
             search: value("collection-search").toLowerCase().trim(),
             type: value("filter-type"),
+            element: value("filter-element"),
             sigil: value("filter-sigil"),
             role: value("filter-role"),
             faction: value("filter-faction"),
@@ -35,6 +36,7 @@
         document.querySelectorAll(".az-game-collection-page .collection-card").forEach(function (card) {
             var matchesSearch = !filters.search || (card.dataset.name || "").indexOf(filters.search) !== -1;
             var matchesType = !filters.type || card.dataset.type === filters.type;
+            var matchesElement = !filters.element || card.dataset.element === filters.element;
             var matchesSigil = !filters.sigil || card.dataset.sigil === filters.sigil;
             var matchesRole = !filters.role || card.dataset.role === filters.role;
             var matchesFaction = !filters.faction || card.dataset.faction === filters.faction;
@@ -43,6 +45,7 @@
             var visible = (
                 matchesSearch &&
                 matchesType &&
+                matchesElement &&
                 matchesSigil &&
                 matchesRole &&
                 matchesFaction &&
@@ -59,12 +62,18 @@
         if (empty) {
             empty.hidden = visibleCount !== 0;
         }
+
+        var visible = document.getElementById("az-collection-visible-count");
+        if (visible) {
+            visible.textContent = String(visibleCount);
+        }
     }
 
     function bindCollectionFilters() {
         [
             "collection-search",
             "filter-type",
+            "filter-element",
             "filter-sigil",
             "filter-role",
             "filter-faction",
@@ -83,6 +92,7 @@
                 [
                     "collection-search",
                     "filter-type",
+                    "filter-element",
                     "filter-sigil",
                     "filter-role",
                     "filter-faction",
@@ -125,7 +135,53 @@
         });
     }
 
+    function markRecentlyUnlockedCards() {
+        var cards = Array.from(document.querySelectorAll(".az-game-collection-page .collection-card[data-card-id]"));
+        if (!cards.length) return;
+
+        var ownedIds = cards
+            .filter(function (card) {
+                return Number(card.dataset.owned || 0) > 0;
+            })
+            .map(function (card) {
+                return card.dataset.cardId;
+            })
+            .filter(Boolean);
+
+        var storageKey = "ambitionz_collection_owned_snapshot_v1";
+        var previous = [];
+
+        try {
+            previous = JSON.parse(window.localStorage.getItem(storageKey) || "[]");
+        } catch (error) {
+            previous = [];
+        }
+
+        var previousSet = new Set(Array.isArray(previous) ? previous : []);
+        var newSet = new Set(ownedIds);
+        var newlyOwned = ownedIds.filter(function (id) {
+            return !previousSet.has(id);
+        });
+
+        if (!previous.length) {
+            newlyOwned = ownedIds.slice(0, 3);
+        }
+
+        cards.forEach(function (card) {
+            var isNew = newlyOwned.indexOf(card.dataset.cardId) !== -1;
+            card.classList.toggle("is-recently-unlocked", isNew);
+            var badge = card.querySelector("[data-new-card-badge]");
+            if (badge) badge.hidden = !isNew;
+        });
+
+        try {
+            window.localStorage.setItem(storageKey, JSON.stringify(Array.from(newSet)));
+        } catch (error) {}
+    }
+
     document.addEventListener("DOMContentLoaded", enhanceCards);
     document.addEventListener("DOMContentLoaded", bindCollectionFilters);
+    document.addEventListener("DOMContentLoaded", markRecentlyUnlockedCards);
+    document.addEventListener("DOMContentLoaded", filterCollectionCards);
     window.filterCollectionCards = filterCollectionCards;
 })();

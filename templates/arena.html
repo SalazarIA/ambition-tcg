@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=81">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=82">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -70,10 +70,23 @@
             <aside class="az48-training-panel" id="az48-training-panel" aria-label="Training overview">
 	                <strong>{% if campaign_context %}{{ campaign_context.title }}{% else %}Training Mode{% endif %}</strong>
 	                <span>{% if campaign_context %}Campaign chapter · {{ campaign_context.difficulty|title }} · {{ campaign_context.reward }}{% else %}Practice intent, card, lane, Ready. Normal bot · one clear beta flow.{% endif %}</span>
-                <div class="az48-training-difficulties" aria-label="Bot difficulty presentation">
-                    <b>Easy: learn</b>
-                    <b class="is-active">Normal: beta</b>
-                    <b>Hard: soon</b>
+                <div class="az48-training-difficulties" aria-label="Bot difficulty presentation" id="az48-training-difficulty-picker">
+                    <label data-training-difficulty="easy">
+                        <input type="radio" name="training_difficulty" value="easy"{% if campaign_context and campaign_context.difficulty == 'easy' %} checked{% endif %}{% if campaign_context %} disabled{% endif %}>
+                        <b>Easy</b>
+                        <small>Learning bot, cleaner openings.</small>
+                    </label>
+                    <label data-training-difficulty="normal">
+                        <input type="radio" name="training_difficulty" value="normal"{% if not campaign_context or campaign_context.difficulty == 'normal' %} checked{% endif %}{% if campaign_context %} disabled{% endif %}>
+                        <b>Normal</b>
+                        <small>Standard competitive beta.</small>
+                    </label>
+                    <label data-training-difficulty="hard">
+                        <input type="radio" name="training_difficulty" value="hard"{% if campaign_context and campaign_context.difficulty == 'hard' %} checked{% endif %}{% if campaign_context %} disabled{% endif %}>
+                        <b>Hard</b>
+                        <small>Aggressive tactical pressure.</small>
+                    </label>
+                    <span id="az48-training-difficulty-label">{% if campaign_context %}{{ campaign_context.difficulty|title }} Campaign{% else %}Normal Training{% endif %}</span>
                 </div>
             </aside>
             {% endif %}
@@ -210,6 +223,6 @@
     {% if arena_renderer == "3d" %}
     <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
     {% endif %}
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=81"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=82"></script>
 </body>
 </html>

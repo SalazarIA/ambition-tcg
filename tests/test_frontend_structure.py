@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v181"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v182"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -387,6 +387,66 @@ def test_arena_state_safety_and_result_panel_contract():
     assert ".az48-result-missions" in css
 
 
+def test_blocks_65_72_retention_progression_contract():
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+    progression_py = (PROJECT_ROOT / "game" / "progression.py").read_text()
+    arena = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    daily = (PROJECT_ROOT / "templates" / "daily.html").read_text()
+    missions = (PROJECT_ROOT / "templates" / "missions.html").read_text()
+    progression = (PROJECT_ROOT / "templates" / "progression.html").read_text()
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    deck_builder = (PROJECT_ROOT / "templates" / "deck_builder.html").read_text()
+    arena_js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    cards_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_cards.js").read_text()
+    deck_js = (PROJECT_ROOT / "static" / "js" / "deck_builder.js").read_text()
+    progression_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_progression.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    arena_css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+    service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
+
+    for mission_key in [
+        "win_training_match",
+        "deal_damage_total",
+        "play_cards_total",
+        "play_fire_card",
+        "play_water_card",
+        "play_earth_card",
+        "play_plant_card",
+        "gain_ambition_total",
+        "use_strike_intent",
+        "use_guard_intent",
+        "use_focus_intent",
+    ]:
+        assert mission_key in progression_py
+
+    assert "build_match_mission_metrics" in app_py
+    assert "track_match_mission_v2" in app_py
+    assert 'data-daily-reward-card' in daily
+    assert "az-daily-reward-card-v1" in progression
+    assert "az-mission-v2-summary" in missions
+    assert "data-mission-type" in missions
+    assert 'id="filter-element"' in collection
+    assert "az-new-card-badge-v1" in collection
+    assert 'id="az-collection-visible-count"' in collection
+    assert 'id="az-deck-guidance-v1"' in deck_builder
+    assert "Test in Training" in deck_builder
+    assert 'name="training_difficulty"' in arena
+    assert "Learning bot" in arena
+    assert "FIRST_PLAYER_STORAGE_KEY" in arena_js
+    assert "az48-first-player-flow" in arena_js
+    assert "Não mostrar novamente" in arena_js
+    assert "selectedTrainingDifficulty" in arena_js
+    assert "level_progress_percent" in arena_js
+    assert "filter-element" in cards_js
+    assert "markRecentlyUnlockedCards" in cards_js
+    assert "updateDeckGuidance" in deck_js
+    assert "ambitionz_daily_reward_claimed_v1" in progression_js
+    assert ".az-deck-guidance-v1" in css
+    assert ".az-mission-v2-summary" in css
+    assert ".az48-first-player-flow" in arena_css
+    assert 'CACHE_NAME = "ambitionz-web-app-v182"' in service_worker
+
+
 def test_arena_premium_hud_contract():
     template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
     js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
@@ -522,7 +582,7 @@ def test_art_direction_system_contract():
     assert "az-rarity-badge" in css
     assert "az-element-badge" in css
     assert "var(--az48-board-fog)" in arena_css
-    assert "arena_clean_v48.css') }}?v=81" in template
+    assert "arena_clean_v48.css') }}?v=82" in template
 
 
 def test_card_frame_premium_contract():
@@ -548,7 +608,7 @@ def test_card_frame_premium_contract():
     assert ".az-premium-card-shell-v1" in css
     assert ".az48-card-frame-premium-v1" in arena_css
     assert ".az48-card-element-mark" in arena_css
-    assert "arena_clean_v48.js') }}?v=81" in arena_template
+    assert "arena_clean_v48.js') }}?v=82" in arena_template
 
 
 def test_faction_identity_layer_contract():

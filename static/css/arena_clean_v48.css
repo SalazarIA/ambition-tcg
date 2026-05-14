@@ -2882,3 +2882,150 @@ body.az48-command-pending .az48-actions::after {
         grid-template-columns: 1fr;
     }
 }
+
+/* Blocks 65-72 Battle Retention UX */
+
+.az48-training-difficulties {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 7px;
+}
+
+.az48-training-difficulties label {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+    padding: 7px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.045);
+    cursor: pointer;
+}
+
+.az48-training-difficulties label.is-active {
+    border-color: rgba(248, 231, 186, 0.34);
+    background: rgba(248, 231, 186, 0.08);
+}
+
+.az48-training-difficulties input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.az48-training-difficulties b,
+.az48-training-difficulties small {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-training-difficulties small {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.56rem;
+    line-height: 1.15;
+}
+
+#az48-training-difficulty-label {
+    grid-column: 1 / -1;
+    color: rgba(248, 231, 186, 0.82);
+    font-size: 0.62rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az48-first-player-flow {
+    position: fixed;
+    right: max(14px, env(safe-area-inset-right));
+    top: max(82px, calc(18px + env(safe-area-inset-top)));
+    z-index: 170;
+    width: min(340px, calc(100vw - 28px));
+    padding: 14px;
+    border-radius: 16px;
+    color: rgba(255, 255, 255, 0.86);
+    background:
+        linear-gradient(135deg, rgba(248, 231, 186, 0.12), rgba(88, 214, 199, 0.08)),
+        rgba(8, 8, 14, 0.94);
+    border: 1px solid rgba(248, 231, 186, 0.22);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+    pointer-events: auto;
+}
+
+.az48-first-player-flow span,
+.az48-first-player-flow strong {
+    display: block;
+}
+
+.az48-first-player-flow span {
+    color: rgba(248, 231, 186, 0.76);
+    font-size: 0.66rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az48-first-player-flow strong {
+    margin-top: 4px;
+    color: #fff;
+    font-size: 0.96rem;
+    line-height: 1.2;
+}
+
+.az48-first-player-flow ol {
+    margin: 10px 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 5px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.76rem;
+    line-height: 1.28;
+}
+
+.az48-first-player-flow div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.az48-first-player-flow button {
+    min-height: 32px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    border: 1px solid rgba(248, 231, 186, 0.22);
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.84);
+    font-weight: 900;
+}
+
+.az48-first-player-flow button:first-child {
+    background: rgba(248, 231, 186, 0.16);
+    color: #fff;
+}
+
+.az48-result-progress strong {
+    white-space: normal;
+}
+
+@media (max-width: 760px), (max-height: 760px) {
+    .az48-first-player-flow {
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: max(88px, calc(18px + env(safe-area-inset-bottom)));
+        width: auto;
+        max-height: 38vh;
+        overflow: auto;
+    }
+
+    .az48-training-difficulties {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .az48-first-player-flow {
+        transition: none;
+    }
+}

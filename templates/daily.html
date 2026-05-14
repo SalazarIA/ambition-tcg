@@ -36,6 +36,19 @@
         </section>
 
         <section class="daily-summary-grid">
+            <article
+                class="daily-summary-card az-daily-reward-card-v1"
+                data-daily-reward-card
+                data-daily-state="{% if daily_checkin.claimed_today %}claimed{% elif daily_checkin.can_claim %}available{% else %}preview{% endif %}"
+                data-daily-today="{{ daily_checkin.today }}"
+            >
+                <span class="progression-kicker">{{ daily_checkin.reward_card.label }}</span>
+                <strong data-daily-reward-title>{% if daily_checkin.claimed_today %}Collected Today{% elif daily_checkin.can_claim %}Available Now{% else %}Beta Preview{% endif %}</strong>
+                <p data-daily-reward-copy>{{ daily_checkin.claim_reward }} · {{ daily_checkin.next_reward }}</p>
+                {% if not user %}
+                    <button type="button" class="btn btn-secondary small-btn" data-local-daily-claim>Preview Claim</button>
+                {% endif %}
+            </article>
             <article class="daily-summary-card">
                 <span class="progression-kicker">Player</span>
                 <strong>{{ user.username if user else 'Guest' }}</strong>
@@ -127,6 +140,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=3"></script>
 </body>
 </html>

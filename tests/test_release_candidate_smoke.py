@@ -6,6 +6,7 @@ from app import active_matches, emit_arena_state_v8, end_match, issue_password_r
 from conftest import create_user, csrf_token_from_response, login_session
 from game.balance import STARTING_HP
 from game.bot_ai import DIFFICULTY_PROFILES, choose_intent
+from game.cards import CARD_CATALOG
 from game.progression import today_key
 from game.state import VALID_INTENTS
 
@@ -27,7 +28,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v181" in body
+    assert "ambitionz-web-app-v182" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -630,6 +631,69 @@ def test_beta_missions_progress_from_real_routes(client):
     assert claim_response.status_code == 200
     assert missions["view_collection"].is_claimed is True
     assert user.total_xp == 20
+
+
+def test_match_end_tracks_mission_v2_combat_progress(client, monkeypatch):
+    user = create_user(username="missionv2", email="missionv2@example.com")
+    emitted = []
+    fire_card = next(card for card in CARD_CATALOG if card["element"] == "Fire")
+
+    def fake_emit(event, payload=None, **kwargs):
+        emitted.append((event, payload, kwargs))
+
+    monkeypatch.setattr(socketio, "emit", fake_emit)
+
+    room_id = "training_test_mission_v2"
+    active_matches[room_id] = {
+        "p1": {
+            "sid": "sid-mission-v2",
+            "user_id": user.id,
+            "name": user.username,
+            "hp": 18,
+            "deck": [],
+            "hand": [],
+            "graveyard": [],
+        },
+        "p2": {
+            "sid": "bot-mission-v2",
+            "name": "Ambitionz Bot",
+            "is_bot": True,
+            "hp": 0,
+            "deck": [],
+            "hand": [],
+            "graveyard": [],
+        },
+        "round": 2,
+        "training": True,
+        "is_bot_match": True,
+        "bot_difficulty": "normal",
+        "logs": [],
+        "combat_log": [
+            {"type": "intent_selected", "side": "player", "intent": "Strike"},
+            {"type": "card_played", "side": "player", "card_id": fire_card["id"], "card_name": fire_card["name"]},
+            {"type": "hero_damage", "attacker_side": "player", "target_side": "opponent", "damage": 12},
+            {"type": "ambition_gain", "side": "player", "amount": 3},
+        ],
+    }
+    player_rooms["sid-mission-v2"] = room_id
+
+    end_match(room_id, "p1")
+
+    missions = {
+        mission.mission_key: mission
+        for mission in UserMission.query.filter_by(user_id=user.id, mission_date="beta").all()
+    }
+
+    assert missions["win_training_match"].progress == 1
+    assert missions["deal_damage_total"].progress == 12
+    assert missions["play_cards_total"].progress == 1
+    assert missions["play_fire_card"].progress == 1
+    assert missions["gain_ambition_total"].progress == 3
+    assert missions["use_strike_intent"].progress == 1
+
+    summary = next(payload for event, payload, _kwargs in emitted if event == "post_match_summary")
+    mission_names = {mission["mission_key"] for mission in summary["mission_progress"]}
+    assert {"deal_damage_total", "play_cards_total", "play_fire_card"}.issubset(mission_names)
 
 
 def test_campaign_match_end_records_history_xp_missions_and_summary(client, monkeypatch):

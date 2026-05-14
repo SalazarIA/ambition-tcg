@@ -702,8 +702,10 @@ def build_beta_mission_guides(user, missions, deck_status=None):
             "mission_id": mission.id if mission else None,
             "title": definition["title"],
             "description": definition["description"],
+            "category": definition.get("category") or "Beta",
             "progress": progress,
             "target": target,
+            "progress_label": f"{progress}/{target}",
             "percent": min(100, round((progress / max(1, target)) * 100)),
             "reward": definition.get("reward_preview") or f"{definition.get('xp_reward', 0)} XP",
             "status": "Preview" if not user else "Claimed" if claimed else "Complete" if complete else "Active",
@@ -713,6 +715,26 @@ def build_beta_mission_guides(user, missions, deck_status=None):
         })
 
     return guides
+
+
+def build_mission_board_summary(mission_guides, daily_missions):
+    guides = mission_guides or []
+    daily_missions = daily_missions or []
+    category_counts = Counter(guide.get("category") or "Beta" for guide in guides)
+    completed_guides = sum(1 for guide in guides if guide.get("status") in {"Complete", "Claimed"})
+    claimable_daily = sum(1 for mission in daily_missions if mission.is_complete and not mission.is_claimed)
+
+    return {
+        "total_beta": len(guides),
+        "completed_beta": completed_guides,
+        "active_beta": max(0, len(guides) - completed_guides),
+        "daily_total": len(daily_missions),
+        "daily_claimable": claimable_daily,
+        "categories": [
+            {"name": name, "count": count}
+            for name, count in sorted(category_counts.items(), key=lambda item: (item[0] != "Battle", item[0]))
+        ],
+    }
 
 
 def build_daily_checkin(user, missions):
@@ -746,6 +768,14 @@ def build_daily_checkin(user, missions):
         "claimed_today": claimed_today,
         "can_claim": bool(user and not claimed_today),
         "claim_reward": "35 XP beta",
+        "next_reward": "Tomorrow: 35 XP beta + mission progress",
+        "reward_card": {
+            "label": "Daily Reward",
+            "available": bool(user and not claimed_today),
+            "claimed": claimed_today,
+            "preview": "35 XP beta",
+            "tomorrow": "Next reward tomorrow",
+        },
         "active_count": active_count,
         "complete_count": complete_count,
         "claimed_count": claimed_count,
@@ -762,6 +792,132 @@ def build_daily_checkin(user, missions):
             {"day": "Day 5", "reward": "45 XP preview", "status": "Current streak" if streak >= 5 else "Future"},
         ],
     }
+
+
+def combat_card_element(card_id):
+    card_id = str(card_id or "").strip()
+    if not card_id:
+        return ""
+
+    for card in CARD_CATALOG:
+        if str(card.get("id") or "") == card_id:
+            return str(card.get("element") or "")
+
+    return ""
+
+
+def build_match_mission_metrics(match, player_key):
+    side = "player" if player_key in {"p1", "player"} else "opponent"
+    opponent_side = "opponent" if side == "player" else "player"
+
+    def safe_int(value):
+        try:
+            return int(value or 0)
+        except Exception:
+            return 0
+
+    metrics = {
+        "cards_played": 0,
+        "damage_dealt": 0,
+        "ambition_gained": 0,
+        "elements": Counter(),
+        "intents": Counter(),
+    }
+    events = [
+        event
+        for event in (match.get("combat_log") or [])
+        if isinstance(event, dict)
+    ]
+
+    if not events:
+        for source_key in ("round_events", "events"):
+            value = match.get(source_key)
+            if isinstance(value, list):
+                events.extend(event for event in value if isinstance(event, dict))
+
+    for event in events:
+        event_type = str(event.get("type") or event.get("kind") or "").lower()
+        event_side = str(event.get("side") or event.get("actor") or "").lower()
+
+        if event_type == "card_played" and event_side == side:
+            metrics["cards_played"] += 1
+            element = combat_card_element(event.get("card_id"))
+            if element:
+                metrics["elements"][element] += 1
+
+        if (
+            event_type == "hero_damage"
+            and str(event.get("attacker_side") or "").lower() == side
+            and str(event.get("target_side") or "").lower() == opponent_side
+        ):
+            metrics["damage_dealt"] += max(0, safe_int(event.get("damage") or event.get("amount") or 0))
+
+        if event_type == "ambition_gain" and event_side == side:
+            metrics["ambition_gained"] += max(0, safe_int(event.get("amount") or 0))
+
+        if event_type == "intent_selected" and event_side == side:
+            intent = str(event.get("intent") or "").strip().title()
+            if intent in {"Strike", "Guard", "Focus"}:
+                metrics["intents"][intent] += 1
+
+    return metrics
+
+
+def track_match_mission_v2(user, room_id, match_mode, result_label, player_key, match):
+    if not user:
+        return []
+
+    updates = []
+    metrics = build_match_mission_metrics(match, player_key)
+
+    def append_update(key, amount=1, metadata=None):
+        update = track_beta_mission(
+            user,
+            key,
+            amount=amount,
+            page="/arena",
+            metadata={
+                "room_id": room_id,
+                "mode": match_mode,
+                "result": result_label,
+                **(metadata or {}),
+            },
+        )
+        if update:
+            updates.append(update)
+
+    if result_label == "WIN" and match_mode in {"training", "campaign", "fallback_bot"}:
+        append_update("win_training_match")
+
+    if metrics["damage_dealt"]:
+        append_update("deal_damage_total", metrics["damage_dealt"], {"damage": metrics["damage_dealt"]})
+
+    if metrics["cards_played"]:
+        append_update("play_cards_total", metrics["cards_played"], {"cards_played": metrics["cards_played"]})
+
+    for element, amount in metrics["elements"].items():
+        mission_key = {
+            "Fire": "play_fire_card",
+            "Water": "play_water_card",
+            "Earth": "play_earth_card",
+            "Plant": "play_plant_card",
+        }.get(element)
+        if mission_key:
+            append_update(mission_key, amount, {"element": element, "cards_played": amount})
+
+    if metrics["ambition_gained"]:
+        append_update("gain_ambition_total", metrics["ambition_gained"], {"ambition": metrics["ambition_gained"]})
+
+    for intent, amount in metrics["intents"].items():
+        mission_key = {
+            "Strike": "use_strike_intent",
+            "Guard": "use_guard_intent",
+            "Focus": "use_focus_intent",
+        }.get(intent)
+        if mission_key:
+            append_update(mission_key, amount, {"intent": intent, "uses": amount})
+
+    return updates
 
 
 def record_retention_event(user, event_key, page="", metadata=None, commit=False):
@@ -2564,14 +2720,21 @@ def collection():
     catalog_element_counts = Counter(str(card.get("element") or "Neutral") for card in cards)
     owned_rarity_counts = Counter(str(card.get("rarity") or "Common") for card in owned_cards)
     catalog_rarity_counts = Counter(str(card.get("rarity") or "Common") for card in cards)
+    owned_faction_counts = Counter(str(card.get("faction") or "") for card in owned_cards)
+    catalog_faction_counts = Counter(str(card.get("faction") or "") for card in cards)
+    owned_role_counts = Counter(str(card.get("role") or "Card") for card in owned_cards)
+    catalog_role_counts = Counter(str(card.get("role") or "Card") for card in cards)
     element_names = [name for name in element_order if catalog_element_counts.get(name, 0)]
     element_names.extend(sorted(name for name in catalog_element_counts if name not in element_names))
     rarity_names = [name for name in rarity_order if catalog_rarity_counts.get(name, 0)]
     rarity_names.extend(sorted(name for name in catalog_rarity_counts if name not in rarity_names))
+    faction_names = sorted(name for name in catalog_faction_counts if name)
+    role_names = sorted(name for name in catalog_role_counts if name)
     collection_stats = {
         "unique_cards": unique_owned,
         "total_cards": sum(int(card.get("count") or 0) for card in owned_cards),
         "catalog_cards": catalog_total,
+        "locked_cards": max(0, catalog_total - unique_owned),
         "completion_percent": int(round((unique_owned / catalog_total) * 100)) if catalog_total else 0,
         "catalog_label": "Starter Collection" if unique_owned else "Beta Catalog",
         "monsters": sum(int(card.get("count") or 0) for card in owned_cards if card.get("type") == "Monster"),
@@ -2594,6 +2757,22 @@ def collection():
                 "css": "rarity-" + name.lower(),
             }
             for name in rarity_names
+        ],
+        "faction_counts": [
+            {
+                "name": name,
+                "owned": int(owned_faction_counts.get(name, 0)),
+                "total": int(catalog_faction_counts.get(name, 0)),
+            }
+            for name in faction_names
+        ],
+        "role_counts": [
+            {
+                "name": name,
+                "owned": int(owned_role_counts.get(name, 0)),
+                "total": int(catalog_role_counts.get(name, 0)),
+            }
+            for name in role_names
         ],
     }
 
@@ -2981,6 +3160,7 @@ def deck_builder():
         collection_cards=collection_cards,
         current_deck=current_deck,
         deck_ids=deck_ids,
+        collection_ids=collection_ids,
         deck_validation_errors=deck_validation_errors,
         deck_analysis=deck_analysis_v115(deck_ids),
         deck_status=deck_status,
@@ -3326,6 +3506,7 @@ def end_match(room_id, winner_key, ending_reason="completed"):
                 },
             )
 
+        updates.extend(track_match_mission_v2(user, room_id, match_mode, result_label, player_key, match))
         mission_updates[player_key] = [update for update in updates if update]
 
     if winner_key == "DRAW":
@@ -3446,6 +3627,8 @@ def end_match(room_id, winner_key, ending_reason="completed"):
                 "deck": url_for("deck_builder"),
                 "collection": url_for("collection"),
                 "history": url_for("match_history_detail", history_id=history.id),
+                "missions": url_for("missions"),
+                "menu": url_for("index"),
             },
         }
 
@@ -4062,11 +4245,14 @@ def missions():
         missions = []
         beta_missions = []
 
+    mission_guides = build_beta_mission_guides(user, beta_missions, deck_status)
+
     return render_template(
         "missions.html",
         user=user,
         missions=missions,
-        mission_guides=build_beta_mission_guides(user, beta_missions, deck_status),
+        mission_guides=mission_guides,
+        mission_board_summary=build_mission_board_summary(mission_guides, missions),
         deck_status=deck_status,
         beta_journey=build_beta_journey(user, deck_status),
     )
@@ -4574,6 +4760,7 @@ def progression():
 
     user = current_user()
     missions = []
+    daily_missions = []
     deck_status = beta_deck_status(user)
     collection_progress = beta_collection_progress(user)
     progression_stats = {
@@ -4599,10 +4786,12 @@ def progression():
             .limit(6)
             .all()
         )
+        daily_missions = missions
     except Exception as error:
         print("PROGRESSION HUB MISSIONS ERROR:", type(error).__name__, error)
         db.session.rollback()
         missions = []
+        daily_missions = []
 
     next_steps = [
         {
@@ -4651,6 +4840,7 @@ def progression():
         progression_stats=progression_stats,
         collection_progress=collection_progress,
         deck_status=deck_status,
+        daily_checkin=build_daily_checkin(user, daily_missions),
         beta_journey=build_beta_journey(user, deck_status),
     )
 

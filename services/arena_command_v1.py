@@ -102,6 +102,10 @@ def normalize_arena_command(payload: Optional[Dict[str, Any]]) -> Dict[str, Any]
 
     if action in {"start_training", "request_state"}:
         command["difficulty"] = _optional_str(data.get("difficulty"))
+        command["campaign_chapter_id"] = _optional_str(data.get("campaign_chapter_id"))
+        command["campaign_title"] = _optional_str(data.get("campaign_title"))
+        command["campaign_difficulty"] = _optional_str(data.get("campaign_difficulty"))
+        command["campaign_reward"] = _optional_str(data.get("campaign_reward"))
 
     return command
 

@@ -13,7 +13,8 @@
             "/progression",
             "/leaderboard",
             "/ranking",
-            "/match-history"
+            "/match-history",
+            "/"
         ].indexOf(window.location.pathname) !== -1;
     }
 
@@ -73,6 +74,53 @@
         anchor.parentNode.insertBefore(strip, anchor.nextSibling);
     }
 
+    function todayKey() {
+        var now = new Date();
+        return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+    }
+
+    function updateDailyRewardCards() {
+        var cards = document.querySelectorAll("[data-daily-reward-card]");
+        if (!cards.length) return;
+
+        var key = "ambitionz_daily_reward_claimed_v1";
+        var today = todayKey();
+        var localClaimed = false;
+
+        try {
+            localClaimed = window.localStorage.getItem(key) === today;
+        } catch (error) {
+            localClaimed = false;
+        }
+
+        cards.forEach(function (card) {
+            var serverState = card.dataset.dailyState || "preview";
+            var claimed = serverState === "claimed" || localClaimed;
+            var title = card.querySelector("[data-daily-reward-title]");
+            var copy = card.querySelector("[data-daily-reward-copy]");
+
+            card.classList.toggle("is-claimed", claimed);
+            card.classList.toggle("is-available", !claimed && serverState !== "preview");
+
+            if (claimed && title) title.textContent = "Collected Today";
+            if (claimed && copy) copy.textContent = "Next reward tomorrow. Play Training to progress missions now.";
+        });
+    }
+
+    function bindLocalDailyReward() {
+        document.querySelectorAll("[data-local-daily-claim]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                try {
+                    window.localStorage.setItem("ambitionz_daily_reward_claimed_v1", todayKey());
+                } catch (error) {}
+
+                button.disabled = true;
+                button.textContent = "Preview Claimed";
+                updateDailyRewardCards();
+            });
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         if (!isProgressionPage()) return;
 
@@ -81,6 +129,8 @@
         markMissionCards();
         markTables();
         addLoopStrip();
+        bindLocalDailyReward();
+        updateDailyRewardCards();
         injectRewardToast();
     });
 })();

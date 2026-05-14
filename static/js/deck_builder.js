@@ -49,17 +49,22 @@ function getCurrentCounts() {
         Trap: 0,
         totalCost: 0,
         duplicates: 0,
-        maxCopiesUsed: 0
+        maxCopiesUsed: 0,
+        highCostCards: 0,
+        elements: {}
     };
 
     getBuilderCards().forEach((card) => {
         const selected = getSelectedInputs(card.dataset.cardId).length;
         const type = card.dataset.type;
         const cost = Number(card.dataset.cost || 1);
+        const element = card.dataset.element || "Neutral";
 
         counts.total += selected;
         counts[type] += selected;
         counts.totalCost += selected * cost;
+        counts.highCostCards += cost >= 4 ? selected : 0;
+        counts.elements[element] = (counts.elements[element] || 0) + selected;
 
         if (selected > 1) {
             counts.duplicates += 1;
@@ -190,9 +195,63 @@ function updateDeckLiveStatus() {
         saveButton.textContent = isValid ? "Save Active Deck" : "Save Deck / Show Errors";
     }
 
+    updateDeckGuidance(counts, averageCost, isValid);
     updateCardSelectionStates();
     updateCopyButtons();
     updateDeckPreview();
+}
+
+function deckGuidanceLines(counts, averageCost, isValid) {
+    const lines = [];
+    const elementEntries = Object.entries(counts.elements || {}).filter((entry) => entry[1] > 0);
+
+    if (isValid) {
+        lines.push("Deck is valid for the fixed beta rule.");
+    } else if (counts.total !== DECK_LIMITS.total) {
+        lines.push(`Set the deck to exactly ${DECK_LIMITS.total} cards.`);
+    }
+
+    if (counts.Monster < 18) {
+        lines.push("Add more creatures so lanes do not collapse early.");
+    } else {
+        lines.push("Creature count can contest lanes.");
+    }
+
+    if (Number(averageCost) > 2.9 || counts.highCostCards > 8) {
+        lines.push("Lower the curve; too many expensive cards can die in hand.");
+    } else {
+        lines.push("Curve is playable for early Training rounds.");
+    }
+
+    if (elementEntries.length < 3) {
+        lines.push("Use at least three elements for a clearer starter identity spread.");
+    } else {
+        lines.push("Element spread supports Fire pressure, Water focus, Earth defense and Plant control.");
+    }
+
+    if (counts.maxCopiesUsed > DECK_LIMITS.maxCopies) {
+        lines.push("Reduce duplicate copies to the beta max of 3.");
+    } else {
+        lines.push("Duplicate limit is respected.");
+    }
+
+    return lines.slice(0, 5);
+}
+
+function updateDeckGuidance(counts, averageCost, isValid) {
+    setText("az-guidance-total", `${counts.total}/${DECK_LIMITS.total}`);
+    setText("az-guidance-average-cost", averageCost);
+    setText("az-guidance-copy-health", `${counts.maxCopiesUsed}/${DECK_LIMITS.maxCopies}`);
+
+    const elementEntries = Object.entries(counts.elements || {}).filter((entry) => entry[1] > 0);
+    setText("az-guidance-element-balance", `${elementEntries.length} elements`);
+
+    const list = document.getElementById("az-deck-guidance-list");
+    if (!list) return;
+
+    list.innerHTML = deckGuidanceLines(counts, averageCost, isValid)
+        .map((line) => `<li>${escapeHtml(line)}</li>`)
+        .join("");
 }
 
 function addCardToDeck(cardId) {

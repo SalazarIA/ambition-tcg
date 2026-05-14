@@ -70,6 +70,30 @@
             </div>
         </section>
 
+        <section class="az-mission-v2-summary" aria-label="Mission system V2 summary">
+            <article>
+                <span class="progression-kicker">Beta Missions</span>
+                <strong>{{ mission_board_summary.completed_beta }}/{{ mission_board_summary.total_beta }}</strong>
+                <p>Journey, combat, element and intent objectives.</p>
+            </article>
+            <article>
+                <span class="progression-kicker">Daily Board</span>
+                <strong>{{ mission_board_summary.daily_claimable }}</strong>
+                <p>Rewards ready to claim today.</p>
+            </article>
+            <article>
+                <span class="progression-kicker">Deck</span>
+                <strong>{% if deck_status.is_valid %}Valid{% else %}Check{% endif %}</strong>
+                <p>{{ deck_status.selected_count|default(deck_status.total|default(0)) }} / 30 beta cards.</p>
+            </article>
+        </section>
+
+        <section class="az-mission-v2-tags" aria-label="Mission categories">
+            {% for category in mission_board_summary.categories %}
+                <span>{{ category.name }} <b>{{ category.count }}</b></span>
+            {% endfor %}
+        </section>
+
         <section class="deck-status az-beta-mission-board-v1">
             <div class="section-title-row">
                 <div>
@@ -81,10 +105,10 @@
 
             <div class="az-beta-guide-grid-v1">
                 {% for guide in mission_guides %}
-                    <article class="az-beta-guide-card-v1" data-status="{{ guide.status|lower|replace(' ', '-') }}">
+                    <article class="az-beta-guide-card-v1 az-mission-v2-card" data-status="{{ guide.status|lower|replace(' ', '-') }}" data-mission-type="{{ guide.category|lower }}">
                         <div class="mission-card-head">
-                            <span class="progression-kicker">{{ guide.status }}</span>
-                            <strong>{{ guide.progress }}/{{ guide.target }}</strong>
+                            <span class="progression-kicker">{{ guide.category }} · {{ guide.status }}</span>
+                            <strong>{{ guide.progress_label }}</strong>
                         </div>
                         <h3>{{ guide.title }}</h3>
                         <p>{{ guide.description }}</p>
@@ -175,6 +199,6 @@
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=3"></script>
 </body>
 </html>

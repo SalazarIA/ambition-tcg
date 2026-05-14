@@ -73,6 +73,14 @@
                 <span>Traps</span>
                 <strong>{{ collection_stats.traps|default(0) }}</strong>
             </article>
+            <article>
+                <span>Locked</span>
+                <strong>{{ collection_stats.locked_cards|default(0) }}</strong>
+            </article>
+            <article>
+                <span>Visible</span>
+                <strong id="az-collection-visible-count">{{ collection_stats.catalog_cards|default(0) }}</strong>
+            </article>
         </section>
 
         <section id="az-collection-desire-loop" class="az-collection-desire-v1" aria-label="Collection progress">
@@ -142,6 +150,16 @@
                     <option value="Monster">Monster</option>
                     <option value="Spell">Spell</option>
                     <option value="Trap">Trap</option>
+                </select>
+
+                <select id="filter-element">
+                    <option value="">All Elements</option>
+                    <option value="Fire">Fire</option>
+                    <option value="Water">Water</option>
+                    <option value="Earth">Earth</option>
+                    <option value="Plant">Plant</option>
+                    <option value="Global">Global</option>
+                    <option value="Neutral">Neutral</option>
                 </select>
 
                 <select id="filter-sigil">
@@ -234,6 +252,7 @@
                         <span class="az-ownership-badge-v1 is-{{ ownership_state }}">
                             {% if owned_count > 0 %}Owned x{{ owned_count }}{% else %}Locked{% endif %}
                         </span>
+                        <span class="az-new-card-badge-v1" data-new-card-badge hidden>New</span>
                         <span>{{ card.sigil }}</span>
                     </div>
                     <div class="az-card-cost-v1">{{ card.cost|default(1) }}</div>
@@ -281,6 +300,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=3"></script>
 </body>
 </html>

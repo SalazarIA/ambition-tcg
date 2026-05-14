@@ -631,6 +631,8 @@ def _legal_actions_for(player: Dict[str, Any], raw_phase: str, step: str, is_fin
 
 
 def _mode_for_state(state: Dict[str, Any]) -> str:
+    if state.get("campaign_chapter_id") or str(state.get("mode") or "").lower() == "campaign":
+        return "campaign"
     if state.get("training"):
         return "training"
     if state.get("is_bot_match"):
