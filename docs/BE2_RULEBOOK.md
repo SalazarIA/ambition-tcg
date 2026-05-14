@@ -46,6 +46,19 @@ played. Support cards occupy the support slot and replace the previous support
 if one exists. Spell and guard cards resolve immediately through the canonical
 card effect resolver.
 
+## Starter Identity
+
+The beta starter deck keeps the 30-card structure and uses element identity as
+readability guidance rather than a separate rules system:
+
+- Fire means pressure and damage.
+- Water means focus, resources and light sustain.
+- Earth means defense and durable bodies.
+- Plant means control and steady growth.
+
+Card payloads expose element, faction, role, preview and effect summary so the
+Arena can teach this identity without changing core combat rules.
+
 ## Lanes And Targeting
 
 There are three lanes: `left`, `center` and `right`. Creature cards require an

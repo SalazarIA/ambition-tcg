@@ -8,6 +8,7 @@ from services.battle_engine_v2 import (
     STARTING_HP,
     STARTING_HAND_SIZE,
     bot_choose_action,
+    build_beta_deck,
     card_has_keyword,
     choose_intent,
     create_match,
@@ -218,6 +219,8 @@ def test_be2_payload_includes_structured_round_events():
     assert resolved["events"]
     assert resolved["round_summary"]["events"]
     assert any(event["type"] in {"hero_damage", "shield_gain", "ambition_gain", "lane_hero_damage"} for event in resolved["round_summary"]["events"])
+    assert resolved["battle_highlights"]["items"]
+    assert resolved["battle_highlights"]["next_step"]
 
 
 def test_be2_payload_exposes_last_completed_combat_log_for_round_summary():
@@ -247,6 +250,29 @@ def test_be2_payload_exposes_last_completed_combat_log_for_round_summary():
     assert "round_end" in event_types
     assert {"lane_attack", "creature_damage"} & event_types
     assert {event.get("round") for event in payload["combat_log"]} == {1}
+
+
+def test_be2_card_payload_exposes_identity_fields_and_preview():
+    match = create_be2_training_match(sid="identity-payload")
+    be2_start(match)
+    payload = build_be2_arena_payload(match)
+    card_payload = payload["me"]["hand"][0]
+
+    assert card_payload["element"]
+    assert card_payload["faction"]
+    assert card_payload["role"]
+    assert card_payload["preview"]
+    assert card_payload["effect_summary"]
+
+
+def test_be2_starter_deck_identity_contract():
+    deck = build_beta_deck(seed=6201)
+
+    assert len(deck) == 30
+    assert all(card.get("id") for card in deck)
+    assert all(card.get("element") for card in deck)
+    assert all(card.get("kind") in {"creature", "spell", "guard"} for card in deck)
+    assert sum(1 for card in deck if card.get("kind") == "creature") == 21
 
 
 def test_training_bot_uses_training_balance_profile():

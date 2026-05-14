@@ -10,6 +10,9 @@
     let selectedCardId = null;
     let selectionMode = "";
     let commandSeq = 0;
+    let pendingCommand = null;
+    let pendingCommandTimer = null;
+    let latestStateOrderKey = -1;
     let latestPostMatchSummary = null;
     let latestGameOverResult = "";
     let lastCombatAudioSignature = "";
@@ -29,6 +32,7 @@
     };
 
     const AZ48_NO_PLAYABLE_HELP = "No playable card with current energy. Press Ready to resolve the round.";
+    const COMMAND_TIMEOUT_MS = 2600;
 
     const PAGE_KIND = document.body ? document.body.getAttribute("data-page-kind") : "arena";
     const CAMPAIGN_CONTEXT = window.AMBITIONZ_CAMPAIGN_CONTEXT || {};
@@ -189,6 +193,62 @@
         return payload && payload.schema === CANONICAL_SCHEMA && payload.me && payload.enemy;
     }
 
+    function phaseRank(payload) {
+        const phase = str(payload && (payload.phase || payload.raw_phase), "").toLowerCase();
+        const primary = str(payload && payload.legal_actions && payload.legal_actions.primary_action, "").toLowerCase();
+        const rankByPhase = {
+            start: 0,
+            created: 0,
+            intent: 1,
+            choose_action: 1,
+            card: 2,
+            ready: 3,
+            waiting: 4,
+            finished: 6,
+        };
+        if (payload && payload.winner) return 6;
+        if (primary === "choose_intent") return 1;
+        if (primary === "play_card") return 2;
+        if (primary === "ready") return 3;
+        if (primary === "wait") return 4;
+        return rankByPhase[phase] === undefined ? 0 : rankByPhase[phase];
+    }
+
+    function stateOrderKey(payload) {
+        return (num(payload && payload.round, 0) * 10) + phaseRank(payload);
+    }
+
+    function isStalePayload(payload) {
+        if (!latestState || !isCanonical(payload)) return false;
+        if (payload.winner) return false;
+        const nextKey = stateOrderKey(payload);
+        return nextKey < latestStateOrderKey;
+    }
+
+    function actionIsCommand(action) {
+        return ["start_training", "set_intent", "play_card", "ready", "unleash"].includes(String(action || ""));
+    }
+
+    function setCommandPending(command) {
+        if (!command || !actionIsCommand(command.action)) return;
+        pendingCommand = command;
+        if (document.body) document.body.classList.add("az48-command-pending");
+        window.clearTimeout(pendingCommandTimer);
+        pendingCommandTimer = window.setTimeout(() => {
+            pendingCommand = null;
+            if (document.body) document.body.classList.remove("az48-command-pending");
+            setServerError("Still syncing. Requesting the latest battle state.");
+            requestState();
+        }, COMMAND_TIMEOUT_MS);
+    }
+
+    function clearCommandPending() {
+        pendingCommand = null;
+        window.clearTimeout(pendingCommandTimer);
+        pendingCommandTimer = null;
+        if (document.body) document.body.classList.remove("az48-command-pending");
+    }
+
     function adapter() {
         return window.AmbitionzArenaRendererAdapter || null;
     }
@@ -218,12 +278,16 @@
             type,
             kind: str(card.kind || type),
             element: str(card.element || "Neutral"),
+            faction: str(card.faction || factionForElement(card.element || "Neutral")),
             rarity: str(card.rarity || "Common"),
             sigil: str(card.sigil || "None"),
+            role: str(card.role || card.kind || type),
             cost: num(firstValue(card.cost, card.energy_cost, card.energyCost), 1),
             stat,
             statLabel: str(card.combat_label || (isMonster ? "PWR" : "VAL")),
             attack,
+            damage: num(firstValue(card.damage, card.dmg, !isMonster ? card.power : 0), 0),
+            shield: num(firstValue(card.shield, card.shd), 0),
             currentHp,
             maxHp,
             artUrl: "/static/img/cards/elemental/neutral.svg",
@@ -236,6 +300,7 @@
                 accent: "#f4f7ff",
             },
             effect: str(card.effect || card.description || ""),
+            effectSummary: str(card.effect_summary || card.effect || card.description || ""),
             preview: str(card.preview || card.effect_summary || card.effect || card.description || ""),
             keywords: arr(card.keywords).map(String),
             keywordText: arr(card.keyword_text).map(String),
@@ -287,10 +352,11 @@
             "--az-card-art-image:url('" + esc(c.artUrl || "/static/img/cards/elemental/neutral.svg") + "')",
         ].join(";");
 
-        const title = options.disabledReason || c.preview || c.effect || c.name;
+        const disabledReason = friendlyDisabledReason(options.disabledReason || c.disabledReason || "");
+        const title = disabledReason || c.preview || c.effect || c.name;
 
         return [
-            '<button type="button" class="az48-card az48-card-v2 az48-card-frame-premium-v1 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + ' data-card-type="' + esc(c.type) + '" data-element="' + esc(c.element || "Neutral") + '" data-rarity="' + esc(c.rarity || "Common") + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(options.disabledReason || "") + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
+            '<button type="button" class="az48-card az48-card-v2 az48-card-frame-premium-v1 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + ' data-card-type="' + esc(c.type) + '" data-element="' + esc(c.element || "Neutral") + '" data-rarity="' + esc(c.rarity || "Common") + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(disabledReason) + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
             '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
@@ -396,6 +462,12 @@
             '<strong>Server message</strong>',
             '<p id="az48-server-error-text"></p>',
             '</div>',
+            '</div>',
+            '<div class="az48-clarity-card az48-highlight-card">',
+            '<span>Battle Highlights</span>',
+            '<strong id="az48-highlight-headline">No clash yet</strong>',
+            '<dl class="az48-highlight-grid" id="az48-highlight-grid"></dl>',
+            '<p id="az48-highlight-next">Choose your next line.</p>',
             '</div>',
             '<div class="az48-clarity-card az48-preview-card">',
             '<span>Card Detail</span>',
@@ -568,14 +640,15 @@
 
     function syncActionControls(step, legal) {
         legal = legal || {};
+        const hasPendingCommand = Boolean(pendingCommand);
 
         const available = {
-            "az48-start": step === "start" && Boolean(legal.can_start || legal.show_start),
-            "az48-floating-start": step === "start" && isTrainingLikePage(),
-            "az48-strike": step === "choose_intent",
-            "az48-guard": step === "choose_intent",
-            "az48-focus": step === "choose_intent",
-            "az48-ready": ["choose_card", "ready"].includes(step) && Boolean(legal.can_ready || legal.show_ready),
+            "az48-start": !hasPendingCommand && step === "start" && Boolean(legal.can_start || legal.show_start),
+            "az48-floating-start": !hasPendingCommand && step === "start" && isTrainingLikePage(),
+            "az48-strike": !hasPendingCommand && step === "choose_intent",
+            "az48-guard": !hasPendingCommand && step === "choose_intent",
+            "az48-focus": !hasPendingCommand && step === "choose_intent",
+            "az48-ready": !hasPendingCommand && ["choose_card", "ready"].includes(step) && Boolean(legal.can_ready || legal.show_ready),
         };
 
         Object.entries(available).forEach(([id, isAvailable]) => {
@@ -642,6 +715,39 @@
         el.innerHTML = lines.map((line) => '<li>' + esc(line) + '</li>').join("");
     }
 
+    function localBattleHighlights(payload) {
+        payload = payload || {};
+        const summary = payload.round_summary || {};
+        const dealt = Math.max(0, num(summary.enemy_hp_before) - num(summary.enemy_hp_after));
+        const taken = Math.max(0, num(summary.player_hp_before) - num(summary.player_hp_after));
+        return {
+            headline: dealt || taken ? ("You dealt " + dealt + " and took " + taken + ".") : "No clash resolved yet.",
+            next_step: uiCopyForStep(getArenaUiStep(payload), payload).hint || "Follow the highlighted action.",
+            items: [
+                { key: "damage_dealt", label: "Damage dealt", value: dealt },
+                { key: "damage_taken", label: "Damage taken", value: taken },
+                { key: "shield_gained", label: "Shield gained", value: 0 },
+                { key: "ambition_gained", label: "Ambition gained", value: 0 },
+            ],
+        };
+    }
+
+    function renderBattleHighlights(payload) {
+        const headline = document.getElementById("az48-highlight-headline");
+        const grid = document.getElementById("az48-highlight-grid");
+        const next = document.getElementById("az48-highlight-next");
+        if (!headline || !grid || !next) return;
+
+        const highlights = (payload && payload.battle_highlights) || localBattleHighlights(payload);
+        const items = arr(highlights.items).filter((item) => item && item.key).slice(0, 6);
+
+        headline.textContent = str(highlights.headline || "No clash resolved yet.");
+        next.textContent = str(highlights.next_step || "Follow the highlighted action.");
+        grid.innerHTML = items.map((item) => {
+            return '<div class="az48-highlight-item az48-highlight-' + esc(slug(item.key)) + '"><dt>' + esc(item.label || item.key) + '</dt><dd>' + esc(item.value) + '</dd></div>';
+        }).join("");
+    }
+
     function summaryEventsFrom(value) {
         if (Array.isArray(value)) return value;
         if (!value || typeof value !== "object") return [];
@@ -685,12 +791,12 @@
         return str(value, fallback);
     }
 
-    function renderSummaryItem(kind, text) {
+    function renderSummaryItem(kind, text, index = 0) {
         const safeKind = slug(kind || "event", "event");
-        return '<li class="az48-summary-item az48-summary-item-' + safeKind + '">' + esc(text) + '</li>';
+        return '<li class="az48-summary-item az48-summary-item-' + safeKind + '" style="--az48-event-index:' + esc(index) + '">' + esc(text) + '</li>';
     }
 
-    function renderCombatEvent(event) {
+    function renderCombatEvent(event, index = 0) {
         event = event || {};
         const type = str(event.type || event.kind || "").toLowerCase();
         const amount = eventAmount(event);
@@ -700,23 +806,23 @@
         const targetName = eventName(event.target_name || event.target || event.defender_name || event.defender || event.name, "alvo");
         const heroTarget = eventName(event.target_name || event.target || "", event.target_side ? "herói" : "alvo");
 
-        if (type === "round_start") return renderSummaryItem("event", "Rodada iniciada.");
-        if (type === "round_resolve") return renderSummaryItem("event", "Resolução da rodada.");
-        if (type === "intent_selected") return renderSummaryItem("event", str(event.message || event.text, "Intenção escolhida."));
-        if (type === "card_played") return renderSummaryItem("event", cardName + " entrou na rodada.");
-        if (type === "shield_gain") return renderSummaryItem("keyword", "Escudo +" + amount + ".");
-        if (type === "ambition_gain") return renderSummaryItem("keyword", "Ambition +" + amount + ".");
-        if (type === "lane_attack") return renderSummaryItem("attack", attackerName + " atacou " + defenderName + ".");
-        if (type === "direct_attack") return renderSummaryItem("attack", attackerName + " atacou diretamente o herói.");
-        if (type === "creature_damage") return renderSummaryItem("damage", targetName + " recebeu " + amount + " de dano.");
-        if (type === "hero_damage") return renderSummaryItem("damage", heroTarget + " recebeu " + amount + " de dano.");
-        if (type === "creature_death") return renderSummaryItem("death", cardName + " foi derrotado.");
-        if (type === "keyword_guarded") return renderSummaryItem("keyword", "Guarded reduziu " + amount + " de dano.");
-        if (type === "keyword_focused") return renderSummaryItem("keyword", "Focused gerou " + amount + " de Ambition.");
-        if (type === "round_end") return renderSummaryItem("end", "Rodada encerrada.");
-        if (type === "match_finished") return renderSummaryItem("end", "Partida encerrada.");
+        if (type === "round_start") return renderSummaryItem("event", "Rodada iniciada.", index);
+        if (type === "round_resolve") return renderSummaryItem("event", "Resolução da rodada.", index);
+        if (type === "intent_selected") return renderSummaryItem("event", str(event.message || event.text, "Intenção escolhida."), index);
+        if (type === "card_played") return renderSummaryItem("played", cardName + " entrou na rodada.", index);
+        if (type === "shield_gain") return renderSummaryItem("shield", "Escudo +" + amount + ".", index);
+        if (type === "ambition_gain") return renderSummaryItem("ambition", "Ambition +" + amount + ".", index);
+        if (type === "lane_attack") return renderSummaryItem("attack", attackerName + " atacou " + defenderName + ".", index);
+        if (type === "direct_attack") return renderSummaryItem("attack", attackerName + " atacou diretamente o herói.", index);
+        if (type === "creature_damage") return renderSummaryItem("damage", targetName + " recebeu " + amount + " de dano.", index);
+        if (type === "hero_damage") return renderSummaryItem("damage", heroTarget + " recebeu " + amount + " de dano.", index);
+        if (type === "creature_death") return renderSummaryItem("death", cardName + " foi derrotado.", index);
+        if (type === "keyword_guarded") return renderSummaryItem("keyword", "Guarded reduziu " + amount + " de dano.", index);
+        if (type === "keyword_focused") return renderSummaryItem("keyword", "Focused gerou " + amount + " de Ambition.", index);
+        if (type === "round_end") return renderSummaryItem("end", "Rodada encerrada.", index);
+        if (type === "match_finished") return renderSummaryItem("end", "Partida encerrada.", index);
 
-        return renderSummaryItem("event", str(event.message, "Evento da rodada."));
+        return renderSummaryItem("event", str(event.message, "Evento da rodada."), index);
     }
 
     function renderRoundSummary(state) {
@@ -742,7 +848,7 @@
             title,
             '</div>',
             '<ol class="az48-summary-list" aria-label="Round Summary events">',
-            events.map(renderCombatEvent).join(""),
+            events.map((event, index) => renderCombatEvent(event, index)).join(""),
             '</ol>',
         ].join("");
 
@@ -793,6 +899,76 @@
         return 35;
     }
 
+    function resultReason(summary, state, copy) {
+        const highlights = (state && state.battle_highlights) || {};
+        const items = arr(highlights.items);
+        const valueFor = (key) => {
+            const found = items.find((item) => item && item.key === key);
+            return num(found && found.value, 0);
+        };
+        const dealt = valueFor("damage_dealt");
+        const taken = valueFor("damage_taken");
+        const shield = valueFor("shield_gained");
+
+        if (summary && summary.campaign_result) {
+            return "Campaign chapter result recorded.";
+        }
+        if (copy.key === "win" && dealt >= taken + 4) {
+            return "You won by keeping pressure ahead of incoming damage.";
+        }
+        if (copy.key === "win" && shield > 0) {
+            return "Your defense bought enough time to close the match.";
+        }
+        if (copy.key === "lose" && taken > dealt) {
+            return "You suffered more direct pressure than you returned.";
+        }
+        if (copy.key === "lose") {
+            return "The enemy survived the final exchange. Tune your intent timing and deck line.";
+        }
+        if (copy.key === "draw") {
+            return "Both sides ended close. One cleaner lane or Ready timing can swing it.";
+        }
+        return "Review the reward summary and choose the next battle step.";
+    }
+
+    function updateResultActionLinks(summary) {
+        const actions = (summary && summary.next_actions) || {};
+        const mapping = {
+            campaign: actions.campaign,
+            collection: actions.collection,
+            deck: actions.deck,
+            history: actions.history,
+            missions: actions.missions || "/missions",
+        };
+
+        Object.entries(mapping).forEach(([key, href]) => {
+            const link = document.querySelector('[data-result-action="' + key + '"]');
+            if (link && href) link.setAttribute("href", href);
+        });
+    }
+
+    function renderResultMissions(summary) {
+        const el = document.getElementById("az48-result-missions");
+        if (!el) return;
+
+        const missions = arr(summary && summary.mission_progress).filter(Boolean);
+        if (!missions.length) {
+            el.hidden = true;
+            el.innerHTML = "";
+            return;
+        }
+
+        el.innerHTML = missions.slice(0, 3).map((mission) => {
+            const name = str(mission.name || mission.mission_name || mission.mission_id || mission.id || "Mission progress");
+            const progress = mission.progress !== undefined && mission.target_count !== undefined
+                ? " " + num(mission.progress) + "/" + num(mission.target_count)
+                : "";
+            const status = mission.is_complete || mission.complete ? " complete" : " progressed";
+            return '<li><b>' + esc(name) + '</b><span>' + esc(progress + status) + '</span></li>';
+        }).join("");
+        el.hidden = false;
+    }
+
     function renderResultProgress(copy, rewards) {
         const panel = document.getElementById("az48-result-progress");
         const label = document.getElementById("az48-result-progress-label");
@@ -829,6 +1005,7 @@
         const copy = trainingResultCopy(summary, state);
         const titleEl = document.getElementById("az48-result-title");
         const textEl = document.getElementById("az48-result-text");
+        const metaEl = document.getElementById("az48-result-meta");
         const rewardsEl = document.getElementById("az48-result-rewards");
         const rewards = summary.rewards || {};
         const rewardLines = [];
@@ -841,6 +1018,18 @@
                 copy.mode ? ("Mode: " + copy.mode + ".") : "",
             ].filter(Boolean).join(" ");
             textEl.textContent = detail;
+        }
+
+        if (metaEl) {
+            const reason = resultReason(summary, state, copy);
+            const meta = [
+                copy.rounds ? ("Rounds " + copy.rounds) : "",
+                copy.mode ? ("Mode " + copy.mode) : "",
+                summary.history_id ? ("History #" + summary.history_id) : "",
+                reason,
+            ].filter(Boolean);
+            metaEl.innerHTML = meta.map((line) => '<span>' + esc(line) + '</span>').join("");
+            metaEl.hidden = meta.length === 0;
         }
 
         if (rewardsEl) {
@@ -857,6 +1046,8 @@
         }
 
         renderResultProgress(copy, rewards);
+        renderResultMissions(summary);
+        updateResultActionLinks(summary);
 
         panel.hidden = false;
         panel.classList.add("is-visible");
@@ -904,8 +1095,11 @@
         const feedback = {
             cardDamage: new Set(),
             cardDeath: new Set(),
+            cardPlayed: new Set(),
             lanes: new Set(),
             heroDamage: new Set(),
+            shield: new Set(),
+            ambition: new Set(),
         };
 
         getRoundCombatLog(state).forEach((event) => {
@@ -931,6 +1125,21 @@
             if (type === "hero_damage") {
                 const side = eventSide(event.target_side || event.target || event.side);
                 if (side) feedback.heroDamage.add(side);
+            }
+
+            if (type === "card_played") {
+                const side = eventSide(event.side || event.actor);
+                if (side) feedback.cardPlayed.add(side);
+            }
+
+            if (type === "shield_gain") {
+                const side = eventSide(event.side || event.actor);
+                if (side) feedback.shield.add(side);
+            }
+
+            if (type === "ambition_gain") {
+                const side = eventSide(event.side || event.actor);
+                if (side) feedback.ambition.add(side);
             }
         });
 
@@ -972,6 +1181,7 @@
         if (feedback && feedback.lanes && feedback.lanes.has(lane)) classes.push("az48-lane-resolved");
         if (feedback && feedback.cardDamage && feedback.cardDamage.has(key)) classes.push("az48-card-damaged");
         if (feedback && feedback.cardDeath && feedback.cardDeath.has(key)) classes.push("az48-card-defeated");
+        if (feedback && feedback.cardPlayed && feedback.cardPlayed.has(side)) classes.push("az48-card-recently-played");
 
         return classes.join(" ");
     }
@@ -1005,6 +1215,15 @@
         if (key === "plant") return "Verdant Pact";
         if (key === "global") return "Arcane Neutral";
         return "Arcane Neutral";
+    }
+
+    function identityForElement(element) {
+        const key = str(element || "").toLowerCase();
+        if (key === "fire") return "Fire: pressure and damage.";
+        if (key === "water") return "Water: focus, resources and light sustain.";
+        if (key === "earth") return "Earth: defense and durable bodies.";
+        if (key === "plant") return "Plant: control and steady growth.";
+        return "Neutral: flexible arcane utility.";
     }
 
     function allKnownCards(payload) {
@@ -1096,7 +1315,52 @@
         const key = str(keyword || "").toLowerCase();
         if (key === "guarded") return "Guarded: reduces incoming damage when the server resolves it.";
         if (key === "focused") return "Focused: generates Ambition when the server resolves it.";
+        if (key === "shield") return "Shield: absorbs hero damage before HP is lost.";
+        if (key === "ambition") return "Ambition: charges Unleash and late-round power.";
+        if (key === "strike") return "Strike: offensive intent. Creatures hit harder this round.";
+        if (key === "guard") return "Guard: defensive intent. Gain shield and blunt attacks.";
+        if (key === "focus") return "Focus: scaling intent. Gain more Ambition.";
+        if (key === "monster") return "Monster: enters a lane and fights through combat.";
+        if (key === "spell") return "Spell: resolves an immediate effect.";
+        if (key === "trap") return "Trap: defensive card that can add shield or counter damage.";
+        if (["fire", "water", "earth", "plant", "neutral", "global"].includes(key)) return identityForElement(key);
         return str(keyword || "Keyword") + ": keyword effect resolved by the server.";
+    }
+
+    function educationTermsForCard(card, cardState) {
+        const c = normalizeCard(card);
+        const terms = [];
+        arr(c.keywords).forEach((keyword) => terms.push(keyword));
+        arr(c.keywordText).forEach((keyword) => terms.push(keyword));
+        terms.push(c.type);
+        if (c.element) terms.push(c.element);
+        if (/shield/i.test(c.preview + " " + c.effectSummary + " " + c.effect)) terms.push("Shield");
+        if (/ambition/i.test(c.preview + " " + c.effectSummary + " " + c.effect)) terms.push("Ambition");
+        if (/strike/i.test(c.preview + " " + (cardState && cardState.preview || ""))) terms.push("Strike");
+        if (/guard/i.test(c.preview + " " + (cardState && cardState.preview || ""))) terms.push("Guard");
+        if (/focus/i.test(c.preview + " " + (cardState && cardState.preview || ""))) terms.push("Focus");
+
+        const seen = new Set();
+        return terms.filter((term) => {
+            const key = str(term).toLowerCase();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        }).slice(0, 5);
+    }
+
+    function friendlyDisabledReason(reason) {
+        const text = str(reason || "");
+        const key = text.toLowerCase();
+        if (!text) return "";
+        if (key.includes("needs") && key.includes("energy")) return text.replace("Needs", "Energy required:");
+        if (key.includes("choose strike")) return "Choose Strike, Guard or Focus before playing this card.";
+        if (key.includes("only one card")) return "You already played one card this round.";
+        if (key.includes("no empty lane")) return "All lanes are full. Use a spell or press Ready.";
+        if (key.includes("ready")) return "You are already Ready. Wait for combat to resolve.";
+        if (key.includes("not the card step")) return "This card can be played during the Card step.";
+        if (key.includes("match finished")) return "The match is finished. Review the result panel.";
+        return text;
     }
 
     function renderCardDetailStats(card) {
@@ -1113,14 +1377,17 @@
             ["Cost", c.cost],
             ["Type", c.type],
             ["Element", c.element || "Neutral"],
-            ["Faction", factionForElement(c.element)],
+            ["Faction", c.faction || factionForElement(c.element)],
+            ["Role", c.role || c.sigil || "Card"],
         ];
 
         if (c.isMonster) {
             rows.push(["ATK", c.attack || c.stat || 0]);
             rows.push(["HP", (c.currentHp || 0) + "/" + (c.maxHp || 0)]);
         } else {
-            rows.push([c.statLabel || "Value", c.stat || 0]);
+            if (c.damage) rows.push(["DMG", c.damage]);
+            if (c.shield) rows.push(["SHD", c.shield]);
+            if (!c.damage && !c.shield) rows.push([c.statLabel || "Value", c.stat || 0]);
         }
 
         el.innerHTML = rows.map((row) => {
@@ -1128,7 +1395,7 @@
         }).join("");
     }
 
-    function renderCardKeywords(card) {
+    function renderCardKeywords(card, cardState) {
         const el = document.getElementById("az48-card-keyword-lines");
         if (!el) return;
 
@@ -1137,11 +1404,10 @@
             return;
         }
 
-        const c = normalizeCard(card);
-        const keywords = arr(c.keywords).length ? arr(c.keywords) : arr(c.keywordText);
+        const keywords = educationTermsForCard(card, cardState || {});
 
         if (!keywords.length) {
-            el.innerHTML = '<li>No keywords.</li>';
+            el.innerHTML = '<li>No extra terms.</li>';
             return;
         }
 
@@ -1166,9 +1432,9 @@
         const states = cardStateMap(payload);
         const cardState = states.get(String(normalized.id)) || {};
         nameEl.textContent = normalized.name;
-        textEl.textContent = cardState.disabled_reason || normalized.preview || normalized.effect || "No effect preview.";
+        textEl.textContent = friendlyDisabledReason(cardState.disabled_reason) || normalized.preview || normalized.effectSummary || normalized.effect || "No effect preview.";
         renderCardDetailStats(card);
-        renderCardKeywords(card);
+        renderCardKeywords(card, cardState);
     }
 
     function renderClarity(payload) {
@@ -1203,6 +1469,7 @@
         const result = document.getElementById("az48-round-result");
         if (result) result.textContent = summary.short_result || "Current Round";
 
+        renderBattleHighlights(payload);
         renderEvents(payload);
         renderCardPreview(payload, legal.playable_card_ids || []);
         renderStepList(uiStep);
@@ -1217,7 +1484,14 @@
             return;
         }
 
+        if (isStalePayload(payload)) {
+            console.warn("[Ambitionz V51] ignored stale state", payload);
+            return;
+        }
+
         const previousState = latestState;
+        latestStateOrderKey = Math.max(latestStateOrderKey, stateOrderKey(payload));
+        clearCommandPending();
 
         hasCanonicalState = true;
         latestState = payload;
@@ -1325,6 +1599,9 @@
         const combatFeedback = combatFeedbackFromState(state);
         document.body.classList.toggle("az48-me-hero-hit", combatFeedback.heroDamage.has("me"));
         document.body.classList.toggle("az48-enemy-hero-hit", combatFeedback.heroDamage.has("enemy"));
+        document.body.classList.toggle("az48-me-shield-gained", combatFeedback.shield.has("me"));
+        document.body.classList.toggle("az48-enemy-shield-gained", combatFeedback.shield.has("enemy"));
+        document.body.classList.toggle("az48-me-ambition-gained", combatFeedback.ambition.has("me"));
 
         const enemyFieldEl = $("az48-enemy-field");
         if (enemyFieldEl) {
@@ -1384,6 +1661,11 @@
     }
 
     function emitCommand(action, payload) {
+        if (pendingCommand && actionIsCommand(action)) {
+            setMessage("Syncing previous action. One moment.");
+            return false;
+        }
+
         commandSeq += 1;
         const legacyEvent = LEGACY_EVENT_BY_ACTION[action] || "";
         const command = {
@@ -1401,10 +1683,14 @@
             command.campaign_reward = CAMPAIGN_CONTEXT.reward || "";
         }
 
-        return emit("arena_command_v1", command);
+        const sent = emit("arena_command_v1", command);
+        if (sent) setCommandPending(command);
+        return sent;
     }
 
     function startTraining() {
+        clearCommandPending();
+        latestStateOrderKey = -1;
         reportedTrainingResult = false;
         latestPostMatchSummary = null;
         latestGameOverResult = "";
@@ -1542,11 +1828,15 @@
             return;
         }
 
+        latestStateOrderKey = -1;
+        clearCommandPending();
         setMessage("Searching for opponent...");
         emit("join_queue", {});
     }
 
     function joinBotMatch() {
+        latestStateOrderKey = -1;
+        clearCommandPending();
         setMessage("Starting bot duel...");
         emit("join_bot_match", {});
     }
@@ -1561,6 +1851,8 @@
             return;
         }
 
+        latestStateOrderKey = -1;
+        clearCommandPending();
         setMessage("Joining private room " + code + "...");
         emit("join_private_room", { code });
     }
@@ -1574,6 +1866,7 @@
         socket.on("connect", () => {
             setMessage(PAGE_KIND === "training" ? "Connected. Press Start." : "Connected. Choose how to find a duel.");
             console.debug("[Ambitionz V51] connected", socket.id);
+            if (hasCanonicalState) window.setTimeout(requestState, 80);
         });
 
         socket.on("connect_error", (error) => {
@@ -1583,6 +1876,7 @@
         });
 
         socket.on("disconnect", () => {
+            clearCommandPending();
             setMessage("Disconnected. Reconnecting...");
             setServerError("Disconnected. Reconnecting...");
         });
@@ -1631,6 +1925,7 @@
         });
 
         socket.on("action_error", (payload) => {
+            clearCommandPending();
             const message = payload && payload.message ? payload.message : "Action failed.";
             setMessage(message);
             setServerError(message);

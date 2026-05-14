@@ -27,7 +27,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v180" in body
+    assert "ambitionz-web-app-v181" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):

@@ -114,6 +114,29 @@ def count_cards(page, selector):
         return 0
 
 
+def visible_text_contains(page, text):
+    try:
+        return page.locator(f"text={text}").first.is_visible(timeout=1200)
+    except Exception:
+        return False
+
+
+def result_panel_visible(page):
+    try:
+        return bool(page.evaluate("""() => {
+            const el = document.querySelector("#az48-training-result");
+            if (!el || el.hidden) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== "none" && style.visibility !== "hidden";
+        }"""))
+    except Exception:
+        return False
+
+
+def visible_finished_text(page):
+    return result_panel_visible(page)
+
+
 def read_int(page, selector, default=0):
     try:
         raw = page.locator(selector).first.inner_text(timeout=1200)
@@ -188,11 +211,8 @@ def snapshot(page, label, logs):
         "socket_error": "Socket connection error" in text,
         "internal_error": "Internal server error" in text or "Traceback" in text,
         "body_has_raw_json": has_raw_json_marker(text),
-        "finished_text_visible": any(
-            phrase in text.lower()
-            for phrase in ["victory", "defeat", "winner", "match finished", "game over", "venceu", "vitória", "vitoria"]
-        ),
-        "training_result_visible": count_cards(page, "#az48-training-result:not([hidden])") > 0,
+        "finished_text_visible": visible_finished_text(page),
+        "training_result_visible": result_panel_visible(page),
         "training_result_text": training_result_text,
         "round_summary_visible": count_cards(page, "#az48-round-summary") > 0,
         "round_summary_text": summary_text,

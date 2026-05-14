@@ -1167,12 +1167,12 @@ def build_round_summary(
             lines.append(f"{lane}: enemy {result['enemy_creature']} hit your HP for {result.get('enemy_damage', 0)}.")
 
     if enemy_lost:
-        lines.append(f"Enemy lost {enemy_lost} HP: {o_hp_before} → {o_hp_after}.")
+        lines.append(f"Enemy took {enemy_lost} damage and is at {o_hp_after} HP.")
     else:
         lines.append(f"Enemy HP stayed at {o_hp_after}.")
 
     if player_lost:
-        lines.append(f"You lost {player_lost} HP: {p_hp_before} → {p_hp_after}.")
+        lines.append(f"You took {player_lost} damage and are at {p_hp_after} HP.")
     else:
         lines.append(f"Your HP stayed at {p_hp_after}.")
 

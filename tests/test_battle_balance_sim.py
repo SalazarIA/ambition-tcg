@@ -10,4 +10,6 @@ def test_battle_balance_simulation_contract_is_fast_and_deterministic():
     assert first["timeout_count"] == 0
     assert first["integrity_error_count"] == 0
     assert first["cards_played_count"] > 0
+    assert first["top_cards_played"]
+    assert "dead_hand_cards" in first
     assert 2 <= first["average_rounds"] <= 30

@@ -101,6 +101,30 @@ def _card_sigil(card: Dict[str, Any]) -> str:
     return "Focus"
 
 
+def _faction_for_element(element: Optional[str]) -> str:
+    key = str(element or "Neutral").strip().lower()
+    return {
+        "fire": "Ember Court",
+        "water": "Tideborn Order",
+        "earth": "Stonebound Clan",
+        "plant": "Verdant Pact",
+        "global": "Arcane Neutral",
+        "neutral": "Arcane Neutral",
+    }.get(key, "Arcane Neutral")
+
+
+def _element_identity(element: Optional[str]) -> str:
+    key = str(element or "Neutral").strip().lower()
+    return {
+        "fire": "pressure and damage",
+        "water": "focus and resource flow",
+        "earth": "defense and durable bodies",
+        "plant": "control and steady growth",
+        "global": "flexible arcane utility",
+        "neutral": "flexible arcane utility",
+    }.get(key, "flexible arcane utility")
+
+
 def _card_image(card: Dict[str, Any]) -> str:
     image = str((card or {}).get("image") or "").strip().lstrip("/")
     if image and (STATIC_IMG_DIR / image).exists():
@@ -114,9 +138,10 @@ def _card_image(card: Dict[str, Any]) -> str:
 
 def _card_effect_summary(card: Dict[str, Any]) -> str:
     kind = (card or {}).get("kind")
+    identity = _element_identity((card or {}).get("element"))
 
     if kind == "creature":
-        return f"Summon {int(card.get('atk') or 0)} ATK / {int(card.get('hp') or 0)} HP."
+        return f"Summon {int(card.get('atk') or 0)} ATK / {int(card.get('hp') or 0)} HP creature for {identity}."
     if kind == "support":
         bonus = int(card.get("atk_bonus") or 0)
         ambition = int(card.get("ambition_bonus") or 0)
@@ -125,14 +150,14 @@ def _card_effect_summary(card: Dict[str, Any]) -> str:
             parts.append(f"+{bonus} ATK while in play")
         if ambition:
             parts.append(f"+{ambition} Ambition each round")
-        return "Support: " + (", ".join(parts) if parts else "stays on your spell slot.")
+        return "Support: " + (", ".join(parts) if parts else f"supports {identity}.")
     if kind == "guard":
         parts = []
         if int(card.get("shield") or 0):
             parts.append(f"+{int(card.get('shield') or 0)} shield")
         if int(card.get("damage") or 0):
             parts.append(f"{int(card.get('damage') or 0)} counter damage")
-        return "Guard: " + (", ".join(parts) if parts else "defensive response.")
+        return "Guard: " + (", ".join(parts) if parts else f"defensive response for {identity}.")
 
     parts = []
     if int(card.get("damage") or 0):
@@ -143,7 +168,7 @@ def _card_effect_summary(card: Dict[str, Any]) -> str:
         parts.append(f"+{int(card.get('ambition') or 0)} Ambition")
     if int(card.get("draw") or 0):
         parts.append(f"draw {int(card.get('draw') or 0)}")
-    return "Spell: " + (", ".join(parts) if parts else "instant effect.")
+    return "Spell: " + (", ".join(parts) if parts else f"instant {identity} effect.")
 
 
 def _card_preview(card: Dict[str, Any], intent: Optional[str] = None, owner: Optional[Dict[str, Any]] = None) -> str:
@@ -228,12 +253,17 @@ def _battle_card_to_arena_card(
         "name": str(card.get("name") or catalog_id),
         "type": _card_type(card),
         "element": str(card.get("element") or "Neutral"),
+        "faction": str(card.get("faction") or _faction_for_element(card.get("element"))),
         "rarity": str(card.get("rarity") or "Beta"),
         "sigil": str(card.get("sigil") or _card_sigil(card)),
         "role": str(card.get("role") or card.get("kind") or "card"),
         "cost": int(card.get("cost") or 0),
         "power": stat,
         "attack": atk,
+        "damage": int(card.get("damage") or 0),
+        "shield": int(card.get("shield") or 0),
+        "ambition": int(card.get("ambition") or 0),
+        "draw": int(card.get("draw") or 0),
         "value": stat,
         "combat_label": _card_label(card),
         "display_stat": stat,
@@ -401,6 +431,109 @@ def _combat_log_for_payload(state: Dict[str, Any]) -> List[Dict[str, Any]]:
     ][-40:]
 
 
+def _event_amount(event: Dict[str, Any]) -> int:
+    try:
+        return max(0, int(event.get("amount") if event.get("amount") is not None else event.get("damage") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _event_side(event: Dict[str, Any]) -> str:
+    return str(event.get("side") or event.get("actor") or event.get("target_side") or event.get("target") or "")
+
+
+def _event_ref_side(value: Any, fallback: str = "") -> str:
+    if isinstance(value, dict):
+        return str(value.get("side") or fallback)
+    return fallback
+
+
+def _highlight_next_step(phase: str, legal_actions: Dict[str, Any]) -> str:
+    primary = str(legal_actions.get("primary_action") or "")
+    if phase == "finished" or primary == "finished":
+        return "Review rewards, then choose your next match."
+    if primary == "start":
+        return "Start the duel to draw your opening hand."
+    if primary == "choose_intent":
+        return "Choose Strike, Guard or Focus."
+    if primary == "play_card":
+        return "Play a highlighted card or skip to Ready."
+    if primary == "ready":
+        return "Press Ready to resolve the round."
+    if primary == "wait":
+        return "Waiting for the opponent to commit."
+    return "Follow the highlighted action."
+
+
+def _battle_highlights_for_payload(
+    state: Dict[str, Any],
+    round_summary: Dict[str, Any],
+    combat_log: List[Dict[str, Any]],
+    legal_actions: Dict[str, Any],
+    phase: str,
+    viewer_side: str,
+) -> Dict[str, Any]:
+    summary = round_summary or {}
+    events = combat_log or list(summary.get("events") or [])
+    viewer_enemy = _opposite_side(viewer_side)
+
+    damage_dealt = max(0, int(summary.get("enemy_hp_before") or 0) - int(summary.get("enemy_hp_after") or 0))
+    damage_taken = max(0, int(summary.get("player_hp_before") or 0) - int(summary.get("player_hp_after") or 0))
+    if viewer_side == "opponent":
+        damage_dealt, damage_taken = damage_taken, damage_dealt
+
+    shield_gained = 0
+    ambition_gained = 0
+    enemy_creatures_defeated = 0
+    own_creatures_defeated = 0
+    card_played = str(summary.get("player_card") or "")
+
+    if viewer_side == "opponent":
+        card_played = str(summary.get("enemy_card") or "")
+
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        event_type = str(event.get("type") or "")
+        side = _event_side(event)
+        if event_type == "shield_gain" and side == viewer_side:
+            shield_gained += _event_amount(event)
+        if event_type == "ambition_gain" and side == viewer_side:
+            ambition_gained += _event_amount(event)
+        if event_type == "creature_death":
+            death_side = str(event.get("side") or event.get("actor") or _event_ref_side(event.get("defender")))
+            if death_side == viewer_enemy:
+                enemy_creatures_defeated += 1
+            elif death_side == viewer_side:
+                own_creatures_defeated += 1
+
+    if card_played in {"", "No card"}:
+        card_played = "No card"
+
+    items = [
+        {"key": "damage_dealt", "label": "Damage dealt", "value": damage_dealt},
+        {"key": "damage_taken", "label": "Damage taken", "value": damage_taken},
+        {"key": "shield_gained", "label": "Shield gained", "value": shield_gained},
+        {"key": "ambition_gained", "label": "Ambition gained", "value": ambition_gained},
+        {"key": "creatures_defeated", "label": "Creatures defeated", "value": enemy_creatures_defeated},
+        {"key": "own_creatures_lost", "label": "Creatures lost", "value": own_creatures_defeated},
+        {"key": "card_played", "label": "Card played", "value": card_played},
+    ]
+
+    if damage_dealt or damage_taken:
+        headline = f"You dealt {damage_dealt} and took {damage_taken}."
+    elif shield_gained or ambition_gained:
+        headline = f"You gained {shield_gained} shield and {ambition_gained} Ambition."
+    else:
+        headline = "Choose your line and commit one clean action."
+
+    return {
+        "headline": headline,
+        "next_step": _highlight_next_step(phase, legal_actions),
+        "items": items,
+    }
+
+
 def _turn_step(raw_phase: str, player: Dict[str, Any], is_finished: bool) -> str:
     if is_finished:
         return "finished"
@@ -562,6 +695,7 @@ def build_be2_arena_payload(
             final_message = "Choose a tactic: Strike attacks harder, Guard blocks damage, Focus charges Unleash."
 
     round_summary = _summary_for_viewer(state.get("round_summary") or {}, viewer_side)
+    combat_log = _combat_log_for_payload(state)
 
     return {
         "schema": ARENA_CLEAN_SCHEMA,
@@ -576,7 +710,15 @@ def build_be2_arena_payload(
         "enemy_preview": enemy_preview,
         "round_summary": round_summary,
         "last_round_summary": round_summary,
-        "combat_log": _combat_log_for_payload(state),
+        "combat_log": combat_log,
+        "battle_highlights": _battle_highlights_for_payload(
+            state,
+            round_summary,
+            combat_log,
+            legal_actions,
+            phase,
+            viewer_side,
+        ),
         "events": _events_for_viewer(list(state.get("events") or [])[-24:], viewer_side),
         "round_events": _events_for_viewer(list(state.get("round_events") or [])[-12:], viewer_side),
         "card_registry": {

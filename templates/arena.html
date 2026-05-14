@@ -150,7 +150,9 @@
 	            <span>{% if campaign_context %}Campaign Result{% else %}Training Result{% endif %}</span>
             <strong id="az48-result-title">Training Complete</strong>
             <p id="az48-result-text">The match result will appear here.</p>
+            <div class="az48-result-meta" id="az48-result-meta" hidden></div>
             <div class="az48-result-rewards" id="az48-result-rewards" hidden></div>
+            <ul class="az48-result-missions" id="az48-result-missions" hidden></ul>
             <div class="az48-result-progress" id="az48-result-progress" hidden>
                 <div>
                     <span id="az48-result-progress-label">Progress preview</span>
@@ -161,11 +163,12 @@
         </div>
         <nav class="az48-result-actions" aria-label="Training result actions">
             <button type="button" id="az48-training-restart" class="az48-result-action az48-result-primary">Jogar novamente</button>
-            <a href="{{ url_for('index') }}" class="az48-result-action">Voltar ao menu</a>
-	            <a href="{{ url_for('collection') }}" class="az48-result-action">Collection</a>
-	            <a href="{{ url_for('deck_builder') }}" class="az48-result-action">Deck</a>
-	            <a href="{{ url_for('campaign') }}" class="az48-result-action">Campaign</a>
-	            <a href="{{ url_for('match_history') }}" class="az48-result-action">History</a>
+            <a href="{{ url_for('index') }}" class="az48-result-action" data-result-action="menu">Voltar ao menu</a>
+	            <a href="{{ url_for('campaign') }}" class="az48-result-action" data-result-action="campaign">Campaign</a>
+	            <a href="{{ url_for('collection') }}" class="az48-result-action" data-result-action="collection">Collection</a>
+	            <a href="{{ url_for('deck_builder') }}" class="az48-result-action" data-result-action="deck">Deck</a>
+	            <a href="{{ url_for('missions') }}" class="az48-result-action" data-result-action="missions">Missões</a>
+	            <a href="{{ url_for('match_history') }}" class="az48-result-action" data-result-action="history">Histórico</a>
         </nav>
     </aside>
     {% endif %}

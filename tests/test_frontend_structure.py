@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v180"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v181"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -293,6 +293,9 @@ def test_arena_round_summary_text_panel_contract():
     assert "ambition_gain" in js
     assert "intent_selected" in js
     assert "match_finished" in js
+    assert "function renderBattleHighlights" in js
+    assert "battle_highlights" in js
+    assert "az48-highlight-grid" in js
 
     for class_name in [
         ".az48-round-summary",
@@ -304,6 +307,10 @@ def test_arena_round_summary_text_panel_contract():
         ".az48-summary-item-death",
         ".az48-summary-item-keyword",
         ".az48-summary-item-end",
+        ".az48-summary-item-shield",
+        ".az48-summary-item-ambition",
+        ".az48-highlight-card",
+        ".az48-highlight-grid",
     ]:
         assert class_name in css
 
@@ -350,10 +357,34 @@ def test_arena_card_detail_readability_contract():
     assert "function keywordDescription" in js
     assert "Guarded: reduces incoming damage" in js
     assert "Focused: generates Ambition" in js
+    assert "Shield: absorbs hero damage" in js
+    assert "Strike: offensive intent" in js
+    assert "Monster: enters a lane" in js
+    assert "function educationTermsForCard" in js
+    assert "friendlyDisabledReason" in js
     assert "setCardDetailFromElement" in js
     assert ".az48-card-stats" in css
     assert ".az48-card-detail-stats" in css
     assert ".az48-card-keyword-lines" in css
+
+
+def test_arena_state_safety_and_result_panel_contract():
+    template = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+
+    assert "pendingCommand" in js
+    assert "COMMAND_TIMEOUT_MS" in js
+    assert "isStalePayload" in js
+    assert "requestState();" in js
+    assert "az48-command-pending" in css
+    assert 'id="az48-result-meta"' in template
+    assert 'id="az48-result-missions"' in template
+    assert 'data-result-action="missions"' in template
+    assert "function resultReason" in js
+    assert "function renderResultMissions" in js
+    assert ".az48-result-meta" in css
+    assert ".az48-result-missions" in css
 
 
 def test_arena_premium_hud_contract():
@@ -542,7 +573,7 @@ def test_faction_identity_layer_contract():
     assert "data-faction" in collection
     assert 'id="az-profile-faction-identity"' in profile
     assert "function factionForElement" in arena_js
-    assert '["Faction", factionForElement(c.element)]' in arena_js
+    assert '["Faction", c.faction || factionForElement(c.element)]' in arena_js
     assert ".az-faction-showcase-v1" in css
     assert ".az-faction-card-v1" in css
     assert ".az-faction-badge-v1" in css

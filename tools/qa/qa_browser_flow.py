@@ -162,6 +162,22 @@ def _visible_text_contains(page, text):
         return False
 
 
+def _result_panel_visible(page):
+    try:
+        return bool(page.evaluate("""() => {
+            const el = document.querySelector("#az48-training-result");
+            if (!el || el.hidden) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== "none" && style.visibility !== "hidden";
+        }"""))
+    except Exception:
+        return False
+
+
+def _visible_finished_text(page):
+    return _result_panel_visible(page)
+
+
 
 
 def _safe_int_text(page, selector, default=0):
@@ -245,11 +261,8 @@ def _arena_snapshot(page, label, logs):
         "body_has_socket_error": "Socket connection error" in body,
         "body_has_action_failed": "Action failed" in body,
         "body_has_raw_json": _has_raw_json_marker(body),
-        "finished_text_visible": any(
-            phrase in body.lower()
-            for phrase in ["victory", "defeat", "winner", "match finished", "game over", "venceu", "vitória", "vitoria"]
-        ),
-        "training_result_visible": _visible_count(page, "#az48-training-result:not([hidden])") > 0,
+        "finished_text_visible": _visible_finished_text(page),
+        "training_result_visible": _result_panel_visible(page),
         "training_result_text": training_result_text,
         "round_summary_visible": _visible_count(page, "#az48-round-summary") > 0,
         "round_summary_text": summary_text,
@@ -477,10 +490,10 @@ def run_browser_flow(base_url="http://127.0.0.1:8080", headed=False):
                 snapshot_before = _arena_snapshot(page, f"cycle_{cycle}_before", logs)
                 _assert_arena_healthy(snapshot_before, f"cycle_{cycle}_before")
 
-                body_now = _body_text(page)
-                lower = body_now.lower()
-
-                if any(word in lower for word in ["victory", "defeat", "winner", "match finished", "game over", "rewards", "venceu", "vitória", "vitoria"]):
+                if (
+                    str(snapshot_before.get("phase") or "").lower() == "finished"
+                    or snapshot_before.get("training_result_visible")
+                ):
                     logs.append(f"full_match_stop: finished text detected at cycle {cycle}")
                     break
 

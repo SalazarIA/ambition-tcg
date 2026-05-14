@@ -36,6 +36,19 @@ from services.battle_engine_v2 import (  # noqa: E402
 )
 
 
+def _catalog_card_id(card: Optional[Dict[str, Any]]) -> str:
+    if not card:
+        return "unknown"
+    value = str(card.get("card_id") or card.get("catalog_id") or card.get("id") or "unknown")
+    for prefix in ("player-left-", "player-center-", "player-right-", "opponent-left-", "opponent-center-", "opponent-right-"):
+        if value.startswith(prefix):
+            value = value[len(prefix):]
+            break
+    if "-" in value and value.rsplit("-", 1)[1].isdigit():
+        value = value.rsplit("-", 1)[0]
+    return value or "unknown"
+
+
 def _attack_pressure(player: Dict[str, Any]) -> int:
     return sum(int(card.get("atk") or 0) for _lane, card in board_creatures(player))
 
@@ -116,6 +129,7 @@ def run_single_match(seed: int, max_rounds: int) -> Dict[str, Any]:
     match = create_match(seed=seed)
     start_round(match)
     intent_counts = Counter()
+    cards_played_by_id = Counter()
     cards_played = 0
     integrity_errors = []
     timeout = False
@@ -132,14 +146,22 @@ def run_single_match(seed: int, max_rounds: int) -> Dict[str, Any]:
             f"player:{match['player'].get('intent') or 'None'}",
             f"bot:{match['opponent'].get('intent') or 'None'}",
         ])
-        cards_played += int(bool(match["player"].get("played_card")))
-        cards_played += int(bool(match["opponent"].get("played_card")))
+        for side in ("player", "opponent"):
+            played = match[side].get("played_card")
+            if played:
+                cards_played += 1
+                cards_played_by_id[_catalog_card_id(played)] += 1
         resolve_round(match)
 
         ok, errors = validate_match_integrity(match)
         if not ok:
             integrity_errors.extend(errors)
             break
+
+    dead_hand_by_id = Counter()
+    for side in ("player", "opponent"):
+        for card in match[side].get("hand") or []:
+            dead_hand_by_id[_catalog_card_id(card)] += 1
 
     return {
         "seed": seed,
@@ -148,6 +170,8 @@ def run_single_match(seed: int, max_rounds: int) -> Dict[str, Any]:
         "player_hp": int(match["player"].get("hp") or 0),
         "enemy_hp": int(match["opponent"].get("hp") or 0),
         "intent_counts": dict(intent_counts),
+        "cards_played_by_id": dict(cards_played_by_id),
+        "dead_hand_by_id": dict(dead_hand_by_id),
         "cards_played_count": cards_played,
         "timeout": timeout,
         "integrity_errors": integrity_errors,
@@ -161,8 +185,12 @@ def run_simulation(matches: int, seed: int, max_rounds: int) -> Dict[str, Any]:
     bot_wins = sum(1 for result in results if result["winner"] == "opponent")
     timeouts = sum(1 for result in results if result["timeout"])
     intent_counts = Counter()
+    cards_played_by_id = Counter()
+    dead_hand_by_id = Counter()
     for result in results:
         intent_counts.update(result["intent_counts"])
+        cards_played_by_id.update(result["cards_played_by_id"])
+        dead_hand_by_id.update(result["dead_hand_by_id"])
 
     total = max(1, len(results))
     metrics = {
@@ -177,6 +205,12 @@ def run_simulation(matches: int, seed: int, max_rounds: int) -> Dict[str, Any]:
         "average_player_hp_end": round(sum(result["player_hp"] for result in results) / total, 2),
         "average_enemy_hp_end": round(sum(result["enemy_hp"] for result in results) / total, 2),
         "intent_counts": dict(sorted(intent_counts.items())),
+        "top_cards_played": cards_played_by_id.most_common(10),
+        "least_played_cards": sorted(
+            [(card_id, count) for card_id, count in cards_played_by_id.items()],
+            key=lambda item: (item[1], item[0]),
+        )[:10],
+        "dead_hand_cards": dead_hand_by_id.most_common(10),
         "cards_played_count": sum(result["cards_played_count"] for result in results),
         "timeout_count": timeouts,
         "integrity_error_count": sum(len(result["integrity_errors"]) for result in results),

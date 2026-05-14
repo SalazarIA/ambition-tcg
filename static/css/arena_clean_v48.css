@@ -2164,7 +2164,7 @@ body.az48-match-started.az48-hand-empty.az48-has-actions .az48-bottom {
 body.az48-match-started .az48-clarity-panel {
     grid-area: clarity;
     display: grid;
-    grid-template-columns: minmax(180px, 0.85fr) minmax(220px, 1.05fr) minmax(210px, 1fr);
+    grid-template-columns: minmax(170px, .8fr) minmax(190px, .9fr) minmax(230px, 1.1fr) minmax(210px, 1fr);
     gap: 10px;
     min-height: 0;
     max-height: 96px;
@@ -2573,7 +2573,185 @@ body[data-az48-primary-action="play_card"] .az48-preview-card {
     text-overflow: ellipsis;
 }
 
+/* =========================================================
+   Blocks 57-64 — Battle Experience Polish
+   Short highlights, card education, pacing and result clarity.
+   ========================================================= */
+
+.az48-highlight-card {
+    border-color: rgba(112, 232, 183, 0.18);
+}
+
+.az48-highlight-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin: 5px 0 0;
+}
+
+.az48-highlight-item {
+    min-width: 0;
+    padding: 4px 5px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.az48-highlight-item dt {
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 0.48rem;
+    font-weight: 1000;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-highlight-item dd {
+    margin: 1px 0 0;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.7rem;
+    font-weight: 1000;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#az48-highlight-next {
+    color: rgba(210, 255, 235, 0.74);
+}
+
+.az48-summary-item {
+    animation: az48SummaryStepIn .36s ease-out both;
+    animation-delay: calc(min(var(--az48-event-index, 0), 8) * 42ms);
+}
+
+.az48-summary-item-played {
+    border-left-color: rgba(255, 226, 151, 0.84);
+    color: rgba(255, 239, 198, 0.90);
+}
+
+.az48-summary-item-shield {
+    border-left-color: rgba(112, 232, 183, 0.86);
+    color: rgba(210, 255, 235, 0.88);
+}
+
+.az48-summary-item-ambition {
+    border-left-color: rgba(255, 214, 111, 0.90);
+    color: rgba(255, 237, 180, 0.90);
+}
+
+.az48-card-recently-played {
+    border-color: rgba(255, 226, 151, 0.70);
+    animation: az48CardPlayedV2 .52s ease-out;
+}
+
+body.az48-me-shield-gained .az48-you,
+body.az48-enemy-shield-gained .az48-enemy {
+    animation: az48ShieldPulseV1 .7s ease-out;
+}
+
+body.az48-me-ambition-gained .az48-ambition-pill {
+    animation: az48AmbitionPulseV1 .72s ease-out;
+}
+
+body.az48-command-pending .az48-btn,
+body.az48-command-pending .az48-card,
+body.az48-command-pending .az48-floating-start {
+    cursor: wait !important;
+}
+
+body.az48-command-pending .az48-actions::after {
+    content: "Syncing battle state";
+    position: absolute;
+    right: 0;
+    top: -24px;
+    color: rgba(255, 222, 148, 0.78);
+    font-size: 0.62rem;
+    font-weight: 1000;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az48-result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 9px;
+}
+
+.az48-result-meta[hidden] {
+    display: none !important;
+}
+
+.az48-result-meta span {
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(255, 255, 255, .055);
+    color: rgba(255, 255, 255, .78);
+    font-size: .66rem;
+    font-weight: 850;
+}
+
+.az48-result-missions {
+    margin: 9px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 5px;
+}
+
+.az48-result-missions[hidden] {
+    display: none !important;
+}
+
+.az48-result-missions li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: rgba(112, 232, 183, .07);
+    color: rgba(210, 255, 235, .86);
+    font-size: .68rem;
+    line-height: 1.15;
+}
+
+.az48-result-missions b,
+.az48-result-missions span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@keyframes az48SummaryStepIn {
+    0% { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes az48CardPlayedV2 {
+    0% { filter: brightness(1.3); transform: translateY(4px) scale(.98); }
+    100% { filter: none; transform: none; }
+}
+
+@keyframes az48ShieldPulseV1 {
+    0% { box-shadow: 0 0 0 0 rgba(112, 232, 183, .38), var(--az-shadow); }
+    60% { box-shadow: 0 0 0 7px rgba(112, 232, 183, .08), var(--az-shadow); }
+    100% { box-shadow: var(--az-shadow); }
+}
+
 @media (prefers-reduced-motion: reduce) {
+    .az48-summary-item,
+    .az48-card-recently-played,
+    body.az48-me-shield-gained .az48-you,
+    body.az48-enemy-shield-gained .az48-enemy,
     .az48-lane-resolved,
     .az48-card-damaged,
     .az48-card-defeated,

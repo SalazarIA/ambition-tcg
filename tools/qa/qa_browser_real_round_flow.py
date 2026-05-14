@@ -92,6 +92,8 @@ def snapshot(page, label, logs):
             const playerIntent = document.querySelector("#az48-me-intent");
             const enemyStatus = document.querySelector("#az48-enemy-status");
             const ambition = document.querySelector("#az48-me-ambition");
+            const resultPanel = document.querySelector("#az48-training-result");
+            const resultVisible = !!resultPanel && !resultPanel.hidden && window.getComputedStyle(resultPanel).display !== "none" && window.getComputedStyle(resultPanel).visibility !== "hidden";
             const combatFeedbackVisible = !!document.querySelector(".az48-lane-resolved, .az48-card-damaged, .az48-card-defeated")
                 || document.body.classList.contains("az48-me-hero-hit")
                 || document.body.classList.contains("az48-enemy-hero-hit");
@@ -122,7 +124,7 @@ def snapshot(page, label, logs):
                 hud_text: [playerIntent && playerIntent.innerText, enemyStatus && enemyStatus.innerText, ambition && ambition.innerText].filter(Boolean).join(" "),
                 combat_feedback_visible: combatFeedbackVisible,
                 body_has_raw_json: text.includes('{"schema"') || text.includes('"schema":') || text.includes('"combat_log"') || text.includes('"round_summary"') || text.includes("combat_log:"),
-                finished_text_visible: ["victory", "defeat", "winner", "match finished", "game over", "venceu", "vitória", "vitoria"].some((phrase) => text.toLowerCase().includes(phrase)),
+                finished_text_visible: resultVisible,
                 body_preview: text.slice(0, 900),
             };
         }""",
