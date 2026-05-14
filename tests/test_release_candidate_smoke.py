@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timedelta, timezone
 
 from models import BoosterHistory, EconomyLedger, FeedbackReport, InventoryOwnership, MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, UserMission, db
 
@@ -28,7 +29,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v184" in body
+    assert "ambitionz-web-app-v185" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -63,6 +64,8 @@ def test_public_home_renders_product_entry_and_real_routes(client):
     assert 'href="/feedback"' in body
     assert "Ambitionz is a tactical card battler in public beta." in body
     assert "Beta Onboarding" in body
+    assert "First Session Questline" in body
+    assert "ambitionz_first_session_questline_dismissed_v1" in body
     assert 'href="/login"' in body
     assert 'href="/register"' in body
 
@@ -73,8 +76,10 @@ def test_public_beta_roadmap_and_feedback_routes(client):
 
     assert roadmap_response.status_code == 200
     assert "Roadmap & Patch Notes" in roadmap_body
-    assert "Public Beta RC V3" in roadmap_body
+    assert "Public Beta RC V4" in roadmap_body
     assert "Arena BE2 polish" in roadmap_body
+    assert "Public Beta RC Checklist" in roadmap_body
+    assert "Economy beta" in roadmap_body
     assert 'href="/feedback"' in roadmap_body
 
     feedback_response = client.get("/feedback")
@@ -332,6 +337,8 @@ def test_profile_and_progression_render_basic_retention_summary(client):
     assert "Training" in profile_body
     assert "Latest Result" in profile_body
     assert "Win" in profile_body
+    assert 'id="az-profile-first-session-questline-v1"' in profile_body
+    assert 'id="az-profile-deck-readiness-coach-v1"' in profile_body
 
     progression_response = client.get("/progression")
     progression_body = progression_response.get_data(as_text=True)
@@ -339,6 +346,8 @@ def test_profile_and_progression_render_basic_retention_summary(client):
     assert 'id="az-progression-summary"' in progression_body
     assert "45/200 XP" in progression_body
     assert "3 matches played" in progression_body
+    assert 'id="az-progression-first-session-questline-v1"' in progression_body
+    assert 'id="az-progression-deck-readiness-coach-v1"' in progression_body
 
     history_response = client.get(f"/match-history/{history.id}")
     history_body = history_response.get_data(as_text=True)
@@ -368,6 +377,8 @@ def test_collection_and_deck_builder_v2_render_and_save(client):
     assert "30 cards" in deck_body
     assert "Duplicate Cards" in deck_body
     assert "Save Active Deck" in deck_body
+    assert 'id="az-deck-readiness-coach-v1"' in deck_body
+    assert "Deck Readiness Coach" in deck_body
 
     selected_cards = re.findall(r'name="deck_cards" value="([^"]+)"', deck_body)
     assert len(selected_cards) == 30
@@ -400,6 +411,8 @@ def test_main_product_routes_smoke(client):
         "/match-history": "No matches yet",
         "/roadmap": "Roadmap & Patch Notes",
         "/feedback": "Beta Feedback",
+        "/leaderboard": "Beta Leaderboard",
+        "/ranking": "Ranking Beta",
     }
 
     for path, expected_text in route_expectations.items():
@@ -674,6 +687,33 @@ def test_daily_claim_is_persistent_and_once_per_day(client):
     assert "xp_awarded" in event_keys
 
 
+def test_daily_return_loop_scales_second_day_reward(client):
+    user = create_user(username="dailyv2", email="dailyv2@example.com")
+    csrf_token = login_session(client, user)
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+    user.daily_last_checkin_date = yesterday
+    user.daily_streak = 1
+    user.daily_best_streak = 1
+    user.coins = 1000
+    db.session.commit()
+
+    response = client.post(
+        "/daily/claim",
+        data={"_csrf_token": csrf_token},
+        follow_redirects=True,
+    )
+
+    db.session.refresh(user)
+    body = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert user.daily_streak == 2
+    assert user.daily_best_streak == 2
+    assert int(user.total_xp or 0) == 40
+    assert int(user.coins or 0) == 1090
+    assert "40 XP" in body
+    assert "90 Gold" in body
+
+
 def test_wallet_gold_api_contract_for_guest_and_logged_user(client):
     guest_response = client.get("/api/wallet")
     guest_payload = guest_response.get_json()
@@ -916,6 +956,10 @@ def test_match_end_tracks_mission_v2_combat_progress(client, monkeypatch):
     summary = next(payload for event, payload, _kwargs in emitted if event == "post_match_summary")
     mission_names = {mission["mission_key"] for mission in summary["mission_progress"]}
     assert {"deal_damage_total", "play_cards_total", "play_fire_card"}.issubset(mission_names)
+    assert summary["next_best_action"]["kind"] in {"shop", "missions", "progression", "training", "deck"}
+    assert summary["next_best_action"]["label"]
+    assert summary["next_actions"]["shop"].endswith("/shop")
+    assert summary["next_actions"]["primary"] == summary["next_best_action"]["url"]
 
 
 def test_campaign_match_end_records_history_xp_missions_and_summary(client, monkeypatch):

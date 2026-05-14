@@ -962,11 +962,14 @@
     function updateResultActionLinks(summary) {
         const actions = (summary && summary.next_actions) || {};
         const mapping = {
+            primary: actions.primary,
             campaign: actions.campaign,
             collection: actions.collection,
             deck: actions.deck,
             history: actions.history,
             missions: actions.missions || "/missions",
+            shop: actions.shop || "/shop",
+            progression: actions.progression || "/progression",
             menu: actions.menu || "/",
         };
 
@@ -974,6 +977,37 @@
             const link = document.querySelector('[data-result-action="' + key + '"]');
             if (link && href) link.setAttribute("href", href);
         });
+    }
+
+    function renderResultNextBestAction(summary) {
+        const panel = document.getElementById("az48-result-next-best");
+        if (!panel) return;
+
+        const action = (summary && summary.next_best_action) || {};
+        const href = str(action.url || "");
+        const title = str(action.title || "");
+        const description = str(action.description || "");
+        const label = str(action.label || "");
+
+        if (!href && !title && !description && !label) {
+            panel.hidden = true;
+            panel.dataset.reason = "";
+            return;
+        }
+
+        const titleEl = document.getElementById("az48-result-next-title");
+        const copyEl = document.getElementById("az48-result-next-copy");
+        const linkEl = document.getElementById("az48-result-next-link");
+
+        if (titleEl) titleEl.textContent = title || "Choose your next step.";
+        if (copyEl) copyEl.textContent = description || "Review rewards, tune your deck or play another Training match.";
+        if (linkEl) {
+            linkEl.textContent = label || "Continue";
+            linkEl.setAttribute("href", href || "/training");
+        }
+
+        panel.dataset.reason = str(action.reason || action.kind || "next_step");
+        panel.hidden = false;
     }
 
     function renderResultMissions(summary) {
@@ -1083,6 +1117,7 @@
 
         renderResultProgress(copy, rewards, summary);
         renderResultMissions(summary);
+        renderResultNextBestAction(summary);
         updateResultActionLinks(summary);
 
         panel.hidden = false;

@@ -69,6 +69,19 @@
             </div>
         </section>
 
+        <section id="az-ranking-beta-criteria-v1" class="az-ranking-beta-note-v1" aria-label="Ranking beta criteria">
+            <div>
+                <span class="progression-kicker">Ranking Beta</span>
+                <h2>{% if current_rank %}Your current rank is #{{ current_rank }}.{% else %}Play Training to enter the beta board.{% endif %}</h2>
+                <p>Ranking reflects recorded beta results only. No multiplayer ladder or paid placement is being promised here.</p>
+            </div>
+            <ul>
+                {% for item in criteria %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
         <section class="deck-status">
             <div class="section-title-row">
                 <div>
@@ -89,7 +102,7 @@
                 </div>
 
                 {% for player in ranked_users %}
-                    <div class="ranking-row-v116">
+                    <div class="ranking-row-v116 {% if player.is_current_user %}current-player-row{% endif %}" {% if player.is_current_user %}data-ranking-row-current="true"{% endif %}>
                         <strong>#{{ player.rank }}</strong>
                         <span>{{ player.username }}</span>
                         <span class="ranking-tier-v116">{{ player.tier }}</span>

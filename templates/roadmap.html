@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Roadmap - Public Beta RC V3 - Ambitionz</title>
+    <title>Roadmap - Public Beta RC V4 - Ambitionz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05050B">
     <meta name="description" content="Ambitionz public beta roadmap and patch notes.">
@@ -75,6 +75,25 @@
                     <p>{{ item.summary }}</p>
                 </article>
             {% endfor %}
+        </section>
+
+        <section id="az-rc-public-checklist-v1" class="az-rc-public-checklist-v1" aria-label="Public beta release candidate checklist">
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Public Beta RC Checklist</span>
+                    <h2>What is ready for the next human review.</h2>
+                </div>
+                <a href="{{ url_for('feedback') }}" class="btn btn-secondary small-btn">Beta Feedback</a>
+            </div>
+            <div class="az-rc-public-checklist-grid-v1">
+                {% for item in roadmap.rc_checklist %}
+                    <article>
+                        <span>{{ item.status }}</span>
+                        <strong>{{ item.item }}</strong>
+                        <p>{{ item.note }}</p>
+                    </article>
+                {% endfor %}
+            </div>
         </section>
 
         <section class="az-beta-disclaimer-v3">

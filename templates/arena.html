@@ -173,6 +173,12 @@
                 </div>
                 <i><b id="az48-result-progress-fill"></b></i>
             </div>
+            <div class="az48-result-next-best" id="az48-result-next-best" hidden>
+                <span>Recommended next step</span>
+                <strong id="az48-result-next-title">Play Again</strong>
+                <p id="az48-result-next-copy">Run another Training match when you are ready.</p>
+                <a href="{{ url_for('training') }}" id="az48-result-next-link" class="az48-result-action az48-result-primary">Play Again</a>
+            </div>
         </div>
         <nav class="az48-result-actions" aria-label="Training result actions">
             <button type="button" id="az48-training-restart" class="az48-result-action az48-result-primary">Jogar novamente</button>

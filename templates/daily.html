@@ -87,6 +87,22 @@
             {% endfor %}
         </section>
 
+        <section id="az-return-loop-v1" class="az-return-loop-v1" aria-label="Daily return loop">
+            <div>
+                <span class="progression-kicker">Return Loop</span>
+                <h2>{% if daily_checkin.claimed_today %}Come back tomorrow for {{ daily_checkin.next_xp }} XP + {{ daily_checkin.next_gold }} Gold.{% else %}Today can start a Day {{ daily_checkin.projected_streak }} streak.{% endif %}</h2>
+                <p>
+                    Claiming daily grants {{ daily_checkin.claim_xp }} XP and {{ daily_checkin.claim_gold }} Gold now.
+                    Tomorrow's reward preview is {{ daily_checkin.next_xp }} XP and {{ daily_checkin.next_gold }} Gold.
+                </p>
+            </div>
+            <div class="az-return-loop-stats-v1">
+                <article><span>Current streak</span><strong>{{ daily_checkin.streak }}</strong></article>
+                <article><span>Best streak</span><strong>{{ daily_checkin.best_streak }}</strong></article>
+                <article><span>Next reward</span><strong>{{ daily_checkin.next_gold }} Gold</strong></article>
+            </div>
+        </section>
+
         <section class="progression-grid">
             {% if missions %}
                 {% for mission in missions %}

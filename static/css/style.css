@@ -10836,3 +10836,164 @@ button.btn-secondary {
         grid-template-columns: 1fr;
     }
 }
+
+/* Blocks 89-96: RC V4 retention and public beta polish. */
+.az-first-session-questline-v1,
+.az-deck-readiness-coach-v1,
+.az-return-loop-v1,
+.az-ranking-beta-note-v1,
+.az-rc-public-checklist-v1 {
+    margin: 18px 0;
+    padding: 18px;
+    border: 1px solid rgba(248, 231, 186, 0.18);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+        rgba(8, 10, 18, 0.76);
+    box-shadow: 0 20px 54px rgba(0, 0, 0, 0.22);
+}
+
+.az-first-session-questline-v1.is-dismissed {
+    opacity: 0.72;
+}
+
+.az-first-session-head-v1 {
+    display: grid;
+    gap: 8px;
+}
+
+.az-first-session-head-v1 h2,
+.az-deck-readiness-coach-v1 h2,
+.az-return-loop-v1 h2,
+.az-ranking-beta-note-v1 h2 {
+    margin: 0;
+}
+
+.az-first-session-head-v1 p,
+.az-deck-readiness-coach-v1 p,
+.az-return-loop-v1 p,
+.az-ranking-beta-note-v1 p,
+.az-rc-public-checklist-v1 p {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.az-first-session-meter-v1 {
+    display: grid;
+    gap: 8px;
+    max-width: 520px;
+}
+
+.az-first-session-meter-v1 i {
+    display: block;
+    height: 9px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.10);
+}
+
+.az-first-session-meter-v1 b {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f5c26b, #58d6c7);
+}
+
+.az-first-session-grid-v1,
+.az-rc-public-checklist-grid-v1,
+.az-return-loop-stats-v1,
+.az-deck-coach-stat-grid-v1 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.az-first-session-step-v1,
+.az-rc-public-checklist-grid-v1 article,
+.az-return-loop-stats-v1 article,
+.az-deck-coach-stat-grid-v1 article {
+    display: grid;
+    gap: 5px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.045);
+    color: inherit;
+    text-decoration: none;
+}
+
+.az-first-session-step-v1.is-complete {
+    border-color: rgba(88, 214, 199, 0.34);
+    background: rgba(88, 214, 199, 0.08);
+}
+
+.az-first-session-step-v1.is-next {
+    border-color: rgba(245, 194, 107, 0.44);
+    box-shadow: 0 16px 42px rgba(245, 194, 107, 0.10);
+}
+
+.az-first-session-step-v1 span,
+.az-first-session-step-v1 small,
+.az-rc-public-checklist-grid-v1 span,
+.az-return-loop-stats-v1 span,
+.az-deck-coach-stat-grid-v1 span {
+    color: rgba(248, 231, 186, 0.76);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az-first-session-step-v1 p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.9rem;
+}
+
+.az-deck-readiness-coach-v1 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr) auto;
+    align-items: start;
+    gap: 16px;
+}
+
+.az-deck-readiness-coach-v1 ul,
+.az-ranking-beta-note-v1 ul {
+    margin: 0;
+    padding-left: 18px;
+    color: rgba(255, 255, 255, 0.74);
+}
+
+.az-ranking-beta-note-v1 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+    gap: 16px;
+}
+
+.az-rc-public-checklist-grid-v1 strong {
+    color: #fff;
+}
+
+.leaderboard-row {
+    grid-template-columns: 72px minmax(140px, 1.25fr) 80px 80px 120px 90px 90px 110px !important;
+}
+
+@media (max-width: 860px) {
+    .leaderboard-row {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 760px) {
+    .az-deck-readiness-coach-v1,
+    .az-ranking-beta-note-v1 {
+        grid-template-columns: 1fr;
+    }
+
+    .az-first-session-grid-v1,
+    .az-rc-public-checklist-grid-v1,
+    .az-return-loop-stats-v1,
+    .az-deck-coach-stat-grid-v1 {
+        grid-template-columns: 1fr;
+    }
+}

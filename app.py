@@ -30,7 +30,6 @@ from game.deck import (
     draw_starting_hand,
     load_card_ids,
     validate_deck,
-    full_deck_analysis,
     deck_analysis_v115,
     create_starter_deck_from_collection,
 )
@@ -491,6 +490,269 @@ def beta_collection_progress(user):
     return progress
 
 
+def beta_daily_reward_for_streak(streak):
+    try:
+        streak = int(streak or 1)
+    except (TypeError, ValueError):
+        streak = 1
+
+    streak = max(1, streak)
+    gold = min(150, DAILY_GOLD_REWARD + ((streak - 1) * 15))
+    xp = min(55, 35 + ((streak - 1) * 5))
+
+    return {
+        "streak": streak,
+        "xp": xp,
+        "gold": gold,
+        "label": f"{xp} XP + {gold} Gold",
+    }
+
+
+def projected_daily_streak(user, today=None):
+    if not user:
+        return 1
+
+    today = today or today_key()
+    last_claim = str(getattr(user, "daily_last_checkin_date", "") or "")
+    current_streak = int(getattr(user, "daily_streak", 0) or 0)
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    if last_claim == today:
+        return max(1, current_streak)
+
+    if last_claim == yesterday:
+        return max(1, current_streak + 1)
+
+    return 1
+
+
+def build_first_session_questline(user=None, deck_status=None, wallet=None, collection_progress=None):
+    deck_status = deck_status or beta_deck_status(user)
+    wallet = wallet or gold_wallet_payload(user)
+    collection_progress = collection_progress or beta_collection_progress(user)
+    total_matches = int(getattr(user, "wins", 0) or 0) + int(getattr(user, "losses", 0) or 0) if user else 0
+    trained = bool(getattr(user, "first_training_completed", False)) if user else False
+    reward_seen = bool(user and (int(getattr(user, "total_xp", 0) or 0) > 0 or int(wallet.get("balance", 0) or 0) > GUEST_GOLD_STARTING_BALANCE))
+    booster_count = 0
+
+    if user:
+        try:
+            booster_count = BoosterHistory.query.filter_by(user_id=user.id).count()
+        except Exception as error:
+            print("FIRST SESSION BOOSTER COUNT ERROR:", type(error).__name__, error)
+            booster_count = 0
+
+    can_buy_booster = bool(user and int(wallet.get("balance", 0) or 0) >= int(get_booster_pack("elemental").get("cost", 300)))
+    collection_seen = bool(user and (int(collection_progress.get("owned_unique", 0) or 0) > 0 or bool(deck_status.get("is_valid"))))
+
+    steps = [
+        {
+            "key": "enter",
+            "number": "01",
+            "title": "Enter the beta",
+            "description": "Open or create a duelist profile so progress can persist.",
+            "complete": bool(user),
+            "url": url_for("progression") if user else url_for("register"),
+            "cta": "Open Progression" if user else "Register",
+        },
+        {
+            "key": "training",
+            "number": "02",
+            "title": "Play first Training",
+            "description": "Finish one BE2 bot duel and read the round summary.",
+            "complete": bool(trained or total_matches > 0),
+            "url": url_for("training"),
+            "cta": "Play Training",
+        },
+        {
+            "key": "reward",
+            "number": "03",
+            "title": "Collect progress",
+            "description": "Review XP, Gold, missions and the post-match reward reveal.",
+            "complete": reward_seen,
+            "url": url_for("missions") if user else url_for("login"),
+            "cta": "Claim Rewards" if user else "Login",
+        },
+        {
+            "key": "booster",
+            "number": "04",
+            "title": "Open a booster",
+            "description": "Spend earned Gold on a beta booster when your wallet is ready.",
+            "complete": booster_count > 0,
+            "ready": can_buy_booster,
+            "url": url_for("shop") if user else url_for("login"),
+            "cta": "Open Shop" if user else "Login",
+        },
+        {
+            "key": "collection_deck",
+            "number": "05",
+            "title": "Inspect Collection / Deck",
+            "description": "Check unlocks, keep the 30-card deck legal, then play again.",
+            "complete": collection_seen,
+            "url": url_for("deck_builder") if user else url_for("collection"),
+            "cta": "Improve Deck",
+        },
+    ]
+
+    completed = sum(1 for step in steps if step.get("complete"))
+    next_step = next((step for step in steps if not step.get("complete")), steps[-1])
+
+    return {
+        "title": "First Session Questline",
+        "subtitle": "A five-minute path from first click to a stronger next match.",
+        "steps": steps,
+        "completed": completed,
+        "total": len(steps),
+        "percent": int(round((completed / max(1, len(steps))) * 100)),
+        "next_step": next_step,
+        "dismiss_key": "ambitionz_first_session_questline_dismissed_v1",
+        "is_complete": completed == len(steps),
+    }
+
+
+def build_deck_readiness_coach(user=None, deck_ids=None, collection_ids=None, deck_status=None, deck_analysis=None):
+    if user and deck_ids is None:
+        deck_ids = load_card_ids(getattr(user, "deck_json", "[]") or "[]")
+
+    if user and collection_ids is None:
+        collection_ids = owned_card_ids_for_user(user)
+
+    deck_ids = deck_ids or []
+    collection_ids = collection_ids or []
+    deck_status = deck_status or beta_deck_status(user)
+    deck_analysis = deck_analysis or deck_analysis_v115(deck_ids)
+    stats = deck_analysis.get("stats", {}) if isinstance(deck_analysis, dict) else {}
+    energy = deck_analysis.get("energy", {}) if isinstance(deck_analysis, dict) else {}
+    elements = deck_analysis.get("elements", {}) if isinstance(deck_analysis, dict) else {}
+    deck_counter = Counter(deck_ids)
+    collection_counter = Counter(collection_ids)
+    locked_count = sum(
+        max(0, int(amount or 0) - int(collection_counter.get(card_id, 0) or 0))
+        for card_id, amount in deck_counter.items()
+    )
+    recommendations = []
+    total = int(stats.get("total", len(deck_ids)) or 0)
+    monsters = int(stats.get("monsters", 0) or 0)
+    spells = int(stats.get("spells", 0) or 0)
+    traps = int(stats.get("traps", 0) or 0)
+    average_cost = float(energy.get("average_cost", 0) or 0)
+    early_curve = int((energy.get("curve", {}) or {}).get(1, 0) or 0) + int((energy.get("curve", {}) or {}).get(2, 0) or 0)
+
+    if total == 0:
+        status = "empty"
+        label = "Deck empty"
+        recommendations.append("Use Auto Build to restore the legal 30-card beta starter deck.")
+    elif total < 30:
+        status = "incomplete"
+        label = "Deck incomplete"
+        recommendations.append(f"Add {30 - total} more card{'s' if 30 - total != 1 else ''} before testing.")
+    elif not bool(deck_status.get("is_valid")):
+        status = "needs_attention"
+        label = "Deck needs attention"
+    else:
+        status = "ready"
+        label = "Training ready"
+        recommendations.append("Deck is legal. Test it in Training and watch the post-match coach.")
+
+    if locked_count > 0:
+        recommendations.append(f"{locked_count} selected card copy/copies are not owned yet. Open boosters or run Auto Build.")
+    if monsters < 21:
+        recommendations.append("Add more creatures so lanes do not fall behind.")
+    if spells > 8 or traps > 5:
+        recommendations.append("Avoid too many spells/traps; the beta deck wants reliable lane bodies.")
+    if average_cost > 3.2:
+        recommendations.append("Reduce average cost so early turns stay playable.")
+    if total and early_curve < 12:
+        recommendations.append("Add more cost 1-2 cards for cleaner openings.")
+    if len([name for name, amount in elements.items() if name != "Global" and int(amount or 0) > 0]) < 2 and total:
+        recommendations.append("Consider a second element so matchups have more flexibility.")
+
+    if not recommendations:
+        recommendations.append("Deck shape is stable. Play Training, then adjust from real match results.")
+
+    primary_url = url_for("training") if status == "ready" else url_for("deck_builder")
+    primary_cta = "Test in Training" if status == "ready" else "Fix Deck"
+
+    if locked_count > 0:
+        primary_url = url_for("shop")
+        primary_cta = "Open Booster"
+
+    return {
+        "status": status,
+        "label": label,
+        "total": total,
+        "monsters": monsters,
+        "spells": spells,
+        "traps": traps,
+        "average_cost": average_cost,
+        "elements": elements,
+        "early_curve": early_curve,
+        "locked_count": locked_count,
+        "recommendations": recommendations[:4],
+        "primary_url": primary_url,
+        "primary_cta": primary_cta,
+    }
+
+
+def build_post_match_next_best_action(user, rewards=None, mission_updates=None, deck_status=None):
+    rewards = rewards or {}
+    mission_updates = mission_updates or []
+    deck_status = deck_status or beta_deck_status(user)
+    gold_balance = get_gold_balance(user) if user else 0
+    booster_cost = int(get_booster_pack("elemental").get("cost", 300) or 300)
+    gained_gold = int(rewards.get("coins", 0) or 0)
+    mission_ready = any(update.get("completed") or update.get("is_complete") or update.get("just_completed") for update in mission_updates if isinstance(update, dict))
+
+    if user and gold_balance >= booster_cost:
+        return {
+            "kind": "shop",
+            "label": "Open Booster",
+            "title": "You have enough Gold for a booster.",
+            "description": f"{gold_balance} Gold is ready. Open a beta pack or keep saving.",
+            "url": url_for("shop"),
+            "reason": "gold_ready",
+        }
+
+    if mission_ready:
+        return {
+            "kind": "missions",
+            "label": "Claim Mission",
+            "title": "A mission moved forward.",
+            "description": "Claim completed objectives before the next Training run.",
+            "url": url_for("missions"),
+            "reason": "mission_ready",
+        }
+
+    if user and not bool(deck_status.get("is_valid")):
+        return {
+            "kind": "deck",
+            "label": "Fix Deck",
+            "title": "Your deck needs attention.",
+            "description": "Deck Coach can restore or tune the legal 30-card beta deck.",
+            "url": url_for("deck_builder"),
+            "reason": "deck_invalid",
+        }
+
+    if gained_gold > 0:
+        return {
+            "kind": "progression",
+            "label": "Review Progress",
+            "title": "Gold and XP were added.",
+            "description": "Check level progress, Daily streak and the next reward target.",
+            "url": url_for("progression") if user else url_for("login"),
+            "reason": "reward_review",
+        }
+
+    return {
+        "kind": "training",
+        "label": "Play Again",
+        "title": "Run it back.",
+        "description": "Play another Training match with the same deck and cleaner decisions.",
+        "url": url_for("training"),
+        "reason": "fallback",
+    }
+
+
 def build_beta_journey(user=None, deck_status=None):
     deck_status = deck_status or beta_deck_status(user)
     total_matches = int(getattr(user, "wins", 0) or 0) + int(getattr(user, "losses", 0) or 0) if user else 0
@@ -765,19 +1027,23 @@ def build_daily_checkin(user, missions):
     claimed_today = bool(user and last_claim == today)
     streak = int(getattr(user, "daily_streak", 0) or 0) if user else 0
     best_streak = int(getattr(user, "daily_best_streak", 0) or 0) if user else 0
+    claim_streak = projected_daily_streak(user, today) if user else 1
+    claim_reward = beta_daily_reward_for_streak(claim_streak)
+    next_reward_streak = (streak + 1) if claimed_today and streak else (claim_streak + 1)
+    next_reward = beta_daily_reward_for_streak(next_reward_streak)
 
     if not user:
         state = "Beta preview"
         message = "Login to activate daily missions, XP and Gold reward previews."
     elif claimed_today:
         state = "Checked in"
-        message = "Daily XP and Gold claimed. Play Training or continue Campaign before tomorrow's reset."
+        message = f"Daily XP and Gold claimed. Come back tomorrow for {next_reward['label']}."
     elif claimable_count:
         state = "Reward ready"
         message = "Daily check-in is ready, and completed missions can still be claimed."
     else:
         state = "Available today"
-        message = "Claim today's beta XP and Gold, then play Training to move the mission board forward."
+        message = "Claim today's scaling XP and Gold, then play Training to move the mission board forward."
 
     return {
         "state": state,
@@ -785,13 +1051,18 @@ def build_daily_checkin(user, missions):
         "today": today,
         "claimed_today": claimed_today,
         "can_claim": bool(user and not claimed_today),
-        "claim_reward": f"35 XP + {DAILY_GOLD_REWARD} Gold",
-        "next_reward": f"Tomorrow: 35 XP + {DAILY_GOLD_REWARD} Gold + mission progress",
+        "claim_reward": claim_reward["label"],
+        "next_reward": f"Tomorrow: {next_reward['label']} + mission progress",
+        "claim_xp": claim_reward["xp"],
+        "claim_gold": claim_reward["gold"],
+        "next_xp": next_reward["xp"],
+        "next_gold": next_reward["gold"],
+        "projected_streak": claim_streak,
         "reward_card": {
             "label": "Daily Reward",
             "available": bool(user and not claimed_today),
             "claimed": claimed_today,
-            "preview": f"35 XP + {DAILY_GOLD_REWARD} Gold",
+            "preview": claim_reward["label"],
             "tomorrow": "Next reward tomorrow",
         },
         "active_count": active_count,
@@ -803,11 +1074,8 @@ def build_daily_checkin(user, missions):
         "streak_label": f"{streak} day streak" if user else "Preview only",
         "reset_label": "Resets tomorrow at local midnight",
         "calendar": [
-            {"day": "Day 1", "reward": f"35 XP + {DAILY_GOLD_REWARD} Gold", "status": "Claimed" if claimed_today and streak >= 1 else state},
-            {"day": "Day 2", "reward": f"35 XP + {DAILY_GOLD_REWARD} Gold", "status": "Current streak" if streak >= 2 else "Future"},
-            {"day": "Day 3", "reward": "40 XP + 90 Gold preview", "status": "Current streak" if streak >= 3 else "Future"},
-            {"day": "Day 4", "reward": "40 XP + 90 Gold preview", "status": "Current streak" if streak >= 4 else "Future"},
-            {"day": "Day 5", "reward": "45 XP + 120 Gold preview", "status": "Current streak" if streak >= 5 else "Future"},
+            {"day": f"Day {day}", "reward": beta_daily_reward_for_streak(day)["label"], "status": "Claimed" if claimed_today and streak >= day else "Current streak" if streak >= day else "Next" if day == claim_streak and not claimed_today else "Future"}
+            for day in range(1, 6)
         ],
     }
 
@@ -2274,12 +2542,16 @@ def admin_release_candidate():
 def index():
     user = current_user()
     deck_status = beta_deck_status(user)
+    collection_progress = beta_collection_progress(user)
+    wallet = gold_wallet_payload(user)
     return render_template(
         "index.html",
         user=user,
-        wallet=gold_wallet_payload(user),
+        wallet=wallet,
         beta_journey=build_beta_journey(user, deck_status),
-        beta_version="Public Beta RC V3",
+        first_session_questline=build_first_session_questline(user, deck_status, wallet, collection_progress),
+        deck_coach=build_deck_readiness_coach(user, deck_status=deck_status),
+        beta_version="Public Beta RC V4",
     )
 
 
@@ -2607,6 +2879,9 @@ def profile():
     cosmetics = get_cosmetic_foundation_for_user(user, profile_stats)
     profile_mission_guides = []
     daily_checkin = build_daily_checkin(user, [])
+    deck_status = beta_deck_status(user)
+    collection_progress = beta_collection_progress(user)
+    wallet = gold_wallet_payload(user)
 
     try:
         ensure_beta_missions(user)
@@ -2617,7 +2892,7 @@ def profile():
             .order_by(UserMission.id.desc())
             .all()
         )
-        profile_mission_guides = build_beta_mission_guides(user, beta_missions, beta_deck_status(user))[:4]
+        profile_mission_guides = build_beta_mission_guides(user, beta_missions, deck_status)[:4]
         daily_checkin = build_daily_checkin(user, daily_missions)
         db.session.commit()
     except Exception as error:
@@ -2633,7 +2908,9 @@ def profile():
         recent_matches=recent_matches,
         profile_mission_guides=profile_mission_guides,
         daily_checkin=daily_checkin,
-        wallet=gold_wallet_payload(user),
+        wallet=wallet,
+        first_session_questline=build_first_session_questline(user, deck_status, wallet, collection_progress),
+        deck_coach=build_deck_readiness_coach(user, deck_status=deck_status),
     )
 
 
@@ -2652,11 +2929,16 @@ def leaderboard():
     current_rank = None
 
     for index, player in enumerate(users, start=1):
+        player_matches = int(player.wins or 0) + int(player.losses or 0)
+        winrate = round((int(player.wins or 0) / player_matches) * 100, 1) if player_matches else 0
         row = {
             "rank": index,
             "user": player,
             "score": int(player.level or 1) * 10000 + int(player.xp or 0) * 10 + int(player.coins or 0),
             "is_current_user": bool(current and player.id == current.id),
+            "record": f"{int(player.wins or 0)}W / {int(player.losses or 0)}L",
+            "winrate": winrate,
+            "matches": player_matches,
         }
 
         if row["is_current_user"]:
@@ -2677,6 +2959,11 @@ def leaderboard():
         ranked_users=ranked_users,
         local_rows=local_rows,
         current_rank=current_rank,
+        criteria=[
+            "Progression score uses level, XP and Gold during beta.",
+            "Win/loss record appears when Training or PvP results are recorded.",
+            "No real-money purchase or paid ranking advantage is active.",
+        ],
     )
 
 
@@ -2699,6 +2986,8 @@ def ranking():
         total_matches = 0
 
     ranked_users = []
+    current = current_user()
+    current_rank = None
 
     for index, player in enumerate(users, start=1):
         total = int(player.wins or 0) + int(player.losses or 0)
@@ -2726,7 +3015,11 @@ def ranking():
             "total_matches": total,
             "winrate": winrate,
             "tier": tier,
+            "is_current_user": bool(current and player.id == current.id),
         })
+
+        if current and player.id == current.id:
+            current_rank = index
 
     season = {
         "name": "Beta Season",
@@ -2741,6 +3034,13 @@ def ranking():
         users=users,
         ranked_users=ranked_users,
         season=season,
+        current_user=current,
+        current_rank=current_rank,
+        criteria=[
+            "Wins are the first beta ordering signal.",
+            "Level and XP break early ties.",
+            "Tier labels are informational until ranked seasons ship.",
+        ],
     )
 
 
@@ -2802,7 +3102,7 @@ def first_session():
 def roadmap():
     user = current_user()
     roadmap_data = {
-        "version": "Public Beta RC V3",
+        "version": "Public Beta RC V4",
         "status": "em desenvolvimento",
         "recent": [
             {
@@ -2816,6 +3116,14 @@ def roadmap():
             {
                 "title": "Public beta polish",
                 "summary": "Landing pública, onboarding fora da Arena, feedback e estados vazios melhores.",
+            },
+            {
+                "title": "Economy beta",
+                "summary": "Gold, Shop V2, booster opening, collection unlock feedback e reward ledger defensivo.",
+            },
+            {
+                "title": "RC V4 retention polish",
+                "summary": "First session questline, next-best-action pós-partida, return loop e ranking beta mais claro.",
             },
         ],
         "planned": [
@@ -2831,6 +3139,21 @@ def roadmap():
                 "title": "Collection depth",
                 "summary": "Melhor leitura de progresso, desbloqueios recentes e metas de deck por elemento.",
             },
+        ],
+        "rc_checklist": [
+            {"item": "Arena jogável", "status": "Ready", "note": "BE2, Arena Clean e QA gauntlet ativos."},
+            {"item": "Training", "status": "Ready", "note": "Modo principal para beta pública e first session."},
+            {"item": "Collection", "status": "Ready", "note": "Owned, locked e unlock feedback defensivo."},
+            {"item": "Deck Builder", "status": "Ready", "note": "Deck Coach mantém a regra beta de 30 cartas legível."},
+            {"item": "Missions", "status": "Ready", "note": "Objetivos persistentes e rewards beta."},
+            {"item": "Daily", "status": "Ready", "note": "Streak simples, XP e Gold sem farm por refresh."},
+            {"item": "Gold", "status": "Ready", "note": "Moeda interna beta, sem pagamento real."},
+            {"item": "Shop beta", "status": "Ready", "note": "Boosters com Gold e supporter pack bloqueado."},
+            {"item": "Booster", "status": "Ready", "note": "Opening V1 com histórico e collection update quando possível."},
+            {"item": "Profile/Progression", "status": "Ready", "note": "Hub de XP, Gold, daily, missions e próximos passos."},
+            {"item": "Feedback", "status": "Ready", "note": "Formulário público defensivo para testers."},
+            {"item": "PWA", "status": "Ready", "note": "Manifest e service worker versionados."},
+            {"item": "QA status", "status": "Required per RC", "note": "Rodar suíte completa antes de commit/deploy."},
         ],
     }
 
@@ -3791,7 +4114,7 @@ def deck_builder():
     current_deck = enrich_cards_for_view(current_deck)
 
     deck_validation_errors = validate_deck(deck_ids, collection_ids)
-    deck_analysis = full_deck_analysis(deck_ids)
+    deck_analysis = deck_analysis_v115(deck_ids)
     deck_counter = Counter(deck_ids)
     deck_status = {
         "is_valid": len(deck_validation_errors) == 0,
@@ -3820,8 +4143,15 @@ def deck_builder():
         deck_ids=deck_ids,
         collection_ids=collection_ids,
         deck_validation_errors=deck_validation_errors,
-        deck_analysis=deck_analysis_v115(deck_ids),
+        deck_analysis=deck_analysis,
         deck_status=deck_status,
+        deck_coach=build_deck_readiness_coach(
+            user,
+            deck_ids=deck_ids,
+            collection_ids=collection_ids,
+            deck_status=deck_status,
+            deck_analysis=deck_analysis,
+        ),
     )
 
 
@@ -4298,6 +4628,13 @@ def end_match(room_id, winner_key, ending_reason="completed"):
         user_id = safe_user_id(match.get(player_key) or {})
         viewer_user = db.session.get(User, user_id) if user_id else None
         xp_result = (rewards or {}).get("xp_result") or (rewards or {}).get("campaign_xp_result") or {}
+        mission_progress = mission_updates.get(player_key, [])
+        next_best_action = build_post_match_next_best_action(
+            viewer_user,
+            rewards or {},
+            mission_progress,
+            beta_deck_status(viewer_user) if viewer_user else None,
+        )
         post_match_extras[player_key] = {
             "history_id": history.id,
             "history_url": url_for("match_history_detail", history_id=history.id),
@@ -4307,18 +4644,22 @@ def end_match(room_id, winner_key, ending_reason="completed"):
             "level": int(getattr(viewer_user, "level", 1) or 1) if viewer_user else 1,
             "level_progress_percent": getattr(viewer_user, "level_progress_percent", 0) if viewer_user else 0,
             "next_level_xp": getattr(viewer_user, "next_level_xp", 100) if viewer_user else 100,
-            "mission_progress": mission_updates.get(player_key, []),
+            "mission_progress": mission_progress,
             "campaign_chapter_id": campaign_chapter_id or None,
             "campaign_result": result_by_key.get(player_key),
             "campaign_reward_preview": campaign_context.get("reward") if is_campaign_match else None,
             "xp_result": xp_result,
+            "next_best_action": next_best_action,
             "next_actions": {
+                "primary": next_best_action.get("url"),
                 "play_again": url_for("training"),
                 "campaign": url_for("campaign"),
                 "deck": url_for("deck_builder"),
                 "collection": url_for("collection"),
                 "history": url_for("match_history_detail", history_id=history.id),
                 "missions": url_for("missions"),
+                "shop": url_for("shop"),
+                "progression": url_for("progression") if viewer_user else url_for("login"),
                 "menu": url_for("index"),
             },
         }
@@ -5140,17 +5481,18 @@ def claim_daily_checkin():
 
         user.daily_best_streak = max(int(getattr(user, "daily_best_streak", 0) or 0), int(user.daily_streak or 0))
         user.daily_last_checkin_date = today
+        daily_reward = beta_daily_reward_for_streak(user.daily_streak)
 
         xp_result = award_xp(
             user,
-            35,
+            daily_reward["xp"],
             source="daily_checkin",
             metadata={"date": today, "streak": user.daily_streak},
             reward_key=f"daily:{user.id}:{today}",
         )
         gold_result = credit_gold(
             user,
-            DAILY_GOLD_REWARD,
+            daily_reward["gold"],
             source="daily_checkin",
             reason="Daily check-in Gold reward.",
             reference_type="daily",
@@ -5172,6 +5514,7 @@ def claim_daily_checkin():
                 "streak": user.daily_streak,
                 "xp": xp_result.get("xp", 0),
                 "gold": gold_result.get("amount", 0) if gold_result.get("ok") else 0,
+                "reward": daily_reward["label"],
                 "mission_completed": bool(mission_update and mission_update.get("completed")),
             },
         )
@@ -5184,6 +5527,7 @@ def claim_daily_checkin():
                 "streak": user.daily_streak,
                 "xp": xp_result.get("xp", 0),
                 "gold": gold_result.get("amount", 0) if gold_result.get("ok") else 0,
+                "reward": daily_reward["label"],
             },
         )
         record_retention_event(
@@ -5514,6 +5858,7 @@ def progression():
     daily_missions = []
     deck_status = beta_deck_status(user)
     collection_progress = beta_collection_progress(user)
+    wallet = gold_wallet_payload(user)
     progression_stats = {
         "username": user.username,
         "level": int(user.level or 1),
@@ -5526,6 +5871,8 @@ def progression():
         "total_matches": int(user.wins or 0) + int(user.losses or 0),
         "first_training_completed": bool(getattr(user, "first_training_completed", False)),
         "gold_balance": get_gold_balance(user),
+        "daily_streak": int(getattr(user, "daily_streak", 0) or 0),
+        "daily_best_streak": int(getattr(user, "daily_best_streak", 0) or 0),
     }
 
     try:
@@ -5594,7 +5941,9 @@ def progression():
         deck_status=deck_status,
         daily_checkin=build_daily_checkin(user, daily_missions),
         beta_journey=build_beta_journey(user, deck_status),
-        wallet=gold_wallet_payload(user),
+        wallet=wallet,
+        first_session_questline=build_first_session_questline(user, deck_status, wallet, collection_progress),
+        deck_coach=build_deck_readiness_coach(user, deck_status=deck_status),
     )
 
 

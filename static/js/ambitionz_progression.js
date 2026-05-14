@@ -155,6 +155,37 @@
         });
     }
 
+    function bindFirstSessionQuestline() {
+        var panels = document.querySelectorAll("[data-first-session-questline]");
+        if (!panels.length) return;
+
+        panels.forEach(function (panel) {
+            var key = panel.getAttribute("data-dismiss-key") || "ambitionz_first_session_questline_dismissed_v1";
+            var dismissed = false;
+
+            try {
+                dismissed = window.localStorage.getItem(key) === "true";
+            } catch (error) {
+                dismissed = false;
+            }
+
+            if (dismissed) {
+                panel.classList.add("is-dismissed");
+            }
+
+            panel.querySelectorAll("[data-first-session-dismiss]").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    try {
+                        window.localStorage.setItem(key, "true");
+                    } catch (error) {}
+
+                    panel.classList.add("is-dismissed");
+                    button.textContent = "Questline hidden";
+                });
+            });
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         if (!isProgressionPage()) return;
 
@@ -166,6 +197,7 @@
         bindLocalDailyReward();
         updateDailyRewardCards();
         bindPublicOnboarding();
+        bindFirstSessionQuestline();
         injectRewardToast();
     });
 })();

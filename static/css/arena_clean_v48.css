@@ -3008,6 +3008,44 @@ body.az48-command-pending .az48-actions::after {
     white-space: normal;
 }
 
+.az48-result-next-best {
+    display: grid;
+    gap: 7px;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(248, 231, 186, 0.20);
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.az48-result-next-best[hidden] {
+    display: none !important;
+}
+
+.az48-result-next-best span {
+    color: rgba(248, 231, 186, 0.78);
+    font-size: 0.66rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az48-result-next-best strong {
+    color: #fff;
+    font-size: 0.98rem;
+}
+
+.az48-result-next-best p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+
+.az48-result-next-best .az48-result-action {
+    justify-self: start;
+}
+
 @media (max-width: 760px), (max-height: 760px) {
     .az48-first-player-flow {
         left: 10px;

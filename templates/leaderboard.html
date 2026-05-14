@@ -54,6 +54,19 @@
             </article>
         </section>
 
+        <section id="az-leaderboard-beta-criteria-v1" class="az-ranking-beta-note-v1" aria-label="Leaderboard beta criteria">
+            <div>
+                <span class="progression-kicker">Beta Leaderboard</span>
+                <h2>Progression ranking, not paid advantage.</h2>
+                <p>Leaderboard is an honest beta view: level, XP, Gold and recorded match results until ranked MMR arrives.</p>
+            </div>
+            <ul>
+                {% for item in criteria %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
         <section class="panel-card">
             <div class="leaderboard-section-head">
                 <div>
@@ -69,6 +82,8 @@
                     <span>Player</span>
                     <span>Level</span>
                     <span>XP</span>
+                    <span>Record</span>
+                    <span>Winrate</span>
                     <span>Gold</span>
                     <span>Score</span>
                 </div>
@@ -79,6 +94,8 @@
                     <span>{{ row.user.username }}</span>
                     <span>{{ row.user.level }}</span>
                     <span>{{ row.user.xp }}</span>
+                    <span>{{ row.record }}</span>
+                    <span>{{ row.winrate }}%</span>
                     <span>{{ row.user.coins }}</span>
                     <strong>{{ row.score }}</strong>
                 </div>
@@ -108,6 +125,8 @@
                     <span>Player</span>
                     <span>Level</span>
                     <span>XP</span>
+                    <span>Record</span>
+                    <span>Winrate</span>
                     <span>Gold</span>
                     <span>Score</span>
                 </div>
@@ -118,6 +137,8 @@
                     <span>{{ row.user.username }}</span>
                     <span>{{ row.user.level }}</span>
                     <span>{{ row.user.xp }}</span>
+                    <span>{{ row.record }}</span>
+                    <span>{{ row.winrate }}%</span>
                     <span>{{ row.user.coins }}</span>
                     <strong>{{ row.score }}</strong>
                 </div>

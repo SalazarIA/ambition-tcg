@@ -122,6 +122,43 @@
             </article>
         </section>
 
+        <section
+            id="az-first-session-questline-v1"
+            class="az-first-session-questline-v1"
+            data-first-session-questline
+            data-dismiss-key="{{ first_session_questline.dismiss_key }}"
+            aria-label="First session questline"
+        >
+            <div class="az-first-session-head-v1">
+                <span class="az-home-kicker-v2">First Session Questline</span>
+                <h2>{{ first_session_questline.title }}</h2>
+                <p>{{ first_session_questline.subtitle }}</p>
+                <div class="az-first-session-meter-v1">
+                    <span>{{ first_session_questline.completed }}/{{ first_session_questline.total }} complete</span>
+                    <strong>{{ first_session_questline.percent }}%</strong>
+                    <i><b style="width: {{ first_session_questline.percent }}%;"></b></i>
+                </div>
+            </div>
+            <div class="az-first-session-grid-v1">
+                {% for step in first_session_questline.steps %}
+                    <a
+                        href="{{ step.url }}"
+                        class="az-first-session-step-v1 {% if step.complete %}is-complete{% elif first_session_questline.next_step.key == step.key %}is-next{% endif %}"
+                        data-quest-step="{{ step.key }}"
+                    >
+                        <span>{{ step.number }}</span>
+                        <strong>{{ step.title }}</strong>
+                        <small>{% if step.complete %}Done{% elif step.ready %}Ready{% else %}Next{% endif %}</small>
+                        <p>{{ step.description }}</p>
+                    </a>
+                {% endfor %}
+            </div>
+            <div class="progression-action-row">
+                <a href="{{ first_session_questline.next_step.url }}" class="btn">{{ first_session_questline.next_step.cta }}</a>
+                <button type="button" class="btn btn-secondary" data-first-session-dismiss>Dismiss</button>
+            </div>
+        </section>
+
         <section id="az-public-onboarding-v1" class="az-public-onboarding-v1" data-public-onboarding aria-label="Public beta onboarding">
             <div>
                 <span class="az-home-kicker-v2">Beta Onboarding</span>

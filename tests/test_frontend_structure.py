@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -444,7 +444,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -481,7 +481,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert 'name="contact"' in feedback
     assert "Guest feedback is accepted" in feedback
     assert "Roadmap & Patch Notes" in roadmap
-    assert "Public Beta RC V3" in roadmap
+    assert "Public Beta RC V4" in roadmap
     assert "Arena BE2 polish" in roadmap
     assert "Retention loops" in roadmap
     assert "Public beta polish" in roadmap
@@ -503,7 +503,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".az-public-onboarding-v1" in css
     assert ".az-roadmap-card-v3" in css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
 
 
 def test_blocks_81_88_beta_economy_contract():
@@ -550,7 +550,7 @@ def test_blocks_81_88_beta_economy_contract():
     assert "Gold is beta currency only" in roadmap
     assert "Gold +" in arena_js
     assert "az-recent-unlocks-data" in cards_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v184"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
 
 
 def test_arena_premium_hud_contract():
@@ -798,3 +798,60 @@ def test_narrative_onboarding_contract():
     assert "One card per round" in app_py
     assert ".az-tutorial-narrative-v1" in css
     assert ".az-tutorial-step-card-v1" in css
+
+
+def test_public_beta_rc_v4_retention_contract():
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+    homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
+    profile = (PROJECT_ROOT / "templates" / "profile.html").read_text()
+    progression = (PROJECT_ROOT / "templates" / "progression.html").read_text()
+    daily = (PROJECT_ROOT / "templates" / "daily.html").read_text()
+    deck_builder = (PROJECT_ROOT / "templates" / "deck_builder.html").read_text()
+    leaderboard = (PROJECT_ROOT / "templates" / "leaderboard.html").read_text()
+    ranking = (PROJECT_ROOT / "templates" / "ranking.html").read_text()
+    roadmap = (PROJECT_ROOT / "templates" / "roadmap.html").read_text()
+    arena = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    arena_js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    progression_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_progression.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    arena_css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+    service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
+    checklist = (PROJECT_ROOT / "docs" / "RC_PUBLIC_CHECKLIST.md").read_text()
+
+    assert "def build_first_session_questline" in app_py
+    assert "def build_post_match_next_best_action" in app_py
+    assert "def build_deck_readiness_coach" in app_py
+    assert "def beta_daily_reward_for_streak" in app_py
+    assert '"next_best_action": next_best_action' in app_py
+    assert "Public Beta RC V4" in app_py
+
+    for template in [homepage, profile, progression]:
+        assert "data-first-session-questline" in template
+    assert "ambitionz_first_session_questline_dismissed_v1" in app_py
+    assert "ambitionz_first_session_questline_dismissed_v1" in progression_js
+
+    assert 'id="az-return-loop-v1"' in daily
+    assert "daily_checkin.projected_streak" in daily
+    assert "daily_checkin.next_gold" in daily
+    assert 'id="az-deck-readiness-coach-v1"' in deck_builder
+    assert 'id="az-profile-deck-readiness-coach-v1"' in profile
+    assert 'id="az-progression-deck-readiness-coach-v1"' in progression
+    assert 'id="az-leaderboard-beta-criteria-v1"' in leaderboard
+    assert 'id="az-ranking-beta-criteria-v1"' in ranking
+    assert 'data-ranking-row-current="true"' in ranking
+    assert 'id="az-rc-public-checklist-v1"' in roadmap
+    assert "Public Beta RC V4" in roadmap
+    assert "Economy beta" in app_py
+
+    assert 'id="az48-result-next-best"' in arena
+    assert "function renderResultNextBestAction" in arena_js
+    assert "summary.next_best_action" in arena_js
+    assert ".az48-result-next-best" in arena_css
+    assert "function bindFirstSessionQuestline" in progression_js
+    assert ".az-first-session-questline-v1" in css
+    assert ".az-deck-readiness-coach-v1" in css
+    assert ".az-rc-public-checklist-v1" in css
+    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
+
+    assert "Arena jogavel" in checklist
+    assert "QA status" in checklist

@@ -106,6 +106,43 @@
             </article>
         </section>
 
+        <section
+            id="az-profile-first-session-questline-v1"
+            class="az-first-session-questline-v1 az-first-session-compact-v1"
+            data-first-session-questline
+            data-dismiss-key="{{ first_session_questline.dismiss_key }}"
+            aria-label="First session questline"
+        >
+            <div class="az-first-session-head-v1">
+                <span class="progression-kicker">First Session Questline</span>
+                <h2>{{ first_session_questline.completed }}/{{ first_session_questline.total }} starter goals complete</h2>
+                <p>Next best starter step: {{ first_session_questline.next_step.title }}.</p>
+                <div class="az-first-session-meter-v1">
+                    <span>{{ first_session_questline.percent }}% complete</span>
+                    <strong>{{ first_session_questline.next_step.cta }}</strong>
+                    <i><b style="width: {{ first_session_questline.percent }}%;"></b></i>
+                </div>
+            </div>
+            <div class="progression-action-row">
+                <a href="{{ first_session_questline.next_step.url }}" class="btn">{{ first_session_questline.next_step.cta }}</a>
+                <button type="button" class="btn btn-secondary" data-first-session-dismiss>Dismiss</button>
+            </div>
+        </section>
+
+        <section id="az-profile-deck-readiness-coach-v1" class="az-deck-readiness-coach-v1" aria-label="Deck readiness coach">
+            <div>
+                <span class="progression-kicker">Deck Readiness Coach</span>
+                <h2>{{ deck_coach.label }}</h2>
+                <p>{{ deck_coach.total }}/30 cards · {{ deck_coach.monsters }} creatures · {{ deck_coach.spells }} spells · {{ deck_coach.traps }} traps · avg cost {{ "%.2f"|format(deck_coach.average_cost) }}</p>
+            </div>
+            <ul>
+                {% for recommendation in deck_coach.recommendations %}
+                    <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+            <a href="{{ deck_coach.primary_url }}" class="btn btn-secondary small-btn">{{ deck_coach.primary_cta }}</a>
+        </section>
+
         <section id="az-profile-progress-preview" class="az-profile-progress-preview-v28" aria-label="Progress preview">
             <div>
                 <span class="progression-kicker">Progress Preview</span>

@@ -254,6 +254,32 @@
             </div>
         </section>
 
+        <section id="az-deck-readiness-coach-v1" class="az-deck-readiness-coach-v1" aria-label="Deck readiness coach">
+            <div>
+                <span class="progression-kicker">Deck Readiness Coach</span>
+                <h2>{{ deck_coach.label }}</h2>
+                <p>
+                    {{ deck_coach.total }}/30 cards · {{ deck_coach.monsters }} creatures ·
+                    {{ deck_coach.spells }} spells · {{ deck_coach.traps }} traps · avg cost {{ "%.2f"|format(deck_coach.average_cost) }}
+                </p>
+            </div>
+            <div class="az-deck-coach-stat-grid-v1">
+                <article><span>Early curve</span><strong>{{ deck_coach.early_curve }}</strong></article>
+                <article><span>Locked copies</span><strong>{{ deck_coach.locked_count }}</strong></article>
+                <article><span>Status</span><strong>{{ deck_coach.status|replace('_', ' ')|title }}</strong></article>
+            </div>
+            <ul>
+                {% for recommendation in deck_coach.recommendations %}
+                    <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+            <div class="progression-action-row">
+                <a href="{{ deck_coach.primary_url }}" class="btn">{{ deck_coach.primary_cta }}</a>
+                <a href="{{ url_for('training') }}" class="btn btn-secondary">Test in Training</a>
+                <a href="{{ url_for('shop') }}" class="btn btn-secondary">Open Booster</a>
+            </div>
+        </section>
+
         {% if deck_validation_errors %}
         <section class="deck-status deck-status-invalid-v1">
             <div class="section-title-row">
