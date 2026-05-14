@@ -1138,6 +1138,15 @@
                 history_id: summary.history_id || null,
                 campaign_chapter_id: summary.campaign_chapter_id || null,
             });
+            if (window.AmbitionzBetaTelemetry && typeof window.AmbitionzBetaTelemetry.track === "function") {
+                window.AmbitionzBetaTelemetry.track("finish_match", {
+                    result: copy.key || "finished",
+                    mode: copy.mode || PAGE_KIND,
+                    rounds: copy.rounds || 0,
+                    xp: firstValue(summary.xp_gained, rewards && rewards.xp) || 0,
+                    gold: firstValue(summary.gold_gained, rewards && rewards.coins) || 0,
+                }, "finish_match_result");
+            }
         }
     }
 

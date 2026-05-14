@@ -57,7 +57,8 @@
                 <h1>Ambitionz is a tactical card battler in public beta.</h1>
                 <p>
                     Play fast BE2 turn-based battles with intent choices and lane control, collect elemental cards, build a legal 30-card deck,
-                    complete missions, claim daily rewards and evolve your profile while the beta grows.
+                    complete missions, claim daily rewards and evolve your profile while the beta grows. Gold, boosters and rewards are internal
+                    beta progression only; there is no real-money checkout.
                 </p>
 
                 <div class="az-home-actions-v2">
@@ -354,6 +355,7 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

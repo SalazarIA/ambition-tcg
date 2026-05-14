@@ -23,3 +23,13 @@ This checklist is a human-readable beta readiness snapshot. It avoids sensitive 
 - Confirm mobile spacing on Home, Progression, Daily, Deck Builder and post-match screens.
 - Verify first-session copy stays clear for both guest and logged-in users.
 - Review balance sim output before public release notes.
+
+## RC V5 Beta Freeze Addendum
+
+- Public copy pass: Home, Roadmap, Shop, Daily, Profile, Progression, Collection, Deck Builder, Arena, Ranking and Leaderboard should present Ambitionz as a playable public beta.
+- Local telemetry: beta events are accepted through a defensive local endpoint and stored in existing retention data or JSONL fallback.
+- Feedback widget: Roadmap, Arena, Profile and Progression can surface a compact beta feedback panel without blocking gameplay.
+- Known issues: Roadmap now explains what works, what is still beta, known limits, feedback flow and next-cycle focus.
+- Balance watchlist: `tools/qa/balance_watchlist.py` generates `docs/BALANCE_WATCHLIST.md` from telemetry when available and BE2 simulation otherwise.
+- Economy notice: Gold, boosters and rewards remain internal beta systems; no real-money payment flow is active.
+- QA status: RC V5 requires py_compile, pytest, backend QA, Arena matrix, playability audit, battle sim, gauntlet, browser QA, node checks, diff check and status review before commit/deploy.

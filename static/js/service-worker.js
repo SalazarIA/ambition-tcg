@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-web-app-v185";
+const CACHE_NAME = "ambitionz-web-app-v186";
 
 const CORE_ASSETS = [
     "/",
@@ -11,6 +11,8 @@ const CORE_ASSETS = [
     "/static/js/arena_renderer_adapter.js",
     "/static/js/arena_clean_v48.js",
     "/static/js/arena_sound.js",
+    "/static/js/beta_telemetry.js",
+    "/static/js/beta_feedback.js",
     "/static/dist/arena3d/arena3d.js",
     "/static/assets/arena3d/manifest.json",
     "/static/icons/icon.svg",

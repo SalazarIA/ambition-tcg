@@ -229,6 +229,8 @@
     {% if arena_renderer == "3d" %}
     <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
     {% endif %}
+    <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/beta_feedback.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=82"></script>
 </body>
 </html>

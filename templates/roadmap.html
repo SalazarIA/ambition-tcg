@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Roadmap - Public Beta RC V4 - Ambitionz</title>
+    <title>Roadmap - {{ roadmap.version|default('Public Beta RC V5') }} - Ambitionz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05050B">
     <meta name="description" content="Ambitionz public beta roadmap and patch notes.">
+    <meta name="ambitionz-beta-version" content="{{ roadmap.version|default('Public Beta RC V5') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
@@ -96,6 +97,48 @@
             </div>
         </section>
 
+        <section id="az-known-issues-beta-notes-v1" class="az-known-issues-beta-notes-v1" aria-label="Known issues and beta notes" data-beta-feedback-widget>
+            <div class="section-title-row">
+                <div>
+                    <span class="progression-kicker">Known Issues / Beta Notes</span>
+                    <h2>Transparent notes before the public beta freeze.</h2>
+                </div>
+                <a href="{{ url_for('feedback') }}" class="btn btn-secondary small-btn">Enviar Feedback</a>
+            </div>
+            <div class="az-known-issues-grid-v1">
+                <article>
+                    <span>Working Now</span>
+                    <h3>Playable core loop</h3>
+                    <p>Arena Clean, Training, BE2 combat, XP, Gold, daily rewards, missions, collection, deck builder, boosters and profile progression are active in beta.</p>
+                </article>
+                <article>
+                    <span>Still Beta</span>
+                    <h3>Progression may be tuned</h3>
+                    <p>Gold values, booster pulls, mission rewards, card balance and ranking criteria can change as more playtest data arrives.</p>
+                </article>
+                <article>
+                    <span>Known Limits</span>
+                    <h3>No live economy or real-money store</h3>
+                    <p>Gold and boosters are internal testing systems. Multiplayer ranking, marketplace, trading and payment flows are not active.</p>
+                </article>
+                <article>
+                    <span>Feedback</span>
+                    <h3>Report friction from the current screen</h3>
+                    <p>Use Beta Feedback for bugs, balance notes, visual issues, suggestions or praise. Reports are stored locally in the beta backend.</p>
+                </article>
+                <article>
+                    <span>Next Cycles</span>
+                    <h3>Balance and onboarding data</h3>
+                    <p>The next work should inspect telemetry, match outcomes, deck readiness and booster unlocks before adding larger systems.</p>
+                </article>
+                <article>
+                    <span>Beta Notice</span>
+                    <h3>Progress can be adjusted</h3>
+                    <p>Public beta data is useful for testing and may be reset, rebalanced or migrated before a full launch.</p>
+                </article>
+            </div>
+        </section>
+
         <section class="az-beta-disclaimer-v3">
             <span class="progression-kicker">Beta notice</span>
             <h2>Gold is beta currency only. No payment flow is active.</h2>
@@ -121,6 +164,8 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/beta_feedback.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

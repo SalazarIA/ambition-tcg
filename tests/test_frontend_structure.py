@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -444,7 +444,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -481,7 +481,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert 'name="contact"' in feedback
     assert "Guest feedback is accepted" in feedback
     assert "Roadmap & Patch Notes" in roadmap
-    assert "Public Beta RC V4" in roadmap
+    assert "Public Beta RC V5" in roadmap
     assert "Arena BE2 polish" in roadmap
     assert "Retention loops" in roadmap
     assert "Public beta polish" in roadmap
@@ -503,7 +503,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".az-public-onboarding-v1" in css
     assert ".az-roadmap-card-v3" in css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
 
 
 def test_blocks_81_88_beta_economy_contract():
@@ -550,7 +550,7 @@ def test_blocks_81_88_beta_economy_contract():
     assert "Gold is beta currency only" in roadmap
     assert "Gold +" in arena_js
     assert "az-recent-unlocks-data" in cards_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
 
 
 def test_arena_premium_hud_contract():
@@ -823,7 +823,7 @@ def test_public_beta_rc_v4_retention_contract():
     assert "def build_deck_readiness_coach" in app_py
     assert "def beta_daily_reward_for_streak" in app_py
     assert '"next_best_action": next_best_action' in app_py
-    assert "Public Beta RC V4" in app_py
+    assert "Public Beta RC V5" in app_py
 
     for template in [homepage, profile, progression]:
         assert "data-first-session-questline" in template
@@ -840,7 +840,7 @@ def test_public_beta_rc_v4_retention_contract():
     assert 'id="az-ranking-beta-criteria-v1"' in ranking
     assert 'data-ranking-row-current="true"' in ranking
     assert 'id="az-rc-public-checklist-v1"' in roadmap
-    assert "Public Beta RC V4" in roadmap
+    assert "Public Beta RC V5" in roadmap
     assert "Economy beta" in app_py
 
     assert 'id="az48-result-next-best"' in arena
@@ -851,7 +851,68 @@ def test_public_beta_rc_v4_retention_contract():
     assert ".az-first-session-questline-v1" in css
     assert ".az-deck-readiness-coach-v1" in css
     assert ".az-rc-public-checklist-v1" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v185"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
 
     assert "Arena jogavel" in checklist
     assert "QA status" in checklist
+
+
+def test_public_beta_rc_v5_observability_contract():
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+    roadmap = (PROJECT_ROOT / "templates" / "roadmap.html").read_text()
+    arena = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    profile = (PROJECT_ROOT / "templates" / "profile.html").read_text()
+    progression = (PROJECT_ROOT / "templates" / "progression.html").read_text()
+    service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
+    telemetry_js = (PROJECT_ROOT / "static" / "js" / "beta_telemetry.js").read_text()
+    feedback_js = (PROJECT_ROOT / "static" / "js" / "beta_feedback.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    checklist = (PROJECT_ROOT / "docs" / "RC_PUBLIC_CHECKLIST.md").read_text()
+    release_notes = (PROJECT_ROOT / "docs" / "RC_V5_RELEASE_NOTES.md").read_text()
+    watchlist = (PROJECT_ROOT / "tools" / "qa" / "balance_watchlist.py").read_text()
+
+    assert '@app.route("/api/beta/telemetry"' in app_py
+    assert '@app.route("/api/beta/feedback"' in app_py
+    assert "normalize_telemetry_payload" in app_py
+    assert "normalize_feedback_payload" in app_py
+    assert "beta_telemetry.jsonl" in app_py
+    assert "beta_feedback.jsonl" in app_py
+
+    assert "Known Issues / Beta Notes" in roadmap
+    assert 'id="az-known-issues-beta-notes-v1"' in roadmap
+    assert "No live economy or real-money store" in roadmap
+    assert "beta_feedback.js" in roadmap
+    assert "beta_feedback.js" in arena
+    assert "beta_feedback.js" in profile
+    assert "beta_feedback.js" in progression
+    assert "beta_telemetry.js" in arena
+
+    for event_name in [
+        "visit_home",
+        "start_training",
+        "finish_match",
+        "claim_daily",
+        "open_shop",
+        "buy_booster",
+        "open_booster",
+        "save_deck",
+        "view_collection",
+        "view_roadmap",
+        "dismiss_first_session_quest",
+    ]:
+        assert event_name in telemetry_js
+
+    assert "/api/beta/feedback" in feedback_js
+    assert "Feedback beta" in feedback_js
+    assert "az-beta-feedback-widget-v1" in feedback_js
+    assert ".az-beta-feedback-widget-v1" in css
+    assert ".az-known-issues-beta-notes-v1" in css
+
+    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
+    assert '"/static/js/beta_telemetry.js"' in service_worker
+    assert '"/static/js/beta_feedback.js"' in service_worker
+
+    assert "RC V5 Beta Freeze Addendum" in checklist
+    assert "RC V5 prepares Ambitionz" in release_notes
+    assert "docs/BALANCE_WATCHLIST.md" in watchlist
+    assert "run_simulation" in watchlist

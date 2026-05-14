@@ -181,6 +181,12 @@
 
                     panel.classList.add("is-dismissed");
                     button.textContent = "Questline hidden";
+                    if (window.AmbitionzBetaTelemetry && typeof window.AmbitionzBetaTelemetry.track === "function") {
+                        window.AmbitionzBetaTelemetry.track("dismiss_first_session_quest", {
+                            source: "first_session_questline",
+                            page: window.location.pathname || "/"
+                        }, "dismiss_first_session_quest");
+                    }
                 });
             });
         });

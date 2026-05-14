@@ -54,6 +54,7 @@ from services.email_service import send_password_reset_email, send_smtp_test_ema
 from services.security.headers import apply_security_headers
 from services.security.password_policy import password_policy_errors
 from services.security.rate_limit import SlidingWindowRateLimiter, request_rate_limit_key
+from services.beta_telemetry import append_jsonl, normalize_feedback_payload, normalize_telemetry_payload, utc_iso
 from routes.security_ops import register_security_ops_routes
 from game.rules import can_pay_cost, pay_card_cost, reset_player_energy
 from game.engine import register_card_played_for_ambition, request_unleash, cancel_unleash
@@ -116,6 +117,8 @@ login_attempts = {}
 retention_event_limiter = SlidingWindowRateLimiter()
 wallet_event_limiter = SlidingWindowRateLimiter()
 economy_action_limiter = SlidingWindowRateLimiter()
+beta_telemetry_limiter = SlidingWindowRateLimiter()
+beta_feedback_limiter = SlidingWindowRateLimiter()
 
 GOLD_CURRENCY_KEY = SOFT_CURRENCY_KEY
 GOLD_DISPLAY_NAME = "Gold"
@@ -123,7 +126,7 @@ GUEST_GOLD_SESSION_KEY = "ambitionz_guest_gold_balance"
 GUEST_GOLD_STARTING_BALANCE = 300
 DAILY_GOLD_REWARD = 75
 
-CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event"}
+CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event", "api_beta_telemetry", "api_beta_feedback"}
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 ALLOWED_RETENTION_EVENTS = {
     "campaign_result",
@@ -2551,7 +2554,7 @@ def index():
         beta_journey=build_beta_journey(user, deck_status),
         first_session_questline=build_first_session_questline(user, deck_status, wallet, collection_progress),
         deck_coach=build_deck_readiness_coach(user, deck_status=deck_status),
-        beta_version="Public Beta RC V4",
+        beta_version="Public Beta RC V5",
     )
 
 
@@ -3102,7 +3105,7 @@ def first_session():
 def roadmap():
     user = current_user()
     roadmap_data = {
-        "version": "Public Beta RC V4",
+        "version": "Public Beta RC V5",
         "status": "em desenvolvimento",
         "recent": [
             {
@@ -3124,6 +3127,10 @@ def roadmap():
             {
                 "title": "RC V4 retention polish",
                 "summary": "First session questline, next-best-action pós-partida, return loop e ranking beta mais claro.",
+            },
+            {
+                "title": "RC V5 beta freeze",
+                "summary": "Copy pública refinada, telemetria local, feedback widget, known issues e balance watchlist.",
             },
         ],
         "planned": [
@@ -5595,6 +5602,134 @@ def api_retention_event():
     db.session.commit()
 
     return jsonify({"ok": True})
+
+
+@app.route("/api/beta/telemetry", methods=["POST"])
+def api_beta_telemetry():
+    try:
+        payload = request.get_json(silent=True) or {}
+    except Exception:
+        payload = {}
+
+    normalized, error_code = normalize_telemetry_payload(payload)
+
+    if error_code:
+        return jsonify({"ok": False, "error": error_code, "message": "Telemetry event was not accepted."}), 400
+
+    user = current_user()
+    user_id = user.id if user else None
+    rate_key = request_rate_limit_key(
+        request,
+        session,
+        app.config.get("SECRET_KEY", ""),
+        "beta_telemetry",
+        identity=str(user_id or "anonymous"),
+    )
+
+    if not beta_telemetry_limiter.allow(rate_key, int(app.config.get("BETA_TELEMETRY_RATE_LIMIT", 90) or 90), 60):
+        return jsonify({"ok": True, "limited": True, "event": normalized["event"]})
+
+    record = {
+        "event": normalized["event"],
+        "page": normalized["page"],
+        "metadata": normalized["metadata"],
+        "user_id": user_id,
+        "is_guest": user_id is None,
+        "recorded_at": utc_iso(),
+    }
+
+    try:
+        event = RetentionEvent(
+            user_id=user_id,
+            event_key=normalized["event"],
+            page=normalized["page"],
+            metadata_json=json.dumps(record["metadata"], ensure_ascii=False)[:4000],
+        )
+        db.session.add(event)
+        db.session.commit()
+        return jsonify({"ok": True, "event": normalized["event"], "stored": "retention_events", "id": event.id})
+    except Exception as error:
+        print("BETA TELEMETRY DB ERROR:", type(error).__name__, error)
+        db.session.rollback()
+
+    try:
+        path = append_jsonl(app, "beta_telemetry.jsonl", record)
+        return jsonify({"ok": True, "event": normalized["event"], "stored": "jsonl", "path": path.name})
+    except Exception as error:
+        print("BETA TELEMETRY JSONL ERROR:", type(error).__name__, error)
+        return jsonify({"ok": False, "error": "persist_failed", "message": "Telemetry could not be stored."}), 500
+
+
+@app.route("/api/beta/feedback", methods=["POST"])
+def api_beta_feedback():
+    try:
+        payload = request.get_json(silent=True) or {}
+    except Exception:
+        payload = {}
+
+    normalized, error_code = normalize_feedback_payload(payload)
+
+    if error_code:
+        return jsonify({"ok": False, "error": error_code, "message": "Feedback message needs a little more detail."}), 400
+
+    user = current_user()
+    user_id = user.id if user else None
+    rate_key = request_rate_limit_key(
+        request,
+        session,
+        app.config.get("SECRET_KEY", ""),
+        "beta_feedback",
+        identity=str(user_id or "anonymous"),
+    )
+
+    if not beta_feedback_limiter.allow(rate_key, int(app.config.get("BETA_FEEDBACK_RATE_LIMIT", 8) or 8), 60):
+        return jsonify({"ok": False, "error": "rate_limited", "message": "Too many feedback reports. Try again shortly."}), 429
+
+    title = f"Beta widget: {normalized['type'].title()}"[:160]
+    stored_message = normalized["message"]
+
+    if normalized.get("page"):
+        stored_message = f"{stored_message}\n\nPage: {normalized['page'][:220]}"
+
+    record = {
+        "type": normalized["type"],
+        "message": normalized["message"],
+        "page": normalized.get("page") or "",
+        "user_id": user_id,
+        "username": user.username if user else "Guest Beta Tester",
+        "recorded_at": utc_iso(),
+    }
+
+    try:
+        report = FeedbackReport(
+            user_id=user_id,
+            username=user.username if user else "Guest Beta Tester",
+            category=normalized["type"],
+            severity="normal",
+            title=title,
+            message=stored_message,
+            page_url=normalized.get("page") or None,
+            status="open",
+        )
+        db.session.add(report)
+        db.session.add(RetentionEvent(
+            user_id=user_id,
+            event_key="beta_feedback_submit",
+            page=normalized.get("page") or request.referrer or "",
+            metadata_json=json.dumps({"type": normalized["type"], "source": "widget"}, ensure_ascii=False),
+        ))
+        db.session.commit()
+        return jsonify({"ok": True, "id": report.id, "stored": "feedback_reports", "message": "Feedback received. Thank you."})
+    except Exception as error:
+        print("BETA FEEDBACK DB ERROR:", type(error).__name__, error)
+        db.session.rollback()
+
+    try:
+        path = append_jsonl(app, "beta_feedback.jsonl", record)
+        return jsonify({"ok": True, "stored": "jsonl", "path": path.name, "message": "Feedback received. Thank you."})
+    except Exception as error:
+        print("BETA FEEDBACK JSONL ERROR:", type(error).__name__, error)
+        return jsonify({"ok": False, "error": "persist_failed", "message": "Feedback could not be stored."}), 500
 
 
 

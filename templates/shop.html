@@ -38,8 +38,8 @@
 
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Beta Shop</h1>
-                <p>Gold: <strong>{{ wallet.balance|default(user.coins) }}</strong> · earned in play only</p>
+                <h1>Beta Shop · Gold Only</h1>
+                <p>Gold: <strong>{{ wallet.balance|default(user.coins) }}</strong> · internal beta currency earned in play, never purchased here</p>
             </div>
 
             <a href="{{ url_for('booster_history') }}" class="btn btn-secondary small-btn">History</a>
@@ -59,7 +59,7 @@
                 <span class="progression-kicker">Gold Economy Beta</span>
                 <h2>Spend earned Gold on boosters. No real-money checkout is active.</h2>
                 <p>
-                    Gold comes from Daily, Missions and match rewards. Boosters add beta cards to your collection while the deck remains capped at 30 cards.
+                    Gold comes from Daily, Missions and match rewards. Boosters add beta cards to your collection while the deck remains capped at 30 cards and no payment flow exists.
                 </p>
 
                 <div class="progression-action-row">
@@ -205,6 +205,7 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=4"></script>
     <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/booster_opening.js') }}?v=1"></script>

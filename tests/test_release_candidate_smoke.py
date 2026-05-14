@@ -29,7 +29,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v185" in body
+    assert "ambitionz-web-app-v186" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -76,7 +76,7 @@ def test_public_beta_roadmap_and_feedback_routes(client):
 
     assert roadmap_response.status_code == 200
     assert "Roadmap & Patch Notes" in roadmap_body
-    assert "Public Beta RC V4" in roadmap_body
+    assert "Public Beta RC V5" in roadmap_body
     assert "Arena BE2 polish" in roadmap_body
     assert "Public Beta RC Checklist" in roadmap_body
     assert "Economy beta" in roadmap_body
@@ -116,6 +116,57 @@ def test_public_beta_feedback_post_accepts_guest_report(client):
     assert report.username == "Guest Beta Tester"
     assert report.category == "balance"
     assert "tester@example.com" in report.message
+
+
+def test_public_beta_telemetry_and_feedback_api_contract(client):
+    telemetry_response = client.post(
+        "/api/beta/telemetry",
+        json={
+            "event": "visit_home",
+            "page": "/",
+            "metadata": {"source": "smoke", "detail": "rc_v5"},
+        },
+    )
+    telemetry_payload = telemetry_response.get_json()
+
+    assert telemetry_response.status_code == 200
+    assert telemetry_payload["ok"] is True
+    assert telemetry_payload["event"] == "visit_home"
+    assert RetentionEvent.query.filter_by(event_key="visit_home").count() == 1
+
+    invalid_response = client.post(
+        "/api/beta/telemetry",
+        json={"event": "script_probe", "page": "/admin"},
+    )
+    invalid_payload = invalid_response.get_json()
+
+    assert invalid_response.status_code == 400
+    assert invalid_payload["ok"] is False
+    assert invalid_payload["error"] == "invalid_event"
+
+    feedback_response = client.post(
+        "/api/beta/feedback",
+        json={
+            "type": "bug",
+            "message": "The beta feedback widget submitted from Roadmap during smoke testing.",
+            "page": "/roadmap",
+        },
+    )
+    feedback_payload = feedback_response.get_json()
+    report = FeedbackReport.query.order_by(FeedbackReport.id.desc()).first()
+
+    assert feedback_response.status_code == 200
+    assert feedback_payload["ok"] is True
+    assert feedback_payload["stored"] in {"feedback_reports", "jsonl"}
+    assert report is not None
+    assert report.category == "bug"
+    assert "Page: /roadmap" in report.message
+
+    short_feedback = client.post(
+        "/api/beta/feedback",
+        json={"type": "suggestion", "message": "short", "page": "/roadmap"},
+    )
+    assert short_feedback.status_code == 400
 
 
 def test_training_3d_renderer_flag_loads_three_bundle(client):
