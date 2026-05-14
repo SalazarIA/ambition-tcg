@@ -20,6 +20,17 @@
 </head>
 <body data-retention-page="missions">
     <main class="wide-page mobile-wide-page">
+        <nav class="az-beta-main-nav-v3" aria-label="Public beta navigation">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}" class="primary">Jogar</a>
+            <a href="{{ url_for('collection') }}">Collection</a>
+            <a href="{{ url_for('deck_builder') }}">Deck Builder</a>
+            <a href="{{ url_for('missions') }}" class="active">Missions</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
+            <a href="{{ url_for('progression') }}">Progression</a>
+            <a href="{{ url_for('roadmap') }}">Roadmap</a>
+            <a href="{{ url_for('feedback') }}">Feedback</a>
+        </nav>
         <header class="top-bar mobile-top-bar">
             <div>
                 <h1>Missions</h1>
@@ -199,6 +210,6 @@
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/mobile-native.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

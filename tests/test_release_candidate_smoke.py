@@ -1,6 +1,6 @@
 import re
 
-from models import MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, UserMission, db
+from models import FeedbackReport, MatchHistory, MatchTelemetry, RetentionEvent, SystemLog, User, UserMission, db
 
 from app import active_matches, emit_arena_state_v8, end_match, issue_password_reset_token, player_rooms, socket_state, socketio
 from conftest import create_user, csrf_token_from_response, login_session
@@ -28,7 +28,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v182" in body
+    assert "ambitionz-web-app-v183" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -59,8 +59,58 @@ def test_public_home_renders_product_entry_and_real_routes(client):
     assert 'href="/collection"' in body
     assert 'href="/deck-builder"' in body
     assert 'href="/leaderboard"' in body
+    assert 'href="/roadmap"' in body
+    assert 'href="/feedback"' in body
+    assert "Ambitionz is a tactical card battler in public beta." in body
+    assert "Beta Onboarding" in body
     assert 'href="/login"' in body
     assert 'href="/register"' in body
+
+
+def test_public_beta_roadmap_and_feedback_routes(client):
+    roadmap_response = client.get("/roadmap")
+    roadmap_body = roadmap_response.get_data(as_text=True)
+
+    assert roadmap_response.status_code == 200
+    assert "Roadmap & Patch Notes" in roadmap_body
+    assert "Public Beta RC V3" in roadmap_body
+    assert "Arena BE2 polish" in roadmap_body
+    assert 'href="/feedback"' in roadmap_body
+
+    feedback_response = client.get("/feedback")
+    feedback_body = feedback_response.get_data(as_text=True)
+
+    assert feedback_response.status_code == 200
+    assert "Beta Feedback" in feedback_body
+    assert 'name="category"' in feedback_body
+    assert 'name="message"' in feedback_body
+    assert 'name="contact"' in feedback_body
+
+
+def test_public_beta_feedback_post_accepts_guest_report(client):
+    token = csrf_token_from_response(client.get("/feedback"))
+    response = client.post(
+        "/feedback",
+        data={
+            "_csrf_token": token,
+            "category": "balance",
+            "severity": "normal",
+            "message": "Fire pressure felt too strong after a hard Training run.",
+            "page_url": "/training",
+            "contact": "tester@example.com",
+        },
+        follow_redirects=True,
+    )
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Feedback sent" in body
+    report = FeedbackReport.query.order_by(FeedbackReport.id.desc()).first()
+    assert report is not None
+    assert report.user_id is None
+    assert report.username == "Guest Beta Tester"
+    assert report.category == "balance"
+    assert "tester@example.com" in report.message
 
 
 def test_training_3d_renderer_flag_loads_three_bundle(client):
@@ -348,6 +398,8 @@ def test_main_product_routes_smoke(client):
         "/missions": "Beta Journey Missions",
         "/progression": "Beta Journey",
         "/match-history": "No matches yet",
+        "/roadmap": "Roadmap & Patch Notes",
+        "/feedback": "Beta Feedback",
     }
 
     for path, expected_text in route_expectations.items():
@@ -478,9 +530,13 @@ def test_beta_retention_product_events_are_accepted(client):
         "collection_view",
         "deck_builder_view",
         "deck_save_attempt",
+        "feedback_submit",
         "campaign_view",
         "mission_cta_click",
         "daily_view",
+        "feedback_view",
+        "onboarding_view",
+        "roadmap_view",
     ]:
         response = client.post(
             "/api/retention/event",
@@ -497,9 +553,13 @@ def test_beta_retention_product_events_are_accepted(client):
         "collection_view",
         "deck_builder_view",
         "deck_save_attempt",
+        "feedback_submit",
         "campaign_view",
         "mission_cta_click",
         "daily_view",
+        "feedback_view",
+        "onboarding_view",
+        "roadmap_view",
     ]
 
 

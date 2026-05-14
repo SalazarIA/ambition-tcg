@@ -13,6 +13,17 @@
 </head>
 <body class="app-body" data-retention-page="leaderboard">
     <main class="page-shell">
+        <nav class="az-beta-main-nav-v3" aria-label="Public beta navigation">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}" class="primary">Jogar</a>
+            <a href="{{ url_for('collection') }}">Collection</a>
+            <a href="{{ url_for('deck_builder') }}">Deck Builder</a>
+            <a href="{{ url_for('missions') }}">Missions</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('roadmap') }}">Roadmap</a>
+            <a href="{{ url_for('feedback') }}">Feedback</a>
+        </nav>
         <section class="hero-card az-loop-hero">
             <div>
                 <span class="progression-kicker">Competitive Identity</span>
@@ -71,6 +82,13 @@
                     <span>{{ row.user.coins }}</span>
                     <strong>{{ row.score }}</strong>
                 </div>
+                {% else %}
+                <article class="panel-card az-empty-beta-state-v1">
+                    <span class="progression-kicker">No local leaderboard rows yet</span>
+                    <h3>Play Training to put your account into the beta pool.</h3>
+                    <p class="subtitle">Leaderboard score currently uses level, XP and coins while ranked MMR is still on the roadmap.</p>
+                    <a href="{{ url_for('training') }}" class="btn">Play Training</a>
+                </article>
                 {% endfor %}
             </div>
         </section>
@@ -103,6 +121,13 @@
                     <span>{{ row.user.coins }}</span>
                     <strong>{{ row.score }}</strong>
                 </div>
+                {% else %}
+                <article class="panel-card az-empty-beta-state-v1">
+                    <span class="progression-kicker">No leaderboard data yet</span>
+                    <h3>The beta pool will populate as players earn XP.</h3>
+                    <p class="subtitle">Start with Training, then check Profile and Progression after the result.</p>
+                    <a href="{{ url_for('training') }}" class="btn">Start Training</a>
+                </article>
                 {% endfor %}
             </div>
         </section>
@@ -124,6 +149,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

@@ -86,13 +86,17 @@
 
 
         <nav class="az-card-nav-v1">
-            <a href="{{ url_for('training') }}" class="primary">Play</a>
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}" class="primary">Jogar</a>
             <a href="{{ url_for('collection') }}">Collection</a>
             <a href="{{ url_for('deck_builder') }}" class="active">Deck</a>
-            <a href="{{ url_for('shop') }}">Shop</a>
+            <a href="{{ url_for('missions') }}">Missions</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
             <span class="az-card-nav-spacer"></span>
             <a href="{{ url_for('profile') }}">Profile</a>
             <a href="{{ url_for('progression') }}">Progression</a>
+            <a href="{{ url_for('roadmap') }}">Roadmap</a>
+            <a href="{{ url_for('feedback') }}">Feedback</a>
         </nav>
 
         <header class="top-bar mobile-top-bar">
@@ -405,6 +409,16 @@
 
                     </div>
 
+                {% else %}
+                    <article class="panel-card az-empty-beta-state-v1">
+                        <span class="progression-kicker">No cards in deck</span>
+                        <h3>Use Auto Build to restore the legal beta starter deck.</h3>
+                        <p class="subtitle">The current beta expects exactly 30 cards before Training can start.</p>
+                        <form class="az-inline-action-form-v25" method="POST" action="{{ url_for('auto_build_deck') }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn">Auto Build Legal Deck</button>
+                        </form>
+                    </article>
                 {% endfor %}
 
             </div>

@@ -15,15 +15,31 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="az-feedback-page-v3" data-retention-page="feedback">
     <main class="wide-page mobile-wide-page">
+        <nav class="az-beta-main-nav-v3" aria-label="Public beta navigation">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}" class="primary">Jogar</a>
+            <a href="{{ url_for('collection') }}">Collection</a>
+            <a href="{{ url_for('deck_builder') }}">Deck Builder</a>
+            <a href="{{ url_for('missions') }}">Missions</a>
+            <a href="{{ url_for('daily') }}">Daily</a>
+            <a href="{{ url_for('roadmap') }}">Roadmap</a>
+            <a href="{{ url_for('feedback') }}" class="active">Feedback</a>
+        </nav>
+
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Feedback</h1>
-                <p>Help improve the Ambitionz beta</p>
+                <h1>Beta Feedback</h1>
+                <p>Send bugs, balance notes, visual issues and suggestions for the public beta.</p>
             </div>
 
-            <a href="{{ url_for('profile') }}" class="btn btn-secondary small-btn">Profile</a>
+            {% if user %}
+                <a href="{{ url_for('profile') }}" class="btn btn-secondary small-btn">Profile</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-secondary small-btn">Login</a>
+            {% endif %}
+            <a href="{{ url_for('roadmap') }}" class="btn btn-secondary small-btn">Roadmap</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
         </header>
 
@@ -33,20 +49,20 @@
             {% endif %}
         {% endwith %}
 
-        <section class="feedback-hero-v120">
+        <section id="az-beta-feedback-v1" class="feedback-hero-v120 az-feedback-hero-v3">
             <div>
                 <span class="progression-kicker">Beta Tester Channel</span>
-                <h2>Report Android issues, bugs, UX problems, balance concerns and improvement ideas.</h2>
+                <h2>Report what felt broken, confusing, unfair or surprisingly good.</h2>
                 <p>
-                    Good feedback makes the beta stronger. Be specific: what happened,
-                    what you expected, where it happened and how severe it felt.
+                    Good feedback makes Ambitionz stronger. You can submit as a logged-in player
+                    or as a guest beta tester; contact is optional.
                 </p>
             </div>
 
             <div class="feedback-guide-v120">
-                <div><strong>Android</strong><span>Install, navigation or device behavior</span></div>
-                <div><strong>Battle</strong><span>Training, cards or match flow</span></div>
-                <div><strong>Progression</strong><span>Rewards, missions, boosters or deck</span></div>
+                <div><strong>Bug</strong><span>Something broke or blocked play</span></div>
+                <div><strong>Balance</strong><span>A card, intent or bot felt off</span></div>
+                <div><strong>Visual</strong><span>Layout, mobile or clarity issue</span></div>
             </div>
         </section>
 
@@ -85,11 +101,11 @@
                 </div>
             </div>
 
-            <form method="POST" class="feedback-form-v120">
+            <form method="POST" class="feedback-form-v120 az-feedback-form-v3" data-retention-event="feedback_submit">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <div class="feedback-form-grid-v120">
                     <label>
-                        <span>Category</span>
+                        <span>Type</span>
                         <select name="category" required>
                             {% for category in categories %}
                                 <option value="{{ category.value }}">{{ category.label }}</option>
@@ -110,22 +126,21 @@
                 </div>
 
                 <label>
-                    <span>Title</span>
+                    <span>Short title optional</span>
                     <input
                         type="text"
                         name="title"
                         maxlength="160"
-                        placeholder="Example: Android back button returned to the wrong screen"
-                        required
+                        placeholder="Example: Hard bot plays too aggressively after round 3"
                     >
                 </label>
 
                 <label>
-                    <span>Details</span>
+                    <span>Message</span>
                     <textarea
                         name="message"
                         rows="8"
-                        placeholder="Describe what happened, what you expected, where it happened, your device if relevant, and how to reproduce it."
+                        placeholder="Describe what happened, what you expected, where it happened, and how to reproduce it."
                         required
                     ></textarea>
                 </label>
@@ -136,6 +151,16 @@
                         type="text"
                         name="page_url"
                         placeholder="/android app, /training, /deck-builder, /shop, post-match modal..."
+                    >
+                </label>
+
+                <label>
+                    <span>Contact optional</span>
+                    <input
+                        type="text"
+                        name="contact"
+                        maxlength="120"
+                        placeholder="Email, Discord, or leave blank"
                     >
                 </label>
 
@@ -166,7 +191,12 @@
                         </footer>
                     </article>
                 {% else %}
-                    <p class="subtitle">No feedback submitted yet.</p>
+                    <article class="panel-card az-empty-beta-state-v1">
+                        <span class="progression-kicker">No feedback submitted yet</span>
+                        <h3>Your reports will appear here when you are logged in.</h3>
+                        <p class="subtitle">Guest feedback is accepted, but recent report history only appears on an account.</p>
+                        <a href="{{ url_for('training') }}" class="btn btn-secondary small-btn">Play Before Reporting</a>
+                    </article>
                 {% endfor %}
             </div>
         </section>
@@ -181,6 +211,7 @@
             <nav>
                 <a href="{{ url_for('closed_test') }}">Closed Test</a>
                 <a href="{{ url_for('first_session') }}">First Session</a>
+                <a href="{{ url_for('roadmap') }}">Roadmap</a>
                 <a href="{{ url_for('feedback') }}">Feedback</a>
                 <a href="{{ url_for('privacy') }}">Privacy</a>
                 <a href="{{ url_for('terms') }}">Terms</a>

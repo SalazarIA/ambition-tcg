@@ -14,6 +14,8 @@
             "/leaderboard",
             "/ranking",
             "/match-history",
+            "/roadmap",
+            "/feedback",
             "/"
         ].indexOf(window.location.pathname) !== -1;
     }
@@ -121,6 +123,36 @@
         });
     }
 
+    function bindPublicOnboarding() {
+        var panel = document.querySelector("[data-public-onboarding]");
+        if (!panel) return;
+
+        var key = "ambitionz_public_onboarding_seen_v1";
+        var dismissed = false;
+
+        try {
+            dismissed = window.localStorage.getItem(key) === "true";
+        } catch (error) {
+            dismissed = false;
+        }
+
+        if (dismissed) {
+            panel.classList.add("is-collapsed");
+            panel.setAttribute("aria-label", "Public beta onboarding completed");
+        }
+
+        document.querySelectorAll("[data-public-onboarding-dismiss]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                try {
+                    window.localStorage.setItem(key, "true");
+                } catch (error) {}
+
+                panel.classList.add("is-collapsed");
+                button.textContent = "Onboarding salvo";
+            });
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         if (!isProgressionPage()) return;
 
@@ -131,6 +163,7 @@
         addLoopStrip();
         bindLocalDailyReward();
         updateDailyRewardCards();
+        bindPublicOnboarding();
         injectRewardToast();
     });
 })();

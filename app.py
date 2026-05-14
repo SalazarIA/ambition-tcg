@@ -127,13 +127,17 @@ ALLOWED_RETENTION_EVENTS = {
     "daily_claim",
     "deck_builder_view",
     "deck_save_attempt",
+    "feedback_submit",
+    "feedback_view",
     "home_cta_play",
     "match_recorded",
     "mission_complete",
     "mission_cta_click",
     "mission_progress",
+    "onboarding_view",
     "page_view",
     "post_match_summary_view",
+    "roadmap_view",
     "training_result_view",
     "training_start_click",
     "tutorial_start",
@@ -1980,6 +1984,7 @@ def index():
         "index.html",
         user=user,
         beta_journey=build_beta_journey(user, deck_status),
+        beta_version="Public Beta RC V3",
     )
 
 
@@ -2305,6 +2310,24 @@ def profile():
     }
 
     cosmetics = get_cosmetic_foundation_for_user(user, profile_stats)
+    profile_mission_guides = []
+    daily_checkin = build_daily_checkin(user, [])
+
+    try:
+        ensure_beta_missions(user)
+        daily_missions = ensure_daily_missions(user)
+        beta_missions = (
+            UserMission.query
+            .filter_by(user_id=user.id, mission_date="beta")
+            .order_by(UserMission.id.desc())
+            .all()
+        )
+        profile_mission_guides = build_beta_mission_guides(user, beta_missions, beta_deck_status(user))[:4]
+        daily_checkin = build_daily_checkin(user, daily_missions)
+        db.session.commit()
+    except Exception as error:
+        print("PROFILE PRODUCT POLISH ERROR:", type(error).__name__, error)
+        db.session.rollback()
 
     return render_template(
         "profile.html",
@@ -2313,6 +2336,8 @@ def profile():
         identity=identity,
         cosmetics=cosmetics,
         recent_matches=recent_matches,
+        profile_mission_guides=profile_mission_guides,
+        daily_checkin=daily_checkin,
     )
 
 
@@ -2475,6 +2500,48 @@ def first_session():
     ]
 
     return render_template("first_session.html", user=user, steps=steps)
+
+
+@app.route("/roadmap")
+def roadmap():
+    user = current_user()
+    roadmap_data = {
+        "version": "Public Beta RC V3",
+        "status": "em desenvolvimento",
+        "recent": [
+            {
+                "title": "Arena BE2 polish",
+                "summary": "Determinismo, bot tático, combat log estruturado, highlights e painel final.",
+            },
+            {
+                "title": "Retention loops",
+                "summary": "XP persistente, daily, missões, histórico, collection loop e deck guidance.",
+            },
+            {
+                "title": "Public beta polish",
+                "summary": "Landing pública, onboarding fora da Arena, feedback e estados vazios melhores.",
+            },
+        ],
+        "planned": [
+            {
+                "title": "Beta balancing pass",
+                "summary": "Ajustes finos em cartas, dificuldade e pacing usando simulações e feedback real.",
+            },
+            {
+                "title": "Campaign expansion",
+                "summary": "Mais capítulos simples, recompensas defensivas e contexto narrativo original.",
+            },
+            {
+                "title": "Collection depth",
+                "summary": "Melhor leitura de progresso, desbloqueios recentes e metas de deck por elemento.",
+            },
+        ],
+    }
+
+    if user:
+        record_retention_event(user, "roadmap_view", page="/roadmap", metadata={"version": roadmap_data["version"]}, commit=True)
+
+    return render_template("roadmap.html", user=user, roadmap=roadmap_data)
 
 
 @app.route("/closed-test")
@@ -3905,25 +3972,18 @@ def training():
 
 @app.route("/feedback", methods=["GET", "POST"])
 def feedback():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
     user = current_user()
 
     categories = [
-        {"value": "android_issue", "label": "Android issue"},
-        {"value": "login_register", "label": "Login / Register"},
-        {"value": "training_battle", "label": "Training battle"},
-        {"value": "deck_builder", "label": "Deck builder"},
-        {"value": "booster_shop", "label": "Booster shop"},
-        {"value": "rewards_missions", "label": "Rewards / Missions"},
-        {"value": "balance", "label": "Balance"},
-        {"value": "visual_ui", "label": "Visual / UI"},
         {"value": "bug", "label": "Bug"},
+        {"value": "balance", "label": "Balanceamento"},
         {"value": "suggestion", "label": "Suggestion"},
-        {"value": "general", "label": "General"},
+        {"value": "visual", "label": "Visual"},
+        {"value": "training_battle", "label": "Training battle"},
+        {"value": "rewards_missions", "label": "Rewards / Missions"},
+        {"value": "deck_builder", "label": "Deck builder"},
+        {"value": "android_issue", "label": "Android issue"},
+        {"value": "other", "label": "Outro"},
     ]
 
     severities = [
@@ -3934,59 +3994,66 @@ def feedback():
     ]
 
     if request.method == "POST":
-        category = request.form.get("category", "general").strip() or "general"
+        category = (request.form.get("category") or request.form.get("type") or "other").strip() or "other"
         severity = request.form.get("severity", "normal").strip() or "normal"
         title = request.form.get("title", "").strip()
         message = request.form.get("message", "").strip()
         page_url = request.form.get("page_url", "").strip()
+        contact = request.form.get("contact", "").strip()
 
         valid_categories = {item["value"] for item in categories}
         valid_severities = {item["value"] for item in severities}
 
         if category not in valid_categories:
-            category = "general"
+            category = "other"
 
         if severity not in valid_severities:
             severity = "normal"
-
-        if not title or len(title) < 4:
-            flash("Feedback title must have at least 4 characters.")
-            return redirect("/feedback")
 
         if not message or len(message) < 10:
             flash("Feedback message must have at least 10 characters.")
             return redirect("/feedback")
 
-        try:
-            daily_limit = int(app.config.get("FEEDBACK_DAILY_LIMIT", 10) or 10)
-            today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-            submitted_today = (
-                FeedbackReport.query
-                .filter_by(user_id=user.id)
-                .filter(FeedbackReport.created_at >= today_start)
-                .count()
-            )
+        if not title:
+            category_label = next((item["label"] for item in categories if item["value"] == category), "Beta")
+            context_label = page_url or "Ambitionz beta"
+            title = f"{category_label} feedback: {context_label}"[:160]
 
-            if submitted_today >= daily_limit:
-                flash("Daily feedback limit reached. Try again tomorrow.")
-                log_rc_event(
-                    "feedback",
-                    "Feedback daily limit reached",
-                    details={"limit": daily_limit},
-                    user_id=user.id,
-                    level="warning",
+        try:
+            if user:
+                daily_limit = int(app.config.get("FEEDBACK_DAILY_LIMIT", 10) or 10)
+                today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+                submitted_today = (
+                    FeedbackReport.query
+                    .filter_by(user_id=user.id)
+                    .filter(FeedbackReport.created_at >= today_start)
+                    .count()
                 )
-                return redirect("/feedback")
+
+                if submitted_today >= daily_limit:
+                    flash("Daily feedback limit reached. Try again tomorrow.")
+                    log_rc_event(
+                        "feedback",
+                        "Feedback daily limit reached",
+                        details={"limit": daily_limit},
+                        user_id=user.id,
+                        level="warning",
+                    )
+                    return redirect("/feedback")
         except Exception as error:
             print("FEEDBACK LIMIT CHECK ERROR:", type(error).__name__, error)
 
+        stored_message = message
+        if contact:
+            stored_message = f"{stored_message}\n\nContact: {contact[:120]}"
+
         report = FeedbackReport(
-            user_id=user.id,
-            username=user.username,
+            user_id=user.id if user else None,
+            username=user.username if user else "Guest Beta Tester",
             category=category,
             severity=severity,
             title=title[:160],
-            message=message,
+            message=stored_message,
             page_url=page_url[:255] if page_url else None,
             status="open",
         )
@@ -3998,7 +4065,13 @@ def feedback():
                 "info",
                 "feedback",
                 f"Feedback submitted: {title[:80]}",
-                user_id=user.id,
+                user_id=user.id if user else None,
+            )
+            record_retention_event(
+                user,
+                "feedback_submit",
+                page="/feedback",
+                metadata={"category": category, "severity": severity, "has_contact": bool(contact)},
             )
         except Exception as error:
             print("FEEDBACK LOG ERROR:", type(error).__name__, error)
@@ -4008,13 +4081,16 @@ def feedback():
         flash("Feedback sent. Thank you for helping improve the beta.")
         return redirect("/feedback")
 
-    recent_reports = (
-        FeedbackReport.query
-        .filter_by(user_id=user.id)
-        .order_by(FeedbackReport.created_at.desc())
-        .limit(5)
-        .all()
-    )
+    recent_reports = []
+
+    if user:
+        recent_reports = (
+            FeedbackReport.query
+            .filter_by(user_id=user.id)
+            .order_by(FeedbackReport.created_at.desc())
+            .limit(5)
+            .all()
+        )
 
     return render_template(
         "feedback.html",

@@ -10616,3 +10616,223 @@ button.btn-secondary {
         grid-template-columns: 1fr;
     }
 }
+
+/* Blocks 73-80: Public Beta Release Candidate V3 */
+.az-beta-main-nav-v3 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 10px;
+    border-radius: 18px;
+    background: rgba(7, 7, 17, 0.70);
+    border: 1px solid rgba(248, 231, 186, 0.12);
+    box-shadow: 0 20px 58px rgba(0, 0, 0, 0.22);
+}
+
+.az-beta-main-nav-v3 a {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 11px;
+    border-radius: 12px;
+    color: rgba(247, 244, 236, 0.80);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 900;
+    border: 1px solid transparent;
+}
+
+.az-beta-main-nav-v3 a:hover,
+.az-beta-main-nav-v3 a.active {
+    color: #fff5d6;
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(248, 231, 186, 0.14);
+}
+
+.az-beta-main-nav-v3 a.primary,
+.az-home-nav-links-v2 a.primary {
+    color: #101017;
+    background: linear-gradient(135deg, #f8e7ba, #d6a84b);
+    border-color: rgba(248, 231, 186, 0.45);
+}
+
+.az-public-beta-hero-v3,
+.az-public-onboarding-v1,
+.az-roadmap-status-v3,
+.az-beta-disclaimer-v3,
+.az-profile-product-hub-v3,
+.az-roadmap-card-v3,
+.az-empty-beta-state-v1 {
+    background:
+        radial-gradient(circle at top left, rgba(248, 231, 186, 0.10), transparent 34%),
+        rgba(8, 8, 16, 0.78);
+    border: 1px solid rgba(248, 231, 186, 0.13);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.az-public-beta-hero-v3 h1 {
+    max-width: 980px;
+}
+
+.az-public-beta-pillars-v3,
+.az-roadmap-grid-v3,
+.az-profile-product-hub-v3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 18px 0;
+}
+
+.az-public-beta-pillars-v3 article,
+.az-roadmap-card-v3,
+.az-profile-product-hub-v3 article {
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.az-public-beta-pillars-v3 span,
+.az-roadmap-card-v3 span,
+.az-roadmap-status-v3 span {
+    display: inline-flex;
+    margin-bottom: 8px;
+    color: rgba(248, 231, 186, 0.84);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.68rem;
+    font-weight: 950;
+}
+
+.az-public-beta-pillars-v3 h2,
+.az-public-onboarding-v1 h2,
+.az-roadmap-card-v3 h3,
+.az-profile-product-hub-v3 h3,
+.az-empty-beta-state-v1 h3 {
+    margin: 0 0 8px;
+    color: #fff7dc;
+}
+
+.az-public-beta-pillars-v3 p,
+.az-public-onboarding-v1 p,
+.az-public-onboarding-v1 span,
+.az-roadmap-card-v3 p,
+.az-profile-product-hub-v3 p,
+.az-empty-beta-state-v1 p {
+    color: rgba(247, 244, 236, 0.74);
+}
+
+.az-public-beta-pillars-v3 a,
+.az-roadmap-card-v3 a {
+    color: #f8e7ba;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.az-public-onboarding-v1 {
+    margin: 18px 0;
+    padding: clamp(18px, 3vw, 28px);
+    border-radius: 22px;
+}
+
+.az-public-onboarding-v1 ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.az-public-onboarding-v1 li {
+    min-height: 112px;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(5, 5, 11, 0.36);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.az-public-onboarding-v1 strong {
+    display: block;
+    margin-bottom: 7px;
+    color: #fff7dc;
+}
+
+.az-public-onboarding-v1.is-collapsed {
+    display: none;
+}
+
+.az-roadmap-page-v3 .az-public-beta-hero-v3 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr);
+    gap: 16px;
+    padding: clamp(18px, 4vw, 34px);
+    border-radius: 24px;
+}
+
+.az-roadmap-grid-v3 {
+    align-items: stretch;
+}
+
+.az-roadmap-grid-v3 .section-title-row {
+    grid-column: 1 / -1;
+}
+
+.az-roadmap-card-v3.is-next {
+    border-color: rgba(88, 214, 199, 0.18);
+}
+
+.az-roadmap-status-v3,
+.az-beta-disclaimer-v3 {
+    padding: 18px;
+    border-radius: 18px;
+}
+
+.az-roadmap-status-v3 strong {
+    display: block;
+    margin: 6px 0;
+    color: #fff7dc;
+    text-transform: capitalize;
+}
+
+.az-beta-disclaimer-v3 {
+    margin: 18px 0 88px;
+}
+
+.az-feedback-hero-v3 {
+    grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
+}
+
+.az-feedback-form-v3 [name="contact"] {
+    border-color: rgba(88, 214, 199, 0.16);
+}
+
+.az-profile-product-hub-v3 {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.az-empty-beta-state-v1 {
+    padding: 18px;
+    border-radius: 18px;
+}
+
+@media (max-width: 760px) {
+    .az-beta-main-nav-v3 {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .az-beta-main-nav-v3 a {
+        white-space: nowrap;
+    }
+
+    .az-roadmap-page-v3 .az-public-beta-hero-v3,
+    .az-feedback-hero-v3 {
+        grid-template-columns: 1fr;
+    }
+}

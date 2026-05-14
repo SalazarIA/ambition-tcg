@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ambitionz - Tactical Card Battles</title>
+    <title>Ambitionz - Public Beta Card Battler</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05050B">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ambitionz">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Ambitionz is a tactical card game with turn-based battles, intent choices, lanes and strategic deck building.">
+    <meta name="description" content="Ambitionz is a public beta tactical card battler with Training, Collection, Deck Builder, missions and persistent progression.">
 
     <link rel="canonical" href="https://ambitionzgame.com/">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
@@ -20,19 +20,22 @@
 </head>
 <body class="az-home-page-v2" data-retention-page="home">
     <main class="az-home-shell-v2">
-        <nav class="az-home-nav-v2" aria-label="Main navigation">
+        <nav class="az-home-nav-v2 az-beta-main-nav-v3" aria-label="Main navigation">
                 <a href="{{ url_for('index') }}" class="az-home-brand-v2" aria-label="Ambitionz home" aria-current="page">
                 <span>A</span>
                 <strong>Ambitionz</strong>
             </a>
 
             <div class="az-home-nav-links-v2">
-                <a href="{{ url_for('training') }}">Training</a>
-                <a href="{{ url_for('arena') }}">Arena</a>
+                <a href="{{ url_for('index') }}" class="active">Home</a>
+                <a href="{{ url_for('training') }}" class="primary">Jogar</a>
                 <a href="{{ url_for('collection') }}">Collection</a>
                 <a href="{{ url_for('deck_builder') }}">Deck Builder</a>
-                <a href="{{ url_for('tutorial') }}">Tutorial</a>
-                <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                <a href="{{ url_for('missions') }}">Missions</a>
+                <a href="{{ url_for('daily') }}">Daily</a>
+                <a href="{{ url_for('progression') }}">Progression</a>
+                <a href="{{ url_for('roadmap') }}">Roadmap</a>
+                <a href="{{ url_for('feedback') }}">Feedback</a>
                 {% if user %}
                     <a href="{{ url_for('profile') }}">Profile</a>
                 {% else %}
@@ -42,7 +45,7 @@
             </div>
         </nav>
 
-        <header class="az-home-hero-v2">
+        <header id="az-public-beta-landing-v2" class="az-home-hero-v2 az-public-beta-hero-v3">
             <div class="az-home-hero-bg-v2" aria-hidden="true">
                 <span class="az-home-card-token-v2 az-home-card-fire-v2">Fire</span>
                 <span class="az-home-card-token-v2 az-home-card-water-v2">Water</span>
@@ -50,21 +53,24 @@
             </div>
 
             <section class="az-home-hero-copy-v2">
-                <span class="az-home-kicker-v2">Official beta at ambitionzgame.com</span>
-                <h1>Ambitionz</h1>
+                <span class="az-home-kicker-v2">{{ beta_version }} at ambitionzgame.com</span>
+                <h1>Ambitionz is a tactical card battler in public beta.</h1>
                 <p>
-                    A tactical card game of turn-based battles, intent choices, lane control
-                    and sharp deck decisions.
+                    Play fast BE2 turn-based battles with intent choices and lane control, collect elemental cards, build a legal 30-card deck,
+                    complete missions, claim daily rewards and evolve your profile while the beta grows.
                 </p>
 
                 <div class="az-home-actions-v2">
                     {% if user %}
                         <a href="{{ url_for('training') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
-                        <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Ajustar Deck</a>
-                        <a href="{{ url_for('collection') }}" class="btn btn-secondary">Ver Collection</a>
+                        <a href="{{ url_for('collection') }}" class="btn btn-secondary">Ver Coleção</a>
+                        <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Montar Deck</a>
+                        <a href="{{ url_for('roadmap') }}" class="btn btn-secondary">Ver Roadmap</a>
                     {% else %}
                         <a href="{{ url_for('register') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
-                        <a href="{{ url_for('tutorial') }}" class="btn btn-secondary">Tutorial</a>
+                        <a href="{{ url_for('collection') }}" class="btn btn-secondary">Ver Coleção</a>
+                        <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Montar Deck</a>
+                        <a href="{{ url_for('roadmap') }}" class="btn btn-secondary">Ver Roadmap</a>
                     {% endif %}
                 </div>
 
@@ -76,6 +82,66 @@
                 </div>
             </section>
         </header>
+
+        <section class="az-public-beta-pillars-v3" aria-label="Public beta pillars">
+            <article>
+                <span>Battle</span>
+                <h2>Jogar partidas</h2>
+                <p>Training coloca você direto no fluxo real: intent, carta, lane, Ready e resumo do round.</p>
+                <a href="{{ url_for('training') }}">Jogar Agora</a>
+            </article>
+            <article>
+                <span>Cards</span>
+                <h2>Colecionar cartas</h2>
+                <p>Veja owned, locked, raridade, elemento, facção e cards recém-destacados.</p>
+                <a href="{{ url_for('collection') }}">Ver Coleção</a>
+            </article>
+            <article>
+                <span>Deck</span>
+                <h2>Montar deck</h2>
+                <p>O Deck Builder guia a estrutura beta de 30 cartas com custo médio e composição.</p>
+                <a href="{{ url_for('deck_builder') }}">Montar Deck</a>
+            </article>
+            <article>
+                <span>Progress</span>
+                <h2>Evoluir perfil</h2>
+                <p>XP, missões, daily reward e histórico dão contexto para a próxima sessão.</p>
+                <a href="{{ url_for('progression') }}">Ver Progression</a>
+            </article>
+            <article>
+                <span>Rewards</span>
+                <h2>Missões e recompensas</h2>
+                <p>Complete objetivos simples de batalha e mantenha o retorno diário em beta.</p>
+                <a href="{{ url_for('missions') }}">Ver Missões</a>
+            </article>
+            <article>
+                <span>Beta</span>
+                <h2>Em desenvolvimento</h2>
+                <p>O roadmap mostra o que foi entregue, o que está sendo refinado e o que vem depois.</p>
+                <a href="{{ url_for('roadmap') }}">Ver Roadmap</a>
+            </article>
+        </section>
+
+        <section id="az-public-onboarding-v1" class="az-public-onboarding-v1" data-public-onboarding aria-label="Public beta onboarding">
+            <div>
+                <span class="az-home-kicker-v2">Beta Onboarding</span>
+                <h2>Aprenda o primeiro duelo antes de abrir a Arena.</h2>
+                <p>Um guia curto para entrar no Training já sabendo o objetivo e os botões principais.</p>
+            </div>
+            <ol>
+                <li><strong>Reduza o HP inimigo.</strong><span>Você vence quando a pressão das lanes e cartas derruba o herói rival.</span></li>
+                <li><strong>Escolha intent.</strong><span>Strike pressiona, Guard segura dano, Focus cresce Ambition.</span></li>
+                <li><strong>Jogue uma carta.</strong><span>Criaturas entram em lane; spells e traps usam efeitos resolvidos pelo backend.</span></li>
+                <li><strong>Clique Ready.</strong><span>Ready trava sua decisão e resolve o round com resumo legível.</span></li>
+                <li><strong>Use recompensas.</strong><span>Depois da partida, veja XP, missões e próximos passos.</span></li>
+                <li><strong>Melhore o deck.</strong><span>Volte para Collection e Deck Builder quando quiser ajustar sua estratégia.</span></li>
+            </ol>
+            <div class="progression-action-row">
+                <a href="{{ url_for('training') }}" class="btn" data-retention-event="training_start_click">Start Training</a>
+                <button type="button" class="btn btn-secondary" data-public-onboarding-dismiss>Já vi onboarding</button>
+                <a href="{{ url_for('tutorial') }}" class="btn btn-secondary">Tutorial completo</a>
+            </div>
+        </section>
 
         <section class="az-home-loop-v2" aria-label="How Ambitionz plays">
             <article>
@@ -250,5 +316,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

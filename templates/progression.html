@@ -22,6 +22,7 @@
     <main class="wide-page mobile-wide-page az-economy-page-polish-v1">
 
         <nav class="az-card-nav-v1">
+            <a href="{{ url_for('index') }}">Home</a>
             <a href="{{ url_for('training') }}" class="primary">Play</a>
             <a href="{{ url_for('collection') }}">Collection</a>
             <a href="{{ url_for('deck_builder') }}">Deck</a>
@@ -30,6 +31,8 @@
             <span class="az-card-nav-spacer"></span>
             <a href="{{ url_for('profile') }}">Profile</a>
             <a href="{{ url_for('progression') }}" class="active">Progression</a>
+            <a href="{{ url_for('roadmap') }}">Roadmap</a>
+            <a href="{{ url_for('feedback') }}">Feedback</a>
         </nav>
 
         <header class="top-bar mobile-top-bar">
@@ -188,6 +191,33 @@
             {% endfor %}
         </section>
 
+        <section id="az-progression-product-hub-v3" class="az-profile-product-hub-v3" aria-label="Progression product hub">
+            <article>
+                <span class="progression-kicker">Primary CTA</span>
+                <h3>Jogar Training</h3>
+                <p>Fastest path to XP, missions, match history and reward reveal.</p>
+                <a href="{{ url_for('training') }}" class="btn small-btn">Jogar Training</a>
+            </article>
+            <article>
+                <span class="progression-kicker">Mission Board</span>
+                <h3>Objectives with rewards</h3>
+                <p>Check combat and product-loop goals before the next match.</p>
+                <a href="{{ url_for('missions') }}" class="btn btn-secondary small-btn">Ver Missões</a>
+            </article>
+            <article>
+                <span class="progression-kicker">Daily Reward</span>
+                <h3>{{ daily_checkin.state }}</h3>
+                <p>{{ daily_checkin.claim_reward }} · {{ daily_checkin.reset_label }}</p>
+                <a href="{{ url_for('daily') }}" class="btn btn-secondary small-btn">Ver Daily Reward</a>
+            </article>
+            <article>
+                <span class="progression-kicker">Collection</span>
+                <h3>{{ collection_progress.completion_percent }}% catalog progress</h3>
+                <p>Use collection clarity to decide what to test in Deck Builder.</p>
+                <a href="{{ url_for('collection') }}" class="btn btn-secondary small-btn">Ver Coleção</a>
+            </article>
+        </section>
+
         <section class="deck-status">
             <div class="section-title-row">
                 <div>
@@ -235,7 +265,12 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <p class="subtitle">No missions available yet. Play a match to start progression.</p>
+                <article class="panel-card az-empty-beta-state-v1">
+                    <span class="progression-kicker">No missions available yet</span>
+                    <h3>Open Missions or play Training to refresh the board.</h3>
+                    <p class="subtitle">Progression remains available even if the daily mission board has not generated yet.</p>
+                    <a href="{{ url_for('missions') }}" class="btn">Open Missions</a>
+                </article>
             {% endif %}
         </section>
 
@@ -249,6 +284,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

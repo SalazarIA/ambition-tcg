@@ -341,7 +341,10 @@
         "/campaign": "campaign_view",
         "/collection": "collection_view",
         "/daily": "daily_view",
-        "/deck-builder": "deck_builder_view"
+        "/deck-builder": "deck_builder_view",
+        "/feedback": "feedback_view",
+        "/roadmap": "roadmap_view",
+        "/tutorial": "onboarding_view"
     };
 
     function trackRetentionEvent(eventKey, metadata) {

@@ -13,6 +13,17 @@
 </head>
 <body class="app-body" data-retention-page="daily">
     <main class="page-shell">
+        <nav class="az-beta-main-nav-v3" aria-label="Public beta navigation">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('training') }}" class="primary">Jogar</a>
+            <a href="{{ url_for('collection') }}">Collection</a>
+            <a href="{{ url_for('deck_builder') }}">Deck Builder</a>
+            <a href="{{ url_for('missions') }}">Missions</a>
+            <a href="{{ url_for('daily') }}" class="active">Daily</a>
+            <a href="{{ url_for('progression') }}">Progression</a>
+            <a href="{{ url_for('roadmap') }}">Roadmap</a>
+            <a href="{{ url_for('feedback') }}">Feedback</a>
+        </nav>
         <section class="hero-card az-loop-hero">
             <div>
                 <span class="progression-kicker">Daily Check-In</span>
@@ -110,10 +121,14 @@
                 </article>
                 {% endfor %}
             {% else %}
-                <article class="panel-card">
-                    <h2>No missions loaded</h2>
-                    <p class="subtitle">Log in and open this page again to generate the daily mission board. This page remains visible as a beta preview.</p>
-                    <a href="{{ url_for('login') }}" class="btn">Login</a>
+                <article class="panel-card az-empty-beta-state-v1">
+                    <span class="progression-kicker">No daily mission board loaded</span>
+                    <h2>Daily remains available as a beta reward preview.</h2>
+                    <p class="subtitle">Log in to persist claims, or play Training now to progress the account loop.</p>
+                    <div class="progression-action-row">
+                        <a href="{{ url_for('training') }}" class="btn">Play Training</a>
+                        <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
+                    </div>
                 </article>
             {% endif %}
         </section>
@@ -140,6 +155,6 @@
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v182"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v183"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -444,7 +444,66 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v182"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v183"' in service_worker
+
+
+def test_blocks_73_80_public_beta_rc_v3_contract():
+    app_py = (PROJECT_ROOT / "app.py").read_text()
+    homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
+    feedback = (PROJECT_ROOT / "templates" / "feedback.html").read_text()
+    roadmap = (PROJECT_ROOT / "templates" / "roadmap.html").read_text()
+    profile = (PROJECT_ROOT / "templates" / "profile.html").read_text()
+    progression = (PROJECT_ROOT / "templates" / "progression.html").read_text()
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    deck_builder = (PROJECT_ROOT / "templates" / "deck_builder.html").read_text()
+    leaderboard = (PROJECT_ROOT / "templates" / "leaderboard.html").read_text()
+    ranking = (PROJECT_ROOT / "templates" / "ranking.html").read_text()
+    match_history = (PROJECT_ROOT / "templates" / "match_history.html").read_text()
+    booster_history = (PROJECT_ROOT / "templates" / "booster_history.html").read_text()
+    shop = (PROJECT_ROOT / "templates" / "shop.html").read_text()
+    progression_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_progression.js").read_text()
+    pwa_js = (PROJECT_ROOT / "static" / "js" / "pwa.js").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
+
+    assert '@app.route("/roadmap")' in app_py
+    assert '"feedback_view"' in app_py
+    assert "Guest Beta Tester" in app_py
+    assert 'id="az-public-beta-landing-v2"' in homepage
+    assert "Ambitionz is a tactical card battler in public beta." in homepage
+    assert "Jogar partidas" in homepage
+    assert "Colecionar cartas" in homepage
+    assert "Montar deck" in homepage
+    assert 'id="az-public-onboarding-v1"' in homepage
+    assert "Ready trava sua decisão" in homepage
+    assert "data-public-onboarding-dismiss" in homepage
+    assert 'id="az-beta-feedback-v1"' in feedback
+    assert 'name="contact"' in feedback
+    assert "Guest feedback is accepted" in feedback
+    assert "Roadmap & Patch Notes" in roadmap
+    assert "Public Beta RC V3" in roadmap
+    assert "Arena BE2 polish" in roadmap
+    assert "Retention loops" in roadmap
+    assert "Public beta polish" in roadmap
+    assert 'id="az-profile-product-hub-v3"' in profile
+    assert 'id="az-progression-product-hub-v3"' in progression
+    assert "No cards match these filters." in collection
+    assert "No cards in deck" in deck_builder
+    assert "No leaderboard data yet" in leaderboard
+    assert "No ranked players yet" in ranking
+    assert "No matches yet" in match_history
+    assert "No booster history yet" in booster_history
+    assert "Shop unavailable for this wallet" in shop
+    assert "ambitionz_public_onboarding_seen_v1" in progression_js
+    assert "bindPublicOnboarding" in progression_js
+    assert '"/roadmap": "roadmap_view"' in pwa_js
+    assert '"/feedback": "feedback_view"' in pwa_js
+    assert ".az-beta-main-nav-v3" in css
+    assert ".az-public-beta-pillars-v3" in css
+    assert ".az-public-onboarding-v1" in css
+    assert ".az-roadmap-card-v3" in css
+    assert ".az-profile-product-hub-v3" in css
+    assert 'CACHE_NAME = "ambitionz-web-app-v183"' in service_worker
 
 
 def test_arena_premium_hud_contract():
