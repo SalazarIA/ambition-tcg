@@ -20,6 +20,7 @@
     let reportedTrainingResult = false;
     let selectedSpellTarget = "";
     let localPreparedTrap = null;
+    let manualInfoTab = "";
     let tutorialStepIndex = 0;
     const pulseTimers = {};
 
@@ -543,8 +544,15 @@
 
         panel = document.createElement("section");
         panel.id = "az48-clarity-panel";
-        panel.className = "az48-clarity-panel";
+        panel.className = "az48-clarity-panel az48-info-drawer";
         panel.innerHTML = [
+            '<nav class="az48-info-tabs" aria-label="Arena information">',
+            '<button type="button" class="az48-info-tab is-active" data-az48-info-tab="next">Next</button>',
+            '<button type="button" class="az48-info-tab" data-az48-info-tab="card">Card</button>',
+            '<button type="button" class="az48-info-tab" data-az48-info-tab="log">Log</button>',
+            '<button type="button" class="az48-info-tab" data-az48-info-tab="summary">Summary</button>',
+            '</nav>',
+            '<div class="az48-info-tab-panel az48-info-tab-panel-next is-active" data-az48-info-panel="next">',
             '<div class="az48-clarity-card az48-turn-card">',
             '<span>Next</span>',
             '<strong id="az48-next-action">Start</strong>',
@@ -561,6 +569,8 @@
             '<dl class="az48-highlight-grid" id="az48-highlight-grid"></dl>',
             '<p id="az48-highlight-next">Choose your next line.</p>',
             '</div>',
+            '</div>',
+            '<div class="az48-info-tab-panel az48-info-tab-panel-card" data-az48-info-panel="card">',
             '<div class="az48-clarity-card az48-preview-card">',
             '<span>Card Detail</span>',
             '<strong id="az48-card-preview-name">No card selected</strong>',
@@ -568,11 +578,14 @@
             '<p id="az48-card-preview-text">Hover a card to preview its effect.</p>',
             '<ul class="az48-card-keyword-lines" id="az48-card-keyword-lines"></ul>',
             '</div>',
+            '</div>',
+            '<div class="az48-info-tab-panel az48-info-tab-panel-log" data-az48-info-panel="log">',
             '<div class="az48-clarity-card az48-timeline-card">',
             '<span>Timeline</span>',
             '<strong id="az48-round-result">No round yet</strong>',
             '<ol id="az48-event-lines"></ol>',
             '<details class="az48-help-drawer"><summary>?</summary><ul id="az48-help-lines"></ul><button type="button" class="az48-help-replay-v6" data-first-flow-replay>Replay tutorial</button></details>',
+            '</div>',
             '</div>'
         ].join("");
 
@@ -584,6 +597,41 @@
         }
 
         return panel;
+    }
+
+    function infoTabForState(step, payload) {
+        if (manualInfoTab) return manualInfoTab;
+        if (selectedCardId || ["choose_lane", "choose_target", "prepare_trap"].includes(step)) return "card";
+        if (step === "finished") return "summary";
+        if (getRoundCombatLog(payload).length && step === "choose_intent") return "summary";
+        return "next";
+    }
+
+    function setInfoTab(tab, options = {}) {
+        const valid = new Set(["next", "card", "log", "summary"]);
+        const selected = valid.has(tab) ? tab : "next";
+
+        if (options.manual) {
+            manualInfoTab = selected;
+        }
+
+        if (document.body) {
+            document.body.dataset.az48InfoTab = selected;
+        }
+
+        document.querySelectorAll("[data-az48-info-tab]").forEach((button) => {
+            const isActive = button.getAttribute("data-az48-info-tab") === selected;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+
+        document.querySelectorAll("[data-az48-info-panel]").forEach((panel) => {
+            const isActive = panel.getAttribute("data-az48-info-panel") === selected;
+            panel.classList.toggle("is-active", isActive);
+            if (panel.id === "az48-round-summary") {
+                panel.hidden = !isActive;
+            }
+        });
     }
 
     function setButtonContent(id, label, detail) {
@@ -733,15 +781,15 @@
         setButtonContent("az48-focus", "Focus", "Build");
 
         if (step === "choose_card") {
-            setButtonContent("az48-ready", "Ready", "Choose a card first");
+            setButtonContent("az48-ready", "Skip", "Ready without card");
         } else if (step === "ready") {
-            setButtonContent("az48-ready", "Ready", "Resolve Round");
+            setButtonContent("az48-ready", "Resolve", "Round");
         } else if (step === "finished") {
             setButtonContent("az48-ready", "Next", "Next Round");
         } else if (step === "waiting") {
-            setButtonContent("az48-ready", "Ready", "Waiting for action");
+            setButtonContent("az48-ready", "Waiting", "Syncing");
         } else {
-            setButtonContent("az48-ready", "Ready", "Resolve Round");
+            setButtonContent("az48-ready", "Resolve", "Round");
         }
     }
 
@@ -1465,6 +1513,7 @@
         selectedCardId = null;
         selectionMode = "";
         selectedSpellTarget = "";
+        manualInfoTab = "";
         clearTargetHighlights();
         document.body.classList.remove("az48-selecting-lane", "az48-selecting-target", "az48-selecting-spell", "az48-selecting-trap");
     }
@@ -1474,6 +1523,7 @@
         selectionMode = mode;
         previewCardId = entry.card.id;
         detailCardSnapshot = entry.raw;
+        manualInfoTab = "";
         document.body.classList.toggle("az48-selecting-lane", mode === "lane");
         document.body.classList.toggle("az48-selecting-target", mode === "target");
         document.body.classList.toggle("az48-selecting-spell", mode === "target" && cardTypeGroup(entry.card) === "Spell");
@@ -1816,6 +1866,7 @@
         renderStepList(uiStep);
         updateActionButtons(uiStep);
         syncActionControls(uiStep, legal);
+        setInfoTab(infoTabForState(uiStep, payload));
     }
 
 
@@ -2352,6 +2403,15 @@
 
     function bindClicks() {
         document.addEventListener("click", (event) => {
+            if (event.__az48DirectHandled) return;
+
+            const infoTab = event.target.closest("[data-az48-info-tab]");
+            if (infoTab) {
+                event.preventDefault();
+                setInfoTab(infoTab.getAttribute("data-az48-info-tab") || "next", { manual: true });
+                return;
+            }
+
             const startBtn = event.target.closest("#az48-floating-start, #az48-start, #join-queue-btn, [data-az48-action='start-training']");
             if (startBtn) {
                 event.preventDefault();
@@ -2396,40 +2456,19 @@
 
             const laneSlot = event.target.closest("[data-az48-lane]");
             if (laneSlot && selectionMode === "lane" && laneSlot.classList.contains("is-legal-lane")) {
-                event.preventDefault();
-                const entry = selectedHandCard();
-                if (!entry) {
-                    clearSelection();
-                    setMessage("Select a card first.");
-                    return;
-                }
-                playCard(entry.card.id, { lane: laneSlot.getAttribute("data-az48-lane") });
+                handleLaneSelection(laneSlot, event);
                 return;
             }
 
             const trapSlot = event.target.closest("[data-az48-trap-slot]");
             if (trapSlot && selectionMode === "trap") {
-                event.preventDefault();
-                const entry = selectedHandCard();
-                if (!entry) {
-                    clearSelection();
-                    setMessage("Select a trap first.");
-                    return;
-                }
-                playCard(entry.card.id, { confirmTrap: true, target: "self" });
+                handleTrapSelection(trapSlot, event);
                 return;
             }
 
             const targetSlot = event.target.closest("[data-az48-target]");
             if (targetSlot && selectionMode === "target") {
-                event.preventDefault();
-                const entry = selectedHandCard();
-                if (!entry) {
-                    clearSelection();
-                    setMessage("Select a card first.");
-                    return;
-                }
-                playCard(entry.card.id, { target: targetSlot.getAttribute("data-az48-target") });
+                handleTargetSelection(targetSlot, event);
                 return;
             }
 
@@ -2443,20 +2482,7 @@
 
             const card = event.target.closest("#az48-hand .az48-card[data-card-id], #hand .az48-card[data-card-id]");
             if (card) {
-                event.preventDefault();
-                setCardDetailFromElement(card);
-
-                const cardIsPlayable =
-                    card.classList.contains("is-playable") ||
-                    card.classList.contains("playable") ||
-                    card.classList.contains("az48-playable");
-
-                if (!cardIsPlayable) {
-                    setMessage("This card cannot be played now. Choose another action or press Ready.");
-                    return;
-                }
-
-                playCard(card.dataset.cardId);
+                handleHandCardClick(card, event);
             }
         });
 
@@ -2471,6 +2497,124 @@
             if (!card) return;
             setCardDetailFromElement(card);
         });
+    }
+
+    function bindDirectActionButtons() {
+        const bind = (id, handler) => {
+            const el = document.getElementById(id);
+            if (!el || el.dataset.az48DirectBound === "1") return;
+            el.dataset.az48DirectBound = "1";
+            el.addEventListener("click", (event) => {
+                event.__az48DirectHandled = true;
+                event.preventDefault();
+                handler();
+            });
+        };
+
+        bind("az48-start", startTraining);
+        bind("az48-floating-start", startTraining);
+        bind("join-queue-btn", startTraining);
+        bind("az48-strike", () => setIntent("Strike"));
+        bind("az48-guard", () => setIntent("Guard"));
+        bind("az48-focus", () => setIntent("Focus"));
+        bind("az48-ready", ready);
+        bind("ready-btn", ready);
+    }
+
+    function handleHandCardClick(card, event) {
+        if (!card) return false;
+        if (event) event.preventDefault();
+
+        setCardDetailFromElement(card);
+
+        const cardIsPlayable =
+            card.classList.contains("is-playable") ||
+            card.classList.contains("playable") ||
+            card.classList.contains("az48-playable");
+
+        if (!cardIsPlayable) {
+            setMessage("This card cannot be played now. Choose another action or press Ready.");
+            return true;
+        }
+
+        playCard(card.dataset.cardId);
+        return true;
+    }
+
+    function selectedEntryOrMessage(kind) {
+        const entry = selectedHandCard();
+        if (entry) return entry;
+        clearSelection();
+        setMessage(kind === "trap" ? "Select a trap first." : "Select a card first.");
+        return null;
+    }
+
+    function handleLaneSelection(laneSlot, event) {
+        if (!laneSlot || selectionMode !== "lane" || !laneSlot.classList.contains("is-legal-lane")) return false;
+        if (event) event.preventDefault();
+
+        const entry = selectedEntryOrMessage("card");
+        if (!entry) return true;
+
+        playCard(entry.card.id, { lane: laneSlot.getAttribute("data-az48-lane") });
+        return true;
+    }
+
+    function handleTrapSelection(trapSlot, event) {
+        if (!trapSlot || selectionMode !== "trap") return false;
+        if (event) event.preventDefault();
+
+        const entry = selectedEntryOrMessage("trap");
+        if (!entry) return true;
+
+        playCard(entry.card.id, { confirmTrap: true, target: "self" });
+        return true;
+    }
+
+    function handleTargetSelection(targetSlot, event) {
+        if (!targetSlot || selectionMode !== "target") return false;
+        if (event) event.preventDefault();
+
+        const entry = selectedEntryOrMessage("card");
+        if (!entry) return true;
+
+        playCard(entry.card.id, { target: targetSlot.getAttribute("data-az48-target") });
+        return true;
+    }
+
+    function bindDirectHandCards() {
+        document.addEventListener("click", (event) => {
+            if (event.__az48DirectHandled) return;
+
+            const card = event.target.closest("#az48-hand .az48-card[data-card-id], #hand .az48-card[data-card-id]");
+            if (!card) return;
+
+            event.__az48DirectHandled = true;
+            handleHandCardClick(card, event);
+        }, true);
+    }
+
+    function bindDirectSelectionTargets() {
+        document.addEventListener("click", (event) => {
+            if (event.__az48DirectHandled) return;
+
+            const laneSlot = event.target.closest("[data-az48-lane]");
+            if (handleLaneSelection(laneSlot, event)) {
+                event.__az48DirectHandled = true;
+                return;
+            }
+
+            const trapSlot = event.target.closest("[data-az48-trap-slot]");
+            if (handleTrapSelection(trapSlot, event)) {
+                event.__az48DirectHandled = true;
+                return;
+            }
+
+            const targetSlot = event.target.closest("[data-az48-target]");
+            if (handleTargetSelection(targetSlot, event)) {
+                event.__az48DirectHandled = true;
+            }
+        }, true);
     }
 
     function shouldShowFirstPlayerCoach() {
@@ -2683,6 +2827,9 @@
 
         bindSocketEvents();
         bindClicks();
+        bindDirectActionButtons();
+        bindDirectHandCards();
+        bindDirectSelectionTargets();
         bindTrainingDifficulty();
         bindFirstPlayerCoach();
         ensureFirstPlayerCoach();

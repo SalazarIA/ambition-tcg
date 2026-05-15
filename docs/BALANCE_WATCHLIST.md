@@ -1,6 +1,6 @@
 # Ambitionz Beta Balance Watchlist
 
-Generated: 2026-05-15 01:02 UTC
+Generated: 2026-05-15 01:38 UTC
 
 ## Simulation Snapshot
 
@@ -35,7 +35,7 @@ Generated: 2026-05-15 01:02 UTC
 
 ## Local Telemetry
 
-- total_events: 1278
+- total_events: 1392
 - db_source: ok
 - jsonl_source: checked instance/beta_telemetry.jsonl, logs/beta_telemetry.jsonl
 - buy_booster: 0
@@ -43,7 +43,7 @@ Generated: 2026-05-15 01:02 UTC
 - finish_match: 0
 - open_booster: 0
 - save_deck: 0
-- start_training: 15
+- start_training: 32
 - view_collection: 0
 - view_roadmap: 0
 - visit_home: 0

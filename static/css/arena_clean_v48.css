@@ -3577,3 +3577,878 @@ body.az48-selecting-trap .az48-trap-zone-v6 * {
         font-size: 0.52rem;
     }
 }
+
+/* Arena Hotfix 121-128: compact playable shell */
+.az48-game-shell.az48-arena,
+.az48-arena-v6.az48-game-shell {
+    grid-template-rows: clamp(72px, 9dvh, 88px) minmax(330px, 1fr) clamp(300px, 32dvh, 326px) !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    background:
+        radial-gradient(circle at 18% 12%, rgba(105, 42, 190, 0.34), transparent 26%),
+        radial-gradient(circle at 82% 14%, rgba(28, 159, 190, 0.22), transparent 26%),
+        linear-gradient(180deg, #0b0822 0%, #050914 58%, #03040a 100%) !important;
+}
+
+.az48-game-shell .az48-statusbar {
+    position: absolute;
+    z-index: 42;
+    left: 16px;
+    right: 16px;
+    top: clamp(78px, calc(9dvh + 12px), 98px);
+    min-height: 34px;
+    max-height: 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 14px;
+    background: rgba(6, 8, 20, 0.78);
+    border-color: rgba(114, 219, 255, 0.16);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(10px);
+}
+
+body.az48-match-started .az48-game-shell .az48-statusbar {
+    left: 50%;
+    right: auto;
+    width: min(760px, calc(100vw - 28px));
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+body.az48-match-started .az48-training-panel,
+body.az48-match-started .az48-match-actions {
+    display: none !important;
+}
+
+.az48-game-shell .az48-message-text {
+    min-width: 0;
+    color: rgba(238, 246, 255, 0.82);
+    font-size: 0.78rem;
+    font-weight: 760;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-game-shell .az48-training-panel {
+    min-width: min(520px, 56vw);
+    display: grid;
+    grid-template-columns: minmax(110px, 0.5fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+.az48-game-shell .az48-training-panel > span {
+    display: none;
+}
+
+.az48-game-shell .az48-training-difficulties {
+    margin: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.az48-game-shell .az48-training-difficulties label {
+    padding: 4px 6px;
+    border-radius: 9px;
+}
+
+.az48-game-shell .az48-training-difficulties small,
+.az48-game-shell #az48-training-difficulty-label {
+    display: none;
+}
+
+.az48-compact-hud.az48-top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(104px, 128px) minmax(0, 1fr) 46px;
+    gap: 8px;
+    min-height: 0;
+}
+
+.az48-compact-hud .az48-player,
+.az48-compact-hud .az48-center {
+    min-height: 0;
+    height: 100%;
+    border-radius: 14px;
+    padding: 6px 8px;
+    box-shadow:
+        0 14px 38px rgba(0, 0, 0, 0.30),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+        rgba(7, 9, 20, 0.84);
+}
+
+.az48-compact-hud .az48-player {
+    grid-template-columns: 30px minmax(78px, 0.52fr) minmax(0, 1fr);
+    gap: 6px;
+}
+
+.az48-compact-hud .az48-player::after,
+.az48-compact-hud .az48-arcane-glow::after {
+    opacity: 0.08;
+    filter: blur(20px);
+}
+
+.az48-compact-hud .az48-avatar-v6 {
+    width: 28px;
+    height: 28px;
+    font-size: 0.72rem !important;
+    box-shadow: none;
+}
+
+.az48-compact-hud .az48-player > div:first-of-type span {
+    font-size: 0.54rem;
+    letter-spacing: 0.07em;
+}
+
+.az48-compact-hud .az48-player strong {
+    font-size: clamp(0.76rem, 1.4vw, 0.9rem);
+    line-height: 1.05;
+}
+
+.az48-compact-hud .az48-stats {
+    grid-template-columns: repeat(3, minmax(42px, max-content));
+    justify-content: end;
+    gap: 4px;
+}
+
+.az48-compact-hud .az48-hand-pill {
+    display: none !important;
+}
+
+.az48-compact-hud .az48-hud-pill {
+    min-height: 24px;
+    padding: 4px 6px;
+    border-radius: 9px;
+    font-size: 0.64rem;
+}
+
+.az48-compact-hud .az48-hud-pill span {
+    font-size: 0.76rem;
+}
+
+.az48-compact-hud .az48-hud-pill small {
+    font-size: 0.48rem;
+}
+
+.az48-compact-hud .az48-center {
+    display: grid;
+    grid-template-rows: 14px 1fr 16px;
+    place-items: center;
+    padding: 6px;
+}
+
+.az48-compact-hud .az48-round-mode,
+.az48-compact-hud .az48-center em {
+    font-size: 0.52rem;
+    letter-spacing: 0.08em;
+}
+
+.az48-compact-hud .az48-round-badge {
+    padding: 5px 8px;
+    font-size: 0.86rem;
+    border-radius: 10px;
+}
+
+.az48-compact-hud .az48-back {
+    min-width: 0;
+    padding: 0 8px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 0.66rem;
+}
+
+.az48-board-shell.az48-board {
+    display: grid !important;
+    grid-template-rows: minmax(126px, 1fr) 22px minmax(126px, 1fr) minmax(42px, auto) !important;
+    gap: 7px;
+    min-height: 330px;
+    padding: 10px;
+    border-radius: 20px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 48%, rgba(255, 214, 111, 0.10), transparent 27%),
+        linear-gradient(180deg, rgba(19, 11, 49, 0.86), rgba(5, 11, 29, 0.92)) !important;
+    border-color: rgba(125, 217, 255, 0.18);
+}
+
+.az48-board-shell::before,
+.az48-board-shell::after {
+    opacity: 0.42;
+}
+
+.az48-board-row.az48-field-row {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(132px, 1fr));
+    gap: 10px;
+    min-height: 0;
+    padding: 8px;
+    align-items: stretch;
+    overflow: visible;
+    border-radius: 16px;
+}
+
+.az48-enemy-board-row {
+    background: linear-gradient(180deg, rgba(255, 91, 79, 0.08), rgba(255, 255, 255, 0.018));
+}
+
+.az48-player-board-row {
+    background: linear-gradient(180deg, rgba(57, 218, 255, 0.075), rgba(255, 255, 255, 0.02));
+}
+
+.az48-board-row .az48-slot,
+.az48-board-row .az48-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 108px !important;
+    max-height: none !important;
+    border-radius: 14px;
+}
+
+.az48-board-row .az48-lane-empty-v6 {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.016)),
+        rgba(0, 0, 0, 0.16);
+    border-style: dashed;
+    color: rgba(236, 245, 255, 0.72);
+}
+
+.az48-board-row .az48-lane-empty-v6 small {
+    color: rgba(156, 231, 255, 0.70);
+}
+
+.az48-board-row .az48-card .az48-art {
+    min-height: 42px;
+}
+
+.az48-board-row .az48-card .az48-effect,
+.az48-board-row .az48-card .az48-tags,
+.az48-board-row .az48-card .az48-power,
+.az48-board-row .az48-card .az48-card-preview-line {
+    display: none !important;
+}
+
+.az48-board-row .az48-card .az48-name {
+    font-size: clamp(0.68rem, 1vw, 0.82rem);
+    line-height: 1.05;
+    -webkit-line-clamp: 1;
+}
+
+.az48-board-row .az48-card-stats {
+    margin-top: 4px;
+}
+
+.az48-board-shell .az48-divider-v6 {
+    min-height: 22px;
+    align-self: center;
+    color: rgba(255, 223, 154, 0.76);
+    font-size: 0.58rem;
+}
+
+.az48-board-shell .az48-trap-zone-v6 {
+    min-height: 42px;
+    padding: 5px 8px;
+    gap: 8px;
+    border-radius: 13px;
+    background: rgba(10, 11, 25, 0.62);
+    border-color: rgba(255, 190, 92, 0.18);
+}
+
+.az48-board-shell .az48-trap-zone-v6 strong {
+    font-size: 0.68rem;
+}
+
+.az48-board-shell .az48-trap-zone-v6 span,
+.az48-board-shell .az48-trap-zone-v6 small {
+    font-size: 0.5rem;
+}
+
+.az48-board-shell .az48-trap-slot-v6 {
+    min-height: 30px;
+    padding: 4px 6px;
+    border-radius: 9px;
+    font-size: 0.56rem;
+}
+
+.az48-hand-action-shell.az48-bottom,
+body.az48-has-actions .az48-hand-action-shell.az48-bottom,
+body.az48-match-started.az48-hand-empty .az48-hand-action-shell.az48-bottom,
+body.az48-match-started.az48-hand-empty.az48-has-actions .az48-hand-action-shell.az48-bottom {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) clamp(170px, 19vw, 224px) !important;
+    grid-template-rows: 20px minmax(166px, 1fr) minmax(68px, 76px) !important;
+    grid-template-areas:
+        "handhead actions"
+        "hand actions"
+        "drawer drawer" !important;
+    gap: 8px;
+    min-height: 0;
+    padding: 9px 12px 10px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(6, 8, 18, 0.86);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.36);
+}
+
+.az48-hand-action-shell .az48-hand-head {
+    grid-area: handhead;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+}
+
+.az48-hand-action-shell .az48-hand-head strong,
+.az48-hand-action-shell .az48-hand-head span {
+    font-size: 0.68rem;
+    line-height: 1;
+}
+
+.az48-hand-action-shell .az48-hand {
+    grid-area: hand;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 10px;
+    min-height: 0;
+    padding: 2px 6px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card {
+    flex: 0 0 clamp(146px, 13vw, 166px) !important;
+    width: clamp(146px, 13vw, 166px) !important;
+    min-width: clamp(146px, 13vw, 166px) !important;
+    max-width: clamp(146px, 13vw, 166px) !important;
+    height: clamp(154px, 17.5dvh, 176px) !important;
+    min-height: clamp(154px, 17.5dvh, 176px) !important;
+    max-height: clamp(154px, 17.5dvh, 176px) !important;
+    padding: 7px;
+    border-radius: 14px;
+    grid-template-rows: 22px 18px 20px minmax(48px, 1fr) 28px !important;
+    scroll-snap-align: start;
+    transform: none;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card:hover,
+.az48-hand-action-shell .az48-hand .az48-card.is-selected,
+.az48-hand-action-shell .az48-hand .az48-card.selected {
+    transform: translateY(-5px);
+}
+
+.az48-hand-action-shell .az48-hand .az48-card .az48-art {
+    grid-row: 4;
+    min-height: 54px;
+    max-height: 62px;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card .az48-name {
+    grid-row: 3;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.96);
+    font-size: 0.82rem;
+    font-weight: 950;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.54);
+}
+
+.az48-hand-action-shell .az48-hand .az48-card .az48-effect,
+.az48-hand-action-shell .az48-hand .az48-card .az48-tags {
+    display: none !important;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card-stats {
+    grid-row: 5;
+    margin-top: 3px;
+    gap: 4px;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card-stats span {
+    padding: 5px 6px;
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.30);
+}
+
+.az48-hand-action-shell .az48-cost,
+.az48-hand-action-shell .az48-rarity,
+.az48-hand-action-shell .az48-card-type-badge-v6 {
+    font-size: 0.5rem;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card .az48-card-type-badge-v6 {
+    position: relative;
+    left: auto;
+    top: auto;
+    grid-row: 2;
+    justify-self: start;
+    align-self: center;
+    max-width: calc(100% - 36px);
+    padding: 2px 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card .az48-card-element-mark {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    grid-row: 2;
+    justify-self: end;
+    align-self: center;
+    width: 19px;
+    height: 19px;
+    font-size: 0.54rem;
+    opacity: 0.94;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card .az48-power {
+    display: none !important;
+}
+
+.az48-hand-action-shell .az48-actions,
+body[data-az48-primary-action="choose_intent"] .az48-hand-action-shell .az48-actions,
+body[data-az48-primary-action="play_card"] .az48-hand-action-shell .az48-actions,
+body[data-az48-primary-action="ready"] .az48-hand-action-shell .az48-actions {
+    grid-area: actions;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: minmax(40px, max-content);
+    align-content: start;
+    gap: 8px;
+    min-height: 0;
+    padding: 1px 0 0;
+}
+
+.az48-hand-action-shell .az48-btn {
+    min-height: 42px !important;
+    max-height: 54px;
+    padding: 8px 10px;
+    border-radius: 13px;
+    font-size: 0.78rem;
+    line-height: 1.05;
+    box-shadow: none;
+}
+
+.az48-hand-action-shell .az48-btn small {
+    margin-top: 2px;
+    font-size: 0.56rem;
+}
+
+.az48-hand-action-shell .az48-ready,
+body[data-az48-primary-action="ready"] .az48-hand-action-shell #az48-ready {
+    min-height: 46px !important;
+    background: linear-gradient(180deg, rgba(255, 221, 120, 0.92), rgba(187, 128, 43, 0.88));
+    color: #120d08;
+}
+
+.az48-info-drawer,
+.az48-clarity-panel,
+.az48-round-summary {
+    grid-area: drawer !important;
+    min-height: 0;
+    max-height: 76px;
+    overflow: hidden;
+    margin: 0;
+}
+
+.az48-clarity-panel.az48-info-drawer {
+    display: grid !important;
+    grid-template-columns: minmax(220px, 0.28fr) minmax(0, 1fr);
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+body[data-az48-info-tab="summary"] .az48-clarity-panel {
+    display: grid !important;
+    pointer-events: none;
+}
+
+body[data-az48-info-tab="summary"] .az48-clarity-panel [data-az48-info-panel] {
+    display: none !important;
+}
+
+body[data-az48-info-tab="summary"] .az48-info-tabs {
+    pointer-events: auto;
+}
+
+body[data-az48-info-tab="summary"] .az48-round-summary {
+    display: block !important;
+    margin-left: calc(220px + 8px);
+    width: calc(100% - 228px);
+}
+
+body:not([data-az48-info-tab="summary"]) .az48-round-summary {
+    display: none !important;
+}
+
+.az48-info-tabs {
+    grid-column: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.az48-info-tab {
+    min-height: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    color: rgba(239, 247, 255, 0.68);
+    background: rgba(255, 255, 255, 0.045);
+    font-size: 0.64rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.az48-info-tab.is-active {
+    color: #11100a;
+    border-color: rgba(255, 218, 124, 0.46);
+    background: linear-gradient(180deg, rgba(255, 232, 168, 0.96), rgba(211, 158, 72, 0.92));
+}
+
+.az48-info-tab-panel {
+    display: none;
+    min-height: 0;
+    max-height: 76px;
+    overflow: hidden;
+}
+
+.az48-info-tab-panel.is-active {
+    display: grid;
+}
+
+.az48-info-tab-panel-next.is-active {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+}
+
+.az48-info-tab-panel-next .az48-highlight-card {
+    display: none !important;
+}
+
+.az48-info-tab-panel-card.is-active,
+.az48-info-tab-panel-log.is-active {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.az48-info-drawer .az48-clarity-card,
+.az48-clarity-panel .az48-clarity-card,
+.az48-round-summary {
+    min-height: 0 !important;
+    max-height: 76px !important;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(8, 11, 24, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.az48-info-drawer .az48-clarity-card span,
+.az48-round-summary .az48-summary-title {
+    font-size: 0.56rem;
+}
+
+.az48-info-drawer .az48-clarity-card strong {
+    font-size: 0.78rem;
+}
+
+.az48-info-drawer .az48-clarity-card p,
+.az48-info-drawer .az48-clarity-card li {
+    font-size: 0.66rem;
+    line-height: 1.2;
+}
+
+.az48-step-list {
+    margin-top: 5px;
+}
+
+.az48-highlight-grid,
+.az48-card-detail-stats {
+    margin-top: 5px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.az48-card-keyword-lines {
+    display: none;
+}
+
+#az48-event-lines {
+    margin-right: 28px;
+    max-height: 58px;
+    overflow-y: auto;
+}
+
+.az48-timeline-event-v6 {
+    grid-template-columns: 20px minmax(76px, 0.25fr) minmax(0, 1fr);
+    gap: 6px;
+    padding: 5px 7px;
+}
+
+.az48-summary-list {
+    max-height: 58px;
+}
+
+@media (min-width: 1120px) {
+    .az48-game-shell.az48-arena,
+    .az48-arena-v6.az48-game-shell {
+        grid-template-rows: 82px minmax(330px, 1fr) 312px !important;
+    }
+
+    .az48-board-shell.az48-board {
+        min-height: 360px;
+    }
+}
+
+@media (max-width: 860px), (max-height: 760px) {
+    .az48-game-shell.az48-arena,
+    .az48-arena-v6.az48-game-shell {
+        grid-template-rows: 106px minmax(290px, 1fr) 318px !important;
+        gap: 6px !important;
+        padding: 6px !important;
+    }
+
+    .az48-compact-hud.az48-top {
+        grid-template-columns: minmax(0, 1fr) minmax(76px, 90px) minmax(0, 1fr);
+        grid-template-rows: minmax(50px, 1fr) minmax(40px, auto);
+        grid-template-areas:
+            "enemy center player"
+            "status status status";
+        gap: 6px;
+    }
+
+    .az48-compact-hud .az48-enemy {
+        grid-area: enemy;
+    }
+
+    .az48-compact-hud .az48-center {
+        grid-area: center;
+    }
+
+    .az48-compact-hud .az48-you {
+        grid-area: player;
+    }
+
+    .az48-compact-hud .az48-back {
+        display: none;
+    }
+
+    .az48-compact-hud .az48-player {
+        grid-template-columns: 24px minmax(0, 1fr);
+        grid-template-rows: 20px 1fr;
+        gap: 4px;
+        padding: 5px 6px;
+    }
+
+    .az48-compact-hud .az48-player > div:first-of-type {
+        min-width: 0;
+    }
+
+    .az48-compact-hud .az48-stats {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        justify-content: stretch;
+        gap: 3px;
+    }
+
+    .az48-compact-hud .az48-hud-pill {
+        min-height: 20px;
+        padding: 3px 4px;
+        font-size: 0.58rem;
+    }
+
+    .az48-game-shell .az48-statusbar {
+        top: 68px;
+        left: 8px;
+        right: 8px;
+        width: auto;
+        transform: none;
+        max-height: 38px;
+        padding: 6px 8px;
+    }
+
+    .az48-game-shell .az48-message-text {
+        font-size: 0.68rem;
+    }
+
+    .az48-board-shell.az48-board {
+        min-height: 290px;
+        grid-template-rows: minmax(88px, 1fr) 18px minmax(88px, 1fr) minmax(38px, auto) !important;
+        padding: 7px;
+        overflow-x: auto;
+    }
+
+    .az48-board-row.az48-field-row,
+    .az48-board-shell .az48-trap-zone-v6 {
+        min-width: 374px;
+    }
+
+    .az48-board-row.az48-field-row {
+        grid-template-columns: repeat(3, minmax(108px, 1fr));
+        gap: 7px;
+        padding: 6px;
+    }
+
+    .az48-board-row .az48-slot,
+    .az48-board-row .az48-card {
+        min-height: 78px !important;
+    }
+
+    .az48-hand-action-shell.az48-bottom,
+    body.az48-has-actions .az48-hand-action-shell.az48-bottom,
+    body.az48-match-started.az48-hand-empty .az48-hand-action-shell.az48-bottom,
+    body.az48-match-started.az48-hand-empty.az48-has-actions .az48-hand-action-shell.az48-bottom {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 18px minmax(136px, 1fr) 52px minmax(82px, 92px) !important;
+        grid-template-areas:
+            "handhead"
+            "hand"
+            "actions"
+            "drawer" !important;
+        padding: 7px 8px 8px;
+    }
+
+    .az48-hand-action-shell .az48-hand {
+        gap: 9px;
+        padding-bottom: 9px;
+        scroll-snap-type: x mandatory;
+    }
+
+    .az48-hand-action-shell .az48-hand .az48-card {
+        flex-basis: 138px !important;
+        width: 138px !important;
+        min-width: 138px !important;
+        max-width: 138px !important;
+        height: 134px !important;
+        min-height: 134px !important;
+        max-height: 134px !important;
+        scroll-snap-align: center;
+    }
+
+    .az48-hand-action-shell .az48-actions,
+    body[data-az48-primary-action="choose_intent"] .az48-hand-action-shell .az48-actions,
+    body[data-az48-primary-action="play_card"] .az48-hand-action-shell .az48-actions,
+    body[data-az48-primary-action="ready"] .az48-hand-action-shell .az48-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        grid-auto-rows: 44px;
+        gap: 7px;
+    }
+
+    body[data-az48-primary-action="play_card"] .az48-hand-action-shell .az48-actions,
+    body[data-az48-primary-action="ready"] .az48-hand-action-shell .az48-actions {
+        grid-template-columns: 1fr !important;
+    }
+
+    .az48-hand-action-shell .az48-btn {
+        min-height: 42px !important;
+        max-height: 44px;
+    }
+
+    .az48-clarity-panel.az48-info-drawer {
+        grid-template-columns: 1fr;
+        grid-template-rows: 32px minmax(0, 1fr);
+        gap: 6px;
+        max-height: 92px;
+    }
+
+    .az48-info-tabs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .az48-info-tab {
+        min-height: 30px;
+        font-size: 0.58rem;
+    }
+
+    .az48-info-tab-panel,
+    .az48-info-tab-panel.is-active,
+    .az48-info-tab-panel-next.is-active {
+        max-height: 54px;
+        grid-template-columns: 1fr;
+    }
+
+    .az48-info-tab-panel-next .az48-highlight-card {
+        display: none;
+    }
+
+    body[data-az48-info-tab="summary"] .az48-round-summary {
+        margin-left: 0;
+        margin-top: 38px;
+        width: 100%;
+    }
+
+    .az48-info-drawer .az48-clarity-card,
+    .az48-round-summary {
+        max-height: 54px !important;
+        padding: 6px 8px;
+    }
+
+    .az48-step-list,
+    .az48-card-detail-stats,
+    .az48-card-keyword-lines,
+    .az48-highlight-grid {
+        display: none !important;
+    }
+
+    .az48-first-player-flow {
+        top: 116px !important;
+        bottom: auto !important;
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-height: 24vh !important;
+    }
+}
+
+.az48-first-player-flow-v6 {
+    width: min(286px, calc(100vw - 24px));
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(9, 12, 24, 0.88);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.34);
+}
+
+.az48-first-player-flow-v6 strong {
+    font-size: 0.92rem;
+    line-height: 1.08;
+}
+
+.az48-first-player-flow-v6 p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.72rem;
+}
+
+.az48-first-player-flow-v6 .az48-first-flow-steps {
+    margin: 8px 0 !important;
+}
+
+.az48-first-player-flow-v6 button {
+    min-height: 32px;
+    padding: 6px 9px;
+    border-radius: 9px;
+    font-size: 0.72rem;
+}

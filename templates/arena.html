@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=83">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=84">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -24,8 +24,8 @@
 </head>
 
 <body class="az-clean-arena-v48 arena-page-v154 az48-arena-v6 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-retention-page="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}"{% if campaign_context %} data-campaign-chapter-id="{{ campaign_context.chapter_id }}"{% endif %}>
-    <main class="az48-arena az48-arena-v6 az48-neon-frame">
-        <header class="az48-top">
+    <main class="az48-arena az48-arena-v6 az48-game-shell az48-neon-frame">
+        <header class="az48-top az48-compact-hud">
             <section class="az48-player az48-enemy az48-enemy-zone-v6 az48-arcane-glow" data-az48-target="enemy_hero">
                 <span class="az48-avatar-v6" aria-hidden="true">E</span>
                 <div>
@@ -104,8 +104,8 @@
             </div>
         </section>
 
-        <section class="az48-board az48-battlefield-v6 az48-battle-core-v6">
-            <div class="az48-field-row az48-enemy-field az48-enemy-zone-v6" id="az48-enemy-field">
+        <section class="az48-board az48-board-shell az48-battlefield-v6 az48-battle-core-v6">
+            <div class="az48-field-row az48-board-row az48-enemy-board-row az48-enemy-field az48-enemy-zone-v6" id="az48-enemy-field">
                 <article class="az48-slot">Enemy Trap</article>
                 <article class="az48-slot">Enemy Monster</article>
                 <article class="az48-slot">Enemy Spell</article>
@@ -113,7 +113,7 @@
 
             <div class="az48-divider az48-divider-v6">Battlefield</div>
 
-            <div class="az48-field-row az48-me-field az48-player-zone-v6" id="az48-me-field">
+            <div class="az48-field-row az48-board-row az48-player-board-row az48-me-field az48-player-zone-v6" id="az48-me-field">
                 <article class="az48-slot">Trap Slot</article>
                 <article class="az48-slot">Monster Slot</article>
                 <article class="az48-slot">Spell Slot</article>
@@ -132,7 +132,7 @@
             </section>
         </section>
 
-        <footer class="az48-bottom">
+        <footer class="az48-bottom az48-hand-action-shell">
             <div class="az48-hand-head">
                 <strong>Your Hand</strong>
                 <span id="az48-hand-count">0 cards</span>
@@ -142,7 +142,7 @@
                 <div class="az48-empty">No cards yet. Press Start.</div>
             </section>
 
-            <section class="az48-round-summary az48-battle-timeline-v6 az48-premium-panel" id="az48-round-summary" aria-live="polite">
+            <section class="az48-round-summary az48-info-drawer az48-info-tab-panel az48-info-tab-panel-summary az48-battle-timeline-v6 az48-premium-panel" id="az48-round-summary" aria-live="polite" data-az48-info-panel="summary">
                 <div class="az48-summary-header">
                     <strong class="az48-summary-title">Round Summary</strong>
                     <p class="az48-summary-empty">Waiting for round resolution.</p>
@@ -150,7 +150,7 @@
                 <ol class="az48-summary-list" aria-label="Round Summary events"></ol>
             </section>
 
-            <nav class="az48-actions">
+            <nav class="az48-actions az48-action-bar">
                 <button type="button" id="az48-start" class="az48-btn az48-start">Start</button>
                 <button type="button" id="az48-strike" class="az48-btn">Strike <small>Attack</small></button>
                 <button type="button" id="az48-guard" class="az48-btn">Guard <small>Defend</small></button>
@@ -246,6 +246,6 @@
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_feedback.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=83"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=84"></script>
 </body>
 </html>
