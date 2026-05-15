@@ -135,9 +135,8 @@ def run_single_match(seed: int, max_rounds: int) -> Dict[str, Any]:
     timeout = False
 
     while not match.get("winner"):
-        if int(match.get("round") or 0) > max_rounds:
-            timeout = True
-            finish_by_tiebreak(match, reason="balance_sim_timeout")
+        if int(match.get("round") or 0) >= max_rounds:
+            finish_by_tiebreak(match, reason="balance_sim_round_cap")
             break
 
         _player_choose_action(match)

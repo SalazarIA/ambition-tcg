@@ -33,3 +33,14 @@ This checklist is a human-readable beta readiness snapshot. It avoids sensitive 
 - Balance watchlist: `tools/qa/balance_watchlist.py` generates `docs/BALANCE_WATCHLIST.md` from telemetry when available and BE2 simulation otherwise.
 - Economy notice: Gold, boosters and rewards remain internal beta systems; no real-money payment flow is active.
 - QA status: RC V5 requires py_compile, pytest, backend QA, Arena matrix, playability audit, battle sim, gauntlet, browser QA, node checks, diff check and status review before commit/deploy.
+
+## Arena V6 Combat Clarity Addendum
+
+- Arena V6: premium fantasy neon battlefield, clearer lanes, stronger HUD hierarchy and compact Ready guidance.
+- Combat clarity: Battle Highlights, normalized timeline and Round Summary explain strategy, card, damage, shield, death and result events.
+- Card types: Creature, Spell and Trap cards now carry stronger visual labels and simple "how to use" education.
+- Spell targeting: the frontend highlights valid or inferred targets and falls back to backend-compatible targets where BE2 is still limited.
+- Trap Zone: traps are presented as prepared cards instead of lane creatures, with local defensive fallback until canonical state updates.
+- First battle tutorial: Training can show a light in-arena tutorial with Skip, Next and Replay controls.
+- Card art pipeline: `static/assets/cards/card_art_manifest.json`, `docs/CARD_ART_DIRECTION.md`, `docs/CARD_ART_PROMPTS_STARTER.md` and `tools/qa/card_art_manifest_check.py` define and validate placeholder/final card art.
+- Known issue: per-creature spell targeting remains a UX preview until the backend exposes richer target contracts.

@@ -379,10 +379,42 @@ function deckPreviewStats(card) {
     ];
 }
 
+function deckCardArtHtml(card) {
+    if (!card) {
+        return "";
+    }
+
+    if (window.AmbitionzCardArt && typeof window.AmbitionzCardArt.renderCardArt === "function") {
+        return window.AmbitionzCardArt.renderCardArt(card);
+    }
+
+    const element = card.dataset.element || "Neutral";
+    return `<div class="az-card-art-v6"><span class="az-card-art-rune-v6">${escapeHtml(element.slice(0, 1).toUpperCase())}</span><span class="az-card-art-name-v6">${escapeHtml(card.dataset.name || "Card")}</span></div>`;
+}
+
+function deckCardFunction(card) {
+    if (!card) return "Select a card to read its role.";
+    const type = card.dataset.type || "Card";
+    const effect = `${card.dataset.effect || ""} ${card.dataset.lore || ""}`.toLowerCase();
+    if (type === "Monster") {
+        if (/shield|guard|defend|resolve/.test(effect)) return "Defender: holds a lane and buys time.";
+        if (/burn|damage|strike|fury/.test(effect)) return "Attacker: pressures HP and forces trades.";
+        return "Creature: contests lanes and converts strategy into combat.";
+    }
+    if (type === "Spell") {
+        if (/shield|heal|protect/.test(effect)) return "Support spell: protects your hero or board.";
+        if (/draw|ambition|focus/.test(effect)) return "Focus spell: builds resources for stronger turns.";
+        return "Spell damage: choose pressure or cast for immediate value.";
+    }
+    if (type === "Trap") return "Trap: prepare it, then let the round punish or protect at resolution.";
+    return "Flexible card: check cost, element and role before adding copies.";
+}
+
 function updateDeckPreview(card) {
     const previewName = document.getElementById("az-deck-preview-name");
     const previewText = document.getElementById("az-deck-preview-text");
     const previewStats = document.getElementById("az-deck-preview-stats");
+    const previewArt = document.getElementById("az-deck-preview-art");
     const target = card || selectedPreviewCard();
 
     if (!previewName || !previewText || !previewStats) {
@@ -396,7 +428,11 @@ function updateDeckPreview(card) {
         const name = target.querySelector(".card-topline strong")?.textContent || "Selected card";
         const lore = target.dataset.lore || target.dataset.effect || "Ambitionz beta card identity.";
         previewName.textContent = name;
-        previewText.textContent = lore;
+        previewText.textContent = `${deckCardFunction(target)} ${lore}`;
+    }
+
+    if (previewArt) {
+        previewArt.innerHTML = target ? deckCardArtHtml(target) : "";
     }
 
     previewStats.innerHTML = deckPreviewStats(target).map((row) => {
@@ -407,6 +443,12 @@ function updateDeckPreview(card) {
 document.addEventListener("DOMContentLoaded", () => {
     bindDeckBuilderControls();
     updateDeckLiveStatus();
+    if (window.AmbitionzCardArt && typeof window.AmbitionzCardArt.loadCardArtManifest === "function") {
+        window.AmbitionzCardArt.loadCardArtManifest().then(() => {
+            if (typeof window.AmbitionzCardArt.enhanceAllCards === "function") window.AmbitionzCardArt.enhanceAllCards();
+            updateDeckPreview();
+        });
+    }
 });
 
 

@@ -18,6 +18,9 @@
     let lastCombatAudioSignature = "";
     let lastGameOverAudioResult = "";
     let reportedTrainingResult = false;
+    let selectedSpellTarget = "";
+    let localPreparedTrap = null;
+    let tutorialStepIndex = 0;
     const pulseTimers = {};
 
     const CANONICAL_SCHEMA = "ambitionz_arena_clean_v50";
@@ -34,6 +37,7 @@
     const AZ48_NO_PLAYABLE_HELP = "No playable card with current energy. Press Ready to resolve the round.";
     const COMMAND_TIMEOUT_MS = 2600;
     const FIRST_PLAYER_STORAGE_KEY = "ambitionz_first_battle_flow_seen_v1";
+    const FIRST_BATTLE_TUTORIAL_KEY = "ambitionz_arena_v6_tutorial_seen_v1";
     const TRAINING_DIFFICULTY_COPY = {
         easy: "Easy: learning bot with a more tolerant practice rhythm.",
         normal: "Normal: standard competitive beta training.",
@@ -289,7 +293,7 @@
         card = card || {};
 
         const type = str(card.type || "Monster");
-        const isMonster = type.toLowerCase() === "monster";
+        const isMonster = ["monster", "creature", "unit"].includes(type.toLowerCase());
 
         const power = num(firstValue(card.power, card.attack, card.display_stat, card.value), 0);
         const value = num(firstValue(card.value, card.display_stat, card.power, card.attack), 0);
@@ -355,8 +359,63 @@
         };
     }
 
+    function cardTypeGroup(card) {
+        const c = card && card.type ? card : normalizeCard(card);
+        const key = str(c.type || c.kind || "Card").toLowerCase();
+        if (["monster", "creature", "unit"].includes(key)) return "Creature";
+        if (["spell", "magic"].includes(key)) return "Spell";
+        if (key === "trap" || str(c.kind || "").toLowerCase() === "guard") return "Trap";
+        return "Card";
+    }
+
+    function v6ClassToken(value, fallback) {
+        return slug(value || fallback || "neutral", "neutral");
+    }
+
+    function cardHowToUse(card) {
+        const c = normalizeCard(card);
+        const group = cardTypeGroup(c);
+        if (group === "Creature") return "How to use: summon it into an empty lane to fight through combat.";
+        if (group === "Spell") {
+            const mode = inferSpellTargetMode(c);
+            if (mode === "enemy") return "How to use: pick the enemy hero or a highlighted enemy target.";
+            if (mode === "ally") return "How to use: choose your hero or an allied target for protection.";
+            if (mode === "self") return "How to use: cast now to build your own resources.";
+            return "How to use: cast now, or choose a highlighted target if the server offers one.";
+        }
+        if (group === "Trap") return "How to use: prepare it in the Trap Zone, then press Ready to let it resolve.";
+        return "How to use: follow the highlighted action for this card.";
+    }
+
+    function cardRuleText(card) {
+        const c = normalizeCard(card);
+        return str(c.preview || c.effectSummary || c.effect || cardHowToUse(c));
+    }
+
+    function cardArtFor(card) {
+        const c = normalizeCard(card);
+        if (window.AmbitionzCardArt && typeof window.AmbitionzCardArt.getCardArt === "function") {
+            return window.AmbitionzCardArt.getCardArt({
+                id: c.cardId || c.id,
+                card_id: c.cardId || c.id,
+                name: c.name,
+                element: c.element,
+                type: cardTypeGroup(c),
+                rarity: c.rarity,
+            });
+        }
+
+        return {
+            symbol: (c.element || "A").slice(0, 1).toUpperCase(),
+            gradient: "linear-gradient(135deg, #32116a, #0bd3ff)",
+            image: "",
+        };
+    }
+
     function renderCard(card, options = {}) {
         const c = normalizeCard(card);
+        const typeGroup = cardTypeGroup(c);
+        const art = cardArtFor(c);
         const typeClass = c.typeCss || ("type-" + c.type.toLowerCase().replaceAll(" ", "-"));
         const elementClass = c.elementCss || "element-neutral";
         const rarityClass = c.rarityCss || "rarity-common";
@@ -373,10 +432,13 @@
             ? '<div class="az48-card-stats"><span class="az48-card-stat-pair az48-stat-attack"><b>ATK</b>' + esc(c.attack || c.stat || 0) + '</span><span class="az48-card-stat-pair az48-stat-health"><b>HP</b>' + esc(c.currentHp || 0) + '/' + esc(c.maxHp || 0) + '</span></div>'
             : '<div class="az48-card-stats"><span class="az48-card-stat-pair"><b>' + esc(c.statLabel || "VAL") + '</b>' + esc(c.stat || 0) + '</span><span class="az48-card-stat-pair"><b>ELM</b>' + esc(c.element || "Neutral") + '</span></div>';
         const laneData = options.lane ? ' data-az48-lane="' + esc(options.lane) + '"' : "";
+        const targetData = options.target ? ' data-az48-target="' + esc(options.target) + '"' : "";
         const style = [
             "--az-card-primary:" + esc(colors.primary || "#9ea7b7"),
             "--az-card-secondary:" + esc(colors.secondary || "#d9deea"),
             "--az-card-accent:" + esc(colors.accent || "#f4f7ff"),
+            "--az-card-v6-gradient:" + esc(art.gradient || "linear-gradient(135deg, #32116a, #0bd3ff)"),
+            "--az-card-v6-symbol:'" + esc(art.symbol || (c.element || "A").slice(0, 1).toUpperCase()) + "'",
             "--az-card-art-image:url('" + esc(c.artUrl || "/static/img/cards/elemental/neutral.svg") + "')",
         ].join(";");
 
@@ -384,12 +446,13 @@
         const title = disabledReason || c.preview || c.effect || c.name;
 
         return [
-            '<button type="button" class="az48-card az48-card-v2 az48-card-frame-premium-v1 ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + ' data-card-type="' + esc(c.type) + '" data-element="' + esc(c.element || "Neutral") + '" data-rarity="' + esc(c.rarity || "Common") + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-disabled-reason="' + esc(disabledReason) + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
+            '<button type="button" class="az48-card az48-card-v2 az48-card-v6 az-card-v6 az48-card-frame-premium-v1 az-card-frame-' + esc(v6ClassToken(c.rarity, "common")) + ' az-card-type-' + esc(v6ClassToken(typeGroup, "card")) + ' az-card-element-' + esc(v6ClassToken(c.element, "neutral")) + ' ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + targetData + ' data-card-type="' + esc(c.type) + '" data-card-group="' + esc(typeGroup) + '" data-element="' + esc(c.element || "Neutral") + '" data-rarity="' + esc(c.rarity || "Common") + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-card-how-to-use="' + esc(cardHowToUse(c)) + '" data-disabled-reason="' + esc(disabledReason) + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
             '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
-            '<span class="az48-card-element-mark">' + esc((c.element || "N").slice(0, 1).toUpperCase()) + '</span>',
-            '<div class="az48-art"><span class="az48-art-image" aria-hidden="true"></span><span class="az48-art-glow" aria-hidden="true"></span></div>',
+            '<span class="az48-card-type-badge-v6">' + esc(typeGroup) + '</span>',
+            '<span class="az48-card-element-mark">' + esc(art.symbol || (c.element || "N").slice(0, 1).toUpperCase()) + '</span>',
+            '<div class="az48-art az-card-art-v6"><span class="az48-art-image" aria-hidden="true"></span><span class="az48-art-rune-v6" aria-hidden="true">' + esc(art.symbol || (c.element || "A").slice(0, 1).toUpperCase()) + '</span><span class="az48-art-glow" aria-hidden="true"></span></div>',
             '<strong class="az48-name">' + esc(c.name) + '</strong>',
             stats,
             '<p class="az48-effect">' + esc(c.effect || c.role || c.kind || "") + '</p>',
@@ -402,12 +465,13 @@
 
     function fieldCard(card, label, owner, lane, legalLane, feedbackClass = "") {
         const feedback = feedbackClass ? " " + feedbackClass : "";
+        const target = owner === "enemy" ? ("enemy_" + lane) : ("ally_" + lane);
 
         if (!card) {
             const hint = legalLane ? "Playable lane" : "Empty lane";
-            return '<button type="button" class="az48-slot az48-lane-slot' + (legalLane ? " is-legal-lane" : "") + feedback + '" data-az48-owner="' + esc(owner || "") + '" data-az48-lane="' + esc(lane || "") + '"><span class="az48-slot-label">' + esc(label) + '</span><small>' + esc(hint) + '</small></button>';
+            return '<button type="button" class="az48-slot az48-lane-slot az48-lane-v6 az48-lane-empty-v6' + (legalLane ? " is-legal-lane is-legal-target" : "") + feedback + '" data-az48-owner="' + esc(owner || "") + '" data-az48-lane="' + esc(lane || "") + '" data-az48-target="' + esc(target) + '"><span class="az48-slot-label">' + esc(label) + '</span><small>' + esc(hint) + '</small></button>';
         }
-        return renderCard(card, { field: true, lane, legalLane, feedbackClass });
+        return renderCard(card, { field: true, lane, legalLane, feedbackClass: "az48-lane-v6 az48-lane-occupied-v6 " + feedbackClass, target });
     }
 
     function setVisible(id, visible) {
@@ -508,7 +572,7 @@
             '<span>Timeline</span>',
             '<strong id="az48-round-result">No round yet</strong>',
             '<ol id="az48-event-lines"></ol>',
-            '<details class="az48-help-drawer"><summary>?</summary><ul id="az48-help-lines"></ul></details>',
+            '<details class="az48-help-drawer"><summary>?</summary><ul id="az48-help-lines"></ul><button type="button" class="az48-help-replay-v6" data-first-flow-replay>Replay tutorial</button></details>',
             '</div>'
         ].join("");
 
@@ -538,6 +602,7 @@
         if (phase === "finished" || state.winner) return "finished";
         if (selectionMode === "lane") return "choose_lane";
         if (selectionMode === "target") return "choose_target";
+        if (selectionMode === "trap") return "prepare_trap";
         if (isStartPhase(phase) || legal.can_start || legal.show_start) return "start";
         if (legal.show_intents || legal.can_choose_intent) return "choose_intent";
         if (legal.can_play_cards && arr(legal.playable_card_ids).length) return "choose_card";
@@ -557,7 +622,7 @@
 
         if (step === "start") {
             return {
-                title: PAGE_KIND === "campaign" ? "1. Start Chapter" : "1. Start Training",
+                title: PAGE_KIND === "campaign" ? "Step 1: Start Chapter" : "Step 1: Start Training",
                 hint: PAGE_KIND === "campaign" ? "Press Start to enter this campaign-marked duel." : "Press Start to draw your opening hand.",
                 button: PAGE_KIND === "campaign" ? "Start Chapter" : "Start Training",
                 detail: "Draw Hand",
@@ -566,8 +631,8 @@
 
         if (step === "choose_intent") {
             return {
-                title: "1. Choose Intent",
-                hint: "Pick Strike, Guard or Focus for this round.",
+                title: "Step 1: Choose Strategy",
+                hint: "Pick Strike for pressure, Guard for shield, or Focus for Ambition.",
                 button: "Choose Intent",
                 detail: "Strike / Guard / Focus",
             };
@@ -575,8 +640,8 @@
 
         if (step === "choose_card") {
             return {
-                title: "2. Choose Card",
-                hint: "Play one highlighted card, or skip the card and press Ready.",
+                title: "Step 2: Play a Card",
+                hint: "Play a highlighted Creature, Spell or Trap, or skip and press Ready.",
                 button: "Play Card",
                 detail: "Optional",
             };
@@ -584,7 +649,7 @@
 
         if (step === "choose_lane") {
             return {
-                title: "3. Choose Lane",
+                title: "Step 3: Choose Lane",
                 hint: "Select an empty lane for " + selectedCardName() + ".",
                 button: "Choose Lane",
                 detail: "Left / Center / Right",
@@ -593,16 +658,25 @@
 
         if (step === "choose_target") {
             return {
-                title: "3. Choose Target",
-                hint: "Select a highlighted target for " + selectedCardName() + ".",
+                title: "Step 3: Choose Target",
+                hint: "Select a highlighted target for " + selectedCardName() + ", or cast now when offered.",
                 button: "Choose Target",
                 detail: "Required",
             };
         }
 
+        if (step === "prepare_trap") {
+            return {
+                title: "Step 3: Prepare Trap",
+                hint: "Choose a Trap Zone slot to seal " + selectedCardName() + " for this round.",
+                button: "Prepare Trap",
+                detail: "Trap Zone",
+            };
+        }
+
         if (step === "ready") {
             return {
-                title: "4. Ready",
+                title: "Step 4: Confirm Round",
                 hint: legal.can_play_cards ? "You may still play one card, or press Ready to resolve." : "Press Ready to resolve the round.",
                 button: "Ready",
                 detail: "Resolve Round",
@@ -619,7 +693,7 @@
         }
 
         return {
-            title: "5. Wait",
+            title: "Step 5: Watch Resolution",
             hint: message || "Waiting for the opponent or server update.",
             button: "Waiting",
             detail: "Resolve",
@@ -631,7 +705,7 @@
         if (!el) return;
 
         const order = [
-            ["choose_intent", "Intent"],
+            ["choose_intent", "Strategy"],
             ["choose_card", "Card"],
             ["choose_lane", "Lane/Target"],
             ["ready", "Ready"],
@@ -640,6 +714,7 @@
         const aliases = {
             start: "choose_intent",
             choose_target: "choose_lane",
+            prepare_trap: "choose_lane",
             finished: "waiting",
         };
         const current = aliases[activeStep] || activeStep;
@@ -658,9 +733,13 @@
         setButtonContent("az48-focus", "Focus", "Build");
 
         if (step === "choose_card") {
-            setButtonContent("az48-ready", "Skip Card", "Ready");
+            setButtonContent("az48-ready", "Ready", "Choose a card first");
         } else if (step === "ready") {
             setButtonContent("az48-ready", "Ready", "Resolve Round");
+        } else if (step === "finished") {
+            setButtonContent("az48-ready", "Next", "Next Round");
+        } else if (step === "waiting") {
+            setButtonContent("az48-ready", "Ready", "Waiting for action");
         } else {
             setButtonContent("az48-ready", "Ready", "Resolve Round");
         }
@@ -727,20 +806,68 @@
         return label + str(event.text || event.type || "");
     }
 
+    function normalizeBattleEvent(event) {
+        if (!event) return null;
+
+        if (typeof event === "string") {
+            return {
+                type: "event",
+                label: "Event",
+                text: event,
+                icon: "*",
+            };
+        }
+
+        const type = str(event.type || event.kind || "event").toLowerCase();
+        const amount = eventAmount(event);
+        const cardName = eventName(event.card_name || event.card || event.name, "Card");
+        const attackerName = eventName(event.attacker_name || event.attacker, "Card");
+        const defenderName = eventName(event.defender_name || event.defender || event.target_name || event.target, "target");
+
+        const map = {
+            round_start: ["Strategy chosen", "Round started. Choose the strongest line.", "*"],
+            intent_selected: ["Strategy chosen", str(event.message || event.text, "Strategy locked in."), "S"],
+            card_played: ["Card played", cardName + " entered the round.", "C"],
+            spell_cast: ["Spell cast", cardName + " was cast.", "M"],
+            trap_prepared: ["Trap prepared", "Trap prepared: " + cardName + ".", "T"],
+            round_resolve: ["Intent revealed", "Both sides revealed their plan.", "R"],
+            lane_attack: ["Combat", attackerName + " attacked " + defenderName + ".", "A"],
+            direct_attack: ["Direct attack", attackerName + " struck the hero directly.", ">"],
+            creature_damage: ["Damage", defenderName + " took " + amount + " damage.", "!"],
+            hero_damage: ["Hero damage", defenderName + " took " + amount + " damage.", "!"],
+            shield_gain: ["Shield", "Shield gained: +" + amount + ".", "+"],
+            ambition_gain: ["Ambition", "Ambition gained: +" + amount + ".", "*"],
+            creature_death: ["Death", cardName + " was defeated.", "X"],
+            round_end: ["Round result", "Round resolved.", "OK"],
+            match_finished: ["Match finished", "The duel is complete.", "V"],
+            reward_preview: ["Reward", str(event.message || event.text, "Reward preview updated."), "$"],
+        };
+        const row = map[type] || ["Event", str(event.message || event.text || eventLine(event) || "Battle event."), "•"];
+
+        return {
+            type,
+            label: row[0],
+            text: row[1],
+            icon: row[2],
+        };
+    }
+
     function renderEvents(payload) {
         const el = document.getElementById("az48-event-lines");
         if (!el) return;
 
         const summaryEvents = arr(payload.round_summary && payload.round_summary.events);
         const events = summaryEvents.length ? summaryEvents : (arr(payload.round_events).length ? arr(payload.round_events) : arr(payload.events));
-        const lines = events.map(eventLine).filter(Boolean).slice(-4);
+        const lines = events.map(normalizeBattleEvent).filter(Boolean).slice(-6);
 
         if (!lines.length) {
-            el.innerHTML = '<li>Choose a tactic to start the timeline.</li>';
+            el.innerHTML = '<li class="az48-timeline-empty-v6">No combat yet this round. Play a card or press Ready when prepared.</li>';
             return;
         }
 
-        el.innerHTML = lines.map((line) => '<li>' + esc(line) + '</li>').join("");
+        el.innerHTML = lines.map((line, index) => {
+            return '<li class="az48-timeline-event-v6 az48-timeline-' + esc(slug(line.type, "event")) + (index === lines.length - 1 ? " is-latest" : "") + '"><span aria-hidden="true">' + esc(line.icon) + '</span><b>' + esc(line.label) + '</b><em>' + esc(line.text) + '</em></li>';
+        }).join("");
     }
 
     function localBattleHighlights(payload) {
@@ -864,7 +991,7 @@
             panel.innerHTML = [
                 '<div class="az48-summary-header">',
                 title,
-                '<p class="az48-summary-empty">A resolução da rodada aparecerá aqui.</p>',
+                '<p class="az48-summary-empty">No combat yet this round. Play a card or press Ready when prepared.</p>',
                 '</div>',
                 '<ol class="az48-summary-list" aria-label="Round Summary events"></ol>',
             ].join("");
@@ -1337,7 +1464,9 @@
     function clearSelection() {
         selectedCardId = null;
         selectionMode = "";
-        document.body.classList.remove("az48-selecting-lane", "az48-selecting-target");
+        selectedSpellTarget = "";
+        clearTargetHighlights();
+        document.body.classList.remove("az48-selecting-lane", "az48-selecting-target", "az48-selecting-spell", "az48-selecting-trap");
     }
 
     function setSelection(entry, mode) {
@@ -1347,6 +1476,12 @@
         detailCardSnapshot = entry.raw;
         document.body.classList.toggle("az48-selecting-lane", mode === "lane");
         document.body.classList.toggle("az48-selecting-target", mode === "target");
+        document.body.classList.toggle("az48-selecting-spell", mode === "target" && cardTypeGroup(entry.card) === "Spell");
+        document.body.classList.toggle("az48-selecting-trap", mode === "trap");
+
+        if (mode === "target") {
+            highlightValidTargets(getValidSpellTargets(entry.card, latestState));
+        }
     }
 
     function legalLanes() {
@@ -1357,19 +1492,107 @@
         return arr(latestState && latestState.legal_actions && latestState.legal_actions.legal_targets).map(String);
     }
 
+    function inferSpellTargetMode(card) {
+        const c = normalizeCard(card);
+        const group = cardTypeGroup(c);
+        const haystack = [
+            c.name,
+            c.effect,
+            c.effectSummary,
+            c.preview,
+            c.role,
+            c.kind,
+            arr(c.keywords).join(" "),
+        ].join(" ").toLowerCase();
+
+        if (group === "Trap") return "trap";
+        if (group !== "Spell") return c.isMonster ? "lane" : "instant";
+        if (/global|all enemies|all allies|area|board|todos|todas|global/.test(haystack)) return "global";
+        if (/draw|ambition|focus|resource|mana|energ|recurso|compra/.test(haystack)) return "self";
+        if (/heal|cura|shield|escudo|barrier|protect|prote/.test(haystack)) return "ally";
+        if (/damage|dano|burn|fire|bolt|strike|ataque|enemy|inimigo|drain|drenar|weaken/.test(haystack)) return "enemy";
+        return "instant";
+    }
+
+    function getValidSpellTargets(card, state) {
+        const c = normalizeCard(card);
+        const group = cardTypeGroup(c);
+        const mode = inferSpellTargetMode(c);
+        const legal = arr(state && state.legal_actions && state.legal_actions.legal_targets).map(String);
+        const targets = [];
+        const push = (target) => {
+            if (target && !targets.includes(target)) targets.push(target);
+        };
+
+        if (group !== "Spell") return targets;
+
+        if (mode === "enemy" || mode === "global" || mode === "instant") {
+            push(legal.includes("enemy_hero") ? "enemy_hero" : "enemy_hero");
+            const enemyField = normalizeField(state && state.enemy && state.enemy.field);
+            ["left", "center", "right"].forEach((lane) => {
+                if (enemyField.lanes[lane]) push("enemy_" + lane);
+            });
+        }
+
+        if (mode === "ally" || mode === "self" || mode === "global" || mode === "instant") {
+            push(legal.includes("self") ? "self" : "self");
+            const meField = normalizeField(state && state.me && state.me.field);
+            ["left", "center", "right"].forEach((lane) => {
+                if (meField.lanes[lane]) push("ally_" + lane);
+            });
+        }
+
+        legal.forEach(push);
+        return targets.length ? targets : ["cast_now"];
+    }
+
+    function clearTargetHighlights() {
+        document.querySelectorAll(".is-legal-target, .is-selected-target, .az48-targetable-v6").forEach((el) => {
+            el.classList.remove("is-legal-target", "is-selected-target", "az48-targetable-v6");
+        });
+    }
+
+    function highlightValidTargets(targets) {
+        clearTargetHighlights();
+        const allowed = new Set(arr(targets).map(String));
+        document.querySelectorAll("[data-az48-target]").forEach((el) => {
+            const target = el.getAttribute("data-az48-target") || "";
+            const isAllowed = allowed.has(target);
+            el.classList.toggle("is-legal-target", isAllowed);
+            el.classList.toggle("az48-targetable-v6", isAllowed);
+            el.classList.toggle("is-selected-target", Boolean(selectedSpellTarget && selectedSpellTarget === target));
+        });
+    }
+
+    function compatibleTargetFor(target, card) {
+        const selected = String(target || "");
+        const legal = legalTargets();
+        if (!selected || selected === "cast_now") return defaultTargetFor(card);
+        if (legal.includes(selected)) return selected;
+        if (selected.startsWith("enemy_")) return legal.includes("enemy_hero") ? "enemy_hero" : (legal[0] || "enemy_hero");
+        if (selected.startsWith("ally_")) return legal.includes("self") ? "self" : (legal[0] || "self");
+        return legal[0] || selected;
+    }
+
     function defaultTargetFor(card) {
-        if (!card || card.isMonster) return "";
-        if (String(card.kind || "").toLowerCase() === "support") return "";
+        if (!card || cardTypeGroup(card) === "Creature") return "";
+        if (String(card.kind || "").toLowerCase() === "support") return legalTargets().includes("self") ? "self" : "";
         const targets = legalTargets();
+        const mode = inferSpellTargetMode(card);
+        if (mode === "self" || mode === "ally" || mode === "trap") return targets.includes("self") ? "self" : (targets[0] || "self");
         if (num(card.attack || card.stat || 0) > 0 && targets.includes("enemy_hero")) return "enemy_hero";
+        if (mode === "enemy" && targets.includes("enemy_hero")) return "enemy_hero";
         if (targets.includes("self")) return "self";
         return targets[0] || "";
     }
 
     function needsTargetSelection(card) {
-        if (!card || card.isMonster) return false;
+        if (!card || cardTypeGroup(card) === "Creature") return false;
         if (String(card.kind || "").toLowerCase() === "support") return false;
-        return legalTargets().length > 1;
+        if (cardTypeGroup(card) !== "Spell") return legalTargets().length > 1;
+        const mode = inferSpellTargetMode(card);
+        if (mode === "self") return false;
+        return getValidSpellTargets(card, latestState).length > 1;
     }
 
     function findPreviewCard(payload, playable) {
@@ -1433,6 +1656,7 @@
         const text = str(reason || "");
         const key = text.toLowerCase();
         if (!text) return "";
+        if (key.includes("not enough") && key.includes("energy")) return "Energy required: save EN or choose a cheaper card.";
         if (key.includes("needs") && key.includes("energy")) return text.replace("Needs", "Energy required:");
         if (key.includes("choose strike")) return "Choose Strike, Guard or Focus before playing this card.";
         if (key.includes("only one card")) return "You already played one card this round.";
@@ -1441,6 +1665,19 @@
         if (key.includes("not the card step")) return "This card can be played during the Card step.";
         if (key.includes("match finished")) return "The match is finished. Review the result panel.";
         return text;
+    }
+
+    function friendlyArenaMessage(message) {
+        const textValue = str(message || "");
+        const key = textValue.toLowerCase();
+        if (!textValue) return "Choose your action.";
+        if (key.includes("card played") && key.includes("press ready")) return "Card locked in. Press Ready to resolve the round.";
+        if (key.includes("choose an intent")) return "Choose Strike, Guard or Focus to set your strategy.";
+        if (key.includes("not enough energy")) return "Not enough EN for that card. Choose a cheaper card or press Ready.";
+        if (key.includes("no empty lane")) return "All lanes are full. Try a Spell, prepare a Trap, or press Ready.";
+        if (key.includes("already played")) return "One card is already locked in for this round. Press Ready to resolve.";
+        if (key.includes("ready sent")) return "Ready locked. Waiting for resolution.";
+        return textValue;
     }
 
     function renderCardDetailStats(card) {
@@ -1512,9 +1749,33 @@
         const states = cardStateMap(payload);
         const cardState = states.get(String(normalized.id)) || {};
         nameEl.textContent = normalized.name;
-        textEl.textContent = friendlyDisabledReason(cardState.disabled_reason) || normalized.preview || normalized.effectSummary || normalized.effect || "No effect preview.";
+        textEl.textContent = [
+            friendlyDisabledReason(cardState.disabled_reason) || normalized.preview || normalized.effectSummary || normalized.effect || "No effect preview.",
+            cardHowToUse(normalized),
+        ].filter(Boolean).join(" ");
         renderCardDetailStats(card);
         renderCardKeywords(card, cardState);
+    }
+
+    function renderTrapZone(state) {
+        const el = document.getElementById("az48-trap-slots-v6");
+        if (!el) return;
+
+        const prepared = [];
+        const meField = normalizeField(state && state.me && state.me.field);
+        if (meField.trap) prepared.push(normalizeCard(meField.trap));
+        if (localPreparedTrap) prepared.push(normalizeCard(localPreparedTrap));
+
+        el.innerHTML = [0, 1, 2].map((index) => {
+            const card = prepared[index];
+            const active = selectionMode === "trap";
+            if (!card) {
+                const targetData = active ? ' data-az48-target="self"' : "";
+                return '<button type="button" class="az48-trap-slot-v6 is-empty' + (active ? " is-legal-target" : "") + '" data-az48-trap-slot="' + (index + 1) + '"' + targetData + '><span>Seal ' + (index + 1) + '</span><small>' + (active ? "Prepare Trap" : "Empty") + '</small></button>';
+            }
+
+            return '<button type="button" class="az48-trap-slot-v6 is-prepared" data-az48-trap-slot="' + (index + 1) + '"><span>Trap prepared</span><strong>' + esc(card.name) + '</strong><small>' + esc(card.element || "Arcane") + " / " + esc(card.rarity || "Common") + '</small></button>';
+        }).join("");
     }
 
     function renderClarity(payload) {
@@ -1600,6 +1861,11 @@
         const uiStep = getArenaUiStep(state);
         const primaryAction = str(legal.primary_action || (uiStep === "choose_card" ? "play_card" : uiStep));
 
+        if (previousState && num(previousState.round || 0) !== num(state.round || 0)) {
+            localPreparedTrap = null;
+            selectedSpellTarget = "";
+        }
+
         if (selectedCardId && !hand.some((card, index) => normalizeCard(card, index).id === String(selectedCardId))) {
             clearSelection();
         }
@@ -1653,7 +1919,7 @@
         text("az48-mode", str(state.mode || "training"));
         text("az48-round", num(state.round || 1, 1));
         text("az48-phase", phase);
-        text("az48-message", str(state.message || "Choose your action."));
+        text("az48-message", friendlyArenaMessage(state.message || "Choose your action."));
 
         text("az48-me-name", str(me.name || "You"));
         text("az48-me-hp", me.hp === 0 ? 0 : num(me.hp || 28, 28));
@@ -1704,8 +1970,16 @@
         const targetSet = new Set(selectionMode === "target" ? legalTargets() : []);
         document.querySelectorAll("[data-az48-target]").forEach((el) => {
             const target = el.getAttribute("data-az48-target") || "";
-            el.classList.toggle("is-legal-target", targetSet.has(target));
+            const isLaneFallback = selectionMode === "lane" && el.classList.contains("is-legal-lane");
+            el.classList.toggle("is-legal-target", targetSet.has(target) || isLaneFallback);
         });
+
+        renderTrapZone(state);
+
+        if (selectionMode === "target") {
+            const entry = selectedHandCard();
+            highlightValidTargets(entry ? getValidSpellTargets(entry.card, state) : legalTargets());
+        }
 
         text("az48-hand-count", hand.length + " cards");
 
@@ -1852,6 +2126,7 @@
         }
 
         const card = entry.card;
+        const typeGroup = cardTypeGroup(card);
         const legal = (latestState && latestState.legal_actions) || {};
         const playable = arr(legal.playable_card_ids).map(String);
 
@@ -1868,7 +2143,7 @@
         }
 
         const payload = { card_id: id, card_index: entry.index };
-        if (card.isMonster) {
+        if (typeGroup === "Creature") {
             const legalLaneList = legalLanes();
             if (!legalLaneList.length) {
                 setMessage("No empty lane available.");
@@ -1889,16 +2164,29 @@
             }
 
             payload.lane = String(choice.lane);
-        } else if (needsTargetSelection(card) && !choice.target) {
+        } else if (typeGroup === "Trap" && !choice.confirmTrap) {
+            setSelection(entry, "trap");
+            setMessage("Prepare this trap in your Trap Zone, then press Ready to let the round resolve.");
+            if (latestState) render(latestState);
+            return;
+        } else if (typeGroup === "Spell" && needsTargetSelection(card) && !choice.target) {
             setSelection(entry, "target");
-            setMessage("Choose a target for " + card.name + ".");
+            setMessage("Choose a valid target for " + card.name + ", or cast now if it affects you.");
             if (latestState) render(latestState);
             return;
         } else {
-            payload.target = choice.target || defaultTargetFor(card);
+            payload.target = compatibleTargetFor(choice.target || defaultTargetFor(card), card);
+            selectedSpellTarget = String(choice.target || payload.target || "");
         }
 
-        setMessage("Playing card...");
+        if (typeGroup === "Spell") {
+            setMessage("Casting " + card.name + "...");
+        } else if (typeGroup === "Trap") {
+            setMessage("Preparing trap: " + card.name + "...");
+            localPreparedTrap = card;
+        } else {
+            setMessage("Playing card...");
+        }
         setServerError("");
         if (emitCommand("play_card", payload)) {
             clearSelection();
@@ -2119,6 +2407,19 @@
                 return;
             }
 
+            const trapSlot = event.target.closest("[data-az48-trap-slot]");
+            if (trapSlot && selectionMode === "trap") {
+                event.preventDefault();
+                const entry = selectedHandCard();
+                if (!entry) {
+                    clearSelection();
+                    setMessage("Select a trap first.");
+                    return;
+                }
+                playCard(entry.card.id, { confirmTrap: true, target: "self" });
+                return;
+            }
+
             const targetSlot = event.target.closest("[data-az48-target]");
             if (targetSlot && selectionMode === "target") {
                 event.preventDefault();
@@ -2175,7 +2476,7 @@
     function shouldShowFirstPlayerCoach() {
         if (!isTrainingLikePage()) return false;
         try {
-            return window.localStorage.getItem(FIRST_PLAYER_STORAGE_KEY) !== "1";
+            return window.localStorage.getItem(FIRST_PLAYER_STORAGE_KEY) !== "1" && window.localStorage.getItem(FIRST_BATTLE_TUTORIAL_KEY) !== "1";
         } catch (error) {
             return true;
         }
@@ -2184,13 +2485,76 @@
     function setFirstPlayerCoachSeen() {
         try {
             window.localStorage.setItem(FIRST_PLAYER_STORAGE_KEY, "1");
+            window.localStorage.setItem(FIRST_BATTLE_TUTORIAL_KEY, "1");
         } catch (error) {}
     }
 
     function closeFirstPlayerCoach(permanent) {
         const coach = document.getElementById("az48-first-player-flow");
         if (coach) coach.remove();
+        document.querySelectorAll(".az48-tutorial-focus-v6").forEach((el) => el.classList.remove("az48-tutorial-focus-v6"));
         if (permanent) setFirstPlayerCoachSeen();
+    }
+
+    function firstBattleTutorialSteps() {
+        return [
+            {
+                target: "az48-battlefield-v6",
+                title: "This is your battlefield.",
+                text: "Enemy lanes are on top. Your lanes are below. Reduce enemy HP to win.",
+            },
+            {
+                target: "az48-actions",
+                title: "Choose a strategy.",
+                text: "Strike pressures, Guard protects, and Focus builds Ambition.",
+            },
+            {
+                target: "az48-hand",
+                title: "Play a creature into a lane.",
+                text: "Creature cards need an empty lane before they can fight.",
+            },
+            {
+                target: "az48-hand",
+                title: "Spells choose targets or cast now.",
+                text: "Spell cards highlight valid targets when the server can use one.",
+            },
+            {
+                target: "az48-trap-zone-v6",
+                title: "Traps are prepared.",
+                text: "Trap cards seal into the Trap Zone and resolve defensively through the round.",
+            },
+            {
+                target: "az48-actions",
+                title: "Press Ready to resolve.",
+                text: "Ready locks your plan and plays out the round in the timeline.",
+            },
+        ];
+    }
+
+    function renderFirstPlayerCoach() {
+        const coach = document.getElementById("az48-first-player-flow");
+        if (!coach) return;
+        const steps = firstBattleTutorialSteps();
+        const index = Math.max(0, Math.min(tutorialStepIndex, steps.length - 1));
+        const step = steps[index];
+        coach.dataset.tutorialStep = String(index + 1);
+        coach.innerHTML = [
+            '<span>First Duel Guide</span>',
+            '<strong>' + esc(step.title) + '</strong>',
+            '<p>' + esc(step.text) + '</p>',
+            '<ol class="az48-first-flow-steps">',
+            steps.map((item, stepIndex) => '<li class="' + (stepIndex === index ? "is-active" : "") + '">' + esc(stepIndex + 1) + '</li>').join(""),
+            '</ol>',
+            '<div>',
+            '<button type="button" data-first-flow-skip>Skip</button>',
+            '<button type="button" data-first-flow-next>' + esc(index >= steps.length - 1 ? "Entendi" : "Next") + '</button>',
+            '<button type="button" data-first-flow-never>Não mostrar novamente</button>',
+            '</div>'
+        ].join("");
+
+        document.querySelectorAll(".az48-tutorial-focus-v6").forEach((el) => el.classList.remove("az48-tutorial-focus-v6"));
+        const target = document.querySelector("." + step.target) || document.getElementById(step.target);
+        if (target) target.classList.add("az48-tutorial-focus-v6");
     }
 
     function ensureFirstPlayerCoach() {
@@ -2199,29 +2563,54 @@
 
         const coach = document.createElement("aside");
         coach.id = "az48-first-player-flow";
-        coach.className = "az48-first-player-flow";
+        coach.className = "az48-first-player-flow az48-first-player-flow-v6";
         coach.setAttribute("aria-label", "First-time player flow");
-        coach.innerHTML = [
-            '<span>First Duel Guide</span>',
-            '<strong>Reduce enemy HP, one clear round at a time.</strong>',
-            '<ol>',
-            '<li>Choose Strike, Guard or Focus.</li>',
-            '<li>Play one card if the server highlights it.</li>',
-            '<li>Click Ready to resolve combat.</li>',
-            '<li>Read Battle Highlights and Round Summary.</li>',
-            '<li>Use Collection and Deck after the match.</li>',
-            '</ol>',
-            '<div>',
-            '<button type="button" data-first-flow-close>Entendi</button>',
-            '<button type="button" data-first-flow-never>Não mostrar novamente</button>',
-            '</div>'
-        ].join("");
 
         document.body.appendChild(coach);
+        renderFirstPlayerCoach();
     }
 
     function bindFirstPlayerCoach() {
         document.addEventListener("click", (event) => {
+            const replay = event.target.closest("[data-first-flow-replay]");
+            if (replay) {
+                event.preventDefault();
+                tutorialStepIndex = 0;
+                try {
+                    window.localStorage.removeItem(FIRST_PLAYER_STORAGE_KEY);
+                    window.localStorage.removeItem(FIRST_BATTLE_TUTORIAL_KEY);
+                } catch (error) {}
+                if (!document.getElementById("az48-first-player-flow")) {
+                    const coach = document.createElement("aside");
+                    coach.id = "az48-first-player-flow";
+                    coach.className = "az48-first-player-flow az48-first-player-flow-v6";
+                    coach.setAttribute("aria-label", "First-time player flow");
+                    document.body.appendChild(coach);
+                }
+                renderFirstPlayerCoach();
+                return;
+            }
+
+            const next = event.target.closest("[data-first-flow-next]");
+            if (next) {
+                event.preventDefault();
+                const steps = firstBattleTutorialSteps();
+                if (tutorialStepIndex >= steps.length - 1) {
+                    closeFirstPlayerCoach(true);
+                    return;
+                }
+                tutorialStepIndex += 1;
+                renderFirstPlayerCoach();
+                return;
+            }
+
+            const skip = event.target.closest("[data-first-flow-skip]");
+            if (skip) {
+                event.preventDefault();
+                closeFirstPlayerCoach(false);
+                return;
+            }
+
             const close = event.target.closest("[data-first-flow-close]");
             if (close) {
                 event.preventDefault();
@@ -2271,6 +2660,9 @@
             renderRoundSummary,
             renderCombatEvent,
             renderSummaryItem,
+            normalizeBattleEvent,
+            inferSpellTargetMode,
+            getValidSpellTargets,
             renderTrainingResult,
             startTraining,
             requestState,

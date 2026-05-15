@@ -3067,3 +3067,513 @@ body.az48-command-pending .az48-actions::after {
         transition: none;
     }
 }
+
+/* Arena V6 premium fantasy neon layer */
+.az48-arena-v6 {
+    --az-v6-magenta: #ff3fd5;
+    --az-v6-cyan: #28f4ff;
+    --az-v6-gold: #ffd66f;
+    --az-v6-violet: #8d4dff;
+    --az-v6-green: #4dff9a;
+    --az-v6-red: #ff5a3d;
+}
+
+body.az48-arena-v6 {
+    background:
+        radial-gradient(circle at 16% 8%, rgba(255, 63, 213, 0.22), transparent 30%),
+        radial-gradient(circle at 78% 14%, rgba(40, 244, 255, 0.18), transparent 30%),
+        radial-gradient(circle at 50% 84%, rgba(255, 214, 111, 0.15), transparent 34%),
+        linear-gradient(145deg, #07041a 0%, #080b22 46%, #03040a 100%);
+}
+
+.az48-arena-v6.az48-arena {
+    grid-template-rows: 78px 58px minmax(0, 1fr) clamp(206px, 23dvh, 250px);
+    background:
+        radial-gradient(circle at 50% 6%, rgba(255, 63, 213, 0.20), transparent 24%),
+        radial-gradient(circle at 12% 72%, rgba(40, 244, 255, 0.14), transparent 28%),
+        radial-gradient(circle at 88% 70%, rgba(255, 90, 61, 0.13), transparent 30%),
+        linear-gradient(180deg, #11062c 0%, #060a1a 54%, #03040a 100%);
+}
+
+.az48-neon-frame,
+.az48-premium-panel {
+    border-color: rgba(255, 214, 111, 0.28);
+    box-shadow:
+        0 18px 70px rgba(0, 0, 0, 0.48),
+        0 0 32px rgba(40, 244, 255, 0.08),
+        inset 0 0 34px rgba(255, 255, 255, 0.025);
+}
+
+.az48-arcane-glow::after {
+    content: "";
+    position: absolute;
+    inset: -40% auto auto 12%;
+    width: 120px;
+    height: 120px;
+    border-radius: 999px;
+    opacity: 0.16;
+    pointer-events: none;
+    filter: blur(16px);
+}
+
+.az48-enemy-zone-v6::after {
+    background: var(--az-v6-red);
+}
+
+.az48-player-zone-v6::after {
+    background: var(--az-v6-cyan);
+}
+
+.az48-avatar-v6 {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    display: grid !important;
+    place-items: center;
+    color: #fff !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0 !important;
+    background:
+        radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.42), transparent 24%),
+        linear-gradient(135deg, rgba(255, 63, 213, 0.78), rgba(40, 244, 255, 0.62));
+    border: 1px solid rgba(255, 214, 111, 0.45);
+    box-shadow: 0 0 24px rgba(40, 244, 255, 0.18);
+}
+
+.az48-battlefield-v6 {
+    position: relative;
+    border-radius: 24px;
+    background:
+        linear-gradient(90deg, rgba(255, 63, 213, 0.09), transparent 18%, transparent 82%, rgba(40, 244, 255, 0.09)),
+        radial-gradient(circle at 50% 46%, rgba(255, 214, 111, 0.12), transparent 24%),
+        linear-gradient(180deg, rgba(28, 6, 60, 0.82), rgba(5, 12, 34, 0.92));
+    overflow: hidden;
+}
+
+.az48-battlefield-v6::before {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border-radius: 22px;
+    border: 1px solid rgba(40, 244, 255, 0.12);
+    background:
+        linear-gradient(90deg, transparent 32%, rgba(255, 214, 111, 0.08) 33%, transparent 34%, transparent 66%, rgba(255, 214, 111, 0.08) 67%, transparent 68%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 84px);
+    pointer-events: none;
+}
+
+.az48-divider-v6 {
+    position: relative;
+    min-height: 16px;
+}
+
+.az48-divider-v6::before {
+    content: "";
+    position: absolute;
+    left: 7%;
+    right: 7%;
+    top: 50%;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--az-v6-magenta), var(--az-v6-gold), var(--az-v6-cyan), transparent);
+    box-shadow: 0 0 20px rgba(255, 214, 111, 0.42);
+}
+
+.az48-lane-v6 {
+    position: relative;
+    border-color: rgba(40, 244, 255, 0.28) !important;
+    box-shadow:
+        inset 0 0 26px rgba(40, 244, 255, 0.07),
+        0 10px 28px rgba(0, 0, 0, 0.20);
+}
+
+.az48-lane-empty-v6 {
+    color: rgba(255, 255, 255, 0.72);
+    background:
+        radial-gradient(circle at 50% 38%, rgba(40, 244, 255, 0.11), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+}
+
+.az48-lane-empty-v6 small {
+    color: rgba(40, 244, 255, 0.78);
+}
+
+.az48-lane-occupied-v6 {
+    transform: translateZ(0);
+}
+
+.az48-targetable-v6,
+.az48-lane-slot.is-legal-lane {
+    border-color: rgba(255, 214, 111, 0.74) !important;
+    box-shadow:
+        0 0 0 2px rgba(255, 214, 111, 0.16),
+        0 0 28px rgba(255, 214, 111, 0.22),
+        inset 0 0 22px rgba(255, 214, 111, 0.10) !important;
+}
+
+.is-selected-target {
+    outline: 2px solid rgba(255, 63, 213, 0.8);
+    outline-offset: 3px;
+}
+
+.az48-card-v6,
+.az-card-v6 {
+    --az-card-v6-gradient: linear-gradient(135deg, #8d4dff, #28f4ff);
+    position: relative;
+    min-height: 174px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 214, 111, 0.26);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 40%),
+        var(--az-card-v6-gradient);
+    box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.34),
+        inset 0 0 28px rgba(255, 255, 255, 0.05);
+}
+
+.az-card-art-v6,
+.az48-card-v6 .az48-art {
+    position: relative;
+    min-height: 74px;
+    border-radius: 12px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.30), transparent 20%),
+        var(--az-card-v6-gradient);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.az-card-art-rune-v6,
+.az48-art-rune-v6 {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 2.1rem;
+    font-weight: 950;
+    text-shadow: 0 0 18px rgba(255, 255, 255, 0.50);
+}
+
+.az-card-art-name-v6 {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 7px;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.64rem;
+    font-weight: 950;
+    line-height: 1.05;
+    text-transform: uppercase;
+}
+
+.az-card-art-texture-v6,
+.az48-art-glow {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(115deg, transparent 0 38%, rgba(255, 255, 255, 0.22) 42%, transparent 48%),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 9px);
+    mix-blend-mode: screen;
+    opacity: 0.72;
+}
+
+.az-card-frame-common { border-color: rgba(230, 235, 255, 0.26) !important; }
+.az-card-frame-uncommon { border-color: rgba(77, 255, 154, 0.48) !important; box-shadow: 0 0 20px rgba(77, 255, 154, 0.10); }
+.az-card-frame-rare { border-color: rgba(40, 244, 255, 0.56) !important; box-shadow: 0 0 24px rgba(40, 244, 255, 0.14); }
+.az-card-frame-epic { border-color: rgba(255, 63, 213, 0.64) !important; box-shadow: 0 0 28px rgba(255, 63, 213, 0.18); }
+.az-card-frame-legendary { border-color: rgba(255, 214, 111, 0.74) !important; box-shadow: 0 0 34px rgba(255, 214, 111, 0.24); }
+
+.az-card-element-fire { --az-card-v6-gradient: linear-gradient(135deg, #56101a, #ff4d3d 48%, #ffd66f); }
+.az-card-element-water { --az-card-v6-gradient: linear-gradient(135deg, #08265e, #1f8cff 52%, #28f4ff); }
+.az-card-element-earth { --az-card-v6-gradient: linear-gradient(135deg, #17351f, #2fd38f 48%, #f0d18a); }
+.az-card-element-plant { --az-card-v6-gradient: linear-gradient(135deg, #062919, #23e87d 50%, #9cff72); }
+.az-card-element-global,
+.az-card-element-neutral { --az-card-v6-gradient: linear-gradient(135deg, #32116a, #8d4dff 48%, #28f4ff); }
+
+.az-card-type-spell .az48-card-type-badge-v6,
+.az-card-type-spell .az-status-badge { background: rgba(40, 244, 255, 0.18); color: #d5fbff; }
+.az-card-type-trap .az48-card-type-badge-v6,
+.az-card-type-trap .az-status-badge { background: rgba(255, 63, 213, 0.18); color: #ffe2ff; }
+.az-card-type-creature .az48-card-type-badge-v6,
+.az-card-type-monster .az-status-badge { background: rgba(255, 214, 111, 0.16); color: #fff4c8; }
+
+.az48-card-type-badge-v6 {
+    position: absolute;
+    left: 8px;
+    top: 32px;
+    z-index: 3;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 950;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.34);
+}
+
+.az48-trap-zone-v6 {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: minmax(108px, 0.5fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    min-height: 58px;
+    padding: 8px 10px;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(255, 63, 213, 0.12), rgba(40, 244, 255, 0.055)),
+        rgba(5, 6, 16, 0.78);
+    border: 1px solid rgba(255, 63, 213, 0.22);
+}
+
+.az48-trap-zone-v6 span,
+.az48-trap-zone-v6 small {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.az48-trap-zone-v6 strong {
+    display: block;
+    color: #fff;
+    font-size: 0.78rem;
+}
+
+.az48-trap-slots-v6 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.az48-trap-slot-v6 {
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 63, 213, 0.26);
+    background: rgba(255, 255, 255, 0.055);
+    color: #fff;
+    display: grid;
+    align-content: center;
+    text-align: left;
+    padding: 6px 8px;
+}
+
+.az48-trap-slot-v6.is-prepared {
+    border-color: rgba(255, 214, 111, 0.46);
+    background:
+        linear-gradient(135deg, rgba(255, 63, 213, 0.18), rgba(255, 214, 111, 0.10)),
+        rgba(0, 0, 0, 0.22);
+}
+
+.az48-timeline-event-v6 {
+    display: grid;
+    grid-template-columns: 24px minmax(76px, 0.36fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.az48-timeline-event-v6.is-latest {
+    border-color: rgba(255, 214, 111, 0.34);
+    background: rgba(255, 214, 111, 0.08);
+}
+
+.az48-timeline-event-v6 span {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: #05050b;
+    background: linear-gradient(135deg, var(--az-v6-gold), var(--az-v6-cyan));
+    font-size: 0.66rem;
+    font-weight: 950;
+}
+
+.az48-timeline-event-v6 b,
+.az48-timeline-event-v6 em {
+    color: rgba(255, 255, 255, 0.88);
+    font-style: normal;
+    font-size: 0.72rem;
+    line-height: 1.25;
+}
+
+.az48-timeline-event-v6 em {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.az48-first-player-flow-v6 p {
+    margin: 8px 0 0;
+    color: rgba(255, 255, 255, 0.74);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.az48-first-player-flow-v6 {
+    pointer-events: none;
+}
+
+.az48-first-player-flow-v6 button {
+    pointer-events: auto;
+}
+
+.az48-first-flow-steps {
+    display: flex !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    margin: 12px 0 !important;
+    list-style: none;
+}
+
+.az48-first-flow-steps li {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.66rem;
+    font-weight: 950;
+}
+
+.az48-first-flow-steps li.is-active {
+    color: #05050b;
+    background: linear-gradient(135deg, var(--az-v6-gold), var(--az-v6-cyan));
+}
+
+.az48-tutorial-focus-v6 {
+    outline: 2px solid rgba(255, 214, 111, 0.72);
+    outline-offset: 4px;
+}
+
+.az48-help-replay-v6 {
+    margin-top: 8px;
+    min-height: 28px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    border: 1px solid rgba(40, 244, 255, 0.22);
+    color: #fff;
+    background: rgba(40, 244, 255, 0.08);
+    font-weight: 850;
+}
+
+@media (max-width: 760px), (max-height: 760px) {
+    .az48-arena-v6.az48-arena {
+        grid-template-rows: auto 54px minmax(0, 1fr) minmax(238px, 34dvh);
+        gap: 6px;
+        padding: 6px;
+    }
+
+    .az48-arena-v6 .az48-top {
+        grid-template-columns: 1fr;
+        grid-auto-rows: minmax(54px, auto);
+    }
+
+    .az48-arena-v6 .az48-back {
+        display: none;
+    }
+
+    .az48-trap-zone-v6 {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        min-height: 52px;
+    }
+
+    .az48-trap-slots-v6 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .az48-card-v6,
+    .az-card-v6 {
+        min-height: 158px;
+    }
+
+    .az48-timeline-event-v6 {
+        grid-template-columns: 22px 1fr;
+    }
+
+    .az48-timeline-event-v6 em {
+        grid-column: 2;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .az48-targetable-v6,
+    .az48-card-v6,
+    .az-card-v6 {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+body.az48-selecting-lane .az48-trap-zone-v6,
+body.az48-selecting-lane .az48-trap-zone-v6 * {
+    pointer-events: none;
+}
+
+body.az48-selecting-trap .az48-trap-zone-v6,
+body.az48-selecting-trap .az48-trap-zone-v6 * {
+    pointer-events: auto;
+}
+
+@media (max-width: 760px), (max-height: 850px) {
+    .az48-arena-v6 .az48-board {
+        grid-template-rows: minmax(54px, 0.72fr) 18px minmax(54px, 0.72fr) minmax(44px, auto);
+        gap: 4px;
+        padding: 8px;
+    }
+
+    .az48-arena-v6 .az48-field-row {
+        min-height: 54px;
+        padding: 6px;
+        align-items: stretch;
+        overflow: visible;
+    }
+
+    .az48-arena-v6 .az48-field-row .az48-slot,
+    .az48-arena-v6 .az48-field-row .az48-card {
+        min-height: 52px;
+        height: auto;
+        max-height: 72px;
+    }
+
+    .az48-arena-v6 .az48-field-row .az48-slot-label,
+    .az48-arena-v6 .az48-field-row .az48-lane-slot small {
+        font-size: 0.52rem;
+        line-height: 1.05;
+    }
+
+    .az48-arena-v6 .az48-divider-v6 {
+        min-height: 18px;
+        font-size: 0.5rem;
+    }
+
+    .az48-arena-v6 .az48-trap-zone-v6 {
+        min-height: 44px;
+        padding: 5px 7px;
+        gap: 5px;
+    }
+
+    .az48-arena-v6 .az48-trap-zone-v6 strong {
+        font-size: 0.68rem;
+    }
+
+    .az48-arena-v6 .az48-trap-zone-v6 span,
+    .az48-arena-v6 .az48-trap-zone-v6 small {
+        font-size: 0.5rem;
+    }
+
+    .az48-arena-v6 .az48-trap-slot-v6 {
+        min-height: 30px;
+        padding: 4px 5px;
+        font-size: 0.52rem;
+    }
+}

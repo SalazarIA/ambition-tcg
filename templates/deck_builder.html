@@ -582,6 +582,7 @@
         </section>
 
         <section id="az-deck-card-preview" class="az-deck-card-preview-v30" aria-live="polite">
+            <div id="az-deck-preview-art" class="az-deck-preview-art-v6" aria-hidden="true"></div>
             <div>
                 <span class="progression-kicker">Card Preview</span>
                 <h2 id="az-deck-preview-name">Select a card</h2>
@@ -726,14 +727,15 @@
         </form>
 
     </main>
-    <script src="{{ url_for('static', filename='js/deck_builder.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/deck_builder.js') }}?v=4"></script>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 
     <script src="{{ url_for('static', filename='js/deck_builder_premium.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=5"></script>
 </body>
 
 </html>

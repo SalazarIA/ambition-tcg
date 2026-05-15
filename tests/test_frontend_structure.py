@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v187"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -282,7 +282,7 @@ def test_arena_round_summary_text_panel_contract():
 
     assert 'id="az48-round-summary"' in template
     assert "Round Summary" in template
-    assert "A resolução da rodada aparecerá aqui." in template
+    assert "Waiting for round resolution." in template
     assert "function getRoundCombatLog" in js
     assert "function renderRoundSummary" in js
     assert "function renderCombatEvent" in js
@@ -444,7 +444,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v187"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -503,7 +503,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".az-public-onboarding-v1" in css
     assert ".az-roadmap-card-v3" in css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v187"' in service_worker
 
 
 def test_blocks_81_88_beta_economy_contract():
@@ -550,7 +550,7 @@ def test_blocks_81_88_beta_economy_contract():
     assert "Gold is beta currency only" in roadmap
     assert "Gold +" in arena_js
     assert "az-recent-unlocks-data" in cards_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v187"' in service_worker
 
 
 def test_arena_premium_hud_contract():
@@ -688,7 +688,7 @@ def test_art_direction_system_contract():
     assert "az-rarity-badge" in css
     assert "az-element-badge" in css
     assert "var(--az48-board-fog)" in arena_css
-    assert "arena_clean_v48.css') }}?v=82" in template
+    assert "arena_clean_v48.css') }}?v=83" in template
 
 
 def test_card_frame_premium_contract():
@@ -714,7 +714,7 @@ def test_card_frame_premium_contract():
     assert ".az-premium-card-shell-v1" in css
     assert ".az48-card-frame-premium-v1" in arena_css
     assert ".az48-card-element-mark" in arena_css
-    assert "arena_clean_v48.js') }}?v=82" in arena_template
+    assert "arena_clean_v48.js') }}?v=83" in arena_template
 
 
 def test_faction_identity_layer_contract():
@@ -851,7 +851,7 @@ def test_public_beta_rc_v4_retention_contract():
     assert ".az-first-session-questline-v1" in css
     assert ".az-deck-readiness-coach-v1" in css
     assert ".az-rc-public-checklist-v1" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v187"' in service_worker
 
     assert "Arena jogavel" in checklist
     assert "QA status" in checklist
@@ -908,7 +908,7 @@ def test_public_beta_rc_v5_observability_contract():
     assert ".az-beta-feedback-widget-v1" in css
     assert ".az-known-issues-beta-notes-v1" in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v186"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v187"' in service_worker
     assert '"/static/js/beta_telemetry.js"' in service_worker
     assert '"/static/js/beta_feedback.js"' in service_worker
 
@@ -916,3 +916,78 @@ def test_public_beta_rc_v5_observability_contract():
     assert "RC V5 prepares Ambitionz" in release_notes
     assert "docs/BALANCE_WATCHLIST.md" in watchlist
     assert "run_simulation" in watchlist
+
+
+def test_arena_v6_card_art_and_combat_clarity_contract():
+    arena = (PROJECT_ROOT / "templates" / "arena.html").read_text()
+    collection = (PROJECT_ROOT / "templates" / "collection.html").read_text()
+    deck_builder = (PROJECT_ROOT / "templates" / "deck_builder.html").read_text()
+    arena_js = (PROJECT_ROOT / "static" / "js" / "arena_clean_v48.js").read_text()
+    card_art_js = (PROJECT_ROOT / "static" / "js" / "card_art_manifest.js").read_text()
+    cards_js = (PROJECT_ROOT / "static" / "js" / "ambitionz_cards.js").read_text()
+    deck_js = (PROJECT_ROOT / "static" / "js" / "deck_builder.js").read_text()
+    arena_css = (PROJECT_ROOT / "static" / "css" / "arena_clean_v48.css").read_text()
+    css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
+    service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
+    art_direction = (PROJECT_ROOT / "docs" / "CARD_ART_DIRECTION.md").read_text()
+    combat_doc = (PROJECT_ROOT / "docs" / "ARENA_V6_COMBAT_CLARITY.md").read_text()
+    prompts = (PROJECT_ROOT / "docs" / "CARD_ART_PROMPTS_STARTER.md").read_text()
+    manifest_check = (PROJECT_ROOT / "tools" / "qa" / "card_art_manifest_check.py").read_text()
+    checklist = (PROJECT_ROOT / "docs" / "RC_PUBLIC_CHECKLIST.md").read_text()
+
+    assert "az48-arena-v6" in arena
+    assert "az48-battlefield-v6" in arena
+    assert "az48-trap-zone-v6" in arena
+    assert "card_art_manifest.js" in arena
+    assert "card_art_manifest.js" in collection
+    assert "card_art_manifest.js" in deck_builder
+    assert "az-deck-preview-art" in deck_builder
+
+    for token in [
+        "function inferSpellTargetMode",
+        "function getValidSpellTargets",
+        "function highlightValidTargets",
+        "function normalizeBattleEvent",
+        "function renderTrapZone",
+        "FIRST_BATTLE_TUTORIAL_KEY",
+        "Card locked in. Press Ready to resolve the round.",
+        "Prepare this trap in your Trap Zone",
+    ]:
+        assert token in arena_js
+
+    assert "loadCardArtManifest" in card_art_js
+    assert "renderCardArt" in card_art_js
+    assert "card_art_manifest.json" in card_art_js
+    assert "openCollectionModal" in cards_js
+    assert "az-collection-card-modal-v6" in cards_js
+    assert "deckCardFunction" in deck_js
+
+    for class_name in [
+        ".az48-arena-v6",
+        ".az48-battlefield-v6",
+        ".az48-lane-v6",
+        ".az48-trap-zone-v6",
+        ".az48-timeline-event-v6",
+        ".az-card-frame-rare",
+        ".az-card-type-spell",
+        ".az-card-element-fire",
+    ]:
+        assert class_name in arena_css
+
+    for class_name in [
+        ".az-collection-card-modal-v6",
+        ".az-deck-preview-art-v6",
+        ".az-card-art-v6",
+        ".az-card-frame-uncommon",
+        ".az-card-element-water",
+    ]:
+        assert class_name in css
+
+    assert 'CACHE_NAME = "ambitionz-web-app-v187"' in service_worker
+    assert '"/static/js/card_art_manifest.js"' in service_worker
+    assert '"/static/assets/cards/card_art_manifest.json"' in service_worker
+    assert "Ambitionz Card Art Direction" in art_direction
+    assert "Arena V6 Combat Clarity" in combat_doc
+    assert "premium fantasy neon trading card illustration" in prompts
+    assert "REQUIRED_FIELDS" in manifest_check
+    assert "Arena V6 Combat Clarity Addendum" in checklist

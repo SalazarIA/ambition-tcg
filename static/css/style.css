@@ -11167,3 +11167,221 @@ button.btn-secondary {
         bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     }
 }
+
+/* Card Art V6 shared premium fallback layer */
+.collection-card.az-card-v6,
+.builder-card.az-card-v6 {
+    --az-card-v6-gradient: linear-gradient(135deg, #32116a, #28f4ff);
+    position: relative;
+    border-color: rgba(255, 214, 111, 0.28);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 40%),
+        rgba(8, 8, 20, 0.92);
+    box-shadow:
+        0 20px 58px rgba(0, 0, 0, 0.32),
+        0 0 28px rgba(40, 244, 255, 0.08);
+}
+
+.collection-card .az-card-art-v6,
+.builder-card .az-card-art-v6,
+.az-deck-preview-art-v6 .az-card-art-v6,
+.az-collection-modal-panel-v6 .az-card-art-v6 {
+    position: relative;
+    min-height: 132px;
+    border-radius: 18px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.30), transparent 18%),
+        var(--az-card-v6-gradient);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+        inset 0 0 34px rgba(255, 255, 255, 0.06),
+        0 18px 46px rgba(0, 0, 0, 0.20);
+}
+
+.builder-card .card-shell > .az-card-art-v6 {
+    margin: 10px 10px 6px;
+    min-height: 104px;
+}
+
+.collection-card > .az-card-art-v6 {
+    margin: 8px;
+}
+
+.az-card-art-rune-v6 {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 3.2rem;
+    font-weight: 950;
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.46);
+}
+
+.az-card-art-name-v6 {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.74rem;
+    font-weight: 950;
+    line-height: 1.08;
+    text-transform: uppercase;
+}
+
+.az-card-art-texture-v6 {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(115deg, transparent 0 38%, rgba(255, 255, 255, 0.22) 42%, transparent 48%),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 9px);
+    mix-blend-mode: screen;
+}
+
+.az-card-frame-common { border-color: rgba(230, 235, 255, 0.28) !important; }
+.az-card-frame-uncommon { border-color: rgba(77, 255, 154, 0.52) !important; }
+.az-card-frame-rare { border-color: rgba(40, 244, 255, 0.58) !important; }
+.az-card-frame-epic { border-color: rgba(255, 63, 213, 0.66) !important; }
+.az-card-frame-legendary { border-color: rgba(255, 214, 111, 0.76) !important; }
+
+.az-card-element-fire { --az-card-v6-gradient: linear-gradient(135deg, #56101a, #ff4d3d 48%, #ffd66f); }
+.az-card-element-water { --az-card-v6-gradient: linear-gradient(135deg, #08265e, #1f8cff 52%, #28f4ff); }
+.az-card-element-earth { --az-card-v6-gradient: linear-gradient(135deg, #17351f, #2fd38f 48%, #f0d18a); }
+.az-card-element-plant { --az-card-v6-gradient: linear-gradient(135deg, #062919, #23e87d 50%, #9cff72); }
+.az-card-element-global,
+.az-card-element-neutral { --az-card-v6-gradient: linear-gradient(135deg, #32116a, #8d4dff 48%, #28f4ff); }
+
+.az-collection-card-modal-v6[hidden] {
+    display: none !important;
+}
+
+.az-collection-card-modal-v6 {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+}
+
+.az-collection-modal-backdrop-v6 {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 3, 10, 0.72);
+    backdrop-filter: blur(14px);
+}
+
+.az-collection-modal-panel-v6 {
+    position: relative;
+    width: min(760px, calc(100vw - 28px));
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    display: grid;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.1fr);
+    gap: 18px;
+    padding: 18px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 214, 111, 0.34);
+    background:
+        radial-gradient(circle at 20% 10%, rgba(255, 63, 213, 0.18), transparent 32%),
+        radial-gradient(circle at 80% 18%, rgba(40, 244, 255, 0.14), transparent 32%),
+        rgba(8, 8, 20, 0.96);
+    box-shadow: 0 34px 110px rgba(0, 0, 0, 0.58);
+}
+
+.az-collection-modal-close-v6 {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    font-weight: 850;
+}
+
+.az-collection-modal-copy-v6 {
+    display: grid;
+    gap: 10px;
+    align-content: center;
+}
+
+.az-collection-modal-copy-v6 span {
+    color: rgba(255, 214, 111, 0.78);
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.az-collection-modal-copy-v6 h2 {
+    margin: 0;
+    color: #fff;
+}
+
+.az-collection-modal-copy-v6 p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.74);
+    line-height: 1.5;
+}
+
+.az-collection-modal-copy-v6 dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+}
+
+.az-collection-modal-copy-v6 dl div,
+.az-deck-preview-stat-grid-v30 span {
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.055);
+    border-radius: 12px;
+}
+
+.az-collection-modal-copy-v6 dt,
+.az-collection-modal-copy-v6 dd {
+    margin: 0;
+    padding: 6px 8px;
+}
+
+.az-collection-modal-copy-v6 dt {
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.az-collection-modal-copy-v6 dd {
+    color: #fff;
+    font-weight: 850;
+}
+
+.az-deck-card-preview-v30 {
+    grid-template-columns: minmax(128px, 0.38fr) minmax(0, 1fr) minmax(220px, 0.8fr);
+    align-items: center;
+}
+
+.az-deck-preview-art-v6 .az-card-art-v6 {
+    min-height: 116px;
+}
+
+@media (max-width: 780px) {
+    .az-collection-modal-panel-v6 {
+        grid-template-columns: 1fr;
+        padding-top: 52px;
+    }
+
+    .az-deck-card-preview-v30 {
+        grid-template-columns: 1fr;
+    }
+
+    .collection-card .az-card-art-v6,
+    .builder-card .az-card-art-v6 {
+        min-height: 104px;
+    }
+}

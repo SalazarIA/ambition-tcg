@@ -1,0 +1,4506 @@
+{
+  "schema": "ambitionz_card_art_manifest_v1",
+  "version": "arena_v6_placeholder_pack",
+  "cards": [
+    {
+      "id": "fire_001",
+      "name": "Draco Magma",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Draco Magma, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_002",
+      "name": "Fenix Infernal",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fenix Infernal, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_003",
+      "name": "Cavaleiro Igneo",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cavaleiro Igneo, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_004",
+      "name": "Golem Incandescente",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Golem Incandescente, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_005",
+      "name": "Behemoth de Lava",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Behemoth de Lava, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_006",
+      "name": "Salamandra Rubra",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Salamandra Rubra, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_007",
+      "name": "Imp de Chama",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Imp de Chama, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_008",
+      "name": "Urso de Lava",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Urso de Lava, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_009",
+      "name": "Escorpiao Vulcanico",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Escorpiao Vulcanico, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_010",
+      "name": "Serpente Ardente",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Serpente Ardente, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_011",
+      "name": "Lobo Flamejante",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Lobo Flamejante, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_012",
+      "name": "Touro de Cinzas",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Touro de Cinzas, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_013",
+      "name": "Dragontocha",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Dragontocha, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_014",
+      "name": "Guardiao da Fornalha",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guardiao da Fornalha, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_015",
+      "name": "Leao Vulcanico",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Leao Vulcanico, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_016",
+      "name": "Colosso Ardente",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Colosso Ardente, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_017",
+      "name": "Espadachim de Brasa",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Espadachim de Brasa, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_018",
+      "name": "Mago da Fumaca",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Mago da Fumaca, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_019",
+      "name": "Arqueiro de Fagulhas",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arqueiro de Fagulhas, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_020",
+      "name": "Elemental de Chamas",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Elemental de Chamas, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_021",
+      "name": "Gigante do Crater",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Gigante do Crater, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_022",
+      "name": "Cobra de Enxofre",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cobra de Enxofre, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_023",
+      "name": "Cacador da Cinza",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cacador da Cinza, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_024",
+      "name": "Arauto do Incendio",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Arauto do Incendio, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_025",
+      "name": "Sentinela Ignea",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sentinela Ignea, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_026",
+      "name": "Fera do Sol",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fera do Sol, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_027",
+      "name": "Cervo de Labareda",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cervo de Labareda, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_028",
+      "name": "Mastim Infernal",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Mastim Infernal, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_029",
+      "name": "Cavaleiro da Caldeira",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cavaleiro da Caldeira, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_030",
+      "name": "Guardiao do Rubi",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guardiao do Rubi, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_031",
+      "name": "Dragao da Fuligem",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Dragao da Fuligem, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_032",
+      "name": "Morcego de Brasa",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Morcego de Brasa, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_033",
+      "name": "Falcao de Fogo",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Falcao de Fogo, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_034",
+      "name": "Demonio da Forja",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Demonio da Forja, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_035",
+      "name": "Lamina Escarlate",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Lamina Escarlate, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_036",
+      "name": "Tigre Solar",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Tigre Solar, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_037",
+      "name": "Basilisco Incandescente",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Basilisco Incandescente, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_038",
+      "name": "Minerador Vulcanico",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Minerador Vulcanico, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_039",
+      "name": "Guerreiro da Tocha",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guerreiro da Tocha, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_040",
+      "name": "Mago Piroclastico",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Mago Piroclastico, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_041",
+      "name": "Serafim Flamejante",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Serafim Flamejante, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_042",
+      "name": "Ciclope de Lava",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Ciclope de Lava, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_043",
+      "name": "Vulto Ardente",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Vulto Ardente, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_044",
+      "name": "Cervo Vulcanico",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Cervo Vulcanico, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_045",
+      "name": "Raptor da Fornalha",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Raptor da Fornalha, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_046",
+      "name": "Fera Carmesim",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fera Carmesim, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_047",
+      "name": "Arconte da Chama",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arconte da Chama, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_048",
+      "name": "Soldado de Magma",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Soldado de Magma, Fire Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_049",
+      "name": "Avatar do Incendio",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Avatar do Incendio, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "fire_050",
+      "name": "Rei da Cratera",
+      "element": "Fire",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Rei da Cratera, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "palette": [
+        "#ff4d3d",
+        "#ffb347",
+        "#ffd36b"
+      ],
+      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "symbol": "F",
+      "placeholder": true
+    },
+    {
+      "id": "water_001",
+      "name": "Guardiao das Mares",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guardiao das Mares, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_002",
+      "name": "Serpente Abissal",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Serpente Abissal, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_003",
+      "name": "Oraculo das Mares",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Oraculo das Mares, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_004",
+      "name": "Leviata Azul",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Leviata Azul, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_005",
+      "name": "Tritao Guerreiro",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Tritao Guerreiro, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_006",
+      "name": "Sereia Lunar",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sereia Lunar, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_007",
+      "name": "Tartaruga Coralina",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Tartaruga Coralina, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_008",
+      "name": "Cavaleiro da Mar\u00e9",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Cavaleiro da Mar\u00e9, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_009",
+      "name": "Dragao de Gelo",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Dragao de Gelo, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_010",
+      "name": "Mago das Correntes",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Mago das Correntes, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_011",
+      "name": "Fera do Abismo",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fera do Abismo, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_012",
+      "name": "Tubar\u00e3o de Cristal",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Tubar\u00e3o de Cristal, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_013",
+      "name": "Arqueiro das Ondas",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arqueiro das Ondas, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_014",
+      "name": "Elemental de Agua",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Elemental de Agua, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_015",
+      "name": "Ninfa da Chuva",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Ninfa da Chuva, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_016",
+      "name": "Polvo Ancestral",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Polvo Ancestral, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_017",
+      "name": "Peixe-Espada Real",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Peixe-Espada Real, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_018",
+      "name": "Cobra Marinha",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cobra Marinha, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_019",
+      "name": "Sentinela do Recife",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sentinela do Recife, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_020",
+      "name": "Guardiao da Perola",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Guardiao da Perola, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_021",
+      "name": "Falcao da Neblina",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Falcao da Neblina, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_022",
+      "name": "Baleia Celeste",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Baleia Celeste, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_023",
+      "name": "Cavaleiro do Oceano",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cavaleiro do Oceano, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_024",
+      "name": "Mago da Geada",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Mago da Geada, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_025",
+      "name": "Arauto da Tempestade",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arauto da Tempestade, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_026",
+      "name": "Hidra Azul",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Hidra Azul, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_027",
+      "name": "Caranguejo Titanico",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Caranguejo Titanico, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_028",
+      "name": "Espadachim das Mares",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Espadachim das Mares, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_029",
+      "name": "Rainha da Mar\u00e9",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Rainha da Mar\u00e9, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_030",
+      "name": "Lobo da Nevoa",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Lobo da Nevoa, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_031",
+      "name": "Cervo Glacial",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cervo Glacial, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_032",
+      "name": "Cavalo-Marinho Arcano",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Cavalo-Marinho Arcano, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_033",
+      "name": "Druida da Chuva",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Druida da Chuva, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_034",
+      "name": "Dragao da Correnteza",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Dragao da Correnteza, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_035",
+      "name": "Sirena Abissal",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sirena Abissal, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_036",
+      "name": "Vigia do Porto",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Vigia do Porto, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_037",
+      "name": "Orca de Guerra",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Orca de Guerra, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_038",
+      "name": "Espinho de Coral",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Espinho de Coral, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_039",
+      "name": "Cacador de Naufragios",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cacador de Naufragios, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_040",
+      "name": "Monge da Cascata",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Monge da Cascata, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_041",
+      "name": "Avatar das Ondas",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Avatar das Ondas, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_042",
+      "name": "Sombra Submersa",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sombra Submersa, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_043",
+      "name": "Tita da Geleira",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Tita da Geleira, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_044",
+      "name": "Guerreiro do Lago",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Guerreiro do Lago, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_045",
+      "name": "Basilisco da Mar\u00e9",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Basilisco da Mar\u00e9, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_046",
+      "name": "Entidade Aquatica",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Entidade Aquatica, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_047",
+      "name": "Colosso do Recife",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Colosso do Recife, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_048",
+      "name": "Serafim Azul",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Serafim Azul, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_049",
+      "name": "Campeao da Profundezas",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Campeao da Profundezas, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "water_050",
+      "name": "Rei Abissal",
+      "element": "Water",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Rei Abissal, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "palette": [
+        "#1f8cff",
+        "#29f0ff",
+        "#d5fbff"
+      ],
+      "visual_identity": "arcane tides, cyan spell light, reflective flow",
+      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "symbol": "W",
+      "placeholder": true
+    },
+    {
+      "id": "earth_001",
+      "name": "Tita de Pedra",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Tita de Pedra, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_002",
+      "name": "Colosso Ancestral",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Colosso Ancestral, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_003",
+      "name": "Sentinela Rochoso",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sentinela Rochoso, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_004",
+      "name": "Golem de Granito",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Golem de Granito, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_005",
+      "name": "Guardiao da Montanha",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guardiao da Montanha, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_006",
+      "name": "Minotauro de Ferro",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Minotauro de Ferro, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_007",
+      "name": "Cavaleiro de Argila",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cavaleiro de Argila, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_008",
+      "name": "Basilisco Terrestre",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Basilisco Terrestre, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_009",
+      "name": "Rinoceronte de Rocha",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Rinoceronte de Rocha, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_010",
+      "name": "Druida Mineral",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Druida Mineral, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_011",
+      "name": "Mago do Cristal",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Mago do Cristal, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_012",
+      "name": "Serpente de Areia",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Serpente de Areia, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_013",
+      "name": "Elemental de Terra",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Elemental de Terra, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_014",
+      "name": "Urso de Pedra",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Urso de Pedra, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_015",
+      "name": "Arqueiro do Vale",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arqueiro do Vale, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_016",
+      "name": "Ciclope Montanhoso",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Ciclope Montanhoso, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_017",
+      "name": "Dragao de Obsidiana",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Dragao de Obsidiana, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_018",
+      "name": "Leao Dourado",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Leao Dourado, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_019",
+      "name": "Cobra de Granito",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cobra de Granito, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_020",
+      "name": "Vulto do Deserto",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Vulto do Deserto, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_021",
+      "name": "Mastodonte Antigo",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Mastodonte Antigo, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_022",
+      "name": "Sentinela de Quartzo",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sentinela de Quartzo, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_023",
+      "name": "Fera da Caverna",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fera da Caverna, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_024",
+      "name": "Touro de Basalto",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Touro de Basalto, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_025",
+      "name": "Guardiao do Onix",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guardiao do Onix, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_026",
+      "name": "Escorpiao de Areia",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Escorpiao de Areia, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_027",
+      "name": "Monge da Montanha",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Monge da Montanha, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_028",
+      "name": "Ferreiro Ancestral",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Ferreiro Ancestral, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_029",
+      "name": "Guerreiro de Bronze",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guerreiro de Bronze, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_030",
+      "name": "Colosso de Marmore",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Colosso de Marmore, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_031",
+      "name": "Raptor Rochoso",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Raptor Rochoso, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_032",
+      "name": "Javali de Pedra",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Javali de Pedra, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_033",
+      "name": "Cervo de Argila",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cervo de Argila, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_034",
+      "name": "Avatar da Terra",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Avatar da Terra, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_035",
+      "name": "Arauto do Terremoto",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arauto do Terremoto, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_036",
+      "name": "Minerador Arcano",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Minerador Arcano, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_037",
+      "name": "Cavaleiro do Topazio",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cavaleiro do Topazio, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_038",
+      "name": "Muralha Viva",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Muralha Viva, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_039",
+      "name": "Gigante do Vale",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Gigante do Vale, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_040",
+      "name": "Guardiao do Templo",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Guardiao do Templo, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_041",
+      "name": "Besouro de Aco",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Besouro de Aco, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_042",
+      "name": "Lobo de Barro",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Lobo de Barro, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_043",
+      "name": "Cacador da Rocha",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cacador da Rocha, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_044",
+      "name": "Tita do Abismo Seco",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Tita do Abismo Seco, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_045",
+      "name": "Arconte de Pedra",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arconte de Pedra, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_046",
+      "name": "Demonio Mineral",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Demonio Mineral, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_047",
+      "name": "Falcao do Penhasco",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Falcao do Penhasco, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_048",
+      "name": "Serafim Dourado",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Serafim Dourado, Earth Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_049",
+      "name": "Campeao do Deserto",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Campeao do Deserto, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "earth_050",
+      "name": "Rei da Montanha",
+      "element": "Earth",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Rei da Montanha, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "palette": [
+        "#2fd38f",
+        "#8f6d3a",
+        "#f0d18a"
+      ],
+      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
+      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "symbol": "E",
+      "placeholder": true
+    },
+    {
+      "id": "plant_001",
+      "name": "Druida das Raizes",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Druida das Raizes, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_002",
+      "name": "Lobo Espinheiro",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Lobo Espinheiro, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_003",
+      "name": "Ent Florido",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Ent Florido, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_004",
+      "name": "Guardiao da Floresta",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Guardiao da Floresta, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_005",
+      "name": "Fada do Bosque",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fada do Bosque, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_006",
+      "name": "Cervo Esmeralda",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cervo Esmeralda, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_007",
+      "name": "Serpente Venenosa",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Serpente Venenosa, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_008",
+      "name": "Tigre Musgo",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Tigre Musgo, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_009",
+      "name": "Mago das Folhas",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Mago das Folhas, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_010",
+      "name": "Arqueiro Silvestre",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arqueiro Silvestre, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_011",
+      "name": "Elemental de Planta",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Elemental de Planta, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_012",
+      "name": "Ent Anciao",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Ent Anciao, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_013",
+      "name": "Rosa Carnivora",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Rosa Carnivora, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_014",
+      "name": "Cavaleiro Verdejante",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cavaleiro Verdejante, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_015",
+      "name": "Fera do Cip\u00f3",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fera do Cip\u00f3, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_016",
+      "name": "Guardiao da Semente",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Guardiao da Semente, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_017",
+      "name": "Vulto da Selva",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Vulto da Selva, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_018",
+      "name": "Lamina de Espinhos",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Lamina de Espinhos, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_019",
+      "name": "Oraculo das Flores",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Oraculo das Flores, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_020",
+      "name": "Basilisco Verde",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Basilisco Verde, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_021",
+      "name": "Urso da Floresta",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Urso da Floresta, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_022",
+      "name": "Abelha Gigante",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Abelha Gigante, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_023",
+      "name": "Ninfa das Raizes",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Ninfa das Raizes, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_024",
+      "name": "Druida do Carvalho",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Druida do Carvalho, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_025",
+      "name": "Dragao Floral",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Dragao Floral, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_026",
+      "name": "Cobra de Hera",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cobra de Hera, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_027",
+      "name": "Sentinela do Jardim",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sentinela do Jardim, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_028",
+      "name": "Touro do Bosque",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Touro do Bosque, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_029",
+      "name": "Leao de Musgo",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Leao de Musgo, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_030",
+      "name": "Mastim Silvestre",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Mastim Silvestre, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_031",
+      "name": "Cacador da Selva",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cacador da Selva, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_032",
+      "name": "Arconte Natural",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Arconte Natural, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_033",
+      "name": "Falcao das Copas",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Falcao das Copas, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_034",
+      "name": "Golem de Vinhas",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Golem de Vinhas, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_035",
+      "name": "Avatar da Primavera",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Avatar da Primavera, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_036",
+      "name": "Serafim Verde",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Serafim Verde, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_037",
+      "name": "Monge da Clareira",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Monge da Clareira, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_038",
+      "name": "Espadachim Herbal",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Espadachim Herbal, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_039",
+      "name": "Cavaleiro da Seiva",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cavaleiro da Seiva, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_040",
+      "name": "Raptor de Cip\u00f3",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Raptor de Cip\u00f3, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_041",
+      "name": "Tita das Raizes",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Tita das Raizes, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_042",
+      "name": "Besouro Folhoso",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Besouro Folhoso, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_043",
+      "name": "Guardiao do Pomar",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Guardiao do Pomar, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_044",
+      "name": "Rainha das Flores",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Rainha das Flores, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_045",
+      "name": "Colosso Verde",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Colosso Verde, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_046",
+      "name": "Espinho Ancestral",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Espinho Ancestral, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_047",
+      "name": "Fera Esmeralda",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fera Esmeralda, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_048",
+      "name": "Campeao da Selva",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Campeao da Selva, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_049",
+      "name": "Arauto da Germinacao",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Arauto da Germinacao, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "plant_050",
+      "name": "Rei do Bosque",
+      "element": "Plant",
+      "type": "Monster",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Rei do Bosque, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "palette": [
+        "#23e87d",
+        "#8cff5a",
+        "#124d34"
+      ],
+      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
+      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "symbol": "P",
+      "placeholder": true
+    },
+    {
+      "id": "spell_001",
+      "name": "Chama Vital",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Chama Vital, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_002",
+      "name": "Surto Elemental",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Surto Elemental, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_003",
+      "name": "Drenar Energia",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Drenar Energia, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_004",
+      "name": "Bencao da Terra",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Bencao da Terra, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_005",
+      "name": "Fonte de Cura",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Fonte de Cura, Global Spell, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_006",
+      "name": "Impulso Arcano",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Impulso Arcano, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_007",
+      "name": "Escudo Mistico",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Escudo Mistico, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_008",
+      "name": "Labareda Global",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Labareda Global, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_009",
+      "name": "Fluxo de Mana",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fluxo de Mana, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_010",
+      "name": "Explosao Astral",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Explosao Astral, Global Spell, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_011",
+      "name": "Cura Profunda",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Cura Profunda, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_012",
+      "name": "Furia Elemental",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Furia Elemental, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_013",
+      "name": "Livro dos Antigos",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Livro dos Antigos, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_014",
+      "name": "Ritual de Poder",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Ritual de Poder, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_015",
+      "name": "Barreira Celeste",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Barreira Celeste, Global Spell, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_016",
+      "name": "Sopro de Energia",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sopro de Energia, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_017",
+      "name": "Marca do Campeao",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Marca do Campeao, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_018",
+      "name": "Corrente Vital",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Corrente Vital, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_019",
+      "name": "Estouro Magico",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Estouro Magico, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_020",
+      "name": "Foco de Combate",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Foco de Combate, Global Spell, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_021",
+      "name": "Chamado do Destino",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Chamado do Destino, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_022",
+      "name": "Pulso de Cristal",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Pulso de Cristal, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_023",
+      "name": "Selo de Reforco",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Selo de Reforco, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_024",
+      "name": "Ordem Arcana",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Ordem Arcana, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_025",
+      "name": "Ruptura Sombria",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Ruptura Sombria, Global Spell, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_026",
+      "name": "Vontade Primordial",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Vontade Primordial, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_027",
+      "name": "Ciclo da Vida",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Ciclo da Vida, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_028",
+      "name": "Pacto de Forca",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Pacto de Forca, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_029",
+      "name": "Alvorada Mistica",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Alvorada Mistica, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "spell_030",
+      "name": "Onda Suprema",
+      "element": "Global",
+      "type": "Spell",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Onda Suprema, Global Spell, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_001",
+      "name": "Armadilha de Cinzas",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Armadilha de Cinzas, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_002",
+      "name": "Raizes Aprisionadoras",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Raizes Aprisionadoras, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_003",
+      "name": "Muralha Rochosa",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Muralha Rochosa, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_004",
+      "name": "Selo Reativo",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Selo Reativo, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_005",
+      "name": "Contra-Ataque Arcano",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Contra-Ataque Arcano, Global Trap, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_006",
+      "name": "Lamina Oculta",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Lamina Oculta, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_007",
+      "name": "Armadilha de Mana",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Armadilha de Mana, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_008",
+      "name": "Barreira Repentina",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Barreira Repentina, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_009",
+      "name": "Vinculo Sombrio",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Vinculo Sombrio, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_010",
+      "name": "Espinhos Secretos",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Espinhos Secretos, Global Trap, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_011",
+      "name": "Reflexo Instavel",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Reflexo Instavel, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_012",
+      "name": "Marca Defensiva",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Marca Defensiva, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_013",
+      "name": "Explosao Oculta",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Explosao Oculta, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_014",
+      "name": "Campo Distorcido",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Campo Distorcido, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_015",
+      "name": "Corrente de Pedra",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Corrente de Pedra, Global Trap, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_016",
+      "name": "Fenda Elemental",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Fenda Elemental, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_017",
+      "name": "Velo da Floresta",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Velo da Floresta, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_018",
+      "name": "Armadilha da Mar\u00e9",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Armadilha da Mar\u00e9, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_019",
+      "name": "Sombra Protetora",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Common",
+      "art_path": "",
+      "prompt": "Sombra Protetora, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    },
+    {
+      "id": "trap_020",
+      "name": "Punicao Global",
+      "element": "Global",
+      "type": "Trap",
+      "rarity": "Uncommon",
+      "art_path": "",
+      "prompt": "Punicao Global, Global Trap, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "palette": [
+        "#9b5cff",
+        "#42f0ff",
+        "#f8d57a"
+      ],
+      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
+      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "symbol": "A",
+      "placeholder": true
+    }
+  ]
+}

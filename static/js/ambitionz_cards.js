@@ -8,6 +8,15 @@
         return window.location.pathname === "/training" || window.location.pathname === "/arena";
     }
 
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
     function collectionFilterValues() {
         function value(id) {
             var element = document.getElementById(id);
@@ -197,8 +206,106 @@
         } catch (error) {}
     }
 
+    function cardArtHtml(card) {
+        if (window.AmbitionzCardArt && typeof window.AmbitionzCardArt.renderCardArt === "function") {
+            return window.AmbitionzCardArt.renderCardArt(card);
+        }
+
+        var element = card.dataset.element || "Neutral";
+        return '<div class="az-card-art-v6"><span class="az-card-art-rune-v6">' + escapeHtml(element.slice(0, 1).toUpperCase()) + '</span><span class="az-card-art-name-v6">' + escapeHtml(card.dataset.name || "Card") + '</span></div>';
+    }
+
+    function ensureCollectionModal() {
+        var modal = document.getElementById("az-collection-card-modal");
+        if (modal) return modal;
+
+        modal = document.createElement("aside");
+        modal.id = "az-collection-card-modal";
+        modal.className = "az-collection-card-modal-v6";
+        modal.hidden = true;
+        modal.setAttribute("aria-label", "Card detail");
+        modal.innerHTML = [
+            '<div class="az-collection-modal-backdrop-v6" data-card-modal-close></div>',
+            '<article class="az-collection-modal-panel-v6">',
+            '<button type="button" class="az-collection-modal-close-v6" data-card-modal-close aria-label="Close card detail">Close</button>',
+            '<div id="az-collection-modal-art"></div>',
+            '<div class="az-collection-modal-copy-v6">',
+            '<span id="az-collection-modal-meta">Card</span>',
+            '<h2 id="az-collection-modal-title">Card detail</h2>',
+            '<p id="az-collection-modal-text">Inspect card identity.</p>',
+            '<dl id="az-collection-modal-stats"></dl>',
+            '<div class="progression-action-row">',
+            '<a class="btn" href="/deck-builder">Open Deck Builder</a>',
+            '<a class="btn btn-secondary" href="/shop">Open Booster</a>',
+            '</div>',
+            '</div>',
+            '</article>',
+        ].join("");
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    function openCollectionModal(card) {
+        if (!card) return;
+        var modal = ensureCollectionModal();
+        var name = card.querySelector(".az-card-body-v1 strong, .card-topline strong")?.textContent || card.dataset.name || "Card";
+        var type = card.dataset.type || "Card";
+        var element = card.dataset.element || "Neutral";
+        var rarity = card.dataset.rarity || "Common";
+        var owned = Number(card.dataset.owned || 0);
+        var ownership = card.dataset.ownership || (owned > 0 ? "owned" : "locked");
+        var description = card.dataset.lore || card.dataset.effect || "Ambitionz beta card identity.";
+
+        modal.querySelector("#az-collection-modal-art").innerHTML = cardArtHtml(card);
+        modal.querySelector("#az-collection-modal-title").textContent = name;
+        modal.querySelector("#az-collection-modal-meta").textContent = [rarity, element, type].filter(Boolean).join(" / ");
+        modal.querySelector("#az-collection-modal-text").textContent = description;
+        modal.querySelector("#az-collection-modal-stats").innerHTML = [
+            ["Type", type],
+            ["Element", element],
+            ["Rarity", rarity],
+            ["Faction", card.dataset.faction || "Arcane Neutral"],
+            ["Role", card.dataset.role || "Flexible"],
+            ["Status", ownership === "owned" ? "Owned x" + owned : "Locked"],
+        ].map(function (row) {
+            return '<div><dt>' + escapeHtml(row[0]) + '</dt><dd>' + escapeHtml(row[1]) + '</dd></div>';
+        }).join("");
+        modal.hidden = false;
+        modal.classList.add("is-open");
+        document.body.classList.add("az-card-modal-open-v6");
+    }
+
+    function closeCollectionModal() {
+        var modal = document.getElementById("az-collection-card-modal");
+        if (!modal) return;
+        modal.hidden = true;
+        modal.classList.remove("is-open");
+        document.body.classList.remove("az-card-modal-open-v6");
+    }
+
+    function bindCollectionModal() {
+        document.addEventListener("click", function (event) {
+            var close = event.target.closest("[data-card-modal-close]");
+            if (close) {
+                event.preventDefault();
+                closeCollectionModal();
+                return;
+            }
+
+            var card = event.target.closest(".az-game-collection-page .collection-card[data-card-id]");
+            if (!card || event.target.closest("a, button, input, select, label")) return;
+            event.preventDefault();
+            openCollectionModal(card);
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") closeCollectionModal();
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", enhanceCards);
     document.addEventListener("DOMContentLoaded", bindCollectionFilters);
+    document.addEventListener("DOMContentLoaded", bindCollectionModal);
     document.addEventListener("DOMContentLoaded", markRecentlyUnlockedCards);
     document.addEventListener("DOMContentLoaded", filterCollectionCards);
     window.filterCollectionCards = filterCollectionCards;
