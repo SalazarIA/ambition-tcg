@@ -81,7 +81,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v188"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v189"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -444,7 +444,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v188"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v189"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -503,7 +503,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".az-public-onboarding-v1" in css
     assert ".az-roadmap-card-v3" in css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v188"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v189"' in service_worker
 
 
 def test_blocks_81_88_beta_economy_contract():
@@ -550,7 +550,7 @@ def test_blocks_81_88_beta_economy_contract():
     assert "Gold is beta currency only" in roadmap
     assert "Gold +" in arena_js
     assert "az-recent-unlocks-data" in cards_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v188"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v189"' in service_worker
 
 
 def test_arena_premium_hud_contract():
@@ -688,7 +688,7 @@ def test_art_direction_system_contract():
     assert "az-rarity-badge" in css
     assert "az-element-badge" in css
     assert "var(--az48-board-fog)" in arena_css
-    assert "arena_clean_v48.css') }}?v=84" in template
+    assert "arena_clean_v48.css') }}?v=85" in template
 
 
 def test_card_frame_premium_contract():
@@ -714,7 +714,7 @@ def test_card_frame_premium_contract():
     assert ".az-premium-card-shell-v1" in css
     assert ".az48-card-frame-premium-v1" in arena_css
     assert ".az48-card-element-mark" in arena_css
-    assert "arena_clean_v48.js') }}?v=84" in arena_template
+    assert "arena_clean_v48.js') }}?v=85" in arena_template
 
 
 def test_faction_identity_layer_contract():
@@ -851,7 +851,7 @@ def test_public_beta_rc_v4_retention_contract():
     assert ".az-first-session-questline-v1" in css
     assert ".az-deck-readiness-coach-v1" in css
     assert ".az-rc-public-checklist-v1" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v188"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v189"' in service_worker
 
     assert "Arena jogavel" in checklist
     assert "QA status" in checklist
@@ -908,7 +908,7 @@ def test_public_beta_rc_v5_observability_contract():
     assert ".az-beta-feedback-widget-v1" in css
     assert ".az-known-issues-beta-notes-v1" in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v188"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v189"' in service_worker
     assert '"/static/js/beta_telemetry.js"' in service_worker
     assert '"/static/js/beta_feedback.js"' in service_worker
 
@@ -934,6 +934,8 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     prompts = (PROJECT_ROOT / "docs" / "CARD_ART_PROMPTS_STARTER.md").read_text()
     manifest_check = (PROJECT_ROOT / "tools" / "qa" / "card_art_manifest_check.py").read_text()
     checklist = (PROJECT_ROOT / "docs" / "RC_PUBLIC_CHECKLIST.md").read_text()
+    production_doc = (PROJECT_ROOT / "docs" / "ARENA_V6_PRODUCTION_VALIDATION.md").read_text()
+    production_smoke = (PROJECT_ROOT / "tools" / "qa" / "qa_production_smoke.py").read_text()
 
     assert "az48-arena-v6" in arena
     assert "az48-game-shell" in arena
@@ -959,6 +961,9 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
         "FIRST_BATTLE_TUTORIAL_KEY",
         "Card locked in. Press Ready to resolve the round.",
         "Prepare this trap in your Trap Zone",
+        "What happens now?",
+        "How to use this card",
+        "function roundSummaryLead",
     ]:
         assert token in arena_js
 
@@ -979,6 +984,7 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
         ".az48-lane-v6",
         ".az48-trap-zone-v6",
         ".az48-timeline-event-v6",
+        "Arena 129-131",
         ".az-card-frame-rare",
         ".az-card-type-spell",
         ".az-card-element-fire",
@@ -994,7 +1000,7 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     ]:
         assert class_name in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v188"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v189"' in service_worker
     assert '"/static/js/card_art_manifest.js"' in service_worker
     assert '"/static/assets/cards/card_art_manifest.json"' in service_worker
     assert "Ambitionz Card Art Direction" in art_direction
@@ -1002,3 +1008,8 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     assert "premium fantasy neon trading card illustration" in prompts
     assert "REQUIRED_FIELDS" in manifest_check
     assert "Arena V6 Combat Clarity Addendum" in checklist
+    assert "Arena V6 Production Validation" in production_doc
+    assert "https://ambition-tcg.onrender.com/training" in production_doc
+    assert "qa_production_smoke.py" in production_doc
+    assert "DEFAULT_BASE_URL = \"https://ambition-tcg.onrender.com\"" in production_smoke
+    assert "RESULT=PASS production_smoke" in production_smoke

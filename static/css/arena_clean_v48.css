@@ -4452,3 +4452,133 @@ body:not([data-az48-info-tab="summary"]) .az48-round-summary {
     border-radius: 9px;
     font-size: 0.72rem;
 }
+
+/* Arena 129-131: readability polish and beginner explanation */
+.az48-game-shell.az48-arena,
+.az48-arena-v6.az48-game-shell {
+    background:
+        radial-gradient(circle at 18% 10%, rgba(102, 57, 205, 0.24), transparent 24%),
+        radial-gradient(circle at 82% 12%, rgba(21, 157, 198, 0.16), transparent 25%),
+        linear-gradient(180deg, #0a0920 0%, #060b18 58%, #03040a 100%) !important;
+}
+
+.az48-game-shell .az48-statusbar {
+    min-height: 30px;
+    max-height: 40px;
+    padding: 5px 10px;
+    background: rgba(6, 8, 20, 0.70);
+    border-color: rgba(146, 225, 255, 0.12);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+.az48-board-shell.az48-board {
+    background:
+        radial-gradient(circle at 50% 48%, rgba(255, 214, 111, 0.07), transparent 28%),
+        linear-gradient(180deg, rgba(18, 12, 47, 0.82), rgba(5, 12, 29, 0.92)) !important;
+    border-color: rgba(137, 221, 255, 0.15);
+    box-shadow:
+        0 16px 46px rgba(0, 0, 0, 0.34),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.az48-board-row.az48-field-row {
+    background-color: rgba(5, 8, 19, 0.36);
+}
+
+.az48-board-row .az48-slot,
+.az48-board-row .az48-card {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.az48-board-row .az48-slot-label {
+    color: rgba(246, 248, 255, 0.78);
+    font-size: clamp(0.72rem, 0.95vw, 0.86rem);
+}
+
+.az48-board-row .az48-card .az48-name,
+.az48-hand-action-shell .az48-hand .az48-card .az48-name {
+    background: linear-gradient(90deg, rgba(3, 5, 12, 0.56), rgba(3, 5, 12, 0.16));
+    border-radius: 7px;
+    padding: 2px 4px;
+}
+
+.az48-hand-action-shell .az48-hand .az48-card {
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.32),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.az48-hand-action-shell .az48-hand .az48-card.is-selected,
+.az48-hand-action-shell .az48-hand .az48-card.selected {
+    outline: 2px solid rgba(255, 220, 112, 0.92);
+    box-shadow:
+        0 0 0 1px rgba(255, 241, 181, 0.34),
+        0 12px 36px rgba(255, 195, 78, 0.18),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.az48-hand-action-shell .az48-hand .az48-card.is-locked,
+.az48-hand-action-shell .az48-hand .az48-card:not(.is-playable):not(.playable):not(.az48-playable) {
+    filter: saturate(0.78);
+    opacity: 0.72;
+}
+
+body[data-az48-primary-action="choose_intent"] .az48-hand-action-shell .az48-hand .az48-card {
+    opacity: 0.76;
+}
+
+.az48-info-drawer .az48-clarity-card strong,
+.az48-info-drawer .az48-clarity-card p,
+.az48-round-summary .az48-summary-lead,
+.az48-round-summary .az48-summary-empty {
+    text-wrap: pretty;
+}
+
+.az48-summary-lead {
+    margin: 2px 0 0;
+    color: rgba(236, 244, 255, 0.82);
+    font-size: 0.66rem;
+    line-height: 1.18;
+}
+
+.az48-summary-list {
+    margin-top: 4px;
+}
+
+.az48-first-player-flow-v6 {
+    pointer-events: none;
+}
+
+.az48-first-player-flow-v6 button {
+    pointer-events: auto;
+}
+
+@media (max-width: 860px), (max-height: 760px) {
+    .az48-game-shell .az48-statusbar {
+        max-height: 34px;
+        padding: 5px 8px;
+        background: rgba(6, 8, 20, 0.66);
+    }
+
+    .az48-hand-action-shell .az48-hand .az48-card {
+        grid-template-rows: 20px 17px 19px minmax(42px, 1fr) 25px !important;
+        height: 140px !important;
+        min-height: 140px !important;
+        max-height: 140px !important;
+    }
+
+    .az48-hand-action-shell .az48-hand .az48-card .az48-name {
+        font-size: 0.78rem;
+    }
+
+    .az48-hand-action-shell .az48-hand .az48-card .az48-art {
+        min-height: 50px;
+        max-height: 54px;
+    }
+
+    .az48-first-player-flow {
+        top: 104px !important;
+        max-height: 18vh !important;
+        background: rgba(9, 12, 24, 0.78);
+    }
+}

@@ -376,16 +376,16 @@
     function cardHowToUse(card) {
         const c = normalizeCard(card);
         const group = cardTypeGroup(c);
-        if (group === "Creature") return "How to use: summon it into an empty lane to fight through combat.";
+        if (group === "Creature") return "How to use this card: summon it into an empty lane. It fights when you press Ready.";
         if (group === "Spell") {
             const mode = inferSpellTargetMode(c);
-            if (mode === "enemy") return "How to use: pick the enemy hero or a highlighted enemy target.";
-            if (mode === "ally") return "How to use: choose your hero or an allied target for protection.";
-            if (mode === "self") return "How to use: cast now to build your own resources.";
-            return "How to use: cast now, or choose a highlighted target if the server offers one.";
+            if (mode === "enemy") return "How to use this card: cast it on the enemy hero or a highlighted enemy target.";
+            if (mode === "ally") return "How to use this card: cast it on yourself or an allied target for protection.";
+            if (mode === "self") return "How to use this card: cast now to build resources.";
+            return "How to use this card: cast on a valid target or instantly when offered.";
         }
-        if (group === "Trap") return "How to use: prepare it in the Trap Zone, then press Ready to let it resolve.";
-        return "How to use: follow the highlighted action for this card.";
+        if (group === "Trap") return "How to use this card: prepare it in the Trap Zone. It resolves later when you press Ready.";
+        return "How to use this card: play it when the action bar says it is available.";
     }
 
     function cardRuleText(card) {
@@ -554,7 +554,7 @@
             '</nav>',
             '<div class="az48-info-tab-panel az48-info-tab-panel-next is-active" data-az48-info-panel="next">',
             '<div class="az48-clarity-card az48-turn-card">',
-            '<span>Next</span>',
+            '<span>What happens now?</span>',
             '<strong id="az48-next-action">Start</strong>',
             '<p id="az48-turn-hint">Press Start to begin.</p>',
             '<ol class="az48-step-list" id="az48-step-list" aria-label="Round steps"></ol>',
@@ -664,6 +664,38 @@
         return entry ? entry.card.name : "the selected card";
     }
 
+    function activePlayedCardSummary(state) {
+        const meField = normalizeField(state && state.me && state.me.field);
+        const laneOrder = [
+            ["left", "left lane"],
+            ["center", "center lane"],
+            ["right", "right lane"],
+        ];
+
+        for (const lane of laneOrder) {
+            const card = meField.lanes[lane[0]];
+            if (card) {
+                const normalized = normalizeCard(card);
+                return normalized.name + " is locked in the " + lane[1] + ".";
+            }
+        }
+
+        if (meField.trap) return normalizeCard(meField.trap).name + " is prepared in the Trap Zone.";
+        if (meField.spell) return normalizeCard(meField.spell).name + " is ready to resolve.";
+        if (meField.monster) return normalizeCard(meField.monster).name + " is ready to fight.";
+
+        return "";
+    }
+
+    function chosenIntentSummary(state) {
+        const intent = intentLabel(state && state.me && state.me.intent, "");
+        if (!intent) return "";
+        if (intent === "Strike") return "Strike is set for pressure.";
+        if (intent === "Guard") return "Guard is set to protect your HP.";
+        if (intent === "Focus") return "Focus is set to build Ambition.";
+        return intent + " is set.";
+    }
+
     function uiCopyForStep(step, state) {
         const legal = (state && state.legal_actions) || {};
         const message = str((state && state.message) || "");
@@ -680,7 +712,7 @@
         if (step === "choose_intent") {
             return {
                 title: "Step 1: Choose Strategy",
-                hint: "Pick Strike for pressure, Guard for shield, or Focus for Ambition.",
+                hint: "Choose your plan: Strike pressures HP, Guard protects you, Focus builds Ambition for stronger turns.",
                 button: "Choose Intent",
                 detail: "Strike / Guard / Focus",
             };
@@ -689,7 +721,7 @@
         if (step === "choose_card") {
             return {
                 title: "Step 2: Play a Card",
-                hint: "Play a highlighted Creature, Spell or Trap, or skip and press Ready.",
+                hint: "Play one highlighted card if it helps. Creatures need lanes, Spells choose targets or cast now, Traps are prepared.",
                 button: "Play Card",
                 detail: "Optional",
             };
@@ -698,7 +730,7 @@
         if (step === "choose_lane") {
             return {
                 title: "Step 3: Choose Lane",
-                hint: "Select an empty lane for " + selectedCardName() + ".",
+                hint: "Choose an empty player lane for " + selectedCardName() + ". That lane is where it will fight.",
                 button: "Choose Lane",
                 detail: "Left / Center / Right",
             };
@@ -707,7 +739,7 @@
         if (step === "choose_target") {
             return {
                 title: "Step 3: Choose Target",
-                hint: "Select a highlighted target for " + selectedCardName() + ", or cast now when offered.",
+                hint: "Choose a highlighted target for " + selectedCardName() + ", or use Cast Now for self/global spells.",
                 button: "Choose Target",
                 detail: "Required",
             };
@@ -716,16 +748,17 @@
         if (step === "prepare_trap") {
             return {
                 title: "Step 3: Prepare Trap",
-                hint: "Choose a Trap Zone slot to seal " + selectedCardName() + " for this round.",
+                hint: "Prepare " + selectedCardName() + " in the Trap Zone. It will resolve defensively after Ready.",
                 button: "Prepare Trap",
                 detail: "Trap Zone",
             };
         }
 
         if (step === "ready") {
+            const beforeReady = [chosenIntentSummary(state), activePlayedCardSummary(state)].filter(Boolean).join(" ");
             return {
                 title: "Step 4: Confirm Round",
-                hint: legal.can_play_cards ? "You may still play one card, or press Ready to resolve." : "Press Ready to resolve the round.",
+                hint: (beforeReady ? beforeReady + " " : "") + (legal.can_play_cards ? "You may still play one card, or press Ready to resolve." : "Press Ready to resolve the round."),
                 button: "Ready",
                 detail: "Resolve Round",
             };
@@ -1028,6 +1061,45 @@
         return renderSummaryItem("event", str(event.message, "Evento da rodada."), index);
     }
 
+    function roundSummaryLead(events, state) {
+        let heroDamageDealt = 0;
+        let heroDamageTaken = 0;
+        let shieldGained = 0;
+        let ambitionGained = 0;
+        let deaths = 0;
+        let cardPlayed = "";
+
+        arr(events).forEach((event) => {
+            const type = str(event && (event.type || event.kind), "").toLowerCase();
+            const amount = eventAmount(event);
+            const side = eventSide(event && (event.target_side || event.target || event.side));
+
+            if (type === "hero_damage") {
+                if (side === "enemy") heroDamageDealt += amount;
+                if (side === "me") heroDamageTaken += amount;
+            }
+
+            if (type === "shield_gain" && eventSide(event.side || event.actor) === "me") shieldGained += amount;
+            if (type === "ambition_gain" && eventSide(event.side || event.actor) === "me") ambitionGained += amount;
+            if (type === "creature_death") deaths += 1;
+            if (type === "card_played" && eventSide(event.side || event.actor) === "me") {
+                cardPlayed = eventName(event.card_name || event.card || event.name, cardPlayed);
+            }
+        });
+
+        const pieces = [];
+        if (cardPlayed) pieces.push(cardPlayed + " resolved");
+        if (heroDamageDealt) pieces.push("you dealt " + heroDamageDealt + " hero damage");
+        if (heroDamageTaken) pieces.push("you took " + heroDamageTaken);
+        if (shieldGained) pieces.push("shield +" + shieldGained);
+        if (ambitionGained) pieces.push("Ambition +" + ambitionGained);
+        if (deaths) pieces.push(deaths + " creature" + (deaths === 1 ? " fell" : "s fell"));
+
+        const next = uiCopyForStep(getArenaUiStep(state), state).hint;
+        if (!pieces.length) return "Round resolved. " + next;
+        return pieces.join(". ") + ". Next: " + next;
+    }
+
     function renderRoundSummary(state) {
         const panel = document.getElementById("az48-round-summary");
         if (!panel) return;
@@ -1039,19 +1111,21 @@
             panel.innerHTML = [
                 '<div class="az48-summary-header">',
                 title,
-                '<p class="az48-summary-empty">No combat yet this round. Play a card or press Ready when prepared.</p>',
+                '<p class="az48-summary-empty">No combat yet. Choose a strategy, play one card if useful, then press Ready.</p>',
                 '</div>',
                 '<ol class="az48-summary-list" aria-label="Round Summary events"></ol>',
             ].join("");
             return;
         }
 
+        const visibleEvents = events.map((event, index) => ({ event, index })).slice(-8);
         panel.innerHTML = [
             '<div class="az48-summary-header">',
             title,
+            '<p class="az48-summary-lead">' + esc(roundSummaryLead(events, state)) + '</p>',
             '</div>',
             '<ol class="az48-summary-list" aria-label="Round Summary events">',
-            events.map((event, index) => renderCombatEvent(event, index)).join(""),
+            visibleEvents.map((item) => renderCombatEvent(item.event, item.index)).join(""),
             '</ol>',
         ].join("");
 
