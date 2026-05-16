@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import ssl
 import sys
 import time
@@ -16,7 +17,7 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_BASE_URL = "https://ambition-tcg.onrender.com"
-EXPECTED_SW = "ambitionz-web-app-v189"
+DEFAULT_EXPECTED_SW = "ambitionz-web-app-v190"
 USER_AGENT = "Ambitionz-Production-Smoke/1.0"
 
 
@@ -102,7 +103,7 @@ def assert_contains(body: str, tokens: List[str], warnings: List[str], context: 
             warnings.append(f"{context}: missing optional token {token!r}")
 
 
-def run(base_url: str, timeout: int, retries: int) -> int:
+def run(base_url: str, timeout: int, retries: int, expected_sw: str) -> int:
     failures: List[str] = []
     warnings: List[str] = []
     results: Dict[str, FetchResult] = {}
@@ -113,6 +114,7 @@ def run(base_url: str, timeout: int, retries: int) -> int:
         "/service-worker.js",
         "/static/css/arena_clean_v48.css",
         "/static/js/arena_clean_v48.js",
+        "/static/js/service-worker.js",
     ]
 
     print("=== Ambitionz Production Smoke ===")
@@ -152,8 +154,8 @@ def run(base_url: str, timeout: int, retries: int) -> int:
     else:
         if "CACHE_NAME" not in service_worker.body:
             failures.append("service worker missing CACHE_NAME")
-        if EXPECTED_SW not in service_worker.body:
-            warnings.append(f"service worker does not yet contain {EXPECTED_SW}; production may not have this local hotfix deployed")
+        if expected_sw and expected_sw not in service_worker.body:
+            warnings.append(f"service worker does not yet contain {expected_sw}; production may not have this local RC deployed")
 
     css = results["/static/css/arena_clean_v48.css"]
     js = results["/static/js/arena_clean_v48.js"]
@@ -165,7 +167,16 @@ def run(base_url: str, timeout: int, retries: int) -> int:
     if not js.ok:
         failures.append(f"arena JS unreachable: status={js.status} error={js.error}")
     else:
-        assert_contains(js.body, ["arena_command_v1", "az48_play_card", "playCard"], warnings, "arena JS")
+        assert_contains(
+            js.body,
+            ["arena_command_v1", "az48_play_card", "playCard", "targetContractFor", "renderTrapZone"],
+            warnings,
+            "arena JS",
+        )
+
+    static_sw = results["/static/js/service-worker.js"]
+    if static_sw.ok and expected_sw and expected_sw not in static_sw.body:
+        warnings.append(f"static service-worker.js does not yet contain {expected_sw}; cache may still be on an older deployment")
 
     for warning in warnings:
         print(f"WARN: {warning}")
@@ -182,11 +193,12 @@ def run(base_url: str, timeout: int, retries: int) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a defensive Ambitionz production smoke check.")
-    parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
+    parser.add_argument("--base-url", default=os.environ.get("AMBITIONZ_PROD_URL", DEFAULT_BASE_URL))
+    parser.add_argument("--expected-sw", default=os.environ.get("AMBITIONZ_EXPECTED_SW_VERSION", DEFAULT_EXPECTED_SW))
     parser.add_argument("--timeout", type=int, default=25)
     parser.add_argument("--retries", type=int, default=4)
     args = parser.parse_args()
-    return run(args.base_url, timeout=args.timeout, retries=args.retries)
+    return run(args.base_url, timeout=args.timeout, retries=args.retries, expected_sw=args.expected_sw)
 
 
 if __name__ == "__main__":

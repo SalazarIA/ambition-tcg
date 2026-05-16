@@ -263,6 +263,16 @@ class MatchEngineFacade:
         card_index: Optional[int] = None,
         lane: Optional[str] = None,
         target: Optional[str] = None,
+        card_type: Optional[str] = None,
+        official_type: Optional[str] = None,
+        target_type: Optional[str] = None,
+        target_owner: Optional[str] = None,
+        target_lane: Optional[str] = None,
+        target_id: Optional[str] = None,
+        cast_mode: Optional[str] = None,
+        prepared: Optional[bool] = None,
+        client_selected_target: Optional[str] = None,
+        source: Optional[str] = None,
         message: Optional[str] = None,
     ) -> Optional[Payload]:
         room_code, match = self.match_for_sid(sid)
@@ -272,7 +282,24 @@ class MatchEngineFacade:
         if self.is_finished(match):
             return self.emit_finished_guard(sid)
 
-        be2_play_card(match, card_id=card_id, card_index=card_index, side=side_for_sid(match, sid), lane=lane, target=target)
+        be2_play_card(
+            match,
+            card_id=card_id,
+            card_index=card_index,
+            side=side_for_sid(match, sid),
+            lane=lane,
+            target=target,
+            card_type=card_type,
+            official_type=official_type,
+            target_type=target_type,
+            target_owner=target_owner,
+            target_lane=target_lane,
+            target_id=target_id,
+            cast_mode=cast_mode,
+            prepared=prepared,
+            client_selected_target=client_selected_target,
+            source=source,
+        )
         if room_code:
             self.emit_match_state(room_code, message=message)
         return self.emit_state(sid, message=message)
@@ -374,6 +401,16 @@ class MatchEngineFacade:
                 card_index=command.get("card_index"),
                 lane=command.get("lane"),
                 target=command.get("target"),
+                card_type=command.get("card_type"),
+                official_type=command.get("official_type"),
+                target_type=command.get("target_type"),
+                target_owner=command.get("target_owner"),
+                target_lane=command.get("target_lane"),
+                target_id=command.get("target_id"),
+                cast_mode=command.get("cast_mode"),
+                prepared=command.get("prepared"),
+                client_selected_target=command.get("client_selected_target"),
+                source=command.get("source"),
                 message="Card played. Press Ready to resolve combat.",
             )
 

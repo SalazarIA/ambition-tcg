@@ -51,7 +51,14 @@ function getCurrentCounts() {
         duplicates: 0,
         maxCopiesUsed: 0,
         highCostCards: 0,
-        elements: {}
+        elements: {},
+        roles: {},
+        scores: {
+            aggression: 0,
+            defense: 0,
+            control: 0,
+            ambition: 0
+        }
     };
 
     getBuilderCards().forEach((card) => {
@@ -59,12 +66,28 @@ function getCurrentCounts() {
         const type = card.dataset.type;
         const cost = Number(card.dataset.cost || 1);
         const element = card.dataset.element || "Neutral";
+        const role = card.dataset.cardArtRole || card.dataset.role || "utility";
+        const roleText = `${role} ${card.dataset.effect || ""} ${card.dataset.lore || ""}`.toLowerCase();
 
         counts.total += selected;
         counts[type] += selected;
         counts.totalCost += selected * cost;
         counts.highCostCards += cost >= 4 ? selected : 0;
         counts.elements[element] = (counts.elements[element] || 0) + selected;
+        counts.roles[role] = (counts.roles[role] || 0) + selected;
+
+        if (/attack|attacker|aggress|damage|fire|burn|strike|spell_damage/.test(roleText)) {
+            counts.scores.aggression += selected;
+        }
+        if (/defend|defender|shield|guard|heal|earth|trap_defense/.test(roleText)) {
+            counts.scores.defense += selected;
+        }
+        if (/control|trap|snare|root|plant|utility/.test(roleText)) {
+            counts.scores.control += selected;
+        }
+        if (/ambition|focus|engine|water|insight|draw/.test(roleText)) {
+            counts.scores.ambition += selected;
+        }
 
         if (selected > 1) {
             counts.duplicates += 1;
@@ -204,6 +227,7 @@ function updateDeckLiveStatus() {
 function deckGuidanceLines(counts, averageCost, isValid) {
     const lines = [];
     const elementEntries = Object.entries(counts.elements || {}).filter((entry) => entry[1] > 0);
+    const roleEntries = Object.entries(counts.roles || {}).filter((entry) => entry[1] > 0);
 
     if (isValid) {
         lines.push("Deck is valid for the fixed beta rule.");
@@ -235,6 +259,18 @@ function deckGuidanceLines(counts, averageCost, isValid) {
         lines.push("Duplicate limit is respected.");
     }
 
+    if ((counts.Spell || 0) < 4) {
+        lines.push("Add spells so the deck teaches damage, shield and Ambition decisions.");
+    }
+
+    if ((counts.Trap || 0) < 2) {
+        lines.push("Keep a trap package so new players learn prepare-and-trigger turns.");
+    }
+
+    if (roleEntries.length < 4) {
+        lines.push("Mix attackers, defenders, spells and traps for a clearer learning deck.");
+    }
+
     return lines.slice(0, 5);
 }
 
@@ -242,6 +278,11 @@ function updateDeckGuidance(counts, averageCost, isValid) {
     setText("az-guidance-total", `${counts.total}/${DECK_LIMITS.total}`);
     setText("az-guidance-average-cost", averageCost);
     setText("az-guidance-copy-health", `${counts.maxCopiesUsed}/${DECK_LIMITS.maxCopies}`);
+    setText("az-deck-role-mix", roleSummary(counts.roles));
+    setText("az-deck-score-aggression", counts.scores.aggression);
+    setText("az-deck-score-defense", counts.scores.defense);
+    setText("az-deck-score-control", counts.scores.control);
+    setText("az-deck-score-ambition", counts.scores.ambition);
 
     const elementEntries = Object.entries(counts.elements || {}).filter((entry) => entry[1] > 0);
     setText("az-guidance-element-balance", `${elementEntries.length} elements`);
@@ -252,6 +293,25 @@ function updateDeckGuidance(counts, averageCost, isValid) {
     list.innerHTML = deckGuidanceLines(counts, averageCost, isValid)
         .map((line) => `<li>${escapeHtml(line)}</li>`)
         .join("");
+}
+
+function roleSummary(roles) {
+    const entries = Object.entries(roles || {})
+        .filter((entry) => entry[1] > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+    if (!entries.length) {
+        return "No role mix yet";
+    }
+
+    return entries.map(([role, count]) => `${roleLabel(role)} ${count}`).join(" · ");
+}
+
+function roleLabel(role) {
+    return String(role || "utility")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function addCardToDeck(cardId) {
@@ -320,6 +380,7 @@ function filterBuilderCards() {
         const cardElement = card.dataset.element || "";
         const cardSigil = card.dataset.sigil || "";
         const cardRole = card.dataset.role || "";
+        const cardArtRole = card.dataset.cardArtRole || "";
         const cardCost = card.dataset.cost || "";
         const cardRarity = card.dataset.rarity || "";
 
@@ -327,7 +388,7 @@ function filterBuilderCards() {
         const matchesType = !type || cardType === type;
         const matchesElement = !element || cardElement === element;
         const matchesSigil = !sigil || cardSigil === sigil;
-        const matchesRole = !role || cardRole === role;
+        const matchesRole = !role || cardRole === role || cardArtRole === role;
         const matchesCost = !cost || cardCost === cost;
         const matchesRarity = !rarity || cardRarity === rarity;
 
@@ -374,6 +435,7 @@ function deckPreviewStats(card) {
     return [
         ["Cost", card.dataset.cost || "--"],
         ["Type", card.dataset.type || "Card"],
+        ["Role", roleLabel(card.dataset.cardArtRole || card.dataset.role || "utility")],
         ["Owned", card.dataset.owned || "0"],
         ["In Deck", card.dataset.selected || "0"]
     ];
@@ -394,6 +456,7 @@ function deckCardArtHtml(card) {
 
 function deckCardFunction(card) {
     if (!card) return "Select a card to read its role.";
+    if (card.dataset.simpleUseText) return card.dataset.simpleUseText;
     const type = card.dataset.type || "Card";
     const effect = `${card.dataset.effect || ""} ${card.dataset.lore || ""}`.toLowerCase();
     if (type === "Monster") {
@@ -426,7 +489,7 @@ function updateDeckPreview(card) {
         previewText.textContent = "Your collection has no cards to preview yet.";
     } else {
         const name = target.querySelector(".card-topline strong")?.textContent || "Selected card";
-        const lore = target.dataset.lore || target.dataset.effect || "Ambitionz beta card identity.";
+        const lore = target.dataset.shortLore || target.dataset.lore || target.dataset.effect || "Ambitionz beta card identity.";
         previewName.textContent = name;
         previewText.textContent = `${deckCardFunction(target)} ${lore}`;
     }
@@ -446,6 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.AmbitionzCardArt && typeof window.AmbitionzCardArt.loadCardArtManifest === "function") {
         window.AmbitionzCardArt.loadCardArtManifest().then(() => {
             if (typeof window.AmbitionzCardArt.enhanceAllCards === "function") window.AmbitionzCardArt.enhanceAllCards();
+            updateDeckLiveStatus();
             updateDeckPreview();
         });
     }

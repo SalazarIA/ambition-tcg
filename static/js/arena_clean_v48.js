@@ -315,12 +315,16 @@
             rarity: str(card.rarity || "Common"),
             sigil: str(card.sigil || "None"),
             role: str(card.role || card.kind || type),
+            officialType: str(card.official_type || card.type || type),
+            simpleUseText: str(card.simple_use_text || ""),
+            shortLore: str(card.short_lore || ""),
             cost: num(firstValue(card.cost, card.energy_cost, card.energyCost), 1),
             stat,
             statLabel: str(card.combat_label || (isMonster ? "PWR" : "VAL")),
             attack,
             damage: num(firstValue(card.damage, card.dmg, !isMonster ? card.power : 0), 0),
             shield: num(firstValue(card.shield, card.shd), 0),
+            heal: num(firstValue(card.heal, card.healing), 0),
             currentHp,
             maxHp,
             artUrl: "/static/img/cards/elemental/neutral.svg",
@@ -350,6 +354,7 @@
 
         return {
             trap: field.trap || null,
+            traps: arr(field.traps),
             monster: field.monster || null,
             spell: field.spell || null,
             lanes: {
@@ -375,6 +380,7 @@
 
     function cardHowToUse(card) {
         const c = normalizeCard(card);
+        if (c.simpleUseText) return "How to use this card: " + c.simpleUseText;
         const group = cardTypeGroup(c);
         if (group === "Creature") return "How to use this card: summon it into an empty lane. It fights when you press Ready.";
         if (group === "Spell") {
@@ -870,9 +876,9 @@
         actions = actions || {};
 
         const rows = [
-            ["Strike", actions.Strike || "+2 attack this round."],
-            ["Guard", actions.Guard || "+5 shield this round."],
-            ["Focus", actions.Focus || "+3 Ambition. Charges Unleash."],
+            ["Strike", actions.Strike || "+1 attack pressure this round."],
+            ["Guard", actions.Guard || "+6 shield and better mitigation."],
+            ["Focus", actions.Focus || "+4 Ambition. Charges Unleash."],
             ["Ready", actions.Ready || "Resolves combat."]
         ];
 
@@ -910,7 +916,17 @@
             intent_selected: ["Strategy chosen", str(event.message || event.text, "Strategy locked in."), "S"],
             card_played: ["Card played", cardName + " entered the round.", "C"],
             spell_cast: ["Spell cast", cardName + " was cast.", "M"],
+            spell_targeted: ["Spell target", cardName + " chose a target.", "T"],
+            spell_damage: ["Spell damage", cardName + " dealt " + amount + " damage.", "!"],
+            spell_heal: ["Spell heal", cardName + " restored " + amount + " HP.", "+"],
+            spell_shield: ["Spell shield", cardName + " added shield.", "+"],
+            spell_ambition: ["Spell focus", cardName + " built Ambition +" + amount + ".", "*"],
+            spell_noop: ["Spell fizzled", cardName + " resolved safely.", "…"],
             trap_prepared: ["Trap prepared", "Trap prepared: " + cardName + ".", "T"],
+            trap_triggered: ["Trap triggered", cardName + " triggered.", "!"],
+            trap_heal: ["Trap heal", cardName + " restored HP.", "+"],
+            trap_snare: ["Trap snare", cardName + " reduced incoming damage.", "-"],
+            trap_noop: ["Trap resolved", cardName + " triggered without extra effect.", "T"],
             round_resolve: ["Intent revealed", "Both sides revealed their plan.", "R"],
             lane_attack: ["Combat", attackerName + " attacked " + defenderName + ".", "A"],
             direct_attack: ["Direct attack", attackerName + " struck the hero directly.", ">"],
@@ -1046,6 +1062,17 @@
         if (type === "round_resolve") return renderSummaryItem("event", "Resolução da rodada.", index);
         if (type === "intent_selected") return renderSummaryItem("event", str(event.message || event.text, "Intenção escolhida."), index);
         if (type === "card_played") return renderSummaryItem("played", cardName + " entrou na rodada.", index);
+        if (type === "spell_cast") return renderSummaryItem("played", cardName + " foi conjurada.", index);
+        if (type === "spell_targeted") return renderSummaryItem("event", cardName + " escolheu um alvo.", index);
+        if (type === "spell_damage") return renderSummaryItem("damage", cardName + " causou " + amount + " de dano.", index);
+        if (type === "spell_heal") return renderSummaryItem("shield", cardName + " curou " + amount + " HP.", index);
+        if (type === "spell_ambition") return renderSummaryItem("ambition", cardName + " gerou Ambition +" + amount + ".", index);
+        if (type === "spell_noop") return renderSummaryItem("event", cardName + " resolveu sem efeito imediato.", index);
+        if (type === "trap_prepared") return renderSummaryItem("played", cardName + " foi preparada na Trap Zone.", index);
+        if (type === "trap_triggered") return renderSummaryItem("event", cardName + " ativou a armadilha.", index);
+        if (type === "trap_heal") return renderSummaryItem("shield", cardName + " recuperou " + amount + " HP.", index);
+        if (type === "trap_snare") return renderSummaryItem("shield", cardName + " reduziu " + amount + " de dano.", index);
+        if (type === "trap_noop") return renderSummaryItem("event", cardName + " ativou sem efeito extra.", index);
         if (type === "shield_gain") return renderSummaryItem("shield", "Escudo +" + amount + ".", index);
         if (type === "ambition_gain") return renderSummaryItem("ambition", "Ambition +" + amount + ".", index);
         if (type === "lane_attack") return renderSummaryItem("attack", attackerName + " atacou " + defenderName + ".", index);
@@ -1693,9 +1720,51 @@
         const legal = legalTargets();
         if (!selected || selected === "cast_now") return defaultTargetFor(card);
         if (legal.includes(selected)) return selected;
+        if (/^enemy_(left|center|right)$/.test(selected)) return "lane:" + selected.replace("enemy_", "");
+        if (/^ally_(left|center|right)$/.test(selected)) return "ally_lane:" + selected.replace("ally_", "");
         if (selected.startsWith("enemy_")) return legal.includes("enemy_hero") ? "enemy_hero" : (legal[0] || "enemy_hero");
         if (selected.startsWith("ally_")) return legal.includes("self") ? "self" : (legal[0] || "self");
         return legal[0] || selected;
+    }
+
+    function targetContractFor(card, visualTarget, backendTarget, typeGroup) {
+        const selected = String(visualTarget || backendTarget || "");
+        const target = String(backendTarget || "");
+        const contract = {
+            target_type: "",
+            target_owner: "",
+            target_lane: "",
+            target_id: "",
+            cast_mode: typeGroup === "Trap" ? "prepare" : (typeGroup === "Creature" ? "summon" : "cast"),
+            prepared: typeGroup === "Trap",
+            client_selected_target: selected,
+            source: "arena_clean_v48",
+        };
+
+        if (target === "enemy_hero") {
+            contract.target_type = "hero";
+            contract.target_owner = "opponent";
+        } else if (target === "self") {
+            contract.target_type = typeGroup === "Trap" ? "self" : "hero";
+            contract.target_owner = "self";
+        } else if (target.startsWith("lane:")) {
+            contract.target_type = "creature";
+            contract.target_owner = "opponent";
+            contract.target_lane = target.split(":", 2)[1] || "";
+            contract.cast_mode = "targeted";
+        } else if (target.startsWith("ally_lane:")) {
+            contract.target_type = "creature";
+            contract.target_owner = "self";
+            contract.target_lane = target.split(":", 2)[1] || "";
+            contract.cast_mode = "targeted";
+        } else if (selected === "cast_now") {
+            contract.target_type = "none";
+            contract.target_owner = "self";
+            contract.cast_mode = "instant";
+        }
+
+        if (typeGroup === "Spell" && !contract.cast_mode) contract.cast_mode = contract.target_type === "none" ? "instant" : "targeted";
+        return contract;
     }
 
     function defaultTargetFor(card) {
@@ -1828,7 +1897,8 @@
         } else {
             if (c.damage) rows.push(["DMG", c.damage]);
             if (c.shield) rows.push(["SHD", c.shield]);
-            if (!c.damage && !c.shield) rows.push([c.statLabel || "Value", c.stat || 0]);
+            if (c.heal) rows.push(["HEAL", c.heal]);
+            if (!c.damage && !c.shield && !c.heal) rows.push([c.statLabel || "Value", c.stat || 0]);
         }
 
         el.innerHTML = rows.map((row) => {
@@ -1887,7 +1957,10 @@
 
         const prepared = [];
         const meField = normalizeField(state && state.me && state.me.field);
-        if (meField.trap) prepared.push(normalizeCard(meField.trap));
+        arr(meField.traps).forEach((trap) => {
+            if (trap) prepared.push(normalizeCard(trap));
+        });
+        if (!prepared.length && meField.trap) prepared.push(normalizeCard(meField.trap));
         if (localPreparedTrap) prepared.push(normalizeCard(localPreparedTrap));
 
         el.innerHTML = [0, 1, 2].map((index) => {
@@ -2267,7 +2340,13 @@
             playSound("cardSelect", { element: card.element });
         }
 
-        const payload = { card_id: id, card_index: entry.index };
+        const payload = {
+            card_id: id,
+            card_index: entry.index,
+            card_type: typeGroup.toLowerCase(),
+            official_type: card.type || typeGroup,
+            source: "arena_clean_v48",
+        };
         if (typeGroup === "Creature") {
             const legalLaneList = legalLanes();
             if (!legalLaneList.length) {
@@ -2289,6 +2368,7 @@
             }
 
             payload.lane = String(choice.lane);
+            payload.cast_mode = "summon";
         } else if (typeGroup === "Trap" && !choice.confirmTrap) {
             setSelection(entry, "trap");
             setMessage("Prepare this trap in your Trap Zone, then press Ready to let the round resolve.");
@@ -2302,6 +2382,12 @@
         } else {
             payload.target = compatibleTargetFor(choice.target || defaultTargetFor(card), card);
             selectedSpellTarget = String(choice.target || payload.target || "");
+            Object.assign(payload, targetContractFor(card, choice.target || selectedSpellTarget, payload.target, typeGroup));
+        }
+
+        if (typeGroup === "Trap") {
+            payload.target = "self";
+            Object.assign(payload, targetContractFor(card, "self", "self", typeGroup));
         }
 
         if (typeGroup === "Spell") {

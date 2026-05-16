@@ -242,6 +242,11 @@
                 <article><span>Average Cost</span><strong id="az-guidance-average-cost">{{ deck_analysis.energy.average_cost if deck_analysis is defined else '0.00' }}</strong></article>
                 <article><span>Elements</span><strong id="az-guidance-element-balance">{{ deck_analysis.elements|length if deck_analysis is defined else 0 }}</strong></article>
                 <article><span>Copies</span><strong id="az-guidance-copy-health">{{ deck_status.max_copies_used }}/3</strong></article>
+                <article><span>Role Mix</span><strong id="az-deck-role-mix">Loading</strong></article>
+                <article><span>Aggression</span><strong id="az-deck-score-aggression">0</strong></article>
+                <article><span>Defense</span><strong id="az-deck-score-defense">0</strong></article>
+                <article><span>Control</span><strong id="az-deck-score-control">0</strong></article>
+                <article><span>Ambition</span><strong id="az-deck-score-ambition">0</strong></article>
             </div>
             <ul id="az-deck-guidance-list" class="az-deck-guidance-list-v1">
                 <li>Use exactly 30 cards.</li>
@@ -521,6 +526,22 @@
 
                     <option value="Utility">Utility</option>
 
+                    <option value="attacker">Attacker V6</option>
+
+                    <option value="defender">Defender V6</option>
+
+                    <option value="spell_damage">Spell Damage</option>
+
+                    <option value="spell_shield">Spell Shield</option>
+
+                    <option value="spell_heal">Spell Heal</option>
+
+                    <option value="trap_counter">Trap Counter</option>
+
+                    <option value="trap_defense">Trap Defense</option>
+
+                    <option value="ambition_engine">Ambition Engine</option>
+
                 </select>
 
                 <select id="builder-rarity-filter">
@@ -629,6 +650,10 @@
 
                         data-lore="{{ card.lore|default(card.tactical_hint|default(card.type_identity|default('Ambitionz beta card identity.'))) }}"
 
+                        data-simple-use-text=""
+
+                        data-short-lore=""
+
                     >
 
                         <div class="deck-card-controls">
@@ -727,15 +752,15 @@
         </form>
 
     </main>
-    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/deck_builder.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/deck_builder.js') }}?v=5"></script>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
 
     <script src="{{ url_for('static', filename='js/deck_builder_premium.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=5"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=6"></script>
 </body>
 
 </html>

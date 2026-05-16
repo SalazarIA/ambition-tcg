@@ -239,13 +239,13 @@
 	        window.AMBITIONZ_CAMPAIGN_CONTEXT = {{ (campaign_context or {})|tojson }};
 	    </script>
     <script src="{{ url_for('static', filename='js/arena_sound.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=5"></script>
+    <script src="{{ url_for('static', filename='js/arena_renderer_adapter.js') }}?v=6"></script>
     {% if arena_renderer == "3d" %}
     <script type="module" src="{{ url_for('static', filename='dist/arena3d/arena3d.js') }}?v=1"></script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_feedback.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=85"></script>
+    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=86"></script>
 </body>
 </html>

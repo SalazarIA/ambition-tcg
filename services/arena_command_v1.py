@@ -98,6 +98,16 @@ def normalize_arena_command(payload: Optional[Dict[str, Any]]) -> Dict[str, Any]
             "card_index": card_index,
             "lane": _optional_str(data.get("lane")),
             "target": _optional_str(data.get("target")),
+            "card_type": _optional_str(data.get("card_type")),
+            "official_type": _optional_str(data.get("official_type")),
+            "target_type": _optional_str(data.get("target_type")),
+            "target_owner": _optional_str(data.get("target_owner")),
+            "target_lane": _optional_str(data.get("target_lane")),
+            "target_id": _optional_str(data.get("target_id")),
+            "cast_mode": _optional_str(data.get("cast_mode")),
+            "prepared": bool(data.get("prepared")) if data.get("prepared") is not None else None,
+            "client_selected_target": _optional_str(data.get("client_selected_target")),
+            "source": _optional_str(data.get("source")),
         })
 
     if action in {"start_training", "request_state"}:

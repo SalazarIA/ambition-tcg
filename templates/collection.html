@@ -220,6 +220,14 @@
                     <option value="Controller">Controller</option>
                     <option value="Balancer">Balancer</option>
                     <option value="Finisher">Finisher</option>
+                    <option value="attacker">Attacker</option>
+                    <option value="defender">Defender V6</option>
+                    <option value="spell_damage">Spell Damage</option>
+                    <option value="spell_shield">Spell Shield</option>
+                    <option value="spell_heal">Spell Heal</option>
+                    <option value="trap_counter">Trap Counter</option>
+                    <option value="trap_defense">Trap Defense</option>
+                    <option value="ambition_engine">Ambition Engine</option>
                 </select>
             </div>
         </section>
@@ -321,8 +329,8 @@
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
     <script type="application/json" id="az-recent-unlocks-data">{{ recent_unlocks|default([])|tojson }}</script>
     <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=2"></script>
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=5"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_cards.js') }}?v=6"></script>
 </body>
 </html>

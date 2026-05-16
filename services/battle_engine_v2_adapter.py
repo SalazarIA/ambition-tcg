@@ -49,6 +49,7 @@ def _card_stat(card: Dict[str, Any]) -> int:
         int(card.get("atk") or 0),
         int(card.get("damage") or 0),
         int(card.get("shield") or 0),
+        int(card.get("heal") or 0),
         int(card.get("current_hp") or 0),
         int(card.get("hp") or 0),
         int(card.get("ambition") or 0),
@@ -61,7 +62,7 @@ def _card_label(card: Dict[str, Any]) -> str:
 
     if kind == "creature":
         return "ATK"
-    if kind == "guard":
+    if kind in {"guard", "trap"}:
         return "SHD"
     if kind == "spell":
         return "DMG" if int((card or {}).get("damage") or 0) > 0 else "AMB"
@@ -76,7 +77,7 @@ def _card_type(card: Dict[str, Any]) -> str:
 
     if kind == "creature":
         return "Monster"
-    if kind == "guard":
+    if kind in {"guard", "trap"}:
         return "Trap"
     if kind == "support":
         return "Spell"
@@ -91,8 +92,8 @@ def _card_sigil(card: Dict[str, Any]) -> str:
 
     if kind == "creature":
         return "Creature"
-    if kind == "guard":
-        return "Guard"
+    if kind in {"guard", "trap"}:
+        return "Trap"
     if kind == "support":
         return "Support"
     if int((card or {}).get("damage") or 0) > 0:
@@ -151,13 +152,15 @@ def _card_effect_summary(card: Dict[str, Any]) -> str:
         if ambition:
             parts.append(f"+{ambition} Ambition each round")
         return "Support: " + (", ".join(parts) if parts else f"supports {identity}.")
-    if kind == "guard":
+    if kind in {"guard", "trap"}:
         parts = []
         if int(card.get("shield") or 0):
             parts.append(f"+{int(card.get('shield') or 0)} shield")
         if int(card.get("damage") or 0):
             parts.append(f"{int(card.get('damage') or 0)} counter damage")
-        return "Guard: " + (", ".join(parts) if parts else f"defensive response for {identity}.")
+        if int(card.get("heal") or 0):
+            parts.append(f"heal {int(card.get('heal') or 0)}")
+        return "Trap: " + (", ".join(parts) if parts else f"prepared response for {identity}.")
 
     parts = []
     if int(card.get("damage") or 0):
@@ -183,6 +186,7 @@ def _card_preview(card: Dict[str, Any], intent: Optional[str] = None, owner: Opt
 
     damage = int(card.get("damage") or 0)
     shield = int(card.get("shield") or 0)
+    heal = int(card.get("heal") or 0)
     ambition = int(card.get("ambition") or 0)
 
     if card.get("id") == "pressure_move" and intent == "Strike":
@@ -197,6 +201,8 @@ def _card_preview(card: Dict[str, Any], intent: Optional[str] = None, owner: Opt
         parts.append(f"deal {damage} damage")
     if shield:
         parts.append(f"gain {shield} shield")
+    if heal:
+        parts.append(f"heal {heal}")
     if ambition:
         parts.append(f"gain {ambition} Ambition")
     if int(card.get("draw") or 0):
@@ -262,6 +268,7 @@ def _battle_card_to_arena_card(
         "attack": atk,
         "damage": int(card.get("damage") or 0),
         "shield": int(card.get("shield") or 0),
+        "heal": int(card.get("heal") or 0),
         "ambition": int(card.get("ambition") or 0),
         "draw": int(card.get("draw") or 0),
         "value": stat,
@@ -279,6 +286,9 @@ def _battle_card_to_arena_card(
         "max_hp": hp,
         "atk": atk,
         "kind": card.get("kind"),
+        "official_type": str(card.get("official_type") or card.get("type") or ""),
+        "simple_use_text": str(card.get("simple_use_text") or ""),
+        "short_lore": str(card.get("short_lore") or ""),
         "owner": card.get("owner"),
         "lane": card.get("lane"),
         "keywords": keywords,
@@ -294,11 +304,17 @@ def _field_payload(player: Dict[str, Any]) -> Dict[str, Any]:
     field = player.get("field") or {}
     board = _board_payload(player)
     first_creature = next((board[lane] for lane in LANES if board.get(lane)), None)
+    prepared_traps = [
+        _battle_card_to_arena_card((trap or {}).get("card"), index=index, owner=player)
+        for index, trap in enumerate(player.get("prepared_traps") or field.get("traps") or [])
+        if isinstance(trap, dict) and not trap.get("consumed")
+    ]
 
     return {
         "monster": board.get("center") or first_creature,
         "spell": _battle_card_to_arena_card(field.get("support"), 1, owner=player),
-        "trap": None,
+        "trap": prepared_traps[0] if prepared_traps else None,
+        "traps": prepared_traps,
         "lanes": board,
         "board": board,
     }
@@ -748,9 +764,9 @@ def build_be2_arena_payload(
                 "3. Press Ready to resolve combat.",
             ],
             "actions": {
-                "Strike": "+2 attack this round.",
-                "Guard": "+5 shield this round.",
-                "Focus": "+3 Ambition. Ambition charges Unleash.",
+                "Strike": "+1 attack pressure this round.",
+                "Guard": "+6 shield and better damage mitigation.",
+                "Focus": "+4 Ambition. Spells gain extra Ambition.",
                 "Ready": "Resolves your action and the enemy action.",
             },
             "goal": "Destroy enemy creatures, damage enemy HP, and use Unleash to finish the duel.",
@@ -830,13 +846,40 @@ def be2_play_card(
     side: str = "player",
     lane: Optional[str] = None,
     target: Optional[str] = None,
+    card_type: Optional[str] = None,
+    official_type: Optional[str] = None,
+    target_type: Optional[str] = None,
+    target_owner: Optional[str] = None,
+    target_lane: Optional[str] = None,
+    target_id: Optional[str] = None,
+    cast_mode: Optional[str] = None,
+    prepared: Optional[bool] = None,
+    client_selected_target: Optional[str] = None,
+    source: Optional[str] = None,
 ) -> Dict[str, Any]:
     if match.get("phase") == "created":
         start_round(match)
 
     side = side if side in {"player", "opponent"} else "player"
 
-    play_card(match, side, card_id=card_id, card_index=card_index, lane=lane, target=target)
+    play_card(
+        match,
+        side,
+        card_id=card_id,
+        card_index=card_index,
+        lane=lane,
+        target=target,
+        card_type=card_type,
+        official_type=official_type,
+        target_type=target_type,
+        target_owner=target_owner,
+        target_lane=target_lane,
+        target_id=target_id,
+        cast_mode=cast_mode,
+        prepared=prepared,
+        client_selected_target=client_selected_target,
+        source=source,
+    )
     return match
 
 

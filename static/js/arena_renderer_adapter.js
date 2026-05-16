@@ -79,10 +79,16 @@
             rarity: str(card.rarity || "Common"),
             sigil: str(card.sigil || "None"),
             role: str(card.role || card.kind || "Card"),
+            officialType: str(card.official_type || card.type || type),
+            simpleUseText: str(card.simple_use_text || ""),
+            shortLore: str(card.short_lore || ""),
             cost: num(firstValue(card.cost, card.energy_cost, card.energyCost), 1),
             stat,
             statLabel: str(card.combat_label || (isMonster ? "PWR" : "VAL")),
             attack: num(card.attack || card.atk || power || 0),
+            damage: num(card.damage || card.dmg || 0),
+            shield: num(card.shield || card.shd || 0),
+            heal: num(card.heal || card.healing || 0),
             currentHp,
             maxHp,
             effect: str(card.effect || card.description || card.text || ""),
@@ -109,6 +115,7 @@
 
         return {
             trap: field.trap ? normalizeCard(field.trap, 0) : null,
+            traps: arr(field.traps).map(normalizeCard),
             monster: field.monster ? normalizeCard(field.monster, 1) : null,
             spell: field.spell ? normalizeCard(field.spell, 2) : null,
             lanes: {

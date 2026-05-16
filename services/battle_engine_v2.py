@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from game.cards import CARD_CATALOG as OFFICIAL_CARD_CATALOG
 from game.deck import STARTER_MONSTER_COUNT, STARTER_SPELL_COUNT, STARTER_TRAP_COUNT
-from services.card_effect_resolver import resolve_card_effect
+from services.card_effect_resolver import infer_card_type, infer_trap_effect, resolve_card_effect
 
 
 ENGINE_VERSION = "battle_engine_v2"
@@ -374,40 +374,59 @@ def _official_card_to_be2(card: Dict[str, Any]) -> Dict[str, Any]:
         return adapted
 
     if card_type == "Spell":
-        damage = max(1, min(6, value or cost + 1))
+        scaled_value = max(1, min(8, round(value / 100) if value and value > 20 else (value or cost + 1)))
+        damage = 0
         shield = 0
+        heal = 0
 
-        if effect in {"Shield", "Heal"}:
-            damage = 0
-            shield = max(3, min(8, value or cost + 3))
-        elif effect in {"Boost", "Draw"}:
-            damage = max(0, min(3, value or cost))
+        if effect == "Shield":
+            shield = max(3, min(8, scaled_value))
+        elif effect == "Heal":
+            heal = max(3, min(8, scaled_value))
+        elif effect == "Draw":
             adapted["ambition"] = 2
-        elif effect in {"Burn", "Drain", "Weaken"}:
-            damage = max(2, min(6, value or cost + 2))
+            adapted["draw"] = max(1, min(2, value or 1))
+        elif effect == "Boost":
+            adapted["ambition"] = 3
+        elif effect == "Drain":
+            damage = max(2, min(5, scaled_value))
+            heal = max(2, min(5, scaled_value))
+        elif effect in {"Burn", "Weaken"}:
+            damage = max(2, min(6, scaled_value))
+        else:
+            damage = max(1, min(4, scaled_value))
 
         adapted.update({
             "kind": "spell",
             "damage": damage,
             "shield": shield,
+            "heal": heal,
+            "effect_type": effect.lower() if effect else "damage",
         })
         return adapted
 
     if card_type == "Trap":
-        shield = max(4, min(9, value or cost + 4))
+        scaled_value = max(1, min(8, round(value / 100) if value and value > 20 else (value or cost + 2)))
+        shield = max(3, min(8, scaled_value + 2))
         damage = 0
+        heal = 0
 
         if effect in {"Counter", "Burn"}:
-            damage = max(1, min(4, value or cost))
+            damage = max(2, min(5, scaled_value))
         elif effect == "Weaken":
             damage = 1
+            shield = max(shield, 5)
         elif effect == "Heal":
             adapted["ambition"] = 2
+            heal = max(3, min(6, scaled_value))
 
         adapted.update({
-            "kind": "guard",
+            "kind": "trap",
             "shield": shield,
             "damage": damage,
+            "heal": heal,
+            "effect_type": effect.lower() if effect else "prepared",
+            "trigger_type": "on_attack",
         })
         return adapted
 
@@ -506,7 +525,7 @@ def _choose_curated_official_cards(card_type: str, amount: int) -> List[Dict[str
 
     preferred_effects = {
         "Spell": ["Heal", "Boost", "Burn", "Weaken", "Draw", "Shield"],
-        "Trap": ["Burn", "Heal", "Counter"],
+        "Trap": ["Counter", "Shield", "Weaken"],
     }.get(card_type, [])
 
     selected = []
@@ -553,7 +572,9 @@ def create_player(
             "active": None,
             "support": None,
             "lanes": board,
+            "traps": [],
         },
+        "prepared_traps": [],
         "intent": None,
         "ready": False,
         "played_card": None,
@@ -696,6 +717,7 @@ def start_round(match: Dict[str, Any]) -> Dict[str, Any]:
         player["unleash"] = False
         player["last_damage_dealt"] = 0
         ensure_board(player)
+        player.setdefault("field", {})["traps"] = _prepared_traps(player)
 
         bonus = support_ambition_bonus(player)
         if bonus:
@@ -842,26 +864,115 @@ def _validate_target(match: Dict[str, Any], side: str, card: Dict[str, Any], tar
         return None
 
     target = str(target)
-    valid_targets = {"enemy_hero", "self"}
+    valid_targets = {"enemy_hero", "self", "cast_now"}
     if target.startswith("lane:"):
         validate_lane(target.split(":", 1)[1])
         valid_targets.add(target)
+    if target.startswith("ally_lane:"):
+        validate_lane(target.split(":", 1)[1])
+        valid_targets.add(target)
 
-    if card.get("kind") in {"creature", "support"}:
+    if infer_card_type(card) in {"creature", "support"}:
         raise ValueError("Target is not valid for this card.")
     if target not in valid_targets:
         raise ValueError("Invalid target.")
-    return target
+    return None if target == "cast_now" else target
+
+
+def _normalize_target_owner(value: Any, side: str) -> str:
+    key = str(value or "").strip().lower()
+    if key in {"self", "player", "me", side}:
+        return "self"
+    if key in {"opponent", "enemy", "bot"}:
+        return "opponent"
+    return ""
+
+
+def _target_from_visual_token(value: str) -> Dict[str, Any]:
+    token = str(value or "").strip().lower()
+    if token == "enemy_hero":
+        return {"target": "enemy_hero", "target_type": "hero", "target_owner": "opponent"}
+    if token == "self":
+        return {"target": "self", "target_type": "self", "target_owner": "self"}
+    if token.startswith("enemy_") and token.split("_", 1)[1] in LANES:
+        lane = token.split("_", 1)[1]
+        return {"target": f"lane:{lane}", "target_type": "creature", "target_owner": "opponent", "target_lane": lane}
+    if token.startswith("ally_") and token.split("_", 1)[1] in LANES:
+        lane = token.split("_", 1)[1]
+        return {"target": f"ally_lane:{lane}", "target_type": "creature", "target_owner": "self", "target_lane": lane}
+    if token.startswith("lane:"):
+        lane = token.split(":", 1)[1]
+        return {"target": f"lane:{lane}", "target_type": "creature", "target_owner": "opponent", "target_lane": lane}
+    if token.startswith("ally_lane:"):
+        lane = token.split(":", 1)[1]
+        return {"target": f"ally_lane:{lane}", "target_type": "creature", "target_owner": "self", "target_lane": lane}
+    return {"target": token or None}
+
+
+def _normalize_card_play_contract(
+    side: str,
+    card: Dict[str, Any],
+    lane: Optional[str] = None,
+    target: Optional[str] = None,
+    card_type: Optional[str] = None,
+    official_type: Optional[str] = None,
+    target_type: Optional[str] = None,
+    target_owner: Optional[str] = None,
+    target_lane: Optional[str] = None,
+    target_id: Optional[str] = None,
+    cast_mode: Optional[str] = None,
+    prepared: Optional[bool] = None,
+    client_selected_target: Optional[str] = None,
+    source: Optional[str] = None,
+) -> Dict[str, Any]:
+    augmented = deepcopy(card)
+    if card_type:
+        augmented["card_type"] = str(card_type)
+    if official_type:
+        augmented["official_type"] = str(official_type)
+
+    visual = _target_from_visual_token(client_selected_target or target or "")
+    normalized_owner = _normalize_target_owner(target_owner or visual.get("target_owner"), side)
+    normalized_lane = normalize_lane(target_lane or visual.get("target_lane"))
+    normalized_type = str(target_type or visual.get("target_type") or "").strip().lower()
+    normalized_target = visual.get("target")
+
+    if normalized_type in {"hero", "self"}:
+        normalized_target = "self" if normalized_owner == "self" or normalized_type == "self" else "enemy_hero"
+    elif normalized_type in {"creature", "lane"} and normalized_lane:
+        normalized_target = f"ally_lane:{normalized_lane}" if normalized_owner == "self" else f"lane:{normalized_lane}"
+
+    contract = {
+        "card_id": str(card.get("id") or card.get("card_id") or ""),
+        "card_type": infer_card_type(augmented),
+        "official_type": str(official_type or card.get("official_type") or card.get("type") or ""),
+        "lane": normalize_lane(lane),
+        "target": normalized_target,
+        "target_type": normalized_type or visual.get("target_type") or ("hero" if normalized_target in {"enemy_hero", "self"} else ""),
+        "target_owner": normalized_owner or visual.get("target_owner") or "",
+        "target_lane": normalized_lane,
+        "target_id": str(target_id or ""),
+        "cast_mode": str(cast_mode or ("prepare" if infer_card_type(augmented) == "trap" else "cast")),
+        "prepared": bool(prepared) if prepared is not None else infer_card_type(augmented) == "trap",
+        "client_selected_target": str(client_selected_target or ""),
+        "source": str(source or "arena"),
+    }
+
+    if contract["target"] in {"", "cast_now"}:
+        contract["target"] = None
+    return contract
 
 
 def _effect_context(
     match: Dict[str, Any],
     lane: Optional[str] = None,
     target: Optional[str] = None,
+    target_contract: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     return {
         "lane": lane,
         "target": target,
+        "target_contract": target_contract or {},
         "ensure_board": ensure_board,
         "create_creature_instance": _field_creature_instance,
         "card_has_keyword": card_has_keyword,
@@ -880,6 +991,16 @@ def play_card(
     card_index: Optional[int] = None,
     lane: Optional[str] = None,
     target: Optional[str] = None,
+    card_type: Optional[str] = None,
+    official_type: Optional[str] = None,
+    target_type: Optional[str] = None,
+    target_owner: Optional[str] = None,
+    target_lane: Optional[str] = None,
+    target_id: Optional[str] = None,
+    cast_mode: Optional[str] = None,
+    prepared: Optional[bool] = None,
+    client_selected_target: Optional[str] = None,
+    source: Optional[str] = None,
 ) -> Dict[str, Any]:
     if match.get("winner") or str(match.get("phase") or "").lower() == "finished":
         raise ValueError("Match is finished.")
@@ -899,9 +1020,25 @@ def play_card(
         raise ValueError("Only one card can be played each round.")
 
     index, card = _find_card_in_hand(player, card_id=card_id, card_index=card_index)
-    kind = card.get("kind")
+    target_contract = _normalize_card_play_contract(
+        side,
+        card,
+        lane=lane,
+        target=target,
+        card_type=card_type,
+        official_type=official_type,
+        target_type=target_type,
+        target_owner=target_owner,
+        target_lane=target_lane,
+        target_id=target_id,
+        cast_mode=cast_mode,
+        prepared=prepared,
+        client_selected_target=client_selected_target,
+        source=source,
+    )
+    kind = target_contract["card_type"]
     lane = validate_lane(lane) if kind == "creature" or lane not in {None, ""} else None
-    target = _validate_target(match, side, card, target)
+    target = _validate_target(match, side, {**card, "card_type": kind}, target_contract.get("target"))
 
     if kind == "creature":
         board = ensure_board(player)
@@ -911,20 +1048,26 @@ def play_card(
         card = _remove_card_from_hand(player, index)
         player["played_card"] = card
         player["played_this_round"] = True
-        resolve_card_effect(match, side, card, _effect_context(match, lane=str(lane), target=target))
+        resolve_card_effect(match, side, card, _effect_context(match, lane=str(lane), target=target, target_contract=target_contract))
 
     elif kind == "support":
         card = _remove_card_from_hand(player, index)
         player["played_card"] = card
         player["played_this_round"] = True
-        resolve_card_effect(match, side, card, _effect_context(match, target=target))
+        resolve_card_effect(match, side, card, _effect_context(match, target=target, target_contract=target_contract))
+
+    elif kind == "trap":
+        card = _remove_card_from_hand(player, index)
+        player["played_card"] = card
+        player["played_this_round"] = True
+        resolve_card_effect(match, side, card, _effect_context(match, target=target or "self", target_contract=target_contract))
 
     else:
         card = _remove_card_from_hand(player, index)
         player["played_card"] = card
         player["played_this_round"] = True
         player["discard"].append(card)
-        apply_instant_card(match, side, card, target=target)
+        apply_instant_card(match, side, card, target=target, target_contract=target_contract)
         match["log"].append(f"{player['name']} cast {card['name']}.")
 
     return match
@@ -935,8 +1078,9 @@ def apply_instant_card(
     side: str,
     card: Dict[str, Any],
     target: Optional[str] = None,
+    target_contract: Optional[Dict[str, Any]] = None,
 ) -> None:
-    resolve_card_effect(match, side, card, _effect_context(match, target=target))
+    resolve_card_effect(match, side, card, _effect_context(match, target=target, target_contract=target_contract))
 
 
 def request_unleash(match: Dict[str, Any], side: str) -> Dict[str, Any]:
@@ -987,7 +1131,7 @@ def creature_attack_value(player: Dict[str, Any], creature: Optional[Dict[str, A
     value = int(creature.get("atk") or 0) + support_atk_bonus(player)
 
     if player.get("intent") == "Strike":
-        value += 2
+        value += 1
     elif player.get("intent") == "Guard":
         value -= 1
 
@@ -997,10 +1141,24 @@ def creature_attack_value(player: Dict[str, Any], creature: Optional[Dict[str, A
 def creature_combat_damage(defender_owner: Dict[str, Any], defender: Optional[Dict[str, Any]], amount: int) -> int:
     damage = max(0, int(amount or 0))
 
-    if defender and card_has_keyword(defender, "guarded") and defender_owner.get("intent") == "Guard":
+    if defender_owner.get("intent") == "Guard":
         damage = max(0, damage - 1)
+        if defender and card_has_keyword(defender, "guarded"):
+            damage = max(0, damage - 1)
 
     return damage
+
+
+def apply_creature_damage_with_shield(creature: Dict[str, Any], amount: int) -> Tuple[int, int, int, int]:
+    requested = max(0, int(amount or 0))
+    shield = max(0, int(creature.get("shield") or 0))
+    blocked = min(shield, requested)
+    creature["shield"] = max(0, shield - blocked)
+    dealt = max(0, requested - blocked)
+    hp_before = int(creature.get("current_hp") if creature.get("current_hp") is not None else (creature.get("hp") or 1))
+    creature["current_hp"] = hp_before - dealt
+    hp_after = int(creature.get("current_hp") or 0)
+    return dealt, blocked, hp_before, hp_after
 
 
 def attack_value(player: Dict[str, Any]) -> int:
@@ -1011,11 +1169,11 @@ def guard_value(player: Dict[str, Any]) -> int:
     value = 0
 
     if player.get("intent") == "Guard":
-        value += 5
+        value += 6
 
     creature = active_creature(player)
     if creature and player.get("intent") == "Guard":
-        value += 1
+        value += 2
 
     return value
 
@@ -1024,10 +1182,161 @@ def ambition_gain_from_intent(player: Dict[str, Any]) -> int:
     intent = player.get("intent") or "Focus"
 
     if intent == "Focus":
-        return 3
+        return 4
     if intent == "Guard":
-        return 1
+        return 2
     return 1
+
+
+def _prepared_traps(player: Dict[str, Any]) -> List[Dict[str, Any]]:
+    traps = player.setdefault("prepared_traps", [])
+    player.setdefault("field", {})["traps"] = traps
+    return traps
+
+
+def _trigger_prepared_traps(
+    match: Dict[str, Any],
+    defender_side: str,
+    attacker_side: str,
+    lane: str,
+    attacker_creature: Optional[Dict[str, Any]],
+    incoming_damage: int,
+) -> int:
+    defender = match[defender_side]
+    attacker = match[attacker_side]
+    adjusted_damage = max(0, int(incoming_damage or 0))
+    traps = _prepared_traps(defender)
+
+    for trap in list(traps):
+        if trap.get("consumed"):
+            continue
+
+        card = trap.get("card") or {}
+        effect = str(trap.get("effect") or infer_trap_effect(card))
+        trap["consumed"] = True
+        text = f"{defender['name']} triggered {card.get('name', 'a trap')}."
+        match["log"].append(text)
+        add_event(
+            match,
+            "trap_triggered",
+            actor=defender_side,
+            target=attacker_side,
+            text=text,
+            card_id=card.get("id"),
+            card_name=card.get("name"),
+            lane=lane,
+            effect_type=effect,
+        )
+        add_combat_event(
+            match,
+            "trap_triggered",
+            side=defender_side,
+            target_side=attacker_side,
+            card_id=card.get("id"),
+            card_name=card.get("name"),
+            lane=lane,
+            effect_type=effect,
+            message=text,
+        )
+
+        if effect in {"shield", "heal"}:
+            if effect == "heal":
+                heal = max(2, min(6, int(card.get("heal") or card.get("shield") or 3)))
+                before = int(defender.get("hp") or 0)
+                defender["hp"] = min(int(defender.get("max_hp") or before), before + heal)
+                add_combat_event(
+                    match,
+                    "trap_heal",
+                    side=defender_side,
+                    amount=defender["hp"] - before,
+                    hp_before=before,
+                    hp_after=defender["hp"],
+                    card_id=card.get("id"),
+                    card_name=card.get("name"),
+                )
+            else:
+                shield = max(2, min(8, int(card.get("shield") or 4)))
+                defender["shield"] = int(defender.get("shield") or 0) + shield
+                add_combat_event(
+                    match,
+                    "shield_gain",
+                    side=defender_side,
+                    amount=shield,
+                    source="trap",
+                    card_id=card.get("id"),
+                    card_name=card.get("name"),
+                    message=f"{card.get('name', 'Trap')} added {shield} shield.",
+                )
+        elif effect == "snare":
+            reduction = max(1, min(3, int(card.get("damage") or 2)))
+            adjusted_damage = max(0, adjusted_damage - reduction)
+            add_combat_event(
+                match,
+                "trap_snare",
+                side=defender_side,
+                target_side=attacker_side,
+                amount=reduction,
+                card_id=card.get("id"),
+                card_name=card.get("name"),
+                message=f"{card.get('name', 'Trap')} reduced incoming damage by {reduction}.",
+            )
+        elif effect == "counter":
+            counter = max(1, min(5, int(card.get("damage") or 2)))
+            if attacker_creature:
+                dealt, blocked, hp_before, hp_after = apply_creature_damage_with_shield(attacker_creature, counter)
+                add_combat_event(
+                    match,
+                    "creature_damage",
+                    side=defender_side,
+                    target_side=attacker_side,
+                    lane=lane,
+                    damage=dealt,
+                    amount=dealt,
+                    shield_blocked=blocked,
+                    hp_before=hp_before,
+                    hp_after=hp_after,
+                    card_id=card.get("id"),
+                    card_name=card.get("name"),
+                    source="trap",
+                )
+                _cleanup_dead_creatures(match, attacker_side)
+                if int(attacker_creature.get("current_hp") or 0) <= 0:
+                    adjusted_damage = 0
+            else:
+                hp_before = int(attacker.get("hp") or 0)
+                dealt = deal_hero_damage(attacker, counter)
+                hp_after = int(attacker.get("hp") or 0)
+                defender["last_damage_dealt"] = int(defender.get("last_damage_dealt") or 0) + dealt
+                add_combat_event(
+                    match,
+                    "hero_damage",
+                    side=defender_side,
+                    target_side=attacker_side,
+                    damage=dealt,
+                    amount=dealt,
+                    hp_before=hp_before,
+                    hp_after=hp_after,
+                    card_id=card.get("id"),
+                    card_name=card.get("name"),
+                    source="trap",
+                )
+        else:
+            add_combat_event(
+                match,
+                "trap_noop",
+                side=defender_side,
+                target_side=attacker_side,
+                card_id=card.get("id"),
+                card_name=card.get("name"),
+                message=f"{card.get('name', 'Trap')} triggered without an extra effect.",
+            )
+
+        defender.setdefault("discard", []).append(card)
+        break
+
+    defender["prepared_traps"] = [trap for trap in traps if not trap.get("consumed")]
+    defender.setdefault("field", {})["traps"] = defender["prepared_traps"]
+    return adjusted_damage
 
 
 def _card_name(card: Optional[Dict[str, Any]]) -> str:
@@ -1323,10 +1632,8 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
             p_before = int(p_creature.get("current_hp") or p_creature.get("hp") or 1)
             p_damage_to_o = creature_combat_damage(opponent, o_creature, p_lane_atk)
             o_damage_to_p = creature_combat_damage(player, p_creature, o_lane_atk)
-            o_creature["current_hp"] = o_before - p_damage_to_o
-            p_creature["current_hp"] = p_before - o_damage_to_p
-            o_after = int(o_creature.get("current_hp") or 0)
-            p_after = int(p_creature.get("current_hp") or 0)
+            p_damage_to_o, o_shield_blocked, o_before, o_after = apply_creature_damage_with_shield(o_creature, p_damage_to_o)
+            o_damage_to_p, p_shield_blocked, p_before, p_after = apply_creature_damage_with_shield(p_creature, o_damage_to_p)
             result["player_damage"] = p_damage_to_o
             result["enemy_damage"] = o_damage_to_p
             add_combat_event(
@@ -1352,6 +1659,7 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 attacker=creature_ref("player", p_creature),
                 defender=creature_ref("opponent", o_creature),
                 damage=p_damage_to_o,
+                shield_blocked=o_shield_blocked,
                 hp_before=o_before,
                 hp_after=o_after,
             )
@@ -1362,6 +1670,7 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 attacker=creature_ref("opponent", o_creature),
                 defender=creature_ref("player", p_creature),
                 damage=o_damage_to_p,
+                shield_blocked=p_shield_blocked,
                 hp_before=p_before,
                 hp_after=p_after,
             )
@@ -1378,8 +1687,16 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 defender_instance_id=o_creature.get("instance_id"),
             )
         elif p_creature:
+            effective_attack = _trigger_prepared_traps(
+                match,
+                defender_side="opponent",
+                attacker_side="player",
+                lane=lane,
+                attacker_creature=p_creature,
+                incoming_damage=p_lane_atk,
+            )
             hp_before = int(opponent.get("hp") or 0)
-            dealt = deal_hero_damage(opponent, p_lane_atk)
+            dealt = deal_hero_damage(opponent, effective_attack)
             hp_after = int(opponent.get("hp") or 0)
             player["last_damage_dealt"] += dealt
             result["player_damage"] = dealt
@@ -1389,7 +1706,7 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 lane=lane,
                 attacker=creature_ref("player", p_creature),
                 target_side="opponent",
-                damage=p_lane_atk,
+                damage=effective_attack,
             )
             add_combat_event(
                 match,
@@ -1412,8 +1729,16 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 attacker_instance_id=p_creature.get("instance_id"),
             )
         elif o_creature:
+            effective_attack = _trigger_prepared_traps(
+                match,
+                defender_side="player",
+                attacker_side="opponent",
+                lane=lane,
+                attacker_creature=o_creature,
+                incoming_damage=o_lane_atk,
+            )
             hp_before = int(player.get("hp") or 0)
-            dealt = deal_hero_damage(player, o_lane_atk)
+            dealt = deal_hero_damage(player, effective_attack)
             hp_after = int(player.get("hp") or 0)
             opponent["last_damage_dealt"] += dealt
             result["enemy_damage"] = dealt
@@ -1423,7 +1748,7 @@ def resolve_combat(match: Dict[str, Any]) -> Dict[str, Any]:
                 lane=lane,
                 attacker=creature_ref("opponent", o_creature),
                 target_side="player",
-                damage=o_lane_atk,
+                damage=effective_attack,
             )
             add_combat_event(
                 match,
@@ -1549,6 +1874,8 @@ def _board_pressure(player: Dict[str, Any]) -> int:
 def _playable_damage(player: Dict[str, Any], intent: Optional[str] = None) -> int:
     damage = 0
     for card in playable_cards(player):
+        if infer_card_type(card) == "trap":
+            continue
         value = int(card.get("damage") or 0)
         if card.get("id") == "pressure_move" and intent == "Strike":
             value += 1
@@ -1563,14 +1890,21 @@ def _bot_choose_intent(match: Dict[str, Any]) -> str:
     player_pressure = _board_pressure(player) + _playable_damage(player, player.get("intent"))
     bot_hp = int(bot.get("hp") or 0)
     player_hp = int(player.get("hp") or 0)
+    has_defense = bool(_playable_of_kind(bot, "guard") or _playable_of_kind(bot, "trap"))
 
     if player_hp <= max(6, bot_pressure + 2) and bot_pressure > 0:
         return "Strike"
-    if bot_hp <= 10 and player_pressure >= 4:
+    if bot_pressure >= max(5, player_pressure - 1) and bot_hp > 12:
+        return "Strike"
+    if bot_hp <= 14 and player_pressure >= 4 and has_defense:
+        return "Guard"
+    if player_pressure >= 7 and has_defense:
         return "Guard"
     if not board_creatures(bot) and _playable_of_kind(bot, "creature"):
+        if int(bot.get("ambition") or 0) < 4 and player_pressure <= 3:
+            return "Focus"
         return "Strike"
-    if int(bot.get("ambition") or 0) < 5 and bot_hp > 12 and player_pressure <= 5:
+    if int(bot.get("ambition") or 0) < 6 and bot_hp > 10 and player_pressure <= 6:
         return "Focus"
     if board_creatures(bot) or _playable_damage(bot, "Strike") >= 3:
         return "Strike"
@@ -1589,7 +1923,7 @@ def _bot_card_score(match: Dict[str, Any], card: Dict[str, Any], intent: str) ->
         board_bonus = 20 if not board_creatures(bot) else 8
         return (board_bonus + int(card.get("atk") or 0) * 2 + int(card.get("hp") or 0), -cost, 0, str(card.get("id") or ""))
 
-    if kind == "guard":
+    if kind in {"guard", "trap"}:
         urgency = 18 if int(bot.get("hp") or 0) <= 12 or _board_pressure(player) >= 5 else 6
         return (urgency + int(card.get("shield") or 0) + int(card.get("damage") or 0), -cost, 1, str(card.get("id") or ""))
 
@@ -1613,13 +1947,20 @@ def _bot_choose_card(match: Dict[str, Any], intent: str) -> Optional[Dict[str, A
     if not cards or bot.get("played_this_round"):
         return None
 
-    if not board_creatures(bot) and first_empty_lane(bot):
+    if first_empty_lane(bot):
         creatures = _playable_of_kind(bot, "creature")
-        if creatures:
+        bot_creature_count = len(board_creatures(bot))
+        player_creature_count = len(board_creatures(match["player"]))
+        should_contest_board = (
+            not bot_creature_count
+            or bot_creature_count < player_creature_count
+            or (intent == "Strike" and bot_creature_count < len(LANES))
+        )
+        if creatures and should_contest_board:
             return max(creatures, key=lambda card: _bot_card_score(match, card, intent))
 
     if intent == "Guard":
-        guards = _playable_of_kind(bot, "guard")
+        guards = _playable_of_kind(bot, "guard") + _playable_of_kind(bot, "trap")
         if guards:
             return max(guards, key=lambda card: _bot_card_score(match, card, intent))
 
@@ -1646,6 +1987,8 @@ def _bot_target_for_card(match: Dict[str, Any], card: Dict[str, Any]) -> Optiona
         return None
     if kind == "guard":
         return "enemy_hero" if int(card.get("damage") or 0) > 0 else "self"
+    if kind == "trap":
+        return "self"
     if kind == "support":
         return None
 
@@ -1659,7 +2002,11 @@ def _bot_target_for_card(match: Dict[str, Any], card: Dict[str, Any]) -> Optiona
         for lane, creature in player_board.items()
         if creature and int(creature.get("current_hp") or creature.get("hp") or 0) <= damage
     ]
-    if killable and int(match["opponent"].get("hp") or 0) <= 12:
+    if killable and (
+        _board_pressure(match["player"]) >= 4
+        or int(match["opponent"].get("hp") or 0) <= 16
+        or len(board_creatures(match["player"])) > len(board_creatures(match["opponent"]))
+    ):
         lane, _creature = min(killable, key=lambda item: (int(item[1].get("current_hp") or 0), item[0]))
         return f"lane:{lane}"
 
@@ -1791,6 +2138,7 @@ def _stable_card_snapshot(card: Optional[Dict[str, Any]]) -> Optional[Dict[str, 
         "max_hp": int(card.get("max_hp") or card.get("hp") or 0),
         "damage": int(card.get("damage") or 0),
         "shield": int(card.get("shield") or 0),
+        "heal": int(card.get("heal") or 0),
         "ambition": int(card.get("ambition") or 0),
         "draw": int(card.get("draw") or 0),
         "owner": str(card.get("owner") or ""),
@@ -1824,6 +2172,14 @@ def _stable_event_snapshot(event: Dict[str, Any]) -> Dict[str, Any]:
         "name",
         "message",
         "text",
+        "effect_type",
+        "target_type",
+        "target_owner",
+        "target_lane",
+        "cast_mode",
+        "prepared",
+        "shield_blocked",
+        "requested_damage",
     }
 
     for key in sorted(allowed):
@@ -1862,6 +2218,16 @@ def _stable_player_snapshot(player: Dict[str, Any]) -> Dict[str, Any]:
         "deck": [_stable_card_snapshot(card) for card in (player.get("deck") or [])],
         "discard": [_stable_card_snapshot(card) for card in (player.get("discard") or [])],
         "support": _stable_card_snapshot((player.get("field") or {}).get("support")),
+        "prepared_traps": [
+            {
+                "card": _stable_card_snapshot((trap or {}).get("card")),
+                "owner": str((trap or {}).get("owner") or ""),
+                "effect": str((trap or {}).get("effect") or ""),
+                "consumed": bool((trap or {}).get("consumed")),
+            }
+            for trap in (player.get("prepared_traps") or [])
+            if isinstance(trap, dict)
+        ],
         "board": {
             lane: _stable_card_snapshot(board.get(lane))
             for lane in LANES
@@ -1942,6 +2308,14 @@ def validate_match_integrity(match: Dict[str, Any]) -> Tuple[bool, List[str]]:
                 catalog_id = card.get("card_id") or card.get("id")
                 if catalog_id not in CARD_CATALOG_V2 and card.get("source") != "official_catalog":
                     errors.append(f"{side} invalid card {catalog_id} in {zone}")
+
+        for trap in player.get("prepared_traps") or []:
+            if not isinstance(trap, dict):
+                errors.append(f"{side} invalid prepared trap")
+                continue
+            card = trap.get("card") or {}
+            if infer_card_type(card) != "trap":
+                errors.append(f"{side} non-trap card in prepared traps")
 
         for slot in ("support",):
             card = field.get(slot)

@@ -67,6 +67,9 @@
             gradient: "linear-gradient(135deg, " + palette[0] + " 0%, " + palette[1] + " 52%, " + palette[2] + " 100%)",
             palette: palette,
             visual_identity: "premium fantasy neon placeholder art",
+            role: "",
+            simple_use_text: "",
+            short_lore: "",
             placeholder: true,
         };
     }
@@ -86,6 +89,9 @@
             gradient: str(entry && entry.fallback_gradient, "linear-gradient(135deg, " + palette.join(", ") + ")"),
             palette: palette,
             visual_identity: str(entry && entry.visual_identity, fallback.visual_identity),
+            role: str(entry && entry.role, ""),
+            simple_use_text: str(entry && entry.simple_use_text, ""),
+            short_lore: str(entry && entry.short_lore, ""),
             placeholder: Boolean(!entry || entry.placeholder !== false || !entry.art_path),
         };
     }
@@ -156,6 +162,9 @@
         });
         card.style.setProperty("--az-card-v6-gradient", art.gradient);
         card.style.setProperty("--az-card-v6-symbol", art.symbol);
+        if (art.role) card.dataset.cardArtRole = art.role;
+        if (art.simple_use_text) card.dataset.simpleUseText = art.simple_use_text;
+        if (art.short_lore) card.dataset.shortLore = art.short_lore;
 
         var existing = card.querySelector(".az-card-art-v6");
         if (existing) return;

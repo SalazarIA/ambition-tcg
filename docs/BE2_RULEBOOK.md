@@ -29,22 +29,25 @@ match-controlled RNG, then drawing continues if possible.
 
 ## Intents
 
-- `Strike`: offensive pressure. Creatures gain +2 attack this round, and
+- `Strike`: offensive pressure. Creatures gain +1 attack this round, and
   Pressure Move gains +1 damage.
-- `Guard`: defense and mitigation. The player gains 5 shield during combat,
-  guarded creatures take 1 less combat damage, and instant shield cards gain
-  +2 shield. Guard creatures attack with -1 attack this round.
-- `Focus`: scaling. The player gains 3 Ambition at combat end, and instant
-  effects gain +1 Ambition.
+- `Guard`: defense and mitigation. The player gains at least 6 shield during
+  combat, Guard reduces incoming creature damage, guarded creatures reduce it
+  further, and instant shield cards gain +2 shield. Guard creatures attack with
+  -1 attack this round.
+- `Focus`: scaling. The player gains 4 Ambition at combat end, and instant
+  effects gain +2 Ambition.
 
-`Guard` and `Strike` also grant 1 Ambition at combat end.
+`Guard` grants 2 Ambition and `Strike` grants 1 Ambition at combat end.
 
 ## Cards
 
 Creature cards enter one empty lane and grant their printed Ambition when
 played. Support cards occupy the support slot and replace the previous support
-if one exists. Spell and guard cards resolve immediately through the canonical
-card effect resolver.
+if one exists. Spell cards resolve immediately through the canonical card
+effect resolver. Official Trap cards are prepared into the trap zone and can
+trigger during an incoming attack; older BE2 `guard` cards still resolve as
+instant defensive cards for compatibility.
 
 ## Starter Identity
 
@@ -62,17 +65,18 @@ Arena can teach this identity without changing core combat rules.
 ## Lanes And Targeting
 
 There are three lanes: `left`, `center` and `right`. Creature cards require an
-empty lane. Instant cards may target `enemy_hero`, `self` or `lane:<lane>`.
-Lane-targeted damage hits the enemy creature in that lane when present;
-otherwise damage falls back to the enemy hero. Guard cards always grant shield
-to their owner, even when their damage component targets the enemy hero.
+empty lane. Spells accept the legacy targets `enemy_hero`, `self` and
+`lane:<lane>`, plus the RC V6 contract fields `target_type`, `target_owner`,
+`target_lane` and `cast_mode`. Lane-targeted damage hits the enemy creature in
+that lane when present; defensive spells can target self or allied creatures.
+Unknown or absent target fields fall back safely.
 
 ## Shield And Damage
 
-Shield absorbs hero damage before HP is reduced. Creature damage reduces
-`current_hp` directly. Creature combat is simultaneous when both sides have a
-creature in the same lane. Direct lane attacks hit the opposing hero when the
-opposing lane is empty.
+Shield absorbs hero damage before HP is reduced. Creature shield can also
+absorb creature damage when granted by a spell or trap. Creature combat is
+simultaneous when both sides have a creature in the same lane. Direct lane
+attacks hit the opposing hero when the opposing lane is empty.
 
 ## Ambition
 

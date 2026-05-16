@@ -11,6 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = ROOT / "static" / "assets" / "cards" / "card_art_manifest.json"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 REQUIRED_FIELDS = {
     "id",
     "name",
@@ -23,6 +25,7 @@ REQUIRED_FIELDS = {
     "visual_identity",
     "fallback_gradient",
 }
+STARTER_IDENTITY_FIELDS = {"role", "simple_use_text", "short_lore"}
 
 
 def load_manifest() -> dict:
@@ -46,9 +49,18 @@ def main() -> int:
     errors: list[str] = []
     warnings: list[str] = []
     ids: list[str] = []
+    starter_ids: set[str] = set()
     by_element: Counter[str] = Counter()
     by_type: Counter[str] = Counter()
     by_rarity: Counter[str] = Counter()
+    by_role: Counter[str] = Counter()
+
+    try:
+        from services.battle_engine_v2 import build_beta_deck
+
+        starter_ids = {str(card.get("id")) for card in build_beta_deck(seed=4248) if card.get("id")}
+    except Exception as exc:  # pragma: no cover - defensive QA fallback
+        warnings.append(f"starter deck identity check skipped: {exc}")
 
     if not isinstance(cards, list) or not cards:
         errors.append("manifest has no cards list")
@@ -69,6 +81,15 @@ def main() -> int:
         by_element[str(card.get("element") or "Unknown")] += 1
         by_type[str(card.get("type") or "Unknown")] += 1
         by_rarity[str(card.get("rarity") or "Unknown")] += 1
+        if card.get("role"):
+            by_role[str(card.get("role"))] += 1
+
+        if card_id in starter_ids:
+            missing_starter = sorted(STARTER_IDENTITY_FIELDS - set(card))
+            empty_starter = sorted(field for field in STARTER_IDENTITY_FIELDS if not str(card.get(field) or "").strip())
+            if missing_starter or empty_starter:
+                missing_text = ", ".join(sorted(set(missing_starter + empty_starter)))
+                errors.append(f"{card_id} starter identity missing: {missing_text}")
 
         art_path = str(card.get("art_path") or "")
         placeholder = bool(card.get("placeholder", not art_path))
@@ -87,6 +108,8 @@ def main() -> int:
     print("elements:", dict(sorted(by_element.items())))
     print("types:", dict(sorted(by_type.items())))
     print("rarities:", dict(sorted(by_rarity.items())))
+    print("roles:", dict(sorted(by_role.items())))
+    print(f"starter_identity_cards: {sum(1 for card_id in ids if card_id in starter_ids)}/{len(starter_ids)}")
     print(f"placeholder_warnings: {len(warnings)}")
 
     for warning in warnings[:8]:

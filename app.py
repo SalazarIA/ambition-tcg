@@ -6289,6 +6289,16 @@ def az48_play_card(data=None):
             card_index=data.get("card_index"),
             lane=data.get("lane"),
             target=data.get("target"),
+            card_type=data.get("card_type"),
+            official_type=data.get("official_type"),
+            target_type=data.get("target_type"),
+            target_owner=data.get("target_owner"),
+            target_lane=data.get("target_lane"),
+            target_id=data.get("target_id"),
+            cast_mode=data.get("cast_mode"),
+            prepared=data.get("prepared"),
+            client_selected_target=data.get("client_selected_target"),
+            source=data.get("source"),
             message="Card played. Press Ready to resolve combat.",
         )
     except Exception as error:

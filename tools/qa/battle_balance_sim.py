@@ -74,7 +74,7 @@ def _card_score(match: Dict[str, Any], card: Dict[str, Any], intent: str) -> tup
     if kind == "creature":
         empty_bonus = 18 if not board_creatures(player) else 6
         return (empty_bonus + int(card.get("atk") or 0) * 2 + int(card.get("hp") or 0), -cost, str(card.get("id") or ""))
-    if kind == "guard":
+    if kind in {"guard", "trap"}:
         urgency = 14 if int(player.get("hp") or 0) <= 12 or _attack_pressure(opponent) >= 5 else 4
         return (urgency + int(card.get("shield") or 0) + int(card.get("damage") or 0), -cost, str(card.get("id") or ""))
     if kind == "support":
@@ -92,6 +92,8 @@ def _target_for_card(match: Dict[str, Any], card: Dict[str, Any]) -> Optional[st
         return None
     if card.get("kind") == "support":
         return None
+    if card.get("kind") == "trap":
+        return "self"
     if card.get("kind") == "guard":
         return "enemy_hero" if int(card.get("damage") or 0) > 0 else "self"
     return "enemy_hero"

@@ -44,6 +44,7 @@ Every prompt should include:
 - Use lowercase card ids as file names, for example `fire_001.png`.
 - Keep placeholders under `static/assets/cards/placeholders/`.
 - Update `static/assets/cards/card_art_manifest.json` when adding final art.
+- RC V6 starter entries also include `role`, `simple_use_text` and `short_lore` so the Arena, Collection and Deck Builder can teach how the card is used before final art exists.
 
 ## QA
 
@@ -54,3 +55,4 @@ python3 tools/qa/card_art_manifest_check.py
 ```
 
 The manifest checker validates required fields, duplicate ids, placeholder state and missing files for non-placeholder art.
+It also validates that the 30 BE2 starter cards include role and how-to-use identity fields.

@@ -71,3 +71,93 @@ def test_resolver_lane_target_damage_clears_dead_creature():
     assert match["opponent"]["board"]["left"] is None
     assert any(card.get("card_id") == "spark_runner" for card in match["opponent"]["discard"])
     assert any(event["type"] == "creature_damage" for event in match["combat_log"])
+
+
+def test_spell_resolver_heals_player_with_real_spell_event():
+    match = create_match(seed=5105, opponent_is_bot=False)
+    start_round(match)
+    heal_spell = {
+        "id": "test_healing_rain",
+        "name": "Healing Rain",
+        "kind": "spell",
+        "official_type": "Spell",
+        "cost": 1,
+        "heal": 5,
+        "text": "Restore HP.",
+    }
+    match["player"]["hp"] = 20
+    match["player"]["hand"] = [heal_spell]
+    match["player"]["energy"] = 10
+    choose_intent(match, "player", "Focus")
+
+    play_card(match, "player", card_id="test_healing_rain", target="self")
+
+    assert match["player"]["hp"] == 25
+    assert any(event["type"] == "spell_heal" for event in match["combat_log"])
+
+
+def test_spell_resolver_can_shield_ally_creature_target():
+    match = create_match(seed=5106, opponent_is_bot=False)
+    start_round(match)
+    match["player"]["hand"] = [card("spark_runner")]
+    match["player"]["energy"] = 10
+    choose_intent(match, "player", "Guard")
+    play_card(match, "player", card_id="spark_runner", lane="left")
+
+    shield_spell = {
+        "id": "test_barrier",
+        "name": "Lane Barrier",
+        "kind": "spell",
+        "official_type": "Spell",
+        "cost": 1,
+        "shield": 4,
+        "text": "Shield an allied creature.",
+    }
+    match["player"]["played_card"] = None
+    match["player"]["played_this_round"] = False
+    match["player"]["hand"] = [shield_spell]
+    match["player"]["energy"] = 10
+
+    play_card(
+        match,
+        "player",
+        card_id="test_barrier",
+        target_type="creature",
+        target_owner="self",
+        target_lane="left",
+    )
+
+    assert match["player"]["board"]["left"]["shield"] == 6
+    assert any(event["type"] == "shield_gain" and event.get("target_type") == "creature" for event in match["combat_log"])
+
+
+def test_trap_resolver_triggers_and_consumes_on_enemy_attack():
+    match = create_match(seed=5107, opponent_is_bot=False)
+    start_round(match)
+    counter_trap = {
+        "id": "test_counter_trap",
+        "name": "Counter Sigil",
+        "kind": "trap",
+        "official_type": "Trap",
+        "cost": 1,
+        "damage": 5,
+        "shield": 0,
+        "text": "Counter damage when the enemy attacks.",
+    }
+    match["player"]["hand"] = [counter_trap]
+    match["opponent"]["hand"] = [card("spark_runner")]
+    match["player"]["energy"] = 10
+    match["opponent"]["energy"] = 10
+    choose_intent(match, "player", "Guard")
+    choose_intent(match, "opponent", "Strike")
+    play_card(match, "player", card_id="test_counter_trap", card_type="trap", target="self")
+    play_card(match, "opponent", card_id="spark_runner", lane="left")
+
+    match["player"]["ready"] = True
+    match["opponent"]["ready"] = True
+    from services.battle_engine_v2 import resolve_combat
+    resolve_combat(match)
+
+    assert match["player"]["prepared_traps"] == []
+    assert any(card.get("id") == "test_counter_trap" for card in match["player"]["discard"])
+    assert any(event["type"] == "trap_triggered" for event in match["combat_log"])

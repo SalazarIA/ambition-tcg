@@ -47,7 +47,7 @@
             var matchesType = !filters.type || card.dataset.type === filters.type;
             var matchesElement = !filters.element || card.dataset.element === filters.element;
             var matchesSigil = !filters.sigil || card.dataset.sigil === filters.sigil;
-            var matchesRole = !filters.role || card.dataset.role === filters.role;
+            var matchesRole = !filters.role || card.dataset.role === filters.role || card.dataset.cardArtRole === filters.role;
             var matchesFaction = !filters.faction || card.dataset.faction === filters.faction;
             var matchesRarity = !filters.rarity || card.dataset.rarity === filters.rarity;
             var matchesOwnership = !filters.ownership || card.dataset.ownership === filters.ownership;
@@ -252,20 +252,26 @@
         var type = card.dataset.type || "Card";
         var element = card.dataset.element || "Neutral";
         var rarity = card.dataset.rarity || "Common";
+        var art = window.AmbitionzCardArt && typeof window.AmbitionzCardArt.getCardArt === "function"
+            ? window.AmbitionzCardArt.getCardArt(card)
+            : {};
         var owned = Number(card.dataset.owned || 0);
         var ownership = card.dataset.ownership || (owned > 0 ? "owned" : "locked");
-        var description = card.dataset.lore || card.dataset.effect || "Ambitionz beta card identity.";
+        var role = card.dataset.cardArtRole || card.dataset.role || art.role || "Flexible";
+        var howToUse = card.dataset.simpleUseText || art.simple_use_text || "Play this card when its cost and type fit the round.";
+        var description = card.dataset.shortLore || art.short_lore || card.dataset.lore || card.dataset.effect || "Ambitionz beta card identity.";
 
         modal.querySelector("#az-collection-modal-art").innerHTML = cardArtHtml(card);
         modal.querySelector("#az-collection-modal-title").textContent = name;
         modal.querySelector("#az-collection-modal-meta").textContent = [rarity, element, type].filter(Boolean).join(" / ");
-        modal.querySelector("#az-collection-modal-text").textContent = description;
+        modal.querySelector("#az-collection-modal-text").textContent = description + " How to use: " + howToUse;
         modal.querySelector("#az-collection-modal-stats").innerHTML = [
             ["Type", type],
             ["Element", element],
             ["Rarity", rarity],
             ["Faction", card.dataset.faction || "Arcane Neutral"],
-            ["Role", card.dataset.role || "Flexible"],
+            ["Role", role],
+            ["How to use", howToUse],
             ["Status", ownership === "owned" ? "Owned x" + owned : "Locked"],
         ].map(function (row) {
             return '<div><dt>' + escapeHtml(row[0]) + '</dt><dd>' + escapeHtml(row[1]) + '</dd></div>';

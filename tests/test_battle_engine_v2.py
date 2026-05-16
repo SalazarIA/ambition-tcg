@@ -152,6 +152,14 @@ def test_arena_command_v1_normalizes_play_card_payload():
         "card_index": "0",
         "lane": "Left",
         "target": "",
+        "card_type": "creature",
+        "target_type": "lane",
+        "target_owner": "self",
+        "target_lane": "left",
+        "cast_mode": "summon",
+        "prepared": False,
+        "client_selected_target": "ally_left",
+        "unknown_field": "ignored",
     })
 
     assert command["schema"] == ARENA_COMMAND_SCHEMA
@@ -160,6 +168,14 @@ def test_arena_command_v1_normalizes_play_card_payload():
     assert command["card_index"] == 0
     assert command["lane"] == "Left"
     assert command["target"] is None
+    assert command["card_type"] == "creature"
+    assert command["target_type"] == "lane"
+    assert command["target_owner"] == "self"
+    assert command["target_lane"] == "left"
+    assert command["cast_mode"] == "summon"
+    assert command["prepared"] is False
+    assert command["client_selected_target"] == "ally_left"
+    assert "unknown_field" not in command
 
 
 def test_match_engine_facade_runs_arena_command_v1_flow():
@@ -271,8 +287,10 @@ def test_be2_starter_deck_identity_contract():
     assert len(deck) == 30
     assert all(card.get("id") for card in deck)
     assert all(card.get("element") for card in deck)
-    assert all(card.get("kind") in {"creature", "spell", "guard"} for card in deck)
+    assert all(card.get("kind") in {"creature", "spell", "trap"} for card in deck)
     assert sum(1 for card in deck if card.get("kind") == "creature") == 21
+    assert sum(1 for card in deck if card.get("kind") == "spell") == 6
+    assert sum(1 for card in deck if card.get("kind") == "trap") == 3
 
 
 def test_training_bot_uses_training_balance_profile():
@@ -403,8 +421,57 @@ def test_guarded_keyword_reduces_combat_damage_on_guard_intent():
     be2_ready(match, side="opponent")
 
     guardian = match["player"]["board"]["center"]
-    assert guardian["current_hp"] == 6
+    assert guardian["current_hp"] == 7
     assert card_has_keyword(guardian, "guarded")
+
+
+def test_be2_new_play_card_contract_accepts_spell_target_fields():
+    match = create_match(seed=1321, opponent_is_bot=False)
+    start_round(match)
+    choose_intent(match, "player", "Strike")
+    match["player"]["hand"] = [card("clean_hit")]
+    match["player"]["energy"] = 10
+
+    play_card(
+        match,
+        "player",
+        card_id="clean_hit",
+        card_type="spell",
+        official_type="Spell",
+        target_type="hero",
+        target_owner="opponent",
+        cast_mode="targeted",
+        client_selected_target="enemy_hero",
+    )
+
+    assert match["opponent"]["hp"] < match["opponent"]["max_hp"]
+    assert any(event["type"] == "spell_cast" for event in match["combat_log"])
+    assert any(event["type"] == "spell_damage" for event in match["combat_log"])
+
+
+def test_be2_new_play_card_contract_prepares_trap_without_summoning():
+    match = create_match(seed=1322, opponent_is_bot=False)
+    start_round(match)
+    trap = next(card for card in build_beta_deck(seed=4248) if card.get("kind") == "trap")
+    match["player"]["hand"] = [trap]
+    match["player"]["energy"] = 10
+    choose_intent(match, "player", "Guard")
+
+    play_card(
+        match,
+        "player",
+        card_id=trap["id"],
+        card_type="trap",
+        official_type="Trap",
+        cast_mode="prepare",
+        prepared=True,
+        target_type="self",
+        target_owner="self",
+    )
+
+    assert match["player"]["prepared_traps"]
+    assert all(slot is None for slot in match["player"]["board"].values())
+    assert any(event["type"] == "trap_prepared" for event in match["combat_log"])
 
 
 def test_focused_keyword_adds_ambition_to_instant_effect():

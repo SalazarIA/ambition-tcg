@@ -1,6 +1,6 @@
 {
   "schema": "ambitionz_card_art_manifest_v1",
-  "version": "arena_v6_placeholder_pack",
+  "version": "rc-v6-starter-identity",
   "cards": [
     {
       "id": "fire_001",
@@ -9,16 +9,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Draco Magma, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "prompt": "Draco Magma, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Draco Magma as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
         "#ff4d3d",
-        "#ffb347",
-        "#ffd36b"
+        "#ff9a3d",
+        "#ffd66f"
       ],
-      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
-      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "visual_identity": "Draco Magma as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ff9a3d 52%, #ffd66f 100%)",
       "symbol": "F",
-      "placeholder": true
+      "placeholder": true,
+      "role": "attacker",
+      "simple_use_text": "Summon into a lane to push damage and force trades.",
+      "short_lore": "Draco Magma teaches pressure attacker decisions in the beta starter deck."
     },
     {
       "id": "fire_002",
@@ -27,16 +30,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Fenix Infernal, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "prompt": "Fenix Infernal, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Fenix Infernal as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
         "#ff4d3d",
-        "#ffb347",
-        "#ffd36b"
+        "#ff9a3d",
+        "#ffd66f"
       ],
-      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
-      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "visual_identity": "Fenix Infernal as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ff9a3d 52%, #ffd66f 100%)",
       "symbol": "F",
-      "placeholder": true
+      "placeholder": true,
+      "role": "attacker",
+      "simple_use_text": "Summon into a lane to push damage and force trades.",
+      "short_lore": "Fenix Infernal teaches pressure attacker decisions in the beta starter deck."
     },
     {
       "id": "fire_003",
@@ -45,16 +51,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Cavaleiro Igneo, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "prompt": "Cavaleiro Igneo, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Cavaleiro Igneo as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
         "#ff4d3d",
-        "#ffb347",
-        "#ffd36b"
+        "#ff9a3d",
+        "#ffd66f"
       ],
-      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
-      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "visual_identity": "Cavaleiro Igneo as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ff9a3d 52%, #ffd66f 100%)",
       "symbol": "F",
-      "placeholder": true
+      "placeholder": true,
+      "role": "attacker",
+      "simple_use_text": "Summon into a lane to push damage and force trades.",
+      "short_lore": "Cavaleiro Igneo teaches pressure attacker decisions in the beta starter deck."
     },
     {
       "id": "fire_004",
@@ -81,16 +90,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Behemoth de Lava, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "prompt": "Behemoth de Lava, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Behemoth de Lava as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
         "#ff4d3d",
-        "#ffb347",
-        "#ffd36b"
+        "#ff9a3d",
+        "#ffd66f"
       ],
-      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
-      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "visual_identity": "Behemoth de Lava as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ff9a3d 52%, #ffd66f 100%)",
       "symbol": "F",
-      "placeholder": true
+      "placeholder": true,
+      "role": "attacker",
+      "simple_use_text": "Summon into a lane to push damage and force trades.",
+      "short_lore": "Behemoth de Lava teaches pressure attacker decisions in the beta starter deck."
     },
     {
       "id": "fire_006",
@@ -99,16 +111,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Salamandra Rubra, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "prompt": "Salamandra Rubra, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Salamandra Rubra as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
         "#ff4d3d",
-        "#ffb347",
-        "#ffd36b"
+        "#ff9a3d",
+        "#ffd66f"
       ],
-      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
-      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "visual_identity": "Salamandra Rubra as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ff9a3d 52%, #ffd66f 100%)",
       "symbol": "F",
-      "placeholder": true
+      "placeholder": true,
+      "role": "attacker",
+      "simple_use_text": "Summon into a lane to push damage and force trades.",
+      "short_lore": "Salamandra Rubra teaches pressure attacker decisions in the beta starter deck."
     },
     {
       "id": "fire_007",
@@ -117,16 +132,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Imp de Chama, Fire Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, aggressive flame pressure, ember sparks, gold heat haze",
+      "prompt": "Imp de Chama, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Imp de Chama as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
         "#ff4d3d",
-        "#ffb347",
-        "#ffd36b"
+        "#ff9a3d",
+        "#ffd66f"
       ],
-      "visual_identity": "aggressive flame pressure, ember sparks, gold heat haze",
-      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ffb347 52%, #ffd36b 100%)",
+      "visual_identity": "Imp de Chama as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #ff4d3d 0%, #ff9a3d 52%, #ffd66f 100%)",
       "symbol": "F",
-      "placeholder": true
+      "placeholder": true,
+      "role": "attacker",
+      "simple_use_text": "Summon into a lane to push damage and force trades.",
+      "short_lore": "Imp de Chama teaches pressure attacker decisions in the beta starter deck."
     },
     {
       "id": "fire_008",
@@ -909,16 +927,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Guardiao das Mares, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Guardiao das Mares, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Guardiao das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#1f8cff",
-        "#29f0ff",
+        "#1478ff",
+        "#28f4ff",
         "#d5fbff"
       ],
-      "visual_identity": "arcane tides, cyan spell light, reflective flow",
-      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "visual_identity": "Guardiao das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1478ff 0%, #28f4ff 52%, #d5fbff 100%)",
       "symbol": "W",
-      "placeholder": true
+      "placeholder": true,
+      "role": "ambition_engine",
+      "simple_use_text": "Use it to build Ambition and unlock stronger turns.",
+      "short_lore": "Guardiao das Mares teaches ambition engine decisions in the beta starter deck."
     },
     {
       "id": "water_002",
@@ -927,16 +948,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Serpente Abissal, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Serpente Abissal, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Serpente Abissal as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#1f8cff",
-        "#29f0ff",
+        "#1478ff",
+        "#28f4ff",
         "#d5fbff"
       ],
-      "visual_identity": "arcane tides, cyan spell light, reflective flow",
-      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "visual_identity": "Serpente Abissal as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1478ff 0%, #28f4ff 52%, #d5fbff 100%)",
       "symbol": "W",
-      "placeholder": true
+      "placeholder": true,
+      "role": "ambition_engine",
+      "simple_use_text": "Use it to build Ambition and unlock stronger turns.",
+      "short_lore": "Serpente Abissal teaches ambition engine decisions in the beta starter deck."
     },
     {
       "id": "water_003",
@@ -945,16 +969,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Oraculo das Mares, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Oraculo das Mares, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Oraculo das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#1f8cff",
-        "#29f0ff",
+        "#1478ff",
+        "#28f4ff",
         "#d5fbff"
       ],
-      "visual_identity": "arcane tides, cyan spell light, reflective flow",
-      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "visual_identity": "Oraculo das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1478ff 0%, #28f4ff 52%, #d5fbff 100%)",
       "symbol": "W",
-      "placeholder": true
+      "placeholder": true,
+      "role": "ambition_engine",
+      "simple_use_text": "Use it to build Ambition and unlock stronger turns.",
+      "short_lore": "Oraculo das Mares teaches ambition engine decisions in the beta starter deck."
     },
     {
       "id": "water_004",
@@ -981,16 +1008,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Tritao Guerreiro, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Tritao Guerreiro, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Tritao Guerreiro as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#1f8cff",
-        "#29f0ff",
+        "#1478ff",
+        "#28f4ff",
         "#d5fbff"
       ],
-      "visual_identity": "arcane tides, cyan spell light, reflective flow",
-      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "visual_identity": "Tritao Guerreiro as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1478ff 0%, #28f4ff 52%, #d5fbff 100%)",
       "symbol": "W",
-      "placeholder": true
+      "placeholder": true,
+      "role": "ambition_engine",
+      "simple_use_text": "Use it to build Ambition and unlock stronger turns.",
+      "short_lore": "Tritao Guerreiro teaches ambition engine decisions in the beta starter deck."
     },
     {
       "id": "water_006",
@@ -999,16 +1029,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Sereia Lunar, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Sereia Lunar, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Sereia Lunar as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#1f8cff",
-        "#29f0ff",
+        "#1478ff",
+        "#28f4ff",
         "#d5fbff"
       ],
-      "visual_identity": "arcane tides, cyan spell light, reflective flow",
-      "fallback_gradient": "linear-gradient(135deg, #1f8cff 0%, #29f0ff 52%, #d5fbff 100%)",
+      "visual_identity": "Sereia Lunar as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1478ff 0%, #28f4ff 52%, #d5fbff 100%)",
       "symbol": "W",
-      "placeholder": true
+      "placeholder": true,
+      "role": "ambition_engine",
+      "simple_use_text": "Use it to build Ambition and unlock stronger turns.",
+      "short_lore": "Sereia Lunar teaches ambition engine decisions in the beta starter deck."
     },
     {
       "id": "water_007",
@@ -1030,12 +1063,12 @@
     },
     {
       "id": "water_008",
-      "name": "Cavaleiro da Mar\u00e9",
+      "name": "Cavaleiro da Maré",
       "element": "Water",
       "type": "Monster",
       "rarity": "Uncommon",
       "art_path": "",
-      "prompt": "Cavaleiro da Mar\u00e9, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Cavaleiro da Maré, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
       "palette": [
         "#1f8cff",
         "#29f0ff",
@@ -1102,12 +1135,12 @@
     },
     {
       "id": "water_012",
-      "name": "Tubar\u00e3o de Cristal",
+      "name": "Tubarão de Cristal",
       "element": "Water",
       "type": "Monster",
       "rarity": "Uncommon",
       "art_path": "",
-      "prompt": "Tubar\u00e3o de Cristal, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Tubarão de Cristal, Water Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
       "palette": [
         "#1f8cff",
         "#29f0ff",
@@ -1408,12 +1441,12 @@
     },
     {
       "id": "water_029",
-      "name": "Rainha da Mar\u00e9",
+      "name": "Rainha da Maré",
       "element": "Water",
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Rainha da Mar\u00e9, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Rainha da Maré, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
       "palette": [
         "#1f8cff",
         "#29f0ff",
@@ -1696,12 +1729,12 @@
     },
     {
       "id": "water_045",
-      "name": "Basilisco da Mar\u00e9",
+      "name": "Basilisco da Maré",
       "element": "Water",
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Basilisco da Mar\u00e9, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
+      "prompt": "Basilisco da Maré, Water Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, arcane tides, cyan spell light, reflective flow",
       "palette": [
         "#1f8cff",
         "#29f0ff",
@@ -1809,16 +1842,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Tita de Pedra, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "prompt": "Tita de Pedra, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Tita de Pedra as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#2fd38f",
-        "#8f6d3a",
+        "#1c6f45",
+        "#b28a45",
         "#f0d18a"
       ],
-      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
-      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "visual_identity": "Tita de Pedra as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1c6f45 0%, #b28a45 52%, #f0d18a 100%)",
       "symbol": "E",
-      "placeholder": true
+      "placeholder": true,
+      "role": "defender",
+      "simple_use_text": "Summon into a lane to soak attacks and protect your hero.",
+      "short_lore": "Tita de Pedra teaches lane defender decisions in the beta starter deck."
     },
     {
       "id": "earth_002",
@@ -1827,16 +1863,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Colosso Ancestral, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "prompt": "Colosso Ancestral, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Colosso Ancestral as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#2fd38f",
-        "#8f6d3a",
+        "#1c6f45",
+        "#b28a45",
         "#f0d18a"
       ],
-      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
-      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "visual_identity": "Colosso Ancestral as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1c6f45 0%, #b28a45 52%, #f0d18a 100%)",
       "symbol": "E",
-      "placeholder": true
+      "placeholder": true,
+      "role": "defender",
+      "simple_use_text": "Summon into a lane to soak attacks and protect your hero.",
+      "short_lore": "Colosso Ancestral teaches lane defender decisions in the beta starter deck."
     },
     {
       "id": "earth_003",
@@ -1845,16 +1884,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Sentinela Rochoso, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "prompt": "Sentinela Rochoso, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Sentinela Rochoso as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#2fd38f",
-        "#8f6d3a",
+        "#1c6f45",
+        "#b28a45",
         "#f0d18a"
       ],
-      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
-      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "visual_identity": "Sentinela Rochoso as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1c6f45 0%, #b28a45 52%, #f0d18a 100%)",
       "symbol": "E",
-      "placeholder": true
+      "placeholder": true,
+      "role": "defender",
+      "simple_use_text": "Summon into a lane to soak attacks and protect your hero.",
+      "short_lore": "Sentinela Rochoso teaches lane defender decisions in the beta starter deck."
     },
     {
       "id": "earth_004",
@@ -1881,16 +1923,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Guardiao da Montanha, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "prompt": "Guardiao da Montanha, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Guardiao da Montanha as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#2fd38f",
-        "#8f6d3a",
+        "#1c6f45",
+        "#b28a45",
         "#f0d18a"
       ],
-      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
-      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "visual_identity": "Guardiao da Montanha as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1c6f45 0%, #b28a45 52%, #f0d18a 100%)",
       "symbol": "E",
-      "placeholder": true
+      "placeholder": true,
+      "role": "defender",
+      "simple_use_text": "Summon into a lane to soak attacks and protect your hero.",
+      "short_lore": "Guardiao da Montanha teaches lane defender decisions in the beta starter deck."
     },
     {
       "id": "earth_006",
@@ -1899,16 +1944,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Minotauro de Ferro, Earth Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, stone armor, bronze runes, grounded defensive mass",
+      "prompt": "Minotauro de Ferro, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Minotauro de Ferro as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#2fd38f",
-        "#8f6d3a",
+        "#1c6f45",
+        "#b28a45",
         "#f0d18a"
       ],
-      "visual_identity": "stone armor, bronze runes, grounded defensive mass",
-      "fallback_gradient": "linear-gradient(135deg, #2fd38f 0%, #8f6d3a 52%, #f0d18a 100%)",
+      "visual_identity": "Minotauro de Ferro as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #1c6f45 0%, #b28a45 52%, #f0d18a 100%)",
       "symbol": "E",
-      "placeholder": true
+      "placeholder": true,
+      "role": "defender",
+      "simple_use_text": "Summon into a lane to soak attacks and protect your hero.",
+      "short_lore": "Minotauro de Ferro teaches lane defender decisions in the beta starter deck."
     },
     {
       "id": "earth_007",
@@ -2709,16 +2757,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Druida das Raizes, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "prompt": "Druida das Raizes, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Druida das Raizes as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
+        "#13a85a",
         "#23e87d",
-        "#8cff5a",
-        "#124d34"
+        "#aaff6a"
       ],
-      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
-      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "visual_identity": "Druida das Raizes as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #13a85a 0%, #23e87d 52%, #aaff6a 100%)",
       "symbol": "P",
-      "placeholder": true
+      "placeholder": true,
+      "role": "utility",
+      "simple_use_text": "Use it to shape lanes, slow pressure and keep options open.",
+      "short_lore": "Druida das Raizes teaches control utility decisions in the beta starter deck."
     },
     {
       "id": "plant_002",
@@ -2727,16 +2778,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Lobo Espinheiro, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "prompt": "Lobo Espinheiro, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Lobo Espinheiro as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
+        "#13a85a",
         "#23e87d",
-        "#8cff5a",
-        "#124d34"
+        "#aaff6a"
       ],
-      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
-      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "visual_identity": "Lobo Espinheiro as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #13a85a 0%, #23e87d 52%, #aaff6a 100%)",
       "symbol": "P",
-      "placeholder": true
+      "placeholder": true,
+      "role": "utility",
+      "simple_use_text": "Use it to shape lanes, slow pressure and keep options open.",
+      "short_lore": "Lobo Espinheiro teaches control utility decisions in the beta starter deck."
     },
     {
       "id": "plant_003",
@@ -2745,16 +2799,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Ent Florido, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "prompt": "Ent Florido, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Ent Florido as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
+        "#13a85a",
         "#23e87d",
-        "#8cff5a",
-        "#124d34"
+        "#aaff6a"
       ],
-      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
-      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "visual_identity": "Ent Florido as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #13a85a 0%, #23e87d 52%, #aaff6a 100%)",
       "symbol": "P",
-      "placeholder": true
+      "placeholder": true,
+      "role": "utility",
+      "simple_use_text": "Use it to shape lanes, slow pressure and keep options open.",
+      "short_lore": "Ent Florido teaches control utility decisions in the beta starter deck."
     },
     {
       "id": "plant_004",
@@ -2781,16 +2838,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Fada do Bosque, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "prompt": "Fada do Bosque, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Fada do Bosque as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
+        "#13a85a",
         "#23e87d",
-        "#8cff5a",
-        "#124d34"
+        "#aaff6a"
       ],
-      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
-      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "visual_identity": "Fada do Bosque as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #13a85a 0%, #23e87d 52%, #aaff6a 100%)",
       "symbol": "P",
-      "placeholder": true
+      "placeholder": true,
+      "role": "utility",
+      "simple_use_text": "Use it to shape lanes, slow pressure and keep options open.",
+      "short_lore": "Fada do Bosque teaches control utility decisions in the beta starter deck."
     },
     {
       "id": "plant_006",
@@ -2799,16 +2859,19 @@
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Cervo Esmeralda, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "prompt": "Cervo Esmeralda, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Cervo Esmeralda as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
+        "#13a85a",
         "#23e87d",
-        "#8cff5a",
-        "#124d34"
+        "#aaff6a"
       ],
-      "visual_identity": "bioluminescent vines, emerald growth, controlled nature magic",
-      "fallback_gradient": "linear-gradient(135deg, #23e87d 0%, #8cff5a 52%, #124d34 100%)",
+      "visual_identity": "Cervo Esmeralda as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #13a85a 0%, #23e87d 52%, #aaff6a 100%)",
       "symbol": "P",
-      "placeholder": true
+      "placeholder": true,
+      "role": "utility",
+      "simple_use_text": "Use it to shape lanes, slow pressure and keep options open.",
+      "short_lore": "Cervo Esmeralda teaches control utility decisions in the beta starter deck."
     },
     {
       "id": "plant_007",
@@ -2956,12 +3019,12 @@
     },
     {
       "id": "plant_015",
-      "name": "Fera do Cip\u00f3",
+      "name": "Fera do Cipó",
       "element": "Plant",
       "type": "Monster",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Fera do Cip\u00f3, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "prompt": "Fera do Cipó, Plant Monster, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
       "palette": [
         "#23e87d",
         "#8cff5a",
@@ -3406,12 +3469,12 @@
     },
     {
       "id": "plant_040",
-      "name": "Raptor de Cip\u00f3",
+      "name": "Raptor de Cipó",
       "element": "Plant",
       "type": "Monster",
       "rarity": "Uncommon",
       "art_path": "",
-      "prompt": "Raptor de Cip\u00f3, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
+      "prompt": "Raptor de Cipó, Plant Monster, Uncommon rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, bioluminescent vines, emerald growth, controlled nature magic",
       "palette": [
         "#23e87d",
         "#8cff5a",
@@ -3609,16 +3672,19 @@
       "type": "Spell",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Chama Vital, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Chama Vital, Global Spell, Common rarity, Heal spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Chama Vital as heal spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Chama Vital as heal spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #32116a 0%, #8d4dff 48%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "spell_heal",
+      "simple_use_text": "Cast on yourself or a damaged ally to recover tempo.",
+      "short_lore": "Chama Vital teaches heal spell decisions in the beta starter deck."
     },
     {
       "id": "spell_002",
@@ -3627,16 +3693,19 @@
       "type": "Spell",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Surto Elemental, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Surto Elemental, Global Spell, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Surto Elemental as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Surto Elemental as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #32116a 0%, #8d4dff 48%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "ambition_engine",
+      "simple_use_text": "Use it to build Ambition and unlock stronger turns.",
+      "short_lore": "Surto Elemental teaches ambition engine decisions in the beta starter deck."
     },
     {
       "id": "spell_003",
@@ -3663,16 +3732,19 @@
       "type": "Spell",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Bencao da Terra, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Bencao da Terra, Global Spell, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Bencao da Terra as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Bencao da Terra as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #32116a 0%, #8d4dff 48%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "ambition_engine",
+      "simple_use_text": "Use it to build Ambition and unlock stronger turns.",
+      "short_lore": "Bencao da Terra teaches ambition engine decisions in the beta starter deck."
     },
     {
       "id": "spell_005",
@@ -3699,16 +3771,19 @@
       "type": "Spell",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Impulso Arcano, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Impulso Arcano, Global Spell, Common rarity, Damage spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Impulso Arcano as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Impulso Arcano as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #32116a 0%, #8d4dff 48%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "spell_damage",
+      "simple_use_text": "Cast on an enemy creature or hero to create immediate pressure.",
+      "short_lore": "Impulso Arcano teaches damage spell decisions in the beta starter deck."
     },
     {
       "id": "spell_007",
@@ -3717,16 +3792,19 @@
       "type": "Spell",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Escudo Mistico, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Escudo Mistico, Global Spell, Common rarity, Damage spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Escudo Mistico as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Escudo Mistico as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #32116a 0%, #8d4dff 48%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "spell_damage",
+      "simple_use_text": "Cast on an enemy creature or hero to create immediate pressure.",
+      "short_lore": "Escudo Mistico teaches damage spell decisions in the beta starter deck."
     },
     {
       "id": "spell_008",
@@ -3807,16 +3885,19 @@
       "type": "Spell",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Furia Elemental, Global Spell, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Furia Elemental, Global Spell, Common rarity, Shield spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Furia Elemental as shield spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Furia Elemental as shield spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #32116a 0%, #8d4dff 48%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "spell_shield",
+      "simple_use_text": "Cast on yourself or an ally creature to survive the next exchange.",
+      "short_lore": "Furia Elemental teaches shield spell decisions in the beta starter deck."
     },
     {
       "id": "spell_013",
@@ -4149,16 +4230,19 @@
       "type": "Trap",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Armadilha de Cinzas, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Armadilha de Cinzas, Global Trap, Common rarity, Counter trap, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Armadilha de Cinzas as counter trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Armadilha de Cinzas as counter trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #3a1748 0%, #ffb347 50%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "trap_counter",
+      "simple_use_text": "Prepare it before Ready; it punishes the next enemy attack.",
+      "short_lore": "Armadilha de Cinzas teaches counter trap decisions in the beta starter deck."
     },
     {
       "id": "trap_002",
@@ -4167,16 +4251,19 @@
       "type": "Trap",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Raizes Aprisionadoras, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Raizes Aprisionadoras, Global Trap, Common rarity, Defense trap, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Raizes Aprisionadoras as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Raizes Aprisionadoras as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #3a1748 0%, #ffb347 50%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "trap_defense",
+      "simple_use_text": "Prepare it before Ready; it shields or weakens incoming pressure.",
+      "short_lore": "Raizes Aprisionadoras teaches defense trap decisions in the beta starter deck."
     },
     {
       "id": "trap_003",
@@ -4185,16 +4272,19 @@
       "type": "Trap",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Muralha Rochosa, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Muralha Rochosa, Global Trap, Common rarity, Defense trap, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Muralha Rochosa as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, no text, no logo, no watermark",
       "palette": [
-        "#9b5cff",
-        "#42f0ff",
+        "#8d4dff",
+        "#28f4ff",
         "#f8d57a"
       ],
-      "visual_identity": "neutral arcane sigils, violet starlight, silver geometry",
-      "fallback_gradient": "linear-gradient(135deg, #9b5cff 0%, #42f0ff 52%, #f8d57a 100%)",
+      "visual_identity": "Muralha Rochosa as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity",
+      "fallback_gradient": "linear-gradient(135deg, #3a1748 0%, #ffb347 50%, #28f4ff 100%)",
       "symbol": "A",
-      "placeholder": true
+      "placeholder": true,
+      "role": "trap_defense",
+      "simple_use_text": "Prepare it before Ready; it shields or weakens incoming pressure.",
+      "short_lore": "Muralha Rochosa teaches defense trap decisions in the beta starter deck."
     },
     {
       "id": "trap_004",
@@ -4450,12 +4540,12 @@
     },
     {
       "id": "trap_018",
-      "name": "Armadilha da Mar\u00e9",
+      "name": "Armadilha da Maré",
       "element": "Global",
       "type": "Trap",
       "rarity": "Common",
       "art_path": "",
-      "prompt": "Armadilha da Mar\u00e9, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
+      "prompt": "Armadilha da Maré, Global Trap, Common rarity, premium fantasy neon trading card illustration, original design, high readability, mobile-first card art, neutral arcane sigils, violet starlight, silver geometry",
       "palette": [
         "#9b5cff",
         "#42f0ff",
