@@ -1,4 +1,23 @@
 (function () {
+    function enableAmbitionzFantasyRuntimeV192() {
+        if (document.body) {
+            document.body.classList.add("az48-fantasy-v7");
+            document.body.setAttribute("data-az48-visual-runtime", "fantasy-v192");
+        }
+        var shell = document.querySelector(".az48-game-shell, .az48-arena-v6, .az48-arena");
+        if (shell) {
+            shell.classList.add("az48-fantasy-v7");
+            shell.setAttribute("data-az48-visual-runtime", "fantasy-v192");
+        }
+    }
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", enableAmbitionzFantasyRuntimeV192);
+    } else {
+        enableAmbitionzFantasyRuntimeV192();
+    }
+})();
+
+(function () {
     "use strict";
 
     let socket = null;

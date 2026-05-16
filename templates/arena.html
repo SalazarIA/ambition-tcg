@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=86">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=192">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -245,6 +245,26 @@
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_feedback.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=3"></script>
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=87"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=192"></script>
+<script>
+(function () {
+  function enableAmbitionzFantasyRuntime() {
+    if (document.body) {
+      document.body.classList.add("az48-fantasy-v7");
+      document.body.setAttribute("data-az48-visual-runtime", "fantasy-v192");
+    }
+    var shell = document.querySelector(".az48-game-shell, .az48-arena-v6, .az48-arena");
+    if (shell) {
+      shell.classList.add("az48-fantasy-v7");
+      shell.setAttribute("data-az48-visual-runtime", "fantasy-v192");
+    }
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", enableAmbitionzFantasyRuntime);
+  } else {
+    enableAmbitionzFantasyRuntime();
+  }
+})();
+</script>
 </body>
 </html>

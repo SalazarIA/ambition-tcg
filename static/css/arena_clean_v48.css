@@ -5601,3 +5601,89 @@ body.az48-fantasy-v7 .az48-command-dock-v7 #az48-start {
         grid-template-columns: 1fr !important;
     }
 }
+
+
+
+/* Runtime proof patch v192 — force Ambitionz fantasy visual layer to appear */
+body.az48-fantasy-v7,
+.az48-game-shell.az48-fantasy-v7,
+.az48-arena-v6.az48-fantasy-v7,
+.az48-arena.az48-fantasy-v7 {
+    background:
+        radial-gradient(circle at 50% 12%, rgba(171, 116, 45, 0.24), transparent 34%),
+        radial-gradient(circle at 18% 72%, rgba(104, 73, 34, 0.28), transparent 30%),
+        linear-gradient(180deg, #050407 0%, #0d1018 42%, #070604 100%) !important;
+}
+
+body.az48-fantasy-v7 .az48-board-system-v7,
+body.az48-fantasy-v7 .az48-stone-battlefield-v7,
+.az48-game-shell.az48-fantasy-v7 .az48-board-system-v7,
+.az48-game-shell.az48-fantasy-v7 .az48-stone-battlefield-v7 {
+    border: 2px solid rgba(232, 199, 122, 0.46) !important;
+    border-radius: 28px !important;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(232, 199, 122, 0.12), transparent 42%),
+        linear-gradient(135deg, rgba(255,255,255,0.055) 0 8%, transparent 8% 16%, rgba(0,0,0,0.18) 16% 24%, transparent 24% 32%),
+        linear-gradient(180deg, #282116 0%, #161411 48%, #0b0a09 100%) !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 244, 203, 0.12),
+        inset 0 0 70px rgba(0,0,0,0.72),
+        0 28px 90px rgba(0,0,0,0.62) !important;
+}
+
+body.az48-fantasy-v7 .az48-hero-plate-v7,
+.az48-game-shell.az48-fantasy-v7 .az48-hero-plate-v7 {
+    border: 2px solid rgba(232, 199, 122, 0.54) !important;
+    border-radius: 22px !important;
+    background:
+        linear-gradient(135deg, rgba(232,199,122,0.16), rgba(35,26,15,0.92) 42%, rgba(8,7,6,0.96)) !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.08),
+        0 18px 44px rgba(0,0,0,0.48) !important;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7,
+.az48-game-shell.az48-fantasy-v7 .az48-command-dock-v7 {
+    border: 2px solid rgba(168, 115, 52, 0.58) !important;
+    border-radius: 26px !important;
+    background:
+        linear-gradient(180deg, rgba(54,39,22,0.96), rgba(16,12,8,0.98)) !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,244,203,0.08),
+        0 -18px 54px rgba(0,0,0,0.54) !important;
+}
+
+body.az48-fantasy-v7 .az48-chronicle-panel-v7,
+body.az48-fantasy-v7 .az48-side-chronicle-v7,
+.az48-game-shell.az48-fantasy-v7 .az48-chronicle-panel-v7,
+.az48-game-shell.az48-fantasy-v7 .az48-side-chronicle-v7 {
+    border: 2px solid rgba(168, 115, 52, 0.52) !important;
+    border-radius: 22px !important;
+    background:
+        linear-gradient(180deg, rgba(231,210,164,0.95), rgba(168,126,70,0.9)) !important;
+    color: #251d13 !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
+}
+
+body.az48-fantasy-v7 .az48-card,
+.az48-game-shell.az48-fantasy-v7 .az48-card {
+    border: 2px solid rgba(232,199,122,0.5) !important;
+    border-radius: 18px !important;
+    background:
+        linear-gradient(180deg, rgba(47,35,20,0.98), rgba(10,8,6,0.98)) !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.07),
+        0 14px 30px rgba(0,0,0,0.46) !important;
+}
+
+body.az48-fantasy-v7 .az48-btn,
+.az48-game-shell.az48-fantasy-v7 .az48-btn {
+    border: 1px solid rgba(232,199,122,0.52) !important;
+    border-radius: 16px !important;
+    background:
+        linear-gradient(180deg, rgba(168,115,52,0.92), rgba(64,41,18,0.98)) !important;
+    color: #fff1c4 !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.16),
+        0 10px 24px rgba(0,0,0,0.38) !important;
+}
