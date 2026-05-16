@@ -4421,6 +4421,976 @@ body:not([data-az48-info-tab="summary"]) .az48-round-summary {
     }
 }
 
+/* Blocks 141-148 QA hitbox guard: actions must never overlap on touch layouts */
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="choose_intent"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="choose_card"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="play_card"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="ready"] .az48-command-dock-v7 .az48-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-rows: minmax(42px, auto) !important;
+    align-items: stretch !important;
+    gap: 7px !important;
+    overflow: visible !important;
+    isolation: isolate;
+}
+
+body.az48-fantasy-v7[data-az48-primary-action="choose_intent"] .az48-command-dock-v7 .az48-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body.az48-fantasy-v7[data-az48-primary-action="play_card"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="ready"] .az48-command-dock-v7 .az48-actions {
+    grid-template-columns: 1fr !important;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-btn {
+    position: relative !important;
+    z-index: 1;
+    width: 100% !important;
+    min-width: 0 !important;
+    transform: none !important;
+    pointer-events: auto;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-strike,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-guard,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-focus,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-ready,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-start {
+    grid-column: auto !important;
+    grid-row: auto !important;
+}
+
+@media (max-width: 420px) {
+    body.az48-fantasy-v7[data-az48-primary-action="choose_intent"] .az48-command-dock-v7 .az48-actions {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Blocks 141-148: Ambitionz dark fantasy premium visual reset */
+:root {
+    --az-fantasy-void: #050407;
+    --az-fantasy-night: #0d1018;
+    --az-fantasy-stone: #17181b;
+    --az-fantasy-stone-2: #262118;
+    --az-fantasy-metal: #5e4b31;
+    --az-fantasy-metal-dark: #2d2519;
+    --az-fantasy-bronze: #a87334;
+    --az-fantasy-gold: #e8c77a;
+    --az-fantasy-parchment: #e7d2a4;
+    --az-fantasy-ink: #251d13;
+    --az-fantasy-rune: #80d8ff;
+    --az-fantasy-ember: #e46f34;
+    --az-fantasy-ward: #70c6e9;
+    --az-fantasy-ambition: #b891ff;
+    --az-fantasy-trap: #d89b45;
+    --az-fantasy-creature: #d7b66c;
+    --az-fantasy-spell: #9f7cff;
+    --az-fantasy-danger: #f06a50;
+    --az-fantasy-good: #87d981;
+    --az-fantasy-border: rgba(232, 199, 122, 0.34);
+    --az-fantasy-shadow: rgba(0, 0, 0, 0.58);
+}
+
+body.az48-fantasy-v7 {
+    min-height: 100svh;
+    color: #f8eed7;
+    background:
+        linear-gradient(115deg, rgba(42, 28, 18, 0.28), transparent 42%),
+        radial-gradient(circle at 50% 34%, rgba(118, 92, 48, 0.16), transparent 36%),
+        radial-gradient(circle at 50% 100%, rgba(22, 66, 79, 0.20), transparent 38%),
+        linear-gradient(180deg, #09080b 0%, #11121a 46%, #050407 100%);
+}
+
+body.az48-fantasy-v7::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 12px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%, rgba(0, 0, 0, 0.20));
+    opacity: 0.42;
+}
+
+body.az48-fantasy-v7 .az48-game-shell.az48-arena,
+body.az48-fantasy-v7 .az48-arena-v6.az48-game-shell {
+    min-height: 100svh;
+    max-width: 1840px;
+    margin: 0 auto;
+    padding: clamp(8px, 1vw, 14px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(248px, 22vw, 340px);
+    grid-template-rows: minmax(62px, 78px) minmax(330px, 1fr) minmax(178px, 26vh);
+    grid-template-areas:
+        "hud chronicle"
+        "board chronicle"
+        "dock chronicle";
+    gap: clamp(8px, 1vw, 12px);
+    background:
+        radial-gradient(circle at 52% 38%, rgba(120, 87, 36, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(9, 9, 12, 0.88), rgba(6, 5, 8, 0.96)) !important;
+    border: 1px solid rgba(232, 199, 122, 0.18);
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px rgba(255, 244, 203, 0.04), 0 28px 90px var(--az-fantasy-shadow);
+    overflow: hidden;
+}
+
+body.az48-fantasy-v7 .az48-hud-plate-v7 {
+    grid-area: hud;
+    min-height: 0;
+    max-height: none;
+    display: grid;
+    grid-template-columns: minmax(230px, 0.9fr) minmax(170px, 0.45fr) auto;
+    align-items: stretch;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.az48-fantasy-v7 .az48-hero-plate-v7,
+body.az48-fantasy-v7 .az48-round-seal-v7,
+body.az48-fantasy-v7 .az48-premium-panel,
+body.az48-fantasy-v7 .az48-parchment-panel-v7 {
+    border: 1px solid var(--az-fantasy-border);
+    background:
+        linear-gradient(180deg, rgba(255, 243, 202, 0.085), rgba(0, 0, 0, 0.08) 42%, rgba(0, 0, 0, 0.30)),
+        linear-gradient(135deg, rgba(61, 47, 30, 0.90), rgba(15, 14, 18, 0.94));
+    box-shadow: inset 0 0 0 1px rgba(255, 244, 204, 0.04), 0 10px 26px rgba(0, 0, 0, 0.34);
+}
+
+body.az48-fantasy-v7 .az48-hero-plate-v7 {
+    min-width: 0;
+    min-height: 62px;
+    display: grid;
+    grid-template-columns: 42px minmax(72px, 0.54fr) minmax(0, 1.46fr);
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 16px 7px 16px 7px;
+}
+
+body.az48-fantasy-v7 .az48-enemy-plate-v7 {
+    box-shadow:
+        inset 0 0 0 1px rgba(240, 106, 80, 0.10),
+        0 12px 26px rgba(0, 0, 0, 0.32);
+}
+
+body.az48-fantasy-v7 .az48-player-command-plate-v7 {
+    grid-area: hero;
+    min-height: 0;
+}
+
+body.az48-fantasy-v7 .az48-avatar-v6 {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    color: #22160a;
+    background:
+        radial-gradient(circle at 35% 28%, #fff3c3, var(--az-fantasy-gold) 42%, #875523 100%);
+    border: 2px solid rgba(62, 38, 15, 0.74);
+    box-shadow: 0 0 0 2px rgba(232, 199, 122, 0.18), 0 6px 14px rgba(0, 0, 0, 0.32);
+}
+
+body.az48-fantasy-v7 .az48-player > div:first-of-type span,
+body.az48-fantasy-v7 .az48-round-mode,
+body.az48-fantasy-v7 .az48-message-text,
+body.az48-fantasy-v7 .az48-training-panel > span {
+    color: rgba(248, 238, 215, 0.68);
+}
+
+body.az48-fantasy-v7 .az48-player strong,
+body.az48-fantasy-v7 .az48-round-badge,
+body.az48-fantasy-v7 .az48-summary-title {
+    color: #fff2cd;
+    text-shadow: 0 1px 0 #000;
+}
+
+body.az48-fantasy-v7 .az48-hud-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(46px, 1fr));
+    gap: 5px;
+}
+
+body.az48-fantasy-v7 .az48-hud-pill,
+body.az48-fantasy-v7 .az48-hand-pill {
+    min-width: 0;
+    min-height: 32px;
+    padding: 4px 6px;
+    border-radius: 10px;
+    color: #fff4d6;
+    background:
+        linear-gradient(180deg, rgba(26, 19, 12, 0.75), rgba(6, 5, 7, 0.78));
+    border: 1px solid rgba(232, 199, 122, 0.18);
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.24);
+}
+
+body.az48-fantasy-v7 .az48-hp-pill {
+    border-color: rgba(240, 106, 80, 0.42);
+}
+
+body.az48-fantasy-v7 .az48-ambition-pill {
+    border-color: rgba(184, 145, 255, 0.45);
+}
+
+body.az48-fantasy-v7 .az48-energy-pill {
+    border-color: rgba(112, 198, 233, 0.42);
+}
+
+body.az48-fantasy-v7 .az48-hud-pill span {
+    font-size: clamp(0.86rem, 1.05vw, 1.05rem);
+    line-height: 1;
+}
+
+body.az48-fantasy-v7 .az48-hud-pill small {
+    color: rgba(232, 199, 122, 0.74);
+    font-size: 0.55rem;
+}
+
+body.az48-fantasy-v7 .az48-round-seal-v7 {
+    display: grid;
+    place-items: center;
+    padding: 8px 10px;
+    border-radius: 40px 10px;
+    background:
+        radial-gradient(circle, rgba(232, 199, 122, 0.14), transparent 58%),
+        linear-gradient(180deg, #352717, #121016);
+}
+
+body.az48-fantasy-v7 .az48-round-seal-v7 em {
+    color: rgba(231, 210, 164, 0.82);
+}
+
+body.az48-fantasy-v7 .az48-back-v7 {
+    align-self: center;
+    min-height: 42px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(232, 199, 122, 0.26);
+    color: #fff2cd;
+    background: linear-gradient(180deg, rgba(97, 71, 36, 0.82), rgba(28, 22, 17, 0.92));
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.30);
+}
+
+body.az48-fantasy-v7 .az48-side-chronicle-v7 {
+    grid-area: chronicle;
+    min-height: 0;
+    max-height: none;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    align-content: start;
+    gap: 10px;
+    padding: 12px;
+    overflow: auto;
+    border-radius: 18px 6px;
+    color: var(--az-fantasy-ink);
+    background:
+        linear-gradient(180deg, rgba(255, 246, 215, 0.88), rgba(210, 178, 120, 0.82)),
+        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.30), transparent 40%);
+}
+
+body.az48-fantasy-v7 .az48-side-chronicle-v7 .az48-message-text {
+    color: #2c2114;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+body.az48-fantasy-v7 .az48-training-panel {
+    min-height: auto;
+    padding: 10px;
+    border-radius: 14px;
+    color: #2a1f13;
+    background: rgba(255, 248, 223, 0.48);
+    border-color: rgba(80, 48, 20, 0.18);
+}
+
+body.az48-fantasy-v7 .az48-training-difficulties label {
+    color: #2a1f13;
+    background: rgba(255, 255, 255, 0.42);
+    border-color: rgba(80, 48, 20, 0.18);
+}
+
+body.az48-fantasy-v7 .az48-match-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+body.az48-fantasy-v7 .az48-mini-btn,
+body.az48-fantasy-v7 .az48-btn,
+body.az48-fantasy-v7 .az48-result-action {
+    border: 1px solid rgba(232, 199, 122, 0.36);
+    color: #fff2cd;
+    background:
+        linear-gradient(180deg, rgba(150, 103, 43, 0.92), rgba(68, 45, 22, 0.96));
+    box-shadow: inset 0 1px 0 rgba(255, 246, 208, 0.18), 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+body.az48-fantasy-v7 .az48-mini-btn:disabled,
+body.az48-fantasy-v7 .az48-btn:disabled,
+body.az48-fantasy-v7 .az48-btn[aria-disabled="true"] {
+    color: rgba(248, 238, 215, 0.46);
+    background: linear-gradient(180deg, rgba(65, 57, 47, 0.72), rgba(22, 20, 19, 0.84));
+    border-color: rgba(232, 199, 122, 0.12);
+    box-shadow: none;
+}
+
+body.az48-fantasy-v7 .az48-board-system-v7,
+body.az48-fantasy-v7 .az48-stone-battlefield-v7 {
+    grid-area: board;
+    min-height: 330px;
+    display: grid;
+    grid-template-rows: minmax(130px, 1fr) 34px minmax(130px, 1fr) minmax(44px, auto);
+    gap: 9px;
+    padding: clamp(10px, 1.2vw, 16px);
+    border: 1px solid rgba(232, 199, 122, 0.26);
+    border-radius: 24px 8px 24px 8px;
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(128, 216, 255, 0.08), transparent 26%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.028), transparent 14% 86%, rgba(255, 255, 255, 0.028)),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 12px),
+        linear-gradient(180deg, #24211d, #121216 50%, #252018) !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(0, 0, 0, 0.28),
+        inset 0 0 60px rgba(0, 0, 0, 0.50),
+        0 22px 60px rgba(0, 0, 0, 0.42);
+}
+
+body.az48-fantasy-v7 .az48-board-system-v7::before,
+body.az48-fantasy-v7 .az48-board-system-v7::after {
+    opacity: 0.22;
+}
+
+body.az48-fantasy-v7 .az48-board-row.az48-field-row {
+    min-height: 0;
+    grid-template-columns: repeat(3, minmax(118px, 1fr));
+    gap: clamp(7px, 1vw, 12px);
+    padding: 6px;
+    border-radius: 18px;
+    border: 1px solid rgba(232, 199, 122, 0.12);
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.24), rgba(255, 255, 255, 0.025)),
+        rgba(6, 6, 8, 0.28);
+}
+
+body.az48-fantasy-v7 .az48-enemy-board-row {
+    box-shadow: inset 0 0 20px rgba(240, 106, 80, 0.08);
+}
+
+body.az48-fantasy-v7 .az48-player-board-row {
+    box-shadow: inset 0 0 22px rgba(112, 198, 233, 0.10);
+}
+
+body.az48-fantasy-v7 .az48-combat-rune-v7 {
+    align-self: center;
+    width: min(340px, 56%);
+    margin: 0 auto;
+    min-height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(232, 199, 122, 0.26);
+    color: rgba(255, 242, 205, 0.78);
+    background:
+        linear-gradient(90deg, transparent, rgba(232, 199, 122, 0.16), transparent),
+        rgba(0, 0, 0, 0.24);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+body.az48-fantasy-v7 .az48-lane-v6,
+body.az48-fantasy-v7 .az48-board-row .az48-slot,
+body.az48-fantasy-v7 .az48-board-row .az48-card {
+    min-height: 112px;
+    border-radius: 16px 7px;
+    border: 1px solid rgba(232, 199, 122, 0.22);
+    background:
+        linear-gradient(180deg, rgba(255, 246, 215, 0.035), rgba(0, 0, 0, 0.20)),
+        radial-gradient(circle at 50% 20%, rgba(128, 216, 255, 0.08), transparent 34%),
+        rgba(12, 12, 14, 0.52);
+    color: rgba(248, 238, 215, 0.84);
+    box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.38), 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+body.az48-fantasy-v7 .az48-lane-empty-v6::before,
+body.az48-fantasy-v7 .az48-board-row .az48-slot::before {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: inherit;
+    border: 1px dashed rgba(232, 199, 122, 0.18);
+    background:
+        radial-gradient(circle, rgba(128, 216, 255, 0.10), transparent 44%);
+    pointer-events: none;
+}
+
+body.az48-fantasy-v7 .az48-lane-slot.is-legal-lane,
+body.az48-fantasy-v7 .az48-lane-slot.is-legal-target {
+    border-color: rgba(232, 199, 122, 0.76);
+    box-shadow:
+        inset 0 0 28px rgba(232, 199, 122, 0.16),
+        0 0 0 2px rgba(232, 199, 122, 0.14),
+        0 14px 26px rgba(0, 0, 0, 0.26);
+}
+
+body.az48-fantasy-v7 .az48-trap-altar-v7 {
+    min-height: 40px;
+    display: grid;
+    grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background:
+        linear-gradient(90deg, rgba(216, 155, 69, 0.12), rgba(0, 0, 0, 0.14)),
+        rgba(16, 13, 10, 0.62);
+}
+
+body.az48-fantasy-v7 .az48-trap-slot-v6 {
+    min-height: 30px;
+    border-radius: 999px;
+    color: rgba(248, 238, 215, 0.78);
+    background: rgba(0, 0, 0, 0.24);
+    border-color: rgba(216, 155, 69, 0.28);
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 {
+    grid-area: dock;
+    min-height: 0;
+    max-height: none;
+    display: grid;
+    grid-template-columns: minmax(238px, 0.72fr) minmax(380px, 1.5fr) minmax(170px, 0.55fr);
+    grid-template-rows: auto minmax(120px, 1fr);
+    grid-template-areas:
+        "hero handhead actions"
+        "hero hand summary";
+    gap: 9px;
+    padding: 10px;
+    border-radius: 20px 8px 20px 8px;
+    border: 1px solid rgba(232, 199, 122, 0.20);
+    background:
+        linear-gradient(180deg, rgba(61, 47, 30, 0.84), rgba(9, 8, 9, 0.94)),
+        radial-gradient(circle at 52% 0%, rgba(232, 199, 122, 0.10), transparent 38%) !important;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-hand-head {
+    grid-area: handhead;
+    min-height: 26px;
+    padding: 0 4px;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-hand {
+    grid-area: hand;
+    min-height: 0;
+    max-height: none;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(128px, 13.5vw, 172px);
+    gap: 9px;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 4px 10px;
+    scroll-snap-type: x proximity;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-actions {
+    grid-area: actions;
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-ready {
+    grid-column: 1 / -1;
+}
+
+body.az48-fantasy-v7 .az48-chronicle-panel-v7 {
+    grid-area: summary;
+    min-height: 0;
+    max-height: none !important;
+    overflow: auto;
+    padding: 8px;
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(231, 210, 164, 0.88), rgba(180, 142, 83, 0.80));
+    color: #281d11;
+}
+
+body.az48-fantasy-v7 .az48-chronicle-panel-v7 .az48-summary-title,
+body.az48-fantasy-v7 .az48-chronicle-panel-v7 .az48-summary-lead,
+body.az48-fantasy-v7 .az48-chronicle-panel-v7 .az48-summary-empty {
+    color: #25190d;
+    text-shadow: none;
+}
+
+body.az48-fantasy-v7 .az48-summary-list {
+    max-height: 82px;
+    overflow: auto;
+}
+
+body.az48-fantasy-v7 .az48-summary-item {
+    border-color: rgba(66, 38, 15, 0.16);
+    color: #281d11;
+    background: rgba(255, 248, 224, 0.38);
+}
+
+body.az48-fantasy-v7 .az48-summary-item-damage,
+body.az48-fantasy-v7 .az48-timeline-hero-damage,
+body.az48-fantasy-v7 .az48-timeline-creature-damage,
+body.az48-fantasy-v7 .az48-timeline-spell-damage {
+    border-left-color: var(--az-fantasy-danger);
+}
+
+body.az48-fantasy-v7 .az48-summary-item-shield,
+body.az48-fantasy-v7 .az48-timeline-shield-gain,
+body.az48-fantasy-v7 .az48-timeline-spell-shield {
+    border-left-color: var(--az-fantasy-ward);
+}
+
+body.az48-fantasy-v7 .az48-summary-item-ambition,
+body.az48-fantasy-v7 .az48-timeline-ambition-gain,
+body.az48-fantasy-v7 .az48-timeline-spell-ambition {
+    border-left-color: var(--az-fantasy-ambition);
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7,
+body.az48-fantasy-v7 .az-card-v6 {
+    min-width: 0;
+    scroll-snap-align: center;
+    color: #fff2d2;
+    border: 2px solid rgba(232, 199, 122, 0.34);
+    border-radius: 18px 8px 18px 8px;
+    background:
+        linear-gradient(180deg, rgba(255, 246, 215, 0.12), transparent 18%),
+        radial-gradient(circle at 50% 18%, rgba(232, 199, 122, 0.10), transparent 32%),
+        linear-gradient(180deg, var(--az-card-v6-gradient, #4c351b), #100d0a 68%);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 244, 204, 0.08),
+        inset 0 -26px 32px rgba(0, 0, 0, 0.42),
+        0 12px 24px rgba(0, 0, 0, 0.30);
+}
+
+body.az48-fantasy-v7 .az48-hand .az48-card-frame-fantasy-v7 {
+    height: clamp(142px, 20vh, 178px) !important;
+    min-height: 142px !important;
+    grid-template-rows: 20px 20px minmax(58px, 1fr) 22px 28px !important;
+    padding: 8px;
+}
+
+body.az48-fantasy-v7 .az48-board-row .az48-card-frame-fantasy-v7 {
+    height: 100%;
+    min-height: 112px;
+    padding: 7px;
+    grid-template-rows: 18px minmax(44px, 1fr) 20px 24px;
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-art {
+    min-height: 52px;
+    border: 1px solid rgba(255, 244, 204, 0.16);
+    border-radius: 12px 5px;
+    background:
+        radial-gradient(circle at 50% 28%, rgba(255, 246, 215, 0.28), transparent 20%),
+        var(--az-card-v6-gradient);
+    box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.28);
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-art-image {
+    opacity: 0.44;
+    filter: saturate(0.84) contrast(1.05);
+}
+
+body.az48-fantasy-v7 .az48-art-rune-v6 {
+    color: rgba(255, 246, 215, 0.92);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.42), 0 0 16px rgba(232, 199, 122, 0.36);
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-name {
+    min-width: 0;
+    display: block;
+    color: #fff3cf;
+    background: rgba(20, 12, 6, 0.62);
+    border: 1px solid rgba(232, 199, 122, 0.16);
+    border-radius: 8px 4px;
+    padding: 2px 5px;
+    font-size: clamp(0.72rem, 0.9vw, 0.88rem);
+    line-height: 1.08;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-cost,
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-rarity,
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-card-type-badge-v6,
+body.az48-fantasy-v7 .az48-card-role-badge-v7,
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-card-element-mark {
+    border: 1px solid rgba(232, 199, 122, 0.26);
+    color: #fff3cf;
+    background: rgba(23, 15, 7, 0.78);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.22);
+}
+
+body.az48-fantasy-v7 .az48-card-role-badge-v7 {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 31px;
+    min-height: 18px;
+    display: block;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 0.55rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+body.az48-fantasy-v7 .az48-howto-v7 {
+    display: none;
+    margin: 0;
+    color: rgba(255, 242, 205, 0.74);
+    font-size: 0.62rem;
+    line-height: 1.18;
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-effect,
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-card-preview-line {
+    color: rgba(255, 242, 205, 0.74);
+    font-size: 0.61rem;
+    line-height: 1.12;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-tags {
+    display: none;
+}
+
+body.az48-fantasy-v7 .az-card-type-creature {
+    border-color: rgba(215, 182, 108, 0.48);
+}
+
+body.az48-fantasy-v7 .az-card-type-spell {
+    border-color: rgba(159, 124, 255, 0.52);
+}
+
+body.az48-fantasy-v7 .az-card-type-trap {
+    border-color: rgba(216, 155, 69, 0.58);
+}
+
+body.az48-fantasy-v7 .az-card-frame-common { box-shadow: inset 0 0 0 1px rgba(255, 244, 204, 0.06), 0 10px 22px rgba(0, 0, 0, 0.30); }
+body.az48-fantasy-v7 .az-card-frame-uncommon { border-color: rgba(137, 217, 129, 0.52) !important; }
+body.az48-fantasy-v7 .az-card-frame-rare { border-color: rgba(128, 216, 255, 0.62) !important; }
+body.az48-fantasy-v7 .az-card-frame-epic { border-color: rgba(184, 145, 255, 0.70) !important; }
+body.az48-fantasy-v7 .az-card-frame-legendary { border-color: rgba(232, 199, 122, 0.88) !important; }
+
+body.az48-fantasy-v7 .az48-hand .az48-card-frame-fantasy-v7.is-selected,
+body.az48-fantasy-v7 .az48-hand .az48-card-frame-fantasy-v7.selected {
+    transform: translateY(-8px);
+    outline: 2px solid rgba(232, 199, 122, 0.94);
+    box-shadow:
+        0 0 0 2px rgba(232, 199, 122, 0.16),
+        0 16px 34px rgba(0, 0, 0, 0.36),
+        0 0 22px rgba(232, 199, 122, 0.20);
+}
+
+body.az48-fantasy-v7 .az48-card-frame-fantasy-v7:not(.is-playable):not(.playable):not(.az48-playable) {
+    filter: saturate(0.62) brightness(0.82);
+    opacity: 0.74;
+}
+
+body.az48-fantasy-v7 .az48-card-recently-played,
+body.az48-fantasy-v7 .az48-lane-resolved {
+    animation: az48-rune-impact-v7 620ms ease-out both;
+}
+
+body.az48-fantasy-v7 .az48-card-damaged,
+body.az48-fantasy-v7.az48-enemy-damaged .az48-enemy-plate-v7,
+body.az48-fantasy-v7.az48-me-damaged .az48-player-command-plate-v7 {
+    animation: az48-damage-pulse-v7 520ms ease-out both;
+}
+
+body.az48-fantasy-v7 .az48-card-defeated {
+    animation: az48-defeat-fade-v7 680ms ease-out both;
+}
+
+body.az48-fantasy-v7.az48-me-shield-gained .az48-player-command-plate-v7,
+body.az48-fantasy-v7.az48-enemy-shield-gained .az48-enemy-plate-v7 {
+    animation: az48-ward-pulse-v7 620ms ease-out both;
+}
+
+@keyframes az48-rune-impact-v7 {
+    0% { box-shadow: 0 0 0 rgba(232, 199, 122, 0); }
+    42% { box-shadow: 0 0 0 3px rgba(232, 199, 122, 0.22), 0 0 26px rgba(232, 199, 122, 0.22); }
+    100% { box-shadow: inherit; }
+}
+
+@keyframes az48-damage-pulse-v7 {
+    0%, 100% { filter: none; }
+    42% { filter: brightness(1.18) saturate(1.2); box-shadow: 0 0 22px rgba(240, 106, 80, 0.34); }
+}
+
+@keyframes az48-ward-pulse-v7 {
+    0%, 100% { filter: none; }
+    45% { filter: brightness(1.12); box-shadow: 0 0 24px rgba(112, 198, 233, 0.30); }
+}
+
+@keyframes az48-defeat-fade-v7 {
+    0% { opacity: 1; transform: scale(1); }
+    60% { opacity: 0.58; transform: scale(0.98); }
+    100% { opacity: 0.78; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.az48-fantasy-v7 .az48-card-recently-played,
+    body.az48-fantasy-v7 .az48-lane-resolved,
+    body.az48-fantasy-v7 .az48-card-damaged,
+    body.az48-fantasy-v7 .az48-card-defeated,
+    body.az48-fantasy-v7.az48-me-damaged .az48-player-command-plate-v7,
+    body.az48-fantasy-v7.az48-enemy-damaged .az48-enemy-plate-v7,
+    body.az48-fantasy-v7.az48-me-shield-gained .az48-player-command-plate-v7,
+    body.az48-fantasy-v7.az48-enemy-shield-gained .az48-enemy-plate-v7 {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+@media (max-width: 1180px), (max-height: 760px) {
+    body.az48-fantasy-v7 .az48-game-shell.az48-arena,
+    body.az48-fantasy-v7 .az48-arena-v6.az48-game-shell {
+        grid-template-columns: minmax(0, 1fr) minmax(214px, 26vw);
+        grid-template-rows: 68px minmax(294px, 1fr) minmax(162px, 25vh);
+        gap: 8px;
+        padding: 8px;
+    }
+
+    body.az48-fantasy-v7 .az48-hero-plate-v7 {
+        grid-template-columns: 34px minmax(62px, 0.52fr) minmax(0, 1.48fr);
+        padding: 6px 8px;
+    }
+
+    body.az48-fantasy-v7 .az48-avatar-v6 {
+        width: 32px;
+        height: 32px;
+    }
+
+    body.az48-fantasy-v7 .az48-board-system-v7 {
+        min-height: 292px;
+        grid-template-rows: minmax(106px, 1fr) 26px minmax(106px, 1fr) minmax(34px, auto);
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 {
+        grid-template-columns: minmax(210px, 0.62fr) minmax(330px, 1.5fr) minmax(156px, 0.52fr);
+        grid-template-rows: 24px minmax(126px, 1fr);
+    }
+
+    body.az48-fantasy-v7 .az48-hand .az48-card-frame-fantasy-v7 {
+        height: 144px !important;
+        min-height: 144px !important;
+    }
+}
+
+@media (max-width: 760px) {
+    body.az48-fantasy-v7 .az48-game-shell.az48-arena,
+    body.az48-fantasy-v7 .az48-arena-v6.az48-game-shell {
+        min-height: 100svh;
+        height: auto;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(330px, auto) auto auto;
+        grid-template-areas:
+            "hud"
+            "board"
+            "dock"
+            "chronicle";
+        overflow: auto;
+    }
+
+    body.az48-fantasy-v7 .az48-hud-plate-v7 {
+        grid-template-columns: minmax(0, 1fr) minmax(108px, auto) auto;
+        gap: 6px;
+    }
+
+    body.az48-fantasy-v7 .az48-enemy-plate-v7 {
+        grid-template-columns: 30px minmax(58px, auto) minmax(0, 1fr);
+    }
+
+    body.az48-fantasy-v7 .az48-hud-stats {
+        grid-template-columns: repeat(2, minmax(42px, 1fr));
+    }
+
+    body.az48-fantasy-v7 .az48-round-seal-v7 {
+        padding: 6px;
+        border-radius: 14px;
+    }
+
+    body.az48-fantasy-v7 .az48-back-v7 {
+        min-width: 44px;
+        padding: 0 9px;
+        font-size: 0.72rem;
+    }
+
+    body.az48-fantasy-v7 .az48-board-system-v7 {
+        min-height: 330px;
+        grid-template-rows: minmax(108px, auto) 26px minmax(108px, auto) auto;
+        overflow-x: hidden;
+    }
+
+    body.az48-fantasy-v7 .az48-board-row.az48-field-row {
+        grid-template-columns: repeat(3, minmax(132px, 1fr));
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto minmax(148px, auto) auto auto;
+        grid-template-areas:
+            "hero"
+            "handhead"
+            "hand"
+            "actions"
+            "summary";
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 .az48-hand {
+        grid-auto-columns: clamp(142px, 42vw, 174px);
+        min-height: 154px;
+        scroll-snap-type: x mandatory;
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 .az48-actions {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        position: sticky;
+        bottom: 0;
+        z-index: 8;
+        padding: 6px;
+        border-radius: 14px;
+        background: rgba(10, 8, 7, 0.92);
+        border: 1px solid rgba(232, 199, 122, 0.18);
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 .az48-ready {
+        grid-column: auto;
+    }
+
+    body.az48-fantasy-v7 .az48-btn {
+        min-height: 42px;
+        padding: 7px 6px;
+        font-size: 0.68rem;
+    }
+
+    body.az48-fantasy-v7 .az48-btn small {
+        display: none;
+    }
+
+    body.az48-fantasy-v7 .az48-side-chronicle-v7 {
+        max-height: 36svh;
+    }
+}
+
+@media (max-width: 560px) {
+    body.az48-fantasy-v7 .az48-hud-plate-v7 {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "enemy back"
+            "round round";
+    }
+
+    body.az48-fantasy-v7 .az48-enemy-plate-v7 {
+        grid-area: enemy;
+    }
+
+    body.az48-fantasy-v7 .az48-round-seal-v7 {
+        grid-area: round;
+        min-height: 42px;
+    }
+
+    body.az48-fantasy-v7 .az48-back-v7 {
+        grid-area: back;
+    }
+
+    body.az48-fantasy-v7 .az48-board-row.az48-field-row {
+        grid-template-columns: repeat(3, minmax(118px, 1fr));
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 .az48-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 .az48-ready {
+        grid-column: 1 / -1;
+    }
+
+    body.az48-fantasy-v7 .az48-player-command-plate-v7 {
+        grid-template-columns: 32px minmax(70px, 0.44fr) minmax(0, 1.56fr);
+    }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+    body.az48-fantasy-v7 .az48-game-shell.az48-arena,
+    body.az48-fantasy-v7 .az48-arena-v6.az48-game-shell {
+        grid-template-columns: minmax(0, 1fr) minmax(190px, 25vw);
+        grid-template-rows: 54px minmax(236px, 1fr) 118px;
+        gap: 6px;
+        padding: 6px;
+    }
+
+    body.az48-fantasy-v7 .az48-hero-plate-v7 {
+        min-height: 48px;
+        padding: 5px 7px;
+    }
+
+    body.az48-fantasy-v7 .az48-hud-pill {
+        min-height: 25px;
+        padding: 2px 4px;
+    }
+
+    body.az48-fantasy-v7 .az48-board-system-v7 {
+        min-height: 236px;
+        grid-template-rows: minmax(78px, 1fr) 22px minmax(78px, 1fr) 30px;
+        padding: 7px;
+    }
+
+    body.az48-fantasy-v7 .az48-lane-v6,
+    body.az48-fantasy-v7 .az48-board-row .az48-slot,
+    body.az48-fantasy-v7 .az48-board-row .az48-card {
+        min-height: 76px;
+    }
+
+    body.az48-fantasy-v7 .az48-command-dock-v7 {
+        grid-template-columns: minmax(170px, 0.62fr) minmax(250px, 1.4fr) minmax(140px, 0.48fr);
+        grid-template-rows: 20px minmax(86px, 1fr);
+        padding: 6px;
+    }
+
+    body.az48-fantasy-v7 .az48-hand .az48-card-frame-fantasy-v7 {
+        height: 100px !important;
+        min-height: 100px !important;
+    }
+
+    body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-effect,
+    body.az48-fantasy-v7 .az48-card-frame-fantasy-v7 .az48-card-preview-line,
+    body.az48-fantasy-v7 .az48-card-role-badge-v7 {
+        display: none;
+    }
+}
+
 .az48-first-player-flow-v6 {
     width: min(286px, calc(100vw - 24px));
     padding: 10px 12px;
@@ -4580,5 +5550,54 @@ body[data-az48-primary-action="choose_intent"] .az48-hand-action-shell .az48-han
         top: 104px !important;
         max-height: 18vh !important;
         background: rgba(9, 12, 24, 0.78);
+    }
+}
+
+/* Blocks 141-148 final hitbox guard: keep command buttons physically separate */
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="choose_intent"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="choose_card"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="play_card"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="ready"] .az48-command-dock-v7 .az48-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-rows: minmax(42px, auto) !important;
+    align-items: stretch !important;
+    gap: 7px !important;
+    overflow: visible !important;
+    isolation: isolate;
+}
+
+body.az48-fantasy-v7[data-az48-primary-action="choose_intent"] .az48-command-dock-v7 .az48-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body.az48-fantasy-v7[data-az48-primary-action="play_card"] .az48-command-dock-v7 .az48-actions,
+body.az48-fantasy-v7[data-az48-primary-action="ready"] .az48-command-dock-v7 .az48-actions {
+    grid-template-columns: 1fr !important;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 .az48-btn {
+    position: relative !important;
+    z-index: 1;
+    width: 100% !important;
+    min-width: 0 !important;
+    transform: none !important;
+    pointer-events: auto;
+}
+
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-strike,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-guard,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-focus,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-ready,
+body.az48-fantasy-v7 .az48-command-dock-v7 #az48-start {
+    grid-column: auto !important;
+    grid-row: auto !important;
+}
+
+@media (max-width: 420px) {
+    body.az48-fantasy-v7[data-az48-primary-action="choose_intent"] .az48-command-dock-v7 .az48-actions {
+        grid-template-columns: 1fr !important;
     }
 }

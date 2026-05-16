@@ -4,12 +4,12 @@
     var manifestPromise = null;
     var manifestCards = new Map();
     var fallbackPalettes = {
-        fire: ["#ff4d3d", "#ffb347", "#ffd36b"],
-        water: ["#1f8cff", "#29f0ff", "#d5fbff"],
-        earth: ["#2fd38f", "#8f6d3a", "#f0d18a"],
-        plant: ["#23e87d", "#8cff5a", "#124d34"],
-        global: ["#9b5cff", "#42f0ff", "#f8d57a"],
-        neutral: ["#9b5cff", "#d7dcff", "#0bd3ff"],
+        fire: ["#43130c", "#a33b1c", "#e8b15f"],
+        water: ["#102138", "#1e5d8d", "#9ad8ea"],
+        earth: ["#202414", "#54612d", "#bd9f64"],
+        plant: ["#102314", "#2d793d", "#9bcf6a"],
+        global: ["#251934", "#5a4674", "#c4b6df"],
+        neutral: ["#241b14", "#6a5638", "#d8bf82"],
     };
     var symbols = {
         fire: "F",
@@ -66,7 +66,7 @@
             symbol: symbols[element] || "A",
             gradient: "linear-gradient(135deg, " + palette[0] + " 0%, " + palette[1] + " 52%, " + palette[2] + " 100%)",
             palette: palette,
-            visual_identity: "premium fantasy neon placeholder art",
+            visual_identity: "dark fantasy Ambitionz placeholder art",
             role: "",
             simple_use_text: "",
             short_lore: "",
@@ -133,6 +133,7 @@
         var art = getCardArt(card || {});
         return [
             "az-card-v6",
+            "az-card-frame-fantasy-v7",
             "az-card-frame-" + art.rarity,
             "az-card-type-" + art.type,
             "az-card-element-" + art.element,

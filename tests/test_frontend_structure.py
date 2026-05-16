@@ -82,7 +82,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v190"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v191"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -445,7 +445,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v190"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v191"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -504,7 +504,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".az-public-onboarding-v1" in css
     assert ".az-roadmap-card-v3" in css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v190"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v191"' in service_worker
 
 
 def test_blocks_81_88_beta_economy_contract():
@@ -551,7 +551,7 @@ def test_blocks_81_88_beta_economy_contract():
     assert "Gold is beta currency only" in roadmap
     assert "Gold +" in arena_js
     assert "az-recent-unlocks-data" in cards_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v190"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v191"' in service_worker
 
 
 def test_arena_premium_hud_contract():
@@ -689,7 +689,7 @@ def test_art_direction_system_contract():
     assert "az-rarity-badge" in css
     assert "az-element-badge" in css
     assert "var(--az48-board-fog)" in arena_css
-    assert "arena_clean_v48.css') }}?v=85" in template
+    assert "arena_clean_v48.css') }}?v=86" in template
 
 
 def test_card_frame_premium_contract():
@@ -715,7 +715,7 @@ def test_card_frame_premium_contract():
     assert ".az-premium-card-shell-v1" in css
     assert ".az48-card-frame-premium-v1" in arena_css
     assert ".az48-card-element-mark" in arena_css
-    assert "arena_clean_v48.js') }}?v=86" in arena_template
+    assert "arena_clean_v48.js') }}?v=87" in arena_template
 
 
 def test_faction_identity_layer_contract():
@@ -852,7 +852,7 @@ def test_public_beta_rc_v4_retention_contract():
     assert ".az-first-session-questline-v1" in css
     assert ".az-deck-readiness-coach-v1" in css
     assert ".az-rc-public-checklist-v1" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v190"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v191"' in service_worker
 
     assert "Arena jogavel" in checklist
     assert "QA status" in checklist
@@ -909,7 +909,7 @@ def test_public_beta_rc_v5_observability_contract():
     assert ".az-beta-feedback-widget-v1" in css
     assert ".az-known-issues-beta-notes-v1" in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v190"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v191"' in service_worker
     assert '"/static/js/beta_telemetry.js"' in service_worker
     assert '"/static/js/beta_feedback.js"' in service_worker
 
@@ -931,6 +931,7 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     css = (PROJECT_ROOT / "static" / "css" / "style.css").read_text()
     service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
     art_direction = (PROJECT_ROOT / "docs" / "CARD_ART_DIRECTION.md").read_text()
+    visual_bible = (PROJECT_ROOT / "docs" / "AMBITIONZ_VISUAL_BIBLE.md").read_text()
     combat_doc = (PROJECT_ROOT / "docs" / "ARENA_V6_COMBAT_CLARITY.md").read_text()
     prompts = (PROJECT_ROOT / "docs" / "CARD_ART_PROMPTS_STARTER.md").read_text()
     manifest_check = (PROJECT_ROOT / "tools" / "qa" / "card_art_manifest_check.py").read_text()
@@ -942,10 +943,14 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     rc_v6_notes = (PROJECT_ROOT / "docs" / "RC_V6_RELEASE_NOTES.md").read_text()
 
     assert "az48-arena-v6" in arena
+    assert "az48-fantasy-v7" in arena
     assert "az48-game-shell" in arena
     assert "az48-compact-hud" in arena
+    assert "az48-hero-plate-v7" in arena
     assert "az48-board-shell" in arena
+    assert "az48-stone-battlefield-v7" in arena
     assert "az48-hand-action-shell" in arena
+    assert "az48-command-dock-v7" in arena
     assert "az48-info-drawer" in arena
     assert "az48-battlefield-v6" in arena
     assert "az48-trap-zone-v6" in arena
@@ -977,6 +982,7 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     assert "loadCardArtManifest" in card_art_js
     assert "renderCardArt" in card_art_js
     assert "card_art_manifest.json" in card_art_js
+    assert "az-card-frame-fantasy-v7" in card_art_js
     assert "simple_use_text" in card_art_js
     assert "openCollectionModal" in cards_js
     assert "az-collection-card-modal-v6" in cards_js
@@ -992,6 +998,9 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
         ".az48-board-shell",
         ".az48-info-tabs",
         ".az48-lane-v6",
+        ".az48-fantasy-v7",
+        ".az48-stone-battlefield-v7",
+        ".az48-card-frame-fantasy-v7",
         ".az48-trap-zone-v6",
         ".az48-timeline-event-v6",
         "Arena 129-131",
@@ -1005,17 +1014,21 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
         ".az-collection-card-modal-v6",
         ".az-deck-preview-art-v6",
         ".az-card-art-v6",
+        ".az-card-frame-fantasy-v7",
         ".az-card-frame-uncommon",
         ".az-card-element-water",
     ]:
         assert class_name in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v190"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v191"' in service_worker
     assert '"/static/js/card_art_manifest.js"' in service_worker
     assert '"/static/assets/cards/card_art_manifest.json"' in service_worker
     assert "Ambitionz Card Art Direction" in art_direction
+    assert "Ambitionz Visual Bible" in visual_bible
+    assert "dark fantasy premium" in visual_bible
+    assert "No generic neon web UI" in visual_bible
     assert "Arena V6 Combat Clarity" in combat_doc
-    assert "premium fantasy neon trading card illustration" in prompts
+    assert "dark fantasy premium Ambitionz trading card illustration" in prompts
     assert "REQUIRED_FIELDS" in manifest_check
     assert "Arena V6 Combat Clarity Addendum" in checklist
     assert "Arena V6 Production Validation" in production_doc

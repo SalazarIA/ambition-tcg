@@ -1,31 +1,31 @@
 # Ambitionz Card Art Direction
 
-Ambitionz card art uses a premium fantasy neon look: deep violet backgrounds, arcane cyan light, gold highlights and clear silhouettes that still read on a mobile card.
+Ambitionz card art now follows the dark fantasy premium direction defined in `docs/AMBITIONZ_VISUAL_BIBLE.md`: ancient stone, aged metal, parchment, restrained magic light and clear silhouettes that read on a mobile card. Neon may appear only as controlled spell light or rune feedback, never as the whole product identity.
 
 ## Core Identity
 
 - Original fantasy TCG art, no borrowed IP, no named third-party worlds, no living artist style references.
 - High readability first: the card name, type, cost and element must remain legible over every art treatment.
-- Card frames may glow, but the frame should not overpower the tactical information.
+- Card frames use aged metal, stone, parchment and restrained magical accents; the frame should not overpower tactical information.
 - Placeholders are official beta placeholders, not broken assets.
 
 ## Element Palettes
 
-- Fire: red, orange, gold, sparks, pressure and direct damage.
-- Water: blue, cyan, reflection, flow, focus and light sustain.
-- Earth: dark green, stone, bronze, armor, defense and durable bodies.
-- Plant: vivid green, bioluminescence, roots, growth and control.
-- Global or Neutral: violet, silver, cyan, arcane geometry and flexible utility.
+- Fire: dark ember, copper, lava orange, gold sparks, pressure and direct damage.
+- Water: deep blue stone, cyan reflection, silver rune light, focus and light sustain.
+- Earth: moss stone, bronze armor, muted green, defense and durable bodies.
+- Plant: root green, living vine light, amber sap, growth and control.
+- Global or Neutral: smoky violet, tarnished silver, old arcane parchment and flexible utility.
 - Shadow if introduced: dark violet, smoke, distortion and risk.
 - Light if introduced: gold, white, radiant lines and protection.
 
 ## Rarity Frames
 
-- Common: clean frame, low glow, readable silhouette.
-- Uncommon: colored edge, moderate aura and extra border detail.
-- Rare: stronger glow, sharper runes and more dramatic lighting.
-- Epic: animated or high-energy aura when motion is allowed.
-- Legendary: gold/cyan/magenta aura, strongest frame detail, still readable.
+- Common: clean aged-metal frame, low glow, readable silhouette.
+- Uncommon: colored edge, moderate rune accent and extra border detail.
+- Rare: stronger metal/rune contrast, sharper silhouette and more dramatic lighting.
+- Epic: controlled magical aura when motion is allowed.
+- Legendary: gold and old arcane light, strongest frame detail, still readable.
 
 ## Prompt Rules
 
@@ -35,7 +35,7 @@ Every prompt should include:
 - Original creature or spell design.
 - Clear composition with one central subject.
 - Palette tied to element identity.
-- "premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art".
+- "dark fantasy premium Ambitionz trading card illustration, original creature or spell design, high readability, mobile-first card art".
 - Negative prompt: no text, no logo, no watermark, no third-party characters, no copied franchise style.
 
 ## Asset Naming

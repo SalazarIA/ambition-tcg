@@ -36,7 +36,7 @@ This checklist is a human-readable beta readiness snapshot. It avoids sensitive 
 
 ## Arena V6 Combat Clarity Addendum
 
-- Arena V6: premium fantasy neon battlefield, clearer lanes, stronger HUD hierarchy and compact Ready guidance.
+- Arena V6: dark fantasy premium battlefield, clearer lanes, stronger HUD hierarchy and compact Ready guidance.
 - Combat clarity: Battle Highlights, normalized timeline and Round Summary explain strategy, card, damage, shield, death and result events.
 - Card types: Creature, Spell and Trap cards now carry stronger visual labels and simple "how to use" education.
 - Spell targeting: the frontend highlights valid or inferred targets and falls back to backend-compatible targets where BE2 is still limited.
@@ -55,3 +55,13 @@ This checklist is a human-readable beta readiness snapshot. It avoids sensitive 
 - Card Identity Pack V1: the 30 starter cards now carry role, short lore and how-to-use copy in the art manifest.
 - Collection/Deck Builder teaching UX: role filters, preview text and deck scores help explain why cards belong in a deck.
 - Production smoke/cache guard: production checks accept `AMBITIONZ_PROD_URL` and `AMBITIONZ_EXPECTED_SW_VERSION` for release validation.
+
+## Visual Rebuild Addendum
+
+- Visual Bible: `docs/AMBITIONZ_VISUAL_BIBLE.md` is the official direction for dark fantasy premium, ancient stone boards, aged metal frames and parchment panels.
+- Arena rebuild: the active Arena keeps Arena Clean v48 contracts while presenting a compact enemy plate, stone battlefield, player command dock and side chronicle.
+- Fantasy card frames: Arena, Collection and Deck Builder use Creature/Spell/Trap frame identity, rarity accents and readable fallback art.
+- HUD/panels: HP, EN, AMB, intent, Ready and training controls use game-command styling instead of generic web panels.
+- Combat readability: damage, shield, Ambition, spell and trap feedback are short, readable and reduced-motion safe.
+- Responsiveness: desktop, notebook, portrait mobile and landscape mobile have explicit layout rules so hand, lanes, actions and tutorial stay usable.
+- No-copy rule: the Ambitionz look is original and must not reproduce assets, exact layouts, logos or proprietary style from external fantasy card games.

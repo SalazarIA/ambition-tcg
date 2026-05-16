@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=85">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/arena_clean_v48.css') }}?v=86">
     {% if arena_renderer == "3d" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arena3d.css') }}?v=1">
     {% endif %}
@@ -23,10 +23,10 @@
 
 </head>
 
-<body class="az-clean-arena-v48 arena-page-v154 az48-arena-v6 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-retention-page="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}"{% if campaign_context %} data-campaign-chapter-id="{{ campaign_context.chapter_id }}"{% endif %}>
-    <main class="az48-arena az48-arena-v6 az48-game-shell az48-neon-frame">
-        <header class="az48-top az48-compact-hud">
-            <section class="az48-player az48-enemy az48-enemy-zone-v6 az48-arcane-glow" data-az48-target="enemy_hero">
+<body class="az-clean-arena-v48 arena-page-v154 az48-arena-v6 az48-fantasy-v7 az48-mobile-safe-v7 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-retention-page="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}"{% if campaign_context %} data-campaign-chapter-id="{{ campaign_context.chapter_id }}"{% endif %}>
+    <main class="az48-arena az48-arena-v6 az48-game-shell az48-fantasy-board-v7 az48-neon-frame">
+        <header class="az48-top az48-compact-hud az48-hud-plate-v7">
+            <section class="az48-player az48-enemy az48-enemy-zone-v6 az48-arcane-glow az48-hero-plate-v7 az48-enemy-plate-v7" data-az48-target="enemy_hero">
                 <span class="az48-avatar-v6" aria-hidden="true">E</span>
                 <div>
                     <span>Enemy</span>
@@ -40,36 +40,22 @@
                 </div>
             </section>
 
-            <section class="az48-center az48-premium-panel">
+            <section class="az48-center az48-premium-panel az48-round-seal-v7">
                 <span class="az48-round-mode" id="az48-mode">{% if campaign_context %}Campaign{% elif training_mode %}Training{% else %}Arena{% endif %}</span>
                 <strong class="az48-round-badge">Round <span id="az48-round">1</span></strong>
                 <em id="az48-phase">Start</em>
             </section>
 
-            <section class="az48-player az48-you az48-player-zone-v6 az48-arcane-glow" data-az48-target="self">
-                <span class="az48-avatar-v6" aria-hidden="true">{{ (user.username[:1] if user else "P")|upper }}</span>
-                <div>
-                    <span>You</span>
-                    <strong id="az48-me-name">{{ user.username if user else "Player" }}</strong>
-                </div>
-                <div class="az48-stats az48-hud-stats">
-                    <b class="az48-hud-pill az48-hp-pill az48-player-hp-pill"><span id="az48-me-hp">--</span> <small>HP</small></b>
-                    <b class="az48-hud-pill az48-energy-pill"><span id="az48-me-energy">0</span>/<span id="az48-me-max-energy">0</span> <small>EN</small></b>
-                    <b class="az48-hud-pill az48-ambition-pill"><span id="az48-me-ambition">0</span> <small>AMB</small></b>
-                    <b class="az48-hud-pill az48-intent-pill"><small>Intent</small> <span id="az48-me-intent">Choose</span></b>
-                </div>
-            </section>
-
-            <a class="az48-back" href="{{ url_for('index') }}">Back</a>
+            <a class="az48-back az48-back-v7" href="{{ url_for('index') }}">Back</a>
         </header>
 
-        <section class="az48-message az48-statusbar az48-premium-panel" id="queue-status">
+        <section class="az48-message az48-statusbar az48-premium-panel az48-side-chronicle-v7" id="queue-status">
             <span class="az48-sr-helper" aria-hidden="true">No playable card with current energy. Press Ready to resolve the round.</span>
             <span class="az48-message-text" id="az48-message">
 	                {% if campaign_context %}Start {{ campaign_context.title }} to enter a campaign Training duel.{% elif training_mode %}Press Start to draw your hand.{% else %}Choose how to find a duel.{% endif %}
             </span>
             {% if training_mode %}
-            <aside class="az48-training-panel" id="az48-training-panel" aria-label="Training overview">
+            <aside class="az48-training-panel az48-parchment-panel-v7" id="az48-training-panel" aria-label="Training overview">
 	                <strong>{% if campaign_context %}{{ campaign_context.title }}{% else %}Training Mode{% endif %}</strong>
 	                <span>{% if campaign_context %}Campaign chapter · {{ campaign_context.difficulty|title }} · {{ campaign_context.reward }}{% else %}Practice intent, card, lane, Ready. Normal bot · one clear beta flow.{% endif %}</span>
                 <div class="az48-training-difficulties" aria-label="Bot difficulty presentation" id="az48-training-difficulty-picker">
@@ -104,14 +90,14 @@
             </div>
         </section>
 
-        <section class="az48-board az48-board-shell az48-battlefield-v6 az48-battle-core-v6">
+        <section class="az48-board az48-board-shell az48-battlefield-v6 az48-battle-core-v6 az48-stone-battlefield-v7 az48-board-system-v7">
             <div class="az48-field-row az48-board-row az48-enemy-board-row az48-enemy-field az48-enemy-zone-v6" id="az48-enemy-field">
                 <article class="az48-slot">Enemy Trap</article>
                 <article class="az48-slot">Enemy Monster</article>
                 <article class="az48-slot">Enemy Spell</article>
             </div>
 
-            <div class="az48-divider az48-divider-v6">Battlefield</div>
+            <div class="az48-divider az48-divider-v6 az48-combat-rune-v7">Battlefield</div>
 
             <div class="az48-field-row az48-board-row az48-player-board-row az48-me-field az48-player-zone-v6" id="az48-me-field">
                 <article class="az48-slot">Trap Slot</article>
@@ -119,7 +105,7 @@
                 <article class="az48-slot">Spell Slot</article>
             </div>
 
-            <section class="az48-trap-zone-v6 az48-premium-panel" id="az48-trap-zone-v6" aria-label="Trap Zone">
+            <section class="az48-trap-zone-v6 az48-premium-panel az48-trap-altar-v7" id="az48-trap-zone-v6" aria-label="Trap Zone">
                 <div>
                     <span>Trap Zone</span>
                     <strong>Prepared traps</strong>
@@ -132,7 +118,20 @@
             </section>
         </section>
 
-        <footer class="az48-bottom az48-hand-action-shell">
+        <footer class="az48-bottom az48-hand-action-shell az48-command-dock-v7">
+            <section class="az48-player az48-you az48-player-zone-v6 az48-arcane-glow az48-hero-plate-v7 az48-player-command-plate-v7" data-az48-target="self">
+                <span class="az48-avatar-v6" aria-hidden="true">{{ (user.username[:1] if user else "P")|upper }}</span>
+                <div>
+                    <span>You</span>
+                    <strong id="az48-me-name">{{ user.username if user else "Player" }}</strong>
+                </div>
+                <div class="az48-stats az48-hud-stats">
+                    <b class="az48-hud-pill az48-hp-pill az48-player-hp-pill"><span id="az48-me-hp">--</span> <small>HP</small></b>
+                    <b class="az48-hud-pill az48-energy-pill"><span id="az48-me-energy">0</span>/<span id="az48-me-max-energy">0</span> <small>EN</small></b>
+                    <b class="az48-hud-pill az48-ambition-pill"><span id="az48-me-ambition">0</span> <small>AMB</small></b>
+                    <b class="az48-hud-pill az48-intent-pill"><small>Intent</small> <span id="az48-me-intent">Choose</span></b>
+                </div>
+            </section>
             <div class="az48-hand-head">
                 <strong>Your Hand</strong>
                 <span id="az48-hand-count">0 cards</span>
@@ -142,7 +141,7 @@
                 <div class="az48-empty">No cards yet. Press Start.</div>
             </section>
 
-            <section class="az48-round-summary az48-info-drawer az48-info-tab-panel az48-info-tab-panel-summary az48-battle-timeline-v6 az48-premium-panel" id="az48-round-summary" aria-live="polite" data-az48-info-panel="summary">
+            <section class="az48-round-summary az48-info-drawer az48-info-tab-panel az48-info-tab-panel-summary az48-battle-timeline-v6 az48-premium-panel az48-chronicle-panel-v7" id="az48-round-summary" aria-live="polite" data-az48-info-panel="summary">
                 <div class="az48-summary-header">
                     <strong class="az48-summary-title">Round Summary</strong>
                     <p class="az48-summary-empty">Waiting for round resolution.</p>
@@ -150,7 +149,7 @@
                 <ol class="az48-summary-list" aria-label="Round Summary events"></ol>
             </section>
 
-            <nav class="az48-actions az48-action-bar">
+            <nav class="az48-actions az48-action-bar az48-command-bar-v7">
                 <button type="button" id="az48-start" class="az48-btn az48-start">Start</button>
                 <button type="button" id="az48-strike" class="az48-btn">Strike <small>Attack</small></button>
                 <button type="button" id="az48-guard" class="az48-btn">Guard <small>Defend</small></button>
@@ -245,7 +244,7 @@
     {% endif %}
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_feedback.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=2"></script>
-    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=86"></script>
+    <script src="{{ url_for('static', filename='js/card_art_manifest.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/arena_clean_v48.js') }}?v=87"></script>
 </body>
 </html>

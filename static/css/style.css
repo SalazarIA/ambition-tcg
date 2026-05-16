@@ -11385,3 +11385,196 @@ button.btn-secondary {
         min-height: 104px;
     }
 }
+
+/* Blocks 141-148: shared Ambitionz fantasy TCG card presentation */
+:root {
+    --az-fantasy-page: #080706;
+    --az-fantasy-panel: #21180f;
+    --az-fantasy-panel-soft: #3a2b18;
+    --az-fantasy-gold: #e8c77a;
+    --az-fantasy-parchment: #ead6ad;
+    --az-fantasy-ink: #25190d;
+    --az-fantasy-copper: #a87334;
+    --az-fantasy-border: rgba(232, 199, 122, 0.34);
+}
+
+.az-game-collection-page,
+.deck-builder-unified-v1 {
+    background:
+        radial-gradient(circle at 50% 0%, rgba(150, 103, 43, 0.14), transparent 34%),
+        linear-gradient(180deg, #0b0908 0%, #17120d 45%, #060504 100%);
+}
+
+.az-game-collection-page .hero,
+.az-game-collection-page .dashboard-section,
+.az-game-collection-page .collection-filters-v1,
+.deck-builder-unified-v1 .deck-builder-hero-v115,
+.deck-builder-unified-v1 .deck-builder-coach-v123,
+.deck-builder-unified-v1 .deck-builder-stat-grid-v115 div,
+.deck-builder-unified-v1 .az-deck-card-preview-v30 {
+    border: 1px solid var(--az-fantasy-border);
+    background:
+        linear-gradient(180deg, rgba(255, 244, 204, 0.08), rgba(0, 0, 0, 0.10) 38%, rgba(0, 0, 0, 0.22)),
+        linear-gradient(135deg, rgba(58, 43, 24, 0.92), rgba(16, 13, 10, 0.94));
+    box-shadow: inset 0 0 0 1px rgba(255, 244, 204, 0.04), 0 18px 46px rgba(0, 0, 0, 0.26);
+}
+
+.az-game-collection-page .hero h1,
+.az-game-collection-page .hero h2,
+.deck-builder-unified-v1 .deck-builder-hero-v115 h2,
+.deck-builder-unified-v1 .deck-builder-coach-v123 h2 {
+    color: #fff1cb;
+    text-shadow: 0 2px 0 #000;
+}
+
+.collection-card.az-card-v6,
+.builder-card.az-card-v6,
+.collection-card.az-card-frame-fantasy-v7,
+.builder-card.az-card-frame-fantasy-v7,
+.collection-card.az-premium-card-frame-v1,
+.builder-card.az-premium-card-frame-v1 {
+    border: 2px solid rgba(232, 199, 122, 0.38);
+    border-radius: 22px 8px 22px 8px;
+    background:
+        linear-gradient(180deg, rgba(255, 246, 215, 0.12), transparent 20%),
+        radial-gradient(circle at 50% 18%, rgba(232, 199, 122, 0.12), transparent 34%),
+        linear-gradient(180deg, var(--az-card-v6-gradient, #4c351b), #120e09 72%);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 244, 204, 0.06),
+        inset 0 -36px 42px rgba(0, 0, 0, 0.40),
+        0 18px 42px rgba(0, 0, 0, 0.30);
+}
+
+.collection-card .card-shell,
+.builder-card .card-shell,
+.collection-card .az-premium-card-shell-v1,
+.builder-card .az-premium-card-shell-v1 {
+    border-radius: 18px 6px 18px 6px;
+    background:
+        linear-gradient(180deg, rgba(255, 246, 215, 0.10), rgba(0, 0, 0, 0.16)),
+        rgba(16, 12, 8, 0.48);
+}
+
+.collection-card .az-card-art-v6,
+.builder-card .az-card-art-v6,
+.az-deck-preview-art-v6 .az-card-art-v6,
+.az-collection-modal-panel-v6 .az-card-art-v6 {
+    border-radius: 18px 6px 18px 6px;
+    border: 1px solid rgba(232, 199, 122, 0.24);
+    background:
+        radial-gradient(circle at 50% 24%, rgba(255, 246, 215, 0.28), transparent 18%),
+        repeating-linear-gradient(45deg, rgba(255, 244, 204, 0.05) 0 1px, transparent 1px 10px),
+        var(--az-card-v6-gradient);
+    box-shadow: inset 0 0 38px rgba(0, 0, 0, 0.28), 0 14px 28px rgba(0, 0, 0, 0.20);
+}
+
+.collection-card .az-card-art-rune-v6,
+.builder-card .az-card-art-rune-v6 {
+    color: rgba(255, 242, 205, 0.92);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.42), 0 0 18px rgba(232, 199, 122, 0.34);
+}
+
+.collection-card .az-card-art-name-v6,
+.builder-card .az-card-art-name-v6 {
+    color: #fff2cd;
+    background: rgba(22, 14, 7, 0.58);
+    border: 1px solid rgba(232, 199, 122, 0.14);
+    border-radius: 8px 4px;
+    padding: 4px 6px;
+}
+
+.collection-card h3,
+.builder-card h3,
+.collection-card .card-name,
+.builder-card .card-name {
+    color: #fff2cd;
+}
+
+.az-element-badge,
+.az-rarity-badge,
+.role-pill,
+.collection-card .type-pill,
+.builder-card .type-pill {
+    border: 1px solid rgba(232, 199, 122, 0.26);
+    color: #fff2cd;
+    background: rgba(24, 15, 8, 0.72);
+}
+
+.az-card-type-creature,
+.type-monster,
+.type-creature {
+    --az-card-v6-gradient: linear-gradient(135deg, #3f2a13, #94703a 46%, #d7b66c);
+}
+
+.az-card-type-spell,
+.type-spell {
+    --az-card-v6-gradient: linear-gradient(135deg, #241747, #7252c8 48%, #c5adff);
+}
+
+.az-card-type-trap,
+.type-trap {
+    --az-card-v6-gradient: linear-gradient(135deg, #3b2209, #b5762f 48%, #f0cf7c);
+}
+
+.az-card-frame-common { border-color: rgba(230, 219, 190, 0.30) !important; }
+.az-card-frame-uncommon { border-color: rgba(137, 217, 129, 0.56) !important; }
+.az-card-frame-rare { border-color: rgba(128, 216, 255, 0.64) !important; }
+.az-card-frame-epic { border-color: rgba(184, 145, 255, 0.72) !important; }
+.az-card-frame-legendary { border-color: rgba(232, 199, 122, 0.92) !important; }
+
+.az-card-element-fire { --az-card-v6-gradient: linear-gradient(135deg, #43130c, #a33b1c 48%, #e8b15f); }
+.az-card-element-water { --az-card-v6-gradient: linear-gradient(135deg, #102138, #1e5d8d 50%, #9ad8ea); }
+.az-card-element-earth { --az-card-v6-gradient: linear-gradient(135deg, #202414, #54612d 50%, #bd9f64); }
+.az-card-element-plant { --az-card-v6-gradient: linear-gradient(135deg, #102314, #2d793d 50%, #9bcf6a); }
+.az-card-element-global,
+.az-card-element-neutral { --az-card-v6-gradient: linear-gradient(135deg, #251934, #5a4674 50%, #c4b6df); }
+
+.az-collection-card-modal-v6 {
+    color: #fff2cd;
+}
+
+.az-collection-modal-backdrop-v6 {
+    background:
+        radial-gradient(circle at 50% 28%, rgba(232, 199, 122, 0.12), transparent 38%),
+        rgba(4, 3, 2, 0.78);
+}
+
+.az-collection-modal-panel-v6 {
+    border: 1px solid rgba(232, 199, 122, 0.42);
+    border-radius: 26px 9px 26px 9px;
+    background:
+        linear-gradient(180deg, rgba(255, 246, 215, 0.10), rgba(0, 0, 0, 0.10) 36%, rgba(0, 0, 0, 0.28)),
+        linear-gradient(135deg, #3a2b18, #0f0c09);
+    box-shadow: 0 34px 110px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(255, 244, 204, 0.05);
+}
+
+.az-collection-modal-copy-v6 p,
+.az-collection-modal-copy-v6 dt {
+    color: rgba(255, 242, 205, 0.72);
+}
+
+.az-collection-modal-copy-v6 dl div,
+.az-deck-preview-stat-grid-v30 span {
+    border-color: rgba(232, 199, 122, 0.18);
+    background: rgba(22, 14, 7, 0.48);
+}
+
+.az-deck-card-preview-v30 {
+    border-radius: 20px 8px 20px 8px;
+}
+
+@media (max-width: 760px) {
+    .az-game-collection-page .card-grid,
+    .deck-builder-unified-v1 .deck-builder-grid {
+        grid-template-columns: repeat(auto-fit, minmax(154px, 1fr));
+    }
+
+    .collection-card.az-card-v6,
+    .builder-card.az-card-v6,
+    .collection-card.az-card-frame-fantasy-v7,
+    .builder-card.az-card-frame-fantasy-v7,
+    .collection-card.az-premium-card-frame-v1,
+    .builder-card.az-premium-card-frame-v1 {
+        border-radius: 18px 7px 18px 7px;
+    }
+}

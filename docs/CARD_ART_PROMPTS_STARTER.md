@@ -9,11 +9,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: ambition_engine (Ambition engine)
 - How to use: Use it to build Ambition and unlock stronger turns.
-- Concept: Tritao Guerreiro as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity.
+- Concept: Tritao Guerreiro as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1478ff, #28f4ff, #d5fbff.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Tritao Guerreiro, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Tritao Guerreiro as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Tritao Guerreiro, Water Monster, Common rarity, Ambition engine, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Tritao Guerreiro as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -24,11 +24,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: defender (Lane defender)
 - How to use: Summon into a lane to soak attacks and protect your hero.
-- Concept: Tita de Pedra as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity.
+- Concept: Tita de Pedra as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1c6f45, #b28a45, #f0d18a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Tita de Pedra, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Tita de Pedra as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Tita de Pedra, Earth Monster, Common rarity, Lane defender, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Tita de Pedra as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -39,11 +39,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: spell_damage (Damage spell)
 - How to use: Cast on an enemy creature or hero to create immediate pressure.
-- Concept: Escudo Mistico as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Escudo Mistico as damage spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Escudo Mistico, Global Spell, Common rarity, Damage spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Escudo Mistico as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Escudo Mistico, Global Spell, Common rarity, Damage spell, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Escudo Mistico as damage spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -54,11 +54,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: defender (Lane defender)
 - How to use: Summon into a lane to soak attacks and protect your hero.
-- Concept: Minotauro de Ferro as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity.
+- Concept: Minotauro de Ferro as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1c6f45, #b28a45, #f0d18a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Minotauro de Ferro, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Minotauro de Ferro as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Minotauro de Ferro, Earth Monster, Common rarity, Lane defender, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Minotauro de Ferro as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -69,11 +69,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: trap_defense (Defense trap)
 - How to use: Prepare it before Ready; it shields or weakens incoming pressure.
-- Concept: Muralha Rochosa as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Muralha Rochosa as defense trap, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Muralha Rochosa, Global Trap, Common rarity, Defense trap, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Muralha Rochosa as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Muralha Rochosa, Global Trap, Common rarity, Defense trap, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Muralha Rochosa as defense trap, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -84,11 +84,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: spell_damage (Damage spell)
 - How to use: Cast on an enemy creature or hero to create immediate pressure.
-- Concept: Impulso Arcano as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Impulso Arcano as damage spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Impulso Arcano, Global Spell, Common rarity, Damage spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Impulso Arcano as damage spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Impulso Arcano, Global Spell, Common rarity, Damage spell, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Impulso Arcano as damage spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -99,11 +99,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: utility (Control utility)
 - How to use: Use it to shape lanes, slow pressure and keep options open.
-- Concept: Lobo Espinheiro as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity.
+- Concept: Lobo Espinheiro as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #13a85a, #23e87d, #aaff6a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Lobo Espinheiro, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Lobo Espinheiro as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Lobo Espinheiro, Plant Monster, Common rarity, Control utility, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Lobo Espinheiro as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -114,11 +114,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: attacker (Pressure attacker)
 - How to use: Summon into a lane to push damage and force trades.
-- Concept: Draco Magma as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity.
+- Concept: Draco Magma as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #ff4d3d, #ff9a3d, #ffd66f.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Draco Magma, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Draco Magma as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Draco Magma, Fire Monster, Common rarity, Pressure attacker, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Draco Magma as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -129,11 +129,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: attacker (Pressure attacker)
 - How to use: Summon into a lane to push damage and force trades.
-- Concept: Salamandra Rubra as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity.
+- Concept: Salamandra Rubra as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #ff4d3d, #ff9a3d, #ffd66f.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Salamandra Rubra, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Salamandra Rubra as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Salamandra Rubra, Fire Monster, Common rarity, Pressure attacker, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Salamandra Rubra as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -144,11 +144,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: ambition_engine (Ambition engine)
 - How to use: Use it to build Ambition and unlock stronger turns.
-- Concept: Serpente Abissal as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity.
+- Concept: Serpente Abissal as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1478ff, #28f4ff, #d5fbff.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Serpente Abissal, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Serpente Abissal as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Serpente Abissal, Water Monster, Common rarity, Ambition engine, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Serpente Abissal as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -159,11 +159,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: attacker (Pressure attacker)
 - How to use: Summon into a lane to push damage and force trades.
-- Concept: Imp de Chama as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity.
+- Concept: Imp de Chama as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #ff4d3d, #ff9a3d, #ffd66f.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Imp de Chama, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Imp de Chama as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Imp de Chama, Fire Monster, Common rarity, Pressure attacker, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Imp de Chama as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -174,11 +174,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: utility (Control utility)
 - How to use: Use it to shape lanes, slow pressure and keep options open.
-- Concept: Cervo Esmeralda as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity.
+- Concept: Cervo Esmeralda as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #13a85a, #23e87d, #aaff6a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Cervo Esmeralda, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Cervo Esmeralda as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Cervo Esmeralda, Plant Monster, Common rarity, Control utility, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Cervo Esmeralda as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -189,11 +189,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: defender (Lane defender)
 - How to use: Summon into a lane to soak attacks and protect your hero.
-- Concept: Colosso Ancestral as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity.
+- Concept: Colosso Ancestral as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1c6f45, #b28a45, #f0d18a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Colosso Ancestral, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Colosso Ancestral as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Colosso Ancestral, Earth Monster, Common rarity, Lane defender, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Colosso Ancestral as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -204,11 +204,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: trap_defense (Defense trap)
 - How to use: Prepare it before Ready; it shields or weakens incoming pressure.
-- Concept: Raizes Aprisionadoras as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Raizes Aprisionadoras as defense trap, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Raizes Aprisionadoras, Global Trap, Common rarity, Defense trap, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Raizes Aprisionadoras as defense trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Raizes Aprisionadoras, Global Trap, Common rarity, Defense trap, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Raizes Aprisionadoras as defense trap, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -219,11 +219,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: attacker (Pressure attacker)
 - How to use: Summon into a lane to push damage and force trades.
-- Concept: Fenix Infernal as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity.
+- Concept: Fenix Infernal as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #ff4d3d, #ff9a3d, #ffd66f.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Fenix Infernal, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Fenix Infernal as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Fenix Infernal, Fire Monster, Common rarity, Pressure attacker, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Fenix Infernal as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -234,11 +234,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: trap_counter (Counter trap)
 - How to use: Prepare it before Ready; it punishes the next enemy attack.
-- Concept: Armadilha de Cinzas as counter trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Armadilha de Cinzas as counter trap, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Armadilha de Cinzas, Global Trap, Common rarity, Counter trap, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Armadilha de Cinzas as counter trap, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Armadilha de Cinzas, Global Trap, Common rarity, Counter trap, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Armadilha de Cinzas as counter trap, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -249,11 +249,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: utility (Control utility)
 - How to use: Use it to shape lanes, slow pressure and keep options open.
-- Concept: Fada do Bosque as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity.
+- Concept: Fada do Bosque as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #13a85a, #23e87d, #aaff6a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Fada do Bosque, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Fada do Bosque as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Fada do Bosque, Plant Monster, Common rarity, Control utility, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Fada do Bosque as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -264,11 +264,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: utility (Control utility)
 - How to use: Use it to shape lanes, slow pressure and keep options open.
-- Concept: Ent Florido as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity.
+- Concept: Ent Florido as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #13a85a, #23e87d, #aaff6a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Ent Florido, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Ent Florido as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Ent Florido, Plant Monster, Common rarity, Control utility, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Ent Florido as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -279,11 +279,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: ambition_engine (Ambition engine)
 - How to use: Use it to build Ambition and unlock stronger turns.
-- Concept: Guardiao das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity.
+- Concept: Guardiao das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1478ff, #28f4ff, #d5fbff.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Guardiao das Mares, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Guardiao das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Guardiao das Mares, Water Monster, Common rarity, Ambition engine, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Guardiao das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -294,11 +294,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: spell_heal (Heal spell)
 - How to use: Cast on yourself or a damaged ally to recover tempo.
-- Concept: Chama Vital as heal spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Chama Vital as heal spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Chama Vital, Global Spell, Common rarity, Heal spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Chama Vital as heal spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Chama Vital, Global Spell, Common rarity, Heal spell, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Chama Vital as heal spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -309,11 +309,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: ambition_engine (Ambition engine)
 - How to use: Use it to build Ambition and unlock stronger turns.
-- Concept: Oraculo das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity.
+- Concept: Oraculo das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1478ff, #28f4ff, #d5fbff.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Oraculo das Mares, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Oraculo das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Oraculo das Mares, Water Monster, Common rarity, Ambition engine, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Oraculo das Mares as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -324,11 +324,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: attacker (Pressure attacker)
 - How to use: Summon into a lane to push damage and force trades.
-- Concept: Cavaleiro Igneo as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity.
+- Concept: Cavaleiro Igneo as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #ff4d3d, #ff9a3d, #ffd66f.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Cavaleiro Igneo, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Cavaleiro Igneo as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Cavaleiro Igneo, Fire Monster, Common rarity, Pressure attacker, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Cavaleiro Igneo as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -339,11 +339,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: utility (Control utility)
 - How to use: Use it to shape lanes, slow pressure and keep options open.
-- Concept: Druida das Raizes as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity.
+- Concept: Druida das Raizes as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #13a85a, #23e87d, #aaff6a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Druida das Raizes, Plant Monster, Common rarity, Control utility, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Druida das Raizes as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Druida das Raizes, Plant Monster, Common rarity, Control utility, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Druida das Raizes as control utility, bioluminescent vines, living roots, green control aura, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -354,11 +354,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: ambition_engine (Ambition engine)
 - How to use: Use it to build Ambition and unlock stronger turns.
-- Concept: Bencao da Terra as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Bencao da Terra as ambition engine, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Bencao da Terra, Global Spell, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Bencao da Terra as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Bencao da Terra, Global Spell, Common rarity, Ambition engine, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Bencao da Terra as ambition engine, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -369,11 +369,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: ambition_engine (Ambition engine)
 - How to use: Use it to build Ambition and unlock stronger turns.
-- Concept: Surto Elemental as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Surto Elemental as ambition engine, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Surto Elemental, Global Spell, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Surto Elemental as ambition engine, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Surto Elemental, Global Spell, Common rarity, Ambition engine, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Surto Elemental as ambition engine, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -384,11 +384,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: ambition_engine (Ambition engine)
 - How to use: Use it to build Ambition and unlock stronger turns.
-- Concept: Sereia Lunar as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity.
+- Concept: Sereia Lunar as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1478ff, #28f4ff, #d5fbff.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Sereia Lunar, Water Monster, Common rarity, Ambition engine, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Sereia Lunar as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Sereia Lunar, Water Monster, Common rarity, Ambition engine, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Sereia Lunar as ambition engine, cyan reflections, tidal glyphs, calm resource glow, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -399,11 +399,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: defender (Lane defender)
 - How to use: Summon into a lane to soak attacks and protect your hero.
-- Concept: Guardiao da Montanha as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity.
+- Concept: Guardiao da Montanha as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1c6f45, #b28a45, #f0d18a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Guardiao da Montanha, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Guardiao da Montanha as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Guardiao da Montanha, Earth Monster, Common rarity, Lane defender, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Guardiao da Montanha as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -414,11 +414,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: defender (Lane defender)
 - How to use: Summon into a lane to soak attacks and protect your hero.
-- Concept: Sentinela Rochoso as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity.
+- Concept: Sentinela Rochoso as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #1c6f45, #b28a45, #f0d18a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Sentinela Rochoso, Earth Monster, Common rarity, Lane defender, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Sentinela Rochoso as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Sentinela Rochoso, Earth Monster, Common rarity, Lane defender, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Sentinela Rochoso as lane defender, bronze stone armor, emerald cracks, sturdy stance, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -429,11 +429,11 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: attacker (Pressure attacker)
 - How to use: Summon into a lane to push damage and force trades.
-- Concept: Behemoth de Lava as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity.
+- Concept: Behemoth de Lava as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #ff4d3d, #ff9a3d, #ffd66f.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Behemoth de Lava, Fire Monster, Common rarity, Pressure attacker, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Behemoth de Lava as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Behemoth de Lava, Fire Monster, Common rarity, Pressure attacker, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Behemoth de Lava as pressure attacker, molten orange pressure, gold sparks, aggressive silhouette, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.
 
@@ -444,10 +444,10 @@ These prompts cover the 30-card beta starter deck used by BE2. They avoid third-
 - Rarity: Common
 - Role: spell_shield (Shield spell)
 - How to use: Cast on yourself or an ally creature to survive the next exchange.
-- Concept: Furia Elemental as shield spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity.
+- Concept: Furia Elemental as shield spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity.
 - Composition: one clear central subject, readable silhouette, strong top-down card crop, room for frame and nameplate.
 - Colors: #8d4dff, #28f4ff, #f8d57a.
-- Mood: premium fantasy neon trading card illustration, collectible, energetic, original Ambitionz identity.
-- Prompt: Furia Elemental, Global Spell, Common rarity, Shield spell, premium fantasy neon trading card illustration, original creature design, high readability, mobile-first card art, Furia Elemental as shield spell, violet arcane geometry, cyan runes, polished beta magic, readable mobile-first Ambitionz card identity, dramatic but clean lighting, no text, no logo, no watermark.
+- Mood: dark fantasy premium Ambitionz trading card illustration, collectible, tactical, ancient magic, original Ambitionz identity.
+- Prompt: Furia Elemental, Global Spell, Common rarity, Shield spell, dark fantasy premium Ambitionz trading card illustration, original creature design, high readability, mobile-first card art, Furia Elemental as shield spell, violet arcane geometry, cyan runes, aged metal, parchment and restrained rune light, readable mobile-first Ambitionz dark fantasy identity, dramatic but clean lighting, no text, no logo, no watermark.
 - Negative prompt: copied franchise character, copyrighted IP, real brand, artist-name style, logo, watermark, unreadable clutter, photoreal portrait of a real person, text overlay.
 - Recommended format: portrait 3:4, safe central subject, high contrast at thumbnail size.

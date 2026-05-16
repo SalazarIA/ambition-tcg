@@ -435,6 +435,8 @@
         const feedbackClass = options.feedbackClass ? " " + options.feedbackClass : "";
         const colors = c.colors || {};
         const keywordTags = arr(c.keywordText && c.keywordText.length ? c.keywordText : c.keywords).slice(0, 2);
+        const roleText = str(c.role || c.sigil || typeGroup, typeGroup);
+        const howToUse = cardHowToUse(c).replace(/^How to use this card:\s*/i, "");
         const stats = c.isMonster
             ? '<div class="az48-card-stats"><span class="az48-card-stat-pair az48-stat-attack"><b>ATK</b>' + esc(c.attack || c.stat || 0) + '</span><span class="az48-card-stat-pair az48-stat-health"><b>HP</b>' + esc(c.currentHp || 0) + '/' + esc(c.maxHp || 0) + '</span></div>'
             : '<div class="az48-card-stats"><span class="az48-card-stat-pair"><b>' + esc(c.statLabel || "VAL") + '</b>' + esc(c.stat || 0) + '</span><span class="az48-card-stat-pair"><b>ELM</b>' + esc(c.element || "Neutral") + '</span></div>';
@@ -453,17 +455,19 @@
         const title = disabledReason || c.preview || c.effect || c.name;
 
         return [
-            '<button type="button" class="az48-card az48-card-v2 az48-card-v6 az-card-v6 az48-card-frame-premium-v1 az-card-frame-' + esc(v6ClassToken(c.rarity, "common")) + ' az-card-type-' + esc(v6ClassToken(typeGroup, "card")) + ' az-card-element-' + esc(v6ClassToken(c.element, "neutral")) + ' ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + targetData + ' data-card-type="' + esc(c.type) + '" data-card-group="' + esc(typeGroup) + '" data-element="' + esc(c.element || "Neutral") + '" data-rarity="' + esc(c.rarity || "Common") + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-card-how-to-use="' + esc(cardHowToUse(c)) + '" data-disabled-reason="' + esc(disabledReason) + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
+            '<button type="button" class="az48-card az48-card-v2 az48-card-v6 az-card-v6 az48-card-frame-premium-v1 az48-card-frame-fantasy-v7 az-card-frame-' + esc(v6ClassToken(c.rarity, "common")) + ' az-card-type-' + esc(v6ClassToken(typeGroup, "card")) + ' az-card-element-' + esc(v6ClassToken(c.element, "neutral")) + ' ' + typeClass + ' ' + elementClass + ' ' + rarityClass + playable + (options.playable ? " is-playable az48-playable" : "") + locked + field + selected + laneSlot + legalLane + feedbackClass + '" data-card-id="' + esc(c.id) + '"' + laneData + targetData + ' data-card-type="' + esc(c.type) + '" data-card-group="' + esc(typeGroup) + '" data-card-role="' + esc(roleText) + '" data-element="' + esc(c.element || "Neutral") + '" data-rarity="' + esc(c.rarity || "Common") + '" data-card-preview="' + esc(c.preview || c.effect || "") + '" data-card-how-to-use="' + esc(cardHowToUse(c)) + '" data-disabled-reason="' + esc(disabledReason) + '" aria-pressed="' + (options.selected ? "true" : "false") + '" title="' + esc(title) + '" style="' + style + '">',
             '<span class="az48-card-sheen" aria-hidden="true"></span>',
             '<span class="az48-cost">E ' + esc(c.cost) + '</span>',
             '<span class="az48-rarity">' + esc(c.rarity) + '</span>',
             '<span class="az48-card-type-badge-v6">' + esc(typeGroup) + '</span>',
+            '<span class="az48-card-role-badge-v7">' + esc(roleText) + '</span>',
             '<span class="az48-card-element-mark">' + esc(art.symbol || (c.element || "N").slice(0, 1).toUpperCase()) + '</span>',
             '<div class="az48-art az-card-art-v6"><span class="az48-art-image" aria-hidden="true"></span><span class="az48-art-rune-v6" aria-hidden="true">' + esc(art.symbol || (c.element || "A").slice(0, 1).toUpperCase()) + '</span><span class="az48-art-glow" aria-hidden="true"></span></div>',
             '<strong class="az48-name">' + esc(c.name) + '</strong>',
             stats,
             '<p class="az48-effect">' + esc(c.effect || c.role || c.kind || "") + '</p>',
             '<p class="az48-card-preview-line">' + esc(c.preview || "") + '</p>',
+            '<p class="az48-howto-v7">' + esc(howToUse) + '</p>',
             '<div class="az48-tags"><span>' + esc(c.element || "Neutral") + '</span><span>' + esc(c.type) + '</span>' + keywordTags.map((keyword) => '<span class="az48-keyword-chip">' + esc(keyword) + '</span>').join("") + '</div>',
             '<span class="az48-power">' + esc(c.statLabel) + ' ' + esc(c.stat) + '</span>',
             '</button>'

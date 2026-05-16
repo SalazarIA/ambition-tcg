@@ -16,14 +16,14 @@ Production URL: https://ambition-tcg.onrender.com/training
 
 - Open DevTools > Application > Service Workers.
 - Confirm the active service worker is the latest deployed build.
-- Confirm `service-worker.js` includes the expected cache name for the release, currently `ambitionz-web-app-v190` locally.
+- Confirm `service-worker.js` includes the expected cache name for the release, currently `ambitionz-web-app-v191` locally.
 - Hard refresh once with DevTools open.
 - Test in an anonymous/private window to avoid stale service worker cache.
 - Confirm `/static/css/arena_clean_v48.css` and `/static/js/arena_clean_v48.js` load with the deployed cache-bust query.
 
 ## Cache Guard / Hard Refresh
 
-- Set `AMBITIONZ_EXPECTED_SW_VERSION=ambitionz-web-app-v190` when validating RC V6 production.
+- Set `AMBITIONZ_EXPECTED_SW_VERSION=ambitionz-web-app-v191` when validating RC V6 production.
 - Use DevTools > Application > Clear site data before judging a visual regression.
 - Hard refresh with DevTools open after clearing site data.
 - Test one anonymous/private window to avoid a stale service worker from a previous RC.
@@ -84,6 +84,6 @@ Optional environment:
 
 ```bash
 AMBITIONZ_PROD_URL=https://ambition-tcg.onrender.com \
-AMBITIONZ_EXPECTED_SW_VERSION=ambitionz-web-app-v190 \
+AMBITIONZ_EXPECTED_SW_VERSION=ambitionz-web-app-v191 \
 python3 tools/qa/qa_production_smoke.py
 ```
