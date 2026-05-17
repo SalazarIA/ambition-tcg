@@ -40,6 +40,21 @@ from services.battle_summary import build_match_summary_lines
 from services.card_stats import update_card_stats_after_match
 from services.arena_payload import build_arena_payloads_for_match, build_arena_state_payload
 from services.arena_command_v1 import arena_command_error_payload
+from services.ascension_bot import run_bot_turn as run_ascension_bot_turn
+from services.ascension_cards import build_ascension_starter_deck, get_ascension_catalog, validate_ascension_deck
+from services.ascension_engine import (
+    AscensionActionError,
+    attempt_dominate as ascension_attempt_dominate,
+    choose_intent as ascension_choose_intent,
+    create_match as create_ascension_match,
+    legal_actions as ascension_legal_actions,
+    play_card as ascension_play_card,
+    resolve_clash as ascension_resolve_clash,
+)
+from services.ascension_history import append_history_record, build_history_record, read_history_records
+from services.ascension_payloads import action_response as ascension_action_response, public_match_state as public_ascension_match_state
+from services.ascension_progression import build_ascension_rewards, progression_event_from_match
+from services.ascension_taxonomy import ascension_deck_summary, enrich_ascension_card
 from services.match_engine_facade import MatchEngineFacade
 from services.match_payloads import (
     build_game_state_payloads,
@@ -103,6 +118,7 @@ socketio = SocketIO(
 serializer = itsdangerous.URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 active_matches = {}
+ascension_training_matches = {}
 player_rooms = {}
 socket_state = {
     "waiting_player": None,
@@ -126,7 +142,18 @@ GUEST_GOLD_SESSION_KEY = "ambitionz_guest_gold_balance"
 GUEST_GOLD_STARTING_BALANCE = 300
 DAILY_GOLD_REWARD = 75
 
-CSRF_EXEMPT_ENDPOINTS = {"beta_event", "api_retention_event", "api_beta_telemetry", "api_beta_feedback"}
+CSRF_EXEMPT_ENDPOINTS = {
+    "beta_event",
+    "api_retention_event",
+    "api_beta_telemetry",
+    "api_beta_feedback",
+    "api_ascension_start",
+    "api_ascension_state",
+    "api_ascension_intent",
+    "api_ascension_play",
+    "api_ascension_commit",
+    "api_ascension_dominate",
+}
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 ALLOWED_RETENTION_EVENTS = {
     "campaign_result",
@@ -775,7 +802,7 @@ def build_beta_journey(user=None, deck_status=None):
         {
             "number": "02",
             "title": "Learn",
-            "description": "Read the intent, lane and Ready flow before the first duel.",
+            "description": "Read the Intent, Champion and Commit flow before the first duel.",
             "url": url_for("tutorial"),
             "cta": "Tutorial",
             "status": "Done" if onboarded else "Recommended",
@@ -851,7 +878,7 @@ def build_campaign_chapters(user=None, deck_status=None):
             "number": "01",
             "chapter_id": "first_signal",
             "title": "First Signal",
-            "description": "Learn the rhythm of intent, card, lane and Ready in a short bot duel.",
+            "description": "Learn the rhythm of Intent, Champion focus and Commit in a short bot duel.",
             "lore": "A quiet signal rises from the first arena floor, asking for discipline before glory.",
             "difficulty": "easy",
             "reward": "35 XP beta + campaign mission progress.",
@@ -3109,8 +3136,12 @@ def roadmap():
         "status": "em desenvolvimento",
         "recent": [
             {
-                "title": "Arena BE2 polish",
-                "summary": "Determinismo, bot tático, combat log estruturado, highlights e painel final.",
+                "title": "Ascension Duel rebirth",
+                "summary": "Training agora usa um Duel Altar com um Champion ativo, Ambition Core, Bound Souls, Schemes e Chronicle.",
+            },
+            {
+                "title": "Legacy Arena preserved",
+                "summary": "O BE2 antigo permanece em /training-legacy para fallback interno e comparação.",
             },
             {
                 "title": "Retention loops",
@@ -4889,19 +4920,11 @@ def campaign_start(chapter_id):
     return redirect(url_for("training", campaign_chapter_id=chapter["chapter_id"]))
 
 
-@app.route("/training")
-def training():
-    auth_redirect = login_required_redirect()
-
-    if auth_redirect:
-        return auth_redirect
-
-    user = current_user()
-    arena_renderer = "3d" if request.args.get("renderer") == "3d" else "dom"
+def _build_training_campaign_context(user):
     campaign_context = None
     chapter_id = str(request.args.get("campaign_chapter_id") or "").strip()
 
-    if chapter_id:
+    if chapter_id and user:
         chapter = get_campaign_chapter(chapter_id, user, beta_deck_status(user))
         if chapter and not chapter.get("locked") and not chapter.get("requires_deck_check"):
             session["campaign_chapter_id"] = chapter["chapter_id"]
@@ -4919,11 +4942,76 @@ def training():
             session.pop("campaign_chapter_title", None)
             session.pop("campaign_chapter_difficulty", None)
             session.pop("campaign_chapter_reward", None)
-    else:
+    elif not chapter_id:
         session.pop("campaign_chapter_id", None)
         session.pop("campaign_chapter_title", None)
         session.pop("campaign_chapter_difficulty", None)
         session.pop("campaign_chapter_reward", None)
+
+    return campaign_context
+
+
+def _ascension_owned_card_ids(user=None):
+    deck = build_ascension_starter_deck(seed=f"owned:{getattr(user, 'id', 'guest')}")
+    return {card["id"] for card in deck}
+
+
+def _ascension_new_card_ids():
+    recent = session.get("ascension_recent_unlocks") or []
+    return {str(card_id) for card_id in recent}
+
+
+@app.route("/collection-ascension")
+def collection_ascension():
+    user = current_user()
+    owned_ids = _ascension_owned_card_ids(user)
+    new_ids = _ascension_new_card_ids()
+    cards = [enrich_ascension_card(card, owned_ids=owned_ids, new_ids=new_ids) for card in get_ascension_catalog()]
+    type_counts = Counter(card["type_key"] for card in cards)
+
+    return render_template(
+        "collection_ascension.html",
+        user=user,
+        cards=cards,
+        type_counts=type_counts,
+    )
+
+
+@app.route("/deck-builder-ascension")
+def deck_builder_ascension():
+    user = current_user()
+    deck = build_ascension_starter_deck(seed=f"builder:{getattr(user, 'id', 'guest')}")
+    summary = ascension_deck_summary(deck)
+    validation = validate_ascension_deck(deck)
+    cards = [enrich_ascension_card(card) for card in deck]
+
+    return render_template(
+        "deck_builder_ascension.html",
+        user=user,
+        cards=cards,
+        summary=summary,
+        validation=validation,
+    )
+
+
+@app.route("/training")
+def training():
+    user = current_user()
+    campaign_context = _build_training_campaign_context(user)
+
+    return render_template(
+        "arena_ascension.html",
+        user=user,
+        training_mode=True,
+        campaign_context=campaign_context,
+    )
+
+
+@app.route("/training-legacy")
+def training_legacy():
+    user = current_user()
+    arena_renderer = "3d" if request.args.get("renderer") == "3d" else "dom"
+    campaign_context = _build_training_campaign_context(user)
 
     return render_template(
         "arena.html",
@@ -4932,6 +5020,158 @@ def training():
         arena_renderer=arena_renderer,
         campaign_context=campaign_context,
     )
+
+
+def _ascension_request_payload():
+    try:
+        return request.get_json(silent=True) or {}
+    except Exception:
+        return {}
+
+
+def _store_ascension_match(match):
+    ascension_training_matches[match["id"]] = match
+    session["ascension_match_id"] = match["id"]
+    return match
+
+
+def _get_ascension_match(create_if_missing=True):
+    match_id = session.get("ascension_match_id")
+    match = ascension_training_matches.get(match_id) if match_id else None
+    if match or not create_if_missing:
+        return match
+
+    seed = session.get("ascension_seed") or secrets.token_hex(6)
+    session["ascension_seed"] = seed
+    return _store_ascension_match(create_ascension_match(seed=seed))
+
+
+def _ascension_json(match, ok=True, error=None, status=200, extra=None):
+    payload = ascension_action_response(match, ok=ok, error=error)
+    if extra:
+        payload.update(extra)
+    return jsonify(payload), status
+
+
+def _ascension_error(match, error, status=400):
+    if isinstance(error, AscensionActionError):
+        return _ascension_json(match, ok=False, error=error.to_dict(), status=status)
+    return _ascension_json(
+        match,
+        ok=False,
+        error={"code": "ascension_error", "message": str(error)},
+        status=status,
+    )
+
+
+def _record_finished_ascension_match(match):
+    if not match or not match.get("winner"):
+        return None
+
+    session_key = f"ascension_result_recorded:{match['id']}"
+    if session.get(session_key):
+        return match.get("ascension_progression_event")
+
+    rewards = build_ascension_rewards(match, perspective="player")
+    match["ascension_reward"] = rewards
+    event = progression_event_from_match(match, perspective="player")
+    match["ascension_progression_event"] = event
+
+    try:
+        record = build_history_record(match, reward=rewards, perspective="player")
+        append_history_record(app.instance_path, record)
+    except Exception as error:
+        print("ASCENSION HISTORY ERROR:", type(error).__name__, error)
+
+    if rewards.get("unlock"):
+        session["ascension_recent_unlocks"] = [rewards["unlock"]["id"]]
+
+    record_retention_event(
+        current_user(),
+        event["event_key"],
+        page=event["page"],
+        metadata=event["metadata"],
+        commit=True,
+    )
+    session[session_key] = True
+    return event
+
+
+@app.route("/api/ascension/start", methods=["POST"])
+def api_ascension_start():
+    payload = _ascension_request_payload()
+    seed = payload.get("seed") or secrets.token_hex(6)
+    bot_profile = payload.get("bot_profile") or payload.get("profile") or "Controller"
+    session["ascension_seed"] = seed
+    match = _store_ascension_match(create_ascension_match(seed=seed, bot_profile=bot_profile))
+    return _ascension_json(match)
+
+
+@app.route("/api/ascension/state", methods=["GET"])
+def api_ascension_state():
+    match = _get_ascension_match(create_if_missing=True)
+    return jsonify(
+        {
+            "ok": True,
+            "error": None,
+            "match": public_ascension_match_state(match, perspective="player"),
+            "actions": ascension_legal_actions(match, "player"),
+        }
+    )
+
+
+@app.route("/api/ascension/intent", methods=["POST"])
+def api_ascension_intent():
+    match = _get_ascension_match(create_if_missing=True)
+    payload = _ascension_request_payload()
+    try:
+        ascension_choose_intent(match, "player", payload.get("intent"))
+        return _ascension_json(match)
+    except AscensionActionError as error:
+        return _ascension_error(match, error)
+
+
+@app.route("/api/ascension/play", methods=["POST"])
+def api_ascension_play():
+    match = _get_ascension_match(create_if_missing=True)
+    payload = _ascension_request_payload()
+    try:
+        ascension_play_card(match, "player", payload.get("card_id"), mode=payload.get("mode"))
+        _record_finished_ascension_match(match)
+        return _ascension_json(match, extra={"reward": match.get("ascension_reward")})
+    except AscensionActionError as error:
+        return _ascension_error(match, error)
+
+
+@app.route("/api/ascension/commit", methods=["POST"])
+def api_ascension_commit():
+    match = _get_ascension_match(create_if_missing=True)
+    try:
+        if not match["player"].get("intent"):
+            raise AscensionActionError("intent_required", "Choose an Intent before you Commit.")
+        run_ascension_bot_turn(match)
+        ascension_resolve_clash(match)
+        event = _record_finished_ascension_match(match)
+        return _ascension_json(match, extra={"progression_event": event, "reward": match.get("ascension_reward")})
+    except AscensionActionError as error:
+        return _ascension_error(match, error)
+
+
+@app.route("/api/ascension/dominate", methods=["POST"])
+def api_ascension_dominate():
+    match = _get_ascension_match(create_if_missing=True)
+    try:
+        result = ascension_attempt_dominate(match, "player")
+        event = _record_finished_ascension_match(match)
+        return _ascension_json(match, ok=bool(result.get("ok")), error=None if result.get("ok") else result, extra={"domination": result, "progression_event": event, "reward": match.get("ascension_reward")})
+    except AscensionActionError as error:
+        return _ascension_error(match, error)
+
+
+@app.route("/ascension-history")
+def ascension_history():
+    records = read_history_records(app.instance_path, limit=30)
+    return render_template("ascension_history.html", user=current_user(), records=records)
 
 
 

@@ -1,0 +1,21 @@
+{
+  "version": "ascension_art_manifest_v1",
+  "style": "obsidian ritual geometry, ember-gold accents, premium Champion focus",
+  "placeholders": {
+    "card_frame": "ui/card-frame-placeholder.svg",
+    "champion_portrait": "champions/champion-placeholder.svg",
+    "core": "ui/ambition-core-placeholder.svg"
+  },
+  "cards": {},
+  "champions": {},
+  "ui": {
+    "card_frame_placeholder": {
+      "path": "ui/card-frame-placeholder.svg",
+      "recommended_size": "768x1075"
+    },
+    "ambition_core_placeholder": {
+      "path": "ui/ambition-core-placeholder.svg",
+      "recommended_size": "512x512"
+    }
+  }
+}

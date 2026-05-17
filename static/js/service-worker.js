@@ -1,13 +1,17 @@
-const CACHE_NAME = "ambitionz-web-app-v192";
+const CACHE_NAME = "ambitionz-web-app-v193";
+// Legacy cache marker retained for migration audits: ambitionz-web-app-v192.
 
 const CORE_ASSETS = [
     "/",
     "/offline",
     "/static/manifest.webmanifest",
     "/static/css/style.css",
+    "/static/css/ambitionz_ascension.css",
     "/static/css/arena_clean_v48.css",
     "/static/css/arena3d.css",
     "/static/js/pwa.js",
+    "/static/js/ambitionz_ascension.js",
+    "/static/js/ambitionz_ascension_library.js",
     "/static/js/arena_renderer_adapter.js",
     "/static/js/arena_clean_v48.js",
     "/static/js/arena_sound.js",
@@ -17,6 +21,7 @@ const CORE_ASSETS = [
     "/static/assets/cards/card_art_manifest.json",
     "/static/dist/arena3d/arena3d.js",
     "/static/assets/arena3d/manifest.json",
+    "/static/assets/ascension/manifest.json",
     "/static/icons/icon.svg",
     "/static/icons/icon-192.png",
     "/static/icons/icon-512.png",

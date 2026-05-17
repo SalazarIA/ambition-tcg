@@ -82,7 +82,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v192"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v193"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -95,13 +95,13 @@ def test_public_home_product_contract():
 
     assert "https://ambitionzgame.com/" in homepage
     assert "Jogar Agora" in homepage
-    assert "turn-based battles" in homepage
-    assert "intent choices" in homepage
-    assert "lane control" in homepage
+    assert "Ascension Duel" in homepage
+    assert "Intent strategy" in homepage
+    assert "Ambition Core" in homepage
     assert "url_for('training')" in homepage
     assert "url_for('arena')" in homepage
-    assert "url_for('collection')" in homepage
-    assert "url_for('deck_builder')" in homepage
+    assert "url_for('collection_ascension')" in homepage
+    assert "url_for('deck_builder_ascension')" in homepage
     assert "url_for('leaderboard')" in homepage
     assert "url_for('login')" in homepage
     assert "url_for('register')" in homepage
@@ -445,7 +445,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v192"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v193"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -471,19 +471,19 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert '"feedback_view"' in app_py
     assert "Guest Beta Tester" in app_py
     assert 'id="az-public-beta-landing-v2"' in homepage
-    assert "Ambitionz is a tactical card battler in public beta." in homepage
+    assert "Ambitionz is an Ascension Duel in public beta." in homepage
     assert "Jogar partidas" in homepage
     assert "Colecionar cartas" in homepage
     assert "Montar deck" in homepage
     assert 'id="az-public-onboarding-v1"' in homepage
-    assert "Ready trava sua decisão" in homepage
+    assert "Commit trava sua decisão" in homepage
     assert "data-public-onboarding-dismiss" in homepage
     assert 'id="az-beta-feedback-v1"' in feedback
     assert 'name="contact"' in feedback
     assert "Guest feedback is accepted" in feedback
     assert "Roadmap & Patch Notes" in roadmap
     assert "Public Beta RC V5" in roadmap
-    assert "Arena BE2 polish" in roadmap
+    assert "Ascension Duel rebirth" in roadmap
     assert "Retention loops" in roadmap
     assert "Public beta polish" in roadmap
     assert 'id="az-profile-product-hub-v3"' in profile
@@ -504,7 +504,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".az-public-onboarding-v1" in css
     assert ".az-roadmap-card-v3" in css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v192"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v193"' in service_worker
 
 
 def test_blocks_81_88_beta_economy_contract():
@@ -551,7 +551,7 @@ def test_blocks_81_88_beta_economy_contract():
     assert "Gold is beta currency only" in roadmap
     assert "Gold +" in arena_js
     assert "az-recent-unlocks-data" in cards_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v192"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v193"' in service_worker
 
 
 def test_arena_premium_hud_contract():
@@ -852,7 +852,7 @@ def test_public_beta_rc_v4_retention_contract():
     assert ".az-first-session-questline-v1" in css
     assert ".az-deck-readiness-coach-v1" in css
     assert ".az-rc-public-checklist-v1" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v192"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v193"' in service_worker
 
     assert "Arena jogavel" in checklist
     assert "QA status" in checklist
@@ -909,7 +909,7 @@ def test_public_beta_rc_v5_observability_contract():
     assert ".az-beta-feedback-widget-v1" in css
     assert ".az-known-issues-beta-notes-v1" in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v192"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v193"' in service_worker
     assert '"/static/js/beta_telemetry.js"' in service_worker
     assert '"/static/js/beta_feedback.js"' in service_worker
 
@@ -1020,7 +1020,7 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     ]:
         assert class_name in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v192"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v193"' in service_worker
     assert '"/static/js/card_art_manifest.js"' in service_worker
     assert '"/static/assets/cards/card_art_manifest.json"' in service_worker
     assert "Ambitionz Card Art Direction" in art_direction

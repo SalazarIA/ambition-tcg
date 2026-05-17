@@ -6,6 +6,7 @@ __pycache__/
 
 instance/database.db
 instance/*.db
+instance/ascension_history.jsonl
 
 .DS_Store
 __MACOSX/

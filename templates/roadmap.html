@@ -18,8 +18,8 @@
         <nav class="az-beta-main-nav-v3" aria-label="Public beta navigation">
             <a href="{{ url_for('index') }}">Home</a>
             <a href="{{ url_for('training') }}" class="primary">Jogar</a>
-            <a href="{{ url_for('collection') }}">Collection</a>
-            <a href="{{ url_for('deck_builder') }}">Deck Builder</a>
+            <a href="{{ url_for('collection_ascension') }}">Collection</a>
+            <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
             <a href="{{ url_for('missions') }}">Missions</a>
             <a href="{{ url_for('daily') }}">Daily</a>
             <a href="{{ url_for('progression') }}">Progression</a>
@@ -44,7 +44,7 @@
             </div>
         </header>
 
-        <section class="az-roadmap-grid-v3" aria-label="Recent beta updates" data-roadmap-recent="Arena BE2 polish Retention loops Public beta polish">
+        <section class="az-roadmap-grid-v3" aria-label="Recent beta updates" data-roadmap-recent="Ascension Duel rebirth Legacy Arena preserved Retention loops Public beta polish">
             <div class="section-title-row">
                 <div>
                     <span class="progression-kicker">Patch Notes</span>
@@ -109,7 +109,7 @@
                 <article>
                     <span>Working Now</span>
                     <h3>Playable core loop</h3>
-                    <p>Arena Clean, Training, BE2 combat, XP, Gold, daily rewards, missions, collection, deck builder, boosters and profile progression are active in beta.</p>
+                    <p>Ascension Duel Training, Ambition Core, Chronicle, XP, Gold, daily rewards, missions, collection, deck builder, boosters and profile progression are active in beta. Legacy Arena remains available for fallback.</p>
                 </article>
                 <article>
                     <span>Still Beta</span>
@@ -149,8 +149,8 @@
             <div class="progression-action-row">
                 <a href="{{ url_for('training') }}" class="btn">Jogar Agora</a>
                 <a href="{{ url_for('shop') }}" class="btn btn-secondary">Ver Shop</a>
-                <a href="{{ url_for('collection') }}" class="btn btn-secondary">Ver Coleção</a>
-                <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Montar Deck</a>
+                <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">Ver Coleção</a>
+                <a href="{{ url_for('deck_builder_ascension') }}" class="btn btn-secondary">Montar Deck</a>
             </div>
         </section>
 

@@ -29,7 +29,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v192" in body
+    assert "ambitionz-web-app-v193" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -43,8 +43,8 @@ def test_tutorial_renders_narrative_onboarding(client):
     assert "Focus" in body
     assert "Ready and Resolve" in body
     assert 'href="/training"' in body
-    assert 'href="/collection"' in body
-    assert 'href="/deck-builder"' in body
+    assert 'href="/collection-ascension"' in body
+    assert 'href="/deck-builder-ascension"' in body
 
 
 def test_public_home_renders_product_entry_and_real_routes(client):
@@ -57,12 +57,12 @@ def test_public_home_renders_product_entry_and_real_routes(client):
     assert "ambitionzgame.com" in body
     assert 'href="/training"' in body
     assert 'href="/arena"' in body
-    assert 'href="/collection"' in body
-    assert 'href="/deck-builder"' in body
+    assert 'href="/collection-ascension"' in body
+    assert 'href="/deck-builder-ascension"' in body
     assert 'href="/leaderboard"' in body
     assert 'href="/roadmap"' in body
     assert 'href="/feedback"' in body
-    assert "Ambitionz is a tactical card battler in public beta." in body
+    assert "Ambitionz is an Ascension Duel in public beta." in body
     assert "Beta Onboarding" in body
     assert "First Session Questline" in body
     assert "ambitionz_first_session_questline_dismissed_v1" in body
@@ -77,7 +77,7 @@ def test_public_beta_roadmap_and_feedback_routes(client):
     assert roadmap_response.status_code == 200
     assert "Roadmap & Patch Notes" in roadmap_body
     assert "Public Beta RC V5" in roadmap_body
-    assert "Arena BE2 polish" in roadmap_body
+    assert "Ascension Duel rebirth" in roadmap_body
     assert "Public Beta RC Checklist" in roadmap_body
     assert "Economy beta" in roadmap_body
     assert 'href="/feedback"' in roadmap_body
@@ -173,7 +173,7 @@ def test_training_3d_renderer_flag_loads_three_bundle(client):
     user = create_user(username="renderer3d", email="renderer3d@example.com")
     login_session(client, user)
 
-    response = client.get("/training?renderer=3d")
+    response = client.get("/training-legacy?renderer=3d")
     body = response.get_data(as_text=True)
 
     assert response.status_code == 200
@@ -186,7 +186,7 @@ def test_training_renders_bot_polish_and_result_contract(client):
     user = create_user(username="trainingpolish", email="trainingpolish@example.com")
     login_session(client, user)
 
-    response = client.get("/training")
+    response = client.get("/training-legacy")
     body = response.get_data(as_text=True)
 
     assert response.status_code == 200
@@ -451,7 +451,7 @@ def test_main_product_routes_smoke(client):
     route_expectations = {
         "/": "Ambitionz",
         "/health": "Ambitionz",
-        "/training": "Training Mode",
+        "/training": "Ascension Duel",
         "/collection": "Collection Progress",
         "/deck-builder": "Active Deck Status",
         "/profile": "Player Snapshot",
@@ -687,6 +687,7 @@ def test_campaign_start_sets_training_context(client):
     training_body = training_response.get_data(as_text=True)
     assert training_response.status_code == 200
     assert 'data-page-kind="campaign"' in training_body
+    assert "Ascension Duel" in training_body
     assert '"chapter_id": "first_signal"' in training_body
     assert "First Signal" in training_body
 

@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ambitionz">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Ambitionz is a public beta tactical card battler with Training, Collection, Deck Builder, missions and persistent progression.">
+    <meta name="description" content="Ambitionz is a public beta Ascension Duel built around one Champion, the Ambition Core and persistent progression.">
 
     <link rel="canonical" href="https://ambitionzgame.com/">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
@@ -29,8 +29,8 @@
             <div class="az-home-nav-links-v2">
                 <a href="{{ url_for('index') }}" class="active">Home</a>
                 <a href="{{ url_for('training') }}" class="primary">Jogar</a>
-                <a href="{{ url_for('collection') }}">Collection</a>
-                <a href="{{ url_for('deck_builder') }}">Deck Builder</a>
+                <a href="{{ url_for('collection_ascension') }}">Collection</a>
+                <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
                 <a href="{{ url_for('missions') }}">Missions</a>
                 <a href="{{ url_for('daily') }}">Daily</a>
                 <a href="{{ url_for('progression') }}">Progression</a>
@@ -54,31 +54,31 @@
 
             <section class="az-home-hero-copy-v2">
                 <span class="az-home-kicker-v2">{{ beta_version }} at ambitionzgame.com</span>
-                <h1>Ambitionz is a tactical card battler in public beta.</h1>
+                <h1>Ambitionz is an Ascension Duel in public beta.</h1>
                 <p>
-                    Play fast BE2 turn-based battles with intent choices and lane control, collect elemental cards, build a legal 30-card deck,
-                    complete missions, claim daily rewards and evolve your profile while the beta grows. Gold, boosters and rewards are internal
-                    beta progression only; there is no real-money checkout.
+                    Enter a one-Champion psychological clash, choose Strike, Guard, Focus or Scheme,
+                    build Ambition, bind Souls and push for Ascension or Domination. Collection,
+                    deck tools, missions and rewards remain beta progression only; there is no real-money checkout.
                 </p>
 
                 <div class="az-home-actions-v2">
                     {% if user %}
                         <a href="{{ url_for('training') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
-                        <a href="{{ url_for('collection') }}" class="btn btn-secondary">Ver Coleção</a>
-                        <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Montar Deck</a>
+                        <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">Ver Coleção</a>
+                        <a href="{{ url_for('deck_builder_ascension') }}" class="btn btn-secondary">Montar Deck</a>
                         <a href="{{ url_for('roadmap') }}" class="btn btn-secondary">Ver Roadmap</a>
                     {% else %}
                         <a href="{{ url_for('register') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
-                        <a href="{{ url_for('collection') }}" class="btn btn-secondary">Ver Coleção</a>
-                        <a href="{{ url_for('deck_builder') }}" class="btn btn-secondary">Montar Deck</a>
+                        <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">Ver Coleção</a>
+                        <a href="{{ url_for('deck_builder_ascension') }}" class="btn btn-secondary">Montar Deck</a>
                         <a href="{{ url_for('roadmap') }}" class="btn btn-secondary">Ver Roadmap</a>
                     {% endif %}
                 </div>
 
                 <div class="az-home-proof-v2" aria-label="Core features">
-                    <span>Card game</span>
-                    <span>Turn-based</span>
-                    <span>3 lanes</span>
+                    <span>Ascension Duel</span>
+                    <span>One Champion</span>
+                    <span>Ambition Core</span>
                     <span>Intent strategy</span>
                 </div>
             </section>
@@ -88,20 +88,20 @@
             <article>
                 <span>Battle</span>
                 <h2>Jogar partidas</h2>
-                <p>Training coloca você direto no fluxo real: intent, carta, lane, Ready e resumo do round.</p>
+                <p>Training coloca você direto no Ascension Duel: Intent, Champion, Ambition Core, Commit e Chronicle.</p>
                 <a href="{{ url_for('training') }}">Jogar Agora</a>
             </article>
             <article>
                 <span>Cards</span>
                 <h2>Colecionar cartas</h2>
-                <p>Veja owned, locked, raridade, elemento, facção e cards recém-destacados.</p>
-                <a href="{{ url_for('collection') }}">Ver Coleção</a>
+                <p>Veja Champions, Techniques, Relics, Schemes e Ascensions com função estratégica clara.</p>
+                <a href="{{ url_for('collection_ascension') }}">Ver Coleção</a>
             </article>
             <article>
                 <span>Deck</span>
                 <h2>Montar deck</h2>
-                <p>O Deck Builder guia a estrutura beta de 30 cartas com custo médio e composição.</p>
-                <a href="{{ url_for('deck_builder') }}">Montar Deck</a>
+                <p>O Ascension Deck guia a estrutura beta de 30 cartas por pressão, controle e momentum.</p>
+                <a href="{{ url_for('deck_builder_ascension') }}">Montar Deck</a>
             </article>
             <article>
                 <span>Progress</span>
@@ -149,7 +149,7 @@
                     >
                         <span>{{ step.number }}</span>
                         <strong>{{ step.title }}</strong>
-                        <small>{% if step.complete %}Done{% elif step.ready %}Ready{% else %}Next{% endif %}</small>
+                        <small>{% if step.complete %}Done{% elif step.ready %}Commit{% else %}Next{% endif %}</small>
                         <p>{{ step.description }}</p>
                     </a>
                 {% endfor %}
@@ -167,12 +167,12 @@
                 <p>Um guia curto para entrar no Training já sabendo o objetivo e os botões principais.</p>
             </div>
             <ol>
-                <li><strong>Reduza o HP inimigo.</strong><span>Você vence quando a pressão das lanes e cartas derruba o herói rival.</span></li>
+                <li><strong>Reduza o HP inimigo.</strong><span>Você vence quando o Mind Clash e seu Champion quebram a resistência rival.</span></li>
                 <li><strong>Escolha intent.</strong><span>Strike pressiona, Guard segura dano, Focus cresce Ambition.</span></li>
-                <li><strong>Jogue uma carta.</strong><span>Criaturas entram em lane; spells e traps usam efeitos resolvidos pelo backend.</span></li>
-                <li><strong>Clique Ready.</strong><span>Ready trava sua decisão e resolve o round com resumo legível.</span></li>
+                <li><strong>Jogue uma carta.</strong><span>Champions entram no Altar, Souls se ligam, Techniques queimam tempo e Schemes ficam preparadas.</span></li>
+                <li><strong>Clique Commit.</strong><span>Commit trava sua decisão e resolve o round com uma Chronicle legível.</span></li>
                 <li><strong>Use recompensas.</strong><span>Depois da partida, veja XP, missões e próximos passos.</span></li>
-                <li><strong>Melhore o deck.</strong><span>Volte para Collection e Deck Builder quando quiser ajustar sua estratégia.</span></li>
+                <li><strong>Melhore o deck.</strong><span>Volte para Ascension Collection e Ascension Deck quando quiser ajustar sua estratégia.</span></li>
             </ol>
             <div class="progression-action-row">
                 <a href="{{ url_for('training') }}" class="btn" data-retention-event="training_start_click">Start Training</a>
@@ -190,12 +190,12 @@
             <article>
                 <strong>2</strong>
                 <h2>Play a Card</h2>
-                <p>Commit one card, place creatures into lanes and pressure the board.</p>
+                <p>Summon a Champion, bind a Soul, cast a Technique, equip a Relic or prepare a Scheme.</p>
             </article>
             <article>
                 <strong>3</strong>
-                <h2>Resolve Lanes</h2>
-                <p>Creatures clash lane-to-lane; open lanes hit the opposing hero.</p>
+                <h2>Resolve Clash</h2>
+                <p>Intents collide through the Duel Altar and write the Chronicle of the round.</p>
             </article>
             <article>
                 <strong>4</strong>
@@ -227,8 +227,8 @@
                 <span class="az-home-kicker-v2">World Identity</span>
                 <h2>Five powers shape every duel.</h2>
                 <p>
-                    Each card belongs to a visual identity built around element, role and tactical rhythm.
-                    This layer is lore and presentation only while the beta rules stay stable.
+                    Each card belongs to a ritual identity built around role, purpose and tactical rhythm.
+                    This layer is presentation-first while Ascension Duel rules stay stable.
                 </p>
             </div>
 
@@ -248,19 +248,19 @@
                 <article class="az-faction-card-v1 faction-stonebound" data-faction="Stonebound Clan">
                     <span>Earth</span>
                     <strong>Stonebound Clan</strong>
-                    <p>Unmoving guardians who turn lanes into fortified ground.</p>
+                    <p>Unmoving guardians who turn pressure into fortified vows.</p>
                     <small>Defense · durable creatures</small>
                 </article>
                 <article class="az-faction-card-v1 faction-verdant" data-faction="Verdant Pact">
                     <span>Plant</span>
                     <strong>Verdant Pact</strong>
-                    <p>Living alliances that grow value from careful board presence.</p>
+                    <p>Living alliances that grow value from careful Champion pressure.</p>
                     <small>Growth · recovery</small>
                 </article>
                 <article class="az-faction-card-v1 faction-arcane" data-faction="Arcane Neutral">
                     <span>Global</span>
                     <strong>Arcane Neutral</strong>
-                    <p>Unbound tactics that support any plan with spells and traps.</p>
+                    <p>Unbound tactics that support any plan with Techniques and Schemes.</p>
                     <small>Support · flexible answers</small>
                 </article>
             </div>
@@ -271,17 +271,17 @@
                 <span class="az-home-kicker-v2">Start here</span>
                 <h2>{% if user %}Your next match is ready.{% else %}Create a duelist and enter with a starter deck.{% endif %}</h2>
                 <p>
-                    Training teaches the full Arena flow: intent, card choice, lane or target
-                    selection, Ready, and the round summary after combat resolves.
+                    Training now teaches Ascension Duel: Intent, Champion focus, Bound Souls,
+                    Ambition Core decisions, Commit, and the Chronicle after the clash resolves.
                 </p>
             </div>
 
             <div class="az-home-route-grid-v2">
                 <a href="{{ url_for('training') }}">Training<span>Learn against the bot</span></a>
-                <a href="{{ url_for('arena') }}">Arena<span>Enter the live duel flow</span></a>
-                <a href="{{ url_for('collection') }}">Collection<span>Inspect owned cards</span></a>
-                <a href="{{ url_for('deck_builder') }}">Deck Builder<span>Build the beta deck</span></a>
-                <a href="{{ url_for('tutorial') }}">Tutorial<span>Learn intent, lanes and Ready</span></a>
+                <a href="{{ url_for('arena') }}">Legacy Arena<span>Internal fallback duel flow</span></a>
+                <a href="{{ url_for('collection_ascension') }}">Collection<span>Inspect Ascension cards</span></a>
+                <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder<span>Build the Ascension deck</span></a>
+                <a href="{{ url_for('tutorial') }}">Tutorial<span>Learn intent and Commit</span></a>
                 <a href="{{ url_for('campaign') }}">Campaign<span>Follow the beta chapter path</span></a>
                 <a href="{{ url_for('daily') }}">Daily<span>Check today's beta reward preview</span></a>
                 <a href="{{ url_for('shop') }}">Shop<span>Spend earned Gold on beta boosters</span></a>
@@ -344,7 +344,7 @@
             <a href="{{ url_for('index') }}" class="active">Home</a>
             <a href="{{ url_for('training') }}">Play</a>
             {% if user %}
-                <a href="{{ url_for('deck_builder') }}">Deck</a>
+                <a href="{{ url_for('deck_builder_ascension') }}">Deck</a>
                 <a href="{{ url_for('profile') }}">Profile</a>
             {% else %}
                 <a href="{{ url_for('login') }}">Login</a>

@@ -58,6 +58,7 @@ def flask_app():
         db.drop_all()
         db.create_all()
         ambition_app.active_matches.clear()
+        ambition_app.ascension_training_matches.clear()
         ambition_app.player_rooms.clear()
         ambition_app.private_waiting_rooms.clear()
         ambition_app.socket_state["waiting_player"] = None
