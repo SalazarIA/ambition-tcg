@@ -2,13 +2,16 @@
 
 ## Command Results
 - PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 -m pytest -q`
-- PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 -m py_compile services/ascension_cards.py services/ascension_engine.py services/ascension_bot.py services/ascension_payloads.py services/ascension_progression.py`
+- PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 -m py_compile services/ascension_cards.py services/ascension_engine.py services/ascension_bot.py services/ascension_payloads.py services/ascension_progression.py services/ascension_taxonomy.py services/ascension_history.py`
 - PASS: `node --check static/js/ambitionz_ascension.js`
+- PASS: `node --check static/js/ambitionz_ascension_library.js`
 - PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/qa/qa_ascension_balance_sim.py`
 - PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/qa/qa_ascension_engine.py`
 - PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/qa/qa_ascension_frontend_contract.py`
 - PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/qa/qa_ascension_full_match.py`
+- PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/qa/qa_ascension_product_surface.py`
 - PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/qa/qa_ascension_routes.py`
+- PASS: `/Users/lucassilverio/Desktop/Ambition/.venv/bin/python3 tools/qa/qa_ascension_viewport_contract.py`
 
 ## Local Curl Smoke
 - SKIP: http://127.0.0.1:5087/training unavailable locally (URLError)

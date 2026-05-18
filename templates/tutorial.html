@@ -2,85 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tutorial - Ambitionz</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#05050B">
+    <title>Ascension Tutorial - Ambitionz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#050309">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_tutorial.css') }}?v=2">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=194">
 </head>
-<body class="az-themed-page" data-retention-page="tutorial">
-    <main class="wide-page mobile-wide-page">
-        <header class="top-bar mobile-top-bar">
-            <div>
-                <span class="progression-kicker">Onboarding</span>
+<body class="ax-body ax-tutorial-page" data-retention-page="tutorial">
+    <main class="ax-shell ax-tutorial-shell ax-product-shell" data-ax-shell>
+        <header class="ax-topbar ax-product-nav">
+            <a class="ax-brand" href="{{ url_for('index') }}"><span>A</span><strong>Ambitionz</strong></a>
+            <div class="ax-title-block">
                 <h1>Tutorial</h1>
-                <p>Learn the battle loop in one guided training match.</p>
+                <p>Six compact beats for the Ascension Duel loop.</p>
             </div>
-
-            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+            <nav class="ax-top-actions">
+                <a href="{{ url_for('training') }}" class="is-primary">Play</a>
+                <a href="{{ url_for('collection_ascension') }}">Collection</a>
+                <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
+                <a href="{{ url_for('roadmap') }}">Roadmap</a>
+            </nav>
         </header>
 
-        <section id="az-tutorial-narrative" class="az-tutorial-narrative-v1">
-            <div class="az-tutorial-hero-copy-v1">
-                <span class="progression-kicker">First Oath</span>
-                <h2>Learn the duel before the board asks for blood.</h2>
-                <p>
-                    Ambitionz is a fantasy card battler where intent, cards, lanes and Ambition
-                    decide each round. This guide teaches the real Arena flow without locking you into it.
-                </p>
-
-                <div class="az-loop-actions">
-                    <a href="{{ url_for('training') }}" class="btn" data-retention-event="tutorial_start">Start Training</a>
-                    <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">View Collection</a>
-                    <a href="{{ url_for('deck_builder_ascension') }}" class="btn btn-secondary">View Deck</a>
-                </div>
-            </div>
-
-            <div class="az-tutorial-intent-panel-v1" aria-label="Intent overview">
-                <article><strong>Strike</strong><span>Pressure and damage</span></article>
-                <article><strong>Guard</strong><span>Survive and blunt attacks</span></article>
-                <article><strong>Focus</strong><span>Build Ambition</span></article>
+        <section id="az-tutorial-narrative" class="ax-page-hero" aria-label="Ascension Duel tutorial">
+            <span>First Oath</span>
+            <h1>Learn the duel before the first Commit.</h1>
+            <p>
+                Ascension Duel is built around one active Champion, Intent psychology,
+                one-card play, the Ambition Core and a readable Reward reveal.
+            </p>
+            <div class="ax-home-actions">
+                <a class="ax-primary-link" href="{{ url_for('training') }}" data-retention-event="tutorial_start">Start Training</a>
+                <a href="{{ url_for('collection_ascension') }}">View Collection</a>
+                <a href="{{ url_for('deck_builder_ascension') }}">View Deck</a>
             </div>
         </section>
 
-        <section class="az-tutorial-step-grid-v1" aria-label="Ambitionz tutorial steps">
+        <section class="ax-panel" aria-label="Intent overview">
+            <div>
+                <span>Intent Ring</span>
+                <h2>Strike, Guard, Focus and Scheme define the Round.</h2>
+            </div>
+            <div class="ax-steps">
+                <li><strong>Strike</strong><span>Pressures Focus and threatens direct damage.</span></li>
+                <li><strong>Guard</strong><span>Contains Strike and protects a fragile Champion.</span></li>
+                <li><strong>Focus</strong><span>Outscales Guard and grows Ambition.</span></li>
+                <li><strong>Scheme</strong><span>Punishes repetition and predictable Intent.</span></li>
+            </div>
+        </section>
+
+        <section class="ax-page-grid" aria-label="Ambitionz tutorial steps">
             {% for step in steps %}
-                <article class="az-tutorial-step-card-v1">
+                <article class="ax-page-card">
                     <span>{{ step.number }}</span>
                     <h2>{{ step.title }}</h2>
                     <strong>{{ step.subtitle }}</strong>
                     <p>{{ step.description }}</p>
                     <small>{{ step.rule }}</small>
-                    <a href="{{ step.cta_url }}" class="btn btn-secondary small-btn">{{ step.cta_label }}</a>
+                    <div class="ax-home-actions">
+                        <a href="{{ step.cta_url }}">{{ step.cta_label }}</a>
+                    </div>
                 </article>
             {% endfor %}
         </section>
 
-        <section class="az-tutorial-cta-v1">
+        <section class="ax-panel">
             <div>
-                <span class="progression-kicker">No Mandatory Tutorial</span>
-                <h2>Train now, inspect your cards, or return home.</h2>
-                <p>Combat math stays on the server. The Arena shows what happened through HUD, lanes and Round Summary.</p>
+                <span>No Mandatory Tutorial</span>
+                <h2>Train now, inspect cards, or return home.</h2>
+                <p>The server resolves the Round. The Arena keeps the Duel Altar, hand and Commit controls inside the compact action flow.</p>
             </div>
-            <div class="az-loop-actions">
-                <a href="{{ url_for('training') }}" class="btn" data-retention-event="tutorial_start">Start Training</a>
-                <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">Collection</a>
-                <a href="{{ url_for('index') }}" class="btn btn-secondary">Home</a>
+            <div class="ax-home-actions">
+                <a class="ax-primary-link" href="{{ url_for('training') }}" data-retention-event="tutorial_start">Start Training</a>
+                <a href="{{ url_for('collection_ascension') }}">Collection</a>
+                <a href="{{ url_for('index') }}">Home</a>
             </div>
         </section>
-
-        <nav class="mobile-bottom-nav">
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('training') }}" class="active">Play</a>
-            <a href="{{ url_for('deck_builder_ascension') }}">Deck</a>
-            <a href="{{ url_for('daily') }}">Daily</a>
-        </nav>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
 </body>
 </html>

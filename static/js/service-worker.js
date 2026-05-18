@@ -1,5 +1,6 @@
-const CACHE_NAME = "ambitionz-web-app-v193";
+const CACHE_NAME = "ambitionz-web-app-v194";
 // Legacy cache marker retained for migration audits: ambitionz-web-app-v192.
+// Previous Ascension cache marker retained for migration audits: ambitionz-web-app-v193.
 
 const CORE_ASSETS = [
     "/",

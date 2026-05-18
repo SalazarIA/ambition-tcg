@@ -12,7 +12,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=193">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=194">
 </head>
 <body
     class="ax-body"
@@ -20,8 +20,8 @@
     data-retention-page="{% if campaign_context %}campaign{% else %}training{% endif %}"
     {% if campaign_context %}data-campaign-chapter-id="{{ campaign_context.chapter_id }}"{% endif %}
 >
-    <main class="ax-shell" data-ax-shell>
-        <header class="ax-topbar">
+    <main class="ax-shell ax-arena-shell ax-viewport-shell" data-ax-shell data-ax-viewport-contract>
+        <header class="ax-topbar ax-compact-topbar">
             <a class="ax-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
                 <span>A</span>
                 <strong>Ambitionz</strong>
@@ -41,74 +41,86 @@
             <script id="ax-campaign-context" type="application/json">{{ campaign_context|tojson }}</script>
         {% endif %}
 
-        <section class="ax-status-line" aria-live="polite">
+        <section class="ax-status-line ax-compact-status" aria-live="polite">
             <span id="ax-round-label">Round 1</span>
             <strong id="ax-phase-label">Opening the Duel Altar</strong>
             <span id="ax-bot-style">Rival Style: Controller</span>
             <em id="ax-winner-label"></em>
         </section>
 
-        <section class="ax-duel-altar" aria-label="Duel Altar">
-            <section class="ax-enemy-champion" aria-label="Enemy Champion">
-                <div class="ax-champion-shell" id="ax-enemy-champion"></div>
-                <div class="ax-side-readout">
-                    <span>Rival HP <strong id="ax-enemy-hp">30</strong></span>
-                    <span>Echo <strong id="ax-enemy-echo">0</strong></span>
-                    <span>Intent <strong id="ax-enemy-intent">Veiled</strong></span>
-                </div>
-                <div class="ax-bound-souls" id="ax-enemy-bound-souls" aria-label="Enemy Bound Souls"></div>
-                <div class="ax-relic" id="ax-enemy-relic" aria-label="Enemy Relic"></div>
-                <div class="ax-schemes" id="ax-enemy-schemes" aria-label="Enemy Schemes"></div>
+        <section class="ax-arena-viewport" aria-label="Ascension Duel viewport">
+            <section class="ax-duel-altar ax-duel-altar-compact" aria-label="Duel Altar" data-ax-compact-duel>
+                <section class="ax-enemy-champion ax-champion-panel" aria-label="Enemy Champion">
+                    <div class="ax-champion-shell" id="ax-enemy-champion"></div>
+                    <div class="ax-side-readout">
+                        <span>Rival HP <strong id="ax-enemy-hp">30</strong></span>
+                        <span>Echo <strong id="ax-enemy-echo">0</strong></span>
+                        <span>Intent <strong id="ax-enemy-intent">Veiled</strong></span>
+                    </div>
+                    <details class="ax-side-details">
+                        <summary>Rival rite</summary>
+                        <div class="ax-bound-souls" id="ax-enemy-bound-souls" aria-label="Enemy Bound Souls"></div>
+                        <div class="ax-relic" id="ax-enemy-relic" aria-label="Enemy Relic"></div>
+                        <div class="ax-schemes" id="ax-enemy-schemes" aria-label="Enemy Schemes"></div>
+                    </details>
+                </section>
+
+                <section class="ax-clash-axis ax-clash-axis-compact" aria-label="Mind Clash">
+                    <div class="ax-clash-line">
+                        <span></span>
+                        <strong>Mind Clash</strong>
+                        <span></span>
+                    </div>
+                    <div class="ax-clash-controls">
+                        <div class="ax-ambition-core" id="ax-ambition-core" aria-label="Ambition Core">
+                            <i id="ax-ambition-fill"></i>
+                            <b id="ax-ambition-value">0</b>
+                            <small>Ambition</small>
+                        </div>
+                        <div class="ax-intent-ring" id="ax-intent-ring" aria-label="Choose Intent">
+                            <button type="button" data-ax-intent="Strike">Strike</button>
+                            <button type="button" data-ax-intent="Guard">Guard</button>
+                            <button type="button" data-ax-intent="Focus">Focus</button>
+                            <button type="button" data-ax-intent="Scheme">Scheme</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ax-player-champion ax-champion-panel" aria-label="Your Champion">
+                    <div class="ax-champion-shell" id="ax-player-champion"></div>
+                    <div class="ax-side-readout">
+                        <span>Your HP <strong id="ax-player-hp">30</strong></span>
+                        <span>Echo <strong id="ax-player-echo">0</strong></span>
+                        <span>Intent <strong id="ax-player-intent">Choose</strong></span>
+                    </div>
+                    <details class="ax-side-details" open>
+                        <summary>Your rite</summary>
+                        <div class="ax-bound-souls" id="ax-player-bound-souls" aria-label="Your Bound Souls"></div>
+                        <div class="ax-relic" id="ax-player-relic" aria-label="Your Relic"></div>
+                        <div class="ax-schemes" id="ax-player-schemes" aria-label="Your Schemes"></div>
+                    </details>
+                </section>
             </section>
 
-            <section class="ax-clash-axis" aria-label="Mind Clash">
-                <div class="ax-clash-line">
-                    <span></span>
-                    <strong>Mind Clash</strong>
-                    <span></span>
-                </div>
-                <div class="ax-ambition-core" id="ax-ambition-core" aria-label="Ambition Core">
-                    <i id="ax-ambition-fill"></i>
-                    <b id="ax-ambition-value">0</b>
-                    <small>Ambition</small>
-                </div>
-                <div class="ax-intent-ring" id="ax-intent-ring" aria-label="Choose Intent">
-                    <button type="button" data-ax-intent="Strike">Strike</button>
-                    <button type="button" data-ax-intent="Guard">Guard</button>
-                    <button type="button" data-ax-intent="Focus">Focus</button>
-                    <button type="button" data-ax-intent="Scheme">Scheme</button>
-                </div>
-            </section>
+            <section class="ax-side-stack" aria-label="Duel side panels">
+                <aside class="ax-chronicle ax-chronicle-compact" id="ax-chronicle" aria-live="polite" aria-label="Chronicle">
+                    <strong>Chronicle</strong>
+                    <ol id="ax-chronicle-list" class="ax-internal-scroll" data-ax-internal-scroll></ol>
+                </aside>
 
-            <section class="ax-player-champion" aria-label="Your Champion">
-                <div class="ax-champion-shell" id="ax-player-champion"></div>
-                <div class="ax-side-readout">
-                    <span>Your HP <strong id="ax-player-hp">30</strong></span>
-                    <span>Echo <strong id="ax-player-echo">0</strong></span>
-                    <span>Intent <strong id="ax-player-intent">Choose</strong></span>
-                </div>
-                <div class="ax-bound-souls" id="ax-player-bound-souls" aria-label="Your Bound Souls"></div>
-                <div class="ax-relic" id="ax-player-relic" aria-label="Your Relic"></div>
-                <div class="ax-schemes" id="ax-player-schemes" aria-label="Your Schemes"></div>
+                <aside class="ax-reward-panel ax-reward-compact" id="ax-reward-panel" aria-live="polite" hidden>
+                    <strong>Ascension Reward</strong>
+                    <p id="ax-reward-summary">Rewards appear when the duel resolves.</p>
+                    <div>
+                        <span><b id="ax-reward-xp">0</b> XP</span>
+                        <span><b id="ax-reward-gold">0</b> Gold</span>
+                        <span><b id="ax-reward-champion">0</b> Champion progress</span>
+                    </div>
+                </aside>
             </section>
         </section>
 
-        <aside class="ax-chronicle" id="ax-chronicle" aria-live="polite" aria-label="Chronicle">
-            <strong>Chronicle</strong>
-            <ol id="ax-chronicle-list"></ol>
-        </aside>
-
-        <aside class="ax-reward-panel" id="ax-reward-panel" aria-live="polite" hidden>
-            <strong>Ascension Reward</strong>
-            <p id="ax-reward-summary">Rewards appear when the duel resolves.</p>
-            <div>
-                <span><b id="ax-reward-xp">0</b> XP</span>
-                <span><b id="ax-reward-gold">0</b> Gold</span>
-                <span><b id="ax-reward-champion">0</b> Champion progress</span>
-            </div>
-        </aside>
-
-        <section class="ax-hand-shell" aria-label="Hand">
+        <section class="ax-hand-shell ax-hand-compact" aria-label="Hand">
             <div class="ax-hand-head">
                 <strong>Your Hand</strong>
                 <span id="ax-hand-count">0 cards</span>
@@ -117,7 +129,7 @@
             <template id="ax-card-template"><button type="button" class="ax-card"></button></template>
         </section>
 
-        <section class="ax-action-rail" aria-label="Actions">
+        <section class="ax-action-rail ax-action-compact ax-reachable-actions" aria-label="Actions" data-ax-reachable-actions>
             <div class="ax-mode-picker" id="ax-mode-picker">
                 <span>Select a card</span>
             </div>
@@ -159,6 +171,6 @@
             dominateUrl: "{{ url_for('api_ascension_dominate') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/ambitionz_ascension.js') }}?v=193"></script>
+    <script src="{{ url_for('static', filename='js/ambitionz_ascension.js') }}?v=194"></script>
 </body>
 </html>

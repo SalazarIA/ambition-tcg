@@ -1,19 +1,50 @@
 :root {
-    --ax-obsidian: #050309;
-    --ax-obsidian-2: #0b080f;
-    --ax-ink: #120d13;
+    --ax-bg: #050309;
+    --ax-bg-2: #0b080f;
+    --ax-bg-3: #120d13;
     --ax-panel: rgba(24, 18, 20, 0.78);
     --ax-panel-strong: rgba(38, 27, 24, 0.9);
+    --ax-panel-soft: rgba(9, 6, 10, 0.64);
+    --ax-border: rgba(216, 173, 98, 0.2);
+    --ax-border-strong: rgba(216, 173, 98, 0.38);
     --ax-gold: #d8ad62;
     --ax-gold-soft: rgba(216, 173, 98, 0.2);
     --ax-ember: #c86536;
+    --ax-danger: #f2a38d;
+    --ax-success: #9fcaa7;
     --ax-blood: #6f2028;
     --ax-bone: #f3e7d0;
     --ax-muted: #a99b88;
     --ax-teal: #709996;
     --ax-line: rgba(216, 173, 98, 0.22);
-    --ax-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+    --ax-space-1: 4px;
+    --ax-space-2: 8px;
+    --ax-space-3: 12px;
+    --ax-space-4: 16px;
+    --ax-space-5: 22px;
+    --ax-space-6: 32px;
+    --ax-radius-xs: 4px;
+    --ax-radius-sm: 6px;
     --ax-radius: 8px;
+    --ax-radius-lg: 12px;
+    --ax-shadow-sm: 0 10px 28px rgba(0, 0, 0, 0.26);
+    --ax-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+    --ax-shadow-gold: 0 0 0 1px rgba(216, 173, 98, 0.16), 0 24px 70px rgba(0, 0, 0, 0.42);
+    --ax-type-xs: 0.66rem;
+    --ax-type-sm: 0.78rem;
+    --ax-type-md: 0.92rem;
+    --ax-type-lg: 1.1rem;
+    --ax-type-xl: 1.55rem;
+    --ax-type-hero: clamp(2.4rem, 8vw, 5.8rem);
+    --ax-viewport-shell: 100svh;
+    --ax-viewport-header: clamp(52px, 8svh, 74px);
+    --ax-viewport-status: clamp(30px, 4svh, 40px);
+    --ax-viewport-hand: clamp(112px, 18svh, 152px);
+    --ax-viewport-actions: clamp(54px, 8svh, 72px);
+    --ax-viewport-gap: clamp(6px, 1.2svh, 12px);
+    --ax-obsidian: var(--ax-bg);
+    --ax-obsidian-2: var(--ax-bg-2);
+    --ax-ink: var(--ax-bg-3);
 }
 
 * {
@@ -23,6 +54,10 @@
 html {
     min-height: 100%;
     background: var(--ax-obsidian);
+}
+
+html.ax-no-scroll {
+    overflow: hidden;
 }
 
 body.ax-body {
@@ -35,6 +70,10 @@ body.ax-body {
         var(--ax-obsidian);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     letter-spacing: 0;
+}
+
+body.ax-body:has(.ax-arena-shell) {
+    overflow: hidden;
 }
 
 button,
@@ -911,6 +950,685 @@ button {
         translate: -50% 0;
         border-inline: 1px solid rgba(216, 173, 98, 0.14);
         border-radius: 8px 8px 0 0;
+    }
+}
+
+.ax-product-shell,
+.ax-library,
+.ax-builder,
+.ax-history,
+.ax-roadmap,
+.ax-tutorial-shell {
+    padding-bottom: 36px;
+}
+
+.ax-product-nav .ax-top-actions a.is-primary,
+.ax-top-actions a.is-primary {
+    color: #150b08;
+    border-color: transparent;
+    background: var(--ax-gold);
+}
+
+.ax-kicker,
+.ax-page-hero span,
+.ax-panel > div > span,
+.ax-route-grid span,
+.ax-steps strong,
+.ax-footer span {
+    color: var(--ax-gold);
+    text-transform: uppercase;
+    font-size: var(--ax-type-xs);
+    letter-spacing: 0.08em;
+}
+
+.ax-home-hero {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-height: clamp(420px, 72svh, 680px);
+    gap: var(--ax-space-5);
+    align-items: center;
+    padding: clamp(24px, 6vw, 64px) 0;
+    border-bottom: 1px solid var(--ax-line);
+}
+
+.ax-home-sigil {
+    position: relative;
+    display: grid;
+    min-height: 280px;
+    place-items: center;
+    color: var(--ax-muted);
+}
+
+.ax-home-sigil::before,
+.ax-home-sigil::after,
+.ax-home-sigil i {
+    content: "";
+    position: absolute;
+    width: min(78vw, 430px);
+    aspect-ratio: 1;
+    border: 1px solid rgba(216, 173, 98, 0.18);
+    border-radius: 50%;
+}
+
+.ax-home-sigil::after {
+    width: min(54vw, 300px);
+    border-color: rgba(200, 101, 54, 0.22);
+    rotate: 18deg;
+    transform: scaleX(1.16);
+}
+
+.ax-home-sigil i {
+    width: min(34vw, 180px);
+    background:
+        radial-gradient(circle, rgba(216, 173, 98, 0.34), transparent 38%),
+        conic-gradient(from 35deg, rgba(216, 173, 98, 0.16), rgba(200, 101, 54, 0.24), rgba(112, 153, 150, 0.12), rgba(216, 173, 98, 0.16));
+    box-shadow: inset 0 0 32px rgba(216, 173, 98, 0.14), var(--ax-shadow-sm);
+}
+
+.ax-home-sigil span,
+.ax-home-sigil b {
+    position: relative;
+    z-index: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--ax-border);
+    border-radius: 999px;
+    background: rgba(5, 3, 9, 0.74);
+    font-size: var(--ax-type-xs);
+    text-transform: uppercase;
+}
+
+.ax-home-sigil b {
+    align-self: end;
+    margin-bottom: 34px;
+    color: var(--ax-bone);
+    font-weight: 500;
+}
+
+.ax-home-copy {
+    display: grid;
+    gap: var(--ax-space-4);
+}
+
+.ax-home-copy h2,
+.ax-page-hero h1 {
+    max-width: 900px;
+    margin: 0;
+    color: var(--ax-bone);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: var(--ax-type-hero);
+    line-height: 0.92;
+}
+
+.ax-home-copy p,
+.ax-page-hero p,
+.ax-panel p,
+.ax-route-grid p,
+.ax-steps span,
+.ax-footer a {
+    color: var(--ax-muted);
+    line-height: 1.45;
+}
+
+.ax-home-copy p {
+    max-width: 720px;
+    font-size: clamp(1rem, 2.6vw, 1.25rem);
+}
+
+.ax-home-actions,
+.ax-builder-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ax-space-2);
+    align-items: center;
+}
+
+.ax-home-actions a,
+.ax-home-actions button,
+.ax-route-grid a,
+.ax-footer a {
+    color: var(--ax-bone);
+    text-decoration: none;
+}
+
+.ax-home-actions a,
+.ax-home-actions button,
+.ax-builder-actions a,
+.ax-history-empty a {
+    min-height: 42px;
+    padding: 11px 13px;
+    border: 1px solid var(--ax-border);
+    border-radius: var(--ax-radius);
+    background: rgba(17, 10, 12, 0.86);
+    cursor: pointer;
+}
+
+.ax-home-proof,
+.ax-route-grid,
+.ax-steps,
+.ax-page-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: var(--ax-space-3);
+}
+
+.ax-home-proof {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin: var(--ax-space-5) 0;
+}
+
+.ax-home-proof article,
+.ax-panel,
+.ax-page-card {
+    border: 1px solid var(--ax-border);
+    border-radius: var(--ax-radius);
+    background:
+        linear-gradient(145deg, rgba(216, 173, 98, 0.08), transparent 34%),
+        var(--ax-panel-soft);
+    box-shadow: var(--ax-shadow-sm);
+}
+
+.ax-home-proof article,
+.ax-panel,
+.ax-page-card,
+.ax-route-grid a,
+.ax-steps li {
+    padding: var(--ax-space-4);
+}
+
+.ax-home-proof strong,
+.ax-panel h2,
+.ax-page-card h2,
+.ax-page-card h3,
+.ax-route-grid strong,
+.ax-steps strong {
+    display: block;
+    color: var(--ax-bone);
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.ax-panel {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: var(--ax-space-4);
+    margin: var(--ax-space-5) 0;
+}
+
+.ax-public-onboarding,
+.ax-first-session,
+.ax-route-panel {
+    scroll-margin-top: var(--ax-space-5);
+}
+
+.ax-steps {
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ax-steps li,
+.ax-route-grid a {
+    border: 1px solid rgba(216, 173, 98, 0.14);
+    border-radius: var(--ax-radius);
+    background: rgba(5, 3, 9, 0.46);
+}
+
+.ax-meter {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--ax-space-2);
+    align-items: center;
+    max-width: 520px;
+}
+
+.ax-meter span {
+    color: var(--ax-muted);
+}
+
+.ax-meter strong {
+    color: var(--ax-gold);
+}
+
+.ax-meter i {
+    grid-column: 1 / -1;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(216, 173, 98, 0.14);
+}
+
+.ax-meter b {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--ax-gold), var(--ax-ember));
+}
+
+.ax-route-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.ax-route-grid a.is-next {
+    border-color: var(--ax-border-strong);
+    box-shadow: var(--ax-shadow-gold);
+}
+
+.ax-route-grid a.is-complete {
+    border-color: rgba(159, 202, 167, 0.34);
+}
+
+.ax-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ax-space-3);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--ax-space-5) 0 0;
+    border-top: 1px solid var(--ax-line);
+}
+
+.ax-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ax-space-3);
+}
+
+.ax-page-hero {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: var(--ax-space-3);
+    padding: var(--ax-space-6) 0 var(--ax-space-5);
+    border-bottom: 1px solid var(--ax-line);
+}
+
+.ax-page-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    margin: var(--ax-space-5) 0;
+}
+
+.ax-page-card span {
+    color: var(--ax-gold);
+    text-transform: uppercase;
+    font-size: var(--ax-type-xs);
+}
+
+.ax-arena-shell {
+    width: min(1280px, 100%);
+    height: var(--ax-viewport-shell);
+    min-height: 620px;
+    display: grid;
+    grid-template-rows:
+        var(--ax-viewport-header)
+        var(--ax-viewport-status)
+        minmax(0, 1fr)
+        var(--ax-viewport-hand)
+        var(--ax-viewport-actions);
+    gap: var(--ax-viewport-gap);
+    padding: max(8px, env(safe-area-inset-top)) 12px max(8px, env(safe-area-inset-bottom));
+    overflow: hidden;
+}
+
+.ax-arena-shell::before {
+    opacity: 0.48;
+}
+
+.ax-arena-shell .ax-topbar {
+    min-height: 0;
+    padding: 0;
+}
+
+.ax-arena-shell .ax-title-block h1 {
+    font-size: clamp(1.2rem, 3.2vw, 2rem);
+}
+
+.ax-arena-shell .ax-title-block p {
+    font-size: var(--ax-type-sm);
+}
+
+.ax-compact-status {
+    min-height: 0;
+    padding: 6px 10px;
+}
+
+.ax-arena-viewport {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    min-height: 0;
+    gap: var(--ax-viewport-gap);
+}
+
+.ax-side-stack {
+    display: grid;
+    min-height: 0;
+    gap: var(--ax-viewport-gap);
+    grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.ax-duel-altar-compact {
+    min-height: 0;
+    gap: var(--ax-viewport-gap);
+    padding: 0;
+    grid-template-rows: minmax(118px, 0.9fr) minmax(116px, 0.8fr) minmax(118px, 0.9fr);
+}
+
+.ax-arena-shell .ax-enemy-champion,
+.ax-arena-shell .ax-player-champion {
+    min-height: 0;
+    padding: 8px;
+    box-shadow: var(--ax-shadow-sm);
+}
+
+.ax-arena-shell .ax-champion-shell {
+    min-height: 0;
+}
+
+.ax-arena-shell .ax-champion,
+.ax-arena-shell .ax-champion-empty {
+    width: clamp(92px, 15svh, 142px);
+}
+
+.ax-arena-shell .ax-champion-empty {
+    padding: 18px 10px;
+    font-size: var(--ax-type-xs);
+}
+
+.ax-arena-shell .ax-champion b {
+    width: clamp(40px, 6svh, 54px);
+    height: clamp(40px, 6svh, 54px);
+    font-size: clamp(1.05rem, 3svh, 1.45rem);
+}
+
+.ax-arena-shell .ax-champion strong {
+    inset: auto 12px 16px;
+    font-size: clamp(0.72rem, 1.6svh, 0.86rem);
+}
+
+.ax-arena-shell .ax-champion small {
+    inset: 12px 10px auto;
+    font-size: 0.56rem;
+}
+
+.ax-arena-shell .ax-side-readout {
+    gap: 6px;
+}
+
+.ax-arena-shell .ax-side-readout span,
+.ax-arena-shell .ax-relic,
+.ax-arena-shell .ax-schemes span,
+.ax-arena-shell .ax-soul {
+    min-height: 26px;
+    padding: 5px 7px;
+    font-size: 0.68rem;
+}
+
+.ax-side-details {
+    position: relative;
+    z-index: 2;
+    max-height: 82px;
+    overflow: hidden;
+}
+
+.ax-side-details summary {
+    width: max-content;
+    max-width: 100%;
+    margin: 0 auto 4px;
+    color: var(--ax-gold);
+    cursor: pointer;
+    font-size: 0.64rem;
+    text-transform: uppercase;
+}
+
+.ax-clash-axis-compact {
+    min-height: 0;
+    padding: 4px;
+}
+
+.ax-clash-controls {
+    display: flex;
+    gap: var(--ax-space-3);
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.ax-arena-shell .ax-ambition-core {
+    width: clamp(48px, 7svh, 62px);
+    height: clamp(92px, 15svh, 122px);
+}
+
+.ax-arena-shell .ax-ambition-core b {
+    margin-bottom: 34px;
+    font-size: clamp(1rem, 2.4svh, 1.35rem);
+}
+
+.ax-arena-shell .ax-ambition-core small {
+    margin-bottom: 14px;
+}
+
+.ax-arena-shell .ax-intent-ring {
+    width: min(420px, 100%);
+}
+
+.ax-arena-shell .ax-intent-ring button,
+.ax-arena-shell .ax-commit-button,
+.ax-arena-shell .ax-dominate-button,
+.ax-arena-shell .ax-reset-button {
+    min-height: 36px;
+}
+
+.ax-chronicle-compact,
+.ax-reward-compact {
+    min-height: 0;
+    margin: 0;
+    padding: 10px;
+}
+
+.ax-chronicle-compact {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.ax-internal-scroll {
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.ax-chronicle-compact ol {
+    max-height: none;
+}
+
+.ax-reward-compact p {
+    margin: 6px 0;
+}
+
+.ax-reward-compact div {
+    gap: 5px;
+}
+
+.ax-reward-compact span {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+}
+
+.ax-hand-compact {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.ax-hand-compact .ax-hand-head {
+    margin-bottom: 4px;
+    font-size: var(--ax-type-sm);
+}
+
+.ax-arena-shell .ax-hand {
+    grid-auto-columns: clamp(132px, 17vw, 168px);
+    gap: 8px;
+    padding: 0 0 4px;
+}
+
+.ax-arena-shell .ax-card {
+    min-height: clamp(92px, 15svh, 122px);
+    padding: 8px;
+}
+
+.ax-arena-shell .ax-card strong {
+    margin-top: 4px;
+    font-size: 0.88rem;
+}
+
+.ax-arena-shell .ax-card p {
+    display: -webkit-box;
+    margin-top: 5px;
+    overflow: hidden;
+    font-size: 0.7rem;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.ax-arena-shell .ax-card small {
+    font-size: 0.6rem;
+}
+
+.ax-action-compact {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    translate: none;
+    min-height: 0;
+    grid-template-columns: minmax(160px, 1fr) auto auto auto auto;
+    padding: 7px 9px;
+    border: 1px solid rgba(216, 173, 98, 0.14);
+    border-radius: var(--ax-radius);
+    background: rgba(5, 3, 9, 0.9);
+}
+
+.ax-action-compact #ax-error {
+    grid-column: 1 / -1;
+}
+
+@media (min-width: 760px) {
+    .ax-home-hero {
+        grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1fr);
+    }
+
+    .ax-arena-viewport {
+        grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
+    }
+
+    .ax-arena-shell .ax-enemy-champion,
+    .ax-arena-shell .ax-player-champion {
+        grid-template-columns: minmax(112px, 160px) minmax(170px, 1fr) minmax(180px, 0.8fr);
+        grid-template-rows: 1fr;
+    }
+
+    .ax-arena-shell .ax-enemy-champion .ax-champion-shell,
+    .ax-arena-shell .ax-player-champion .ax-champion-shell {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .ax-arena-shell .ax-enemy-champion .ax-side-readout,
+    .ax-arena-shell .ax-player-champion .ax-side-readout {
+        grid-column: 2;
+    }
+
+    .ax-arena-shell .ax-side-details {
+        grid-column: 3;
+    }
+}
+
+@media (max-width: 759px) {
+    body.ax-body:has(.ax-arena-shell) {
+        overflow: auto;
+    }
+
+    .ax-arena-shell {
+        height: auto;
+        min-height: 100svh;
+        grid-template-rows: auto auto auto auto auto;
+        padding-inline: 10px;
+        overflow: visible;
+    }
+
+    .ax-arena-shell .ax-topbar {
+        grid-template-columns: auto 1fr;
+    }
+
+    .ax-arena-shell .ax-title-block h1 {
+        font-size: 1.28rem;
+    }
+
+    .ax-arena-shell .ax-title-block p {
+        display: none;
+    }
+
+    .ax-compact-status {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .ax-duel-altar-compact {
+        grid-template-rows: auto auto auto;
+    }
+
+    .ax-arena-shell .ax-enemy-champion,
+    .ax-arena-shell .ax-player-champion {
+        display: grid;
+        grid-template-columns: 104px 1fr;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .ax-arena-shell .ax-champion-shell {
+        grid-row: span 2;
+    }
+
+    .ax-arena-shell .ax-side-details {
+        grid-column: 2;
+        max-height: 68px;
+    }
+
+    .ax-clash-controls {
+        gap: 8px;
+    }
+
+    .ax-arena-shell .ax-intent-ring {
+        gap: 6px;
+    }
+
+    .ax-side-stack {
+        grid-template-rows: auto auto;
+    }
+
+    .ax-chronicle-compact ol {
+        max-height: 96px;
+    }
+
+    .ax-arena-shell .ax-hand {
+        grid-auto-columns: minmax(132px, 42vw);
+    }
+
+    .ax-action-compact {
+        position: sticky;
+        z-index: 12;
+        bottom: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-inline: -10px;
+        border-radius: var(--ax-radius) var(--ax-radius) 0 0;
+    }
+
+    .ax-action-compact .ax-mode-picker,
+    .ax-action-compact #ax-error {
+        grid-column: 1 / -1;
+    }
+
+    .ax-action-compact button {
+        width: 100%;
     }
 }
 

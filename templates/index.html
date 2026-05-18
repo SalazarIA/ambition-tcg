@@ -2,149 +2,128 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ambitionz - Public Beta Card Battler</title>
-
+    <title>Ambitionz - Ascension Duel</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#05050B">
+    <meta name="theme-color" content="#050309">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ambitionz">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Ambitionz is a public beta Ascension Duel built around one Champion, the Ambition Core and persistent progression.">
-
+    <meta name="description" content="Ambitionz is a public beta Ascension Duel built around one Champion, mind-game intent, Champion progression and the Ambition Core. No real-money payments are active.">
     <link rel="canonical" href="https://ambitionzgame.com/">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=194">
 </head>
-<body class="az-home-page-v2" data-retention-page="home">
-    <main class="az-home-shell-v2">
-        <nav class="az-home-nav-v2 az-beta-main-nav-v3" aria-label="Main navigation">
-                <a href="{{ url_for('index') }}" class="az-home-brand-v2" aria-label="Ambitionz home" aria-current="page">
+<body class="ax-body ax-home-page" data-retention-page="home">
+    <main class="ax-shell ax-product-shell ax-home-shell" data-ax-shell>
+        <header class="ax-topbar ax-product-nav" aria-label="Main navigation">
+            <a class="ax-brand" href="{{ url_for('index') }}" aria-current="page" aria-label="Ambitionz home">
                 <span>A</span>
                 <strong>Ambitionz</strong>
             </a>
-
-            <div class="az-home-nav-links-v2">
-                <a href="{{ url_for('index') }}" class="active">Home</a>
-                <a href="{{ url_for('training') }}" class="primary">Jogar</a>
+            <div class="ax-title-block">
+                <h1>Ambitionz</h1>
+                <p>Ascension Duel public beta at ambitionzgame.com.</p>
+            </div>
+            <nav class="ax-top-actions" aria-label="Ascension routes">
+                <a href="{{ url_for('training') }}" class="is-primary" data-retention-event="home_cta_play">Play</a>
                 <a href="{{ url_for('collection_ascension') }}">Collection</a>
                 <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
-                <a href="{{ url_for('missions') }}">Missions</a>
-                <a href="{{ url_for('daily') }}">Daily</a>
-                <a href="{{ url_for('progression') }}">Progression</a>
+                <a href="{{ url_for('ascension_history') }}">Chronicle</a>
                 <a href="{{ url_for('roadmap') }}">Roadmap</a>
-                <a href="{{ url_for('feedback') }}">Feedback</a>
+                <a href="{{ url_for('tutorial') }}">Tutorial</a>
                 {% if user %}
                     <a href="{{ url_for('profile') }}">Profile</a>
                 {% else %}
                     <a href="{{ url_for('login') }}">Login</a>
-                    <a href="{{ url_for('register') }}" class="az-nav-cta-v2">Register</a>
+                    <a href="{{ url_for('register') }}">Register</a>
                 {% endif %}
-            </div>
-        </nav>
-
-        <header id="az-public-beta-landing-v2" class="az-home-hero-v2 az-public-beta-hero-v3">
-            <div class="az-home-hero-bg-v2" aria-hidden="true">
-                <span class="az-home-card-token-v2 az-home-card-fire-v2">Fire</span>
-                <span class="az-home-card-token-v2 az-home-card-water-v2">Water</span>
-                <span class="az-home-card-token-v2 az-home-card-earth-v2">Earth</span>
-            </div>
-
-            <section class="az-home-hero-copy-v2">
-                <span class="az-home-kicker-v2">{{ beta_version }} at ambitionzgame.com</span>
-                <h1>Ambitionz is an Ascension Duel in public beta.</h1>
-                <p>
-                    Enter a one-Champion psychological clash, choose Strike, Guard, Focus or Scheme,
-                    build Ambition, bind Souls and push for Ascension or Domination. Collection,
-                    deck tools, missions and rewards remain beta progression only; there is no real-money checkout.
-                </p>
-
-                <div class="az-home-actions-v2">
-                    {% if user %}
-                        <a href="{{ url_for('training') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
-                        <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">Ver Coleção</a>
-                        <a href="{{ url_for('deck_builder_ascension') }}" class="btn btn-secondary">Montar Deck</a>
-                        <a href="{{ url_for('roadmap') }}" class="btn btn-secondary">Ver Roadmap</a>
-                    {% else %}
-                        <a href="{{ url_for('register') }}" class="btn az-home-primary-v2" data-retention-event="home_cta_play">Jogar Agora</a>
-                        <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">Ver Coleção</a>
-                        <a href="{{ url_for('deck_builder_ascension') }}" class="btn btn-secondary">Montar Deck</a>
-                        <a href="{{ url_for('roadmap') }}" class="btn btn-secondary">Ver Roadmap</a>
-                    {% endif %}
-                </div>
-
-                <div class="az-home-proof-v2" aria-label="Core features">
-                    <span>Ascension Duel</span>
-                    <span>One Champion</span>
-                    <span>Ambition Core</span>
-                    <span>Intent strategy</span>
-                </div>
-            </section>
+            </nav>
         </header>
 
-        <section class="az-public-beta-pillars-v3" aria-label="Public beta pillars">
+        <section id="ax-home-hero" class="ax-home-hero" aria-label="Ambitionz Ascension Duel">
+            <div class="ax-home-sigil" aria-hidden="true">
+                <span>Champion</span>
+                <i></i>
+                <b>Ambition Core</b>
+            </div>
+            <div class="ax-home-copy">
+                <span class="ax-kicker">{{ beta_version }} · no real-money payments</span>
+                <h2>Ascension Duel is a one-card psychological clash.</h2>
+                <p>
+                    Command one active Champion, read the rival intent, bind Souls, prepare Schemes
+                    and push the Ambition Core toward Ascension or Domination.
+                </p>
+                <div class="ax-home-actions">
+                    <a class="ax-primary-link" href="{{ url_for('training') }}" data-retention-event="home_cta_play">Play Ascension Duel</a>
+                    <a href="{{ url_for('collection_ascension') }}">Collection</a>
+                    <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="ax-home-proof" aria-label="Ascension product pillars">
             <article>
-                <span>Battle</span>
-                <h2>Jogar partidas</h2>
-                <p>Training coloca você direto no Ascension Duel: Intent, Champion, Ambition Core, Commit e Chronicle.</p>
-                <a href="{{ url_for('training') }}">Jogar Agora</a>
+                <span>01</span>
+                <strong>One-card duel architecture</strong>
+                <p>No crowded table. Every Round turns on Champion pressure, one meaningful card purpose and the Mind Clash.</p>
             </article>
             <article>
-                <span>Cards</span>
-                <h2>Colecionar cartas</h2>
-                <p>Veja Champions, Techniques, Relics, Schemes e Ascensions com função estratégica clara.</p>
-                <a href="{{ url_for('collection_ascension') }}">Ver Coleção</a>
+                <span>02</span>
+                <strong>Champion progression</strong>
+                <p>Your active Champion, Bound Souls and rewards create a readable path from match result to next decision.</p>
             </article>
             <article>
-                <span>Deck</span>
-                <h2>Montar deck</h2>
-                <p>O Ascension Deck guia a estrutura beta de 30 cartas por pressão, controle e momentum.</p>
-                <a href="{{ url_for('deck_builder_ascension') }}">Montar Deck</a>
+                <span>03</span>
+                <strong>Mind-game battle system</strong>
+                <p>Strike, Guard, Focus and Scheme produce a compact strategic loop that rewards timing and prediction.</p>
             </article>
-            <article>
-                <span>Progress</span>
-                <h2>Evoluir perfil</h2>
-                <p>XP, missões, daily reward e histórico dão contexto para a próxima sessão.</p>
-                <a href="{{ url_for('progression') }}">Ver Progression</a>
-            </article>
-            <article>
-                <span>Rewards</span>
-                <h2>Missões e recompensas</h2>
-                <p>Complete objetivos simples, ganhe XP e Gold, e abra boosters sem pagamento real.</p>
-                <a href="{{ url_for('missions') }}">Ver Missões</a>
-            </article>
-            <article>
-                <span>Beta</span>
-                <h2>Em desenvolvimento</h2>
-                <p>O roadmap mostra o que foi entregue, o que está sendo refinado e o que vem depois.</p>
-                <a href="{{ url_for('roadmap') }}">Ver Roadmap</a>
-            </article>
+        </section>
+
+        <section id="az-public-onboarding-v1" class="ax-panel ax-public-onboarding" data-public-onboarding aria-label="Public beta onboarding">
+            <div>
+                <span class="ax-kicker">First Read</span>
+                <h2>Learn the duel in six beats.</h2>
+                <p>Champion, Intent, one-card play, Commit, Dominate and Reward are the core verbs of Ascension Duel.</p>
+            </div>
+            <ol class="ax-steps">
+                <li><strong>Champion</strong><span>One active Champion anchors your Duel Altar.</span></li>
+                <li><strong>Intent</strong><span>Strike, Guard, Focus or Scheme sets the psychological line.</span></li>
+                <li><strong>One-card play</strong><span>Summon, bind, burn, equip, set, ascend, overrule or dominate.</span></li>
+                <li><strong>Commit</strong><span>Resolve the Round and read the Chronicle.</span></li>
+                <li><strong>Dominate</strong><span>Spend high Ambition for a risky finisher.</span></li>
+                <li><strong>Reward</strong><span>Earn XP, Gold and Champion progress in beta.</span></li>
+            </ol>
+            <div class="ax-home-actions">
+                <a class="ax-primary-link" href="{{ url_for('training') }}" data-retention-event="training_start_click">Start Training</a>
+                <button type="button" data-public-onboarding-dismiss>Dismiss</button>
+                <a href="{{ url_for('tutorial') }}">Tutorial</a>
+            </div>
         </section>
 
         <section
             id="az-first-session-questline-v1"
-            class="az-first-session-questline-v1"
+            class="ax-panel ax-first-session"
             data-first-session-questline
             data-dismiss-key="{{ first_session_questline.dismiss_key }}"
             aria-label="First session questline"
         >
-            <div class="az-first-session-head-v1">
-                <span class="az-home-kicker-v2">First Session Questline</span>
+            <div>
+                <span class="ax-kicker">First Session Questline</span>
                 <h2>{{ first_session_questline.title }}</h2>
                 <p>{{ first_session_questline.subtitle }}</p>
-                <div class="az-first-session-meter-v1">
+                <div class="ax-meter">
                     <span>{{ first_session_questline.completed }}/{{ first_session_questline.total }} complete</span>
                     <strong>{{ first_session_questline.percent }}%</strong>
                     <i><b style="width: {{ first_session_questline.percent }}%;"></b></i>
                 </div>
             </div>
-            <div class="az-first-session-grid-v1">
+            <div class="ax-route-grid">
                 {% for step in first_session_questline.steps %}
                     <a
                         href="{{ step.url }}"
-                        class="az-first-session-step-v1 {% if step.complete %}is-complete{% elif first_session_questline.next_step.key == step.key %}is-next{% endif %}"
+                        class="{% if step.complete %}is-complete{% elif first_session_questline.next_step.key == step.key %}is-next{% endif %}"
                         data-quest-step="{{ step.key }}"
                     >
                         <span>{{ step.number }}</span>
@@ -154,207 +133,45 @@
                     </a>
                 {% endfor %}
             </div>
-            <div class="progression-action-row">
-                <a href="{{ first_session_questline.next_step.url }}" class="btn">{{ first_session_questline.next_step.cta }}</a>
-                <button type="button" class="btn btn-secondary" data-first-session-dismiss>Dismiss</button>
+            <div class="ax-home-actions">
+                <a class="ax-primary-link" href="{{ first_session_questline.next_step.url }}">{{ first_session_questline.next_step.cta }}</a>
+                <button type="button" data-first-session-dismiss>Dismiss</button>
             </div>
         </section>
 
-        <section id="az-public-onboarding-v1" class="az-public-onboarding-v1" data-public-onboarding aria-label="Public beta onboarding">
+        <section id="az-beta-journey" class="ax-panel ax-route-panel" aria-label="Ascension product routes">
             <div>
-                <span class="az-home-kicker-v2">Beta Onboarding</span>
-                <h2>Aprenda o primeiro duelo antes de abrir a Arena.</h2>
-                <p>Um guia curto para entrar no Training já sabendo o objetivo e os botões principais.</p>
+                <span class="ax-kicker">Public Beta Surface</span>
+                <h2>One coherent path through Ambitionz.</h2>
+                <p>Start in the Duel Altar, inspect Champions and Techniques, tune the Ascension Deck, then review the Chronicle.</p>
             </div>
-            <ol>
-                <li><strong>Reduza o HP inimigo.</strong><span>Você vence quando o Mind Clash e seu Champion quebram a resistência rival.</span></li>
-                <li><strong>Escolha intent.</strong><span>Strike pressiona, Guard segura dano, Focus cresce Ambition.</span></li>
-                <li><strong>Jogue uma carta.</strong><span>Champions entram no Altar, Souls se ligam, Techniques queimam tempo e Schemes ficam preparadas.</span></li>
-                <li><strong>Clique Commit.</strong><span>Commit trava sua decisão e resolve o round com uma Chronicle legível.</span></li>
-                <li><strong>Use recompensas.</strong><span>Depois da partida, veja XP, missões e próximos passos.</span></li>
-                <li><strong>Melhore o deck.</strong><span>Volte para Ascension Collection e Ascension Deck quando quiser ajustar sua estratégia.</span></li>
-            </ol>
-            <div class="progression-action-row">
-                <a href="{{ url_for('training') }}" class="btn" data-retention-event="training_start_click">Start Training</a>
-                <button type="button" class="btn btn-secondary" data-public-onboarding-dismiss>Já vi onboarding</button>
-                <a href="{{ url_for('tutorial') }}" class="btn btn-secondary">Tutorial completo</a>
-            </div>
-        </section>
-
-        <section class="az-home-loop-v2" aria-label="How Ambitionz plays">
-            <article>
-                <strong>1</strong>
-                <h2>Choose Intent</h2>
-                <p>Pick Strike, Guard or Focus before the round resolves.</p>
-            </article>
-            <article>
-                <strong>2</strong>
-                <h2>Play a Card</h2>
-                <p>Summon a Champion, bind a Soul, cast a Technique, equip a Relic or prepare a Scheme.</p>
-            </article>
-            <article>
-                <strong>3</strong>
-                <h2>Resolve Clash</h2>
-                <p>Intents collide through the Duel Altar and write the Chronicle of the round.</p>
-            </article>
-            <article>
-                <strong>4</strong>
-                <h2>Improve</h2>
-                <p>Review your collection, tune the 30-card deck and climb your profile.</p>
-            </article>
-        </section>
-
-        <section id="az-beta-journey" class="az-beta-journey-v1" aria-label="Beta journey">
-            <div class="az-beta-journey-head-v1">
-                <span class="az-home-kicker-v2">Beta Journey</span>
-                <h2>One clean path from first click to the next match.</h2>
-                <p>Enter, learn, train, review progress, inspect cards, tune the fixed 30-card deck and play again.</p>
-            </div>
-            <div class="az-beta-journey-grid-v1">
-                {% for step in beta_journey %}
-                    <a href="{{ step.url }}" class="az-beta-step-v1" data-state="{{ step.status|lower|replace(' ', '-') }}">
-                        <span>{{ step.number }}</span>
-                        <strong>{{ step.title }}</strong>
-                        <small>{{ step.status }}</small>
-                        <p>{{ step.description }}</p>
-                    </a>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section id="az-faction-identity" class="az-faction-showcase-v1" aria-label="Ambitionz factions">
-            <div class="az-faction-showcase-copy-v1">
-                <span class="az-home-kicker-v2">World Identity</span>
-                <h2>Five powers shape every duel.</h2>
-                <p>
-                    Each card belongs to a ritual identity built around role, purpose and tactical rhythm.
-                    This layer is presentation-first while Ascension Duel rules stay stable.
-                </p>
-            </div>
-
-            <div class="az-faction-grid-v1">
-                <article class="az-faction-card-v1 faction-ember" data-faction="Ember Court">
-                    <span>Fire</span>
-                    <strong>Ember Court</strong>
-                    <p>Ambitious duelists who turn pressure into decisive damage.</p>
-                    <small>Aggression · direct pressure</small>
-                </article>
-                <article class="az-faction-card-v1 faction-tideborn" data-faction="Tideborn Order">
-                    <span>Water</span>
-                    <strong>Tideborn Order</strong>
-                    <p>Patient strategists who win by focus, timing and control.</p>
-                    <small>Focus · control</small>
-                </article>
-                <article class="az-faction-card-v1 faction-stonebound" data-faction="Stonebound Clan">
-                    <span>Earth</span>
-                    <strong>Stonebound Clan</strong>
-                    <p>Unmoving guardians who turn pressure into fortified vows.</p>
-                    <small>Defense · durable creatures</small>
-                </article>
-                <article class="az-faction-card-v1 faction-verdant" data-faction="Verdant Pact">
-                    <span>Plant</span>
-                    <strong>Verdant Pact</strong>
-                    <p>Living alliances that grow value from careful Champion pressure.</p>
-                    <small>Growth · recovery</small>
-                </article>
-                <article class="az-faction-card-v1 faction-arcane" data-faction="Arcane Neutral">
-                    <span>Global</span>
-                    <strong>Arcane Neutral</strong>
-                    <p>Unbound tactics that support any plan with Techniques and Schemes.</p>
-                    <small>Support · flexible answers</small>
-                </article>
-            </div>
-        </section>
-
-        <section class="az-home-panel-v2">
-            <div>
-                <span class="az-home-kicker-v2">Start here</span>
-                <h2>{% if user %}Your next match is ready.{% else %}Create a duelist and enter with a starter deck.{% endif %}</h2>
-                <p>
-                    Training now teaches Ascension Duel: Intent, Champion focus, Bound Souls,
-                    Ambition Core decisions, Commit, and the Chronicle after the clash resolves.
-                </p>
-            </div>
-
-            <div class="az-home-route-grid-v2">
-                <a href="{{ url_for('training') }}">Training<span>Learn against the bot</span></a>
-                <a href="{{ url_for('arena') }}">Legacy Arena<span>Internal fallback duel flow</span></a>
-                <a href="{{ url_for('collection_ascension') }}">Collection<span>Inspect Ascension cards</span></a>
-                <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder<span>Build the Ascension deck</span></a>
-                <a href="{{ url_for('tutorial') }}">Tutorial<span>Learn intent and Commit</span></a>
-                <a href="{{ url_for('campaign') }}">Campaign<span>Follow the beta chapter path</span></a>
-                <a href="{{ url_for('daily') }}">Daily<span>Check today's beta reward preview</span></a>
-                <a href="{{ url_for('shop') }}">Shop<span>Spend earned Gold on beta boosters</span></a>
+            <div class="ax-route-grid">
+                <a href="{{ url_for('training') }}"><span>Duel</span><strong>Play Ascension Duel</strong><p>Enter the compact one-Champion clash.</p></a>
+                <a href="{{ url_for('collection_ascension') }}"><span>Collection</span><strong>Inspect cards</strong><p>Review Champions, Techniques, Relics, Schemes and Ascensions.</p></a>
+                <a href="{{ url_for('deck_builder_ascension') }}"><span>Deck</span><strong>Shape the rite</strong><p>Validate the 30-card beta structure and strategic posture.</p></a>
+                <a href="{{ url_for('ascension_history') }}"><span>Chronicle</span><strong>Read match history</strong><p>Track results, decisive cards and rewards.</p></a>
+                <a href="{{ url_for('roadmap') }}"><span>Roadmap</span><strong>See beta direction</strong><p>Follow shipped Ascension work and next tuning passes.</p></a>
+                <a href="{{ url_for('feedback') }}"><span>Feedback</span><strong>Report friction</strong><p>Send product, balance and UX notes from the beta.</p></a>
                 {% if user %}
-                    <a href="{{ url_for('missions') }}">Missions<span>Complete loop objectives</span></a>
-                    <a href="{{ url_for('match_history') }}">Match History<span>Review recent battles</span></a>
-                {% endif %}
-                <a href="{{ url_for('ranking') }}">Ranking<span>Track competitive records</span></a>
-                <a href="{{ url_for('leaderboard') }}">Leaderboard<span>Compare progression</span></a>
-                {% if user %}
-                    <a href="{{ url_for('profile') }}">Profile<span>See XP, level and history</span></a>
-                    <a href="{{ url_for('progression') }}">Progression<span>Follow the account loop</span></a>
+                    <a href="{{ url_for('profile') }}"><span>Profile</span><strong>{{ user.username }}</strong><p>Review XP, Gold and account progression.</p></a>
                 {% else %}
-                    <a href="{{ url_for('login') }}">Login<span>Return to your account</span></a>
-                    <a href="{{ url_for('register') }}">Register<span>Start playing now</span></a>
+                    <a href="{{ url_for('register') }}"><span>Access</span><strong>Create account</strong><p>Save progress when you are ready.</p></a>
                 {% endif %}
             </div>
         </section>
 
-        {% if user %}
-            <section class="az-home-player-v2">
-                <div>
-                    <span class="az-home-kicker-v2">Player Status</span>
-                    <h2>{{ user.username }}</h2>
-                    <p>Level {{ user.level|default(1) }} · {{ user.xp|default(0) }} XP · {{ user.wins|default(0) }}W / {{ user.losses|default(0) }}L</p>
-                </div>
-                <div class="az-home-player-actions-v2">
-                    <a href="{{ url_for('profile') }}" class="btn btn-secondary">Profile</a>
-                    <a href="{{ url_for('progression') }}" class="btn btn-secondary">Progression</a>
-                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
-                </div>
-            </section>
-        {% else %}
-            <section class="az-home-public-cta-v2">
-                <div>
-                    <span class="az-home-kicker-v2">Beta access</span>
-                    <h2>Jogue agora no domínio oficial.</h2>
-                    <p>Use ambitionzgame.com for the public game experience. The Render URL is only the technical endpoint.</p>
-                </div>
-                <div class="az-home-actions-v2">
-                    <a href="{{ url_for('register') }}" class="btn az-home-primary-v2">Create Account</a>
-                    <a href="{{ url_for('how_to_play') }}" class="btn btn-secondary">Read Rules</a>
-                </div>
-            </section>
-        {% endif %}
-
-        <footer class="az-home-footer-v2">
+        <footer class="ax-footer">
             <span>Ambitionz Beta</span>
             <nav>
                 <a href="{{ url_for('how_to_play') }}">Rules</a>
-                <a href="{{ url_for('first_session') }}">First Session</a>
-                <a href="{{ url_for('feedback') }}">Feedback</a>
                 <a href="{{ url_for('support') }}">Support</a>
                 <a href="{{ url_for('privacy') }}">Privacy</a>
                 <a href="{{ url_for('terms') }}">Terms</a>
             </nav>
         </footer>
-
-        <nav class="mobile-bottom-nav">
-            <a href="{{ url_for('index') }}" class="active">Home</a>
-            <a href="{{ url_for('training') }}">Play</a>
-            {% if user %}
-                <a href="{{ url_for('deck_builder_ascension') }}">Deck</a>
-                <a href="{{ url_for('profile') }}">Profile</a>
-            {% else %}
-                <a href="{{ url_for('login') }}">Login</a>
-                <a href="{{ url_for('register') }}">Register</a>
-            {% endif %}
-        </nav>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>

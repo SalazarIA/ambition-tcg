@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=194">
 </head>
 <body class="ax-body ax-builder-page" data-retention-page="deck-builder-ascension">
-    <main class="ax-shell ax-builder">
+    <main class="ax-shell ax-builder ax-product-shell" data-ax-shell>
         <header class="ax-topbar">
             <a class="ax-brand" href="{{ url_for('index') }}"><span>A</span><strong>Ambitionz</strong></a>
             <div class="ax-title-block">
@@ -19,7 +19,7 @@
                 <p>A 30-card rite tuned for Champion focus, prepared pressure and Ambition momentum.</p>
             </div>
             <nav class="ax-top-actions">
-                <a href="{{ url_for('training') }}">Duel</a>
+                <a href="{{ url_for('training') }}" class="is-primary">Duel</a>
                 <a href="{{ url_for('collection_ascension') }}">Collection</a>
                 <a href="{{ url_for('ascension_history') }}">Chronicle</a>
             </nav>

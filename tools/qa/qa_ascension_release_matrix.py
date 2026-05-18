@@ -89,8 +89,11 @@ def main():
             "services/ascension_bot.py",
             "services/ascension_payloads.py",
             "services/ascension_progression.py",
+            "services/ascension_taxonomy.py",
+            "services/ascension_history.py",
         ],
         ["node", "--check", "static/js/ambitionz_ascension.js"],
+        ["node", "--check", "static/js/ambitionz_ascension_library.js"],
     ]
     commands.extend([[sys.executable, str(path.relative_to(PROJECT_ROOT))] for path in qa_scripts])
 

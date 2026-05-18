@@ -34,6 +34,11 @@ REQUIRED_FILES = [
     "docs/ASCENSION_PUBLIC_COPY.md",
     "docs/LEGACY_CONTAINMENT_CHECKLIST.md",
     "docs/RC_V8_ASCENSION_STATUS.md",
+    "docs/ASCENSION_FRONTEND_ARCHITECTURE.md",
+    "docs/ASCENSION_VIEWPORT_CONTRACT.md",
+    "docs/RC_V8_1_VISUAL_ARCHITECTURE_STATUS.md",
+    "tools/qa/qa_ascension_viewport_contract.py",
+    "tools/qa/qa_ascension_product_surface.py",
 ]
 
 

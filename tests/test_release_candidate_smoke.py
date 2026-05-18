@@ -29,7 +29,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v193" in body
+    assert "ambitionz-web-app-v194" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -41,7 +41,7 @@ def test_tutorial_renders_narrative_onboarding(client):
     assert "Strike" in body
     assert "Guard" in body
     assert "Focus" in body
-    assert "Ready and Resolve" in body
+    assert "Commit and Resolve" in body
     assert 'href="/training"' in body
     assert 'href="/collection-ascension"' in body
     assert 'href="/deck-builder-ascension"' in body
@@ -53,17 +53,15 @@ def test_public_home_renders_product_entry_and_real_routes(client):
 
     assert response.status_code == 200
     assert "Ambitionz" in body
-    assert "Jogar Agora" in body
+    assert "Play Ascension Duel" in body
     assert "ambitionzgame.com" in body
     assert 'href="/training"' in body
-    assert 'href="/arena"' in body
     assert 'href="/collection-ascension"' in body
     assert 'href="/deck-builder-ascension"' in body
-    assert 'href="/leaderboard"' in body
     assert 'href="/roadmap"' in body
     assert 'href="/feedback"' in body
-    assert "Ambitionz is an Ascension Duel in public beta." in body
-    assert "Beta Onboarding" in body
+    assert "Ascension Duel is a one-card psychological clash." in body
+    assert "First Read" in body
     assert "First Session Questline" in body
     assert "ambitionz_first_session_questline_dismissed_v1" in body
     assert 'href="/login"' in body
@@ -76,10 +74,10 @@ def test_public_beta_roadmap_and_feedback_routes(client):
 
     assert roadmap_response.status_code == 200
     assert "Roadmap & Patch Notes" in roadmap_body
-    assert "Public Beta RC V5" in roadmap_body
+    assert "RC V8.1 Visual Architecture" in roadmap_body
     assert "Ascension Duel rebirth" in roadmap_body
     assert "Public Beta RC Checklist" in roadmap_body
-    assert "Economy beta" in roadmap_body
+    assert "Reward beta" in roadmap_body
     assert 'href="/feedback"' in roadmap_body
 
     feedback_response = client.get("/feedback")

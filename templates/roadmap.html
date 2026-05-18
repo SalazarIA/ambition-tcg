@@ -2,170 +2,120 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Roadmap - {{ roadmap.version|default('Public Beta RC V5') }} - Ambitionz</title>
+    <title>Roadmap - {{ roadmap.version|default('RC V8.1 Visual Architecture') }} - Ambitionz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#05050B">
-    <meta name="description" content="Ambitionz public beta roadmap and patch notes.">
-    <meta name="ambitionz-beta-version" content="{{ roadmap.version|default('Public Beta RC V5') }}">
+    <meta name="theme-color" content="#050309">
+    <meta name="description" content="Ambitionz Ascension Duel public beta roadmap and patch notes.">
+    <meta name="ambitionz-beta-version" content="{{ roadmap.version|default('RC V8.1 Visual Architecture') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_theme.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=194">
 </head>
-<body class="az-roadmap-page-v3" data-retention-page="roadmap">
-    <main class="wide-page mobile-wide-page">
-        <nav class="az-beta-main-nav-v3" aria-label="Public beta navigation">
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('training') }}" class="primary">Jogar</a>
-            <a href="{{ url_for('collection_ascension') }}">Collection</a>
-            <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
-            <a href="{{ url_for('missions') }}">Missions</a>
-            <a href="{{ url_for('daily') }}">Daily</a>
-            <a href="{{ url_for('progression') }}">Progression</a>
-            <a href="{{ url_for('roadmap') }}" class="active">Roadmap</a>
-            <a href="{{ url_for('feedback') }}">Feedback</a>
-        </nav>
-
-        <header class="az-public-beta-hero-v3">
-            <div>
-                <span class="progression-kicker">{{ roadmap.version }}</span>
-                <h1>Roadmap & Patch Notes</h1>
-                <p>
-                    Ambitionz is in public beta. This page tracks what recently landed,
-                    what is being hardened now, and what is planned next without promising
-                    features before they are implemented.
-                </p>
+<body class="ax-body ax-roadmap-page" data-retention-page="roadmap">
+    <main class="ax-shell ax-roadmap ax-product-shell" data-ax-shell>
+        <header class="ax-topbar ax-product-nav" aria-label="Public beta navigation">
+            <a class="ax-brand" href="{{ url_for('index') }}"><span>A</span><strong>Ambitionz</strong></a>
+            <div class="ax-title-block">
+                <h1>Roadmap</h1>
+                <p>Ascension Duel public beta status, visual architecture and next tuning passes.</p>
             </div>
-            <div class="az-roadmap-status-v3">
-                <span>Status</span>
-                <strong>{{ roadmap.status }}</strong>
-                <small>Playable beta, systems still evolving.</small>
-            </div>
+            <nav class="ax-top-actions">
+                <a href="{{ url_for('training') }}" class="is-primary">Play</a>
+                <a href="{{ url_for('collection_ascension') }}">Collection</a>
+                <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
+                <a href="{{ url_for('ascension_history') }}">Chronicle</a>
+                <a href="{{ url_for('tutorial') }}">Tutorial</a>
+                <a href="{{ url_for('feedback') }}">Feedback</a>
+            </nav>
         </header>
 
-        <section class="az-roadmap-grid-v3" aria-label="Recent beta updates" data-roadmap-recent="Ascension Duel rebirth Legacy Arena preserved Retention loops Public beta polish">
-            <div class="section-title-row">
-                <div>
-                    <span class="progression-kicker">Patch Notes</span>
-                    <h2>Recent improvements</h2>
-                </div>
-                <a href="{{ url_for('training') }}" class="btn small-btn">Play Current Build</a>
-            </div>
+        <section class="ax-page-hero">
+            <span>{{ roadmap.version }}</span>
+            <h1>Roadmap & Patch Notes</h1>
+            <p>
+                Ambitionz is now centered on Ascension Duel: one active Champion, mind-game Intent,
+                Ambition Core pressure, Champion progression and beta rewards with no real-money payments.
+            </p>
+        </section>
+
+        <section class="ax-page-grid" aria-label="Recent beta updates" data-roadmap-recent="Ascension Duel rebirth Visual architecture lock Compact viewport Public beta polish">
             {% for item in roadmap.recent %}
-                <article class="az-roadmap-card-v3">
+                <article class="ax-page-card">
                     <span>Shipped</span>
-                    <h3>{{ item.title }}</h3>
+                    <h2>{{ item.title }}</h2>
                     <p>{{ item.summary }}</p>
                 </article>
             {% endfor %}
         </section>
 
-        <section class="az-roadmap-grid-v3" aria-label="Planned beta work">
-            <div class="section-title-row">
-                <div>
-                    <span class="progression-kicker">Next</span>
-                    <h2>Planned beta focus</h2>
-                </div>
-                <a href="{{ url_for('feedback') }}" class="btn btn-secondary small-btn">Send Feedback</a>
+        <section class="ax-panel" aria-label="Planned beta work">
+            <div>
+                <span>Next</span>
+                <h2>Planned beta focus</h2>
+                <p>These are tuning and validation tracks, not promises for unbuilt systems.</p>
             </div>
-            {% for item in roadmap.planned %}
-                <article class="az-roadmap-card-v3 is-next">
-                    <span>Planned</span>
-                    <h3>{{ item.title }}</h3>
-                    <p>{{ item.summary }}</p>
-                </article>
-            {% endfor %}
+            <div class="ax-page-grid">
+                {% for item in roadmap.planned %}
+                    <article class="ax-page-card">
+                        <span>Planned</span>
+                        <h3>{{ item.title }}</h3>
+                        <p>{{ item.summary }}</p>
+                    </article>
+                {% endfor %}
+            </div>
         </section>
 
-        <section id="az-rc-public-checklist-v1" class="az-rc-public-checklist-v1" aria-label="Public beta release candidate checklist">
-            <div class="section-title-row">
-                <div>
-                    <span class="progression-kicker">Public Beta RC Checklist</span>
-                    <h2>What is ready for the next human review.</h2>
-                </div>
-                <a href="{{ url_for('feedback') }}" class="btn btn-secondary small-btn">Beta Feedback</a>
+        <section id="az-rc-public-checklist-v1" class="ax-panel" aria-label="Public beta release candidate checklist">
+            <div>
+                <span>Public Beta RC Checklist</span>
+                <h2>What is ready for the next human review.</h2>
             </div>
-            <div class="az-rc-public-checklist-grid-v1">
+            <div class="ax-page-grid">
                 {% for item in roadmap.rc_checklist %}
-                    <article>
+                    <article class="ax-page-card">
                         <span>{{ item.status }}</span>
-                        <strong>{{ item.item }}</strong>
+                        <h3>{{ item.item }}</h3>
                         <p>{{ item.note }}</p>
                     </article>
                 {% endfor %}
             </div>
         </section>
 
-        <section id="az-known-issues-beta-notes-v1" class="az-known-issues-beta-notes-v1" aria-label="Known issues and beta notes" data-beta-feedback-widget>
-            <div class="section-title-row">
-                <div>
-                    <span class="progression-kicker">Known Issues / Beta Notes</span>
-                    <h2>Transparent notes before the public beta freeze.</h2>
-                </div>
-                <a href="{{ url_for('feedback') }}" class="btn btn-secondary small-btn">Enviar Feedback</a>
+        <section id="az-known-issues-beta-notes-v1" class="ax-panel" aria-label="Known issues and beta notes" data-beta-feedback-widget>
+            <div>
+                <span>Known Issues / Beta Notes</span>
+                <h2>Current product risks stay visible.</h2>
+                <p>Balance, onboarding clarity, compact viewport behavior and reward tuning remain under active review.</p>
             </div>
-            <div class="az-known-issues-grid-v1">
-                <article>
+            <div class="ax-page-grid">
+                <article class="ax-page-card">
                     <span>Working Now</span>
-                    <h3>Playable core loop</h3>
-                    <p>Ascension Duel Training, Ambition Core, Chronicle, XP, Gold, daily rewards, missions, collection, deck builder, boosters and profile progression are active in beta. Legacy Arena remains available for fallback.</p>
+                    <h3>Playable Ascension loop</h3>
+                    <p>Training, Ambition Core, Chronicle, XP, Gold, daily rewards, missions, collection, deck builder and Champion progress are active in beta.</p>
                 </article>
-                <article>
+                <article class="ax-page-card">
                     <span>Still Beta</span>
                     <h3>Progression may be tuned</h3>
-                    <p>Gold values, booster pulls, mission rewards, card balance and ranking criteria can change as more playtest data arrives.</p>
+                    <p>Gold values, unlock pacing, card balance and ranking criteria can change as playtest data arrives.</p>
                 </article>
-                <article>
-                    <span>Known Limits</span>
-                    <h3>No live economy or real-money store</h3>
-                    <p>Gold and boosters are internal testing systems. Multiplayer ranking, marketplace, trading and payment flows are not active.</p>
-                </article>
-                <article>
-                    <span>Feedback</span>
-                    <h3>Report friction from the current screen</h3>
-                    <p>Use Beta Feedback for bugs, balance notes, visual issues, suggestions or praise. Reports are stored locally in the beta backend.</p>
-                </article>
-                <article>
-                    <span>Next Cycles</span>
-                    <h3>Balance and onboarding data</h3>
-                    <p>The next work should inspect telemetry, match outcomes, deck readiness and booster unlocks before adding larger systems.</p>
-                </article>
-                <article>
+                <article class="ax-page-card">
                     <span>Beta Notice</span>
-                    <h3>Progress can be adjusted</h3>
-                    <p>Public beta data is useful for testing and may be reset, rebalanced or migrated before a full launch.</p>
+                    <h3>No real-money payments</h3>
+                    <p>Gold is beta currency only. Rewards and boosters are internal beta systems; no real-money payments are active.</p>
                 </article>
             </div>
-        </section>
-
-        <section class="az-beta-disclaimer-v3">
-            <span class="progression-kicker">Beta notice</span>
-            <h2>Gold is beta currency only. No payment flow is active.</h2>
-            <p>
-                Current rewards are defensive beta progression: XP, Gold, mission progress,
-                collection visibility and deck guidance. Booster opening is being tested without real-money checkout.
-            </p>
-            <div class="progression-action-row">
-                <a href="{{ url_for('training') }}" class="btn">Jogar Agora</a>
-                <a href="{{ url_for('shop') }}" class="btn btn-secondary">Ver Shop</a>
-                <a href="{{ url_for('collection_ascension') }}" class="btn btn-secondary">Ver Coleção</a>
-                <a href="{{ url_for('deck_builder_ascension') }}" class="btn btn-secondary">Montar Deck</a>
+            <div class="ax-home-actions">
+                <a class="ax-primary-link" href="{{ url_for('training') }}">Play Ascension Duel</a>
+                <a href="{{ url_for('collection_ascension') }}">Collection</a>
+                <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
+                <a href="{{ url_for('feedback') }}">Feedback</a>
             </div>
         </section>
-
-        <nav class="mobile-bottom-nav">
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('training') }}">Play</a>
-            <a href="{{ url_for('missions') }}">Missions</a>
-            <a href="{{ url_for('roadmap') }}" class="active">Roadmap</a>
-        </nav>
     </main>
 
     <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_ui.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/beta_feedback.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
 </body>
 </html>

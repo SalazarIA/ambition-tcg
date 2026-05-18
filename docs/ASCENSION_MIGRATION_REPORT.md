@@ -53,3 +53,11 @@
 - Match history uses defensive JSONL fallback while legacy database systems remain untouched.
 - Bot profiles now include Aggressor, Controller, Opportunist, Defensive and Ascender.
 - Art pipeline folders and manifest are present without external assets.
+
+## RC V8.1 Visual Architecture Notes
+
+- Home now uses the same Ascension shell as Arena, Collection, Deck Builder, Chronicle, Roadmap and Tutorial.
+- `/training` declares a viewport contract through `ax-arena-shell`, `ax-arena-viewport`, `ax-duel-altar-compact`, `ax-internal-scroll` and `ax-action-compact`.
+- Chronicle and reward details scroll inside their own panels instead of stretching the core duel surface.
+- Public CTAs point to `/training`, `/collection-ascension` and `/deck-builder-ascension`.
+- Service worker cache moved to `ambitionz-web-app-v194`.
