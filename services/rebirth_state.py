@@ -2,6 +2,7 @@ from copy import deepcopy
 import hashlib
 import uuid
 
+from services.rebirth_contracts import PHASE_CHOOSE
 from services.rebirth_cards import build_deck, catalog_payload
 
 
@@ -61,7 +62,7 @@ def create_match(seed=None):
         "match_id": _match_id(seed),
         "architecture": "Ambitionz Rebirth",
         "turn": 1,
-        "phase": "choose",
+        "phase": PHASE_CHOOSE,
         "player": player,
         "bot": bot,
         "last_clash": None,
@@ -137,17 +138,6 @@ def side_payload(side, *, reveal_hand=True):
 
 
 def public_state(match):
-    return {
-        "match_id": match["match_id"],
-        "architecture": match["architecture"],
-        "turn": match["turn"],
-        "phase": match["phase"],
-        "player": side_payload(match["player"], reveal_hand=True),
-        "bot": side_payload(match["bot"], reveal_hand=False),
-        "available_evolutions": available_evolutions(match["player"]),
-        "last_clash": deepcopy(match.get("last_clash")),
-        "result": deepcopy(match.get("result")),
-        "winner": match.get("winner"),
-        "is_finished": match["is_finished"],
-        "log": list(match["log"][-8:]),
-    }
+    from services.rebirth_serializers import public_state as serialize_public_state
+
+    return serialize_public_state(match)

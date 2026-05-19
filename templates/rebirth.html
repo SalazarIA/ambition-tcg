@@ -5,132 +5,140 @@
     <title>Play Ambitionz Rebirth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#030405">
-    <meta name="description" content="Play Ambitionz Rebirth: one monster, one answer, one premium clash.">
+    <meta name="description" content="Play Ambitionz Rebirth: one card, one decision, one clash.">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-clash-ui">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-004">
 </head>
 <body class="rb-page rb-game-page">
-    <main class="rb-clash-shell" data-rebirth-app aria-label="Ambitionz Rebirth Premium Clash UI">
-        <section class="rb-hud" aria-label="Match HUD">
-            <div class="rb-hud-side rb-hud-player">
-                <a class="rb-mark" href="{{ url_for('index') }}" aria-label="Ambitionz home">A</a>
-                <div class="rb-hud-copy">
-                    <span>You</span>
-                    <div class="rb-hud-health">
-                        <i aria-hidden="true"></i>
-                        <strong id="player-hp">30</strong>
+    <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
+        <main id="rebirth-board" class="rb-game-board rb-clash-shell" aria-label="Ambitionz Rebirth Premium Clash UI">
+            <section class="rb-hud" aria-label="Match HUD">
+                <div class="rb-hud-side rb-hud-player">
+                    <a class="rb-mark" href="{{ url_for('index') }}" aria-label="Ambitionz home">A</a>
+                    <div class="rb-hud-copy">
+                        <span>You</span>
+                        <div class="rb-hud-health">
+                            <i aria-hidden="true"></i>
+                            <strong id="player-hp">30</strong>
+                        </div>
+                        <div class="rb-hp-meter" aria-hidden="true"><b id="player-hp-fill"></b></div>
                     </div>
-                    <div class="rb-hp-meter" aria-hidden="true"><b id="player-hp-fill"></b></div>
                 </div>
-            </div>
 
-            <div class="rb-turn-core">
-                <span>Turn</span>
-                <strong id="turn-number">01</strong>
-            </div>
+                <div class="rb-turn-core rb-hud-turn">
+                    <span>Turn</span>
+                    <strong id="turn-number">01</strong>
+                </div>
 
-            <div class="rb-hud-side rb-hud-bot">
-                <div class="rb-hud-copy">
-                    <span>Bot</span>
-                    <div class="rb-hud-health">
-                        <i aria-hidden="true"></i>
-                        <strong id="bot-hp">30</strong>
+                <div class="rb-hud-side rb-hud-bot">
+                    <div class="rb-hud-copy">
+                        <span>Bot</span>
+                        <div class="rb-hud-health">
+                            <i aria-hidden="true"></i>
+                            <strong id="bot-hp">30</strong>
+                        </div>
+                        <div class="rb-hp-meter" aria-hidden="true"><b id="bot-hp-fill"></b></div>
                     </div>
-                    <div class="rb-hp-meter" aria-hidden="true"><b id="bot-hp-fill"></b></div>
+                    <div class="rb-bot-emblem" aria-hidden="true"></div>
                 </div>
-                <div class="rb-bot-emblem" aria-hidden="true"></div>
-            </div>
-        </section>
+            </section>
 
-        <section class="rb-slogan-grid" aria-label="Core promise">
-            <p class="rb-slogan rb-slogan-player">
-                <span>One card.</span>
-                <span>One decision.</span>
-                <strong>One clash.</strong>
-            </p>
-            <div class="rb-bot-card-zone" aria-label="Bot card zone">
-                <div id="bot-card" class="rb-card-back">
-                    <span>Bot's Card</span>
-                </div>
-            </div>
-            <p class="rb-slogan rb-slogan-bot">
-                <span>Combine duplicates.</span>
-                <span>Evolve monsters.</span>
-                <strong>Win the duel.</strong>
-            </p>
-        </section>
-
-        <section class="rb-card-stage" aria-label="Selected monster and evolution">
-            <article id="focus-card" class="rb-monster-card rb-monster-card-main rb-empty-card">
-                <div class="rb-card-topline">
-                    <div>
-                        <strong>Select a monster</strong>
-                        <span>Ready</span>
+            <section class="rb-slogans rb-slogan-grid" aria-label="Core promise">
+                <p class="rb-slogan rb-slogan-player">
+                    <span>One card.</span>
+                    <span>One decision.</span>
+                    <strong>One clash.</strong>
+                </p>
+                <div class="rb-bot-card-zone" aria-label="Bot card zone">
+                    <div id="bot-card" class="rb-bot-card rb-card-back">
+                        <span>Bot's Card</span>
                     </div>
-                    <b class="rb-card-rank">?</b>
                 </div>
-                <div class="rb-card-art">
-                    <span>Choose</span>
+                <p class="rb-slogan rb-slogan-bot">
+                    <span>Combine duplicates.</span>
+                    <span>Evolve monsters.</span>
+                    <strong>Win the duel.</strong>
+                </p>
+            </section>
+
+            <section class="rb-card-stage" aria-label="Selected monster and evolution">
+                <article id="focus-card" class="rb-main-card rb-monster-card rb-monster-card-main rb-empty-card" aria-live="polite">
+                    <div class="rb-card-topline">
+                        <div>
+                            <strong>Select a monster</strong>
+                            <span>Ready</span>
+                        </div>
+                        <b class="rb-card-rank">?</b>
+                    </div>
+                    <div class="rb-card-art rb-asset-fallback">
+                        <span>Choose</span>
+                    </div>
+                    <div class="rb-card-rule">
+                        <strong>One Card Clash</strong>
+                        <p>Your card becomes the center of the duel.</p>
+                    </div>
+                    <div class="rb-card-stats">
+                        <span><i class="rb-stat-sword"></i><b>0</b></span>
+                        <span><i class="rb-stat-crest"></i></span>
+                        <span><i class="rb-stat-shield"></i><b>0</b></span>
+                    </div>
+                </article>
+
+                <aside id="evolution-panel" class="rb-duplicate-panel rb-evolution-panel" aria-live="polite">
+                    <span>Duplicate Found</span>
+                    <div id="evolution-card-thumbnail" class="rb-evolution-thumb rb-asset-fallback" aria-hidden="true"></div>
+                    <strong id="evolution-name">Monster x2</strong>
+                    <small>Merge duplicates to evolve.</small>
+                    <button class="rb-button-secondary rb-secondary rb-combine-button" type="button" id="evolve-button">Evolve</button>
+                </aside>
+            </section>
+
+            <section class="rb-player-hand rb-hand-wrap" aria-label="Player hand">
+                <div id="player-hand" class="rb-hand"></div>
+                <span id="hand-count" class="rb-hand-count">0 cards</span>
+            </section>
+
+            <section class="rb-actions rb-actions-row" aria-label="Primary actions">
+                <div>
+                    <button class="rb-button-primary rb-cta" type="button" id="play-button"><i class="rb-action-sword"></i>Clash</button>
+                    <small>Resolve the clash</small>
                 </div>
-                <div class="rb-card-rule">
-                    <strong>One Card Clash</strong>
-                    <p>Your card becomes the center of the duel.</p>
+                <div>
+                    <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>Combine</button>
+                    <small id="secondary-action-copy">Merge duplicates to evolve</small>
                 </div>
-                <div class="rb-card-stats">
-                    <span><i class="rb-stat-sword"></i><b>0</b></span>
-                    <span><i class="rb-stat-crest"></i></span>
-                    <span><i class="rb-stat-shield"></i><b>0</b></span>
+            </section>
+
+            <section class="rb-result rb-result-panel" id="result-panel" aria-live="polite">
+                <div>
+                    <span id="result-label">Waiting</span>
+                    <strong id="result-title">Pick one monster.</strong>
+                    <p id="result-copy">The bot will answer with one monster. Higher attack wins the clash.</p>
                 </div>
-            </article>
+                <button class="rb-button-secondary rb-secondary" type="button" data-new-match>New Match</button>
+            </section>
 
-            <aside id="evolution-panel" class="rb-evolution-panel" hidden>
-                <span>Duplicate Found</span>
-                <div id="evolution-card-thumbnail" class="rb-evolution-thumb" aria-hidden="true"></div>
-                <strong id="evolution-name">Monster x2</strong>
-                <small>Merge duplicates to evolve.</small>
-                <button class="rb-secondary rb-combine-button" type="button" id="evolve-button">Evolve</button>
-            </aside>
-        </section>
+            <section class="rb-turn-log rb-log" aria-label="Turn log">
+                <div class="rb-log-head">
+                    <strong>Turn Log</strong>
+                    <span id="phase-label">choose</span>
+                </div>
+                <ol id="turn-log"></ol>
+            </section>
 
-        <section class="rb-hand-wrap" aria-label="Player hand">
-            <div id="player-hand" class="rb-hand"></div>
-            <span id="hand-count" class="rb-hand-count">0 cards</span>
-        </section>
+            <section class="rb-footer-actions rb-prototype-actions" aria-label="Prototype controls">
+                <a class="rb-button-primary rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Play Rebirth Prototype <i aria-hidden="true"></i></a>
+                <button class="rb-button-secondary rb-secondary" type="button" data-new-match>+ New Match</button>
+            </section>
 
-        <section class="rb-actions-row" aria-label="Primary actions">
-            <div>
-                <button class="rb-cta" type="button" id="play-button"><i class="rb-action-sword"></i>Clash</button>
-                <small>Resolve the clash</small>
-            </div>
-            <div>
-                <button class="rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>Combine</button>
-                <small id="secondary-action-copy">Merge duplicates to evolve</small>
-            </div>
-        </section>
-
-        <section class="rb-result-panel" id="result-panel" aria-live="polite">
-            <div>
-                <span id="result-label">Waiting</span>
-                <strong id="result-title">Pick one monster.</strong>
-                <p id="result-copy">The bot will answer with one monster. Higher attack wins the clash.</p>
-            </div>
-            <button class="rb-secondary" type="button" data-new-match>New Match</button>
-        </section>
-
-        <section class="rb-log" aria-label="Turn log">
-            <div class="rb-log-head">
-                <strong>Turn Log</strong>
-                <span id="phase-label">choose</span>
-            </div>
-            <ol id="turn-log"></ol>
-        </section>
-
-        <section class="rb-prototype-actions" aria-label="Prototype controls">
-            <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Play Rebirth Prototype <i aria-hidden="true"></i></a>
-            <button class="rb-secondary" type="button" data-new-match>+ New Match</button>
-        </section>
-    </main>
+            <div class="rb-loading" id="rebirth-loading" aria-hidden="true">Loading</div>
+            <div class="rb-error" id="rebirth-error" aria-live="polite"></div>
+        </main>
+    </div>
 
     <script>
         window.REBIRTH_ENDPOINTS = {
@@ -139,8 +147,14 @@
             evolve: "{{ url_for('api_rebirth_evolve') }}",
             nextTurn: "{{ url_for('api_rebirth_next_turn') }}"
         };
+        window.REBIRTH_ASSETS = {
+            fallbackCardArt: "{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}",
+            botCardBack: "{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}",
+            botEmblem: "{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}",
+            manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
+        };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-clash-ui"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-clash-ui"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-004"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-004"></script>
 </body>
 </html>

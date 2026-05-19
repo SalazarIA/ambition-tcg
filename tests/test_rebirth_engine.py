@@ -100,7 +100,7 @@ def test_evolution_requires_duplicate():
     with pytest.raises(RebirthError) as error:
         evolve_duplicate(match, "voidstalker")
 
-    assert error.value.code == "no_evolution"
+    assert error.value.code == "duplicate_not_available"
 
     match = start_match(seed="no-duplicate-2")
     first_dreadclaw = next(card for card in match["player"]["hand"] if card["id"] == "dreadclaw")
@@ -109,7 +109,7 @@ def test_evolution_requires_duplicate():
     with pytest.raises(RebirthError) as duplicate_error:
         evolve_duplicate(match, "dreadclaw")
 
-    assert duplicate_error.value.code == "duplicate_required"
+    assert duplicate_error.value.code == "duplicate_not_available"
 
 
 def test_match_finishes_when_hp_reaches_zero():
@@ -120,7 +120,7 @@ def test_match_finishes_when_hp_reaches_zero():
     play_card(match, card_instance_id=card["instance_id"])
 
     assert match["is_finished"] is True
-    assert match["phase"] == "game_over"
+    assert match["phase"] == "finished"
     assert match["winner"] == "player"
 
 
@@ -139,6 +139,15 @@ def test_next_turn_resets_result_and_refills_hand():
     assert original_card["id"] in {card["id"] for card in match["player"]["discard"]}
 
 
+def test_next_turn_requires_result_phase():
+    match = start_match(seed="next-invalid")
+
+    with pytest.raises(RebirthError) as error:
+        next_turn(match)
+
+    assert error.value.code == "invalid_phase"
+
+
 def test_public_state_exposes_player_hand_and_hides_bot_hand():
     match = start_match(seed="public")
     state = public_state(match)
@@ -148,3 +157,17 @@ def test_public_state_exposes_player_hand_and_hides_bot_hand():
     assert "hand" not in state["bot"]
     assert state["player"]["max_hp"] == 30
     assert state["available_evolutions"][0]["card_id"] == "dreadclaw"
+
+    for field in [
+        "match_id",
+        "phase",
+        "turn",
+        "player",
+        "bot",
+        "available_evolutions",
+        "last_clash",
+        "result",
+        "winner",
+        "log",
+    ]:
+        assert field in state

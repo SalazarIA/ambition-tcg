@@ -63,6 +63,7 @@ def test_start_api_returns_clear_json_state(client):
     assert response.status_code == 200
     assert response.is_json
     assert payload["ok"] is True
+    assert "result" in payload
     assert payload["state"]["match_id"].startswith("rebirth-")
     assert payload["state"]["player"]["hp"] == 30
     assert payload["state"]["player"]["max_hp"] == 30
@@ -130,9 +131,50 @@ def test_invalid_api_returns_json_error(client):
     )
     payload = response.get_json()
 
-    assert response.status_code == 400
+    assert response.status_code == 404
     assert payload["ok"] is False
-    assert payload["error"]["code"] == "match_not_found"
+    assert payload["error"]["code"] == "missing_match"
+
+
+def test_expected_action_errors_do_not_return_500(client):
+    start = client.post("/api/rebirth/start", json={"seed": "routes-errors"})
+    state = start.get_json()["state"]
+
+    missing_match = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": "missing", "card_id": "dreadclaw"},
+    )
+    malformed = client.post(
+        "/api/rebirth/play-card",
+        data="[",
+        content_type="application/json",
+    )
+    invalid_card = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": state["match_id"], "card_instance_id": "not-in-hand"},
+    )
+    duplicate = client.post(
+        "/api/rebirth/evolve",
+        json={"match_id": state["match_id"], "card_id": "voidstalker"},
+    )
+    invalid_phase = client.post(
+        "/api/rebirth/next-turn",
+        json={"match_id": state["match_id"]},
+    )
+
+    expected = [
+        (missing_match, 404, "missing_match"),
+        (malformed, 400, "malformed_request"),
+        (invalid_card, 400, "invalid_card"),
+        (duplicate, 400, "duplicate_not_available"),
+        (invalid_phase, 409, "invalid_phase"),
+    ]
+    for response, status, code in expected:
+        payload = response.get_json()
+        assert response.status_code == status
+        assert response.status_code != 500
+        assert payload["ok"] is False
+        assert payload["error"]["code"] == code
 
 
 def test_legacy_routes_redirect_or_report_retired(client):

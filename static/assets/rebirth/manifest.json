@@ -1,0 +1,21 @@
+{
+  "product": "Ambitionz Rebirth",
+  "version": "rebirth-004",
+  "ui": {
+    "bot_card_back": "/static/assets/rebirth/ui/bot-card-back.png",
+    "bot_emblem": "/static/assets/rebirth/ui/bot-emblem.png"
+  },
+  "cards": {
+    "dreadclaw": "/static/assets/rebirth/cards/dreadclaw-art.png",
+    "stoneshell": "/static/assets/rebirth/cards/stoneshell.svg",
+    "shadewisp": "/static/assets/rebirth/cards/shadewisp.svg",
+    "skywarden": "/static/assets/rebirth/cards/skywarden.svg",
+    "ironbastion": "/static/assets/rebirth/cards/ironbastion.svg",
+    "embermaw": "/static/assets/rebirth/cards/embermaw.svg",
+    "voidstalker": "/static/assets/rebirth/cards/voidstalker.svg",
+    "nightfang": "/static/assets/rebirth/cards/nightfang.svg"
+  },
+  "fallbacks": {
+    "card_art": "/static/assets/rebirth/cards/dreadclaw-art.png"
+  }
+}

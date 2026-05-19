@@ -16,6 +16,7 @@ def _card(
     flavor,
     art,
 ):
+    art_file = art if "." in art else f"{art}.svg"
     return {
         "id": card_id,
         "name": name,
@@ -30,7 +31,7 @@ def _card(
         "ability_name": ability_name,
         "ability_text": ability_text,
         "flavor": flavor,
-        "art": f"/static/assets/rebirth/cards/{art}.svg",
+        "art": f"/static/assets/rebirth/cards/{art_file}",
     }
 
 
@@ -48,7 +49,7 @@ BASE_MONSTERS = [
         "Rending Strike",
         "Deal attack damage. If the target is wounded, deal 2 extra damage.",
         "A volcanic beast that turns pressure into a finish.",
-        "dreadclaw",
+        "dreadclaw-art.png",
     ),
     _card(
         "stoneshell",
@@ -172,7 +173,7 @@ EVOLVED_MONSTERS = [
         "Apex Rend",
         "Deal attack damage and add 2 if the target is wounded.",
         "Dreadclaw after the second roar.",
-        "dreadclaw",
+        "dreadclaw-art.png",
     ),
     _card(
         "stonewarden",

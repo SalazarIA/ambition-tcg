@@ -17,6 +17,12 @@ One card. One decision. One clash.
 9. First side to 0 HP loses the match.
 10. After a resolved turn, both sides draw back up to 5 cards when possible.
 
+## Match Phases
+
+- `choose`: the player can select one monster or combine an available duplicate.
+- `result`: the clash has resolved and the next turn can be requested.
+- `finished`: the match has a winner and only a new match should be started.
+
 ## Card Model
 
 Each monster has:
@@ -82,3 +88,35 @@ Evolved monsters:
 - `POST /api/rebirth/next-turn`
 
 The MVP uses JSON APIs only. Socket.io is not part of Ambitionz Rebirth MVP.
+
+Successful responses use:
+
+```json
+{
+  "ok": true,
+  "state": {},
+  "result": null
+}
+```
+
+Expected player/request errors use:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "stable_string_code",
+    "message": "Human-readable message."
+  }
+}
+```
+
+Stable expected error codes:
+
+- `missing_match`
+- `invalid_phase`
+- `missing_card`
+- `invalid_card`
+- `duplicate_not_available`
+- `match_finished`
+- `malformed_request`

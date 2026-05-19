@@ -168,3 +168,125 @@ Rebirth 002 validation result:
 Next recommended block:
 
 - Rebirth 003: improve card art fidelity with higher-detail raster or SVG assets, add clash animations and tune the first five-turn balance curve.
+
+## Rebirth 003 - Visual Fidelity Correction
+
+This correction locks the live `/rebirth` screen to the approved reference composition instead of a loose interpretation.
+
+Files changed in this correction:
+
+- `services/rebirth_cards.py`
+- `static/css/rebirth.css`
+- `static/js/rebirth.js`
+- `static/js/service-worker.js`
+- `static/assets/rebirth/cards/dreadclaw-art.png`
+- `static/assets/rebirth/ui/bot-card-back.png`
+- `static/assets/rebirth/ui/bot-emblem.png`
+- `tests/test_rebirth_frontend_contract.py`
+- `docs/REBIRTH_VISUAL_STANDARD.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+
+What changed:
+
+- Re-centered the main monster card on the 860px reference board and moved the duplicate panel into a right-side rail.
+- Reduced the live layout drift that made desktop open on a stretched, cropped card view.
+- Forced `/rebirth` to restore scroll to the top so the HUD is visible on reload.
+- Replaced the placeholder Dreadclaw SVG in the active product with a raster crop from the approved concept art.
+- Replaced CSS-generated bot placeholder shapes with approved bot emblem and bot-card-back assets.
+- Updated the service worker cache to the active raster/reference assets and removed the old Dreadclaw SVG from the active cache list.
+- Added frontend contract coverage for the reference asset lock.
+
+QA executed for this correction:
+
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py`
+- `python3 -m pytest -q`
+- `node --check static/js/rebirth.js`
+- Local Playwright visual QA on 860x1880, 1440x900 and 390x844 viewports.
+- Verified no horizontal overflow, scroll starts at top, 5 hand cards render, COMBINE is enabled, and Dreadclaw uses `/static/assets/rebirth/cards/dreadclaw-art.png`.
+
+Validation result:
+
+- `py_compile`: passed
+- `pytest -q`: 21 passed
+- `node --check`: passed
+- Visual QA: passed on 860x1880, 1440x900 and 390x844 with no horizontal overflow.
+
+Next recommended block:
+
+- Rebirth 004: replace the remaining secondary SVG monster placeholders with premium raster art so the whole hand matches the approved Dreadclaw quality.
+
+## Rebirth 004 - Product Architecture Lock + Single Screen Game System
+
+Rebirth 004 moves the product from a tall page interpretation into a locked single-screen web-game architecture.
+
+Files created in this block:
+
+- `services/rebirth_contracts.py`
+- `services/rebirth_match_store.py`
+- `services/rebirth_serializers.py`
+- `static/assets/rebirth/manifest.json`
+
+Files changed in this block:
+
+- `app.py`
+- `services/rebirth_engine.py`
+- `services/rebirth_state.py`
+- `templates/index.html`
+- `templates/rebirth.html`
+- `static/css/rebirth.css`
+- `static/js/rebirth.js`
+- `static/js/service-worker.js`
+- `pytest.ini`
+- `tests/test_rebirth_engine.py`
+- `tests/test_rebirth_routes.py`
+- `tests/test_rebirth_frontend_contract.py`
+- `tests/test_rebirth_home_promotion.py`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_RULEBOOK.md`
+- `docs/REBIRTH_VISUAL_STANDARD.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+
+What changed:
+
+- Split backend responsibilities into contracts, match store, serializers, state, engine, bot and cards.
+- Locked phases to `choose`, `result` and `finished`.
+- Replaced old expected-error codes with stable API codes: `missing_match`, `invalid_phase`, `missing_card`, `invalid_card`, `duplicate_not_available`, `match_finished` and `malformed_request`.
+- Updated Flask API responses to always include `ok`, `state` and `result` on success.
+- Ensured expected player/request mistakes return JSON with 400/404/409 instead of 500.
+- Rebuilt `/rebirth` as a fixed `852px x 1846px` game board scaled into the viewport.
+- Added `rb-game-viewport`, `rb-game-board`, `rb-main-card`, `rb-duplicate-panel`, `rb-asset-fallback` and related locked component classes.
+- Rewrote `static/js/rebirth.js` into internal modules: `RebirthApi`, `RebirthStore`, `RebirthRenderer`, `RebirthInput`, `RebirthBoardScaler`, `RebirthAssets` and `RebirthErrors`.
+- Added anti-scroll behavior so wheel and document scroll do not move `/rebirth`.
+- Rebuilt the home as a Rebirth-only premium page with no old Arena/Ascension CTAs.
+- Added an explicit active Rebirth asset manifest and updated the service worker cache to `ambitionz-rebirth-single-screen-v4`.
+- Expanded tests to include API error contracts, frontend active asset contracts, home Rebirth positioning and single-screen runtime markers.
+
+QA executed for Rebirth 004:
+
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_contracts.py services/rebirth_match_store.py services/rebirth_serializers.py`
+- `python3 -m pytest -q`
+- `node --check static/js/rebirth.js`
+- Local Playwright rendered QA on 390x844, 852x1846, 1440x900 and 2048x1218 viewports.
+
+Rebirth 004 validation result:
+
+- `py_compile`: passed
+- `pytest -q`: 27 passed
+- `node --check`: passed
+- Visual QA: passed on all required viewports.
+- No document scroll on `/rebirth`.
+- Wheel did not change `scrollY`.
+- No horizontal overflow.
+- No console errors.
+- No page errors.
+- No asset 404s.
+- No native broken-image icons.
+- Core flow passed: start -> combine -> clash -> next turn.
+
+Remaining constraint:
+
+- Secondary monster art is still SVG placeholder-level and intentionally deferred to the next premium art block.
+
+Next recommended block:
+
+- Rebirth 005: Premium Monster Identity + Card Art System.

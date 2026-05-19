@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from services.rebirth_bot import choose_response
 from services.rebirth_cards import create_card_instance, get_card
+from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESULT, RebirthError
 from services.rebirth_state import (
     RebirthStateError,
     clear_played_cards,
@@ -9,12 +10,6 @@ from services.rebirth_state import (
     draw_to_hand_size,
     remove_from_hand,
 )
-
-
-class RebirthError(ValueError):
-    def __init__(self, message, code="rebirth_error"):
-        super().__init__(message)
-        self.code = code
 
 
 def start_match(seed=None):
@@ -64,7 +59,7 @@ def finish_if_needed(match):
         return False
 
     match["is_finished"] = True
-    match["phase"] = "game_over"
+    match["phase"] = PHASE_FINISHED
     if match["winner"] == "player":
         match["log"].append("Victory. The bot is out of lives.")
     elif match["winner"] == "bot":
@@ -113,15 +108,17 @@ def resolve_turn(match, player_card, bot_card):
     match["log"].append(result["message"])
     finish_if_needed(match)
     if not match["is_finished"]:
-        match["phase"] = "result"
+        match["phase"] = PHASE_RESULT
     return result
 
 
 def play_card(match, *, card_instance_id=None, card_id=None):
     if match.get("is_finished"):
         raise RebirthError("Match is already finished.", "match_finished")
-    if match.get("phase") != "choose":
-        raise RebirthError("Advance to the next turn before playing another card.", "turn_not_ready")
+    if match.get("phase") != PHASE_CHOOSE:
+        raise RebirthError("Advance to the next turn before playing another card.", "invalid_phase")
+    if not card_instance_id and not card_id:
+        raise RebirthError("A card_instance_id or card_id is required.", "missing_card")
 
     try:
         player_card = remove_from_hand(
@@ -130,11 +127,11 @@ def play_card(match, *, card_instance_id=None, card_id=None):
             card_id=card_id,
         )
     except RebirthStateError as exc:
-        raise RebirthError(str(exc), "card_not_in_hand") from exc
+        raise RebirthError(str(exc), "invalid_card") from exc
 
     bot_choice = choose_response(match["bot"]["hand"], player_card)
     if not bot_choice:
-        raise RebirthError("Bot has no card to answer with.", "bot_hand_empty")
+        raise RebirthError("Bot has no card to answer with.", "invalid_phase")
 
     bot_card = remove_from_hand(match["bot"], card_instance_id=bot_choice["instance_id"])
     match["player"]["played_card"] = player_card
@@ -149,23 +146,23 @@ def play_card(match, *, card_instance_id=None, card_id=None):
 def evolve_duplicate(match, card_id):
     if match.get("is_finished"):
         raise RebirthError("Match is already finished.", "match_finished")
-    if match.get("phase") != "choose":
-        raise RebirthError("Evolution is only available before playing a card.", "evolution_not_ready")
+    if match.get("phase") != PHASE_CHOOSE:
+        raise RebirthError("Evolution is only available before playing a card.", "invalid_phase")
     if not card_id:
-        raise RebirthError("card_id is required.", "missing_card_id")
+        raise RebirthError("card_id is required.", "missing_card")
 
     try:
         card = get_card(card_id)
     except ValueError as exc:
-        raise RebirthError(str(exc), "unknown_card") from exc
+        raise RebirthError(str(exc), "invalid_card") from exc
 
     evolution_id = card.get("evolution_id")
     if not evolution_id:
-        raise RebirthError("This monster has no MVP evolution.", "no_evolution")
+        raise RebirthError("This monster has no MVP evolution.", "duplicate_not_available")
 
     matches = [hand_card for hand_card in match["player"]["hand"] if hand_card["id"] == card_id]
     if len(matches) < 2:
-        raise RebirthError("Two matching monsters are required to evolve.", "duplicate_required")
+        raise RebirthError("Two matching monsters are required to evolve.", "duplicate_not_available")
 
     consumed = []
     for _ in range(2):
@@ -183,9 +180,9 @@ def evolve_duplicate(match, card_id):
 
 def next_turn(match):
     if match.get("is_finished"):
-        return match
-    if match.get("phase") == "choose":
-        return match
+        raise RebirthError("Match is already finished.", "match_finished")
+    if match.get("phase") != PHASE_RESULT:
+        raise RebirthError("Next turn is available only after a clash result.", "invalid_phase")
 
     clear_played_cards(match)
     match["turn"] += 1
@@ -193,6 +190,6 @@ def next_turn(match):
     draw_to_hand_size(match["bot"])
     match["result"] = None
     match["last_clash"] = None
-    match["phase"] = "choose"
+    match["phase"] = PHASE_CHOOSE
     match["log"].append(f"Turn {match['turn']:02d}   Choose one monster.")
     return match

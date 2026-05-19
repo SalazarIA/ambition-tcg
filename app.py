@@ -2,35 +2,50 @@ import os
 
 from flask import Flask, jsonify, redirect, render_template, request, send_from_directory
 
+from services.rebirth_contracts import RebirthError
 from services.rebirth_engine import (
-    RebirthError,
     evolve_duplicate,
     next_turn,
     play_card,
     start_match,
 )
-from services.rebirth_state import public_state
+from services.rebirth_match_store import MATCH_STORE
+from services.rebirth_serializers import public_state
 
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "ambitionz-rebirth-dev")
 
-REBIRTH_MATCHES = {}
+REBIRTH_MATCHES = MATCH_STORE.raw()
 
 
-def json_error(message, code="rebirth_error", status=400):
+def json_error(message, code="malformed_request", status=400):
     return jsonify({"ok": False, "error": {"code": code, "message": message}}), status
 
 
+def json_success(state, result=None, **extra):
+    payload = {"ok": True, "state": state, "result": result}
+    payload.update(extra)
+    return jsonify(payload)
+
+
+def json_from_rebirth_error(error):
+    return json_error(str(error), error.code, status=getattr(error, "status", 400))
+
+
 def get_match(match_id):
-    match = REBIRTH_MATCHES.get(str(match_id or ""))
-    if not match:
-        raise RebirthError("Match not found.", "match_not_found")
-    return match
+    return MATCH_STORE.get(match_id)
 
 
-def request_json():
-    return request.get_json(silent=True) or {}
+def request_json(required=False):
+    payload = request.get_json(silent=True)
+    if payload is None:
+        if required and request.data:
+            raise RebirthError("Request body must be valid JSON.", "malformed_request")
+        return {}
+    if not isinstance(payload, dict):
+        raise RebirthError("Request body must be a JSON object.", "malformed_request")
+    return payload
 
 
 @app.get("/")
@@ -73,47 +88,50 @@ def webmanifest():
 
 @app.post("/api/rebirth/start")
 def api_rebirth_start():
-    payload = request_json()
-    match = start_match(seed=payload.get("seed"))
-    REBIRTH_MATCHES[match["match_id"]] = match
-    return jsonify({"ok": True, "match_id": match["match_id"], "state": public_state(match)})
+    try:
+        payload = request_json(required=False)
+        match = MATCH_STORE.save(start_match(seed=payload.get("seed")))
+        state = public_state(match)
+        return json_success(state, match.get("result"), match_id=match["match_id"])
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
 
 
 @app.post("/api/rebirth/play-card")
 def api_rebirth_play_card():
-    payload = request_json()
     try:
+        payload = request_json(required=True)
         match = get_match(payload.get("match_id"))
         play_card(
             match,
             card_instance_id=payload.get("card_instance_id"),
             card_id=payload.get("card_id"),
         )
-        return jsonify({"ok": True, "state": public_state(match)})
+        return json_success(public_state(match), match.get("result"))
     except RebirthError as error:
-        return json_error(str(error), error.code)
+        return json_from_rebirth_error(error)
 
 
 @app.post("/api/rebirth/evolve")
 def api_rebirth_evolve():
-    payload = request_json()
     try:
+        payload = request_json(required=True)
         match = get_match(payload.get("match_id"))
         evolved = evolve_duplicate(match, payload.get("card_id"))
-        return jsonify({"ok": True, "evolved": evolved, "state": public_state(match)})
+        return json_success(public_state(match), match.get("result"), evolved=evolved)
     except RebirthError as error:
-        return json_error(str(error), error.code)
+        return json_from_rebirth_error(error)
 
 
 @app.post("/api/rebirth/next-turn")
 def api_rebirth_next_turn():
-    payload = request_json()
     try:
+        payload = request_json(required=True)
         match = get_match(payload.get("match_id"))
         next_turn(match)
-        return jsonify({"ok": True, "state": public_state(match)})
+        return json_success(public_state(match), match.get("result"))
     except RebirthError as error:
-        return json_error(str(error), error.code)
+        return json_from_rebirth_error(error)
 
 
 @app.route("/arena")
