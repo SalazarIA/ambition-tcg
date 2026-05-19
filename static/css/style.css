@@ -2,6 +2,57 @@
     box-sizing: border-box;
 }
 
+.legacy-rebirth-banner {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px auto 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(229, 177, 91, 0.28);
+    border-radius: 14px;
+    color: #f7ead2;
+    background:
+        linear-gradient(135deg, rgba(229, 177, 91, 0.12), rgba(5, 4, 10, 0.86)),
+        #090711;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.legacy-rebirth-banner span {
+    color: #e5b15b;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+}
+
+.legacy-rebirth-banner strong {
+    display: block;
+    color: #f7ead2;
+}
+
+.legacy-rebirth-banner p {
+    margin: 2px 0 0;
+    color: #b9a991;
+}
+
+.legacy-rebirth-banner a {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    border-radius: 10px;
+    color: #130b07;
+    background: #e5b15b;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 0.76rem;
+}
+
+@media (max-width: 760px) {
+    .legacy-rebirth-banner {
+        display: grid;
+    }
+}
+
 :root {
     --safe-top: env(safe-area-inset-top);
     --safe-bottom: env(safe-area-inset-bottom);

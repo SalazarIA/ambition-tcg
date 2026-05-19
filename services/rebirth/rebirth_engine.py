@@ -1,4 +1,5 @@
 from copy import deepcopy
+import hashlib
 
 from services.rebirth.rebirth_state import (
     activate_card_from_hand,
@@ -11,6 +12,26 @@ from services.rebirth.rebirth_state import (
 
 VALID_REBIRTH_INTENTS = {"STRIKE", "GUARD", "FOCUS"}
 DAMAGE_CAP = 10
+BOT_PROFILES = [
+    {
+        "id": "warden",
+        "name": "The Warden",
+        "style": "Defensive",
+        "description": "A rival who contains pressure and waits for clean counterplay.",
+    },
+    {
+        "id": "duelist",
+        "name": "The Duelist",
+        "style": "Aggressive",
+        "description": "A rival who tries to end the duel before your Ambition stabilizes.",
+    },
+    {
+        "id": "oracle",
+        "name": "The Oracle",
+        "style": "Strategic",
+        "description": "A rival who prefers Focus, timing and Ambition pressure.",
+    },
+]
 
 
 def add_log(match, event_type, payload=None):
@@ -33,7 +54,9 @@ def _message_for_event(entry):
     if event_type == "match_start":
         return "Rebirth match initialized."
     if event_type == "round_start":
-        return f"Round {payload.get('round', entry.get('round'))} begins."
+        profile = payload.get("opponent_profile")
+        suffix = f" against {profile}" if profile else ""
+        return f"Round {payload.get('round', entry.get('round'))} begins{suffix}."
     if event_type == "draw":
         return f"{payload.get('side', 'A side').title()} draws {payload.get('count', 1)} card(s)."
     if event_type == "intent_selected":
@@ -85,8 +108,31 @@ def _cinematic(match, event_type, payload=None):
     return match["cinematic_event"]
 
 
-def start_rebirth_match(seed=None):
-    match = create_rebirth_match(seed=seed)
+def _select_bot_profile(seed=None, difficulty="normal"):
+    if difficulty == "easy":
+        return deepcopy(BOT_PROFILES[2])
+    if difficulty == "hard":
+        return deepcopy(BOT_PROFILES[1])
+    digest = hashlib.sha256(str(seed or "rebirth").encode("utf-8")).hexdigest()
+    return deepcopy(BOT_PROFILES[int(digest[:2], 16) % len(BOT_PROFILES)])
+
+
+def _metrics(match):
+    return match.setdefault(
+        "metrics",
+        {
+            "player_damage_dealt": 0,
+            "opponent_damage_dealt": 0,
+            "cards_activated": 0,
+            "player_intents": {},
+            "ambition_gained": 0,
+        },
+    )
+
+
+def start_rebirth_match(seed=None, deck_id=None, difficulty="normal"):
+    match = create_rebirth_match(seed=seed, deck_id=deck_id, difficulty=difficulty)
+    match["opponent_profile"] = _select_bot_profile(seed=seed, difficulty=match.get("difficulty", "normal"))
     add_log(match, "match_start", {"match_id": match["match_id"]})
     _cinematic(match, "MATCH_START", {"match_id": match["match_id"]})
     start_rebirth_round(match)
@@ -97,7 +143,15 @@ def start_rebirth_round(match):
     if match.get("is_finished"):
         return match
     match["phase"] = "START"
-    add_log(match, "round_start", {"round": match.get("round", 1)})
+    add_log(
+        match,
+        "round_start",
+        {
+            "round": match.get("round", 1),
+            "opponent_profile": match.get("opponent_profile", {}).get("name"),
+            "difficulty": match.get("difficulty"),
+        },
+    )
     _cinematic(match, "ROUND_START", {"round": match.get("round", 1)})
     if match.get("round", 1) > 1:
         match["phase"] = "DRAW"
@@ -117,6 +171,9 @@ def select_intent(match, side, intent):
     if intent_key not in VALID_REBIRTH_INTENTS:
         raise ValueError("Invalid Rebirth intent.")
     get_side(match, side)["selected_intent"] = intent_key
+    if side == "player":
+        intents = _metrics(match).setdefault("player_intents", {})
+        intents[intent_key] = int(intents.get(intent_key, 0) or 0) + 1
     match["phase"] = "ACTION"
     add_log(match, "intent_selected", {"side": side, "intent": intent_key})
     _cinematic(match, intent_key, {"side": side, "intent": intent_key})
@@ -129,6 +186,7 @@ def play_rebirth_card(match, side, card_id):
     side_state = get_side(match, side)
     previous = deepcopy(side_state.get("active_card")) if side_state.get("active_card") else None
     card = activate_card_from_hand(match, side, card_id)
+    _metrics(match)["cards_activated"] = int(_metrics(match).get("cards_activated", 0) or 0) + 1
     match["phase"] = "ACTION"
     if previous:
         add_log(
@@ -147,22 +205,60 @@ def play_rebirth_card(match, side, card_id):
     return card
 
 
+def _score_card_for_bot(match, card):
+    difficulty = match.get("difficulty", "normal")
+    profile = (match.get("opponent_profile") or {}).get("id")
+    attack = int(card.get("attack", 0) or 0)
+    guard = int(card.get("guard", 0) or 0)
+    ambition = int(card.get("ambition", 0) or 0)
+    if difficulty == "easy":
+        return ambition * 3 + attack + guard
+    if difficulty == "hard":
+        if match["player"].get("hp", 0) <= 10 or profile == "duelist":
+            return attack * 4 + ambition + guard
+        if match["opponent"].get("hp", 0) <= 12 or profile == "warden":
+            return guard * 4 + attack + ambition
+        return attack * 2 + guard * 2 + ambition * 2
+    if profile == "warden":
+        return guard * 3 + attack + ambition
+    if profile == "duelist":
+        return attack * 3 + guard + ambition
+    return ambition * 3 + attack + guard
+
+
 def _choose_bot_card(match):
     opponent = match["opponent"]
     if opponent.get("active_card") or not opponent.get("hand"):
         return None
     return sorted(
         opponent["hand"],
-        key=lambda card: (
-            int(card.get("attack", 0)) + int(card.get("guard", 0)) + int(card.get("ambition", 0)),
-            card.get("id", ""),
-        ),
+        key=lambda card: (_score_card_for_bot(match, card), card.get("id", "")),
         reverse=True,
     )[0]
 
 
 def _choose_bot_intent(match):
     opponent = match["opponent"]
+    profile = (match.get("opponent_profile") or {}).get("id")
+    difficulty = match.get("difficulty", "normal")
+    if difficulty == "easy":
+        if opponent.get("hp", 0) <= 8 and match.get("round", 1) % 2 == 0:
+            return "GUARD"
+        return "FOCUS"
+    if difficulty == "hard":
+        if match["player"].get("hp", 0) <= 10:
+            return "STRIKE"
+        if opponent.get("hp", 0) <= 12:
+            return "GUARD"
+        if opponent.get("ambition", 0) < 6 and profile == "oracle":
+            return "FOCUS"
+        return "STRIKE"
+    if profile == "warden" and (opponent.get("hp", 0) <= 16 or match.get("round", 1) % 3 == 0):
+        return "GUARD"
+    if profile == "duelist" and match["player"].get("hp", 0) <= 18:
+        return "STRIKE"
+    if profile == "oracle" and opponent.get("ambition", 0) < 6:
+        return "FOCUS"
     if opponent.get("hp", 0) <= 10:
         return "GUARD"
     if match["player"].get("hp", 0) <= 8:
@@ -203,6 +299,8 @@ def _apply_focus(match, side):
     side_state = match[side]
     if side_state.get("selected_intent") == "FOCUS":
         side_state["ambition"] = int(side_state.get("ambition", 0) or 0) + 2
+        if side == "player":
+            _metrics(match)["ambition_gained"] = int(_metrics(match).get("ambition_gained", 0) or 0) + 2
         add_log(match, "ambition_gained", {"side": side, "amount": 2, "total": side_state["ambition"]})
         _cinematic(match, "FOCUS", {"side": side, "amount": 2, "total": side_state["ambition"]})
 
@@ -210,6 +308,11 @@ def _apply_focus(match, side):
 def _deal_damage(match, source, target, amount):
     amount = max(0, int(amount or 0))
     match[target]["hp"] = max(0, int(match[target].get("hp", 0) or 0) - amount)
+    metrics = _metrics(match)
+    if source == "player":
+        metrics["player_damage_dealt"] = int(metrics.get("player_damage_dealt", 0) or 0) + amount
+    elif source == "opponent":
+        metrics["opponent_damage_dealt"] = int(metrics.get("opponent_damage_dealt", 0) or 0) + amount
     add_log(match, "damage_dealt", {"source": source, "target": target, "amount": amount, "target_hp": match[target]["hp"]})
     if amount > 0:
         _cinematic(match, "DAMAGE", {"source": source, "target": target, "amount": amount, "target_hp": match[target]["hp"]})
@@ -230,8 +333,52 @@ def _check_winner(match):
     match["winner"] = winner
     match["is_finished"] = True
     add_log(match, "match_finished", {"winner": winner})
+    match["match_summary"] = _build_match_summary(match)
+    match["reward_preview"] = _build_reward_preview(match)
     _cinematic(match, "KO", {"winner": winner})
     return winner
+
+
+def _favorite_intent(match):
+    intents = _metrics(match).get("player_intents", {})
+    if not intents:
+        return None
+    return sorted(intents.items(), key=lambda item: (item[1], item[0]), reverse=True)[0][0]
+
+
+def _build_match_summary(match):
+    metrics = _metrics(match)
+    winner = match.get("winner")
+    player_won = winner == "player"
+    return {
+        "winner": winner,
+        "rounds_played": int(match.get("round", 1) or 1),
+        "player_damage_dealt": int(metrics.get("player_damage_dealt", 0) or 0),
+        "opponent_damage_dealt": int(metrics.get("opponent_damage_dealt", 0) or 0),
+        "cards_activated": int(metrics.get("cards_activated", 0) or 0),
+        "favorite_intent": _favorite_intent(match),
+        "ambition_gained": int(metrics.get("ambition_gained", 0) or 0),
+        "result_title": "Ascension Achieved" if player_won else "Will Broken" if winner == "opponent" else "Mutual Break",
+        "result_message": "You broke the rival's line." if player_won else "The rival broke your intent. Rebuild and return." if winner == "opponent" else "Both wills collapsed in the same instant.",
+    }
+
+
+def _build_reward_preview(match):
+    summary = match.get("match_summary") or _build_match_summary(match)
+    rounds = int(summary.get("rounds_played", 1) or 1)
+    difficulty = match.get("difficulty", "normal")
+    difficulty_bonus = {"easy": 0.0, "normal": 0.1, "hard": 0.25}.get(difficulty, 0.1)
+    player_won = match.get("winner") == "player"
+    base_xp = (80 if player_won else 35) + rounds * (4 if player_won else 2)
+    base_gold = (45 if player_won else 15) + rounds * (3 if player_won else 1)
+    xp = int(base_xp * (1 + difficulty_bonus))
+    gold = int(base_gold * (1 + difficulty_bonus))
+    return {
+        "gold": gold,
+        "xp": xp,
+        "card_unlock_chance": "elevated" if player_won and difficulty == "hard" else "moderate" if player_won else "low",
+        "reason": "Alpha Preview reward; not persisted yet.",
+    }
 
 
 def _damage_to_apply(match, source, target):

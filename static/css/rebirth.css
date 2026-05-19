@@ -102,6 +102,7 @@ button {
 
 .rb-topbar,
 .rb-hero,
+.rb-deck-selector,
 .rb-onboarding,
 .rb-cinematic-banner,
 .rb-game-layout,
@@ -222,11 +223,14 @@ button {
 }
 
 .rb-pillar,
+.rb-deck-card,
+.rb-deck-selector,
 .rb-onboarding,
 .rb-side-panel,
 .rb-decision-panel,
 .rb-log-panel,
 .rb-hand-section,
+.rb-card-detail,
 .rb-winner-state {
     border: 1px solid var(--rb-line);
     border-radius: var(--rb-radius);
@@ -242,6 +246,76 @@ button {
     gap: 6px;
     min-height: 96px;
     padding: 14px;
+}
+
+.rb-deck-selector {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 12px;
+}
+
+.rb-deck-selector .rb-section-head {
+    margin-bottom: 0;
+}
+
+.rb-difficulty-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.rb-difficulty-selector .is-selected,
+.rb-button-ghost.is-selected {
+    color: #130b07;
+    border-color: transparent;
+    background: linear-gradient(180deg, #f4c875, var(--rb-gold));
+}
+
+.rb-deck-list {
+    display: grid;
+    gap: 10px;
+}
+
+.rb-deck-card {
+    display: grid;
+    gap: 8px;
+    min-height: 172px;
+    padding: 14px;
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.rb-deck-card:hover,
+.rb-deck-card.is-selected {
+    transform: translateY(-2px);
+    border-color: var(--rb-line-strong);
+    box-shadow: 0 0 0 1px rgba(229, 177, 91, 0.18), var(--rb-shadow-sm);
+}
+
+.rb-deck-card span,
+.rb-deck-card small,
+.rb-opponent-profile span,
+.rb-card-detail span,
+.rb-card-detail small,
+.rb-reward-preview span,
+.rb-summary-grid small {
+    color: var(--rb-gold);
+    text-transform: uppercase;
+    font-size: var(--rb-type-xs);
+}
+
+.rb-deck-card strong,
+.rb-card-detail strong,
+.rb-reward-preview strong {
+    color: var(--rb-text);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: var(--rb-type-lg);
+}
+
+.rb-deck-card p {
+    margin: 0;
+    color: var(--rb-muted);
 }
 
 .rb-onboarding {
@@ -323,6 +397,21 @@ button {
 .rb-side-panel h2 {
     margin: 0;
     font-size: clamp(1.25rem, 4vw, 2rem);
+}
+
+.rb-opponent-profile {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid rgba(116, 216, 255, 0.14);
+    border-radius: var(--rb-radius-sm);
+    background: rgba(116, 216, 255, 0.055);
+}
+
+.rb-opponent-profile small {
+    color: var(--rb-muted);
 }
 
 .rb-stat-row,
@@ -623,6 +712,44 @@ button.rb-hand-card.is-selected {
     grid-column: 1 / -1;
 }
 
+.rb-card-detail {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+}
+
+.rb-card-detail p,
+.rb-reward-preview p {
+    margin: 0;
+    color: var(--rb-muted);
+    line-height: 1.38;
+}
+
+.rb-card-detail-stats,
+.rb-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.rb-card-detail-stats b,
+.rb-summary-grid span {
+    min-height: 52px;
+    padding: 9px;
+    border: 1px solid rgba(229, 177, 91, 0.14);
+    border-radius: var(--rb-radius-sm);
+    background: rgba(2, 1, 5, 0.34);
+}
+
+.rb-summary-grid span {
+    display: grid;
+    gap: 3px;
+}
+
+.rb-summary-grid strong {
+    color: var(--rb-text);
+}
+
 .rb-button {
     min-height: 40px;
     padding: 10px 12px;
@@ -710,6 +837,15 @@ button.rb-hand-card.is-selected {
     padding: 14px;
 }
 
+.rb-reward-preview {
+    display: grid;
+    gap: 5px;
+    padding: 12px;
+    border: 1px solid rgba(156, 230, 188, 0.22);
+    border-radius: var(--rb-radius-sm);
+    background: rgba(156, 230, 188, 0.06);
+}
+
 .rb-winner-state[hidden] {
     display: none;
 }
@@ -779,6 +915,10 @@ button.rb-hand-card.is-selected {
 }
 
 @media (min-width: 1100px) {
+    .rb-deck-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .rb-game-layout {
         grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
         align-items: start;
@@ -823,6 +963,7 @@ button.rb-hand-card.is-selected {
 
 @media (max-width: 900px) {
     .rb-pillars,
+    .rb-deck-list,
     .rb-onboarding,
     .rb-onboarding ol,
     .rb-intents {
@@ -851,7 +992,9 @@ button.rb-hand-card.is-selected {
 
     .rb-topbar,
     .rb-side-head,
-    .rb-actions {
+    .rb-actions,
+    .rb-card-detail-stats,
+    .rb-summary-grid {
         grid-template-columns: 1fr;
     }
 

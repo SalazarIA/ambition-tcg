@@ -1059,6 +1059,141 @@ button {
     font-size: var(--ax-type-sm);
 }
 
+.rebirth-home .ax-shell::before {
+    background:
+        conic-gradient(from 32deg, transparent 0 12deg, rgba(216, 173, 98, 0.16) 13deg 15deg, transparent 16deg 80deg, rgba(112, 153, 150, 0.14) 81deg 83deg, transparent 84deg),
+        radial-gradient(circle, transparent 0 56%, rgba(216, 173, 98, 0.11) 57% 59%, transparent 60%);
+}
+
+.rebirth-home-hero {
+    min-height: clamp(500px, 76svh, 760px);
+    border-bottom: 1px solid rgba(216, 173, 98, 0.26);
+}
+
+.rebirth-home-copy h2 {
+    max-width: 840px;
+    margin: 8px 0;
+    color: var(--ax-bone);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: var(--ax-type-hero);
+    line-height: 0.92;
+}
+
+.rebirth-home-copy p {
+    max-width: 640px;
+    color: var(--ax-muted);
+    font-size: clamp(1rem, 2vw, 1.22rem);
+    line-height: 1.45;
+}
+
+.rebirth-home-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ax-space-3);
+    align-items: center;
+}
+
+.rebirth-home-cta a,
+.rebirth-home-cta button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    border: 1px solid var(--ax-line);
+    border-radius: var(--ax-radius);
+    color: var(--ax-bone);
+    background: rgba(8, 5, 8, 0.64);
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: var(--ax-type-sm);
+}
+
+.rebirth-home-cta .ax-primary-link {
+    color: #150b08;
+    border-color: transparent;
+    background: var(--ax-gold);
+}
+
+.rebirth-home-sigil::before,
+.rebirth-home-sigil::after,
+.rebirth-home-sigil i {
+    border-color: rgba(216, 173, 98, 0.22);
+}
+
+.rebirth-home .ax-home-proof {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.rebirth-section-copy {
+    grid-column: 1 / -1;
+}
+
+.rebirth-section-copy h2 {
+    margin: 6px 0 0;
+    color: var(--ax-bone);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.4rem, 4vw, 2.6rem);
+}
+
+.legacy-access {
+    border-color: rgba(216, 173, 98, 0.16);
+    opacity: 0.94;
+}
+
+.legacy-access-grid a {
+    border-color: rgba(216, 173, 98, 0.14);
+}
+
+.rebirth-home-footer {
+    border-top: 1px solid var(--ax-line);
+}
+
+.legacy-rebirth-banner {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    gap: var(--ax-space-3);
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 var(--ax-space-4);
+    padding: 12px 14px;
+    border: 1px solid rgba(216, 173, 98, 0.26);
+    border-radius: var(--ax-radius-lg);
+    color: var(--ax-bone);
+    background:
+        linear-gradient(135deg, rgba(216, 173, 98, 0.12), rgba(5, 3, 9, 0.82)),
+        var(--ax-panel-soft);
+    box-shadow: var(--ax-shadow-sm);
+}
+
+.legacy-rebirth-banner span {
+    color: var(--ax-gold);
+    text-transform: uppercase;
+    font-size: var(--ax-type-xs);
+}
+
+.legacy-rebirth-banner strong {
+    display: block;
+    color: var(--ax-bone);
+}
+
+.legacy-rebirth-banner p {
+    margin: 2px 0 0;
+    color: var(--ax-muted);
+}
+
+.legacy-rebirth-banner a {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    border-radius: var(--ax-radius);
+    color: #150b08;
+    background: var(--ax-gold);
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: var(--ax-type-sm);
+}
+
 .ax-home-sigil {
     position: relative;
     display: grid;

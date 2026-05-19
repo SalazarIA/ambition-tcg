@@ -7,6 +7,7 @@ Ambitionz Rebirth is an isolated product slice inside the existing repo. It does
 ```text
 services/rebirth/
     __init__.py
+    rebirth_decks.py
     rebirth_state.py
     rebirth_engine.py
     rebirth_payloads.py
@@ -23,19 +24,31 @@ tests/test_rebirth_engine.py
 tests/test_rebirth_routes.py
 tests/test_rebirth_payload_contract.py
 tests/test_rebirth_frontend_contract.py
+tests/test_rebirth_home_promotion.py
+tests/test_legacy_rebirth_bridge.py
 
 tools/qa/qa_rebirth_smoke.py
 tools/qa/qa_rebirth_browser_contract.py
+tools/qa/qa_rebirth_productization.py
 ```
 
 ## Boundaries
 
 - `rebirth_cards.py` owns the initial premium card catalog.
+- `rebirth_decks.py` owns Rebirth starter archetypes and deck metadata.
 - `rebirth_state.py` owns serializable match and player state.
 - `rebirth_engine.py` owns deterministic gameplay rules and bot decisions.
 - `rebirth_payloads.py` owns the public frontend contract and hides decks.
 - `rebirth.html`, `rebirth.css`, `rebirth.js` own the DOM product surface.
 - `rebirth_3d_adapter.js` owns the bridge to the future 3D scene.
+
+## Productization Additions
+
+- Deck selection: Ember Oath, Deepguard and Null Circuit.
+- Difficulty: Easy, Normal and Hard.
+- Bot profiles: The Warden, The Duelist and The Oracle.
+- End-state payloads: `match_summary` and `reward_preview`.
+- Legacy containment: `templates/_legacy_rebirth_banner.html` marks old beta surfaces without deleting them.
 
 ## Runtime Policy
 

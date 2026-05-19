@@ -5687,3 +5687,45 @@ body.az48-fantasy-v7 .az48-btn,
         inset 0 1px 0 rgba(255,255,255,0.16),
         0 10px 24px rgba(0,0,0,0.38) !important;
 }
+
+.legacy-rebirth-banner {
+    position: relative;
+    z-index: 40;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(229, 177, 91, 0.32);
+    border-radius: 14px;
+    color: #f7ead2;
+    background: linear-gradient(135deg, rgba(229, 177, 91, 0.14), rgba(5, 4, 10, 0.88));
+}
+
+.legacy-rebirth-banner span {
+    color: #e5b15b;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+}
+
+.legacy-rebirth-banner strong {
+    display: block;
+    color: #f7ead2;
+}
+
+.legacy-rebirth-banner p {
+    margin: 2px 0 0;
+    color: #b9a991;
+}
+
+.legacy-rebirth-banner a {
+    flex: 0 0 auto;
+    padding: 8px 11px;
+    border-radius: 10px;
+    color: #130b07;
+    background: #e5b15b;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+}

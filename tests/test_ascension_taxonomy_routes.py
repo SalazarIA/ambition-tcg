@@ -49,11 +49,10 @@ def test_ascension_collection_and_deck_routes_render_new_taxonomy(client):
     assert "pressure" in deck.get_data(as_text=True)
 
 
-def test_public_home_ctas_use_ascension_routes():
+def test_public_home_ctas_use_rebirth_first_routes():
     homepage = (PROJECT_ROOT / "templates" / "index.html").read_text()
 
-    assert "url_for('collection_ascension')" in homepage
-    assert "url_for('deck_builder_ascension')" in homepage
     assert "url_for('rebirth')" in homepage
-    assert "az-rebirth-bridge" in homepage
-    assert "Legacy Arena" in homepage
+    assert "Ambitionz Rebirth" in homepage
+    assert "Legacy Access" in homepage
+    assert "url_for('training_legacy')" in homepage

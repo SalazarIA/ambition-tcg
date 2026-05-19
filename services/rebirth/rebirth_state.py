@@ -2,10 +2,16 @@ from copy import deepcopy
 import hashlib
 import uuid
 
-from services.rebirth.rebirth_cards import build_rebirth_deck
+from services.rebirth.rebirth_decks import build_rebirth_deck, get_default_rebirth_deck_id
 
 
 VALID_SIDES = {"player", "opponent"}
+VALID_DIFFICULTIES = {"easy", "normal", "hard"}
+DIFFICULTY_LABELS = {
+    "easy": "Easy",
+    "normal": "Normal",
+    "hard": "Hard",
+}
 
 
 def _match_id(seed=None):
@@ -14,12 +20,22 @@ def _match_id(seed=None):
     return f"rebirth-{digest}"
 
 
-def create_rebirth_player(name, seed=None):
+def normalize_rebirth_difficulty(difficulty=None):
+    key = str(difficulty or "normal").lower()
+    if key not in VALID_DIFFICULTIES:
+        raise ValueError("Invalid Rebirth difficulty.")
+    return key
+
+
+def create_rebirth_player(name, seed=None, deck_id=None):
+    deck = build_rebirth_deck(deck_id or get_default_rebirth_deck_id(), seed=seed)
     return {
         "name": name,
         "hp": 32,
         "ambition": 0,
-        "deck": build_rebirth_deck(seed=seed),
+        "deck": deepcopy(deck["cards"]),
+        "deck_id": deck["id"],
+        "deck_name": deck["name"],
         "hand": [],
         "discard": [],
         "active_card": None,
@@ -44,9 +60,19 @@ def draw_starting_hand(player, hand_size=4):
     return drawn
 
 
-def create_rebirth_match(seed=None):
-    player = create_rebirth_player("Player", seed=f"{seed}:player")
-    opponent = create_rebirth_player("Rival", seed=f"{seed}:opponent")
+def _opponent_deck_id(player_deck_id):
+    if player_deck_id == "deepguard":
+        return "null_circuit"
+    if player_deck_id == "null_circuit":
+        return "ember_oath"
+    return "deepguard"
+
+
+def create_rebirth_match(seed=None, deck_id=None, difficulty="normal"):
+    selected_deck = build_rebirth_deck(deck_id or get_default_rebirth_deck_id(), seed=f"{seed}:preview")
+    difficulty_key = normalize_rebirth_difficulty(difficulty)
+    player = create_rebirth_player("Player", seed=f"{seed}:player", deck_id=selected_deck["id"])
+    opponent = create_rebirth_player("Rival", seed=f"{seed}:opponent", deck_id=_opponent_deck_id(selected_deck["id"]))
     draw_starting_hand(player)
     draw_starting_hand(opponent)
     return {
@@ -60,6 +86,20 @@ def create_rebirth_match(seed=None):
         "winner": None,
         "is_finished": False,
         "seed": seed,
+        "selected_deck_id": selected_deck["id"],
+        "selected_deck_name": selected_deck["name"],
+        "difficulty": difficulty_key,
+        "difficulty_label": DIFFICULTY_LABELS[difficulty_key],
+        "opponent_profile": None,
+        "metrics": {
+            "player_damage_dealt": 0,
+            "opponent_damage_dealt": 0,
+            "cards_activated": 0,
+            "player_intents": {},
+            "ambition_gained": 0,
+        },
+        "match_summary": None,
+        "reward_preview": None,
     }
 
 

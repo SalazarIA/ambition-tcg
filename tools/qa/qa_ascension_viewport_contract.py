@@ -38,10 +38,10 @@ def main():
     assert "data-ax-reachable-actions" in arena
     assert "ax-home-page" in home
     assert "ax-home-hero" in home
-    assert "Play Ascension Duel" in home
-    assert "az-rebirth-bridge" in home
+    assert "Ambitionz Rebirth" in home
+    assert "rebirth-home-hero" in home
     assert "url_for('rebirth')" in home
-    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v197"' in service_worker
     print("PASS ascension_viewport_contract")
 
 

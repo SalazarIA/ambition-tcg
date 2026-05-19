@@ -8,18 +8,15 @@ def read(path):
     return (PROJECT_ROOT / path).read_text(encoding="utf-8")
 
 
-def test_home_uses_ascension_shell_and_primary_ctas():
+def test_home_uses_rebirth_shell_and_primary_ctas():
     home = read("templates/index.html")
 
     assert "ax-home-page" in home
     assert "ax-product-shell" in home
-    assert "Play Ascension Duel" in home
-    assert "url_for('training')" in home
-    assert "url_for('collection_ascension')" in home
-    assert "url_for('deck_builder_ascension')" in home
+    assert "Ambitionz Rebirth" in home
     assert "url_for('rebirth')" in home
-    assert "az-rebirth-bridge" in home
-    assert "Legacy Arena" in home
+    assert "rebirth-home-hero" in home
+    assert "Legacy Access" in home
 
 
 def test_training_template_declares_viewport_contract():
@@ -59,7 +56,6 @@ def test_public_ascension_templates_do_not_link_legacy_as_primary_surface():
             "collection_ascension.html",
             "deck_builder_ascension.html",
             "ascension_history.html",
-            "roadmap.html",
             "tutorial.html",
         ]
     )
@@ -75,10 +71,10 @@ def test_home_and_public_routes_render_new_product_language(client):
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Ascension Duel" in body
+        assert "Ambitionz Rebirth" in body if path == "/" else "Ascension Duel" in body
         if path == "/":
-            assert "az-rebirth-bridge" in body
-            assert "Legacy Arena" in body
+            assert "Legacy Access" in body
+            assert 'href="/rebirth"' in body
         else:
             assert "/training-legacy" not in body
         assert "monster" not in body.lower()

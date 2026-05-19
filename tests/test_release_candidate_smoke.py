@@ -29,7 +29,7 @@ def test_service_worker_is_served_from_root_scope(client):
     assert response.status_code == 200
     assert response.headers["Service-Worker-Allowed"] == "/"
     assert "text/javascript" in response.content_type
-    assert "ambitionz-web-app-v196" in body
+    assert "ambitionz-web-app-v197" in body
 
 
 def test_tutorial_renders_narrative_onboarding(client):
@@ -52,18 +52,20 @@ def test_public_home_renders_product_entry_and_real_routes(client):
     body = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Ambitionz" in body
-    assert "Play Ascension Duel" in body
+    assert "Ambitionz Rebirth" in body
+    assert "One-card tactical duels built for cinematic 3D combat." in body
     assert "ambitionzgame.com" in body
+    assert 'href="/rebirth"' in body
+    assert "Legacy Access" in body
+    assert 'href="/training-legacy"' in body
     assert 'href="/training"' in body
-    assert 'href="/collection-ascension"' in body
-    assert 'href="/deck-builder-ascension"' in body
+    assert 'href="/collection"' in body
+    assert 'href="/deck-builder"' in body
     assert 'href="/roadmap"' in body
     assert 'href="/feedback"' in body
-    assert "Ascension Duel is a one-card psychological clash." in body
-    assert "First Read" in body
-    assert "First Session Questline" in body
-    assert "ambitionz_first_session_questline_dismissed_v1" in body
+    assert "Why Rebirth?" in body
+    assert "One active card" in body
+    assert "Intent-driven combat" in body
     assert 'href="/login"' in body
     assert 'href="/register"' in body
 

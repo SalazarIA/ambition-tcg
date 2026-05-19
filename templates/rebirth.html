@@ -24,7 +24,7 @@
                 <a class="rb-button rb-button-ghost" id="rb-rule-core-link" href="{{ url_for('how_to_play') }}">Rule Core</a>
                 <a class="rb-button rb-button-ghost" href="{{ url_for('training_legacy') }}">Legacy Arena</a>
             </nav>
-            <button class="rb-button rb-button-primary" type="button" id="rb-start-duel-button" data-rb-new-duel>Start New Duel</button>
+            <button class="rb-button rb-button-primary" type="button" id="rb-quick-duel-button" data-rb-quick-duel>Quick Duel</button>
         </header>
 
         <section class="rb-hero" aria-label="Ambitionz Rebirth product statement">
@@ -46,6 +46,23 @@
                     <strong>3D Arena Ready</strong>
                     <span>A clean adapter boundary waits for the real model.</span>
                 </article>
+            </div>
+        </section>
+
+        <section class="rb-deck-selector" id="rb-deck-selector" aria-label="Choose Rebirth deck">
+            <div class="rb-section-head">
+                <div>
+                    <span>Deck Selection</span>
+                    <strong>Choose your opening oath.</strong>
+                </div>
+                <div class="rb-difficulty-selector" id="rb-difficulty-selector" aria-label="Difficulty">
+                    <button class="rb-button rb-button-ghost" type="button" data-rb-difficulty="easy">Easy</button>
+                    <button class="rb-button rb-button-ghost is-selected" type="button" data-rb-difficulty="normal">Normal</button>
+                    <button class="rb-button rb-button-ghost" type="button" data-rb-difficulty="hard">Hard</button>
+                </div>
+            </div>
+            <div class="rb-deck-list" id="rb-deck-list">
+                <article class="rb-deck-card rb-empty-slot">Loading Rebirth decks...</article>
             </div>
         </section>
 
@@ -72,6 +89,10 @@
                     <div class="rb-side-head">
                         <span>Opponent</span>
                         <h2 id="rb-opponent-name">Rival</h2>
+                    </div>
+                    <div class="rb-opponent-profile" id="rb-opponent-profile">
+                        <span>Opponent: <strong id="rb-opponent-profile-name">Unknown</strong></span>
+                        <small>Style: <strong id="rb-opponent-profile-style">Veiled</strong></small>
                     </div>
                     <div class="rb-stat-row">
                         <span class="rb-stat-pill">HP <strong id="rb-opponent-hp">32</strong></span>
@@ -112,6 +133,8 @@
                     <span class="rb-stat-pill">Round <strong id="rb-round">1</strong></span>
                     <span class="rb-stat-pill">Phase <strong id="rb-phase">START</strong></span>
                     <span class="rb-stat-pill">Selected <strong id="rb-selected-intent">None</strong></span>
+                    <span class="rb-stat-pill">Deck <strong id="rb-selected-deck-name">Ember Oath</strong></span>
+                    <span class="rb-stat-pill">Difficulty <strong id="rb-difficulty-label">Normal</strong></span>
                     <span class="rb-stat-pill">Winner <strong id="rb-winner-label">None</strong></span>
                 </section>
 
@@ -139,13 +162,22 @@
                 <div class="rb-actions">
                     <button class="rb-button rb-button-primary" type="button" id="rb-resolve-button">Resolve Round</button>
                     <button class="rb-button rb-button-ghost" type="button" id="rb-new-match-button" data-rb-new-duel>New Duel</button>
+                    <button class="rb-button rb-button-ghost" type="button" data-rb-quick-duel>Quick Duel</button>
                     <button class="rb-button rb-button-ghost" type="button" id="rb-reset-tips">Reset Tips</button>
                 </div>
+
+                <section class="rb-card-detail" id="rb-card-detail" aria-label="Card detail">
+                    <span>Card Detail</span>
+                    <strong>Select a card</strong>
+                    <p>Inspect a card before activating it.</p>
+                </section>
 
                 <section class="rb-winner-state" id="rb-winner-state" hidden aria-live="polite">
                     <span>Match Complete</span>
                     <strong id="rb-winner-title">ASCENSION ACHIEVED</strong>
                     <p id="rb-winner-copy">You broke the opponent's will.</p>
+                    <div class="rb-summary-grid" id="rb-summary-list"></div>
+                    <div class="rb-reward-preview" id="rb-reward-preview"></div>
                     <button class="rb-button rb-button-primary" type="button" data-rb-new-duel>New Duel</button>
                 </section>
 
@@ -162,6 +194,7 @@
 
     <script>
         window.REBIRTH_CONFIG = {
+            decksUrl: "{{ url_for('api_rebirth_decks') }}",
             newUrl: "{{ url_for('api_rebirth_new') }}",
             intentUrl: "{{ url_for('api_rebirth_intent') }}",
             playCardUrl: "{{ url_for('api_rebirth_play_card') }}",

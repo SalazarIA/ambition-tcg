@@ -18,7 +18,7 @@ from app import app  # noqa: E402
 
 
 ROUTES = {
-    "/": ["Ambitionz", "Ascension Duel", "Champion progression"],
+    "/": ["Ambitionz Rebirth", "One-card tactical duels built for cinematic 3D combat.", "Legacy Access"],
     "/training": ["Ascension Duel", "Duel Altar", "Ambition Core"],
     "/collection-ascension": ["Ascension Collection", "Champion", "Technique"],
     "/deck-builder-ascension": ["Ascension Deck", "Champion", "Technique"],
@@ -42,8 +42,7 @@ def main():
         for token in required:
             assert token in body, f"{path} missing {token}"
         if path == "/":
-            assert "az-rebirth-bridge" in body, "/ missing Rebirth bridge"
-            assert "Legacy Arena" in body, "/ missing explicit legacy fallback label"
+            assert 'href="/rebirth"' in body, "/ missing Rebirth route"
         else:
             assert "/training-legacy" not in body, f"{path} exposes legacy as public route"
             assert "Legacy Arena" not in body, f"{path} presents legacy as product"

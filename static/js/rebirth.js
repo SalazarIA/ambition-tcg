@@ -2,6 +2,10 @@
     "use strict";
 
     const ONBOARDING_KEY = "ambitionz_rebirth_onboarding_seen";
+    const SELECTED_DECK_KEY = "ambitionz_rebirth_selected_deck";
+    const DIFFICULTY_KEY = "ambitionz_rebirth_difficulty";
+    const DEFAULT_DECK_ID = "ember_oath";
+    const DEFAULT_DIFFICULTY = "normal";
     const log3DMap = {
         match_start: "rebirth:match_start",
         intent_selected: "rebirth:intent_selected",
@@ -16,10 +20,14 @@
 
     const RB = {
         state: null,
+        decks: [],
         pending: false,
         loading: false,
         lastEventId: 0,
         selectedCardId: null,
+        selectedCardSource: null,
+        selectedDeckId: readStorage(SELECTED_DECK_KEY) || DEFAULT_DECK_ID,
+        difficulty: readStorage(DIFFICULTY_KEY) || DEFAULT_DIFFICULTY,
         errorTimer: null,
         config: window.REBIRTH_CONFIG || {},
 
@@ -44,11 +52,31 @@
                 .finally(() => this.setLoading(false));
         },
 
-        newMatch() {
+        loadDecks() {
+            if (!this.config.decksUrl) return Promise.resolve();
+            return this.api(this.config.decksUrl)
+                .then((payload) => {
+                    if (!payload || !payload.ok) throw new Error("Decks unavailable");
+                    this.decks = payload.decks || [];
+                    if (!this.decks.find((deck) => deck.id === this.selectedDeckId)) {
+                        this.selectedDeckId = this.decks[0] ? this.decks[0].id : DEFAULT_DECK_ID;
+                    }
+                    this.renderDecks();
+                    this.renderDifficulty();
+                })
+                .catch(() => this.showError("Could not load Rebirth decks."));
+        },
+
+        newMatch(deckId, difficulty) {
             this.lastEventId = 0;
             this.selectedCardId = null;
+            this.selectedCardSource = null;
+            const resolvedDeck = deckId || this.selectedDeckId || DEFAULT_DECK_ID;
+            const resolvedDifficulty = difficulty || this.difficulty || DEFAULT_DIFFICULTY;
+            this.persistDeckAndDifficulty(resolvedDeck, resolvedDifficulty);
+            const params = new URLSearchParams({ deck_id: resolvedDeck, difficulty: resolvedDifficulty });
             return this.request(
-                () => this.api(this.config.newUrl).then((payload) => this.applyPayload(payload, "rebirth:match_start")),
+                () => this.api(`${this.config.newUrl}?${params.toString()}`).then((payload) => this.applyPayload(payload, "rebirth:match_start")),
                 "Could not initialize Rebirth."
             );
         },
@@ -56,10 +84,44 @@
         restart() {
             this.lastEventId = 0;
             this.selectedCardId = null;
+            this.selectedCardSource = null;
             return this.request(
-                () => this.api(this.config.restartUrl, {}).then((payload) => this.applyPayload(payload, "rebirth:match_start")),
+                () => this.api(this.config.restartUrl, {
+                    deck_id: this.selectedDeckId || DEFAULT_DECK_ID,
+                    difficulty: this.difficulty || DEFAULT_DIFFICULTY
+                }).then((payload) => this.applyPayload(payload, "rebirth:match_start")),
                 "Could not restart Rebirth."
             );
+        },
+
+        quickDuel() {
+            return this.newMatch(DEFAULT_DECK_ID, DEFAULT_DIFFICULTY);
+        },
+
+        selectDeck(deckId) {
+            this.selectedDeckId = deckId || DEFAULT_DECK_ID;
+            writeStorage(SELECTED_DECK_KEY, this.selectedDeckId);
+            this.renderDecks();
+        },
+
+        startWithDeck(deckId) {
+            this.selectDeck(deckId);
+            return this.newMatch(deckId, this.difficulty);
+        },
+
+        setDifficulty(difficulty) {
+            this.difficulty = ["easy", "normal", "hard"].includes(difficulty) ? difficulty : DEFAULT_DIFFICULTY;
+            writeStorage(DIFFICULTY_KEY, this.difficulty);
+            this.renderDifficulty();
+        },
+
+        persistDeckAndDifficulty(deckId, difficulty) {
+            this.selectedDeckId = deckId;
+            this.difficulty = difficulty;
+            writeStorage(SELECTED_DECK_KEY, deckId);
+            writeStorage(DIFFICULTY_KEY, difficulty);
+            this.renderDecks();
+            this.renderDifficulty();
         },
 
         selectIntent(intent) {
@@ -71,10 +133,26 @@
             );
         },
 
+        selectCard(cardId, source) {
+            const card = this.findCard(cardId);
+            if (!card) return;
+            this.selectedCardId = cardId;
+            this.selectedCardSource = source || "detail";
+            this.renderHand();
+            this.bindActiveCardDetails();
+            this.renderCardDetail();
+        },
+
+        activateSelectedCard() {
+            if (!this.selectedCardId || this.selectedCardSource !== "hand") {
+                this.showError("Select a hand card before activating.");
+                return Promise.resolve();
+            }
+            return this.playCard(this.selectedCardId);
+        },
+
         playCard(cardId) {
             if (!this.state || this.state.is_finished || this.pending || !this.canPlayCard(cardId)) return Promise.resolve();
-            this.selectedCardId = cardId;
-            this.renderHand();
             return this.request(
                 () => this.api(this.config.playCardUrl, { match_id: this.state.match_id, card_id: cardId })
                     .then((payload) => this.applyPayload(payload, "rebirth:card_activated", { card_id: cardId, side: "player" })),
@@ -108,7 +186,11 @@
             }
 
             this.state = payload.state;
-            if (!this.handContains(this.selectedCardId)) this.selectedCardId = null;
+            this.persistDeckAndDifficulty(this.state.selected_deck_id || this.selectedDeckId, this.state.difficulty || this.difficulty);
+            if (!this.handContains(this.selectedCardId) && !(this.state.player && this.state.player.active_card && this.state.player.active_card.id === this.selectedCardId)) {
+                this.selectedCardId = null;
+                this.selectedCardSource = null;
+            }
             this.showError("");
             this.render();
             this.emitNew3DEvents(fallbackEventName, fallbackPayload || {});
@@ -138,6 +220,15 @@
             }
         },
 
+        findCard(cardId) {
+            if (!cardId || !this.state) return null;
+            const cards = []
+                .concat(this.state.hand || [])
+                .concat(this.state.player && this.state.player.active_card ? [this.state.player.active_card] : [])
+                .concat(this.state.opponent && this.state.opponent.active_card ? [this.state.opponent.active_card] : []);
+            return cards.find((card) => card && card.id === cardId) || null;
+        },
+
         handContains(cardId) {
             if (!cardId || !this.state) return false;
             return Boolean((this.state.hand || []).find((card) => card.id === cardId));
@@ -157,6 +248,7 @@
             if (!this.state) return;
             const player = this.state.player || {};
             const opponent = this.state.opponent || {};
+            const profile = this.state.opponent_profile || {};
 
             setText("rb-player-name", player.name || "Player");
             setText("rb-opponent-name", opponent.name || "Rival");
@@ -169,15 +261,54 @@
             setText("rb-round", this.state.round);
             setText("rb-phase", this.state.phase || "START");
             setText("rb-selected-intent", formatIntent(this.state.selected_intent || "None"));
+            setText("rb-selected-deck-name", this.state.selected_deck_name || "Ember Oath");
+            setText("rb-difficulty-label", this.state.difficulty_label || "Normal");
             setText("rb-winner-label", this.state.winner || "None");
+            setText("rb-opponent-profile-name", profile.name || "Unknown");
+            setText("rb-opponent-profile-style", profile.style || "Veiled");
 
             this.renderBanner();
-            this.replaceCard("rb-player-active", player.active_card);
-            this.replaceCard("rb-opponent-active", opponent.active_card);
+            this.replaceCard("rb-player-active", player.active_card, "player-active");
+            this.replaceCard("rb-opponent-active", opponent.active_card, "opponent-active");
             this.renderHand();
+            this.renderCardDetail();
             this.renderLog();
             this.renderButtons();
             this.renderWinner();
+        },
+
+        renderDecks() {
+            const host = document.getElementById("rb-deck-list");
+            if (!host) return;
+            if (!this.decks.length) {
+                host.innerHTML = '<article class="rb-deck-card rb-empty-slot">Loading Rebirth decks...</article>';
+                return;
+            }
+            host.innerHTML = this.decks.map((deck) => `
+                <article class="rb-deck-card ${deck.id === this.selectedDeckId ? "is-selected" : ""}" data-rb-deck="${escapeHtml(deck.id)}">
+                    <span>${escapeHtml(deck.difficulty)} · ${escapeHtml((deck.featured_elements || []).join(" / "))}</span>
+                    <strong>${escapeHtml(deck.name)}</strong>
+                    <p>${escapeHtml(deck.tagline)}</p>
+                    <small>${escapeHtml(deck.playstyle)} · ${number(deck.card_count)} cards</small>
+                    <button class="rb-button rb-button-primary" type="button" data-rb-start-deck="${escapeHtml(deck.id)}">Start with this deck</button>
+                </article>
+            `).join("");
+            host.querySelectorAll("[data-rb-deck]").forEach((card) => {
+                card.addEventListener("click", (event) => {
+                    if (event.target && event.target.matches("[data-rb-start-deck]")) return;
+                    this.selectDeck(card.getAttribute("data-rb-deck"));
+                });
+            });
+            host.querySelectorAll("[data-rb-start-deck]").forEach((button) => {
+                button.addEventListener("click", () => this.startWithDeck(button.getAttribute("data-rb-start-deck")));
+            });
+        },
+
+        renderDifficulty() {
+            document.querySelectorAll("[data-rb-difficulty]").forEach((button) => {
+                const difficulty = button.getAttribute("data-rb-difficulty");
+                button.classList.toggle("is-selected", difficulty === this.difficulty);
+            });
         },
 
         renderBanner() {
@@ -195,10 +326,11 @@
             banner.innerHTML = `<strong>${escapeHtml(event.title || event.type || "Arena Shift")}</strong><span>${escapeHtml(event.message || cinematicText(event))}</span>`;
         },
 
-        replaceCard(id, card) {
+        replaceCard(id, card, source) {
             const node = document.getElementById(id);
             if (!node) return;
-            node.outerHTML = this.renderCard(card, { active: true, id });
+            node.outerHTML = this.renderCard(card, { active: true, id, source });
+            this.bindActiveCardDetails();
         },
 
         renderCard(card, options) {
@@ -208,12 +340,15 @@
                 return `<div${idAttr} class="rb-active-card rb-empty-slot">No active card</div>`;
             }
             const tag = opts.button ? "button" : "article";
+            const isSelected = this.selectedCardId === card.id;
             const classes = [
                 opts.active ? "rb-active-card" : "rb-card rb-hand-card",
-                opts.button && this.selectedCardId === card.id ? "is-selected" : ""
+                isSelected ? "is-selected" : ""
             ].filter(Boolean).join(" ");
             const disabled = opts.button && (!this.canPlayCard(card.id) || this.pending) ? " disabled" : "";
-            const data = opts.button ? ` type="button" data-rb-card-id="${escapeHtml(card.id)}"${disabled}` : "";
+            const data = opts.button
+                ? ` type="button" data-rb-card-id="${escapeHtml(card.id)}"${disabled}`
+                : ` tabindex="0" data-rb-detail-card-id="${escapeHtml(card.id)}" data-rb-detail-source="${escapeHtml(opts.source || "active")}"`;
             return `
                 <${tag}${idAttr} class="${classes}"${data}>
                     <span class="rb-card-meta">${escapeHtml(card.element || "Unknown")} / ${escapeHtml(card.role || "Duelist")} / ${escapeHtml(card.rarity || "Common")}</span>
@@ -235,8 +370,45 @@
             }
             host.innerHTML = hand.map((card) => this.renderCard(card, { button: true })).join("");
             host.querySelectorAll("[data-rb-card-id]").forEach((button) => {
-                button.addEventListener("click", () => this.playCard(button.getAttribute("data-rb-card-id")));
+                button.addEventListener("click", () => this.selectCard(button.getAttribute("data-rb-card-id"), "hand"));
             });
+        },
+
+        bindActiveCardDetails() {
+            document.querySelectorAll("[data-rb-detail-card-id]").forEach((node) => {
+                node.addEventListener("click", () => this.selectCard(node.getAttribute("data-rb-detail-card-id"), node.getAttribute("data-rb-detail-source") || "active"));
+                node.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        this.selectCard(node.getAttribute("data-rb-detail-card-id"), node.getAttribute("data-rb-detail-source") || "active");
+                    }
+                });
+            });
+        },
+
+        renderCardDetail() {
+            const panel = document.getElementById("rb-card-detail");
+            if (!panel) return;
+            const card = this.findCard(this.selectedCardId);
+            if (!card) {
+                panel.innerHTML = "<span>Card Detail</span><strong>Select a card</strong><p>Inspect a card before activating it.</p>";
+                return;
+            }
+            const canActivate = this.selectedCardSource === "hand" && this.canPlayCard(card.id) && !this.state.is_finished;
+            panel.innerHTML = `
+                <span>${escapeHtml(card.rarity || "Common")} · ${escapeHtml(card.element || "Unknown")} · ${escapeHtml(card.role || "Duelist")}</span>
+                <strong>${escapeHtml(card.name || "Unnamed Card")}</strong>
+                <p>${escapeHtml(card.text || "")}</p>
+                <div class="rb-card-detail-stats">
+                    <b>Attack ${number(card.attack)}</b>
+                    <b>Guard ${number(card.guard)}</b>
+                    <b>Ambition ${number(card.ambition)}</b>
+                </div>
+                <small>Model ${escapeHtml(card.model_key || "none")} · FX ${escapeHtml(card.fx_key || "none")}</small>
+                ${canActivate ? '<button class="rb-button rb-button-primary" type="button" id="rb-activate-selected-card">Activate Card</button>' : ""}
+            `;
+            const activate = document.getElementById("rb-activate-selected-card");
+            if (activate) activate.addEventListener("click", () => this.activateSelectedCard());
         },
 
         renderLog() {
@@ -253,7 +425,7 @@
                 button.classList.toggle("is-selected", this.state.selected_intent === intent);
                 button.disabled = Boolean(this.state.is_finished || this.pending);
             });
-            document.querySelectorAll("[data-rb-new-duel]").forEach((button) => {
+            document.querySelectorAll("[data-rb-new-duel], [data-rb-quick-duel]").forEach((button) => {
                 button.disabled = Boolean(this.pending);
             });
             const resolve = document.getElementById("rb-resolve-button");
@@ -271,8 +443,28 @@
             panel.hidden = !this.state.is_finished;
             if (!this.state.is_finished) return;
             const playerWon = this.state.winner === "player";
+            const summary = this.state.match_summary || {};
+            const reward = this.state.reward_preview || {};
             setText("rb-winner-title", playerWon ? "ASCENSION ACHIEVED" : "WILL BROKEN");
             setText("rb-winner-copy", playerWon ? "You broke the opponent's will." : "Rebuild your intent and challenge again.");
+            const summaryNode = document.getElementById("rb-summary-list");
+            if (summaryNode) {
+                summaryNode.innerHTML = [
+                    ["Rounds", summary.rounds_played],
+                    ["Damage Dealt", summary.player_damage_dealt],
+                    ["Damage Taken", summary.opponent_damage_dealt],
+                    ["Favorite Intent", summary.favorite_intent || "None"],
+                    ["Ambition Gained", summary.ambition_gained]
+                ].map(([label, value]) => `<span><small>${escapeHtml(label)}</small><strong>${escapeHtml(value == null ? "0" : value)}</strong></span>`).join("");
+            }
+            const rewardNode = document.getElementById("rb-reward-preview");
+            if (rewardNode) {
+                rewardNode.innerHTML = `
+                    <span>Reward Preview · Alpha</span>
+                    <strong>+${number(reward.gold)} Gold · +${number(reward.xp)} XP</strong>
+                    <p>${escapeHtml(reward.reason || "Alpha Preview reward; not persisted yet.")}</p>
+                `;
+            }
         },
 
         emit3D(eventName, payload) {
@@ -327,6 +519,22 @@
         if (node) node.textContent = value == null ? "" : String(value);
     }
 
+    function readStorage(key) {
+        try {
+            return window.localStorage ? window.localStorage.getItem(key) : null;
+        } catch (_error) {
+            return null;
+        }
+    }
+
+    function writeStorage(key, value) {
+        try {
+            if (window.localStorage) window.localStorage.setItem(key, value);
+        } catch (_error) {
+            // Storage can be disabled in private contexts; Rebirth remains playable.
+        }
+    }
+
     function number(value) {
         return Number(value || 0);
     }
@@ -345,7 +553,7 @@
     function humanLog(entry) {
         const payload = entry.payload || {};
         const side = payload.side ? formatIntent(payload.side) : "";
-        if (entry.type === "round_start") return `Round ${payload.round || entry.round} started.`;
+        if (entry.type === "round_start") return `Round ${payload.round || entry.round} started${payload.opponent_profile ? ` against ${payload.opponent_profile}` : ""}.`;
         if (entry.type === "draw") return `${side || "A side"} drew ${payload.count || 1} card.`;
         if (entry.type === "intent_selected") return `${side || "A side"} chose ${formatIntent(payload.intent)}.`;
         if (entry.type === "card_activated") return `${payload.card_name || "A card"} entered the arena.`;
@@ -373,10 +581,16 @@
         document.querySelectorAll("[data-rb-intent]").forEach((button) => {
             button.addEventListener("click", () => RB.selectIntent(button.getAttribute("data-rb-intent")));
         });
+        document.querySelectorAll("[data-rb-difficulty]").forEach((button) => {
+            button.addEventListener("click", () => RB.setDifficulty(button.getAttribute("data-rb-difficulty")));
+        });
         const resolve = document.getElementById("rb-resolve-button");
         if (resolve) resolve.addEventListener("click", () => RB.resolve());
         document.querySelectorAll("[data-rb-new-duel]").forEach((button) => {
             button.addEventListener("click", () => RB.restart());
+        });
+        document.querySelectorAll("[data-rb-quick-duel]").forEach((button) => {
+            button.addEventListener("click", () => RB.quickDuel());
         });
         RB.initOnboarding();
     }
@@ -386,7 +600,7 @@
             window.Rebirth3D.init(document.getElementById("rebirth-3d-stage"));
         }
         bind();
-        RB.newMatch();
+        RB.loadDecks().finally(() => RB.newMatch());
     });
 
     window.RB = RB;

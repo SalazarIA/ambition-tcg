@@ -2,37 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ambitionz - Ascension Duel</title>
+    <title>Ambitionz Rebirth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#050309">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ambitionz">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Ambitionz is a public beta Ascension Duel built around one Champion, mind-game intent, Champion progression and the Ambition Core. No real-money payments are active.">
+    <meta name="description" content="Ambitionz Rebirth is a one-card tactical duel alpha built for cinematic 3D combat. Older beta surfaces remain available during migration.">
     <link rel="canonical" href="https://ambitionzgame.com/">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=194">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=197">
 </head>
-<body class="ax-body ax-home-page" data-retention-page="home">
-    <main class="ax-shell ax-product-shell ax-home-shell" data-ax-shell>
-        <header class="ax-topbar ax-product-nav" aria-label="Main navigation">
+<body class="ax-body ax-home-page rebirth-home" data-retention-page="home">
+    <main class="ax-shell ax-product-shell ax-home-shell rebirth-home-shell" data-ax-shell>
+        <header class="ax-topbar ax-product-nav rebirth-home-nav" aria-label="Main navigation">
             <a class="ax-brand" href="{{ url_for('index') }}" aria-current="page" aria-label="Ambitionz home">
                 <span>A</span>
                 <strong>Ambitionz</strong>
             </a>
             <div class="ax-title-block">
-                <h1>Ambitionz</h1>
-                <p>Ascension Duel public beta at ambitionzgame.com.</p>
+                <h1>Rebirth Alpha</h1>
+                <p>One-card tactical combat at ambitionzgame.com.</p>
             </div>
-            <nav class="ax-top-actions" aria-label="Ascension routes">
-                <a href="{{ url_for('training') }}" class="is-primary" data-retention-event="home_cta_play">Play</a>
-                <a href="{{ url_for('collection_ascension') }}">Collection</a>
-                <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
-                <a href="{{ url_for('ascension_history') }}">Chronicle</a>
+            <nav class="ax-top-actions" aria-label="Rebirth routes">
+                <a href="{{ url_for('rebirth') }}" class="is-primary" data-retention-event="home_cta_play">Enter Rebirth</a>
+                <a href="{{ url_for('training_legacy') }}">Legacy Arena</a>
                 <a href="{{ url_for('roadmap') }}">Roadmap</a>
-                <a href="{{ url_for('tutorial') }}">Tutorial</a>
                 {% if user %}
                     <a href="{{ url_for('profile') }}">Profile</a>
                 {% else %}
@@ -42,146 +39,94 @@
             </nav>
         </header>
 
-        <section class="az-rebirth-bridge" aria-label="Ambitionz Rebirth prototype">
-            <div>
-                <span class="ax-kicker">Ambitionz Rebirth is live</span>
-                <h2>One-card tactical duel prototype.</h2>
-                <p>
-                    Rebirth is the forward product lab: one active card, cleaner cinematic reads,
-                    and a dedicated 3D-ready arena contract beside the existing beta.
-                </p>
-            </div>
-            <div class="az-rebirth-bridge-actions">
-                <a class="ax-primary-link" href="{{ url_for('rebirth') }}">Enter Rebirth</a>
-                <a href="{{ url_for('training_legacy') }}" aria-label="Open legacy Arena fallback">Legacy Arena</a>
-            </div>
-        </section>
-
-        <section id="ax-home-hero" class="ax-home-hero" aria-label="Ambitionz Ascension Duel">
-            <div class="ax-home-sigil" aria-hidden="true">
-                <span>Champion</span>
+        <section id="ax-home-hero" class="ax-home-hero rebirth-home-hero" aria-label="Ambitionz Rebirth">
+            <div class="ax-home-sigil rebirth-home-sigil" aria-hidden="true">
+                <span>1 Active Card</span>
                 <i></i>
-                <b>Ambition Core</b>
+                <b>3D Ready</b>
             </div>
-            <div class="ax-home-copy">
-                <span class="ax-kicker">{{ beta_version }} · no real-money payments</span>
-                <h2>Ascension Duel is a one-card psychological clash.</h2>
-                <p>
-                    Command one active Champion, read the rival intent, bind Souls, prepare Schemes
-                    and push the Ambition Core toward Ascension or Domination.
-                </p>
-                <div class="ax-home-actions">
-                    <a class="ax-primary-link" href="{{ url_for('training') }}" data-retention-event="home_cta_play">Play Ascension Duel</a>
-                    <a href="{{ url_for('collection_ascension') }}">Collection</a>
-                    <a href="{{ url_for('deck_builder_ascension') }}">Deck Builder</a>
+            <div class="ax-home-copy rebirth-home-copy">
+                <span class="ax-kicker">Ambitionz Rebirth is live</span>
+                <h2>Ambitionz Rebirth</h2>
+                <p>One-card tactical duels built for cinematic 3D combat.</p>
+                <div class="rebirth-home-cta">
+                    <a class="ax-primary-link" href="{{ url_for('rebirth') }}" data-retention-event="home_cta_play">Enter Rebirth</a>
+                    <a href="{{ url_for('training_legacy') }}">View Legacy Arena</a>
                 </div>
             </div>
         </section>
 
-        <section class="ax-home-proof" aria-label="Ascension product pillars">
+        <section class="ax-home-proof" aria-label="Why Rebirth">
+            <div class="rebirth-section-copy">
+                <span class="ax-kicker">Why Rebirth?</span>
+                <h2>A cleaner Ambitionz core.</h2>
+            </div>
             <article>
                 <span>01</span>
-                <strong>One-card duel architecture</strong>
-                <p>No crowded table. Every Round turns on Champion pressure, one meaningful card purpose and the Mind Clash.</p>
+                <strong>One active card</strong>
+                <p>Each side commits to one readable active card instead of crowding the field.</p>
             </article>
             <article>
                 <span>02</span>
-                <strong>Champion progression</strong>
-                <p>Your active Champion, Bound Souls and rewards create a readable path from match result to next decision.</p>
+                <strong>Intent-driven combat</strong>
+                <p>Strike, Guard and Focus turn each round into a sharp tactical decision.</p>
             </article>
             <article>
                 <span>03</span>
-                <strong>Mind-game battle system</strong>
-                <p>Strike, Guard, Focus and Scheme produce a compact strategic loop that rewards timing and prediction.</p>
+                <strong>3D arena-ready architecture</strong>
+                <p>The DOM interface and future arena model communicate through a dedicated adapter.</p>
+            </article>
+            <article>
+                <span>04</span>
+                <strong>Fast tactical rounds</strong>
+                <p>Deck, difficulty, rival style and reward preview are built for quick alpha iteration.</p>
             </article>
         </section>
 
-        <section id="az-public-onboarding-v1" class="ax-panel ax-public-onboarding" data-public-onboarding aria-label="Public beta onboarding">
+        <section id="az-public-onboarding-v1" class="ax-panel ax-public-onboarding rebirth-alpha-read" data-public-onboarding aria-label="Rebirth alpha read">
             <div>
-                <span class="ax-kicker">First Read</span>
-                <h2>Learn the duel in six beats.</h2>
-                <p>Champion, Intent, one-card play, Commit, Dominate and Reward are the core verbs of Ascension Duel.</p>
+                <span class="ax-kicker">{{ beta_version }} · Alpha Preview</span>
+                <h2>Choose a deck, read the rival, resolve the round.</h2>
+                <p>Rebirth is the forward alpha. Rewards are preview-only until account persistence is connected.</p>
             </div>
-            <ol class="ax-steps">
-                <li><strong>Champion</strong><span>One active Champion anchors your Duel Altar.</span></li>
-                <li><strong>Intent</strong><span>Strike, Guard, Focus or Scheme sets the psychological line.</span></li>
-                <li><strong>One-card play</strong><span>Summon, bind, burn, equip, set, ascend, overrule or dominate.</span></li>
-                <li><strong>Commit</strong><span>Resolve the Round and read the Chronicle.</span></li>
-                <li><strong>Dominate</strong><span>Spend high Ambition for a risky finisher.</span></li>
-                <li><strong>Reward</strong><span>Earn XP, Gold and Champion progress in beta.</span></li>
-            </ol>
-            <div class="ax-home-actions">
-                <a class="ax-primary-link" href="{{ url_for('training') }}" data-retention-event="training_start_click">Start Training</a>
+            <div class="rebirth-home-cta">
+                <a class="ax-primary-link" href="{{ url_for('rebirth') }}" data-retention-event="training_start_click">Quick Duel</a>
                 <button type="button" data-public-onboarding-dismiss>Dismiss</button>
-                <a href="{{ url_for('tutorial') }}">Tutorial</a>
             </div>
         </section>
 
         <section
-            id="az-first-session-questline-v1"
-            class="ax-panel ax-first-session"
+            class="rebirth-compat-hooks"
             data-first-session-questline
-            data-dismiss-key="{{ first_session_questline.dismiss_key }}"
-            aria-label="First session questline"
-        >
+            data-dismiss-key="ambitionz_first_session_questline_dismissed_v1"
+            hidden
+            aria-hidden="true"
+        ></section>
+
+        <section id="az-beta-journey" class="ax-panel legacy-access" aria-label="Legacy Access">
             <div>
-                <span class="ax-kicker">First Session Questline</span>
-                <h2>{{ first_session_questline.title }}</h2>
-                <p>{{ first_session_questline.subtitle }}</p>
-                <div class="ax-meter">
-                    <span>{{ first_session_questline.completed }}/{{ first_session_questline.total }} complete</span>
-                    <strong>{{ first_session_questline.percent }}%</strong>
-                    <i><b style="width: {{ first_session_questline.percent }}%;"></b></i>
-                </div>
+                <span class="ax-kicker">Legacy Access</span>
+                <h2>Older beta surfaces remain available during migration.</h2>
+                <p>Use these only when validating compatibility, old economy flows or pre-Rebirth systems.</p>
             </div>
-            <div class="ax-route-grid">
-                {% for step in first_session_questline.steps %}
-                    <a
-                        href="{{ step.url }}"
-                        class="{% if step.complete %}is-complete{% elif first_session_questline.next_step.key == step.key %}is-next{% endif %}"
-                        data-quest-step="{{ step.key }}"
-                    >
-                        <span>{{ step.number }}</span>
-                        <strong>{{ step.title }}</strong>
-                        <small>{% if step.complete %}Done{% elif step.ready %}Commit{% else %}Next{% endif %}</small>
-                        <p>{{ step.description }}</p>
-                    </a>
-                {% endfor %}
-            </div>
-            <div class="ax-home-actions">
-                <a class="ax-primary-link" href="{{ first_session_questline.next_step.url }}">{{ first_session_questline.next_step.cta }}</a>
-                <button type="button" data-first-session-dismiss>Dismiss</button>
+            <div class="ax-route-grid legacy-access-grid">
+                <a href="{{ url_for('training') }}"><span>Beta</span><strong>Training</strong><p>Ascension beta training surface.</p></a>
+                <a href="{{ url_for('collection') }}"><span>Legacy</span><strong>Collection</strong><p>Original card inventory surface.</p></a>
+                <a href="{{ url_for('deck_builder') }}"><span>Legacy</span><strong>Deck Builder</strong><p>Old deck construction tools.</p></a>
+                <a href="{{ url_for('shop') }}"><span>Legacy</span><strong>Shop</strong><p>Gold-only beta economy surface.</p></a>
+                <a href="{{ url_for('roadmap') }}"><span>Docs</span><strong>Roadmap</strong><p>Migration notes and public direction.</p></a>
             </div>
         </section>
 
-        <section id="az-beta-journey" class="ax-panel ax-route-panel" aria-label="Ascension product routes">
-            <div>
-                <span class="ax-kicker">Public Beta Surface</span>
-                <h2>One coherent path through Ambitionz.</h2>
-                <p>Start in the Duel Altar, inspect Champions and Techniques, tune the Ascension Deck, then review the Chronicle.</p>
-            </div>
-            <div class="ax-route-grid">
-                <a href="{{ url_for('training') }}"><span>Duel</span><strong>Play Ascension Duel</strong><p>Enter the compact one-Champion clash.</p></a>
-                <a href="{{ url_for('collection_ascension') }}"><span>Collection</span><strong>Inspect cards</strong><p>Review Champions, Techniques, Relics, Schemes and Ascensions.</p></a>
-                <a href="{{ url_for('deck_builder_ascension') }}"><span>Deck</span><strong>Shape the rite</strong><p>Validate the 30-card beta structure and strategic posture.</p></a>
-                <a href="{{ url_for('ascension_history') }}"><span>Chronicle</span><strong>Read match history</strong><p>Track results, decisive cards and rewards.</p></a>
-                <a href="{{ url_for('roadmap') }}"><span>Roadmap</span><strong>See beta direction</strong><p>Follow shipped Ascension work and next tuning passes.</p></a>
-                <a href="{{ url_for('feedback') }}"><span>Feedback</span><strong>Report friction</strong><p>Send product, balance and UX notes from the beta.</p></a>
-                {% if user %}
-                    <a href="{{ url_for('profile') }}"><span>Profile</span><strong>{{ user.username }}</strong><p>Review XP, Gold and account progression.</p></a>
-                {% else %}
-                    <a href="{{ url_for('register') }}"><span>Access</span><strong>Create account</strong><p>Save progress when you are ready.</p></a>
-                {% endif %}
-            </div>
-        </section>
-
-        <footer class="ax-footer">
-            <span>Ambitionz Beta</span>
+        <footer class="ax-footer rebirth-home-footer">
+            <span>Ambitionz Rebirth Alpha</span>
             <nav>
-                <a href="{{ url_for('how_to_play') }}">Rules</a>
+                <a href="{{ url_for('rebirth') }}">Rebirth</a>
+                <a href="{{ url_for('tutorial') }}">Tutorial</a>
                 <a href="{{ url_for('support') }}">Support</a>
                 <a href="{{ url_for('privacy') }}">Privacy</a>
                 <a href="{{ url_for('terms') }}">Terms</a>
+                <a href="{{ url_for('feedback') }}">Feedback</a>
             </nav>
         </footer>
     </main>

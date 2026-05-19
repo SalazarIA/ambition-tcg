@@ -8,6 +8,8 @@ Each side has:
 
 - `hp`
 - `ambition`
+- `deck_id`
+- `deck_name`
 - `deck`
 - `hand`
 - `discard`
@@ -49,6 +51,24 @@ The first implementation starts with a four-card opening hand, then moves into I
 
 Ambition is the future ultimate resource. In this block, it exists as a real state value and UI contract so later ultimate/ascension rules can be added safely.
 
+## Deck Archetypes
+
+- Ember Oath: aggressive Fire/Light pressure.
+- Deepguard: defensive Water/Earth guard and sustain.
+- Null Circuit: technical Tech/Shadow Ambition control.
+
+## Difficulty
+
+- `easy`: bot over-prioritizes Focus and makes less efficient defensive reads.
+- `normal`: standard deterministic rival behavior with profile influence.
+- `hard`: bot presses lethal windows, guards at lower HP and chooses cards by situation.
+
+## Bot Profiles
+
+- The Warden: defensive and Guard-biased.
+- The Duelist: aggressive and Strike-biased.
+- The Oracle: strategic and Focus/Ambition-biased.
+
 ## Active Card Rule
 
 If a side has no `active_card`, it may activate a card from hand. If a side already has an `active_card`, playing another card replaces the current active card and moves the previous card to discard.
@@ -64,3 +84,10 @@ The alpha engine emits structured entries for `round_start`, `draw`, `intent_sel
 ## Win Condition
 
 Reduce the enemy HP to 0. When HP reaches 0 or lower, `winner` and `is_finished` are set.
+
+## Post-Match Alpha Payload
+
+Finished matches generate:
+
+- `match_summary`: winner, rounds, damage, cards activated, favorite intent and Ambition gained.
+- `reward_preview`: mock Gold, XP, card unlock chance and preview reason. This is not persisted yet.

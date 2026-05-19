@@ -21,6 +21,9 @@ def test_rebirth_match_starts_with_expected_state():
     assert match["player"]["active_card"] is None
     assert match["opponent"]["active_card"] is None
     assert match["phase"] == "INTENT"
+    assert match["selected_deck_id"] == "ember_oath"
+    assert match["difficulty"] == "normal"
+    assert match["opponent_profile"]["name"] in {"The Warden", "The Duelist", "The Oracle"}
 
 
 def test_rebirth_only_one_active_card_and_replacement_discards_old():
@@ -56,6 +59,18 @@ def test_rebirth_bot_selects_card_and_intent():
 
     assert match["opponent"]["active_card"] is not None
     assert match["opponent"]["selected_intent"] in {"STRIKE", "GUARD", "FOCUS"}
+
+
+def test_rebirth_difficulty_changes_bot_intent_bias():
+    easy = start_rebirth_match(seed="engine-difficulty", difficulty="easy")
+    hard = start_rebirth_match(seed="engine-difficulty", difficulty="hard")
+    hard["player"]["hp"] = 9
+
+    bot_select_action(easy)
+    bot_select_action(hard)
+
+    assert easy["opponent"]["selected_intent"] == "FOCUS"
+    assert hard["opponent"]["selected_intent"] == "STRIKE"
 
 
 def test_rebirth_strike_increases_damage():
@@ -152,3 +167,7 @@ def test_rebirth_match_finished_when_hp_reaches_zero():
     assert match["winner"] == "player"
     assert match["is_finished"] is True
     assert any(entry["type"] == "match_finished" for entry in match["combat_log"])
+    assert match["match_summary"]["winner"] == "player"
+    assert match["match_summary"]["player_damage_dealt"] > 0
+    assert match["reward_preview"]["xp"] > 0
+    assert match["reward_preview"]["gold"] > 0

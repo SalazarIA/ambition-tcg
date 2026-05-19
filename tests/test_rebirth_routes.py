@@ -21,6 +21,35 @@ def test_rebirth_new_api_returns_json(client):
     assert payload["ok"] is True
     assert payload["state"]["match_id"].startswith("rebirth-")
     assert payload["state"]["player"]["hp"] == 32
+    assert payload["state"]["selected_deck_id"] == "ember_oath"
+    assert payload["state"]["difficulty"] == "normal"
+
+
+def test_rebirth_deck_apis_return_catalog(client):
+    response = client.get("/api/rebirth/decks")
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert {deck["id"] for deck in payload["decks"]} == {"ember_oath", "deepguard", "null_circuit"}
+    assert all(deck["card_count"] >= 12 for deck in payload["decks"])
+
+    detail = client.get("/api/rebirth/decks/null_circuit")
+    body = detail.get_json()
+    assert detail.status_code == 200
+    assert body["deck"]["id"] == "null_circuit"
+    assert body["deck"]["cards"]
+
+
+def test_rebirth_new_accepts_deck_and_difficulty(client):
+    response = client.get("/api/rebirth/new?seed=routes-deck&deck_id=deepguard&difficulty=hard")
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["state"]["selected_deck_id"] == "deepguard"
+    assert payload["state"]["selected_deck_name"] == "Deepguard"
+    assert payload["state"]["difficulty"] == "hard"
+    assert payload["state"]["difficulty_label"] == "Hard"
 
 
 def test_rebirth_intent_play_and_resolve_flow(client):
@@ -62,11 +91,21 @@ def test_rebirth_invalid_intent_returns_400(client):
     assert response.status_code == 400
 
 
+def test_rebirth_invalid_deck_and_difficulty_return_400(client):
+    invalid_deck = client.get("/api/rebirth/new?deck_id=missing")
+    invalid_difficulty = client.get("/api/rebirth/new?difficulty=nightmare")
+
+    assert invalid_deck.status_code == 400
+    assert invalid_deck.get_json()["error"]["code"] == "invalid_rebirth_deck"
+    assert invalid_difficulty.status_code == 400
+    assert invalid_difficulty.get_json()["error"]["code"] == "invalid_rebirth_difficulty"
+
+
 def test_rebirth_assets_are_cached():
     service_worker = Path(__file__).resolve().parents[1] / "static" / "js" / "service-worker.js"
     body = service_worker.read_text()
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in body
+    assert 'CACHE_NAME = "ambitionz-web-app-v197"' in body
     assert '"/rebirth"' in body
     assert '"/static/css/rebirth.css"' in body
     assert '"/static/js/rebirth.js"' in body

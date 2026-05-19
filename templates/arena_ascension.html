@@ -21,6 +21,7 @@
     {% if campaign_context %}data-campaign-chapter-id="{{ campaign_context.chapter_id }}"{% endif %}
 >
     <main class="ax-shell ax-arena-shell ax-viewport-shell" data-ax-shell data-ax-viewport-contract>
+        {% include "_legacy_rebirth_banner.html" %}
         <header class="ax-topbar ax-compact-topbar">
             <a class="ax-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
                 <span>A</span>

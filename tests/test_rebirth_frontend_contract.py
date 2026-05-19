@@ -25,17 +25,21 @@ def test_rebirth_template_exposes_playable_contract_mounts():
         'class="rb-shell"',
         "rb-game-layout",
         "rb-decision-panel",
+        "rb-deck-selector",
+        "rb-card-detail",
         "rb-onboarding",
         "rb-winner-state",
         'id="rb-hand"',
         'id="rb-combat-log-list"',
         'id="rb-resolve-button"',
-        "Start New Duel",
+        "Quick Duel",
         "STRIKE",
         "GUARD",
         "FOCUS",
     ]:
         assert token in template
+
+    assert "Start with this deck" in read("static/js/rebirth.js")
 
 
 def test_rebirth_css_contains_cinematic_product_classes():
@@ -46,6 +50,9 @@ def test_rebirth_css_contains_cinematic_product_classes():
         ".rb-topbar",
         ".rb-alpha-badge",
         ".rb-hero",
+        ".rb-deck-selector",
+        ".rb-deck-card",
+        ".rb-difficulty-selector",
         ".rb-game-layout",
         ".rb-stage-wrap",
         ".rb-arena-orbit",
@@ -53,6 +60,9 @@ def test_rebirth_css_contains_cinematic_product_classes():
         ".rb-avatar-node",
         ".rb-fx-ring",
         ".rb-intent-card.is-selected",
+        ".rb-card-detail",
+        ".rb-summary-grid",
+        ".rb-reward-preview",
         ".rb-winner-state",
         "@media (min-width: 1100px)",
         "@media (max-width: 640px)",
@@ -68,6 +78,8 @@ def test_rebirth_js_uses_vanilla_fetch_and_3d_contract():
     assert "Socket.IO" not in js
     assert "az48" not in js
     assert "ambitionz_rebirth_onboarding_seen" in js
+    assert "ambitionz_rebirth_selected_deck" in js
+    assert "ambitionz_rebirth_difficulty" in js
     assert "rebirth:match_start" in js
     assert "rebirth:round_resolved" in js
     assert "window.Rebirth3D" in adapter

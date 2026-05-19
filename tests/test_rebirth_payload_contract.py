@@ -12,6 +12,11 @@ def test_public_rebirth_state_hides_decks_and_exposes_expected_keys():
         "round",
         "player",
         "opponent",
+        "selected_deck_id",
+        "selected_deck_name",
+        "difficulty",
+        "difficulty_label",
+        "opponent_profile",
         "active_card",
         "hand",
         "available_actions",
@@ -19,6 +24,8 @@ def test_public_rebirth_state_hides_decks_and_exposes_expected_keys():
         "combat_log",
         "cinematic_event",
         "ui_flags",
+        "match_summary",
+        "reward_preview",
         "winner",
         "is_finished",
     ]:
@@ -29,6 +36,9 @@ def test_public_rebirth_state_hides_decks_and_exposes_expected_keys():
     assert "deck" not in payload["opponent"]
     assert "hand" not in payload["opponent"]
     assert {"can_resolve", "can_play_card", "has_active_card", "has_selected_intent", "needs_active_card", "is_finished"} <= set(payload["ui_flags"])
+    assert payload["selected_deck_id"] == "ember_oath"
+    assert payload["difficulty"] == "normal"
+    assert payload["opponent_profile"]["name"].startswith("The ")
 
 
 def test_available_actions_is_stable_list():

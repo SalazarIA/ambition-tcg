@@ -30,6 +30,8 @@ def main():
         "static/js/rebirth.js",
         "static/js/rebirth_3d_adapter.js",
         "Ambitionz Rebirth",
+        "rb-deck-selector",
+        "Quick Duel",
         "STRIKE",
         "GUARD",
         "FOCUS",
@@ -50,6 +52,9 @@ def main():
         "player",
         "opponent",
         "available_actions",
+        "selected_deck_id",
+        "difficulty",
+        "opponent_profile",
         "is_finished",
     ]:
         assert key in state, f"Missing Rebirth state key: {key}"

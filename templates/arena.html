@@ -25,6 +25,7 @@
 
 <body class="az-clean-arena-v48 arena-page-v154 az48-arena-v6 az48-fantasy-v7 az48-mobile-safe-v7 {% if arena_renderer == '3d' %}az48-renderer-3d{% endif %}" data-page-kind="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-retention-page="{% if campaign_context %}campaign{% elif training_mode %}training{% else %}arena{% endif %}" data-arena-renderer="{{ arena_renderer|default('dom') }}"{% if campaign_context %} data-campaign-chapter-id="{{ campaign_context.chapter_id }}"{% endif %}>
     <main class="az48-arena az48-arena-v6 az48-game-shell az48-fantasy-board-v7 az48-neon-frame">
+        {% include "_legacy_rebirth_banner.html" %}
         <header class="az48-top az48-compact-hud az48-hud-plate-v7">
             <section class="az48-player az48-enemy az48-enemy-zone-v6 az48-arcane-glow az48-hero-plate-v7 az48-enemy-plate-v7" data-az48-target="enemy_hero">
                 <span class="az48-avatar-v6" aria-hidden="true">E</span>

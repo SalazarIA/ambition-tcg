@@ -9,6 +9,16 @@ The Rebirth frontend consumes a stable JSON payload from `/api/rebirth/*`.
   "match_id": "rebirth-...",
   "phase": "INTENT",
   "round": 1,
+  "selected_deck_id": "ember_oath",
+  "selected_deck_name": "Ember Oath",
+  "difficulty": "normal",
+  "difficulty_label": "Normal",
+  "opponent_profile": {
+    "id": "warden",
+    "name": "The Warden",
+    "style": "Defensive",
+    "description": "A defensive rival profile."
+  },
   "player": {
     "name": "Player",
     "hp": 32,
@@ -45,10 +55,19 @@ The Rebirth frontend consumes a stable JSON payload from `/api/rebirth/*`.
     "needs_active_card": true,
     "is_finished": false
   },
+  "match_summary": null,
+  "reward_preview": null,
   "winner": null,
   "is_finished": false
 }
 ```
+
+## Deck API
+
+- `GET /api/rebirth/decks` returns compact deck cards for selection UI.
+- `GET /api/rebirth/decks/<deck_id>` returns deck detail and compact cards.
+- `GET /api/rebirth/new?deck_id=ember_oath&difficulty=normal` starts a configured match.
+- `POST /api/rebirth/restart` accepts `deck_id` and `difficulty`.
 
 ## Rules
 
@@ -62,3 +81,9 @@ The Rebirth frontend consumes a stable JSON payload from `/api/rebirth/*`.
 ## Frontend Responsibilities
 
 The frontend renders the state, sends player actions through fetch, disables invalid buttons, and forwards cinematic events to `window.Rebirth3D`.
+
+It also owns local-only preferences for:
+
+- `ambitionz_rebirth_selected_deck`
+- `ambitionz_rebirth_difficulty`
+- `ambitionz_rebirth_onboarding_seen`

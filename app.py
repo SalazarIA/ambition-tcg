@@ -62,6 +62,7 @@ from services.rebirth.rebirth_engine import (
     select_intent as select_rebirth_intent,
     start_rebirth_match,
 )
+from services.rebirth.rebirth_decks import build_rebirth_deck as build_rebirth_named_deck, compact_rebirth_deck, list_rebirth_decks
 from services.rebirth.rebirth_payloads import public_rebirth_state
 from services.match_engine_facade import MatchEngineFacade
 from services.match_payloads import (
@@ -5222,11 +5223,32 @@ def rebirth():
     return render_template("rebirth.html", user=current_user())
 
 
+@app.route("/api/rebirth/decks", methods=["GET"])
+def api_rebirth_decks():
+    decks = [compact_rebirth_deck(deck) for deck in list_rebirth_decks()]
+    return jsonify({"ok": True, "decks": decks})
+
+
+@app.route("/api/rebirth/decks/<deck_id>", methods=["GET"])
+def api_rebirth_deck_detail(deck_id):
+    try:
+        deck = build_rebirth_named_deck(deck_id)
+        return jsonify({"ok": True, "deck": {**compact_rebirth_deck(deck), "cards": [card for card in deck["cards"]]}})
+    except ValueError as error:
+        return _rebirth_error(str(error), code="invalid_rebirth_deck")
+
+
 @app.route("/api/rebirth/new", methods=["GET"])
 def api_rebirth_new():
     seed = request.args.get("seed") or secrets.token_hex(6)
-    match = _store_rebirth_match(start_rebirth_match(seed=seed))
-    return _rebirth_response(match)
+    deck_id = request.args.get("deck_id")
+    difficulty = request.args.get("difficulty") or "normal"
+    try:
+        match = _store_rebirth_match(start_rebirth_match(seed=seed, deck_id=deck_id, difficulty=difficulty))
+        return _rebirth_response(match)
+    except ValueError as error:
+        code = "invalid_rebirth_difficulty" if "difficulty" in str(error).lower() else "invalid_rebirth_deck"
+        return _rebirth_error(str(error), code=code)
 
 
 @app.route("/api/rebirth/intent", methods=["POST"])
@@ -5277,8 +5299,18 @@ def api_rebirth_resolve():
 def api_rebirth_restart():
     payload = _rebirth_request_payload()
     seed = payload.get("seed") or secrets.token_hex(6)
-    match = _store_rebirth_match(start_rebirth_match(seed=seed))
-    return _rebirth_response(match)
+    try:
+        match = _store_rebirth_match(
+            start_rebirth_match(
+                seed=seed,
+                deck_id=payload.get("deck_id"),
+                difficulty=payload.get("difficulty") or "normal",
+            )
+        )
+        return _rebirth_response(match)
+    except ValueError as error:
+        code = "invalid_rebirth_difficulty" if "difficulty" in str(error).lower() else "invalid_rebirth_deck"
+        return _rebirth_error(str(error), code=code)
 
 
 
