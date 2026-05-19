@@ -13,6 +13,11 @@ REQUIRED_CARD_FIELDS = {
     "guard",
     "element",
     "art",
+    "art_key",
+    "art_status",
+    "art_version",
+    "palette",
+    "silhouette",
 }
 
 
