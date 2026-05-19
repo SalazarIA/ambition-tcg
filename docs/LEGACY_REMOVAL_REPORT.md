@@ -1,16 +1,26 @@
 # Legacy Removal Report
 
-## Removed From Active Product
+## Official Decision
 
-The active Flask app no longer imports or initializes:
+Ambitionz Rebirth is the only active runtime product.
 
-- Arena routes.
-- BE2 or old battle engines.
-- Socket.io handlers.
-- SQLAlchemy models.
-- Economy, shop, collection, deck builder, missions, ranking or progression services.
-- Old templates, CSS or JavaScript.
-- Ascension/Rebirth hybrid intents, 3D adapters or HP 32 combat.
+The pre-Rebirth Arena, Ascension, BE2, SocketIO, SQLAlchemy/database-backed
+account systems, economy, progression, shop, collection and old deck builder are
+retired from the active Flask app. They remain in the repository only as
+historical implementation context.
+
+Do not restore retired routes, APIs or services to make old tests pass. Future
+work should migrate useful ideas into Rebirth-native contracts instead.
+
+## Active Product Surface
+
+- `GET /`
+- `GET /rebirth`
+- `GET /health`
+- `POST /api/rebirth/start`
+- `POST /api/rebirth/play-card`
+- `POST /api/rebirth/evolve`
+- `POST /api/rebirth/next-turn`
 
 ## Redirected Legacy Browser Routes
 
@@ -33,6 +43,8 @@ The following retired browser routes redirect to `/rebirth`:
 - `/economy`
 - `/match-history`
 
+Unknown non-API browser routes also redirect to `/rebirth`.
+
 ## Disabled Legacy API Routes
 
 The following legacy API groups return JSON `410 legacy_disabled`:
@@ -41,8 +53,26 @@ The following legacy API groups return JSON `410 legacy_disabled`:
 - `/api/beta/*`
 - `/api/booster/*`
 
+Unknown API routes return JSON `404 not_found`.
+
+## Test Archive Policy
+
+The authoritative test suite is `tests/rebirth` and is selected through
+`pytest.ini`.
+
+Historical tests that target retired systems have been moved to
+`tests/legacy_disabled`. That directory contains a README and collection guard
+so the repository is explicit about why those tests are outside the default
+release gate.
+
+This is intentional release hygiene, not a hidden failure. Those tests assert
+pre-Rebirth behavior that the product decision has retired.
+
 ## Legacy Files Still Present But Inert
 
-Old files remain in the repository history and working tree for auditability, but the active product does not import them. They are not loaded by the home or Rebirth game templates.
+Old modules, templates, CSS, JavaScript and QA scripts remain in the working
+tree for auditability. The active Rebirth templates do not load old Arena,
+Ascension, economy, progression, shop or deck-builder assets.
 
-The active test configuration in `pytest.ini` limits `pytest -q` to the Rebirth MVP tests. Old tests are no longer authoritative for the active product.
+Reports and QA screenshots can be large and should not be edited or deleted as
+part of release hygiene unless a dedicated cleanup task explicitly asks for it.

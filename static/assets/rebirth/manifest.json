@@ -1,19 +1,24 @@
 {
   "product": "Ambitionz Rebirth",
-  "version": "rebirth-004",
+  "version": "rebirth-005",
   "ui": {
     "bot_card_back": "/static/assets/rebirth/ui/bot-card-back.png",
     "bot_emblem": "/static/assets/rebirth/ui/bot-emblem.png"
   },
   "cards": {
     "dreadclaw": "/static/assets/rebirth/cards/dreadclaw-art.png",
-    "stoneshell": "/static/assets/rebirth/cards/stoneshell.svg",
-    "shadewisp": "/static/assets/rebirth/cards/shadewisp.svg",
-    "skywarden": "/static/assets/rebirth/cards/skywarden.svg",
-    "ironbastion": "/static/assets/rebirth/cards/ironbastion.svg",
-    "embermaw": "/static/assets/rebirth/cards/embermaw.svg",
-    "voidstalker": "/static/assets/rebirth/cards/voidstalker.svg",
-    "nightfang": "/static/assets/rebirth/cards/nightfang.svg"
+    "dreadmaw": "/static/assets/rebirth/cards/dreadmaw-art.png",
+    "stoneshell": "/static/assets/rebirth/cards/stoneshell-art.png",
+    "stonewarden": "/static/assets/rebirth/cards/stonewarden-art.png",
+    "shadewisp": "/static/assets/rebirth/cards/shadewisp-art.png",
+    "skywarden": "/static/assets/rebirth/cards/skywarden-art.png",
+    "stormwarden": "/static/assets/rebirth/cards/stormwarden-art.png",
+    "ironbastion": "/static/assets/rebirth/cards/ironbastion-art.png",
+    "ironbulwark": "/static/assets/rebirth/cards/ironbulwark-art.png",
+    "embermaw": "/static/assets/rebirth/cards/embermaw-art.png",
+    "embermaw_alpha": "/static/assets/rebirth/cards/embermaw-alpha-art.png",
+    "voidstalker": "/static/assets/rebirth/cards/voidstalker-art.png",
+    "nightfang": "/static/assets/rebirth/cards/nightfang-art.png"
   },
   "fallbacks": {
     "card_art": "/static/assets/rebirth/cards/dreadclaw-art.png"

@@ -16,7 +16,24 @@ from services.rebirth_serializers import public_state
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "ambitionz-rebirth-dev")
 
-REBIRTH_MATCHES = MATCH_STORE.raw()
+REBIRTH_MATCHES = MATCH_STORE
+
+CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data:",
+        "font-src 'self' data:",
+        "connect-src 'self'",
+        "manifest-src 'self'",
+        "worker-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ]
+)
 
 
 def json_error(message, code="malformed_request", status=400):
@@ -46,6 +63,16 @@ def request_json(required=False):
     if not isinstance(payload, dict):
         raise RebirthError("Request body must be a JSON object.", "malformed_request")
     return payload
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    response.headers.setdefault("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+    return response
 
 
 @app.get("/")
@@ -78,6 +105,7 @@ def service_worker():
         mimetype="application/javascript",
     )
     response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
     return response
 
 

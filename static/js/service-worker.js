@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-rebirth-single-screen-v4";
+const CACHE_NAME = "ambitionz-rebirth-release-hygiene-v6";
 
 const CORE_ASSETS = [
     "/",
@@ -10,13 +10,18 @@ const CORE_ASSETS = [
     "/static/js/pwa.js",
     "/static/assets/rebirth/manifest.json",
     "/static/assets/rebirth/cards/dreadclaw-art.png",
-    "/static/assets/rebirth/cards/stoneshell.svg",
-    "/static/assets/rebirth/cards/shadewisp.svg",
-    "/static/assets/rebirth/cards/skywarden.svg",
-    "/static/assets/rebirth/cards/ironbastion.svg",
-    "/static/assets/rebirth/cards/embermaw.svg",
-    "/static/assets/rebirth/cards/voidstalker.svg",
-    "/static/assets/rebirth/cards/nightfang.svg",
+    "/static/assets/rebirth/cards/dreadmaw-art.png",
+    "/static/assets/rebirth/cards/stoneshell-art.png",
+    "/static/assets/rebirth/cards/stonewarden-art.png",
+    "/static/assets/rebirth/cards/shadewisp-art.png",
+    "/static/assets/rebirth/cards/skywarden-art.png",
+    "/static/assets/rebirth/cards/stormwarden-art.png",
+    "/static/assets/rebirth/cards/ironbastion-art.png",
+    "/static/assets/rebirth/cards/ironbulwark-art.png",
+    "/static/assets/rebirth/cards/embermaw-art.png",
+    "/static/assets/rebirth/cards/embermaw-alpha-art.png",
+    "/static/assets/rebirth/cards/voidstalker-art.png",
+    "/static/assets/rebirth/cards/nightfang-art.png",
     "/static/assets/rebirth/ui/bot-card-back.png",
     "/static/assets/rebirth/ui/bot-emblem.png",
     "/static/icons/icon.svg",

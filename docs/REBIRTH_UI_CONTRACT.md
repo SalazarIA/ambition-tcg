@@ -1,89 +1,83 @@
 # Rebirth UI Contract
 
-The Rebirth frontend consumes a stable JSON payload from `/api/rebirth/*`.
+The active Rebirth frontend consumes JSON from the current `/api/rebirth/*`
+endpoints only. Older deck, intent, resolve, restart and 3D adapter contracts
+are historical and are not active runtime APIs.
 
 ## Public State Shape
 
 ```json
 {
   "match_id": "rebirth-...",
-  "phase": "INTENT",
-  "round": 1,
-  "selected_deck_id": "ember_oath",
-  "selected_deck_name": "Ember Oath",
-  "difficulty": "normal",
-  "difficulty_label": "Normal",
-  "opponent_profile": {
-    "id": "warden",
-    "name": "The Warden",
-    "style": "Defensive",
-    "description": "A defensive rival profile."
-  },
+  "architecture": "Ambitionz Rebirth",
+  "turn": 1,
+  "phase": "choose",
   "player": {
-    "name": "Player",
-    "hp": 32,
-    "ambition": 0,
-    "active_card": null,
-    "hand": [],
-    "selected_intent": null
+    "name": "You",
+    "hp": 30,
+    "max_hp": 30,
+    "deck_count": 11,
+    "discard_count": 0,
+    "played_card": null,
+    "wounded": false,
+    "hand": []
   },
-  "opponent": {
-    "name": "Opponent",
-    "hp": 32,
-    "ambition": 0,
-    "active_card": null,
-    "selected_intent": null
+  "bot": {
+    "name": "Bot",
+    "hp": 30,
+    "max_hp": 30,
+    "deck_count": 11,
+    "discard_count": 0,
+    "played_card": null,
+    "wounded": false,
+    "hand_count": 5
   },
-  "active_card": null,
-  "hand": [],
-  "available_actions": [],
-  "selected_intent": null,
-  "combat_log": [],
-  "cinematic_event": {
-    "type": "DAMAGE",
-    "title": "Damage Lands",
-    "message": "Opponent takes 6 damage.",
-    "intensity": "high",
-    "payload": {},
-    "round": 1
-  },
-  "ui_flags": {
-    "can_resolve": false,
-    "can_play_card": true,
-    "has_active_card": false,
-    "has_selected_intent": false,
-    "needs_active_card": true,
-    "is_finished": false
-  },
-  "match_summary": null,
-  "reward_preview": null,
+  "available_evolutions": [],
+  "last_clash": null,
+  "result": null,
   "winner": null,
-  "is_finished": false
+  "is_finished": false,
+  "log": []
 }
 ```
 
-## Deck API
+## Active API
 
-- `GET /api/rebirth/decks` returns compact deck cards for selection UI.
-- `GET /api/rebirth/decks/<deck_id>` returns deck detail and compact cards.
-- `GET /api/rebirth/new?deck_id=ember_oath&difficulty=normal` starts a configured match.
-- `POST /api/rebirth/restart` accepts `deck_id` and `difficulty`.
+- `POST /api/rebirth/start` starts an in-memory match.
+- `POST /api/rebirth/play-card` resolves the chosen player card against the
+  bot response.
+- `POST /api/rebirth/evolve` combines two matching base monsters into one
+  evolved card when available.
+- `POST /api/rebirth/next-turn` advances from `result` to `choose`.
+
+## Retired API
+
+The following former Rebirth productization endpoints are not active:
+
+- `/api/rebirth/decks`
+- `/api/rebirth/decks/<deck_id>`
+- `/api/rebirth/new`
+- `/api/rebirth/intent`
+- `/api/rebirth/resolve`
+- `/api/rebirth/restart`
+
+Do not recreate them unless a future Rebirth-native feature explicitly needs
+them.
 
 ## Rules
 
-- Decks are never sent to the browser.
+- Deck lists are never sent to the browser.
 - Player hand is public to the player.
-- Opponent hand and deck are hidden.
-- `combat_log` returns the latest 12 entries.
-- Cards use `compact_card`.
-- `available_actions` is a list of stable action dictionaries.
+- Bot hand is hidden and represented by `hand_count`.
+- `log` returns the latest entries needed by the current UI.
+- Cards must include art metadata: `art`, `art_key`, `art_status`,
+  `art_version`, `palette` and `silhouette`.
+- Expected player/request mistakes return JSON errors, not 500s.
 
 ## Frontend Responsibilities
 
-The frontend renders the state, sends player actions through fetch, disables invalid buttons, and forwards cinematic events to `window.Rebirth3D`.
+The frontend renders server state, sends player actions through fetch, disables
+invalid buttons, preloads active Rebirth art and keeps `/rebirth` locked as a
+single-screen board.
 
-It also owns local-only preferences for:
-
-- `ambitionz_rebirth_selected_deck`
-- `ambitionz_rebirth_difficulty`
-- `ambitionz_rebirth_onboarding_seen`
+The frontend does not compute gameplay outcomes.

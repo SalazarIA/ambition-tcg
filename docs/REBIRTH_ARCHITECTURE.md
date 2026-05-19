@@ -9,6 +9,7 @@ app.py
 
 services/rebirth_contracts.py
 services/rebirth_cards.py
+services/rebirth_art.py
 services/rebirth_bot.py
 services/rebirth_state.py
 services/rebirth_serializers.py
@@ -27,13 +28,10 @@ static/assets/rebirth/manifest.json
 static/assets/rebirth/cards/*
 static/assets/rebirth/ui/*
 
-tests/test_rebirth_engine.py
-tests/test_rebirth_routes.py
-tests/test_rebirth_frontend_contract.py
-tests/test_rebirth_home_promotion.py
+tests/rebirth/*
 ```
 
-The older `services/rebirth/` package is not part of the active Flask route or `/rebirth` product runtime. It remains repository history/legacy context only.
+The older `services/rebirth/` package is not part of the active Flask route or `/rebirth` product runtime. It remains repository history/legacy context only. Historical tests for retired systems live under `tests/legacy_disabled`.
 
 ## Backend Boundaries
 
@@ -41,6 +39,7 @@ The older `services/rebirth/` package is not part of the active Flask route or `
 - `services/rebirth_contracts.py` owns phase constants, stable error codes and `RebirthError`.
 - `services/rebirth_match_store.py` owns the active in-memory match store.
 - `services/rebirth_cards.py` owns card catalog, lookup, deck construction and card instances.
+- `services/rebirth_art.py` owns active card-art metadata, palette data and art paths.
 - `services/rebirth_bot.py` owns bot response selection.
 - `services/rebirth_state.py` owns match creation, draw helpers, hand/discard mutation and phase-neutral state helpers.
 - `services/rebirth_engine.py` owns pure game rules: play card, compare attack, calculate damage, evolve duplicate, finish match and next turn.
@@ -128,6 +127,20 @@ Stable expected error codes:
 
 Expected player mistakes return JSON and do not return 500.
 
+## Security Boundary
+
+`app.py` adds minimum security headers on every response:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- a pragmatic CSP using local sources, with `unsafe-inline` only because the
+  current templates and card rendering still use inline bootstrap data and
+  inline styles.
+
+`/service-worker.js` is served from the app root with `Service-Worker-Allowed: /`.
+
 ## Frontend Runtime
 
 `static/js/rebirth.js` is deliberately framework-free and split into internal modules:
@@ -166,17 +179,34 @@ static/assets/rebirth/manifest.json
 Primary active assets:
 
 - `/static/assets/rebirth/cards/dreadclaw-art.png`
+- `/static/assets/rebirth/cards/dreadmaw-art.png`
+- `/static/assets/rebirth/cards/stoneshell-art.png`
+- `/static/assets/rebirth/cards/stonewarden-art.png`
+- `/static/assets/rebirth/cards/shadewisp-art.png`
+- `/static/assets/rebirth/cards/skywarden-art.png`
+- `/static/assets/rebirth/cards/stormwarden-art.png`
+- `/static/assets/rebirth/cards/ironbastion-art.png`
+- `/static/assets/rebirth/cards/ironbulwark-art.png`
+- `/static/assets/rebirth/cards/embermaw-art.png`
+- `/static/assets/rebirth/cards/embermaw-alpha-art.png`
+- `/static/assets/rebirth/cards/voidstalker-art.png`
+- `/static/assets/rebirth/cards/nightfang-art.png`
 - `/static/assets/rebirth/ui/bot-card-back.png`
 - `/static/assets/rebirth/ui/bot-emblem.png`
-- `/static/assets/rebirth/cards/stoneshell.svg`
-- `/static/assets/rebirth/cards/shadewisp.svg`
-- `/static/assets/rebirth/cards/skywarden.svg`
-- `/static/assets/rebirth/cards/ironbastion.svg`
-- `/static/assets/rebirth/cards/embermaw.svg`
-- `/static/assets/rebirth/cards/voidstalker.svg`
-- `/static/assets/rebirth/cards/nightfang.svg`
 
-The service worker cache is versioned as `ambitionz-rebirth-single-screen-v4` and lists only active Rebirth assets plus app shell essentials.
+The service worker cache is versioned as `ambitionz-rebirth-release-hygiene-v6` and lists only active Rebirth assets plus app shell essentials.
+
+## Match Store
+
+`services/rebirth_match_store.py` is intentionally in-memory for the MVP. It now
+uses:
+
+- TTL expiry, default `3600` seconds;
+- max-entry trimming, default `512` matches;
+- defensive cleanup on save/get/len/raw;
+- basic locking around store operations for threaded Gunicorn.
+
+It does not persist match history and does not introduce a database.
 
 ## Active Page Policy
 
@@ -184,6 +214,7 @@ The service worker cache is versioned as `ambitionz-rebirth-single-screen-v4` an
 - `/rebirth` is the playable single-screen game and must not scroll.
 - Legacy product routes redirect to `/rebirth` or return a safe retired API response.
 - Active Rebirth pages do not load old Arena, BE2, Ascension, collection, progression, shop or economy CSS/JS.
+- Historical tests are archived under `tests/legacy_disabled` and are not the active release gate.
 
 ## Validation Gates
 
@@ -193,6 +224,8 @@ Mandatory commands:
 python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py
 python3 -m pytest -q
 node --check static/js/rebirth.js
+node --check static/js/service-worker.js
+node --check static/js/pwa.js
 ```
 
 Rendered QA must verify:

@@ -14,13 +14,17 @@ This map documents old Ambitionz areas that are intentionally isolated from the 
 - `templates/arena*.html`, `templates/collection*.html`, `templates/deck_builder*.html`, `templates/shop.html`, `templates/missions.html`, `templates/progression.html`, `templates/ranking.html`, `templates/leaderboard.html`: old UI surfaces.
 - `static/css/ambitionz_*.css`, `static/css/arena*.css`, `static/css/style.css`: old visual system.
 - `static/js/ambitionz_*.js`, `static/js/arena*.js`, `static/js/deck_builder*.js`, `static/js/booster_opening.js`: old client systems.
-- `tests/test_ascension*.py`, `tests/test_battle*.py`, `tests/test_socket*.py`, `tests/test_matchmaking*.py`, `tests/test_legacy*.py`: old product tests.
+- `tests/legacy_disabled/`: old product tests preserved outside the active release gate.
 
 ## Active Rebirth Files
 
 - `app.py`
+- `services/rebirth_contracts.py`
 - `services/rebirth_cards.py`
+- `services/rebirth_art.py`
 - `services/rebirth_state.py`
+- `services/rebirth_serializers.py`
+- `services/rebirth_match_store.py`
 - `services/rebirth_bot.py`
 - `services/rebirth_engine.py`
 - `templates/index.html`
@@ -30,5 +34,4 @@ This map documents old Ambitionz areas that are intentionally isolated from the 
 - `static/js/pwa.js`
 - `static/js/service-worker.js`
 - `static/manifest.webmanifest`
-- `tests/test_rebirth_engine.py`
-- `tests/test_rebirth_routes.py`
+- `tests/rebirth/*`

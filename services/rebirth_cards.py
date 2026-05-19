@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+from services.rebirth_art import attach_art_profile
+
 
 def _card(
     card_id,
@@ -17,7 +19,7 @@ def _card(
     art,
 ):
     art_file = art if "." in art else f"{art}.svg"
-    return {
+    card = {
         "id": card_id,
         "name": name,
         "family": family,
@@ -33,6 +35,7 @@ def _card(
         "flavor": flavor,
         "art": f"/static/assets/rebirth/cards/{art_file}",
     }
+    return attach_art_profile(card)
 
 
 BASE_MONSTERS = [

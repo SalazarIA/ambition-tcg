@@ -2,66 +2,73 @@
 
 ## Rebirth Canonical Surface
 
+- `/`
 - `/rebirth`
-- `/api/rebirth/new`
-- `/api/rebirth/decks`
-- `/api/rebirth/decks/<deck_id>`
-- `/api/rebirth/intent`
+- `/health`
+- `/api/rebirth/start`
 - `/api/rebirth/play-card`
-- `/api/rebirth/resolve`
-- `/api/rebirth/restart`
-- `services/rebirth/*`
+- `/api/rebirth/evolve`
+- `/api/rebirth/next-turn`
+- `services/rebirth_contracts.py`
+- `services/rebirth_cards.py`
+- `services/rebirth_art.py`
+- `services/rebirth_bot.py`
+- `services/rebirth_state.py`
+- `services/rebirth_serializers.py`
+- `services/rebirth_match_store.py`
+- `services/rebirth_engine.py`
+- `templates/index.html`
 - `templates/rebirth.html`
 - `static/css/rebirth.css`
 - `static/js/rebirth.js`
-- `static/js/rebirth_3d_adapter.js`
-- `static/assets/rebirth3d/*`
+- `static/js/pwa.js`
+- `static/js/service-worker.js`
+- `static/assets/rebirth/*`
+- `tests/rebirth/*`
 
-## Legacy Surface
+## Retired Browser Surface
 
-Routes found in `app.py` that remain compatibility or older beta surfaces:
+These routes are retired in runtime and redirect to `/rebirth`:
 
-- `/training` - Ascension beta training surface, now visually bridged to Rebirth.
-- `/training-legacy` - old lane Arena fallback.
-- `/arena` - authenticated old Arena route.
-- `/collection` - original inventory collection surface.
-- `/deck-builder` - original deck builder.
-- `/shop` - gold-only beta shop.
-- `/daily`
+- `/training`
+- `/training-legacy`
+- `/arena`
+- `/collection`
+- `/deck-builder`
+- `/shop`
+- `/ranking`
+- `/leaderboard`
 - `/missions`
 - `/progression`
-- `/roadmap` - public status page, now includes Rebirth migration bridge.
-- `/tutorial` - Ascension tutorial surface.
 - `/campaign`
-- `/match-history`
+- `/tutorial`
+- `/how-to-play`
 - `/inventory`
 - `/economy`
+- `/match-history`
 
-## Shared Surface
+## Retired API Surface
 
-- `app.py`
-- `templates/index.html`
-- `templates/_legacy_rebirth_banner.html`
-- `static/js/service-worker.js`
-- `static/css/style.css`
-- `static/css/ambitionz_ascension.css`
-- `static/css/arena_clean_v48.css`
-- global release/smoke tests in `tests/`
-- QA scripts in `tools/qa/`
+These API groups are retired in runtime and return `410 legacy_disabled`:
+
+- `/api/ascension/*`
+- `/api/beta/*`
+- `/api/booster/*`
+
+## Historical Code
+
+Files for Arena, Ascension, BE2, SocketIO, SQLAlchemy/database-backed systems,
+economy, shop, collection, progression and old deck builder remain in the
+repository for reference. They are not active release targets.
+
+Historical tests are stored under `tests/legacy_disabled`.
 
 ## Cleanup Rule
 
-- Rebirth does not import legacy Arena JS/CSS.
-- Rebirth does not use `az48` classes.
-- Rebirth does not use old Socket.IO gameplay.
-- Legacy files and routes are not removed until usage and migration are proven.
-- Home prioritizes Rebirth.
-- Old beta links are grouped under Legacy Access.
-- Existing useful features should be migrated into Rebirth before retiring legacy surfaces.
-
-## Current Cleanup Risk Notes
-
-- `/arena` is authenticated and can redirect for anonymous users.
-- `/collection`, `/deck-builder` and `/shop` may depend on account/economy state.
-- `app.py` remains shared by Rebirth, Ascension and old Arena, so route edits must stay defensive.
-- Service worker cache still carries legacy assets for offline fallback and compatibility.
+- Do not re-enable retired systems to satisfy old tests.
+- Do not import legacy Arena/Ascension CSS or JavaScript into `/` or `/rebirth`.
+- Do not add SocketIO, SQLAlchemy, economy or account persistence back into the
+  active runtime without a new explicit product decision.
+- Migrate useful retired ideas into Rebirth-native APIs, tests and docs.
+- Keep reports and large local QA artifacts untouched unless a dedicated cleanup
+  task asks for them.

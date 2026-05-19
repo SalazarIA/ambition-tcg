@@ -1,170 +1,162 @@
 # Rebirth Release Status
 
-## Checklist
+## Official Product State
 
-- [x] Block 141 docs
-- [x] Block 142 services
-- [x] Block 143 route
-- [x] Block 144 frontend template
-- [x] Block 145 premium CSS
-- [x] Block 146 frontend JS
-- [x] Block 147 3D adapter
-- [x] Block 148 tests
-- [x] Block 149 QA smoke
-- [x] Block 150 service worker/cache
-- [x] Block 151 validation
-- [x] Block 152 final status
-- [x] Block 153 browser contract QA
-- [x] Block 154 premium product shell
-- [x] Block 155 cinematic CSS hardening
-- [x] Block 156 frontend UX hardening
-- [x] Block 157 advanced 3D placeholder adapter
-- [x] Block 158 engine game feel V1
-- [x] Block 159 embedded onboarding
-- [x] Block 160 premium end states
-- [x] Block 161 home bridge to Rebirth
-- [x] Block 162 product migration docs
-- [x] Block 163 frontend contract tests
-- [x] Block 164 expanded engine tests
-- [x] Block 165 QA smoke V2
-- [x] Block 166 service worker cache bump
-- [x] Block 167 release status update
-- [x] Block 171 legacy cleanup map
-- [x] Block 172 Rebirth-first home
-- [x] Block 173 Rebirth deck selection backend
-- [x] Block 174 Rebirth deck APIs
-- [x] Block 175 deck selection UI
-- [x] Block 176 difficulty V1
-- [x] Block 177 bot personalities V1
-- [x] Block 178 match summary V1
-- [x] Block 179 reward mock V1
-- [x] Block 180 premium card detail
-- [x] Block 181 quick duel mode
-- [x] Block 182 legacy nav lowered
-- [x] Block 183 route promotion plan
-- [x] Block 184 home and legacy cleanup tests
-- [x] Block 185 productization QA
-- [x] Block 186 service worker cache bump
-- [x] Block 187 docs status
+Ambitionz Rebirth is the only active Ambitionz runtime product.
 
-## Files Created
+The active product is a Flask-served, vanilla frontend, single-screen monster
+duel MVP. The old Arena, Ascension, BE2, SocketIO, economy, progression, shop,
+collection and deck builder systems are retired from runtime and must not be
+restored just to satisfy historical tests.
 
-- `tests/test_rebirth_frontend_contract.py`
-- `tests/test_rebirth_home_promotion.py`
-- `tests/test_legacy_rebirth_bridge.py`
-- `tools/qa/qa_rebirth_browser_contract.py`
-- `tools/qa/qa_rebirth_productization.py`
-- `services/rebirth/rebirth_decks.py`
-- `docs/LEGACY_CLEANUP_MAP.md`
-- `docs/REBIRTH_ALPHA_ROADMAP.md`
-- `templates/_legacy_rebirth_banner.html`
+## Active Runtime
 
-## Files Changed
-
-- `docs/REBIRTH_PRODUCT_RESET.md`
-- `docs/REBIRTH_ARCHITECTURE.md`
-- `docs/REBIRTH_GAMEPLAY_CORE.md`
-- `docs/REBIRTH_UI_CONTRACT.md`
-- `docs/REBIRTH_3D_MODEL_CONTRACT.md`
-- `docs/REBIRTH_RELEASE_STATUS.md`
-- `docs/LEGACY_CLEANUP_MAP.md`
-- `docs/REBIRTH_ALPHA_ROADMAP.md`
-- `services/rebirth/rebirth_cards.py`
-- `services/rebirth/rebirth_decks.py`
-- `services/rebirth/rebirth_state.py`
-- `services/rebirth/rebirth_engine.py`
-- `services/rebirth/rebirth_payloads.py`
-- `templates/rebirth.html`
+- `app.py`
+- `services/rebirth_contracts.py`
+- `services/rebirth_cards.py`
+- `services/rebirth_art.py`
+- `services/rebirth_bot.py`
+- `services/rebirth_state.py`
+- `services/rebirth_serializers.py`
+- `services/rebirth_match_store.py`
+- `services/rebirth_engine.py`
 - `templates/index.html`
-- `templates/_legacy_rebirth_banner.html`
-- `templates/arena.html`
-- `templates/arena_ascension.html`
-- `templates/collection.html`
-- `templates/deck_builder.html`
-- `templates/shop.html`
-- `templates/roadmap.html`
+- `templates/rebirth.html`
 - `static/css/rebirth.css`
-- `static/css/ambitionz_ascension.css`
-- `static/css/style.css`
-- `static/css/arena_clean_v48.css`
 - `static/js/rebirth.js`
-- `static/js/rebirth_3d_adapter.js`
+- `static/js/pwa.js`
 - `static/js/service-worker.js`
-- `static/assets/rebirth3d/manifest.json`
-- `tests/test_rebirth_engine.py`
-- `tests/test_rebirth_payload_contract.py`
-- `tests/test_rebirth_routes.py`
-- `tests/test_rebirth_home_promotion.py`
-- `tests/test_legacy_rebirth_bridge.py`
-- `tests/test_ascension_visual_architecture.py`
-- `tests/test_ascension_taxonomy_routes.py`
-- `tests/test_frontend_structure.py`
-- `tests/test_release_candidate_smoke.py`
-- `tests/test_ascension_frontend_structure.py`
-- `tools/qa/qa_rebirth_smoke.py`
-- `tools/qa/qa_rebirth_browser_contract.py`
-- `tools/qa/qa_rebirth_productization.py`
-- `tools/qa/qa_ascension_viewport_contract.py`
-- `tools/qa/qa_ascension_frontend_contract.py`
-- `tools/qa/qa_ascension_product_surface.py`
-- `docs/RC_V8_1_VISUAL_ARCHITECTURE_STATUS.md`
-- `docs/ASCENSION_MIGRATION_REPORT.md`
+- `static/manifest.webmanifest`
+- `static/assets/rebirth/manifest.json`
+- `static/assets/rebirth/cards/*-art.png`
+- `static/assets/rebirth/ui/*`
 
-## Routes
+## Active Browser Routes
 
+- `GET /`
 - `GET /rebirth`
-- `GET /api/rebirth/decks`
-- `GET /api/rebirth/decks/<deck_id>`
-- `GET /api/rebirth/new`
-- `POST /api/rebirth/intent`
+- `GET /health`
+- `GET /manifest.webmanifest`
+- `GET /service-worker.js`
+
+Retired browser routes redirect to `/rebirth`; examples include `/arena`,
+`/training`, `/training-legacy`, `/collection`, `/deck-builder`, `/shop`,
+`/ranking`, `/leaderboard`, `/missions`, `/progression`, `/campaign`,
+`/tutorial`, `/how-to-play`, `/inventory`, `/economy` and `/match-history`.
+
+## Active APIs
+
+- `POST /api/rebirth/start`
 - `POST /api/rebirth/play-card`
-- `POST /api/rebirth/resolve`
-- `POST /api/rebirth/restart`
+- `POST /api/rebirth/evolve`
+- `POST /api/rebirth/next-turn`
 
-Legacy routes remain intact, including `/training-legacy` and `/arena`.
+Retired API groups return JSON `410 legacy_disabled`:
 
-## Current Product Notes
+- `/api/ascension/*`
+- `/api/beta/*`
+- `/api/booster/*`
 
-- `/rebirth` now presents a premium product shell with topbar, hero, pillars, decision panel, compact log, embedded onboarding and winner state.
-- Home is now Rebirth-first with Legacy Access grouped below the main product CTA.
-- Rebirth has starter deck archetypes: Ember Oath, Deepguard and Null Circuit.
-- Rebirth supports Easy, Normal and Hard difficulty.
-- Rival profiles now include The Warden, The Duelist and The Oracle.
-- Finished matches expose `match_summary` and `reward_preview`.
-- Card detail now requires explicit activation instead of accidental hand-card play.
-- Quick Duel starts the default deck on Normal.
-- Legacy beta surfaces now show a Rebirth migration banner where safe.
-- Rebirth gameplay remains one active card per side.
-- HP starts at 32.
-- STRIKE adds 2 pressure, GUARD absorbs 3 pressure, FOCUS grants 2 Ambition and adds 1 pressure when Ambition reaches 6.
-- Starter damage is capped at 10.
-- The frontend uses fetch only, not Socket.IO.
-- The 3D adapter remains DOM-based but now owns scene depth, arena orbit, energy core, avatar nodes, active card frame, FX ring and particles.
-- The home page now includes a clear Rebirth bridge while preserving Ascension and legacy fallback routes.
+## Tests
 
-## Validation
+The authoritative suite is `tests/rebirth`.
 
-- `python3 -m py_compile app.py services/rebirth/__init__.py services/rebirth/rebirth_cards.py services/rebirth/rebirth_decks.py services/rebirth/rebirth_state.py services/rebirth/rebirth_engine.py services/rebirth/rebirth_payloads.py tools/qa/qa_rebirth_smoke.py tools/qa/qa_rebirth_browser_contract.py tools/qa/qa_rebirth_productization.py`
-- `python3 -m pytest -q tests/test_rebirth_engine.py tests/test_rebirth_payload_contract.py tests/test_rebirth_routes.py tests/test_rebirth_frontend_contract.py tests/test_rebirth_home_promotion.py tests/test_legacy_rebirth_bridge.py`
-- `python3 tools/qa/qa_rebirth_smoke.py`
-- `python3 tools/qa/qa_rebirth_browser_contract.py`
-- `python3 tools/qa/qa_rebirth_productization.py`
-- `node --check static/js/rebirth.js`
-- `node --check static/js/rebirth_3d_adapter.js`
-- `python3 -m pytest -q`
+`pytest.ini` uses `testpaths = tests/rebirth` so `python3 -m pytest -q` runs the
+active Rebirth product suite. Historical tests for the retired pre-Rebirth
+product are preserved under `tests/legacy_disabled` with a README and collection
+guard explaining why they are not part of the release gate.
 
-Current result: targeted Rebirth productization tests pass with `32 passed, 1 warning`; smoke prints `REBIRTH_SMOKE_V2_OK`; browser contract prints `REBIRTH_BROWSER_CONTRACT_OK`; productization QA prints `REBIRTH_PRODUCTIZATION_OK`; JS checks pass; full suite passes with `242 passed, 1 warning`.
+Current Rebirth suite coverage includes:
 
-## Pending
+- Rebirth route smoke
+- Rebirth JSON API start/evolve/play/next-turn contracts
+- retired browser route redirect behavior
+- retired API `410 legacy_disabled` behavior
+- frontend template/CSS/JS/service-worker asset contract
+- security headers on public surfaces
+- in-memory match store save/get/expiry/cleanup/max-limit behavior
 
-- Three.js/GLB arena implementation is not built yet.
-- Real multiplayer is not implemented yet.
-- Database persistence for Rebirth match history is not implemented yet.
-- Manual visual QA on physical mobile devices is still recommended.
+Current local result for this block:
 
-## Next Recommended Blocks
+```text
+36 passed
+```
 
-- Build the first real Three.js arena behind `Rebirth3D`.
-- Add Rebirth balance simulations and card tuning.
-- Add Rebirth match persistence after the state contract stabilizes.
-- Add screenshot-based desktop/mobile visual QA for `/rebirth`.
+Do not reuse old historical counts such as `242 passed`; they described a
+different product surface.
+
+## Security Headers
+
+The Flask app applies minimum headers to all responses:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- a pragmatic local-only CSP compatible with current inline template styles and
+  bootstrap data.
+
+`/service-worker.js` also declares `Service-Worker-Allowed: /`.
+
+## Match Store
+
+Rebirth matches remain in memory. The store now includes:
+
+- TTL-based expiry, default `3600` seconds;
+- defensive cleanup on save/get/len/raw;
+- max-entry cap, default `512`;
+- basic locking around store operations for threaded Gunicorn.
+
+Environment overrides:
+
+- `REBIRTH_MATCH_TTL_SECONDS`
+- `REBIRTH_MAX_MATCHES`
+
+No database has been added in this block.
+
+## Active Assets
+
+The active Rebirth art manifest is:
+
+```text
+static/assets/rebirth/manifest.json
+```
+
+It lists 13 active monster PNG assets:
+
+- `dreadclaw-art.png`
+- `dreadmaw-art.png`
+- `stoneshell-art.png`
+- `stonewarden-art.png`
+- `shadewisp-art.png`
+- `skywarden-art.png`
+- `stormwarden-art.png`
+- `ironbastion-art.png`
+- `ironbulwark-art.png`
+- `embermaw-art.png`
+- `embermaw-alpha-art.png`
+- `voidstalker-art.png`
+- `nightfang-art.png`
+
+The active service worker cache is `ambitionz-rebirth-release-hygiene-v6` and
+does not cache Arena or Ascension assets.
+
+## Current Limitations
+
+- No real multiplayer.
+- No account progression.
+- No database persistence for match history.
+- In-memory matches are lost on process restart or deploy.
+- Rebirth has one starter deck and deterministic bot behavior.
+- Browser visual QA is still recommended before public release.
+- Historical docs and archived tests may describe retired systems; current
+  Rebirth docs are authoritative.
+
+## Next Steps
+
+- Add Rebirth-native persistence only after the active state contract stabilizes.
+- Add Rebirth balance simulations and tuning.
+- Add screenshot-based visual QA for desktop/mobile `/rebirth`.
+- Migrate only useful old-product ideas into Rebirth-native contracts.
+- Keep retired APIs and routes retired unless a future product decision says
+  otherwise.

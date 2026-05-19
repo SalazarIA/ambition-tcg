@@ -290,3 +290,105 @@ Remaining constraint:
 Next recommended block:
 
 - Rebirth 005: Premium Monster Identity + Card Art System.
+
+## Rebirth 004 - Repository Truth + Release Hygiene
+
+This block makes the repository match the official product decision:
+Ambitionz Rebirth is the only active runtime product.
+
+Decision applied:
+
+- Arena, Ascension, BE2, SocketIO, SQLAlchemy/database-backed account systems,
+  economy, progression, shop, collection and old deck builder remain retired.
+- Retired browser routes redirect to `/rebirth`.
+- Retired API groups return `410 legacy_disabled`.
+- No legacy API, database, SocketIO or economy system was restored for test
+  compatibility.
+
+Files created in this block:
+
+- `tests/legacy_disabled/README.md`
+- `tests/legacy_disabled/conftest.py`
+- `tests/rebirth/test_rebirth_deploy_smoke.py`
+- `tests/rebirth/test_rebirth_match_store.py`
+- `tests/rebirth/test_rebirth_security_headers.py`
+
+Files changed in this block:
+
+- `README.md`
+- `app.py`
+- `pytest.ini`
+- `requirements-dev.txt`
+- `services/rebirth_match_store.py`
+- `static/js/service-worker.js`
+- `tests/rebirth/test_rebirth_frontend_contract.py`
+- `docs/REBIRTH_RELEASE_STATUS.md`
+- `docs/LEGACY_REMOVAL_REPORT.md`
+- `docs/LEGACY_CLEANUP_MAP.md`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+
+Files moved or archived:
+
+- Active Rebirth tests moved to `tests/rebirth`.
+- Pre-Rebirth historical tests moved to `tests/legacy_disabled`.
+- `tests/legacy_disabled` is intentionally outside the default release suite
+  because those tests target retired product surfaces.
+
+What changed:
+
+- Replaced the old `pytest.ini` file-name allowlist with explicit
+  `testpaths = tests/rebirth`.
+- Added an honest deploy smoke covering `/`, `/rebirth`, `/health`,
+  `/api/rebirth/start`, `/api/rebirth/evolve`, `/api/rebirth/play-card`,
+  retired browser redirects and retired API `410 legacy_disabled`.
+- Added security headers through `app.after_request`.
+- Added service worker root-scope header for `/service-worker.js`.
+- Added TTL expiry, defensive cleanup, max-entry trimming and basic locking to
+  the in-memory match store.
+- Bumped active service worker cache to
+  `ambitionz-rebirth-release-hygiene-v6`.
+- Updated current docs so old Arena/Ascension/economy claims are historical,
+  not release truth.
+- Updated development requirements to include pytest, Pillow and Playwright
+  without adding them to runtime requirements.
+
+Security headers:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- CSP limited to local sources with `unsafe-inline` kept for current inline
+  bootstrap data and inline card styles.
+
+Match store:
+
+- Default TTL: `3600` seconds.
+- Default max matches: `512`.
+- Environment overrides: `REBIRTH_MATCH_TTL_SECONDS`,
+  `REBIRTH_MAX_MATCHES`.
+- Still no database persistence.
+
+QA executed for this block:
+
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py`
+- `python3 -m pytest -q`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/service-worker.js`
+- `node --check static/js/pwa.js`
+- `git status --short`
+- `git diff --stat`
+
+Validation result:
+
+- `py_compile`: passed
+- `pytest -q`: 36 passed
+- `node --check static/js/rebirth.js`: passed
+- `node --check static/js/service-worker.js`: passed
+- `node --check static/js/pwa.js`: passed
+
+Next recommended block:
+
+- Rebirth 005: Rebirth-native persistence and balance/visual QA, without
+  reactivating legacy systems.

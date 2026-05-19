@@ -11,18 +11,21 @@ Rebirth is the clean laboratory for the next Ambitionz core.
 - The future 3D arena needs its own contract instead of being a decorative background behind legacy UI.
 - Product, gameplay, state payload and visual language need to move together.
 
-## Frozen Legacy Surface
+## Retired Legacy Surface
 
-The old product is not deleted. These routes and systems remain available:
+The old product is not deleted from the repository, but it is retired from the
+active runtime. These routes and systems are historical only:
 
 - `/training-legacy`
 - `/arena`
 - BE2 and socket flows
 - old collection and deck builder
 - economy beta, shop, missions, daily, profile and match history
-- Arena V48 assets and service worker compatibility entries
+- Arena V48 assets
 
-They are frozen as legacy/internal surfaces unless a future migration block explicitly upgrades them.
+Retired browser routes now redirect to `/rebirth`. Retired API groups now return
+`410 legacy_disabled`. They should not be reactivated unless a future product
+decision explicitly moves a feature into Rebirth-native contracts.
 
 ## New Product Surface
 
@@ -47,31 +50,30 @@ See `docs/LEGACY_CLEANUP_MAP.md` for the current route/file ownership map betwee
 
 ## Forward Product Path
 
-Rebirth is now the forward product path for new Ambitionz gameplay and presentation work. Legacy Arena remains available for compatibility, QA comparison and internal fallback, but new product development should prefer `/rebirth` unless the task explicitly maintains legacy.
+Rebirth is now the forward product path for new Ambitionz gameplay and presentation work. Legacy Arena remains repository history and QA reference material, not an active runtime product.
 
 ## Product Migration Phases
 
-- Phase 1: parallel prototype. Rebirth ships beside the old Arena without breaking existing routes.
-- Phase 2: Rebirth playable alpha. The one-card loop, premium shell, browser contract, QA smoke and 3D adapter become the active prototype foundation.
-- Phase 3: Rebirth public home. The main landing surface can promote Rebirth as the product lead once onboarding, balance and visual QA mature.
-- Phase 4: legacy retirement. Arena V48 and BE2 can be hidden or retired only after data, QA and user-facing migration prove the replacement stable.
+- Phase 1: parallel prototype. Complete.
+- Phase 2: Rebirth playable alpha. Complete.
+- Phase 3: Rebirth public home. Complete.
+- Phase 4: legacy retirement. Active: browser routes redirect, legacy APIs return `410 legacy_disabled`, historical tests live under `tests/legacy_disabled`.
 
 ## Route Promotion Plan
 
 Current:
 
-- `/rebirth` is the primary alpha path.
-- Home points to Rebirth first.
-- Legacy surfaces remain available and clearly marked.
+- `/rebirth` is the active playable product path.
+- Home is Rebirth-first.
+- Legacy browser routes redirect to `/rebirth`.
+- Legacy API groups return `410 legacy_disabled`.
 
 Next:
 
 - Migrate useful collection, deck, rewards and progression behavior into Rebirth-native contracts.
-- Keep legacy banners on old beta surfaces during migration.
-- Continue using `/training-legacy` and old Arena only for compatibility checks.
+- Keep old files and tests as historical reference only.
 
 Future:
 
 - `/play` can redirect to `/rebirth`.
-- `/training` can become legacy-only or redirect after Ascension compatibility is retired.
-- Old `/arena` can move to archived/internal access after Rebirth has account persistence and QA coverage.
+- Add Rebirth-native persistence and progression after the MVP state contract is stable.

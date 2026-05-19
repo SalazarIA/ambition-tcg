@@ -173,15 +173,46 @@
     };
 
     const RebirthAssets = {
+        manifest: null,
+        seen: new Set(),
+
         preload() {
             [
                 RebirthConfig.assets.fallbackCardArt,
                 RebirthConfig.assets.botCardBack,
                 RebirthConfig.assets.botEmblem
             ].filter(Boolean).forEach((src) => {
-                const image = new Image();
-                image.src = src;
+                this.preloadUrl(src);
             });
+            if (RebirthConfig.assets.manifest) {
+                fetch(RebirthConfig.assets.manifest, { credentials: "same-origin" })
+                    .then((response) => response.ok ? response.json() : null)
+                    .then((manifest) => {
+                        this.manifest = manifest || null;
+                        Object.values((manifest && manifest.cards) || {}).forEach((src) => this.preloadUrl(src));
+                    })
+                    .catch(() => {});
+            }
+        },
+
+        preloadUrl(src) {
+            if (!src || this.seen.has(src)) return;
+            this.seen.add(src);
+            const image = new Image();
+            image.src = src;
+        },
+
+        preloadCard(card) {
+            if (card && card.art) {
+                this.preloadUrl(card.art);
+            }
+        },
+
+        preloadState(state) {
+            if (!state) return;
+            ((state.player && state.player.hand) || []).forEach((card) => this.preloadCard(card));
+            this.preloadCard(state.player && state.player.played_card);
+            this.preloadCard(state.bot && state.bot.played_card);
         },
 
         artStyle(card) {
@@ -189,10 +220,20 @@
             return source ? `style="background-image: url('${RebirthText.escape(source)}')"` : "";
         },
 
+        cssVars(card) {
+            const palette = card && card.palette ? card.palette : {};
+            const safe = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? value : fallback;
+            return [
+                `--card-accent:${safe(palette.accent, "#f4ad26")}`,
+                `--card-secondary:${safe(palette.secondary, "#58d6ff")}`,
+                `--card-shadow:${safe(palette.shadow, "#08090b")}`
+            ].join(";");
+        },
+
         imageMarkup(card) {
             const source = card && card.art ? card.art : RebirthConfig.assets.fallbackCardArt;
             if (!source) return "";
-            return `<img data-rebirth-art src="${RebirthText.escape(source)}" alt="" loading="eager">`;
+            return `<img data-rebirth-art data-art-key="${RebirthText.escape(card && card.art_key ? card.art_key : "fallback")}" src="${RebirthText.escape(source)}" alt="" loading="eager">`;
         },
 
         bindFallbacks(root) {
@@ -240,7 +281,7 @@
         miniCard(card, options) {
             const selected = options && options.selected ? " is-selected" : "";
             return `
-                <button class="rb-mini-card${selected}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
+                <button class="rb-mini-card${selected}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
                     <b class="rb-power">${RebirthText.escape(card.attack || card.power)}</b>
                     <div class="rb-mini-art" ${RebirthAssets.artStyle(card)}></div>
                     <div class="rb-mini-copy">
@@ -284,6 +325,7 @@
         render() {
             if (!RebirthStore.state) return;
             const state = RebirthStore.state;
+            RebirthAssets.preloadState(state);
             RebirthDom.setText("player-hp", state.player.hp);
             RebirthDom.setText("bot-hp", state.bot.hp);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
@@ -320,11 +362,15 @@
             if (!card) {
                 host.className = "rb-main-card rb-monster-card rb-monster-card-main rb-empty-card";
                 host.removeAttribute("data-element");
+                host.removeAttribute("data-art-key");
+                host.removeAttribute("style");
                 host.innerHTML = RebirthMarkup.emptyFocus();
                 return;
             }
             host.className = `rb-main-card rb-monster-card rb-monster-card-main${Number(card.tier || 1) > 1 ? " is-evolved" : ""}`;
             host.setAttribute("data-element", card.element);
+            host.setAttribute("data-art-key", card.art_key || card.id);
+            host.setAttribute("style", RebirthAssets.cssVars(card));
             host.innerHTML = RebirthMarkup.card(card);
         },
 
@@ -335,11 +381,15 @@
             if (!card) {
                 host.className = "rb-bot-card rb-card-back";
                 host.removeAttribute("data-element");
+                host.removeAttribute("data-art-key");
+                host.removeAttribute("style");
                 host.innerHTML = "<span>Bot's Card</span>";
                 return;
             }
             host.className = "rb-bot-card rb-monster-card rb-bot-revealed";
             host.setAttribute("data-element", card.element);
+            host.setAttribute("data-art-key", card.art_key || card.id);
+            host.setAttribute("style", RebirthAssets.cssVars(card));
             host.innerHTML = RebirthMarkup.card(card);
         },
 
@@ -368,6 +418,7 @@
             if (thumb && sourceCard) {
                 thumb.classList.remove("rb-asset-fallback");
                 thumb.style.backgroundImage = `url('${sourceCard.art}')`;
+                thumb.style.setProperty("--card-accent", (sourceCard.palette && sourceCard.palette.accent) || "#f4ad26");
             }
         },
 
