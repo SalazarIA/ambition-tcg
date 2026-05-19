@@ -41,8 +41,12 @@ def main():
         assert response.status_code == 200, f"{path} returned {response.status_code}"
         for token in required:
             assert token in body, f"{path} missing {token}"
-        assert "/training-legacy" not in body, f"{path} exposes legacy as public route"
-        assert "Legacy Arena" not in body, f"{path} presents legacy as product"
+        if path == "/":
+            assert "az-rebirth-bridge" in body, "/ missing Rebirth bridge"
+            assert "Legacy Arena" in body, "/ missing explicit legacy fallback label"
+        else:
+            assert "/training-legacy" not in body, f"{path} exposes legacy as public route"
+            assert "Legacy Arena" not in body, f"{path} presents legacy as product"
         for label in OLD_PUBLIC_LABELS:
             assert label not in lower, f"{path} exposes old label {label}"
 

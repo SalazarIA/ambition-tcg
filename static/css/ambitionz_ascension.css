@@ -992,6 +992,73 @@ button {
     border-bottom: 1px solid var(--ax-line);
 }
 
+.az-rebirth-bridge {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: var(--ax-space-4);
+    align-items: center;
+    margin: 0 0 var(--ax-space-5);
+    padding: clamp(16px, 4vw, 26px);
+    border: 1px solid rgba(216, 173, 98, 0.3);
+    border-radius: var(--ax-radius-lg);
+    background:
+        radial-gradient(circle at 82% 26%, rgba(112, 153, 150, 0.16), transparent 18rem),
+        linear-gradient(135deg, rgba(216, 173, 98, 0.12), rgba(9, 6, 10, 0.74) 42%, rgba(111, 32, 40, 0.16)),
+        var(--ax-panel-soft);
+    box-shadow: var(--ax-shadow-gold);
+    overflow: hidden;
+}
+
+.az-rebirth-bridge::before {
+    content: "";
+    position: absolute;
+    inset: auto 4% -42% auto;
+    width: min(42vw, 360px);
+    aspect-ratio: 1;
+    border: 1px solid rgba(216, 173, 98, 0.18);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(216, 173, 98, 0.1), transparent 62%);
+    pointer-events: none;
+}
+
+.az-rebirth-bridge h2 {
+    max-width: 760px;
+    margin: 6px 0;
+    color: var(--ax-bone);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.6rem, 5vw, 3.3rem);
+    line-height: 0.98;
+}
+
+.az-rebirth-bridge p {
+    max-width: 760px;
+    margin: 0;
+    color: var(--ax-muted);
+    line-height: 1.45;
+}
+
+.az-rebirth-bridge-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ax-space-3);
+}
+
+.az-rebirth-bridge-actions a {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 13px;
+    border: 1px solid var(--ax-line);
+    border-radius: var(--ax-radius);
+    color: var(--ax-bone);
+    background: rgba(8, 5, 8, 0.62);
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: var(--ax-type-sm);
+}
+
 .ax-home-sigil {
     position: relative;
     display: grid;

@@ -16,6 +16,7 @@ The adapter receives:
 - `rebirth:match_start`
 - `rebirth:intent_selected`
 - `rebirth:card_activated`
+- `rebirth:round_resolved`
 - `rebirth:strike`
 - `rebirth:guard`
 - `rebirth:focus`

@@ -11,7 +11,7 @@ The Rebirth frontend consumes a stable JSON payload from `/api/rebirth/*`.
   "round": 1,
   "player": {
     "name": "Player",
-    "hp": 30,
+    "hp": 32,
     "ambition": 0,
     "active_card": null,
     "hand": [],
@@ -19,7 +19,7 @@ The Rebirth frontend consumes a stable JSON payload from `/api/rebirth/*`.
   },
   "opponent": {
     "name": "Opponent",
-    "hp": 30,
+    "hp": 32,
     "ambition": 0,
     "active_card": null,
     "selected_intent": null
@@ -29,10 +29,20 @@ The Rebirth frontend consumes a stable JSON payload from `/api/rebirth/*`.
   "available_actions": [],
   "selected_intent": null,
   "combat_log": [],
-  "cinematic_event": null,
+  "cinematic_event": {
+    "type": "DAMAGE",
+    "title": "Damage Lands",
+    "message": "Opponent takes 6 damage.",
+    "intensity": "high",
+    "payload": {},
+    "round": 1
+  },
   "ui_flags": {
     "can_resolve": false,
     "can_play_card": true,
+    "has_active_card": false,
+    "has_selected_intent": false,
+    "needs_active_card": true,
     "is_finished": false
   },
   "winner": null,

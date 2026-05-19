@@ -42,3 +42,14 @@ Arena V48 is valuable as history and fallback, but it is not the shape of the fu
 ## Product Rule
 
 No three-lane board exists in Rebirth. Each player controls one active card. The next product iterations should deepen that rule rather than reintroduce a crowded field.
+
+## Forward Product Path
+
+Rebirth is now the forward product path for new Ambitionz gameplay and presentation work. Legacy Arena remains available for compatibility, QA comparison and internal fallback, but new product development should prefer `/rebirth` unless the task explicitly maintains legacy.
+
+## Product Migration Phases
+
+- Phase 1: parallel prototype. Rebirth ships beside the old Arena without breaking existing routes.
+- Phase 2: Rebirth playable alpha. The one-card loop, premium shell, browser contract, QA smoke and 3D adapter become the active prototype foundation.
+- Phase 3: Rebirth public home. The main landing surface can promote Rebirth as the product lead once onboarding, balance and visual QA mature.
+- Phase 4: legacy retirement. Arena V48 and BE2 can be hidden or retired only after data, QA and user-facing migration prove the replacement stable.

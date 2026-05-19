@@ -77,6 +77,9 @@ def public_rebirth_state(match):
         "ui_flags": {
             "can_resolve": any(action["type"] == "resolve" and action.get("enabled") for action in actions),
             "can_play_card": any(action["type"] == "play_card" and action.get("enabled") for action in actions),
+            "has_active_card": bool(player.get("active_card")),
+            "has_selected_intent": bool(player.get("selected_intent")),
+            "needs_active_card": not bool(player.get("active_card")),
             "is_finished": bool(match.get("is_finished")),
         },
         "winner": match.get("winner"),

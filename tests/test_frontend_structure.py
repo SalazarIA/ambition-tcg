@@ -82,7 +82,7 @@ def test_pwa_install_assets_are_declared():
     assert '"/static/icons/maskable-icon-512.png"' in manifest
     assert '"display": "standalone"' in manifest
     assert 'navigator.serviceWorker.register("/service-worker.js", { scope: "/" })' in pwa_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
     assert '"/static/js/arena_clean_v48.js"' in service_worker
     assert '"/static/dist/arena3d/arena3d.js"' in service_worker
     assert '"/static/assets/arena3d/manifest.json"' in service_worker
@@ -103,9 +103,11 @@ def test_public_home_product_contract():
     assert "url_for('deck_builder_ascension')" in homepage
     assert "url_for('login')" in homepage
     assert "url_for('register')" in homepage
-    assert "url_for('training_legacy')" not in homepage
+    assert "url_for('rebirth')" in homepage
+    assert "az-rebirth-bridge" in homepage
     assert "ax-home-page" in homepage
     assert ".ax-home-hero" in css
+    assert ".az-rebirth-bridge" in css
     assert ".ax-route-grid" in css
 
 
@@ -444,7 +446,7 @@ def test_blocks_65_72_retention_progression_contract():
     assert ".az-deck-guidance-v1" in css
     assert ".az-mission-v2-summary" in css
     assert ".az48-first-player-flow" in arena_css
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
 
 
 def test_blocks_73_80_public_beta_rc_v3_contract():
@@ -504,7 +506,7 @@ def test_blocks_73_80_public_beta_rc_v3_contract():
     assert ".ax-public-onboarding" in ascension_css
     assert ".ax-page-card" in ascension_css
     assert ".az-profile-product-hub-v3" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
 
 
 def test_blocks_81_88_beta_economy_contract():
@@ -551,7 +553,7 @@ def test_blocks_81_88_beta_economy_contract():
     assert "Gold is beta currency only" in roadmap
     assert "Gold +" in arena_js
     assert "az-recent-unlocks-data" in cards_js
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
 
 
 def test_arena_premium_hud_contract():
@@ -847,7 +849,7 @@ def test_public_beta_rc_v4_retention_contract():
     assert ".az-first-session-questline-v1" in css
     assert ".az-deck-readiness-coach-v1" in css
     assert ".az-rc-public-checklist-v1" in css
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
 
     assert "Arena jogavel" in checklist
     assert "QA status" in checklist
@@ -904,7 +906,7 @@ def test_public_beta_rc_v5_observability_contract():
     assert ".az-beta-feedback-widget-v1" in css
     assert ".az-known-issues-beta-notes-v1" in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
     assert '"/static/js/beta_telemetry.js"' in service_worker
     assert '"/static/js/beta_feedback.js"' in service_worker
 
@@ -1015,7 +1017,7 @@ def test_arena_v6_card_art_and_combat_clarity_contract():
     ]:
         assert class_name in css
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in service_worker
     assert '"/static/js/card_art_manifest.js"' in service_worker
     assert '"/static/assets/cards/card_art_manifest.json"' in service_worker
     assert "Ambitionz Card Art Direction" in art_direction

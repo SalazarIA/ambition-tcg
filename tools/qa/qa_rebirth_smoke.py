@@ -17,6 +17,23 @@ os.environ.setdefault("ENVIRONMENT", "testing")
 from app import app  # noqa: E402
 
 
+def post(client, path, body):
+    response = client.post(path, json=body)
+    assert response.status_code == 200 and response.is_json
+    payload = response.get_json()
+    assert payload["ok"] is True
+    return payload["state"]
+
+
+def play_round(client, state, intent):
+    match_id = state["match_id"]
+    if not state["player"]["active_card"] and state["hand"]:
+        state = post(client, "/api/rebirth/play-card", {"match_id": match_id, "card_id": state["hand"][0]["id"]})
+    state = post(client, "/api/rebirth/intent", {"match_id": match_id, "intent": intent})
+    state = post(client, "/api/rebirth/resolve", {"match_id": match_id})
+    return state
+
+
 def main():
     app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
     client = app.test_client()
@@ -24,31 +41,29 @@ def main():
     page = client.get("/rebirth")
     assert page.status_code == 200
     assert b"rb-shell" in page.data
+    assert b"rb-onboarding" in page.data
 
-    start = client.get("/api/rebirth/new?seed=qa-smoke")
+    start = client.get("/api/rebirth/new?seed=qa-smoke-v2")
     assert start.status_code == 200 and start.is_json
     state = start.get_json()["state"]
-    assert state["player"]["hp"] == 30
+    assert state["player"]["hp"] == 32
     assert state["hand"]
 
-    match_id = state["match_id"]
-    card_id = state["hand"][0]["id"]
+    initial_opponent_hp = state["opponent"]["hp"]
+    for intent in ["STRIKE", "FOCUS", "GUARD"]:
+        if state["is_finished"]:
+            break
+        state = play_round(client, state, intent)
+        assert state["player"]["active_card"]
+        assert state["combat_log"]
+        assert state["cinematic_event"]
+        assert state["round"] >= 1
 
-    intent = client.post("/api/rebirth/intent", json={"match_id": match_id, "intent": "STRIKE"})
-    assert intent.status_code == 200 and intent.is_json
+    assert "hp" in state["player"]
+    assert "hp" in state["opponent"]
+    assert state["opponent"]["hp"] <= initial_opponent_hp
 
-    play = client.post("/api/rebirth/play-card", json={"match_id": match_id, "card_id": card_id})
-    assert play.status_code == 200 and play.is_json
-    assert play.get_json()["state"]["player"]["active_card"]["id"] == card_id
-
-    resolved = client.post("/api/rebirth/resolve", json={"match_id": match_id})
-    assert resolved.status_code == 200 and resolved.is_json
-    final_state = resolved.get_json()["state"]
-    assert "hp" in final_state["player"]
-    assert final_state["player"]["active_card"]
-    assert final_state["combat_log"]
-
-    print("REBIRTH_SMOKE_OK")
+    print("REBIRTH_SMOKE_V2_OK")
 
 
 if __name__ == "__main__":

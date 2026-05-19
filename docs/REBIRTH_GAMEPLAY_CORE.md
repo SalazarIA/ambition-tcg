@@ -45,7 +45,7 @@ The first implementation starts with a four-card opening hand, then moves into I
 
 - `STRIKE`: adds 2 attack for the Round.
 - `GUARD`: reduces incoming damage by 3 for the Round.
-- `FOCUS`: grants 2 Ambition before damage.
+- `FOCUS`: grants 2 Ambition before damage and adds 1 pressure once Ambition reaches 6.
 
 Ambition is the future ultimate resource. In this block, it exists as a real state value and UI contract so later ultimate/ascension rules can be added safely.
 
@@ -55,7 +55,11 @@ If a side has no `active_card`, it may activate a card from hand. If a side alre
 
 ## Damage
 
-Base damage is the active card's `attack`. If a side has no active card, its base damage is 1. STRIKE adds 2. GUARD reduces received damage by 3. Damage cannot be negative.
+Base damage is the active card's `attack`, with a minimum of 1. If a side has no active card, its base damage is 1. STRIKE adds 2. GUARD reduces received damage by 3. Starter damage is capped at 10 and cannot be negative.
+
+## Combat Log Events
+
+The alpha engine emits structured entries for `round_start`, `draw`, `intent_selected`, `card_activated`, `active_card_replaced`, `attack_calculated`, `guard_applied`, `ambition_gained`, `damage_dealt`, `round_resolved`, `round_end` and `match_finished`.
 
 ## Win Condition
 

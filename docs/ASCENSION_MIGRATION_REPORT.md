@@ -60,4 +60,4 @@
 - `/training` declares a viewport contract through `ax-arena-shell`, `ax-arena-viewport`, `ax-duel-altar-compact`, `ax-internal-scroll` and `ax-action-compact`.
 - Chronicle and reward details scroll inside their own panels instead of stretching the core duel surface.
 - Public CTAs point to `/training`, `/collection-ascension` and `/deck-builder-ascension`.
-- Service worker cache moved to `ambitionz-web-app-v195`.
+- Service worker cache moved to `ambitionz-web-app-v196`.

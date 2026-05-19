@@ -6,7 +6,7 @@
 - `/training` now has an explicit viewport contract and compact combat shell.
 - Chronicle and reward details no longer push the core duel layout downward.
 - Public navigation points to Ascension routes first.
-- Service worker cache moved to `ambitionz-web-app-v195`.
+- Service worker cache moved to `ambitionz-web-app-v196`.
 
 ## Home Rebirth
 

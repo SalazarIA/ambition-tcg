@@ -54,4 +54,6 @@ def test_public_home_ctas_use_ascension_routes():
 
     assert "url_for('collection_ascension')" in homepage
     assert "url_for('deck_builder_ascension')" in homepage
-    assert "url_for('training_legacy')" not in homepage
+    assert "url_for('rebirth')" in homepage
+    assert "az-rebirth-bridge" in homepage
+    assert "Legacy Arena" in homepage

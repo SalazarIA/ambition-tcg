@@ -22,8 +22,10 @@ static/assets/rebirth3d/manifest.json
 tests/test_rebirth_engine.py
 tests/test_rebirth_routes.py
 tests/test_rebirth_payload_contract.py
+tests/test_rebirth_frontend_contract.py
 
 tools/qa/qa_rebirth_smoke.py
+tools/qa/qa_rebirth_browser_contract.py
 ```
 
 ## Boundaries
@@ -38,3 +40,14 @@ tools/qa/qa_rebirth_smoke.py
 ## Runtime Policy
 
 The simulation is the source of truth. The DOM UI and 3D adapter are renderers. Future Three.js or GLB work should plug into the adapter without moving gameplay rules into the renderer.
+
+## Migration Rule
+
+Rebirth is now the preferred path for new product gameplay work. Legacy Arena, BE2 and Ascension routes remain intact, but they are compatibility surfaces unless a task explicitly targets them.
+
+## Product Migration Phases
+
+- Phase 1: parallel prototype under `/rebirth`.
+- Phase 2: playable alpha with hardened engine events, onboarding, premium shell and browser QA.
+- Phase 3: public home promotion once manual visual QA and balance tuning are complete.
+- Phase 4: legacy retirement after the Rebirth contract replaces the old public loop.

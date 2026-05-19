@@ -1,10 +1,12 @@
 :root {
     --rb-bg: #05040a;
     --rb-bg-2: #0d0915;
-    --rb-panel: rgba(15, 12, 22, 0.78);
-    --rb-panel-strong: rgba(23, 18, 34, 0.92);
+    --rb-bg-3: #15101f;
+    --rb-panel: rgba(16, 12, 23, 0.76);
+    --rb-panel-strong: rgba(23, 17, 32, 0.93);
+    --rb-panel-soft: rgba(8, 6, 13, 0.62);
     --rb-line: rgba(229, 177, 91, 0.22);
-    --rb-line-strong: rgba(229, 177, 91, 0.44);
+    --rb-line-strong: rgba(229, 177, 91, 0.46);
     --rb-gold: #e5b15b;
     --rb-amber: #ff8d46;
     --rb-blue: #74d8ff;
@@ -13,8 +15,22 @@
     --rb-muted: #b9a991;
     --rb-danger: #ff927f;
     --rb-success: #9ce6bc;
+    --rb-space-1: 4px;
+    --rb-space-2: 8px;
+    --rb-space-3: 12px;
+    --rb-space-4: 16px;
+    --rb-space-5: 22px;
+    --rb-space-6: 32px;
+    --rb-radius-sm: 8px;
     --rb-radius: 14px;
-    --rb-shadow: 0 28px 90px rgba(0, 0, 0, 0.46);
+    --rb-radius-lg: 22px;
+    --rb-shadow-sm: 0 12px 32px rgba(0, 0, 0, 0.28);
+    --rb-shadow: 0 28px 90px rgba(0, 0, 0, 0.48);
+    --rb-type-xs: 0.68rem;
+    --rb-type-sm: 0.78rem;
+    --rb-type-md: 0.94rem;
+    --rb-type-lg: 1.16rem;
+    --rb-type-xl: clamp(2.25rem, 8vw, 5rem);
 }
 
 * {
@@ -26,13 +42,15 @@ body {
     min-height: 100%;
 }
 
-body.rb-body {
+body.rb-page {
     margin: 0;
     color: var(--rb-text);
     background:
-        radial-gradient(circle at 50% 18%, rgba(139, 108, 255, 0.22), transparent 30rem),
-        radial-gradient(circle at 18% 70%, rgba(255, 141, 70, 0.13), transparent 26rem),
-        linear-gradient(180deg, #090611 0%, var(--rb-bg) 58%, #020104 100%);
+        radial-gradient(circle at 50% 10%, rgba(139, 108, 255, 0.2), transparent 28rem),
+        radial-gradient(circle at 12% 70%, rgba(255, 141, 70, 0.12), transparent 25rem),
+        radial-gradient(circle at 84% 42%, rgba(116, 216, 255, 0.1), transparent 22rem),
+        repeating-linear-gradient(90deg, rgba(229, 177, 91, 0.026) 0 1px, transparent 1px 6rem),
+        linear-gradient(180deg, #090611 0%, var(--rb-bg) 62%, #020104 100%);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     letter-spacing: 0;
 }
@@ -42,19 +60,28 @@ a {
     font: inherit;
 }
 
+button {
+    border: 0;
+}
+
 .rb-shell {
     position: relative;
-    width: min(1180px, 100%);
+    width: min(1240px, 100%);
     min-height: 100svh;
     margin: 0 auto;
     padding: max(12px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom));
 }
 
-.rb-shell::before {
+.rb-shell::before,
+.rb-shell::after {
     content: "";
     position: fixed;
-    inset: 8vh auto auto 50%;
-    width: min(72vw, 760px);
+    pointer-events: none;
+}
+
+.rb-shell::before {
+    inset: 7vh auto auto 50%;
+    width: min(74vw, 760px);
     aspect-ratio: 1;
     translate: -50% 0;
     border: 1px solid rgba(229, 177, 91, 0.12);
@@ -62,13 +89,30 @@ a {
     background:
         conic-gradient(from 40deg, transparent 0 18deg, rgba(116, 216, 255, 0.16) 19deg 21deg, transparent 22deg 80deg, rgba(229, 177, 91, 0.18) 81deg 83deg, transparent 84deg),
         radial-gradient(circle, transparent 0 58%, rgba(139, 108, 255, 0.12) 59% 60%, transparent 61%);
-    pointer-events: none;
+    opacity: 0.8;
+}
+
+.rb-shell::after {
+    inset: 0;
+    background-image: radial-gradient(rgba(247, 234, 210, 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(180deg, transparent, #000 16%, #000 74%, transparent);
+    opacity: 0.24;
+}
+
+.rb-topbar,
+.rb-hero,
+.rb-onboarding,
+.rb-cinematic-banner,
+.rb-game-layout,
+.rb-error {
+    position: relative;
+    z-index: 2;
 }
 
 .rb-topbar {
-    position: relative;
-    z-index: 2;
     display: grid;
+    grid-template-columns: auto auto 1fr auto;
     gap: 10px;
     align-items: center;
     padding: 0 0 12px;
@@ -90,95 +134,199 @@ a {
 
 .rb-brand span {
     display: grid;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     place-items: center;
     border: 1px solid var(--rb-line-strong);
     border-radius: 50%;
     color: var(--rb-gold);
     background: #100b16;
+    box-shadow: inset 0 0 24px rgba(229, 177, 91, 0.08);
 }
 
 .rb-brand strong,
-.rb-hero-card h2,
+.rb-hero h1,
+.rb-side-panel h2,
 .rb-section-head strong,
-.rb-combat-log > strong {
+.rb-combat-log > strong,
+.rb-winner-state strong,
+.rb-card-name {
     font-family: Georgia, "Times New Roman", serif;
 }
 
-.rb-topbar p {
-    margin: 0;
-    color: var(--rb-muted);
+.rb-alpha-badge {
+    width: max-content;
+    padding: 7px 10px;
+    border: 1px solid rgba(116, 216, 255, 0.22);
+    border-radius: 999px;
+    color: var(--rb-blue);
+    background: rgba(116, 216, 255, 0.07);
+    font-size: var(--rb-type-xs);
+    text-transform: uppercase;
 }
 
 .rb-topbar nav {
     display: flex;
+    justify-content: flex-end;
     gap: 8px;
     overflow-x: auto;
 }
 
-.rb-topbar nav a,
-.rb-button {
-    min-height: 40px;
-    padding: 10px 12px;
-    border: 1px solid var(--rb-line);
-    border-radius: 999px;
-    color: var(--rb-text);
-    background: rgba(8, 6, 13, 0.72);
+.rb-hero {
+    display: grid;
+    gap: 18px;
+    padding: clamp(18px, 5vw, 38px) 0 16px;
+}
+
+.rb-hero-copy {
+    max-width: 790px;
+}
+
+.rb-hero-copy > span,
+.rb-side-head span,
+.rb-pillar span,
+.rb-onboarding span,
+.rb-intent-card span,
+.rb-card-meta,
+.rb-card-stats,
+.rb-section-head span,
+.rb-winner-state span {
+    color: var(--rb-gold);
     text-transform: uppercase;
-    font-size: 0.72rem;
-    cursor: pointer;
+    font-size: var(--rb-type-xs);
+}
+
+.rb-hero h1 {
+    max-width: 850px;
+    margin: 8px 0;
+    color: var(--rb-text);
+    font-size: var(--rb-type-xl);
+    line-height: 0.95;
+}
+
+.rb-hero p,
+.rb-pillar span,
+.rb-onboarding li,
+.rb-intent-card p,
+.rb-card p,
+.rb-combat-log li,
+.rb-winner-state p {
+    color: var(--rb-muted);
+    line-height: 1.38;
+}
+
+.rb-pillars {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.rb-pillar,
+.rb-onboarding,
+.rb-side-panel,
+.rb-decision-panel,
+.rb-log-panel,
+.rb-hand-section,
+.rb-winner-state {
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-radius);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.014)),
+        var(--rb-panel);
+    box-shadow: var(--rb-shadow-sm);
+    backdrop-filter: blur(18px);
+}
+
+.rb-pillar {
+    display: grid;
+    gap: 6px;
+    min-height: 96px;
+    padding: 14px;
+}
+
+.rb-onboarding {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 12px;
+}
+
+.rb-onboarding[hidden] {
+    display: none;
+}
+
+.rb-onboarding strong {
+    display: block;
+}
+
+.rb-onboarding ol {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rb-onboarding li {
+    min-height: 48px;
+    padding: 9px 10px;
+    border: 1px solid rgba(229, 177, 91, 0.12);
+    border-radius: var(--rb-radius-sm);
+    background: rgba(2, 1, 5, 0.34);
+    font-size: var(--rb-type-sm);
 }
 
 .rb-cinematic-banner {
-    position: relative;
-    z-index: 2;
-    margin: 12px 0;
+    min-height: 54px;
+    margin: 0 0 12px;
     padding: 12px 14px;
     border: 1px solid var(--rb-line);
     border-radius: var(--rb-radius);
     color: var(--rb-gold);
-    background: linear-gradient(90deg, rgba(229, 177, 91, 0.12), rgba(116, 216, 255, 0.08), rgba(139, 108, 255, 0.1));
+    background: linear-gradient(90deg, rgba(229, 177, 91, 0.13), rgba(116, 216, 255, 0.08), rgba(139, 108, 255, 0.1));
     box-shadow: var(--rb-shadow);
 }
 
-.rb-stage-grid {
-    position: relative;
-    z-index: 2;
+.rb-cinematic-banner strong {
+    display: block;
+    color: var(--rb-text);
+    font-size: var(--rb-type-lg);
+}
+
+.rb-game-layout {
     display: grid;
     gap: 12px;
 }
 
-.rb-hero-card,
-.rb-combat-log,
-.rb-hand-section {
-    border: 1px solid var(--rb-line);
-    border-radius: var(--rb-radius);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)), var(--rb-panel);
-    box-shadow: var(--rb-shadow);
-    backdrop-filter: blur(18px);
+.rb-duel-column {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
 }
 
-.rb-hero-card {
+.rb-side-panel {
     display: grid;
     gap: 10px;
-    padding: 14px;
+    padding: 12px;
 }
 
-.rb-hero-card > span,
-.rb-section-head span,
-.rb-card span {
-    color: var(--rb-gold);
-    text-transform: uppercase;
-    font-size: 0.68rem;
+.rb-side-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
 }
 
-.rb-hero-card h2 {
+.rb-side-panel h2 {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: clamp(1.25rem, 4vw, 2rem);
 }
 
-.rb-stat-row {
+.rb-stat-row,
+.rb-status-panel {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -191,15 +339,15 @@ a {
     border-radius: 999px;
     color: var(--rb-muted);
     background: rgba(2, 1, 5, 0.42);
-    font-size: 0.76rem;
+    font-size: var(--rb-type-sm);
 }
 
 .rb-stat-pill strong {
     color: var(--rb-text);
 }
 
-.rb-3d-wrap {
-    min-height: clamp(300px, 52svh, 520px);
+.rb-stage-wrap {
+    min-height: clamp(280px, 42svh, 500px);
 }
 
 .rb-3d-stage {
@@ -208,7 +356,7 @@ a {
     min-height: inherit;
     overflow: hidden;
     border: 1px solid rgba(116, 216, 255, 0.2);
-    border-radius: calc(var(--rb-radius) + 8px);
+    border-radius: var(--rb-radius-lg);
     background:
         radial-gradient(circle at 50% 50%, rgba(116, 216, 255, 0.18), transparent 24%),
         radial-gradient(circle at 50% 62%, rgba(229, 177, 91, 0.12), transparent 34%),
@@ -221,141 +369,271 @@ a {
     inset: 0;
     display: grid;
     place-items: center;
+    perspective: 900px;
 }
 
-.rb-3d-orbit,
-.rb-3d-ring,
-.rb-3d-core {
+.rb-stage-depth {
     position: absolute;
+    width: min(88vw, 620px);
+    aspect-ratio: 1.5;
     border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(229, 177, 91, 0.08), transparent 62%);
+    transform: rotateX(66deg);
 }
 
-.rb-3d-orbit {
-    width: min(72vw, 420px);
-    aspect-ratio: 1;
-    border: 1px solid rgba(229, 177, 91, 0.22);
-    transform: rotateX(64deg);
-}
-
-.rb-3d-ring {
-    width: min(48vw, 260px);
-    aspect-ratio: 1;
-    border: 1px solid rgba(116, 216, 255, 0.28);
-    transform: rotateX(64deg) rotateZ(22deg);
-}
-
-.rb-3d-core {
-    width: 92px;
-    aspect-ratio: 1;
-    background: radial-gradient(circle, rgba(229, 177, 91, 0.48), rgba(139, 108, 255, 0.18), transparent 70%);
-    filter: blur(1px);
-}
-
-.rb-3d-avatar,
-.rb-3d-frame,
-.rb-3d-fx {
+.rb-arena-orbit,
+.rb-energy-core,
+.rb-avatar-node,
+.rb-fx-ring,
+.rb-card-frame-hologram {
     position: absolute;
     display: grid;
     place-items: center;
-    border: 1px solid var(--rb-line-strong);
-    color: var(--rb-text);
-    background: rgba(5, 4, 10, 0.72);
 }
 
-.rb-3d-avatar {
-    width: 76px;
-    height: 76px;
+.rb-arena-orbit {
+    width: min(76vw, 460px);
+    aspect-ratio: 1;
+    border: 1px solid rgba(229, 177, 91, 0.24);
     border-radius: 50%;
+    background:
+        conic-gradient(from 0deg, transparent 0 32deg, rgba(116, 216, 255, 0.22) 33deg 35deg, transparent 36deg 110deg, rgba(229, 177, 91, 0.24) 111deg 113deg, transparent 114deg),
+        radial-gradient(circle, transparent 0 51%, rgba(139, 108, 255, 0.1) 52% 54%, transparent 55%);
+    transform: rotateX(64deg);
+    animation: rb-orbit-breathe 5.8s ease-in-out infinite;
 }
 
-.rb-3d-avatar.is-player {
-    bottom: 10%;
-}
-
-.rb-3d-avatar.is-opponent {
-    top: 10%;
-}
-
-.rb-3d-frame {
-    width: min(44vw, 180px);
-    height: 112px;
-    border-radius: var(--rb-radius);
-    box-shadow: 0 0 34px rgba(229, 177, 91, 0.14);
-}
-
-.rb-3d-fx {
-    width: 150px;
+.rb-energy-core {
+    width: 96px;
     aspect-ratio: 1;
     border-radius: 50%;
-    opacity: 0.18;
+    background: radial-gradient(circle, rgba(229, 177, 91, 0.6), rgba(139, 108, 255, 0.2), transparent 70%);
+    filter: blur(0.5px);
+    animation: rb-core-pulse 2.8s ease-in-out infinite;
 }
 
-.rb-3d-stage.is-strike .rb-3d-fx {
+.rb-avatar-node {
+    width: 78px;
+    height: 78px;
+    border: 1px solid var(--rb-line-strong);
+    border-radius: 50%;
+    color: var(--rb-text);
+    background: radial-gradient(circle at 50% 20%, rgba(116, 216, 255, 0.14), rgba(5, 4, 10, 0.88));
+    box-shadow: 0 0 32px rgba(116, 216, 255, 0.12);
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.rb-avatar-node.is-player {
+    bottom: 9%;
+}
+
+.rb-avatar-node.is-opponent {
+    top: 9%;
+}
+
+.rb-card-frame-hologram {
+    width: min(48vw, 210px);
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid var(--rb-line-strong);
+    border-radius: var(--rb-radius);
+    color: var(--rb-text);
+    background: rgba(5, 4, 10, 0.72);
+    box-shadow: 0 0 34px rgba(229, 177, 91, 0.16);
+    text-align: center;
+}
+
+.rb-card-frame-hologram.has-card {
+    border-color: var(--rb-line-strong);
+    background:
+        linear-gradient(160deg, rgba(229, 177, 91, 0.16), rgba(5, 4, 10, 0.76)),
+        rgba(5, 4, 10, 0.72);
+}
+
+.rb-fx-ring {
+    width: 160px;
+    aspect-ratio: 1;
+    border: 1px solid rgba(229, 177, 91, 0.34);
+    border-radius: 50%;
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+.rb-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--rb-gold);
+    box-shadow: 0 0 16px currentColor;
+    animation: rb-particle-rise 740ms ease-out forwards;
+}
+
+.rb-3d-stage.is-strike .rb-fx-ring {
     border-color: var(--rb-amber);
-    opacity: 0.72;
+    opacity: 0.86;
+    transform: scale(1.22);
 }
 
-.rb-3d-stage.is-guard .rb-3d-fx {
+.rb-3d-stage.is-guard .rb-fx-ring {
     border-color: var(--rb-blue);
-    opacity: 0.72;
+    opacity: 0.82;
+    box-shadow: 0 0 42px rgba(116, 216, 255, 0.2);
 }
 
-.rb-3d-stage.is-focus .rb-3d-fx {
-    border-color: var(--rb-violet);
-    opacity: 0.72;
+.rb-3d-stage.is-focus .rb-energy-core {
+    filter: saturate(1.4);
+    box-shadow: 0 0 58px rgba(139, 108, 255, 0.28);
 }
 
 .rb-3d-stage.is-damage {
-    box-shadow: inset 0 0 90px rgba(255, 146, 127, 0.2), var(--rb-shadow);
+    animation: rb-damage-shake 380ms ease;
+    box-shadow: inset 0 0 90px rgba(255, 146, 127, 0.22), var(--rb-shadow);
 }
 
 .rb-3d-stage.is-ko {
-    filter: saturate(1.3);
+    filter: saturate(1.25) contrast(1.08);
+}
+
+.rb-3d-stage.is-ko .rb-card-frame-hologram {
+    animation: rb-ko-collapse 900ms ease both;
 }
 
 .rb-active-card,
-.rb-card {
+.rb-card,
+.rb-hand-card {
     position: relative;
     border: 1px solid var(--rb-line);
     border-radius: var(--rb-radius);
     background:
         linear-gradient(150deg, rgba(229, 177, 91, 0.12), transparent 44%),
-        rgba(7, 5, 12, 0.82);
+        rgba(7, 5, 12, 0.84);
 }
 
 .rb-active-card {
-    min-height: 118px;
-    padding: 14px;
+    min-height: 122px;
+    padding: 13px;
+}
+
+.rb-card,
+.rb-hand-card {
+    min-height: 188px;
+    padding: 12px;
+    color: var(--rb-text);
+    text-align: left;
+}
+
+button.rb-hand-card {
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+button.rb-hand-card:hover,
+button.rb-hand-card.is-selected {
+    transform: translateY(-5px);
+    border-color: var(--rb-line-strong);
+    box-shadow: 0 0 0 1px rgba(229, 177, 91, 0.16), 0 22px 52px rgba(0, 0, 0, 0.35);
+}
+
+button.rb-hand-card.is-selected {
+    background:
+        linear-gradient(150deg, rgba(229, 177, 91, 0.22), transparent 44%),
+        rgba(14, 10, 18, 0.94);
+}
+
+.rb-card-name {
+    display: block;
+    margin: 6px 0 8px;
+    color: var(--rb-text);
+    font-size: var(--rb-type-lg);
+}
+
+.rb-card-meta,
+.rb-card-stats {
+    display: block;
+}
+
+.rb-card-stats {
+    margin-top: 10px;
+    color: var(--rb-blue);
 }
 
 .rb-empty-slot {
     display: grid;
+    min-height: 92px;
     place-items: center;
     color: var(--rb-muted);
     border-style: dashed;
+    text-align: center;
 }
 
-.rb-control-row {
-    position: relative;
-    z-index: 3;
+.rb-decision-panel {
     display: grid;
-    gap: 10px;
-    margin: 12px 0;
+    gap: 12px;
+    align-content: start;
+    padding: 12px;
 }
 
-.rb-intents,
-.rb-actions {
+.rb-intents {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
 }
 
+.rb-intent-card {
+    display: grid;
+    gap: 6px;
+    min-height: 126px;
+    padding: 12px;
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-radius);
+    color: var(--rb-text);
+    background: rgba(8, 6, 13, 0.72);
+    text-align: left;
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.rb-intent-card:hover,
+.rb-intent-card.is-selected {
+    transform: translateY(-2px);
+    border-color: var(--rb-line-strong);
+}
+
+.rb-intent-card.is-selected {
+    box-shadow: 0 0 0 1px rgba(229, 177, 91, 0.2), 0 0 34px rgba(229, 177, 91, 0.14);
+    animation: rb-selected-glow 2.4s ease-in-out infinite;
+}
+
+.rb-intent-card strong {
+    color: var(--rb-text);
+    font-size: var(--rb-type-lg);
+}
+
+.rb-intent-card small {
+    color: var(--rb-blue);
+}
+
 .rb-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.rb-actions #rb-reset-tips {
+    grid-column: 1 / -1;
 }
 
 .rb-button {
+    min-height: 40px;
+    padding: 10px 12px;
+    border: 1px solid var(--rb-line);
     border-radius: var(--rb-radius);
+    color: var(--rb-text);
+    background: rgba(8, 6, 13, 0.72);
+    text-transform: uppercase;
+    font-size: var(--rb-type-xs);
+    text-decoration: none;
+    cursor: pointer;
     transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
@@ -364,22 +642,27 @@ a {
     border-color: var(--rb-line-strong);
 }
 
-.rb-button.is-selected,
 .rb-button-primary {
     color: #130b07;
     border-color: transparent;
     background: linear-gradient(180deg, #f4c875, var(--rb-gold));
 }
 
-.rb-button[disabled] {
+.rb-button-ghost {
+    color: var(--rb-muted);
+    background: rgba(8, 6, 13, 0.42);
+}
+
+.rb-button[disabled],
+.rb-intent-card[disabled],
+.rb-hand-card[disabled] {
     opacity: 0.45;
     cursor: not-allowed;
+    transform: none;
 }
 
 .rb-hand-section,
 .rb-combat-log {
-    position: relative;
-    z-index: 2;
     padding: 12px;
 }
 
@@ -393,43 +676,20 @@ a {
 .rb-hand {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(172px, 62vw);
+    grid-auto-columns: minmax(190px, 28%);
     gap: 10px;
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding: 3px 0 8px;
     scroll-snap-type: x proximity;
 }
 
-.rb-card {
-    min-height: 188px;
-    padding: 12px;
-    color: var(--rb-text);
-    text-align: left;
+.rb-hand > * {
     scroll-snap-align: start;
-}
-
-.rb-card strong {
-    display: block;
-    margin: 8px 0;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.05rem;
-}
-
-.rb-card p,
-.rb-card small,
-.rb-combat-log li {
-    color: var(--rb-muted);
-    line-height: 1.35;
-}
-
-.rb-card small {
-    display: block;
-    margin-top: 10px;
 }
 
 .rb-combat-log ol {
     display: grid;
-    max-height: 156px;
+    max-height: 280px;
     gap: 7px;
     margin: 8px 0 0;
     padding: 0;
@@ -437,11 +697,35 @@ a {
     list-style: none;
 }
 
+.rb-log-entry {
+    padding: 9px 10px;
+    border: 1px solid rgba(229, 177, 91, 0.12);
+    border-radius: var(--rb-radius-sm);
+    background: rgba(2, 1, 5, 0.34);
+}
+
+.rb-winner-state {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+}
+
+.rb-winner-state[hidden] {
+    display: none;
+}
+
+.rb-winner-state strong {
+    color: var(--rb-gold);
+    font-size: clamp(1.3rem, 5vw, 2.1rem);
+}
+
 .rb-error {
-    position: relative;
-    z-index: 3;
     min-height: 1.2em;
     color: var(--rb-danger);
+}
+
+.rb-error:empty {
+    display: none;
 }
 
 .rb-loading {
@@ -459,69 +743,167 @@ a {
     display: none;
 }
 
-@media (min-width: 760px) {
-    .rb-topbar {
-        grid-template-columns: auto 1fr auto;
+@keyframes rb-core-pulse {
+    0%,
+    100% { transform: scale(0.96); opacity: 0.78; }
+    50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes rb-orbit-breathe {
+    0%,
+    100% { opacity: 0.72; }
+    50% { opacity: 1; }
+}
+
+@keyframes rb-selected-glow {
+    0%,
+    100% { box-shadow: 0 0 0 1px rgba(229, 177, 91, 0.18), 0 0 22px rgba(229, 177, 91, 0.1); }
+    50% { box-shadow: 0 0 0 1px rgba(229, 177, 91, 0.34), 0 0 34px rgba(229, 177, 91, 0.2); }
+}
+
+@keyframes rb-damage-shake {
+    0%,
+    100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    60% { transform: translateX(4px); }
+}
+
+@keyframes rb-ko-collapse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.92); opacity: 0.72; }
+}
+
+@keyframes rb-particle-rise {
+    0% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+    100% { transform: translate3d(var(--rb-px, 0), var(--rb-py, -46px), 0) scale(0.3); opacity: 0; }
+}
+
+@media (min-width: 1100px) {
+    .rb-game-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+        align-items: start;
     }
 
-    .rb-topbar p {
-        text-align: center;
+    .rb-duel-column {
+        grid-template-rows: auto minmax(320px, 42svh) auto auto;
     }
 
-    .rb-stage-grid {
-        grid-template-columns: minmax(220px, 0.72fr) minmax(390px, 1.55fr) minmax(220px, 0.72fr);
-        align-items: stretch;
-    }
-
-    .rb-opponent-panel {
-        order: 1;
-    }
-
-    .rb-3d-wrap {
-        order: 2;
-    }
-
-    .rb-player-panel {
-        order: 3;
-    }
-
-    .rb-control-row {
-        grid-template-columns: 1fr auto;
-        align-items: center;
-    }
-
-    .rb-intents {
-        max-width: 560px;
-    }
-
-    .rb-actions {
-        width: 300px;
-    }
-
-    .rb-hand {
-        grid-auto-columns: 210px;
+    .rb-log-panel {
+        position: sticky;
+        top: 12px;
     }
 }
 
-@media (max-width: 759px) {
+@media (max-width: 1099px) {
+    .rb-topbar {
+        grid-template-columns: auto auto;
+    }
+
+    .rb-topbar nav,
+    .rb-topbar #rb-start-duel-button {
+        grid-column: 1 / -1;
+    }
+
+    .rb-topbar nav {
+        justify-content: flex-start;
+    }
+
+    .rb-game-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .rb-intents {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .rb-combat-log ol {
+        max-height: 190px;
+    }
+}
+
+@media (max-width: 900px) {
+    .rb-pillars,
+    .rb-onboarding,
+    .rb-onboarding ol,
+    .rb-intents {
+        grid-template-columns: 1fr;
+    }
+
+    .rb-stage-wrap {
+        min-height: 320px;
+    }
+
+    .rb-decision-panel {
+        position: sticky;
+        bottom: 0;
+        z-index: 9;
+        border-color: rgba(229, 177, 91, 0.34);
+        background:
+            linear-gradient(180deg, rgba(13, 9, 21, 0.72), rgba(5, 4, 10, 0.96)),
+            var(--rb-panel-strong);
+    }
+}
+
+@media (max-width: 640px) {
     .rb-shell {
         padding-inline: 10px;
+    }
+
+    .rb-topbar,
+    .rb-side-head,
+    .rb-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .rb-brand strong {
+        font-size: 0.96rem;
+    }
+
+    .rb-alpha-badge {
+        justify-self: start;
     }
 
     .rb-topbar nav {
         padding-bottom: 4px;
     }
 
-    .rb-3d-wrap {
-        min-height: 320px;
+    .rb-button {
+        min-height: 38px;
+        padding: 9px 10px;
     }
 
-    .rb-control-row {
-        position: sticky;
-        z-index: 8;
-        bottom: 0;
-        padding: 8px 0 max(8px, env(safe-area-inset-bottom));
-        background: linear-gradient(180deg, transparent, rgba(5, 4, 10, 0.94) 18%);
+    .rb-hero {
+        padding-top: 16px;
+    }
+
+    .rb-hero h1 {
+        font-size: clamp(2rem, 14vw, 3.6rem);
+    }
+
+    .rb-stage-wrap {
+        min-height: 300px;
+    }
+
+    .rb-avatar-node {
+        width: 62px;
+        height: 62px;
+    }
+
+    .rb-card-frame-hologram {
+        width: min(72vw, 190px);
+    }
+
+    .rb-hand {
+        grid-auto-columns: minmax(176px, 76vw);
+    }
+
+    .rb-card,
+    .rb-hand-card {
+        min-height: 170px;
+    }
+
+    .rb-combat-log ol {
+        max-height: 150px;
     }
 }
 

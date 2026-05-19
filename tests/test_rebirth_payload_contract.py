@@ -28,6 +28,7 @@ def test_public_rebirth_state_hides_decks_and_exposes_expected_keys():
     assert "deck" not in payload["player"]
     assert "deck" not in payload["opponent"]
     assert "hand" not in payload["opponent"]
+    assert {"can_resolve", "can_play_card", "has_active_card", "has_selected_intent", "needs_active_card", "is_finished"} <= set(payload["ui_flags"])
 
 
 def test_available_actions_is_stable_list():
@@ -47,4 +48,3 @@ def test_active_card_uses_compact_card():
     assert payload["player"]["active_card"] == compact_card(card)
     assert "model_key" in payload["player"]["active_card"]
     assert "fx_key" in payload["player"]["active_card"]
-

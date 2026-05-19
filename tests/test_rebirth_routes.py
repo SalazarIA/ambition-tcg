@@ -20,7 +20,7 @@ def test_rebirth_new_api_returns_json(client):
     assert response.is_json
     assert payload["ok"] is True
     assert payload["state"]["match_id"].startswith("rebirth-")
-    assert payload["state"]["player"]["hp"] == 30
+    assert payload["state"]["player"]["hp"] == 32
 
 
 def test_rebirth_intent_play_and_resolve_flow(client):
@@ -66,7 +66,7 @@ def test_rebirth_assets_are_cached():
     service_worker = Path(__file__).resolve().parents[1] / "static" / "js" / "service-worker.js"
     body = service_worker.read_text()
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in body
+    assert 'CACHE_NAME = "ambitionz-web-app-v196"' in body
     assert '"/rebirth"' in body
     assert '"/static/css/rebirth.css"' in body
     assert '"/static/js/rebirth.js"' in body

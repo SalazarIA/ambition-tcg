@@ -17,7 +17,7 @@ def _match_id(seed=None):
 def create_rebirth_player(name, seed=None):
     return {
         "name": name,
-        "hp": 30,
+        "hp": 32,
         "ambition": 0,
         "deck": build_rebirth_deck(seed=seed),
         "hand": [],
@@ -95,4 +95,3 @@ def activate_card_from_hand(match, side, card_id):
         player.setdefault("discard", []).append(deepcopy(previous))
     player["active_card"] = selected
     return selected
-
