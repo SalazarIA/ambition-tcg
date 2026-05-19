@@ -8,86 +8,81 @@ def read(path):
     return (PROJECT_ROOT / path).read_text(encoding="utf-8")
 
 
-def test_rebirth_template_references_isolated_assets_and_no_az48():
+def test_rebirth_template_matches_premium_clash_contract():
     template = read("templates/rebirth.html")
 
     assert "filename='css/rebirth.css'" in template
     assert "filename='js/rebirth.js'" in template
-    assert "filename='js/rebirth_3d_adapter.js'" in template
-    assert "az48" not in template
-
-
-def test_rebirth_template_exposes_playable_contract_mounts():
-    template = read("templates/rebirth.html")
+    assert "rebirth_3d_adapter.js" not in template
+    assert "Socket.IO" not in template
 
     for token in [
-        'id="rebirth-3d-stage"',
-        'class="rb-shell"',
-        "rb-game-layout",
-        "rb-decision-panel",
-        "rb-deck-selector",
-        "rb-card-detail",
-        "rb-onboarding",
-        "rb-winner-state",
-        'id="rb-hand"',
-        'id="rb-combat-log-list"',
-        'id="rb-resolve-button"',
-        "Quick Duel",
-        "STRIKE",
-        "GUARD",
-        "FOCUS",
+        'data-rebirth-app',
+        'class="rb-hud"',
+        'id="player-hp"',
+        'id="player-hp-fill"',
+        'id="turn-number"',
+        'id="bot-hp"',
+        'id="bot-hp-fill"',
+        'id="bot-card"',
+        'id="focus-card"',
+        'id="evolution-panel"',
+        'id="evolution-card-thumbnail"',
+        'id="player-hand"',
+        'id="play-button"',
+        'id="next-turn-button"',
+        'id="result-panel"',
+        'id="turn-log"',
+        "One card.",
+        "One decision.",
+        "One clash.",
+        "Combine duplicates.",
+        "Evolve monsters.",
+        "Win the duel.",
+        "Play Rebirth Prototype",
     ]:
         assert token in template
 
-    assert "Start with this deck" in read("static/js/rebirth.js")
 
-
-def test_rebirth_css_contains_cinematic_product_classes():
+def test_rebirth_css_locks_reference_classes_and_assets():
     css = read("static/css/rebirth.css")
 
     for token in [
-        ".rb-page",
-        ".rb-topbar",
-        ".rb-alpha-badge",
-        ".rb-hero",
-        ".rb-deck-selector",
-        ".rb-deck-card",
-        ".rb-difficulty-selector",
-        ".rb-game-layout",
-        ".rb-stage-wrap",
-        ".rb-arena-orbit",
-        ".rb-energy-core",
-        ".rb-avatar-node",
-        ".rb-fx-ring",
-        ".rb-intent-card.is-selected",
-        ".rb-card-detail",
-        ".rb-summary-grid",
-        ".rb-reward-preview",
-        ".rb-winner-state",
-        "@media (min-width: 1100px)",
-        "@media (max-width: 640px)",
+        ".rb-clash-shell",
+        ".rb-hud",
+        ".rb-hud-player",
+        ".rb-hud-bot",
+        ".rb-turn-core",
+        ".rb-slogan-grid",
+        ".rb-card-back",
+        ".rb-monster-card-main",
+        ".rb-evolution-panel",
+        ".rb-mini-card",
+        ".rb-actions-row",
+        ".rb-prototype-actions",
+        "--rb-gold",
+        "--rb-cyan",
+        "@media (max-width: 720px)",
+        "@media (max-width: 520px)",
     ]:
         assert token in css
 
 
-def test_rebirth_js_uses_vanilla_fetch_and_3d_contract():
+def test_rebirth_js_uses_json_api_and_card_art_contract():
     js = read("static/js/rebirth.js")
-    adapter = read("static/js/rebirth_3d_adapter.js")
 
     assert "fetch(" in js
     assert "Socket.IO" not in js
-    assert "az48" not in js
-    assert "ambitionz_rebirth_onboarding_seen" in js
-    assert "ambitionz_rebirth_selected_deck" in js
-    assert "ambitionz_rebirth_difficulty" in js
-    assert "rebirth:match_start" in js
-    assert "rebirth:round_resolved" in js
-    assert "window.Rebirth3D" in adapter
-    for method in [
-        "loadManifest()",
-        "flash(type)",
-        "spawnParticles(type, count)",
-        "setActiveIntent(intent)",
-        "setWinner(winner)",
+    assert "Rebirth3D" not in js
+    for token in [
+        "player-hp-fill",
+        "bot-hp-fill",
+        "evolution-card-thumbnail",
+        "rb-mini-card",
+        "card.art",
+        "attack",
+        "guard",
+        "Combine",
+        "Next Turn",
     ]:
-        assert method in adapter
+        assert token in js

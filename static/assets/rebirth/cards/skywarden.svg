@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Skywarden avian art">
+  <defs><linearGradient id="s" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26313a"/><stop offset=".6" stop-color="#090b0e"/></linearGradient></defs>
+  <rect width="640" height="420" fill="url(#s)"/>
+  <path d="M320 74 498 296 364 243l-44 104-44-104-134 53z" fill="#11161a" stroke="#d4dde1" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M320 106 393 250l-73-37-73 37z" fill="#2d3333" stroke="#f5ad2f" stroke-width="5"/>
+  <path d="M111 254c77-43 128-74 151-149M529 254c-77-43-128-74-151-149" fill="none" stroke="#65d7ff" stroke-width="7" opacity=".7"/>
+  <circle cx="320" cy="169" r="12" fill="#f4f0e8"/>
+</svg>

@@ -6,15 +6,35 @@ Ambitionz Rebirth is the active Ambitionz MVP architecture. It replaces the old 
 
 One card. One decision. One clash.
 
-1. Both sides begin with 3 HP.
+1. Both sides begin with 30 HP.
 2. Both sides draw a hand of 5 monsters.
 3. Each turn, the player chooses exactly 1 monster from hand.
-4. The bot responds with exactly 1 monster from its hand.
-5. Higher power wins the turn.
-6. The loser of the turn loses 1 HP.
-7. A tie is a Clash: no HP is lost.
-8. First side to 0 HP loses the match.
-9. After a resolved turn, both sides draw back up to 5 cards when possible.
+4. The bot responds with exactly 1 monster from hand.
+5. Higher attack wins the clash.
+6. The winner deals damage to the loser.
+7. Damage is based on attacker attack minus half of defender guard, with a minimum of 1.
+8. A tie is a Clash: no damage is dealt.
+9. First side to 0 HP loses the match.
+10. After a resolved turn, both sides draw back up to 5 cards when possible.
+
+## Card Model
+
+Each monster has:
+
+- `id`
+- `name`
+- `family`
+- `role`
+- `tier`
+- `attack`
+- `guard`
+- `power` as attack-compatible UI shorthand
+- `element`
+- `evolution_id`
+- `ability_name`
+- `ability_text`
+- `flavor`
+- `art`
 
 ## Evolution
 
@@ -24,32 +44,32 @@ If the player has 2 matching base monsters in hand and that monster has an `evol
 
 Initial direct evolutions:
 
-- Ember Cub + Ember Cub = Ember Fang
-- Tide Imp + Tide Imp = Tide Brute
-- Stone Pup + Stone Pup = Stone Golem
-- Night Sprout + Night Sprout = Night Bloom
+- Dreadclaw + Dreadclaw = Dreadmaw
+- Stoneshell + Stoneshell = Stonewarden
+- Skywarden + Skywarden = Stormwarden
+- Ironbastion + Ironbastion = Ironbulwark
+- Embermaw + Embermaw = Embermaw Alpha
 
 ## MVP Catalog
 
 Base monsters:
 
-- Ember Cub, Fire, tier 1, power 2
-- Tide Imp, Water, tier 1, power 2
-- Stone Pup, Earth, tier 1, power 3
-- Night Sprout, Shadow, tier 1, power 1
-- Spark Hare, Volt, tier 1, power 4
-- Glass Moth, Air, tier 1, power 3
-- Iron Beetle, Metal, tier 1, power 5
-- Mist Lynx, Water, tier 1, power 4
-- Sun Ram, Light, tier 1, power 3
-- Void Tadpole, Void, tier 1, power 2
+- Dreadclaw, Fire, Beast, tier 1, attack 6, guard 6
+- Stoneshell, Earth, Guardian, tier 1, attack 2, guard 5
+- Shadewisp, Shadow, Assassin, tier 1, attack 3, guard 2
+- Skywarden, Air, Avian, tier 1, attack 4, guard 3
+- Ironbastion, Metal, Guardian, tier 1, attack 3, guard 6
+- Embermaw, Fire, Wyrm, tier 1, attack 7, guard 6
+- Voidstalker, Void, Hunter, tier 1, attack 5, guard 2
+- Nightfang, Shadow, Beast, tier 1, attack 4, guard 2
 
 Evolved monsters:
 
-- Ember Fang, Fire, tier 2, power 5
-- Tide Brute, Water, tier 2, power 5
-- Stone Golem, Earth, tier 2, power 6
-- Night Bloom, Shadow, tier 2, power 4
+- Dreadmaw, Fire, Apex Beast, tier 2, attack 9, guard 7
+- Stonewarden, Earth, Guardian, tier 2, attack 4, guard 8
+- Stormwarden, Air, Avian, tier 2, attack 7, guard 5
+- Ironbulwark, Metal, Guardian, tier 2, attack 5, guard 9
+- Embermaw Alpha, Fire, Wyrm, tier 2, attack 10, guard 7
 
 ## API Contract
 

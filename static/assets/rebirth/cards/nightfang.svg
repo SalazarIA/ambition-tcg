@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Nightfang beast art">
+  <rect width="640" height="420" fill="#06070a"/>
+  <path d="M132 285 212 176l103-46 118 28 76 75-33 74-132 48-130-22z" fill="#111317" stroke="#8f8aa9" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M242 166 279 68l33 82M393 167l75-74-28 104" fill="#111317" stroke="#bdb7cf" stroke-width="5"/>
+  <path d="M418 221h85l-69 29z" fill="#f5ad2f"/>
+  <path d="M253 247c51-42 94-47 132-16-34 51-84 70-151 57z" fill="#050608" stroke="#65d7ff" stroke-width="4"/>
+  <circle cx="407" cy="209" r="8" fill="#ffca55"/>
+</svg>

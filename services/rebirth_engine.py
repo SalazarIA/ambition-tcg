@@ -22,8 +22,8 @@ def start_match(seed=None):
 
 
 def compare_power(player_card, bot_card):
-    player_power = int(player_card.get("power", 0))
-    bot_power = int(bot_card.get("power", 0))
+    player_power = int(player_card.get("attack", player_card.get("power", 0)) or 0)
+    bot_power = int(bot_card.get("attack", bot_card.get("power", 0)) or 0)
 
     if player_power > bot_power:
         return "player"
@@ -32,11 +32,22 @@ def compare_power(player_card, bot_card):
     return "clash"
 
 
-def apply_turn_damage(match, loser):
+def calculate_damage(attacker, defender, defender_wounded=False):
+    attack = int(attacker.get("attack", attacker.get("power", 0)) or 0)
+    guard = int(defender.get("guard", 0) or 0)
+    mitigated = max(1, attack - guard // 2)
+    if defender_wounded and "wounded" in str(attacker.get("ability_text", "")).lower():
+        mitigated += 2
+    return mitigated
+
+
+def apply_turn_damage(match, loser, amount):
     if loser == "player":
-        match["player"]["hp"] = max(0, int(match["player"]["hp"]) - 1)
+        match["player"]["hp"] = max(0, int(match["player"]["hp"]) - amount)
+        match["player"]["wounded"] = amount > 0
     elif loser == "bot":
-        match["bot"]["hp"] = max(0, int(match["bot"]["hp"]) - 1)
+        match["bot"]["hp"] = max(0, int(match["bot"]["hp"]) - amount)
+        match["bot"]["wounded"] = amount > 0
 
 
 def finish_if_needed(match):
@@ -66,27 +77,31 @@ def finish_if_needed(match):
 def resolve_turn(match, player_card, bot_card):
     winner = compare_power(player_card, bot_card)
     if winner == "player":
-        apply_turn_damage(match, "bot")
+        damage = calculate_damage(player_card, bot_card, match["bot"].get("wounded", False))
+        apply_turn_damage(match, "bot", damage)
         result = {
             "outcome": "Victory",
             "winner": "player",
-            "damage": {"player": 0, "bot": 1},
-            "message": f"{player_card['name']} overpowers {bot_card['name']}. Bot loses 1 life.",
+            "damage": {"player": 0, "bot": damage},
+            "message": f"{player_card['name']} overpowers {bot_card['name']}. Bot takes {damage} damage.",
         }
     elif winner == "bot":
-        apply_turn_damage(match, "player")
+        damage = calculate_damage(bot_card, player_card, match["player"].get("wounded", False))
+        apply_turn_damage(match, "player", damage)
         result = {
             "outcome": "Defeat",
             "winner": "bot",
-            "damage": {"player": 1, "bot": 0},
-            "message": f"{bot_card['name']} beats {player_card['name']}. You lose 1 life.",
+            "damage": {"player": damage, "bot": 0},
+            "message": f"{bot_card['name']} beats {player_card['name']}. You take {damage} damage.",
         }
     else:
+        match["player"]["wounded"] = False
+        match["bot"]["wounded"] = False
         result = {
             "outcome": "Clash",
             "winner": None,
             "damage": {"player": 0, "bot": 0},
-            "message": f"{player_card['name']} and {bot_card['name']} clash. No life is lost.",
+            "message": f"{player_card['name']} and {bot_card['name']} lock blades. No damage lands.",
         }
 
     match["result"] = result
@@ -124,8 +139,9 @@ def play_card(match, *, card_instance_id=None, card_id=None):
     bot_card = remove_from_hand(match["bot"], card_instance_id=bot_choice["instance_id"])
     match["player"]["played_card"] = player_card
     match["bot"]["played_card"] = bot_card
-    match["log"].append(f"Turn {match['turn']}: you played {player_card['name']}.")
-    match["log"].append(f"Turn {match['turn']}: bot answered with {bot_card['name']}.")
+    turn_label = f"Turn {match['turn']:02d}"
+    match["log"].append(f"{turn_label}   You played {player_card['name']}.")
+    match["log"].append(f"{turn_label}   Bot played {bot_card['name']}.")
     resolve_turn(match, player_card, bot_card)
     return match
 
@@ -161,7 +177,7 @@ def evolve_duplicate(match, card_id):
     evolved = create_card_instance(evolution_id, "player", sequence)
     evolved["evolved_from"] = [consumed_card["instance_id"] for consumed_card in consumed]
     match["player"]["hand"].insert(0, evolved)
-    match["log"].append(f"{card['name']} x2 evolved into {evolved['name']}.")
+    match["log"].append(f"Turn {match['turn']:02d}   {card['name']} x2 evolved into {evolved['name']}.")
     return deepcopy(evolved)
 
 
@@ -178,5 +194,5 @@ def next_turn(match):
     match["result"] = None
     match["last_clash"] = None
     match["phase"] = "choose"
-    match["log"].append(f"Turn {match['turn']} begins. Choose one monster.")
+    match["log"].append(f"Turn {match['turn']:02d}   Choose one monster.")
     return match

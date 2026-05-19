@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Embermaw wyrm art">
+  <rect width="640" height="420" fill="#080706"/>
+  <path d="M82 291c125-132 242-174 360-126 68 28 92 76 118 133-71-47-133-58-187-34-68 30-159 49-291 27z" fill="#111316" stroke="#d7952d" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M386 167 494 93l-36 102M292 173l42-108 23 107M201 220 92 171l78 86" fill="#111316" stroke="#f0b849" stroke-width="6"/>
+  <path d="M411 215h96l-75 34z" fill="#f5ad2f"/>
+  <path d="M219 281c51-12 96-34 136-66-18 47-57 87-117 120z" fill="#2b1707"/>
+  <circle cx="431" cy="201" r="10" fill="#ffca55"/>
+</svg>

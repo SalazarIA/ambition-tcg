@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Shadewisp assassin art">
+  <rect width="640" height="420" fill="#06070a"/>
+  <g opacity=".55" stroke="#6d6f78" stroke-width="2"><path d="M90 352 410 58M163 369 500 84M41 286 286 60"/></g>
+  <path d="M335 62c-67 47-119 105-146 171-22 54-2 98 65 132 42-65 92-113 155-144-51-24-76-76-74-159z" fill="#11141a" stroke="#b7b2c7" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M367 91 254 284l202-131z" fill="#050608" stroke="#f5ad2f" stroke-width="5"/>
+  <path d="M249 307c70-20 131-49 182-91-26 57-73 103-140 136z" fill="#20242b"/>
+  <circle cx="345" cy="167" r="8" fill="#65d7ff"/>
+</svg>

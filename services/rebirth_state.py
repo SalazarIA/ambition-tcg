@@ -5,7 +5,7 @@ import uuid
 from services.rebirth_cards import build_deck, catalog_payload
 
 
-STARTING_HP = 3
+STARTING_HP = 30
 HAND_SIZE = 5
 
 
@@ -24,10 +24,12 @@ def create_player(name, owner):
     return {
         "name": name,
         "hp": STARTING_HP,
+        "max_hp": STARTING_HP,
         "deck": build_deck(owner),
         "hand": [],
         "discard": [],
         "played_card": None,
+        "wounded": False,
     }
 
 
@@ -66,7 +68,10 @@ def create_match(seed=None):
         "result": None,
         "winner": None,
         "is_finished": False,
-        "log": ["Match started. Choose one monster."],
+        "log": [
+            "Turn 01   Rebirth clash initialized.",
+            "Turn 01   Choose one monster.",
+        ],
         "catalog": catalog_payload(),
     }
 
@@ -118,9 +123,11 @@ def side_payload(side, *, reveal_hand=True):
     payload = {
         "name": side["name"],
         "hp": side["hp"],
+        "max_hp": side.get("max_hp", STARTING_HP),
         "deck_count": len(side["deck"]),
         "discard_count": len(side["discard"]),
         "played_card": deepcopy(side.get("played_card")),
+        "wounded": bool(side.get("wounded")),
     }
     if reveal_hand:
         payload["hand"] = deepcopy(side["hand"])

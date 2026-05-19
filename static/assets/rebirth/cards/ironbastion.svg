@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Ironbastion guardian art">
+  <rect width="640" height="420" fill="#08090b"/>
+  <g fill="#161a1d" stroke="#c0c6c8" stroke-width="7" stroke-linejoin="round">
+    <path d="M240 80h160l68 72v130l-72 72H244l-72-72V152z"/>
+    <path d="M275 123h90l42 49v83l-42 48h-90l-42-48v-83z"/>
+    <path d="M172 181h-66v120h82M468 181h66v120h-82"/>
+  </g>
+  <path d="M320 111v212M232 172h176M232 255h176" stroke="#f5ad2f" stroke-width="5" opacity=".72"/>
+  <circle cx="292" cy="195" r="8" fill="#65d7ff"/><circle cx="348" cy="195" r="8" fill="#65d7ff"/>
+</svg>

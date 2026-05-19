@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Stoneshell guardian art">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1b2118"/><stop offset=".7" stop-color="#080a0b"/></linearGradient></defs>
+  <rect width="640" height="420" fill="url(#g)"/>
+  <g fill="#101417" stroke="#c8c1a4" stroke-width="8" stroke-linejoin="round">
+    <path d="M233 92h164l55 73-26 163-106 48-109-48-25-163z"/>
+    <path d="M250 145h140l31 47-17 100-84 38-83-38-18-100z"/>
+    <path d="M194 218 92 278l126 18M446 218l102 60-126 18"/>
+  </g>
+  <g fill="#343a36" stroke="#f2c46b" stroke-width="4" opacity=".72">
+    <path d="M320 109v220M226 182h188M242 286h156"/>
+  </g>
+  <circle cx="290" cy="192" r="10" fill="#f5ad2f"/><circle cx="350" cy="192" r="10" fill="#65d7ff"/>
+</svg>

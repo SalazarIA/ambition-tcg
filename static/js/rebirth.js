@@ -17,20 +17,25 @@
     function cacheElements() {
         [
             "player-hp",
+            "player-hp-fill",
             "bot-hp",
+            "bot-hp-fill",
             "turn-number",
             "bot-card",
             "focus-card",
             "evolution-panel",
             "evolution-name",
+            "evolution-card-thumbnail",
             "evolve-button",
             "player-hand",
             "hand-count",
             "play-button",
             "next-turn-button",
+            "secondary-action-copy",
             "result-label",
             "result-title",
             "result-copy",
+            "result-panel",
             "turn-log",
             "phase-label"
         ].forEach((id) => {
@@ -87,6 +92,9 @@
         if (!handContains(app.selectedInstanceId)) {
             app.selectedInstanceId = null;
         }
+        if (!app.selectedInstanceId && state && state.phase === "choose" && state.player && state.player.hand.length) {
+            app.selectedInstanceId = state.player.hand[0].instance_id;
+        }
         render();
     }
 
@@ -103,45 +111,74 @@
         return app.state.player.played_card || null;
     }
 
+    function artStyle(card) {
+        return card && card.art ? `style="background-image: url('${escapeHtml(card.art)}')"` : "";
+    }
+
     function cardInnerMarkup(card) {
         return `
-            <div class="rb-card-art">
-                <span>${escapeHtml(card.family)}</span>
+            <div class="rb-card-topline">
+                <div>
+                    <strong>${escapeHtml(card.name)}</strong>
+                    <span>${escapeHtml(card.role || card.family)}</span>
+                </div>
+                <b class="rb-card-rank">${escapeHtml(card.attack || card.power)}</b>
             </div>
-            <div class="rb-card-body">
-                <span>${escapeHtml(card.element)} - Tier ${escapeHtml(card.tier)}</span>
-                <strong>${escapeHtml(card.name)}</strong>
-                <p>${escapeHtml(card.flavor)}</p>
+            <div class="rb-card-art" ${artStyle(card)}>
+                <img src="${escapeHtml(card.art)}" alt="" loading="lazy">
             </div>
-            <b class="rb-power">${escapeHtml(card.power)}</b>
+            <div class="rb-card-rule">
+                <strong>${escapeHtml(card.ability_name || "Clash")}</strong>
+                <p>${escapeHtml(card.ability_text || card.flavor)}</p>
+            </div>
+            <div class="rb-card-stats">
+                <span><i class="rb-stat-sword"></i><b>${escapeHtml(card.attack || card.power)}</b></span>
+                <span><i class="rb-stat-crest"></i></span>
+                <span><i class="rb-stat-shield"></i><b>${escapeHtml(card.guard || 0)}</b></span>
+            </div>
         `;
     }
 
-    function cardMarkup(card, options) {
+    function miniCardMarkup(card, options) {
         const opts = options || {};
         const selected = opts.selected ? " is-selected" : "";
-        const tag = opts.button ? "button" : "article";
-        const attrs = opts.button
-            ? `type="button" data-card-instance="${escapeHtml(card.instance_id)}"`
-            : "";
         return `
-            <${tag} class="rb-card${selected}" data-element="${escapeHtml(card.element)}" ${attrs}>
-                ${cardInnerMarkup(card)}
-            </${tag}>
+            <button class="rb-mini-card${selected}" type="button" data-card-instance="${escapeHtml(card.instance_id)}" aria-pressed="${opts.selected ? "true" : "false"}" aria-label="Select ${escapeHtml(card.name)}, attack ${escapeHtml(card.attack)}, guard ${escapeHtml(card.guard)}">
+                <b class="rb-power">${escapeHtml(card.attack || card.power)}</b>
+                <div class="rb-mini-art" ${artStyle(card)}></div>
+                <div class="rb-mini-copy">
+                    <span>${escapeHtml(card.element)} - Tier ${escapeHtml(card.tier)}</span>
+                    <strong>${escapeHtml(card.name)}</strong>
+                    <div class="rb-mini-stats">
+                        <b>${escapeHtml(card.attack || card.power)}</b>
+                        <b>${escapeHtml(card.guard || 0)}</b>
+                    </div>
+                </div>
+            </button>
         `;
     }
 
     function emptyFocusMarkup() {
         return `
+            <div class="rb-card-topline">
+                <div>
+                    <strong>Select a monster</strong>
+                    <span>Ready</span>
+                </div>
+                <b class="rb-card-rank">?</b>
+            </div>
             <div class="rb-card-art">
                 <span>Choose</span>
             </div>
-            <div class="rb-card-body">
-                <span>Ready</span>
-                <strong>Select a monster</strong>
-                <p>Your card becomes the center of the clash.</p>
+            <div class="rb-card-rule">
+                <strong>One Card Clash</strong>
+                <p>Your card becomes the center of the duel.</p>
             </div>
-            <b class="rb-power">?</b>
+            <div class="rb-card-stats">
+                <span><i class="rb-stat-sword"></i><b>0</b></span>
+                <span><i class="rb-stat-crest"></i></span>
+                <span><i class="rb-stat-shield"></i><b>0</b></span>
+            </div>
         `;
     }
 
@@ -152,6 +189,7 @@
         setText("bot-hp", state.bot.hp);
         setText("turn-number", String(state.turn).padStart(2, "0"));
         setText("phase-label", state.phase);
+        renderHpBars();
         renderFocusCard();
         renderBotCard();
         renderEvolution();
@@ -161,17 +199,31 @@
         renderButtons();
     }
 
+    function renderHpBars() {
+        if (!app.state) return;
+        const playerMax = Number(app.state.player.max_hp || 30);
+        const botMax = Number(app.state.bot.max_hp || 30);
+        const playerScale = Math.max(0, Math.min(1, Number(app.state.player.hp || 0) / playerMax));
+        const botScale = Math.max(0, Math.min(1, Number(app.state.bot.hp || 0) / botMax));
+        if (elements["player-hp-fill"]) {
+            elements["player-hp-fill"].style.transform = `scaleX(${playerScale})`;
+        }
+        if (elements["bot-hp-fill"]) {
+            elements["bot-hp-fill"].style.transform = `scaleX(${botScale})`;
+        }
+    }
+
     function renderFocusCard() {
         const host = elements["focus-card"];
         if (!host) return;
         const card = selectedCard();
         if (!card) {
-            host.className = "rb-card rb-card-large rb-empty-card";
+            host.className = "rb-monster-card rb-monster-card-main rb-empty-card";
             host.removeAttribute("data-element");
             host.innerHTML = emptyFocusMarkup();
             return;
         }
-        host.className = "rb-card rb-card-large";
+        host.className = `rb-monster-card rb-monster-card-main${Number(card.tier || 1) > 1 ? " is-evolved" : ""}`;
         host.setAttribute("data-element", card.element);
         host.innerHTML = cardInnerMarkup(card);
     }
@@ -186,7 +238,7 @@
             host.innerHTML = "<span>Bot's Card</span>";
             return;
         }
-        host.className = "rb-card rb-card-large";
+        host.className = "rb-monster-card rb-bot-revealed";
         host.setAttribute("data-element", card.element);
         host.innerHTML = cardInnerMarkup(card);
     }
@@ -204,6 +256,10 @@
         panel.hidden = false;
         button.dataset.cardId = evolution.card_id;
         setText("evolution-name", `${evolution.name} x${evolution.count}`);
+        const sourceCard = (app.state.player.hand || []).find((card) => card.id === evolution.card_id);
+        if (elements["evolution-card-thumbnail"] && sourceCard) {
+            elements["evolution-card-thumbnail"].style.backgroundImage = `url('${sourceCard.art}')`;
+        }
     }
 
     function renderHand() {
@@ -211,8 +267,7 @@
         if (!host || !app.state) return;
         const hand = app.state.player.hand || [];
         setText("hand-count", `${hand.length} cards`);
-        host.innerHTML = hand.map((card) => cardMarkup(card, {
-            button: true,
+        host.innerHTML = hand.map((card) => miniCardMarkup(card, {
             selected: card.instance_id === app.selectedInstanceId
         })).join("");
         host.querySelectorAll("[data-card-instance]").forEach((button) => {
@@ -227,15 +282,25 @@
     function renderResult() {
         if (!app.state) return;
         const result = app.state.result;
+        const panel = elements["result-panel"];
+        if (panel) {
+            panel.classList.remove("is-victory", "is-defeat", "is-clash");
+        }
         if (app.state.is_finished) {
             const won = app.state.winner === "player";
             const tied = app.state.winner === "clash";
+            if (panel) {
+                panel.classList.add(tied ? "is-clash" : won ? "is-victory" : "is-defeat");
+            }
             setText("result-label", tied ? "Clash" : won ? "Victory" : "Defeat");
             setText("result-title", tied ? "Both sides fell." : won ? "You won the duel." : "Bot won the duel.");
             setText("result-copy", tied ? "The match ended in a final clash." : "Start a new match when ready.");
             return;
         }
         if (result) {
+            if (panel) {
+                panel.classList.add(`is-${String(result.outcome || "clash").toLowerCase()}`);
+            }
             setText("result-label", result.outcome);
             setText("result-title", result.outcome === "Clash" ? "No damage." : result.outcome);
             setText("result-copy", result.message);
@@ -259,15 +324,38 @@
     function renderButtons() {
         if (!app.state) return;
         const canChoose = app.state.phase === "choose" && !app.state.is_finished && !app.pending;
+        const evolution = (app.state.available_evolutions || [])[0];
         if (elements["play-button"]) {
             elements["play-button"].disabled = !canChoose || !app.selectedInstanceId;
         }
         if (elements["next-turn-button"]) {
-            elements["next-turn-button"].disabled = app.pending || app.state.phase !== "result";
+            if (app.state.phase === "result") {
+                elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Next Turn';
+                elements["next-turn-button"].disabled = app.pending;
+                setText("secondary-action-copy", "Advance to the next clash");
+            } else {
+                elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Combine';
+                elements["next-turn-button"].disabled = !canChoose || !evolution;
+                setText("secondary-action-copy", "Merge duplicates to evolve");
+            }
         }
         if (elements["evolve-button"]) {
-            elements["evolve-button"].disabled = !canChoose || !elements["evolve-button"].dataset.cardId;
+            elements["evolve-button"].disabled = !canChoose || !evolution;
         }
+    }
+
+    function evolveFirstDuplicate() {
+        if (!app.state) return Promise.resolve();
+        const evolution = (app.state.available_evolutions || [])[0];
+        if (!evolution) return Promise.resolve();
+        return request(async () => {
+            const payload = await api(endpoints.evolve, {
+                match_id: app.state.match_id,
+                card_id: evolution.card_id
+            });
+            app.selectedInstanceId = payload.evolved.instance_id;
+            applyState(payload.state);
+        });
     }
 
     function showError(message) {
@@ -297,6 +385,10 @@
         if (elements["next-turn-button"]) {
             elements["next-turn-button"].addEventListener("click", () => {
                 if (!app.state) return;
+                if (app.state.phase === "choose") {
+                    evolveFirstDuplicate();
+                    return;
+                }
                 request(async () => {
                     const payload = await api(endpoints.nextTurn, { match_id: app.state.match_id });
                     applyState(payload.state);
@@ -309,14 +401,7 @@
                 if (!app.state) return;
                 const cardId = elements["evolve-button"].dataset.cardId;
                 if (!cardId) return;
-                request(async () => {
-                    const payload = await api(endpoints.evolve, {
-                        match_id: app.state.match_id,
-                        card_id: cardId
-                    });
-                    app.selectedInstanceId = payload.evolved.instance_id;
-                    applyState(payload.state);
-                });
+                evolveFirstDuplicate();
             });
         }
     }

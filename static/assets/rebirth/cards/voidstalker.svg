@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Voidstalker hunter art">
+  <rect width="640" height="420" fill="#050608"/>
+  <circle cx="321" cy="207" r="140" fill="#11121a" stroke="#4d5366" stroke-width="8"/>
+  <path d="M197 314 321 62l122 252-122-65z" fill="#090b11" stroke="#65d7ff" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M321 99v150M252 247h138" stroke="#f5ad2f" stroke-width="5" opacity=".68"/>
+  <path d="M120 350c85-44 157-51 218-20 59 30 119 22 181-25" fill="none" stroke="#2b3144" stroke-width="14" opacity=".72"/>
+</svg>

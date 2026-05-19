@@ -20,48 +20,56 @@ def test_start_match_creates_valid_state_with_hands():
     assert match["architecture"] == "Ambitionz Rebirth"
     assert match["turn"] == 1
     assert match["phase"] == "choose"
-    assert match["player"]["hp"] == 3
-    assert match["bot"]["hp"] == 3
+    assert match["player"]["hp"] == 30
+    assert match["bot"]["hp"] == 30
+    assert match["player"]["max_hp"] == 30
+    assert match["player"]["hand"][0]["id"] == "dreadclaw"
     assert len(match["player"]["hand"]) == 5
     assert len(match["bot"]["hand"]) == 5
 
 
 def test_compare_power_returns_expected_winner():
-    player = {"power": 5}
-    bot = {"power": 3}
+    player = {"attack": 5}
+    bot = {"attack": 3}
 
     assert compare_power(player, bot) == "player"
     assert compare_power(bot, player) == "bot"
-    assert compare_power({"power": 4}, {"power": 4}) == "clash"
+    assert compare_power({"attack": 4}, {"attack": 4}) == "clash"
 
 
 def test_play_card_resolves_turn_and_applies_life_damage():
     match = start_match(seed="damage")
-    card = next(card for card in match["player"]["hand"] if card["id"] == "iron_beetle")
+    card = next(card for card in match["player"]["hand"] if card["id"] == "dreadclaw")
 
     play_card(match, card_instance_id=card["instance_id"])
 
     assert match["phase"] == "result"
     assert match["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
-    assert match["bot"]["hp"] == 2
-    assert match["player"]["played_card"]["id"] == "iron_beetle"
+    assert match["bot"]["hp"] == 27
+    assert match["player"]["played_card"]["id"] == "dreadclaw"
     assert match["bot"]["played_card"] is not None
 
 
 def test_equal_power_clash_causes_no_damage():
     match = start_match(seed="tie")
-    player_card = next(card for card in match["player"]["hand"] if card["id"] == "spark_hare")
+    player_card = next(card for card in match["player"]["hand"] if card["id"] == "skywarden")
 
     match["bot"]["hand"] = [
         {
-            "id": "mist_lynx",
-            "name": "Mist Lynx",
-            "family": "Mist",
+            "id": "nightfang",
+            "name": "Nightfang",
+            "family": "Nightfang",
+            "role": "Beast",
             "tier": 1,
+            "attack": 4,
+            "guard": 2,
             "power": 4,
-            "element": "Water",
+            "element": "Shadow",
             "evolution_id": None,
+            "ability_name": "Test",
+            "ability_text": "Test card.",
             "flavor": "Test card.",
+            "art": "/static/assets/rebirth/cards/nightfang.svg",
             "instance_id": "bot-test-mist",
         }
     ]
@@ -69,45 +77,45 @@ def test_equal_power_clash_causes_no_damage():
     play_card(match, card_instance_id=player_card["instance_id"])
 
     assert match["result"]["outcome"] == "Clash"
-    assert match["player"]["hp"] == 3
-    assert match["bot"]["hp"] == 3
+    assert match["player"]["hp"] == 30
+    assert match["bot"]["hp"] == 30
 
 
 def test_evolution_by_duplicate_creates_stronger_card():
     match = start_match(seed="evolve")
 
-    evolved = evolve_duplicate(match, "ember_cub")
+    evolved = evolve_duplicate(match, "dreadclaw")
 
-    assert evolved["id"] == "ember_fang"
-    assert evolved["name"] == "Ember Fang"
-    assert evolved["power"] == 5
+    assert evolved["id"] == "dreadmaw"
+    assert evolved["name"] == "Dreadmaw"
+    assert evolved["attack"] == 9
     assert evolved["tier"] == 2
-    assert match["player"]["hand"][0]["id"] == "ember_fang"
-    assert len([card for card in match["player"]["discard"] if card["id"] == "ember_cub"]) == 2
+    assert match["player"]["hand"][0]["id"] == "dreadmaw"
+    assert len([card for card in match["player"]["discard"] if card["id"] == "dreadclaw"]) == 2
 
 
 def test_evolution_requires_duplicate():
     match = start_match(seed="no-duplicate")
 
     with pytest.raises(RebirthError) as error:
-        evolve_duplicate(match, "spark_hare")
+        evolve_duplicate(match, "voidstalker")
 
     assert error.value.code == "no_evolution"
 
     match = start_match(seed="no-duplicate-2")
-    first_ember = next(card for card in match["player"]["hand"] if card["id"] == "ember_cub")
-    match["player"]["hand"] = [first_ember]
+    first_dreadclaw = next(card for card in match["player"]["hand"] if card["id"] == "dreadclaw")
+    match["player"]["hand"] = [first_dreadclaw]
 
     with pytest.raises(RebirthError) as duplicate_error:
-        evolve_duplicate(match, "ember_cub")
+        evolve_duplicate(match, "dreadclaw")
 
     assert duplicate_error.value.code == "duplicate_required"
 
 
 def test_match_finishes_when_hp_reaches_zero():
     match = start_match(seed="finish")
-    match["bot"]["hp"] = 1
-    card = next(card for card in match["player"]["hand"] if card["id"] == "iron_beetle")
+    match["bot"]["hp"] = 3
+    card = next(card for card in match["player"]["hand"] if card["id"] == "dreadclaw")
 
     play_card(match, card_instance_id=card["instance_id"])
 
@@ -138,4 +146,5 @@ def test_public_state_exposes_player_hand_and_hides_bot_hand():
     assert "hand" in state["player"]
     assert "hand_count" in state["bot"]
     assert "hand" not in state["bot"]
-    assert state["available_evolutions"][0]["card_id"] == "ember_cub"
+    assert state["player"]["max_hp"] == 30
+    assert state["available_evolutions"][0]["card_id"] == "dreadclaw"

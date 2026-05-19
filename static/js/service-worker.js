@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-rebirth-mvp-v1";
+const CACHE_NAME = "ambitionz-rebirth-clash-ui-v2";
 
 const CORE_ASSETS = [
     "/",
@@ -8,6 +8,14 @@ const CORE_ASSETS = [
     "/static/css/rebirth.css",
     "/static/js/rebirth.js",
     "/static/js/pwa.js",
+    "/static/assets/rebirth/cards/dreadclaw.svg",
+    "/static/assets/rebirth/cards/stoneshell.svg",
+    "/static/assets/rebirth/cards/shadewisp.svg",
+    "/static/assets/rebirth/cards/skywarden.svg",
+    "/static/assets/rebirth/cards/ironbastion.svg",
+    "/static/assets/rebirth/cards/embermaw.svg",
+    "/static/assets/rebirth/cards/voidstalker.svg",
+    "/static/assets/rebirth/cards/nightfang.svg",
     "/static/icons/icon.svg",
     "/static/icons/icon-192.png",
     "/static/icons/icon-512.png"
