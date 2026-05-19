@@ -1,81 +1,87 @@
-from pathlib import Path
+def test_home_rebirth_and_health_routes_return_200(client):
+    home = client.get("/")
+    rebirth = client.get("/rebirth")
+    health = client.get("/health")
+
+    assert home.status_code == 200
+    assert "One card. One decision. One clash." in home.get_data(as_text=True)
+    assert rebirth.status_code == 200
+    assert "data-rebirth-app" in rebirth.get_data(as_text=True)
+    assert health.status_code == 200
+    assert health.get_json()["product"] == "Ambitionz Rebirth"
 
 
-def test_rebirth_route_renders(client):
-    response = client.get("/rebirth")
-    body = response.get_data(as_text=True)
-
-    assert response.status_code == 200
-    assert "Ambitionz Rebirth" in body
-    assert "rb-shell" in body
-    assert "rebirth.js" in body
-    assert "rebirth_3d_adapter.js" in body
-
-
-def test_rebirth_new_api_returns_json(client):
-    response = client.get("/api/rebirth/new?seed=routes-a")
+def test_start_api_returns_clear_json_state(client):
+    response = client.post("/api/rebirth/start", json={"seed": "routes-start"})
     payload = response.get_json()
 
     assert response.status_code == 200
     assert response.is_json
     assert payload["ok"] is True
     assert payload["state"]["match_id"].startswith("rebirth-")
-    assert payload["state"]["player"]["hp"] == 32
-    assert payload["state"]["selected_deck_id"] == "ember_oath"
-    assert payload["state"]["difficulty"] == "normal"
+    assert payload["state"]["player"]["hp"] == 3
+    assert len(payload["state"]["player"]["hand"]) == 5
+    assert payload["state"]["bot"]["hand_count"] == 5
 
 
-def test_rebirth_deck_apis_return_catalog(client):
-    response = client.get("/api/rebirth/decks")
+def test_play_card_api_resolves_turn(client):
+    start = client.post("/api/rebirth/start", json={"seed": "routes-play"})
+    state = start.get_json()["state"]
+    card = next(card for card in state["player"]["hand"] if card["id"] == "iron_beetle")
+
+    response = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": state["match_id"], "card_instance_id": card["instance_id"]},
+    )
     payload = response.get_json()
 
     assert response.status_code == 200
     assert payload["ok"] is True
-    assert {deck["id"] for deck in payload["decks"]} == {"ember_oath", "deepguard", "null_circuit"}
-    assert all(deck["card_count"] >= 12 for deck in payload["decks"])
-
-    detail = client.get("/api/rebirth/decks/null_circuit")
-    body = detail.get_json()
-    assert detail.status_code == 200
-    assert body["deck"]["id"] == "null_circuit"
-    assert body["deck"]["cards"]
+    assert payload["state"]["phase"] == "result"
+    assert payload["state"]["last_clash"]["player_card"]["id"] == "iron_beetle"
+    assert payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
 
 
-def test_rebirth_new_accepts_deck_and_difficulty(client):
-    response = client.get("/api/rebirth/new?seed=routes-deck&deck_id=deepguard&difficulty=hard")
+def test_evolve_api_combines_duplicate(client):
+    start = client.post("/api/rebirth/start", json={"seed": "routes-evolve"})
+    state = start.get_json()["state"]
+
+    response = client.post(
+        "/api/rebirth/evolve",
+        json={"match_id": state["match_id"], "card_id": "ember_cub"},
+    )
     payload = response.get_json()
 
     assert response.status_code == 200
-    assert payload["state"]["selected_deck_id"] == "deepguard"
-    assert payload["state"]["selected_deck_name"] == "Deepguard"
-    assert payload["state"]["difficulty"] == "hard"
-    assert payload["state"]["difficulty_label"] == "Hard"
+    assert payload["ok"] is True
+    assert payload["evolved"]["id"] == "ember_fang"
+    assert payload["state"]["player"]["hand"][0]["id"] == "ember_fang"
 
 
-def test_rebirth_intent_play_and_resolve_flow(client):
-    start = client.get("/api/rebirth/new?seed=routes-flow")
+def test_next_turn_api_advances_after_result(client):
+    start = client.post("/api/rebirth/start", json={"seed": "routes-next"})
     state = start.get_json()["state"]
-    card_id = state["hand"][0]["id"]
-    match_id = state["match_id"]
+    card = state["player"]["hand"][0]
+    played = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": state["match_id"], "card_instance_id": card["instance_id"]},
+    )
+    after_play = played.get_json()["state"]
 
-    intent = client.post("/api/rebirth/intent", json={"match_id": match_id, "intent": "STRIKE"})
-    assert intent.status_code == 200
-    assert intent.get_json()["state"]["selected_intent"] == "STRIKE"
+    response = client.post("/api/rebirth/next-turn", json={"match_id": after_play["match_id"]})
+    payload = response.get_json()
 
-    play = client.post("/api/rebirth/play-card", json={"match_id": match_id, "card_id": card_id})
-    assert play.status_code == 200
-    assert play.get_json()["state"]["player"]["active_card"]["id"] == card_id
-
-    resolved = client.post("/api/rebirth/resolve", json={"match_id": match_id})
-    body = resolved.get_json()
-    assert resolved.status_code == 200
-    assert body["state"]["combat_log"]
-    assert "hp" in body["state"]["player"]
-    assert "hp" in body["state"]["opponent"]
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["state"]["turn"] == 2
+    assert payload["state"]["phase"] == "choose"
 
 
-def test_rebirth_invalid_match_returns_400(client):
-    response = client.post("/api/rebirth/intent", json={"match_id": "missing", "intent": "STRIKE"})
+def test_invalid_api_returns_json_error(client):
+    response = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": "missing", "card_id": "ember_cub"},
+    )
     payload = response.get_json()
 
     assert response.status_code == 400
@@ -83,31 +89,11 @@ def test_rebirth_invalid_match_returns_400(client):
     assert payload["error"]["code"] == "match_not_found"
 
 
-def test_rebirth_invalid_intent_returns_400(client):
-    start = client.get("/api/rebirth/new?seed=routes-invalid")
-    match_id = start.get_json()["state"]["match_id"]
-    response = client.post("/api/rebirth/intent", json={"match_id": match_id, "intent": "LANE"})
+def test_legacy_routes_redirect_or_report_retired(client):
+    arena = client.get("/arena")
+    legacy_api = client.post("/api/ascension/start", json={})
 
-    assert response.status_code == 400
-
-
-def test_rebirth_invalid_deck_and_difficulty_return_400(client):
-    invalid_deck = client.get("/api/rebirth/new?deck_id=missing")
-    invalid_difficulty = client.get("/api/rebirth/new?difficulty=nightmare")
-
-    assert invalid_deck.status_code == 400
-    assert invalid_deck.get_json()["error"]["code"] == "invalid_rebirth_deck"
-    assert invalid_difficulty.status_code == 400
-    assert invalid_difficulty.get_json()["error"]["code"] == "invalid_rebirth_difficulty"
-
-
-def test_rebirth_assets_are_cached():
-    service_worker = Path(__file__).resolve().parents[1] / "static" / "js" / "service-worker.js"
-    body = service_worker.read_text()
-
-    assert 'CACHE_NAME = "ambitionz-web-app-v197"' in body
-    assert '"/rebirth"' in body
-    assert '"/static/css/rebirth.css"' in body
-    assert '"/static/js/rebirth.js"' in body
-    assert '"/static/js/rebirth_3d_adapter.js"' in body
-    assert '"/static/assets/rebirth3d/manifest.json"' in body
+    assert arena.status_code == 302
+    assert arena.headers["Location"] == "/rebirth"
+    assert legacy_api.status_code == 410
+    assert legacy_api.get_json()["error"]["code"] == "legacy_disabled"

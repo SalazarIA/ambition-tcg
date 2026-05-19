@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "Ambitionz",
+  "name": "Ambitionz Rebirth",
   "short_name": "Ambitionz",
-  "description": "Dark tactical fantasy card duels built around risk, intent, Sigils and Ambition.",
-  "start_url": "/?source=pwa",
+  "description": "A fast one-card monster duel. Combine duplicates, evolve monsters and win the clash.",
+  "start_url": "/rebirth?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -11,12 +11,11 @@
     "minimal-ui",
     "browser"
   ],
-  "orientation": "any",
-  "background_color": "#05050B",
-  "theme_color": "#05050B",
+  "orientation": "portrait-primary",
+  "background_color": "#050608",
+  "theme_color": "#050608",
   "categories": [
     "games",
-    "entertainment",
     "strategy"
   ],
   "lang": "en",
@@ -56,22 +55,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Play Training",
+      "name": "Play Rebirth Prototype",
       "short_name": "Play",
-      "description": "Start a quick Ambitionz training match.",
-      "url": "/training",
-      "icons": [
-        {
-          "src": "/static/icons/icon.svg",
-          "sizes": "1024x1024"
-        }
-      ]
-    },
-    {
-      "name": "Feedback",
-      "short_name": "Feedback",
-      "description": "Send beta feedback.",
-      "url": "/feedback",
+      "description": "Start a one-card Ambitionz Rebirth duel.",
+      "url": "/rebirth",
       "icons": [
         {
           "src": "/static/icons/icon.svg",

@@ -1,40 +1,16 @@
-const CACHE_NAME = "ambitionz-web-app-v197";
-// Legacy cache marker retained for migration audits: ambitionz-web-app-v192.
-// Previous Ascension cache marker retained for migration audits: ambitionz-web-app-v193.
-// Previous visual architecture cache marker retained for migration audits: ambitionz-web-app-v194.
+const CACHE_NAME = "ambitionz-rebirth-mvp-v1";
 
 const CORE_ASSETS = [
     "/",
     "/rebirth",
-    "/offline",
+    "/manifest.webmanifest",
     "/static/manifest.webmanifest",
-    "/static/css/style.css",
-    "/static/css/ambitionz_ascension.css",
     "/static/css/rebirth.css",
-    "/static/css/arena_clean_v48.css",
-    "/static/css/arena3d.css",
-    "/static/js/pwa.js",
-    "/static/js/ambitionz_ascension.js",
-    "/static/js/ambitionz_ascension_library.js",
     "/static/js/rebirth.js",
-    "/static/js/rebirth_3d_adapter.js",
-    "/static/js/arena_renderer_adapter.js",
-    "/static/js/arena_clean_v48.js",
-    "/static/js/arena_sound.js",
-    "/static/js/card_art_manifest.js",
-    "/static/js/beta_telemetry.js",
-    "/static/js/beta_feedback.js",
-    "/static/assets/cards/card_art_manifest.json",
-    "/static/dist/arena3d/arena3d.js",
-    "/static/assets/arena3d/manifest.json",
-    "/static/assets/ascension/manifest.json",
-    "/static/assets/rebirth3d/manifest.json",
+    "/static/js/pwa.js",
     "/static/icons/icon.svg",
     "/static/icons/icon-192.png",
-    "/static/icons/icon-512.png",
-    "/static/icons/maskable-icon-192.png",
-    "/static/icons/maskable-icon-512.png",
-    "/static/icons/apple-touch-icon.png"
+    "/static/icons/icon-512.png"
 ];
 
 self.addEventListener("install", function (event) {
@@ -45,7 +21,6 @@ self.addEventListener("install", function (event) {
             });
         })
     );
-
     self.skipWaiting();
 });
 
@@ -63,7 +38,6 @@ self.addEventListener("activate", function (event) {
             );
         })
     );
-
     self.clients.claim();
 });
 
@@ -72,40 +46,31 @@ self.addEventListener("fetch", function (event) {
         return;
     }
 
-    const requestUrl = new URL(event.request.url);
-
-    if (
-        requestUrl.pathname.startsWith("/socket.io/") ||
-        requestUrl.pathname.startsWith("/api/")
-    ) {
+    const url = new URL(event.request.url);
+    if (url.pathname.startsWith("/api/")) {
         return;
     }
 
     if (event.request.mode === "navigate") {
         event.respondWith(
             fetch(event.request).catch(function () {
-                return caches.match("/offline");
+                return caches.match("/rebirth");
             })
         );
         return;
     }
 
     event.respondWith(
-        caches.match(event.request).then(function (cachedResponse) {
-            const networkFetch = fetch(event.request).then(function (networkResponse) {
-                if (networkResponse && networkResponse.ok && requestUrl.origin === self.location.origin) {
-                    const responseClone = networkResponse.clone();
+        caches.match(event.request).then(function (cached) {
+            return cached || fetch(event.request).then(function (response) {
+                if (response && response.ok && url.origin === self.location.origin) {
+                    const copy = response.clone();
                     caches.open(CACHE_NAME).then(function (cache) {
-                        cache.put(event.request, responseClone);
+                        cache.put(event.request, copy);
                     });
                 }
-
-                return networkResponse;
-            }).catch(function () {
-                return cachedResponse || caches.match("/offline");
+                return response;
             });
-
-            return cachedResponse || networkFetch;
         })
     );
 });

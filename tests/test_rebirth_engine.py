@@ -1,173 +1,141 @@
 from copy import deepcopy
 
-from services.rebirth.rebirth_engine import (
-    DAMAGE_CAP,
-    bot_select_action,
-    play_rebirth_card,
-    resolve_rebirth_round,
-    select_intent,
-    start_rebirth_match,
+import pytest
+
+from services.rebirth_engine import (
+    RebirthError,
+    compare_power,
+    evolve_duplicate,
+    next_turn,
+    play_card,
+    start_match,
 )
-from services.rebirth.rebirth_state import activate_card_from_hand
+from services.rebirth_state import public_state
 
 
-def test_rebirth_match_starts_with_expected_state():
-    match = start_rebirth_match(seed="engine-start")
+def test_start_match_creates_valid_state_with_hands():
+    match = start_match(seed="start")
 
-    assert match["player"]["hp"] == 32
-    assert match["opponent"]["hp"] == 32
-    assert len(match["player"]["hand"]) == 4
-    assert len(match["opponent"]["hand"]) == 4
-    assert match["player"]["active_card"] is None
-    assert match["opponent"]["active_card"] is None
-    assert match["phase"] == "INTENT"
-    assert match["selected_deck_id"] == "ember_oath"
-    assert match["difficulty"] == "normal"
-    assert match["opponent_profile"]["name"] in {"The Warden", "The Duelist", "The Oracle"}
+    assert match["match_id"].startswith("rebirth-")
+    assert match["architecture"] == "Ambitionz Rebirth"
+    assert match["turn"] == 1
+    assert match["phase"] == "choose"
+    assert match["player"]["hp"] == 3
+    assert match["bot"]["hp"] == 3
+    assert len(match["player"]["hand"]) == 5
+    assert len(match["bot"]["hand"]) == 5
 
 
-def test_rebirth_only_one_active_card_and_replacement_discards_old():
-    match = start_rebirth_match(seed="engine-active")
-    first = match["player"]["hand"][0]["id"]
-    second = match["player"]["hand"][1]["id"]
+def test_compare_power_returns_expected_winner():
+    player = {"power": 5}
+    bot = {"power": 3}
 
-    activate_card_from_hand(match, "player", first)
-    first_active = deepcopy(match["player"]["active_card"])
-    activate_card_from_hand(match, "player", second)
-
-    assert match["player"]["active_card"]["id"] == second
-    assert len([match["player"]["active_card"]]) == 1
-    assert match["player"]["discard"][0]["id"] == first_active["id"]
+    assert compare_power(player, bot) == "player"
+    assert compare_power(bot, player) == "bot"
+    assert compare_power({"power": 4}, {"power": 4}) == "clash"
 
 
-def test_rebirth_play_card_logs_replacement():
-    match = start_rebirth_match(seed="engine-replace-log")
-    first = match["player"]["hand"][0]["id"]
-    second = match["player"]["hand"][1]["id"]
+def test_play_card_resolves_turn_and_applies_life_damage():
+    match = start_match(seed="damage")
+    card = next(card for card in match["player"]["hand"] if card["id"] == "iron_beetle")
 
-    play_rebirth_card(match, "player", first)
-    play_rebirth_card(match, "player", second)
+    play_card(match, card_instance_id=card["instance_id"])
 
-    assert match["player"]["discard"]
-    assert any(entry["type"] == "active_card_replaced" for entry in match["combat_log"])
-
-
-def test_rebirth_bot_selects_card_and_intent():
-    match = start_rebirth_match(seed="engine-bot")
-
-    bot_select_action(match)
-
-    assert match["opponent"]["active_card"] is not None
-    assert match["opponent"]["selected_intent"] in {"STRIKE", "GUARD", "FOCUS"}
+    assert match["phase"] == "result"
+    assert match["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
+    assert match["bot"]["hp"] == 2
+    assert match["player"]["played_card"]["id"] == "iron_beetle"
+    assert match["bot"]["played_card"] is not None
 
 
-def test_rebirth_difficulty_changes_bot_intent_bias():
-    easy = start_rebirth_match(seed="engine-difficulty", difficulty="easy")
-    hard = start_rebirth_match(seed="engine-difficulty", difficulty="hard")
-    hard["player"]["hp"] = 9
+def test_equal_power_clash_causes_no_damage():
+    match = start_match(seed="tie")
+    player_card = next(card for card in match["player"]["hand"] if card["id"] == "spark_hare")
 
-    bot_select_action(easy)
-    bot_select_action(hard)
-
-    assert easy["opponent"]["selected_intent"] == "FOCUS"
-    assert hard["opponent"]["selected_intent"] == "STRIKE"
-
-
-def test_rebirth_strike_increases_damage():
-    strike = start_rebirth_match(seed="strike-a")
-    neutral = start_rebirth_match(seed="strike-a")
-
-    play_rebirth_card(strike, "player", strike["player"]["hand"][0]["id"])
-    play_rebirth_card(neutral, "player", neutral["player"]["hand"][0]["id"])
-    select_intent(strike, "player", "STRIKE")
-    select_intent(neutral, "player", "FOCUS")
-    resolve_rebirth_round(strike)
-    resolve_rebirth_round(neutral)
-
-    assert strike["opponent"]["hp"] < neutral["opponent"]["hp"]
-
-
-def test_rebirth_guard_reduces_damage_received():
-    guard = start_rebirth_match(seed="guard-a")
-    focus = start_rebirth_match(seed="guard-a")
-
-    play_rebirth_card(guard, "player", guard["player"]["hand"][0]["id"])
-    play_rebirth_card(focus, "player", focus["player"]["hand"][0]["id"])
-    select_intent(guard, "player", "GUARD")
-    select_intent(focus, "player", "FOCUS")
-    resolve_rebirth_round(guard)
-    resolve_rebirth_round(focus)
-
-    assert guard["player"]["hp"] >= focus["player"]["hp"]
-    assert any(entry["type"] == "guard_applied" for entry in guard["combat_log"])
-
-
-def test_rebirth_focus_increases_ambition():
-    match = start_rebirth_match(seed="focus-a")
-
-    select_intent(match, "player", "FOCUS")
-    resolve_rebirth_round(match)
-
-    assert match["player"]["ambition"] >= 2
-    assert any(entry["type"] == "ambition_gained" for entry in match["combat_log"])
-
-
-def test_rebirth_phase_advances_through_resolve_back_to_intent():
-    match = start_rebirth_match(seed="phase-a")
-
-    assert match["phase"] == "INTENT"
-    play_rebirth_card(match, "player", match["player"]["hand"][0]["id"])
-    select_intent(match, "player", "FOCUS")
-    assert match["phase"] == "ACTION"
-    resolve_rebirth_round(match)
-
-    assert match["round"] == 2
-    assert match["phase"] == "INTENT"
-
-
-def test_rebirth_damage_is_capped():
-    match = start_rebirth_match(seed="damage-cap")
-    play_rebirth_card(match, "player", match["player"]["hand"][0]["id"])
-    match["player"]["active_card"]["attack"] = 99
-    select_intent(match, "player", "STRIKE")
-    select_intent(match, "opponent", "FOCUS")
-    resolve_rebirth_round(match)
-
-    player_damage_events = [
-        entry for entry in match["combat_log"]
-        if entry["type"] == "damage_dealt" and entry["payload"].get("source") == "player"
+    match["bot"]["hand"] = [
+        {
+            "id": "mist_lynx",
+            "name": "Mist Lynx",
+            "family": "Mist",
+            "tier": 1,
+            "power": 4,
+            "element": "Water",
+            "evolution_id": None,
+            "flavor": "Test card.",
+            "instance_id": "bot-test-mist",
+        }
     ]
-    assert player_damage_events
-    assert player_damage_events[-1]["payload"]["amount"] <= DAMAGE_CAP
+
+    play_card(match, card_instance_id=player_card["instance_id"])
+
+    assert match["result"]["outcome"] == "Clash"
+    assert match["player"]["hp"] == 3
+    assert match["bot"]["hp"] == 3
 
 
-def test_rebirth_resolve_generates_rich_log_and_cinematic():
-    match = start_rebirth_match(seed="rich-log")
+def test_evolution_by_duplicate_creates_stronger_card():
+    match = start_match(seed="evolve")
 
-    play_rebirth_card(match, "player", match["player"]["hand"][0]["id"])
-    select_intent(match, "player", "STRIKE")
-    resolve_rebirth_round(match)
+    evolved = evolve_duplicate(match, "ember_cub")
 
-    assert any(entry["type"] == "attack_calculated" for entry in match["combat_log"])
-    assert any(entry["type"] == "damage_dealt" for entry in match["combat_log"])
-    assert any(entry["type"] == "round_resolved" for entry in match["combat_log"])
-    assert match["cinematic_event"]
-    assert {"type", "title", "message", "intensity"} <= set(match["cinematic_event"])
+    assert evolved["id"] == "ember_fang"
+    assert evolved["name"] == "Ember Fang"
+    assert evolved["power"] == 5
+    assert evolved["tier"] == 2
+    assert match["player"]["hand"][0]["id"] == "ember_fang"
+    assert len([card for card in match["player"]["discard"] if card["id"] == "ember_cub"]) == 2
 
 
-def test_rebirth_match_finished_when_hp_reaches_zero():
-    match = start_rebirth_match(seed="winner-a")
-    card_id = next(card["id"] for card in match["player"]["hand"] if card["attack"] >= 4)
+def test_evolution_requires_duplicate():
+    match = start_match(seed="no-duplicate")
 
-    play_rebirth_card(match, "player", card_id)
-    select_intent(match, "player", "STRIKE")
-    match["opponent"]["hp"] = 1
-    resolve_rebirth_round(match)
+    with pytest.raises(RebirthError) as error:
+        evolve_duplicate(match, "spark_hare")
 
-    assert match["winner"] == "player"
+    assert error.value.code == "no_evolution"
+
+    match = start_match(seed="no-duplicate-2")
+    first_ember = next(card for card in match["player"]["hand"] if card["id"] == "ember_cub")
+    match["player"]["hand"] = [first_ember]
+
+    with pytest.raises(RebirthError) as duplicate_error:
+        evolve_duplicate(match, "ember_cub")
+
+    assert duplicate_error.value.code == "duplicate_required"
+
+
+def test_match_finishes_when_hp_reaches_zero():
+    match = start_match(seed="finish")
+    match["bot"]["hp"] = 1
+    card = next(card for card in match["player"]["hand"] if card["id"] == "iron_beetle")
+
+    play_card(match, card_instance_id=card["instance_id"])
+
     assert match["is_finished"] is True
-    assert any(entry["type"] == "match_finished" for entry in match["combat_log"])
-    assert match["match_summary"]["winner"] == "player"
-    assert match["match_summary"]["player_damage_dealt"] > 0
-    assert match["reward_preview"]["xp"] > 0
-    assert match["reward_preview"]["gold"] > 0
+    assert match["phase"] == "game_over"
+    assert match["winner"] == "player"
+
+
+def test_next_turn_resets_result_and_refills_hand():
+    match = start_match(seed="next")
+    original_card = deepcopy(match["player"]["hand"][0])
+
+    play_card(match, card_instance_id=original_card["instance_id"])
+    next_turn(match)
+
+    assert match["turn"] == 2
+    assert match["phase"] == "choose"
+    assert match["result"] is None
+    assert match["player"]["played_card"] is None
+    assert len(match["player"]["hand"]) == 5
+    assert original_card["id"] in {card["id"] for card in match["player"]["discard"]}
+
+
+def test_public_state_exposes_player_hand_and_hides_bot_hand():
+    match = start_match(seed="public")
+    state = public_state(match)
+
+    assert "hand" in state["player"]
+    assert "hand_count" in state["bot"]
+    assert "hand" not in state["bot"]
+    assert state["available_evolutions"][0]["card_id"] == "ember_cub"

@@ -4,135 +4,67 @@
     <meta charset="UTF-8">
     <title>Ambitionz Rebirth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#050309">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Ambitionz">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Ambitionz Rebirth is a one-card tactical duel alpha built for cinematic 3D combat. Older beta surfaces remain available during migration.">
-    <link rel="canonical" href="https://ambitionzgame.com/">
+    <meta name="theme-color" content="#050608">
+    <meta name="description" content="Ambitionz Rebirth is a fast one-card monster duel. Combine duplicates, evolve monsters and win the clash.">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ambitionz_ascension.css') }}?v=197">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-mvp">
 </head>
-<body class="ax-body ax-home-page rebirth-home" data-retention-page="home">
-    <main class="ax-shell ax-product-shell ax-home-shell rebirth-home-shell" data-ax-shell>
-        <header class="ax-topbar ax-product-nav rebirth-home-nav" aria-label="Main navigation">
-            <a class="ax-brand" href="{{ url_for('index') }}" aria-current="page" aria-label="Ambitionz home">
+<body class="rb-page rb-home-page">
+    <main class="rb-home-shell">
+        <header class="rb-home-nav" aria-label="Ambitionz Rebirth">
+            <a class="rb-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
                 <span>A</span>
                 <strong>Ambitionz</strong>
             </a>
-            <div class="ax-title-block">
-                <h1>Rebirth Alpha</h1>
-                <p>One-card tactical combat at ambitionzgame.com.</p>
-            </div>
-            <nav class="ax-top-actions" aria-label="Rebirth routes">
-                <a href="{{ url_for('rebirth') }}" class="is-primary" data-retention-event="home_cta_play">Enter Rebirth</a>
-                <a href="{{ url_for('training_legacy') }}">Legacy Arena</a>
-                <a href="{{ url_for('roadmap') }}">Roadmap</a>
-                {% if user %}
-                    <a href="{{ url_for('profile') }}">Profile</a>
-                {% else %}
-                    <a href="{{ url_for('login') }}">Login</a>
-                    <a href="{{ url_for('register') }}">Register</a>
-                {% endif %}
-            </nav>
+            <a class="rb-small-link" href="{{ url_for('rebirth') }}">Play</a>
         </header>
 
-        <section id="ax-home-hero" class="ax-home-hero rebirth-home-hero" aria-label="Ambitionz Rebirth">
-            <div class="ax-home-sigil rebirth-home-sigil" aria-hidden="true">
-                <span>1 Active Card</span>
-                <i></i>
-                <b>3D Ready</b>
+        <section class="rb-home-hero" aria-label="Ambitionz Rebirth prototype">
+            <div class="rb-home-copy">
+                <h1>Ambitionz Rebirth</h1>
+                <p class="rb-home-line">One card. One decision. One clash.</p>
+                <p>Combine duplicates. Evolve monsters. Win the duel.</p>
+                <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}">Play Rebirth Prototype</a>
             </div>
-            <div class="ax-home-copy rebirth-home-copy">
-                <span class="ax-kicker">Ambitionz Rebirth is live</span>
-                <h2>Ambitionz Rebirth</h2>
-                <p>One-card tactical duels built for cinematic 3D combat.</p>
-                <div class="rebirth-home-cta">
-                    <a class="ax-primary-link" href="{{ url_for('rebirth') }}" data-retention-event="home_cta_play">Enter Rebirth</a>
-                    <a href="{{ url_for('training_legacy') }}">View Legacy Arena</a>
+
+            <div class="rb-home-preview" aria-hidden="true">
+                <div class="rb-score-frame">
+                    <div>
+                        <span>You</span>
+                        <strong>3 HP</strong>
+                    </div>
+                    <div>
+                        <span>Turn</span>
+                        <strong>01</strong>
+                    </div>
+                    <div>
+                        <span>Bot</span>
+                        <strong>3 HP</strong>
+                    </div>
+                </div>
+                <article class="rb-card rb-card-large rb-element-fire">
+                    <div class="rb-card-art">
+                        <span>Ember</span>
+                    </div>
+                    <div class="rb-card-body">
+                        <span>Tier 2</span>
+                        <strong>Ember Fang</strong>
+                        <p>The cub learns to bite in flames.</p>
+                    </div>
+                    <b class="rb-power">5</b>
+                </article>
+                <div class="rb-home-hand">
+                    <span>2</span>
+                    <span>3</span>
+                    <span>4</span>
+                    <span>5</span>
+                    <span>6</span>
                 </div>
             </div>
         </section>
-
-        <section class="ax-home-proof" aria-label="Why Rebirth">
-            <div class="rebirth-section-copy">
-                <span class="ax-kicker">Why Rebirth?</span>
-                <h2>A cleaner Ambitionz core.</h2>
-            </div>
-            <article>
-                <span>01</span>
-                <strong>One active card</strong>
-                <p>Each side commits to one readable active card instead of crowding the field.</p>
-            </article>
-            <article>
-                <span>02</span>
-                <strong>Intent-driven combat</strong>
-                <p>Strike, Guard and Focus turn each round into a sharp tactical decision.</p>
-            </article>
-            <article>
-                <span>03</span>
-                <strong>3D arena-ready architecture</strong>
-                <p>The DOM interface and future arena model communicate through a dedicated adapter.</p>
-            </article>
-            <article>
-                <span>04</span>
-                <strong>Fast tactical rounds</strong>
-                <p>Deck, difficulty, rival style and reward preview are built for quick alpha iteration.</p>
-            </article>
-        </section>
-
-        <section id="az-public-onboarding-v1" class="ax-panel ax-public-onboarding rebirth-alpha-read" data-public-onboarding aria-label="Rebirth alpha read">
-            <div>
-                <span class="ax-kicker">{{ beta_version }} · Alpha Preview</span>
-                <h2>Choose a deck, read the rival, resolve the round.</h2>
-                <p>Rebirth is the forward alpha. Rewards are preview-only until account persistence is connected.</p>
-            </div>
-            <div class="rebirth-home-cta">
-                <a class="ax-primary-link" href="{{ url_for('rebirth') }}" data-retention-event="training_start_click">Quick Duel</a>
-                <button type="button" data-public-onboarding-dismiss>Dismiss</button>
-            </div>
-        </section>
-
-        <section
-            class="rebirth-compat-hooks"
-            data-first-session-questline
-            data-dismiss-key="ambitionz_first_session_questline_dismissed_v1"
-            hidden
-            aria-hidden="true"
-        ></section>
-
-        <section id="az-beta-journey" class="ax-panel legacy-access" aria-label="Legacy Access">
-            <div>
-                <span class="ax-kicker">Legacy Access</span>
-                <h2>Older beta surfaces remain available during migration.</h2>
-                <p>Use these only when validating compatibility, old economy flows or pre-Rebirth systems.</p>
-            </div>
-            <div class="ax-route-grid legacy-access-grid">
-                <a href="{{ url_for('training') }}"><span>Beta</span><strong>Training</strong><p>Ascension beta training surface.</p></a>
-                <a href="{{ url_for('collection') }}"><span>Legacy</span><strong>Collection</strong><p>Original card inventory surface.</p></a>
-                <a href="{{ url_for('deck_builder') }}"><span>Legacy</span><strong>Deck Builder</strong><p>Old deck construction tools.</p></a>
-                <a href="{{ url_for('shop') }}"><span>Legacy</span><strong>Shop</strong><p>Gold-only beta economy surface.</p></a>
-                <a href="{{ url_for('roadmap') }}"><span>Docs</span><strong>Roadmap</strong><p>Migration notes and public direction.</p></a>
-            </div>
-        </section>
-
-        <footer class="ax-footer rebirth-home-footer">
-            <span>Ambitionz Rebirth Alpha</span>
-            <nav>
-                <a href="{{ url_for('rebirth') }}">Rebirth</a>
-                <a href="{{ url_for('tutorial') }}">Tutorial</a>
-                <a href="{{ url_for('support') }}">Support</a>
-                <a href="{{ url_for('privacy') }}">Privacy</a>
-                <a href="{{ url_for('terms') }}">Terms</a>
-                <a href="{{ url_for('feedback') }}">Feedback</a>
-            </nav>
-        </footer>
     </main>
 
-    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/beta_telemetry.js') }}?v=1"></script>
-    <script src="{{ url_for('static', filename='js/ambitionz_progression.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-mvp"></script>
 </body>
 </html>
