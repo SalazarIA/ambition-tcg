@@ -1,0 +1,24 @@
+{
+  "version": "rebirth3d-placeholder-v1",
+  "assets": {
+    "arena_core": null,
+    "player_avatar": null,
+    "opponent_avatar": null,
+    "active_card_frame": null,
+    "strike_fx": null,
+    "guard_fx": null,
+    "focus_fx": null,
+    "ambition_fx": null
+  },
+  "events": [
+    "rebirth:match_start",
+    "rebirth:intent_selected",
+    "rebirth:card_activated",
+    "rebirth:strike",
+    "rebirth:guard",
+    "rebirth:focus",
+    "rebirth:damage",
+    "rebirth:ko",
+    "rebirth:round_end"
+  ]
+}

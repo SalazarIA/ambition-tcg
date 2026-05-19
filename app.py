@@ -55,6 +55,14 @@ from services.ascension_history import append_history_record, build_history_reco
 from services.ascension_payloads import action_response as ascension_action_response, public_match_state as public_ascension_match_state
 from services.ascension_progression import build_ascension_rewards, progression_event_from_match
 from services.ascension_taxonomy import ascension_deck_summary, enrich_ascension_card
+from services.rebirth.rebirth_engine import (
+    bot_select_action as rebirth_bot_select_action,
+    play_rebirth_card,
+    resolve_rebirth_round,
+    select_intent as select_rebirth_intent,
+    start_rebirth_match,
+)
+from services.rebirth.rebirth_payloads import public_rebirth_state
 from services.match_engine_facade import MatchEngineFacade
 from services.match_payloads import (
     build_game_state_payloads,
@@ -119,6 +127,7 @@ serializer = itsdangerous.URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 active_matches = {}
 ascension_training_matches = {}
+REBIRTH_MATCHES = {}
 player_rooms = {}
 socket_state = {
     "waiting_player": None,
@@ -153,6 +162,10 @@ CSRF_EXEMPT_ENDPOINTS = {
     "api_ascension_play",
     "api_ascension_commit",
     "api_ascension_dominate",
+    "api_rebirth_intent",
+    "api_rebirth_play_card",
+    "api_rebirth_resolve",
+    "api_rebirth_restart",
 }
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 ALLOWED_RETENTION_EVENTS = {
@@ -5174,6 +5187,98 @@ def api_ascension_dominate():
 def ascension_history():
     records = read_history_records(app.instance_path, limit=30)
     return render_template("ascension_history.html", user=current_user(), records=records)
+
+
+def _rebirth_request_payload():
+    try:
+        return request.get_json(silent=True) or {}
+    except Exception:
+        return {}
+
+
+def _store_rebirth_match(match):
+    REBIRTH_MATCHES[match["match_id"]] = match
+    session["rebirth_match_id"] = match["match_id"]
+    return match
+
+
+def _rebirth_response(match, status=200):
+    return jsonify({"ok": True, "state": public_rebirth_state(match)}), status
+
+
+def _rebirth_error(message, status=400, code="rebirth_error"):
+    return jsonify({"ok": False, "error": {"code": code, "message": message}}), status
+
+
+def _get_rebirth_match(match_id=None):
+    resolved_id = match_id or session.get("rebirth_match_id")
+    if not resolved_id:
+        return None
+    return REBIRTH_MATCHES.get(str(resolved_id))
+
+
+@app.route("/rebirth")
+def rebirth():
+    return render_template("rebirth.html", user=current_user())
+
+
+@app.route("/api/rebirth/new", methods=["GET"])
+def api_rebirth_new():
+    seed = request.args.get("seed") or secrets.token_hex(6)
+    match = _store_rebirth_match(start_rebirth_match(seed=seed))
+    return _rebirth_response(match)
+
+
+@app.route("/api/rebirth/intent", methods=["POST"])
+def api_rebirth_intent():
+    payload = _rebirth_request_payload()
+    match = _get_rebirth_match(payload.get("match_id"))
+    if not match:
+        return _rebirth_error("Rebirth match not found.", code="match_not_found")
+
+    try:
+        select_rebirth_intent(match, "player", payload.get("intent"))
+        rebirth_bot_select_action(match)
+        return _rebirth_response(match)
+    except ValueError as error:
+        return _rebirth_error(str(error), code="invalid_rebirth_intent")
+
+
+@app.route("/api/rebirth/play-card", methods=["POST"])
+def api_rebirth_play_card():
+    payload = _rebirth_request_payload()
+    match = _get_rebirth_match(payload.get("match_id"))
+    if not match:
+        return _rebirth_error("Rebirth match not found.", code="match_not_found")
+
+    try:
+        play_rebirth_card(match, "player", payload.get("card_id"))
+        rebirth_bot_select_action(match)
+        return _rebirth_response(match)
+    except ValueError as error:
+        return _rebirth_error(str(error), code="invalid_rebirth_card")
+
+
+@app.route("/api/rebirth/resolve", methods=["POST"])
+def api_rebirth_resolve():
+    payload = _rebirth_request_payload()
+    match = _get_rebirth_match(payload.get("match_id"))
+    if not match:
+        return _rebirth_error("Rebirth match not found.", code="match_not_found")
+
+    try:
+        resolve_rebirth_round(match)
+        return _rebirth_response(match)
+    except ValueError as error:
+        return _rebirth_error(str(error), code="rebirth_resolve_failed")
+
+
+@app.route("/api/rebirth/restart", methods=["POST"])
+def api_rebirth_restart():
+    payload = _rebirth_request_payload()
+    seed = payload.get("seed") or secrets.token_hex(6)
+    match = _store_rebirth_match(start_rebirth_match(seed=seed))
+    return _rebirth_response(match)
 
 
 

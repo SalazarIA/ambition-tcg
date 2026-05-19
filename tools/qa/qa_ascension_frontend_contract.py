@@ -18,7 +18,7 @@ def main():
     assert "lane" not in combined
     assert "az48" not in combined
     assert "arena_clean_v48" not in template
-    assert 'CACHE_NAME = "ambitionz-web-app-v194"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
     assert "/static/css/ambitionz_ascension.css" in service_worker
     assert "/static/js/ambitionz_ascension.js" in service_worker
     print("PASS ascension_frontend_contract")

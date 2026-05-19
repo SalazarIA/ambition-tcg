@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ambitionz Rebirth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#05040a">
+    <meta name="description" content="Ambitionz Rebirth: one active card, cinematic tactical pressure and a clean 3D-ready arena contract.">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=1">
+</head>
+<body class="rb-body" data-product-surface="rebirth">
+    <main class="rb-shell">
+        <header class="rb-topbar">
+            <a class="rb-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
+                <span>A</span>
+                <strong>Ambitionz Rebirth</strong>
+            </a>
+            <p>One card. One will. One ascension.</p>
+            <nav aria-label="Rebirth navigation">
+                <a href="{{ url_for('training') }}">Ascension</a>
+                <a href="{{ url_for('training_legacy') }}">Legacy fallback</a>
+            </nav>
+        </header>
+
+        <section class="rb-cinematic-banner" id="rb-cinematic-banner" aria-live="polite">
+            <span>Initializing Rebirth core...</span>
+        </section>
+
+        <section class="rb-stage-grid" aria-label="Ambitionz Rebirth arena">
+            <aside class="rb-hero-card rb-opponent-panel" aria-label="Opponent state">
+                <span>Opponent</span>
+                <h2 id="rb-opponent-name">Rival</h2>
+                <div class="rb-stat-row">
+                    <span class="rb-stat-pill">HP <strong id="rb-opponent-hp">30</strong></span>
+                    <span class="rb-stat-pill">Ambition <strong id="rb-opponent-ambition">0</strong></span>
+                    <span class="rb-stat-pill">Intent <strong id="rb-opponent-intent">Veiled</strong></span>
+                </div>
+                <div id="rb-opponent-active" class="rb-active-card rb-empty-slot">No active card</div>
+            </aside>
+
+            <section class="rb-3d-wrap" aria-label="3D arena placeholder">
+                <div id="rebirth-3d-stage" class="rb-3d-stage"></div>
+            </section>
+
+            <aside class="rb-hero-card rb-player-panel" aria-label="Player state">
+                <span>Player</span>
+                <h2 id="rb-player-name">Player</h2>
+                <div class="rb-stat-row">
+                    <span class="rb-stat-pill">HP <strong id="rb-player-hp">30</strong></span>
+                    <span class="rb-stat-pill">Ambition <strong id="rb-player-ambition">0</strong></span>
+                    <span class="rb-stat-pill">Intent <strong id="rb-player-intent">None</strong></span>
+                </div>
+                <div id="rb-player-active" class="rb-active-card rb-empty-slot">No active card</div>
+            </aside>
+        </section>
+
+        <section class="rb-control-row" aria-label="Rebirth controls">
+            <div class="rb-intents" id="rb-intents" aria-label="Select intent">
+                <button class="rb-button" type="button" data-rb-intent="STRIKE">Strike</button>
+                <button class="rb-button" type="button" data-rb-intent="GUARD">Guard</button>
+                <button class="rb-button" type="button" data-rb-intent="FOCUS">Focus</button>
+            </div>
+            <div class="rb-actions">
+                <button class="rb-button rb-button-primary" type="button" id="rb-resolve-button">Resolve</button>
+                <button class="rb-button" type="button" id="rb-new-match-button">New Match</button>
+            </div>
+        </section>
+
+        <section class="rb-hand-section" aria-label="Player hand">
+            <div class="rb-section-head">
+                <strong>Hand</strong>
+                <span id="rb-hand-count">0 cards</span>
+            </div>
+            <div class="rb-hand" id="rb-hand"></div>
+        </section>
+
+        <aside class="rb-combat-log" aria-label="Combat log">
+            <strong>Combat Log</strong>
+            <ol id="rb-combat-log-list"></ol>
+        </aside>
+
+        <p class="rb-error" id="rb-error" role="alert"></p>
+        <div class="rb-loading" id="rb-loading" hidden>Loading Rebirth...</div>
+    </main>
+
+    <script>
+        window.REBIRTH_CONFIG = {
+            newUrl: "{{ url_for('api_rebirth_new') }}",
+            intentUrl: "{{ url_for('api_rebirth_intent') }}",
+            playCardUrl: "{{ url_for('api_rebirth_play_card') }}",
+            resolveUrl: "{{ url_for('api_rebirth_resolve') }}",
+            restartUrl: "{{ url_for('api_rebirth_restart') }}",
+            manifestUrl: "{{ url_for('static', filename='assets/rebirth3d/manifest.json') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/rebirth_3d_adapter.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=1"></script>
+</body>
+</html>

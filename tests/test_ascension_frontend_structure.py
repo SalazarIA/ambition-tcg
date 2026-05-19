@@ -47,7 +47,7 @@ def test_new_frontend_does_not_depend_on_old_arena_runtime_markers():
 def test_service_worker_caches_ascension_assets():
     service_worker = (PROJECT_ROOT / "static" / "js" / "service-worker.js").read_text()
 
-    assert 'CACHE_NAME = "ambitionz-web-app-v194"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
     assert '"/static/css/ambitionz_ascension.css"' in service_worker
     assert '"/static/js/ambitionz_ascension.js"' in service_worker
     assert '"/static/js/ambitionz_ascension_library.js"' in service_worker

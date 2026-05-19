@@ -41,7 +41,7 @@ def main():
     assert "Play Ascension Duel" in home
     assert "training_legacy" not in home
     assert "/training-legacy" not in home
-    assert 'CACHE_NAME = "ambitionz-web-app-v194"' in service_worker
+    assert 'CACHE_NAME = "ambitionz-web-app-v195"' in service_worker
     print("PASS ascension_viewport_contract")
 
 
