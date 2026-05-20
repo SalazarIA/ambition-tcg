@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-rebirth-season0-v34";
+const CACHE_NAME = "ambitionz-rebirth-season0-v36";
 
 const CORE_ASSETS = [
     "/",

@@ -94,6 +94,8 @@
                 "reward-panel",
                 "result-panel",
                 "turn-log",
+                "turn-log-panel",
+                "turn-log-toggle",
                 "phase-label",
                 "guide-rule-label",
                 "guide-rule-title",
@@ -277,6 +279,72 @@
             board.dataset.turnPhase = meta.tone;
         }
         return meta;
+    }
+
+    const RebirthParallax = {
+        selector: ".rb-mini-card, .rb-main-card, .rb-bot-card, .rb-card-back",
+        bound: false,
+
+        init() {
+            const board = RebirthStore.elements["rebirth-board"];
+            if (!board || this.bound) return;
+            this.bound = true;
+            board.addEventListener("pointermove", (event) => this.move(event), { passive: true });
+            board.addEventListener("pointerleave", () => this.resetAll(), { passive: true });
+            board.addEventListener("pointercancel", () => this.resetAll(), { passive: true });
+            board.addEventListener("touchend", () => this.resetAll(), { passive: true });
+        },
+
+        move(event) {
+            const card = event.target && event.target.closest ? event.target.closest(this.selector) : null;
+            const board = RebirthStore.elements["rebirth-board"];
+            if (!card || !board || !board.contains(card)) return;
+            const rect = card.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            const x = (event.clientX - rect.left) / rect.width;
+            const y = (event.clientY - rect.top) / rect.height;
+            const tiltY = (x - 0.5) * 12;
+            const tiltX = (0.5 - y) * 12;
+            card.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}deg`);
+            card.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}deg`);
+            card.style.setProperty("--glare-x", `${Math.round(x * 100)}%`);
+            card.style.setProperty("--glare-y", `${Math.round(y * 100)}%`);
+            card.classList.add("is-parallaxing");
+        },
+
+        reset(card) {
+            if (!card) return;
+            card.style.setProperty("--tilt-x", "0deg");
+            card.style.setProperty("--tilt-y", "0deg");
+            card.style.setProperty("--glare-x", "50%");
+            card.style.setProperty("--glare-y", "50%");
+            card.classList.remove("is-parallaxing");
+        },
+
+        resetAll() {
+            const board = RebirthStore.elements["rebirth-board"];
+            if (!board) return;
+            board.querySelectorAll(this.selector).forEach((card) => this.reset(card));
+        }
+    };
+
+    function triggerScreenShake(intensity) {
+        const viewport = document.querySelector(".rb-game-viewport");
+        const board = RebirthStore.elements["rebirth-board"];
+        const target = viewport || board;
+        const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!target || reducedMotion) return;
+        const shake = Math.max(1, Number(intensity || 1));
+        target.style.setProperty("--shake-intensity", `${shake}px`);
+        target.style.setProperty("--shake-intensity-negative", `${shake * -1}px`);
+        target.style.setProperty("--shake-intensity-soft", `${shake * 0.55}px`);
+        target.style.setProperty("--shake-intensity-soft-negative", `${shake * -0.55}px`);
+        target.classList.remove("is-screen-shaking");
+        void target.offsetWidth;
+        target.classList.add("is-screen-shaking");
+        window.setTimeout(() => {
+            target.classList.remove("is-screen-shaking");
+        }, 420);
     }
 
     const RebirthAssets = {
@@ -550,6 +618,7 @@
 
             this.haptics(state.result);
             this.tone(card, state.result);
+            this.screenShake(state.result);
         },
 
         haptics(result) {
@@ -580,6 +649,16 @@
                 oscillator.stop(context.currentTime + 0.18);
                 oscillator.addEventListener("ended", () => context.close());
             } catch (_error) {}
+        },
+
+        screenShake(result) {
+            if (!result || this.reducedMotion()) return;
+            const damage = result.damage || {};
+            const playerDamage = Number(damage.player || 0);
+            const botDamage = Number(damage.bot || 0);
+            const totalDamage = Math.max(0, playerDamage) + Math.max(0, botDamage);
+            if (!totalDamage) return;
+            triggerScreenShake(Math.min(10, 2 + totalDamage));
         }
     };
 
@@ -707,6 +786,7 @@
             if (board) {
                 board.dataset.phase = state.phase;
                 board.dataset.winner = state.winner || "";
+                board.dataset.botProfile = (state.bot_profile && state.bot_profile.id) || "defensive";
             }
             renderTurnPhase(state.turn_phase || state.phase);
             RebirthAssets.preloadState(state);
@@ -730,6 +810,7 @@
             this.log();
             this.buttons();
             RebirthAssets.bindFallbacks(RebirthStore.elements["rebirth-board"]);
+            RebirthParallax.resetAll();
         },
 
         hpBars() {
@@ -1173,6 +1254,9 @@
 
     const RebirthInput = {
         bind() {
+            this.bindLogToggle();
+            RebirthParallax.init();
+
             document.querySelectorAll("[data-new-match]").forEach((button) => {
                 button.addEventListener("click", () => RebirthFlow.startMatch());
             });
@@ -1208,6 +1292,39 @@
                     RebirthRenderer.render();
                 });
             }
+        },
+
+        bindLogToggle() {
+            const panel = RebirthStore.elements["turn-log-panel"] || document.querySelector(".rb-turn-log");
+            if (!panel) return;
+            panel.id = panel.id || "turn-log-panel";
+            panel.classList.remove("is-open");
+            RebirthStore.elements["turn-log-panel"] = panel;
+
+            const head = panel.querySelector(".rb-log-head");
+            if (!head) return;
+
+            let button = RebirthStore.elements["turn-log-toggle"] || panel.querySelector("[data-turn-log-toggle]");
+            if (!button) {
+                button = document.createElement("button");
+                button.id = "turn-log-toggle";
+                button.className = "rb-log-toggle";
+                button.type = "button";
+                button.dataset.turnLogToggle = "true";
+                button.setAttribute("aria-controls", panel.id);
+                button.setAttribute("aria-label", "Open turn history");
+                button.innerHTML = '<i aria-hidden="true"></i><span>History</span>';
+                head.appendChild(button);
+                RebirthStore.elements["turn-log-toggle"] = button;
+            }
+
+            button.setAttribute("aria-expanded", "false");
+            button.addEventListener("click", () => {
+                const isOpen = !panel.classList.contains("is-open");
+                panel.classList.toggle("is-open", isOpen);
+                button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                button.setAttribute("aria-label", isOpen ? "Close turn history" : "Open turn history");
+            });
         }
     };
 
@@ -1225,6 +1342,7 @@
 
     window.initiateMobilePurchase = initiateMobilePurchase;
     window.renderTurnPhase = renderTurnPhase;
+    window.triggerScreenShake = triggerScreenShake;
 
     document.addEventListener("DOMContentLoaded", init);
 })();

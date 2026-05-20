@@ -85,8 +85,40 @@ button {
         linear-gradient(180deg, #05070a, #010202);
 }
 
+.rb-game-viewport::before,
+.rb-game-viewport::after {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    z-index: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+.rb-game-viewport::before {
+    opacity: 0.44;
+    background:
+        radial-gradient(circle at 11% 18%, rgba(244, 173, 38, 0.28) 0 1px, transparent 2px),
+        radial-gradient(circle at 31% 72%, rgba(88, 214, 255, 0.2) 0 1px, transparent 2px),
+        radial-gradient(circle at 54% 34%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px),
+        radial-gradient(circle at 78% 61%, rgba(244, 173, 38, 0.18) 0 1px, transparent 2px);
+    background-size: 190px 210px, 250px 230px, 170px 190px, 290px 260px;
+    animation: rb-spark-float 24s linear infinite;
+}
+
+.rb-game-viewport::after {
+    opacity: 0.28;
+    background:
+        linear-gradient(112deg, transparent 0 22%, rgba(88, 214, 255, 0.08) 32%, transparent 48% 100%),
+        linear-gradient(68deg, transparent 0 18%, rgba(244, 173, 38, 0.075) 28%, transparent 45% 100%),
+        repeating-linear-gradient(174deg, transparent 0 72px, rgba(255, 255, 255, 0.035) 73px 74px, transparent 75px 150px);
+    filter: blur(10px);
+    animation: rb-mist-drift 36s ease-in-out infinite alternate;
+}
+
 .rb-game-board {
     position: absolute;
+    z-index: 1;
     left: 50%;
     top: 50%;
     width: var(--rb-board-width);
@@ -98,6 +130,10 @@ button {
         linear-gradient(90deg, rgba(244, 173, 38, 0.05), transparent 28%, transparent 72%, rgba(88, 214, 255, 0.045)),
         repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 82px),
         linear-gradient(180deg, #07090c 0%, #020303 100%);
+}
+
+.rb-game-viewport.is-screen-shaking {
+    animation: rb-screen-shake 420ms cubic-bezier(0.2, 0.9, 0.28, 1) both;
 }
 
 .rb-game-board::before {
@@ -198,6 +234,36 @@ button {
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent),
         #05070a url("../assets/rebirth/ui/bot-emblem.png") center / cover no-repeat;
+}
+
+.rb-game-board[data-bot-profile="aggressive"] .rb-hud-bot,
+.rb-game-board[data-bot-profile="aggressive"] .rb-bot-emblem {
+    --bot-aura: var(--rb-red);
+    border-color: rgba(255, 115, 95, 0.66);
+    animation: rb-bot-aura 1.18s ease-in-out infinite;
+}
+
+.rb-game-board[data-bot-profile="opportunist"] .rb-hud-bot,
+.rb-game-board[data-bot-profile="opportunist"] .rb-bot-emblem {
+    --bot-aura: var(--rb-gold);
+    border-color: rgba(244, 173, 38, 0.62);
+    animation: rb-bot-aura 1.6s ease-in-out infinite;
+}
+
+.rb-game-board[data-bot-profile="defensive"] .rb-hud-bot,
+.rb-game-board[data-bot-profile="defensive"] .rb-bot-emblem {
+    --bot-aura: var(--rb-cyan);
+    border-color: rgba(88, 214, 255, 0.58);
+    box-shadow: 0 0 0 1px rgba(88, 214, 255, 0.1), var(--rb-shadow);
+}
+
+.rb-game-board[data-bot-profile] #bot-profile-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }
 
 .rb-hud-copy {
@@ -471,7 +537,25 @@ button {
 }
 
 .rb-main-card {
+    transform: perspective(960px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     will-change: transform;
+}
+
+.rb-bot-card,
+.rb-card-back {
+    transform: perspective(760px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    will-change: transform;
+}
+
+.rb-main-card.is-parallaxing,
+.rb-bot-card.is-parallaxing,
+.rb-card-back.is-parallaxing,
+.rb-hand .rb-mini-card.is-parallaxing {
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.56), 0 0 22px color-mix(in srgb, var(--card-accent, var(--rb-gold)), transparent 74%);
 }
 
 .rb-bot-revealed {
@@ -549,6 +633,7 @@ button {
 
 .rb-card-art {
     position: relative;
+    overflow: hidden;
     height: 340px;
     background:
         linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.55)),
@@ -567,10 +652,35 @@ button {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 1;
     pointer-events: none;
     background:
         linear-gradient(180deg, rgba(0, 0, 0, 0.02), transparent 38%, rgba(0, 0, 0, 0.36)),
         radial-gradient(circle at 50% 44%, transparent 48%, rgba(0, 0, 0, 0.46) 100%);
+}
+
+.rb-card-art::before,
+.rb-mini-art::after {
+    content: "";
+    position: absolute;
+    inset: -38%;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    background:
+        radial-gradient(circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, 0.42), transparent 19%),
+        conic-gradient(from 124deg at 50% 50%, rgba(255, 115, 95, 0), rgba(88, 214, 255, 0.42), rgba(255, 200, 82, 0.5), rgba(120, 242, 170, 0.34), rgba(255, 115, 95, 0));
+    mix-blend-mode: screen;
+    transform: translate3d(0, 0, 0) rotate(8deg);
+    transition: opacity 180ms ease;
+}
+
+.rb-monster-card.is-evolved:hover .rb-card-art::before,
+.rb-monster-card.is-evolved.is-parallaxing .rb-card-art::before,
+.rb-hand .rb-mini-card.is-evolved:hover .rb-mini-art::after,
+.rb-hand .rb-mini-card.is-evolved.is-parallaxing .rb-mini-art::after {
+    opacity: 0.56;
+    animation: rb-foil-sweep 1.8s linear infinite;
 }
 
 .rb-card-art span {
@@ -665,6 +775,74 @@ button {
     }
     48% {
         box-shadow: 0 34px 90px rgba(0, 0, 0, 0.74), 0 0 0 4px rgba(255, 115, 95, 0.26), 0 0 28px rgba(255, 115, 95, 0.28);
+    }
+}
+
+@keyframes rb-foil-sweep {
+    0% {
+        transform: translate3d(-7%, -5%, 0) rotate(8deg);
+    }
+    50% {
+        transform: translate3d(6%, 5%, 0) rotate(15deg);
+    }
+    100% {
+        transform: translate3d(-7%, -5%, 0) rotate(8deg);
+    }
+}
+
+@keyframes rb-spark-float {
+    0% {
+        transform: translate3d(0, 0, 0);
+        opacity: 0.34;
+    }
+    50% {
+        transform: translate3d(16px, -22px, 0);
+        opacity: 0.52;
+    }
+    100% {
+        transform: translate3d(34px, -44px, 0);
+        opacity: 0.34;
+    }
+}
+
+@keyframes rb-mist-drift {
+    0% {
+        transform: translate3d(-2%, 1%, 0) scale(1);
+    }
+    100% {
+        transform: translate3d(2%, -1.5%, 0) scale(1.04);
+    }
+}
+
+@keyframes rb-bot-aura {
+    0%,
+    100% {
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0), var(--rb-shadow);
+    }
+    52% {
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--bot-aura, var(--rb-red)), transparent 66%), 0 0 30px color-mix(in srgb, var(--bot-aura, var(--rb-red)), transparent 74%), var(--rb-shadow);
+    }
+}
+
+@keyframes rb-screen-shake {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    12% {
+        transform: translate3d(var(--shake-intensity-negative, -6px), var(--shake-intensity-soft, 3px), 0);
+    }
+    28% {
+        transform: translate3d(var(--shake-intensity, 6px), var(--shake-intensity-soft-negative, -3px), 0);
+    }
+    44% {
+        transform: translate3d(var(--shake-intensity-soft-negative, -3px), var(--shake-intensity, 6px), 0);
+    }
+    62% {
+        transform: translate3d(var(--shake-intensity-soft, 3px), var(--shake-intensity-negative, -6px), 0);
+    }
+    82% {
+        transform: translate3d(var(--shake-intensity-soft-negative, -3px), 0, 0);
     }
 }
 
@@ -901,6 +1079,7 @@ button {
 }
 
 .rb-hand .rb-mini-card {
+    --card-lift: 0px;
     position: relative;
     display: grid;
     grid-template-rows: 102px 1fr;
@@ -915,12 +1094,15 @@ button {
     text-align: left;
     cursor: pointer;
     clip-path: var(--rb-cut);
+    transform: perspective(700px) translateY(var(--card-lift)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
     transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    will-change: transform;
 }
 
 .rb-hand .rb-mini-card.is-selected {
+    --card-lift: -7px;
     border-color: var(--rb-gold-2);
-    transform: translateY(-7px);
     box-shadow: 0 0 0 2px rgba(244, 173, 38, 0.14), 0 18px 44px rgba(244, 173, 38, 0.2);
 }
 
@@ -951,6 +1133,7 @@ button {
 
 .rb-mini-art {
     position: relative;
+    overflow: hidden;
     background: #101317 center / cover no-repeat;
 }
 
@@ -1267,6 +1450,13 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .rb-game-viewport::before,
+    .rb-game-viewport::after,
+    .rb-game-viewport.is-screen-shaking,
+    .rb-game-board[data-bot-profile] .rb-hud-bot,
+    .rb-game-board[data-bot-profile] .rb-bot-emblem,
+    .rb-monster-card.is-evolved .rb-card-art::before,
+    .rb-hand .rb-mini-card.is-evolved .rb-mini-art::after,
     .rb-result-panel.is-impacting,
     .rb-main-card.is-impacting,
     .rb-bot-card.is-impacting,
@@ -1281,7 +1471,9 @@ button {
     top: 1656px;
     width: 804px;
     height: 108px;
+    overflow: hidden;
     padding: 0;
+    transition: left 180ms ease, top 180ms ease, width 180ms ease, height 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .rb-log-head {
@@ -1318,6 +1510,83 @@ button {
 
 .rb-log li:nth-child(even) {
     border-left-color: var(--rb-cyan);
+}
+
+.rb-log-toggle {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    border: 1px solid rgba(244, 173, 38, 0.46);
+    color: var(--rb-gold);
+    background: rgba(8, 10, 13, 0.74);
+    cursor: pointer;
+    clip-path: var(--rb-cut);
+}
+
+.rb-log-toggle i {
+    position: relative;
+    width: 21px;
+    height: 24px;
+    border: 2px solid currentColor;
+    border-radius: 2px 6px 6px 2px;
+}
+
+.rb-log-toggle i::before,
+.rb-log-toggle i::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background: currentColor;
+}
+
+.rb-log-toggle i::before {
+    top: 7px;
+}
+
+.rb-log-toggle i::after {
+    top: 14px;
+}
+
+.rb-log-toggle span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.rb-log:not(.is-open) {
+    left: 768px;
+    top: 1654px;
+    width: 58px;
+    height: 58px;
+    border-color: rgba(244, 173, 38, 0.44);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 18px rgba(244, 173, 38, 0.12);
+}
+
+.rb-log:not(.is-open) .rb-log-head {
+    display: grid;
+    height: 58px;
+    place-items: center;
+    padding: 0;
+    border-bottom: 0;
+}
+
+.rb-log:not(.is-open) .rb-log-head strong,
+.rb-log:not(.is-open) .rb-log-head .rb-turn-phase-pill,
+.rb-log:not(.is-open) ol {
+    display: none;
+}
+
+.rb-log.is-open {
+    left: 24px;
+    top: 1656px;
+    width: 804px;
+    height: 108px;
 }
 
 .rb-prototype-actions {
@@ -2663,6 +2932,20 @@ button {
     .rb-log li {
         min-height: 28px;
         font-size: 12px;
+    }
+
+    .rb-log:not(.is-open) {
+        left: 1098px;
+        top: 386px;
+        width: 58px;
+        height: 58px;
+    }
+
+    .rb-log.is-open {
+        left: 808px;
+        top: 390px;
+        width: 348px;
+        height: 182px;
     }
 
     .rb-prototype-actions {

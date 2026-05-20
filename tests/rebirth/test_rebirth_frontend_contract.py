@@ -84,6 +84,12 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         "safe-area-inset-top",
         "rb-turn-phase-pill",
         ".rb-monster-card.is-burn",
+        ".rb-log-toggle",
+        "rb-screen-shake",
+        "rb-spark-float",
+        "rb-mist-drift",
+        "rb-foil-sweep",
+        'data-bot-profile="aggressive"',
         "--rb-gold",
         "--rb-cyan",
         "bot-card-back.png",
@@ -96,7 +102,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v34" in service_worker
+    assert "ambitionz-rebirth-season0-v36" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -127,9 +133,13 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthErrors",
         "RebirthFeel",
         "RebirthTactics",
+        "RebirthParallax",
         "renderTurnPhase",
+        "triggerScreenShake",
         "initiateMobilePurchase",
         "turn_phase",
+        "botProfile",
+        "turn-log-toggle",
         "guide-rule-title",
         "X-Rebirth-CSRF",
         "match_reward",
