@@ -55,7 +55,7 @@
   ],
   "shortcuts": [
     {
-      "name": "Play Rebirth Prototype",
+      "name": "Play Rebirth",
       "short_name": "Play",
       "description": "Start a one-card Ambitionz Rebirth duel.",
       "url": "/rebirth",

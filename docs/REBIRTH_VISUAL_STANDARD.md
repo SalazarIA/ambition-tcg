@@ -51,7 +51,7 @@ Ambitionz Rebirth Premium Clash UI
 9. Primary CLASH action and secondary COMBINE or NEXT TURN action.
 10. Result panel.
 11. Compact turn log.
-12. Play Rebirth Prototype CTA and New Match control.
+12. Play Rebirth CTA and New Match control.
 
 ## Required Components
 
