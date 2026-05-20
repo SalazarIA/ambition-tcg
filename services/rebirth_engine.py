@@ -1,4 +1,5 @@
 from copy import deepcopy
+import hashlib
 
 from services.rebirth_bot import ability_priority, choose_response
 from services.rebirth_cards import create_card_instance, get_card
@@ -416,6 +417,12 @@ def evolve_bot_if_ready(match):
     choice = _evolution_choice(match["bot"], (match.get("bot_profile") or {}).get("id"))
     if not choice:
         return None
+    profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+    rates = {"defensive": 0.95, "aggressive": 0.75, "opportunist": 0.85}
+    source = f"{match.get('match_id')}:{profile_id}:{match.get('turn')}:{choice['card_id']}"
+    roll = int(hashlib.sha256(source.encode("utf-8")).hexdigest()[:4], 16) / 0xFFFF
+    if roll > rates.get(profile_id, 0.55):
+        return None
     return _evolve_side_duplicate(match, "bot", choice["card_id"])
 
 
@@ -451,6 +458,7 @@ def play_card(match, *, card_instance_id=None, card_id=None):
         turn=match.get("turn", 1),
         player_wounded=match["player"].get("wounded", False),
         bot_wounded=match["bot"].get("wounded", False),
+        match_id=match.get("match_id"),
     )
     if not bot_choice:
         finish_if_exhausted(match)

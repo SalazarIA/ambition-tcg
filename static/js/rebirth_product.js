@@ -78,7 +78,7 @@
 
         button.addEventListener("click", function () {
             button.disabled = true;
-            result.textContent = "Opening booster...";
+            result.textContent = "Opening pack...";
             postJson(endpoints.booster, { seed: "booster-" + Date.now() })
                 .then(function (payload) {
                     const booster = payload.booster;
@@ -244,7 +244,7 @@
         const registerForm = document.querySelector("[data-rebirth-register]");
         const loginForm = document.querySelector("[data-rebirth-login]");
 
-        function submitAuth(event, endpoint) {
+        function submitAuth(event, endpoint, redirectTo) {
             event.preventDefault();
             const form = event.currentTarget;
             const button = form.querySelector("button");
@@ -262,7 +262,7 @@
                     if (authResult) {
                         authResult.textContent = "Signed in as " + payload.account.user.username + ".";
                     }
-                    window.location.reload();
+                    window.location.href = redirectTo || "/rebirth";
                 })
                 .catch(function (error) {
                     if (authResult) {
@@ -278,12 +278,12 @@
 
         if (registerForm && endpoints.register) {
             registerForm.addEventListener("submit", function (event) {
-                submitAuth(event, endpoints.register);
+                submitAuth(event, endpoints.register, "/rebirth?firstRun=1");
             });
         }
         if (loginForm && endpoints.login) {
             loginForm.addEventListener("submit", function (event) {
-                submitAuth(event, endpoints.login);
+                submitAuth(event, endpoints.login, "/rebirth");
             });
         }
     }
@@ -348,12 +348,22 @@
             postJson(endpoints.claimDaily, {})
                 .then(function (payload) {
                     result.textContent = "Claimed " + payload.claim.xp + " XP.";
+                    button.textContent = "Claimed";
+                    button.dataset.dailyState = "claimed";
+                    button.disabled = true;
                 })
                 .catch(function (error) {
                     result.textContent = error.message;
+                    if (/already claimed/i.test(error.message)) {
+                        button.textContent = "Claimed";
+                        button.dataset.dailyState = "claimed";
+                        button.disabled = true;
+                    }
                 })
                 .finally(function () {
-                    button.disabled = false;
+                    if (button.dataset.dailyState !== "claimed") {
+                        button.disabled = false;
+                    }
                 });
         });
     }

@@ -20,8 +20,10 @@ from services.rebirth_product import (
     auth_plan_payload,
     balance_payload,
     collection_payload,
+    DEFAULT_LOADOUT,
     desktop_payload,
     history_payload,
+    lab_payload,
     onboarding_payload,
     open_booster,
     profile_payload,
@@ -100,9 +102,13 @@ def match_reward_payload(before, after, state):
             "persisted": False,
             "xp": 0,
             "level": 1,
+            "xp_total": 0,
+            "next_level_xp": 500,
+            "xp_to_next": 500,
             "level_up": False,
             "achievements": [],
-            "daily": {"name": "Play one clash", "progress": 0, "goal": 1, "ready": False},
+            "daily": {"name": "Play one clash", "progress": 0, "goal": 1, "state": "locked", "ready": False},
+            "next_goal": "Create an account to save XP and unlock the reward track.",
             "message": "Sign in to persist XP, rewards and achievements.",
         }
 
@@ -120,19 +126,28 @@ def match_reward_payload(before, after, state):
 
     level = int(after.get("level", 1) or 1)
     daily_progress = min(1, int(after.get("clashes", 0) or 0))
+    daily_state = "claimed" if after.get("daily_claimed") else "ready" if daily_progress >= 1 else "locked"
+    xp_total = int(after.get("xp", 0) or 0)
+    next_xp = int(after.get("next_level_xp", level * 500) or level * 500)
+    xp_to_next = max(0, next_xp - xp_total)
     outcome = ((state or {}).get("result") or {}).get("outcome") or ((state or {}).get("winner") or "Clash")
     return {
         "persisted": True,
         "xp": xp_delta,
         "level": level,
+        "xp_total": xp_total,
+        "next_level_xp": next_xp,
+        "xp_to_next": xp_to_next,
         "level_up": level > before_level,
         "achievements": achievements,
         "daily": {
             "name": "Play one clash",
             "progress": daily_progress,
             "goal": 1,
-            "ready": daily_progress >= 1,
+            "state": daily_state,
+            "ready": daily_state == "ready",
         },
+        "next_goal": "Claim your daily reward." if daily_state == "ready" else "Open Cards to tune your loadout." if level >= 3 else "Play the next guided clash.",
         "message": f"{outcome}: +{xp_delta} XP saved to your Rebirth account.",
     }
 
@@ -281,7 +296,9 @@ def index():
 
 @app.get("/rebirth")
 def rebirth():
-    return render_template("rebirth.html")
+    user = current_user()
+    progress = rebirth_repo().progression(user["id"]) if user else None
+    return render_template("rebirth.html", account=account_payload(user), progression=progress or {})
 
 
 @app.get("/rebirth/account")
@@ -366,6 +383,11 @@ def rebirth_support():
     return render_template("rebirth_product.html", page=support_payload(account=account_payload(user)))
 
 
+@app.get("/rebirth/lab")
+def rebirth_lab():
+    return render_template("rebirth_product.html", page=lab_payload())
+
+
 @app.get("/health")
 def health():
     return jsonify(
@@ -400,24 +422,36 @@ def api_rebirth_start():
     try:
         payload = request_json(required=False)
         user = current_user()
+        repo = rebirth_repo()
         player_card_ids = None
         player_name = "You"
+        bot_profile_id = None
+        progress = None
         if user:
-            player_card_ids = rebirth_repo().loadout_card_ids(user["id"])
+            progress = repo.progression(user["id"])
+            player_card_ids = repo.loadout_card_ids(user["id"])
             player_name = user["username"]
+            if payload.get("tutorial"):
+                player_card_ids = DEFAULT_LOADOUT
+                bot_profile_id = "aggressive"
+            elif progress and int(progress.get("clashes", 0) or 0) < 3:
+                bot_profile_id = "aggressive"
         requested_seed = payload.get("seed")
+        if payload.get("tutorial") and requested_seed is None:
+            requested_seed = "guided-first-match"
         engine_seed = f"user:{user['id']}:{requested_seed}" if user and requested_seed is not None else requested_seed
         match = start_match(
             seed=engine_seed,
             player_card_ids=player_card_ids,
             player_name=player_name,
+            bot_profile_id=bot_profile_id,
         )
         if user:
             match["owner_user_id"] = user["id"]
             match["seed"] = str(requested_seed or "")
         match = MATCH_STORE.save(match)
         if user:
-            rebirth_repo().upsert_match_history(user["id"], match)
+            repo.upsert_match_history(user["id"], match)
         state = public_state(match)
         return json_success(state, match.get("result"), match_id=match["match_id"])
     except RebirthPersistenceError as error:

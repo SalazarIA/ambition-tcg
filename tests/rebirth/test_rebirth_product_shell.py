@@ -10,11 +10,12 @@ def read(path):
 
 def test_rebirth_product_pages_render_active_shell(client):
     expected = {
-        "/rebirth/account": "Real Login/Auth Plan",
-        "/rebirth/collection": "Collection + Loadout",
-        "/rebirth/shop": "Shop + Booster Demo",
-        "/rebirth/progression": "Progression + Rewards",
+        "/rebirth/account": "Create Account",
+        "/rebirth/collection": "Cards",
+        "/rebirth/shop": "Packs",
+        "/rebirth/progression": "Rewards",
         "/rebirth/profile": "Player Profile",
+        "/rebirth/lab": "Rebirth Lab",
         "/rebirth/history": "Match History + Economy Ledger",
         "/rebirth/desktop": "Desktop Arena Polish",
         "/rebirth/onboarding": "Onboarding/Tutorial Rebirth",
@@ -49,13 +50,13 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     release = client.get("/api/rebirth/release")
 
     assert shell.status_code == 200
-    assert shell.get_json()["shell"]["status"][0]["value"] == "Rebirth only"
+    assert shell.get_json()["shell"]["status"][0]["value"] == "One Card Clash"
     assert auth.status_code == 200
-    assert auth.get_json()["auth"]["steps"][0]["title"] == "Identity"
+    assert auth.get_json()["auth"]["steps"][0]["title"] == "Create"
     assert collection.status_code == 200
     assert collection.get_json()["collection"]["summary"]["loadout_size"] == 8
     assert shop.status_code == 200
-    assert shop.get_json()["shop"]["offers"][0]["price"] == "Demo"
+    assert shop.get_json()["shop"]["offers"][0]["price"] == "Free"
     assert progression.status_code == 200
     assert progression.get_json()["progression"]["profile"]["level"] == 1
     assert profile.status_code == 200
@@ -121,7 +122,7 @@ def test_rebirth_booster_demo_returns_four_cards_without_economy(client):
     assert len(payload["booster"]["cards"]) == 4
 
     shop = client.get("/api/rebirth/shop").get_json()["shop"]
-    assert "No currency, payment processor or legacy economy" in shop["disclaimer"]
+    assert "Packs are free during the Rebirth beta" in shop["disclaimer"]
 
 
 def test_rebirth_product_shell_does_not_load_legacy_assets():

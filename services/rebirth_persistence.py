@@ -616,6 +616,12 @@ class RebirthRepository:
         self.ensure_schema()
         with self.connect() as db:
             row = db.execute("SELECT * FROM user_progress WHERE user_id = ?", (user_id,)).fetchone()
+            daily_claimed = bool(
+                db.execute(
+                    "SELECT 1 FROM reward_claims WHERE user_id = ? AND reward_key = ?",
+                    (user_id, "daily_first_clash"),
+                ).fetchone()
+            )
         if not row:
             return None
         xp = int(row["xp"])
@@ -630,6 +636,7 @@ class RebirthRepository:
             "boosters_opened": int(row["boosters_opened"]),
             "tutorial_step": int(row["tutorial_step"]),
             "tutorial_complete": bool(row["tutorial_complete"]),
+            "daily_claimed": daily_claimed,
         }
 
     def record_clash_result(self, user_id, public_match_state):

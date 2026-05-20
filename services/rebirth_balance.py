@@ -53,6 +53,7 @@ def projected_player_score(match, player_card):
         turn=match.get("turn", 1),
         player_wounded=match["player"].get("wounded", False),
         bot_wounded=match["bot"].get("wounded", False),
+        match_id=match.get("match_id"),
     )
     if not bot_card:
         return 1000

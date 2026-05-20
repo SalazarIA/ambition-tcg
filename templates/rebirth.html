@@ -15,7 +15,7 @@
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-030">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-033">
 </head>
 <body class="rb-page rb-game-page">
     <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
@@ -33,11 +33,13 @@
                 <strong>8-card preview</strong>
             </article>
             <nav aria-label="Rebirth product links">
-                <a href="{{ url_for('rebirth_collection') }}">Collection</a>
-                <a href="{{ url_for('rebirth_shop') }}">Shop Demo</a>
-                <a href="{{ url_for('rebirth_progression') }}">Progression</a>
+                <a href="{{ url_for('rebirth_collection') }}">Cards</a>
+                <a href="{{ url_for('rebirth_shop') }}">Packs</a>
+                <a href="{{ url_for('rebirth_progression') }}">Rewards</a>
                 <a href="{{ url_for('rebirth_profile') }}">Profile</a>
-                <a href="{{ url_for('rebirth_onboarding') }}">Tutorial</a>
+                {% if not account.authenticated %}
+                    <a href="{{ url_for('rebirth_account') }}">Create Account</a>
+                {% endif %}
             </nav>
         </aside>
 
@@ -52,6 +54,10 @@
                             <strong id="player-hp">30</strong>
                         </div>
                         <div class="rb-hp-meter" aria-hidden="true"><b id="player-hp-fill"></b></div>
+                        <div class="rb-zone-row" aria-label="Player card zones">
+                            <span id="player-deck-count">Deck 0</span>
+                            <span id="player-discard-count">Void 0</span>
+                        </div>
                     </div>
                 </div>
 
@@ -69,6 +75,10 @@
                             <strong id="bot-hp">30</strong>
                         </div>
                         <div class="rb-hp-meter" aria-hidden="true"><b id="bot-hp-fill"></b></div>
+                        <div class="rb-zone-row" aria-label="Bot card zones">
+                            <span id="bot-deck-count">Deck 0</span>
+                            <span id="bot-discard-count">Void 0</span>
+                        </div>
                     </div>
                     <div class="rb-bot-emblem" aria-hidden="true"></div>
                 </div>
@@ -90,6 +100,12 @@
                     <span>Evolve monsters.</span>
                     <strong>Win the duel.</strong>
                 </p>
+            </section>
+
+            <section class="rb-coach-panel" id="coach-panel" aria-label="Coach" aria-live="polite">
+                <span id="coach-badge">Coach</span>
+                <strong id="coach-title">Pick one monster.</strong>
+                <p id="coach-copy">I will call out the safest line before you commit.</p>
             </section>
 
             <section class="rb-card-stage" aria-label="Selected monster and evolution">
@@ -145,6 +161,7 @@
                     <span id="result-label">Waiting</span>
                     <strong id="result-title">Pick one monster.</strong>
                     <p id="result-copy">The bot will answer with one monster. Higher attack wins the clash.</p>
+                    <div id="tactics-strip" class="rb-tactics-strip" aria-label="Tactical read"></div>
                     <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
                     <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
                 </div>
@@ -189,8 +206,10 @@
             start: "{{ url_for('api_rebirth_start') }}",
             playCard: "{{ url_for('api_rebirth_play_card') }}",
             evolve: "{{ url_for('api_rebirth_evolve') }}",
-            nextTurn: "{{ url_for('api_rebirth_next_turn') }}"
+            nextTurn: "{{ url_for('api_rebirth_next_turn') }}",
+            completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}"
         };
+        window.REBIRTH_PLAYER_CONTEXT = {{ {"account": account, "progression": progression} | tojson }};
         window.REBIRTH_ASSETS = {
             fallbackCardArt: "{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}",
             botCardBack: "{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}",
@@ -198,7 +217,7 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-030"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-030"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-033"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-033"></script>
 </body>
 </html>

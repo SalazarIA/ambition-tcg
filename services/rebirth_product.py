@@ -7,17 +7,19 @@ from services.rebirth_cards import BASE_MONSTERS, EVOLVED_MONSTERS, PLAYER_DECK,
 
 PRODUCT_NAV = [
     {"key": "play", "label": "Play", "href": "/rebirth"},
-    {"key": "collection", "label": "Collection", "href": "/rebirth/collection"},
-    {"key": "shop", "label": "Shop", "href": "/rebirth/shop"},
-    {"key": "progression", "label": "Progression", "href": "/rebirth/progression"},
+    {"key": "collection", "label": "Cards", "href": "/rebirth/collection"},
+    {"key": "shop", "label": "Packs", "href": "/rebirth/shop"},
+    {"key": "progression", "label": "Rewards", "href": "/rebirth/progression"},
     {"key": "profile", "label": "Profile", "href": "/rebirth/profile"},
-    {"key": "history", "label": "History", "href": "/rebirth/history"},
-    {"key": "tutorial", "label": "Tutorial", "href": "/rebirth/onboarding"},
-    {"key": "balance", "label": "Balance", "href": "/rebirth/balance"},
-    {"key": "support", "label": "Support", "href": "/rebirth/support"},
-    {"key": "account", "label": "Account", "href": "/rebirth/account"},
-    {"key": "desktop", "label": "Desktop", "href": "/rebirth/desktop"},
-    {"key": "release", "label": "Release", "href": "/rebirth/release"},
+]
+
+LAB_LINKS = [
+    {"key": "history", "label": "Match Journal", "href": "/rebirth/history"},
+    {"key": "tutorial", "label": "Tutorial Status", "href": "/rebirth/onboarding"},
+    {"key": "balance", "label": "Balance Lab", "href": "/rebirth/balance"},
+    {"key": "support", "label": "Support Tools", "href": "/rebirth/support"},
+    {"key": "desktop", "label": "Desktop Notes", "href": "/rebirth/desktop"},
+    {"key": "release", "label": "Release Gate", "href": "/rebirth/release"},
 ]
 
 DEFAULT_LOADOUT = [
@@ -33,29 +35,24 @@ DEFAULT_LOADOUT = [
 
 AUTH_PLAN_STEPS = [
     {
-        "title": "Identity",
-        "status": "Live",
-        "copy": "Email and password accounts with unique username, normalized email and beta-safe JSON errors.",
+        "title": "Create",
+        "status": "Step 1",
+        "copy": "Create your Rebirth name and save every clash, card and reward to this account.",
     },
     {
-        "title": "Session",
-        "status": "Live",
-        "copy": "Flask signed session cookie with HttpOnly and SameSite defaults for the active Rebirth app.",
+        "title": "Learn",
+        "status": "Step 2",
+        "copy": "The first match opens with live coaching so each card choice has a clear reason.",
     },
     {
-        "title": "Mutations",
-        "status": "Live",
-        "copy": "Rebirth POST APIs use a session CSRF token and auth endpoints have a small in-memory rate limit.",
+        "title": "Earn",
+        "status": "Step 3",
+        "copy": "Finish clashes, claim daily XP and unlock new reward milestones.",
     },
     {
-        "title": "Ownership",
-        "status": "Live",
-        "copy": "Collection, loadout, rewards and booster history attach to the signed-in Rebirth user.",
-    },
-    {
-        "title": "Migration",
-        "status": "Future",
-        "copy": "No legacy account table is active. Any migration must map old data into Rebirth-native records.",
+        "title": "Build",
+        "status": "Step 4",
+        "copy": "Open packs, tune your eight-card loadout and bring it into the next duel.",
     },
 ]
 
@@ -97,10 +94,26 @@ RELEASE_CHECKS = [
 ]
 
 PROGRESSION_TRACK = [
-    {"level": 1, "name": "First Spark", "reward": "Starter booster demo", "state": "claimed"},
-    {"level": 2, "name": "Second Clash", "reward": "50 Gold preview", "state": "ready"},
-    {"level": 3, "name": "Monster Bond", "reward": "Loadout slot preview", "state": "locked"},
-    {"level": 4, "name": "Apex Trial", "reward": "Evolved art frame", "state": "locked"},
+    {"level": 1, "name": "First Spark", "reward": "Starter pack ready", "state": "claimed"},
+    {"level": 2, "name": "Second Clash", "reward": "25 XP boost", "state": "ready"},
+    {"level": 3, "name": "Monster Bond", "reward": "Loadout tune-up", "state": "locked"},
+    {"level": 4, "name": "Apex Trial", "reward": "Evolved frame", "state": "locked"},
+    {"level": 5, "name": "Pack Runner", "reward": "Pack ticket", "state": "locked"},
+    {"level": 6, "name": "Guard Breaker", "reward": "Card upgrade spark", "state": "locked"},
+    {"level": 7, "name": "Clean Read", "reward": "Coach insight badge", "state": "locked"},
+    {"level": 8, "name": "Pressure Line", "reward": "Rare card chance", "state": "locked"},
+    {"level": 9, "name": "Twin Flame", "reward": "Duplicate bonus", "state": "locked"},
+    {"level": 10, "name": "Arena Name", "reward": "Profile title", "state": "locked"},
+    {"level": 11, "name": "Counterplay", "reward": "Pack ticket", "state": "locked"},
+    {"level": 12, "name": "Apex Bond", "reward": "Evolved card chance", "state": "locked"},
+    {"level": 13, "name": "Steady Hand", "reward": "Loadout slot style", "state": "locked"},
+    {"level": 14, "name": "Hot Streak", "reward": "XP boost", "state": "locked"},
+    {"level": 15, "name": "Vault Spark", "reward": "Collection frame", "state": "locked"},
+    {"level": 16, "name": "Duel Sense", "reward": "Coach badge", "state": "locked"},
+    {"level": 17, "name": "Pack Master", "reward": "Pack ticket", "state": "locked"},
+    {"level": 18, "name": "Wounded Read", "reward": "Rare card chance", "state": "locked"},
+    {"level": 19, "name": "Rebirth Chain", "reward": "Duplicate bonus", "state": "locked"},
+    {"level": 20, "name": "Season Spark", "reward": "Season 0 badge", "state": "locked"},
 ]
 
 
@@ -137,51 +150,41 @@ def product_shell_payload(account=None):
     payload = page_payload(
         "home",
         "Ambitionz Rebirth",
-        "One active product shell around the persisted one-card clash MVP.",
+        "A fast one-card monster duel where every choice has pressure, payoff and progress.",
     )
     payload.update(
         {
             "account": account,
             "status": [
-                {"label": "Runtime", "value": "Rebirth only"},
-                {"label": "Legacy", "value": "Retired"},
-                {"label": "Store", "value": "SQLite MVP"},
+                {"label": "Mode", "value": "One Card Clash"},
+                {"label": "Cards", "value": "13 monsters"},
+                {"label": "Progress", "value": "Saved account"},
             ],
             "blocks": [
                 {
-                    "title": "Real Auth/Persistence",
-                    "copy": "Create a Rebirth account and attach ownership to the active session.",
+                    "title": "Create Account",
+                    "copy": "Save your cards, rewards, badges and match progress.",
                     "href": "/rebirth/account",
                 },
                 {
-                    "title": "Collection + Loadout",
-                    "copy": "Persist owned monsters and the active eight-card Rebirth loadout.",
+                    "title": "Cards",
+                    "copy": "Build an eight-card loadout around damage, guard and evolution pairs.",
                     "href": "/rebirth/collection",
                 },
                 {
-                    "title": "Shop + Booster",
-                    "copy": "Open a no-payment booster that mutates signed-in ownership.",
+                    "title": "Packs",
+                    "copy": "Open Rebirth packs and add monsters to your collection.",
                     "href": "/rebirth/shop",
                 },
                 {
-                    "title": "Progression + Rewards",
-                    "copy": "Track persisted XP, wins, clashes, tutorial and daily reward state.",
+                    "title": "Rewards",
+                    "copy": "Climb a 20-level reward track with daily XP and pack milestones.",
                     "href": "/rebirth/progression",
                 },
                 {
-                    "title": "Profile + Achievements",
-                    "copy": "Inspect player identity, collection stats and unlocked Rebirth achievements.",
+                    "title": "Profile",
+                    "copy": "Track level, badges, owned cards and account controls.",
                     "href": "/rebirth/profile",
-                },
-                {
-                    "title": "History + Ledger",
-                    "copy": "Review persisted matches, event counts, state hashes and economy movements.",
-                    "href": "/rebirth/history",
-                },
-                {
-                    "title": "Onboarding + QA",
-                    "copy": "Run the tutorial, balance simulation and release checks.",
-                    "href": "/rebirth/onboarding",
                 },
             ],
         }
@@ -193,21 +196,19 @@ def auth_plan_payload(account=None):
     account = account or guest_account()
     payload = page_payload(
         "account",
-        "Real Login/Auth Plan",
-        "Rebirth now has its own account/session layer, backed by SQLite and isolated from retired legacy auth.",
-        primary_label="Open Collection",
-        primary_href="/rebirth/collection",
+        "Create Account",
+        "Save your cards, rewards and guided first match.",
+        primary_label="Start Tutorial",
+        primary_href="/rebirth?firstRun=1",
     )
     payload["account"] = account
     payload["steps"] = deepcopy(AUTH_PLAN_STEPS)
     payload["constraints"] = [
-        "No SQLAlchemy runtime is active in the current MVP.",
-        "Passwords are hashed with PBKDF2 before storage.",
-        "Mutating Rebirth APIs are guarded by a session CSRF token.",
-        "Auth endpoints have a small in-memory rate limit for the current runtime.",
-        "Collection, loadout, booster history and rewards persist per Rebirth user.",
-        "Signed-in players can change their password from the Rebirth profile screen.",
-        "Legacy users require an explicit future migration task.",
+        "Every clash earns account XP.",
+        "The first match starts with card-choice coaching.",
+        "Daily rewards unlock after one clash.",
+        "Packs and loadout changes persist to this player.",
+        "Password controls live inside the Profile screen.",
     ]
     return payload
 
@@ -239,8 +240,8 @@ def collection_payload(account=None, collection_counts=None, loadout_card_ids=No
     base_owned = [card for card in cards if card["owned_count"]]
     payload = page_payload(
         "collection",
-        "Collection + Loadout",
-        "Owned monsters and the active eight-card loadout now persist to the signed-in Rebirth account.",
+        "Cards",
+        "Tune your eight-card loadout around attack, guard and evolution pairs.",
         primary_label="Enter Arena",
         primary_href="/rebirth",
     )
@@ -294,9 +295,9 @@ def shop_payload(account=None, booster_history=None):
     account = account or guest_account()
     payload = page_payload(
         "shop",
-        "Shop + Booster Demo",
-        "A no-payment booster flow that adds cards to the signed-in Rebirth collection.",
-        primary_label="Open Demo Booster",
+        "Packs",
+        "Open Rebirth packs and add monsters to your saved collection.",
+        primary_label="Open Pack",
         primary_href="/rebirth/shop",
     )
     payload.update(
@@ -304,15 +305,15 @@ def shop_payload(account=None, booster_history=None):
             "offers": [
                 {
                     "id": "starter_booster_demo",
-                    "name": "Rebirth Starter Booster",
-                    "price": "Demo",
-                    "contents": "4 cards, one elevated slot, persisted ownership",
+                    "name": "Rebirth Starter Pack",
+                    "price": "Free",
+                    "contents": "4 cards, one elevated slot, saved to your collection",
                     "state": "available",
                 }
             ],
             "account": account,
             "history": booster_history or [],
-            "disclaimer": "No currency, payment processor or legacy economy is active. Booster cards persist only for signed-in Rebirth accounts.",
+            "disclaimer": "Packs are free during the Rebirth beta. Cards persist for signed-in players.",
         }
     )
     return payload
@@ -348,14 +349,17 @@ def progression_payload(account=None, progression=None):
         "boosters_opened": 0,
         "tutorial_step": 0,
         "tutorial_complete": False,
+        "daily_claimed": False,
     }
     payload = page_payload(
         "progression",
-        "Progression + Rewards",
-        "A Rebirth-native reward loop persisted per account and separate from retired economy systems.",
+        "Rewards",
+        "Earn XP, claim daily progress and chase the Season 0 reward track.",
         primary_label="Play For XP",
         primary_href="/rebirth",
     )
+    daily_claimed = bool(profile.get("daily_claimed", False))
+    daily_ready = int(profile.get("clashes", 0)) >= 1
     payload.update(
         {
             "account": account,
@@ -366,7 +370,7 @@ def progression_payload(account=None, progression=None):
                 "progress": min(1, int(profile.get("clashes", 0))),
                 "goal": 1,
                 "reward": "25 XP",
-                "state": "ready" if int(profile.get("clashes", 0)) >= 1 else "locked",
+                "state": "claimed" if daily_claimed else "ready" if daily_ready else "locked",
             },
         }
     )
@@ -399,6 +403,7 @@ def guest_profile():
             "boosters_opened": 0,
             "tutorial_step": 0,
             "tutorial_complete": False,
+            "daily_claimed": False,
         },
         "collection": {"owned_cards": len(PLAYER_DECK), "unique_owned": len(set(PLAYER_DECK)), "loadout_size": 8},
         "achievements": [
@@ -497,6 +502,18 @@ def support_payload(account=None, export=None):
             ],
         }
     )
+    return payload
+
+
+def lab_payload():
+    payload = page_payload(
+        "lab",
+        "Rebirth Lab",
+        "Internal QA, support and release tools for the Rebirth team.",
+        primary_label="Back To Play",
+        primary_href="/rebirth",
+    )
+    payload.update({"links": deepcopy(LAB_LINKS)})
     return payload
 
 

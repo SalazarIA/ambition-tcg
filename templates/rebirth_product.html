@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-030">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-033">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     <main class="rb-home-shell rb-product-shell">
@@ -87,8 +87,8 @@
                     </article>
                 {% endfor %}
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Auth constraints">
-                <h2>Runtime Contract</h2>
+            <section class="rb-product-panel rb-product-wide" aria-label="Account benefits">
+                <h2>Account Benefits</h2>
                 <ul class="rb-product-list">
                     {% for item in page.constraints %}
                         <li>{{ item }}</li>
@@ -322,23 +322,23 @@
                         <h2>{{ offer.name }}</h2>
                         <p>{{ offer.contents }}</p>
                         <strong>{{ offer.price }}</strong>
-                        <button class="rb-button-primary rb-cta" type="button" data-rebirth-booster>Open Booster</button>
+                        <button class="rb-button-primary rb-cta" type="button" data-rebirth-booster>Open Pack</button>
                     </article>
                 {% endfor %}
                 <article class="rb-product-panel">
-                    <span>Contract</span>
-                    <h2>No Economy Runtime</h2>
+                    <span>Beta</span>
+                    <h2>Free Packs</h2>
                     <p>{{ page.disclaimer }}</p>
                 </article>
             </section>
             <section class="rb-product-panel rb-product-wide" aria-label="Booster result">
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>Demo result</span>
-                        <h2>Booster Pull</h2>
+                        <span>Pack result</span>
+                        <h2>Pack Pull</h2>
                     </div>
                 </div>
-                <div id="rebirth-booster-result" class="rb-product-result rb-booster-result" aria-live="polite">Open a booster to reveal four Rebirth cards.</div>
+                <div id="rebirth-booster-result" class="rb-product-result rb-booster-result" aria-live="polite">Open a pack to reveal four Rebirth cards.</div>
             </section>
             {% if page.history %}
                 <section class="rb-product-panel rb-product-wide" aria-label="Booster history">
@@ -377,8 +377,27 @@
                 <span>{{ page.daily.state }}</span>
                 <h2>{{ page.daily.name }}</h2>
                 <p>{{ page.daily.progress }}/{{ page.daily.goal }} complete - {{ page.daily.reward }}</p>
-                <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-claim-daily>Claim Daily</button>
-                <div class="rb-product-result" data-rebirth-progression-result aria-live="polite">Reward state ready.</div>
+                <button
+                    class="rb-button-secondary rb-secondary"
+                    type="button"
+                    data-rebirth-claim-daily
+                    data-daily-state="{{ page.daily.state }}"
+                    {{ 'disabled' if page.daily.state != 'ready' else '' }}
+                >{{ 'Claimed' if page.daily.state == 'claimed' else 'Claim Daily' if page.daily.state == 'ready' else 'Play A Clash' }}</button>
+                <div class="rb-product-result" data-rebirth-progression-result aria-live="polite">
+                    {{ 'Daily reward claimed.' if page.daily.state == 'claimed' else 'Daily reward ready.' if page.daily.state == 'ready' else 'Play one clash to unlock this daily reward.' }}
+                </div>
+            </section>
+        {% elif page.key == "lab" %}
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Rebirth lab links">
+                {% for item in page.links %}
+                    <article class="rb-product-panel">
+                        <span>Lab</span>
+                        <h2>{{ item.label }}</h2>
+                        <p>Internal Rebirth tooling kept outside the player navigation.</p>
+                        <a class="rb-secondary" href="{{ item.href }}">Open</a>
+                    </article>
+                {% endfor %}
             </section>
         {% elif page.key == "desktop" %}
             <section class="rb-product-grid" aria-label="Desktop polish checks">
@@ -512,7 +531,7 @@
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-030"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-030"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-033"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-033"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@
     const RebirthConfig = {
         endpoints: window.REBIRTH_ENDPOINTS || {},
         assets: window.REBIRTH_ASSETS || {},
+        player: window.REBIRTH_PLAYER_CONTEXT || {},
         boardWidth: 852,
         boardHeight: 1846
     };
@@ -13,6 +14,8 @@
         selectedInstanceId: null,
         reward: null,
         lastResultSignature: null,
+        guidedFirstMatch: false,
+        tutorialCompletionSent: false,
         pending: false,
         elements: {},
 
@@ -63,8 +66,12 @@
                 "rebirth-error",
                 "player-hp",
                 "player-hp-fill",
+                "player-deck-count",
+                "player-discard-count",
                 "bot-hp",
                 "bot-hp-fill",
+                "bot-deck-count",
+                "bot-discard-count",
                 "turn-number",
                 "bot-profile-label",
                 "bot-card",
@@ -82,6 +89,7 @@
                 "result-label",
                 "result-title",
                 "result-copy",
+                "tactics-strip",
                 "ability-events",
                 "reward-panel",
                 "result-panel",
@@ -92,7 +100,11 @@
                 "guide-rule-copy",
                 "guide-combine-label",
                 "guide-combine-title",
-                "guide-combine-copy"
+                "guide-combine-copy",
+                "coach-panel",
+                "coach-badge",
+                "coach-title",
+                "coach-copy"
             ].forEach((id) => {
                 RebirthStore.elements[id] = this.byId(id);
             });
@@ -181,7 +193,12 @@
             const viewport = window.visualViewport || window;
             const width = Math.max(1, viewport.width || window.innerWidth || RebirthConfig.boardWidth);
             const height = Math.max(1, viewport.height || window.innerHeight || RebirthConfig.boardHeight);
-            const scale = Math.min(width / RebirthConfig.boardWidth, height / RebirthConfig.boardHeight);
+            const desktop = width >= 1180 && height >= 680;
+            const baseWidth = desktop ? 1180 : RebirthConfig.boardWidth;
+            const baseHeight = desktop ? 760 : RebirthConfig.boardHeight;
+            document.documentElement.style.setProperty("--rb-board-width", `${baseWidth}px`);
+            document.documentElement.style.setProperty("--rb-board-height", `${baseHeight}px`);
+            const scale = Math.min(width / baseWidth, height / baseHeight);
             document.documentElement.style.setProperty("--rb-scale", String(scale));
             window.scrollTo(0, 0);
         }
@@ -269,6 +286,21 @@
     };
 
     const RebirthMarkup = {
+        cardTierName(card) {
+            return Number(card && card.tier || 1) > 1 ? "Apex" : "Base";
+        },
+
+        cardRole(card) {
+            const attack = Number(card && (card.attack || card.power) || 0);
+            const guard = Number(card && card.guard || 0);
+            const ability = String(card && card.ability_key || "");
+            if (Number(card && card.tier || 1) > 1) return "Finisher";
+            if (ability.includes("guard") || ability === "brace" || ability === "bulwark" || guard >= attack + 2) return "Sentinel";
+            if (attack >= 7 || ability.includes("bite") || ability.includes("rend")) return "Striker";
+            if (ability.includes("fade") || ability.includes("pursuit") || ability.includes("mark")) return "Tempo";
+            return "Duelist";
+        },
+
         card(card) {
             return `
                 <div class="rb-card-topline">
@@ -284,6 +316,11 @@
                 <div class="rb-card-rule">
                     <strong>${RebirthText.escape(card.ability_name || "Clash")}</strong>
                     <p>${RebirthText.escape(card.ability_text || card.flavor)}</p>
+                    <div class="rb-card-tags">
+                        <span>${RebirthText.escape(this.cardTierName(card))}</span>
+                        <span>${RebirthText.escape(card.element || "Void")}</span>
+                        <span>${RebirthText.escape(this.cardRole(card))}</span>
+                    </div>
                 </div>
                 <div class="rb-card-stats">
                     <span><i class="rb-stat-sword"></i><b>${RebirthText.escape(card.attack || card.power)}</b></span>
@@ -295,8 +332,10 @@
 
         miniCard(card, options) {
             const selected = options && options.selected ? " is-selected" : "";
+            const recommended = options && options.recommended ? " is-recommended" : "";
+            const evolved = Number(card.tier || 1) > 1 ? " is-evolved" : "";
             return `
-                <button class="rb-mini-card${selected}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
+                <button class="rb-mini-card${selected}${recommended}${evolved}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
                     <b class="rb-power">${RebirthText.escape(card.attack || card.power)}</b>
                     <div class="rb-mini-art" ${RebirthAssets.artStyle(card)}></div>
                     <div class="rb-mini-copy">
@@ -333,6 +372,45 @@
                     <span><i class="rb-stat-shield"></i><b>0</b></span>
                 </div>
             `;
+        }
+    };
+
+    const RebirthTactics = {
+        botIntent(profile) {
+            const id = profile && profile.id;
+            if (id === "aggressive") {
+                return { label: "Pressure", copy: "Likely to race attack and force quick HP trades.", tone: "danger" };
+            }
+            if (id === "opportunist") {
+                return { label: "Trap Window", copy: "Likely to chase ability value when the line opens.", tone: "warning" };
+            }
+            return { label: "Guard Line", copy: "Likely to absorb first and punish low attack.", tone: "guard" };
+        },
+
+        selectedRead(card) {
+            if (!card) {
+                return { label: "No Card", copy: "Select a monster to see tempo, role and risk." };
+            }
+            const attack = Number(card.attack || card.power || 0);
+            const guard = Number(card.guard || 0);
+            const tempo = attack * 2 + guard + Number(card.tier || 1) * 3;
+            const role = RebirthMarkup.cardRole(card);
+            const label = tempo >= 25 ? "Power Line" : tempo >= 18 ? "Stable Line" : "Setup Line";
+            return {
+                label,
+                copy: `${role}: ${attack} attack / ${guard} guard. Tempo ${tempo}.`
+            };
+        },
+
+        advantage(state) {
+            if (!state) return { label: "Even", copy: "Match not loaded." };
+            const hpDelta = Number(state.player.hp || 0) - Number(state.bot.hp || 0);
+            const handDelta = Number((state.player.hand || []).length) - Number(state.bot.hand_count || 0);
+            const deckDelta = Number(state.player.deck_count || 0) - Number(state.bot.deck_count || 0);
+            const score = hpDelta + handDelta * 2 + deckDelta;
+            if (score >= 6) return { label: "Advantage", copy: `You lead by ${score} tempo.` };
+            if (score <= -6) return { label: "Under Fire", copy: `Bot leads by ${Math.abs(score)} tempo.` };
+            return { label: "Even Board", copy: "HP, hand and deck pressure are close." };
         }
     };
 
@@ -426,13 +504,138 @@
         }
     };
 
+    const RebirthCoach = {
+        progression() {
+            return (RebirthConfig.player && RebirthConfig.player.progression) || {};
+        },
+
+        account() {
+            return (RebirthConfig.player && RebirthConfig.player.account) || {};
+        },
+
+        shouldGuideFirstMatch() {
+            const params = new URLSearchParams(window.location.search || "");
+            const progress = this.progression();
+            return Boolean(
+                params.has("firstRun") ||
+                params.has("tutorial") ||
+                (this.account().authenticated && !progress.tutorial_complete && Number(progress.clashes || 0) === 0)
+            );
+        },
+
+        score(card) {
+            if (!card) return -1;
+            const ability = {
+                inferno_bite: 8,
+                apex_rend: 7,
+                molten_bite: 6,
+                rending_strike: 5,
+                silent_pursuit: 5,
+                storm_dive: 5,
+                high_guard: 4,
+                bleed_mark: 4,
+                fade_cut: 3,
+                fortress_hit: 3,
+                immovable: 2,
+                bulwark: 2,
+                brace: 1
+            }[card.ability_key] || 0;
+            return Number(card.attack || card.power || 0) * 3 + Number(card.guard || 0) + Number(card.tier || 1) * 4 + ability;
+        },
+
+        recommendedCard() {
+            const hand = (RebirthStore.state && RebirthStore.state.player && RebirthStore.state.player.hand) || [];
+            if (!hand.length) return null;
+            return hand.slice().sort((a, b) => {
+                return this.score(b) - this.score(a) || String(a.name).localeCompare(String(b.name));
+            })[0];
+        },
+
+        insight() {
+            const state = RebirthStore.state;
+            if (!state) {
+                return { badge: "Coach", title: "Loading arena.", copy: "Preparing your first hand." };
+            }
+            if (!this.account().authenticated) {
+                return {
+                    badge: "Save",
+                    title: "Create an account when ready.",
+                    copy: "You can play now, but cards, XP and rewards only persist after account creation."
+                };
+            }
+            if (state.is_finished) {
+                const won = state.winner === "player";
+                return {
+                    badge: won ? "Victory" : "Next",
+                    title: won ? "Lock in the reward." : "Review the reward, then rebuild.",
+                    copy: "Open Rewards for XP progress, or Cards to tune your loadout before the next match."
+                };
+            }
+            if (state.phase === "result") {
+                const reward = RebirthStore.reward;
+                if (reward && reward.daily && reward.daily.ready) {
+                    return { badge: "Reward", title: "Daily reward is ready.", copy: "After this match, claim the daily XP on Rewards." };
+                }
+                return { badge: "Read", title: "Read the result before moving.", copy: "The log explains damage, ability triggers and why the clash resolved that way." };
+            }
+            const evolution = RebirthStore.firstEvolution();
+            const selected = RebirthStore.selectedCard();
+            const recommended = this.recommendedCard();
+            if (evolution && (!selected || selected.id === evolution.card_id)) {
+                return {
+                    badge: "Evolve",
+                    title: "Evolve now for a stronger line.",
+                    copy: `${evolution.name} x${evolution.count} can merge before you clash. That usually adds attack, guard and pressure.`
+                };
+            }
+            if (!selected) {
+                return { badge: "Choose", title: "Pick one monster.", copy: "The highlighted card is the safest starting line from your hand." };
+            }
+            if (recommended && selected.instance_id === recommended.instance_id) {
+                return {
+                    badge: "Good",
+                    title: `${selected.name} is the clean read.`,
+                    copy: `Best pressure in hand: ${selected.attack} attack, ${selected.guard} guard. Commit it unless you want to bait with defense.`
+                };
+            }
+            if (Number(selected.guard || 0) <= 2) {
+                return {
+                    badge: "Risky",
+                    title: `${selected.name} can get punished.`,
+                    copy: "Low guard hits fast, but it can fold if the bot answers with a bigger attack."
+                };
+            }
+            if (Number(selected.attack || 0) <= 3) {
+                return {
+                    badge: "Risky",
+                    title: `${selected.name} may stall into high guard.`,
+                    copy: "Defensive cards reduce damage, but they usually need an ability trigger or wounded target to swing the turn."
+                };
+            }
+            return {
+                badge: "Plan",
+                title: `${selected.name} is playable.`,
+                copy: recommended ? `${recommended.name} has a stronger projected line, but this card can still set up pressure.` : "Commit when the attack and guard fit your plan."
+            };
+        }
+    };
+
     const RebirthRenderer = {
         render() {
             if (!RebirthStore.state) return;
             const state = RebirthStore.state;
+            const board = RebirthStore.elements["rebirth-board"];
+            if (board) {
+                board.dataset.phase = state.phase;
+                board.dataset.winner = state.winner || "";
+            }
             RebirthAssets.preloadState(state);
             RebirthDom.setText("player-hp", state.player.hp);
             RebirthDom.setText("bot-hp", state.bot.hp);
+            RebirthDom.setText("player-deck-count", `Deck ${state.player.deck_count || 0}`);
+            RebirthDom.setText("player-discard-count", `Void ${state.player.discard_count || 0}`);
+            RebirthDom.setText("bot-deck-count", `Deck ${state.bot.deck_count || 0}`);
+            RebirthDom.setText("bot-discard-count", `Void ${state.bot.discard_count || 0}`);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
             RebirthDom.setText("phase-label", state.phase);
             RebirthDom.setText("bot-profile-label", (state.bot_profile && state.bot_profile.name) || "Bot Profile");
@@ -441,7 +644,9 @@
             this.botCard();
             this.evolutionPanel();
             this.hand();
+            this.coach();
             this.result();
+            this.tactics();
             this.guide();
             this.log();
             this.buttons();
@@ -535,10 +740,22 @@
             const host = RebirthStore.elements["player-hand"];
             if (!host) return;
             const hand = RebirthStore.state.player.hand || [];
+            const recommended = RebirthCoach.recommendedCard();
             RebirthDom.setText("hand-count", `${hand.length} cards`);
             host.innerHTML = hand.map((card) => RebirthMarkup.miniCard(card, {
-                selected: card.instance_id === RebirthStore.selectedInstanceId
+                selected: card.instance_id === RebirthStore.selectedInstanceId,
+                recommended: recommended && card.instance_id === recommended.instance_id
             })).join("");
+        },
+
+        coach() {
+            const panel = RebirthStore.elements["coach-panel"];
+            if (!panel) return;
+            const insight = RebirthCoach.insight();
+            panel.dataset.coachTone = String(insight.badge || "Coach").toLowerCase();
+            RebirthDom.setText("coach-badge", insight.badge || "Coach");
+            RebirthDom.setText("coach-title", insight.title || "Pick one monster.");
+            RebirthDom.setText("coach-copy", insight.copy || "I will call out the safest line before you commit.");
         },
 
         result() {
@@ -576,6 +793,24 @@
             RebirthDom.setText("result-label", "Waiting");
             RebirthDom.setText("result-title", "Pick one monster.");
             RebirthDom.setText("result-copy", "The bot will answer with one monster. Higher attack wins the clash.");
+        },
+
+        tactics() {
+            const host = RebirthStore.elements["tactics-strip"];
+            const state = RebirthStore.state;
+            if (!host || !state) return;
+            const selected = RebirthStore.selectedCard();
+            const intent = RebirthTactics.botIntent(state.bot_profile || {});
+            const read = RebirthTactics.selectedRead(selected);
+            const advantage = RebirthTactics.advantage(state);
+            const botHand = state.bot.hand_count == null ? "?" : state.bot.hand_count;
+            host.dataset.intentTone = intent.tone;
+            host.innerHTML = [
+                `<span><b>${RebirthText.escape(intent.label)}</b>${RebirthText.escape(intent.copy)}</span>`,
+                `<span><b>${RebirthText.escape(read.label)}</b>${RebirthText.escape(read.copy)}</span>`,
+                `<span><b>${RebirthText.escape(advantage.label)}</b>${RebirthText.escape(advantage.copy)}</span>`,
+                `<span><b>Enemy Hand</b>${RebirthText.escape(botHand)} hidden cards</span>`
+            ].join("");
         },
 
         guide() {
@@ -653,11 +888,21 @@
                 return;
             }
             const achievements = (reward.achievements || []).map((item) => item.name).join(", ");
+            const dailyLabel = reward.daily && reward.daily.state === "claimed"
+                ? "Daily claimed"
+                : reward.daily && reward.daily.ready
+                    ? "Daily ready"
+                    : "";
+            const nextLabel = reward.xp_to_next != null
+                ? RebirthText.escape(reward.xp_to_next) + " XP to next level"
+                : "";
             host.innerHTML = [
                 '<span class="rb-reward-xp">+' + RebirthText.escape(reward.xp) + " XP</span>",
                 "<span>Level " + RebirthText.escape(reward.level) + (reward.level_up ? " up" : "") + "</span>",
+                nextLabel ? "<span>" + nextLabel + "</span>" : "",
                 achievements ? "<span>" + RebirthText.escape(achievements) + "</span>" : "",
-                reward.daily && reward.daily.ready ? '<span class="rb-reward-daily">Daily ready</span>' : ""
+                dailyLabel ? '<span class="rb-reward-daily">' + RebirthText.escape(dailyLabel) + "</span>" : "",
+                reward.next_goal ? "<span>" + RebirthText.escape(reward.next_goal) + "</span>" : ""
             ].join("");
         },
 
@@ -743,7 +988,11 @@
 
         async startMatch() {
             await this.request(async () => {
-                const payload = await RebirthApi.post(RebirthConfig.endpoints.start, {});
+                RebirthStore.guidedFirstMatch = RebirthCoach.shouldGuideFirstMatch();
+                RebirthStore.tutorialCompletionSent = false;
+                const payload = await RebirthApi.post(RebirthConfig.endpoints.start, {
+                    tutorial: RebirthStore.guidedFirstMatch
+                });
                 RebirthStore.selectedInstanceId = null;
                 RebirthStore.reward = null;
                 this.applyState(payload.state);
@@ -773,6 +1022,7 @@
                 RebirthStore.selectedInstanceId = null;
                 RebirthStore.reward = payload.match_reward || null;
                 this.applyState(payload.state);
+                this.completeTutorialIfNeeded(payload.state);
             });
         },
 
@@ -784,7 +1034,27 @@
                 });
                 RebirthStore.reward = null;
                 this.applyState(payload.state);
+                this.completeTutorialIfNeeded(payload.state);
             });
+        },
+
+        completeTutorialIfNeeded(state) {
+            if (!RebirthStore.guidedFirstMatch || RebirthStore.tutorialCompletionSent || !state || !state.is_finished) {
+                return;
+            }
+            if (!RebirthConfig.endpoints.completeTutorial || !RebirthCoach.account().authenticated) {
+                return;
+            }
+            RebirthStore.tutorialCompletionSent = true;
+            RebirthApi.post(RebirthConfig.endpoints.completeTutorial, { step: 4 })
+                .then((payload) => {
+                    if (payload.tutorial && payload.tutorial.progression) {
+                        RebirthConfig.player.progression = payload.tutorial.progression;
+                    }
+                })
+                .catch(() => {
+                    RebirthStore.tutorialCompletionSent = false;
+                });
         }
     };
 

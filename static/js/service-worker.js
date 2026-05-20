@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-rebirth-season0-v30";
+const CACHE_NAME = "ambitionz-rebirth-season0-v33";
 
 const CORE_ASSETS = [
     "/",
@@ -8,12 +8,7 @@ const CORE_ASSETS = [
     "/rebirth/shop",
     "/rebirth/progression",
     "/rebirth/profile",
-    "/rebirth/history",
-    "/rebirth/desktop",
-    "/rebirth/onboarding",
-    "/rebirth/balance",
-    "/rebirth/support",
-    "/rebirth/release",
+    "/rebirth/lab",
     "/manifest.webmanifest",
     "/static/manifest.webmanifest",
     "/static/css/rebirth.css",

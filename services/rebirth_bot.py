@@ -153,7 +153,9 @@ def winning_cards(bot_hand, player_card, **context):
 def choose_defensive(bot_hand, player_card, **context):
     def key(card):
         projection = response_projection(card, player_card, **context)
+        outcome_rank = {"loss": 0, "tie": 1, "win": 2}[projection["outcome"]]
         return (
+            outcome_rank,
             -projection["damage_taken"],
             card_guard(card),
             projection["damage_dealt"],
@@ -167,13 +169,11 @@ def choose_defensive(bot_hand, player_card, **context):
 def choose_aggressive(bot_hand, player_card, **context):
     def key(card):
         projection = response_projection(card, player_card, **context)
-        outcome_rank = {"loss": 0, "tie": 1, "win": 2}[projection["outcome"]]
         return (
-            outcome_rank,
             card_attack(card),
+            ability_priority(card),
             projection["damage_dealt"],
             -projection["damage_taken"],
-            ability_priority(card),
             card_guard(card),
             card["name"],
         )
@@ -186,9 +186,28 @@ def choose_opportunist(bot_hand, player_card, **context):
         projection = response_projection(card, player_card, **context)
         swing = projection["damage_dealt"] - projection["damage_taken"]
         return (
-            swing,
             ability_priority(card),
+            card_attack(card),
+            swing,
             projection["damage_dealt"],
+            card_guard(card),
+            card["name"],
+        )
+
+    return sorted(bot_hand, key=key)[-1]
+
+
+def choose_projected_counter(bot_hand, player_card, **context):
+    def key(card):
+        projection = response_projection(card, player_card, **context)
+        outcome_rank = {"loss": 0, "tie": 1, "win": 2}[projection["outcome"]]
+        swing = projection["damage_dealt"] - projection["damage_taken"]
+        return (
+            outcome_rank,
+            swing,
+            projection["damage_dealt"],
+            -projection["damage_taken"],
+            ability_priority(card),
             card_attack(card),
             card_guard(card),
             card["name"],
@@ -197,7 +216,28 @@ def choose_opportunist(bot_hand, player_card, **context):
     return sorted(bot_hand, key=key)[-1]
 
 
-def choose_response(bot_hand, player_card, profile_id=None, *, turn=1, player_wounded=False, bot_wounded=False):
+def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
+    if not match_id:
+        return False
+    rates = {
+        "defensive": 0.45,
+        "aggressive": 0.45,
+        "opportunist": 0.85,
+    }
+    source = "|".join(
+        [
+            str(profile_id),
+            str(match_id or ""),
+            str(turn or 1),
+            str(player_card.get("id") or ""),
+            ",".join(str(card.get("id") or "") for card in bot_hand),
+        ]
+    )
+    roll = int(hashlib.sha256(source.encode("utf-8")).hexdigest()[:4], 16) / 0xFFFF
+    return roll < rates.get(profile_id, 0.3)
+
+
+def choose_response(bot_hand, player_card, profile_id=None, *, turn=1, player_wounded=False, bot_wounded=False, match_id=None):
     if not bot_hand:
         return None
 
@@ -207,7 +247,9 @@ def choose_response(bot_hand, player_card, profile_id=None, *, turn=1, player_wo
         "player_wounded": player_wounded,
         "bot_wounded": bot_wounded,
     }
-    if profile_id == "aggressive":
+    if counter_window(profile_id, bot_hand, player_card, turn=turn, match_id=match_id):
+        choice = choose_projected_counter(bot_hand, player_card, **context)
+    elif profile_id == "aggressive":
         choice = choose_aggressive(bot_hand, player_card, **context)
     elif profile_id == "opportunist":
         choice = choose_opportunist(bot_hand, player_card, **context)

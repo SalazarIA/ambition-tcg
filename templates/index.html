@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-030">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-033">
 </head>
 <body class="rb-page rb-home-page">
     <main class="rb-home-shell">
@@ -33,7 +33,7 @@
                 <p>A fast premium monster clash built around one card at a time, clear pressure and instant decisions.</p>
                 <div class="rb-home-actions">
                     <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Play Rebirth <i aria-hidden="true"></i></a>
-                    <a class="rb-secondary" href="{{ url_for('health') }}">Health</a>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_profile') }}">Profile</a>
                 </div>
                 <div class="rb-home-proof" aria-label="Product pillars">
                     <article><span>Loop</span><strong>One card clash</strong></article>
@@ -94,6 +94,6 @@
         </section>
     </main>
 
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-030"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-033"></script>
 </body>
 </html>

@@ -23,9 +23,13 @@ def test_rebirth_template_matches_premium_clash_contract():
         'class="rb-hud"',
         'id="player-hp"',
         'id="player-hp-fill"',
+        'id="player-deck-count"',
+        'id="player-discard-count"',
         'id="turn-number"',
         'id="bot-hp"',
         'id="bot-hp-fill"',
+        'id="bot-deck-count"',
+        'id="bot-discard-count"',
         'id="bot-card"',
         'id="focus-card"',
         'id="evolution-panel"',
@@ -35,6 +39,7 @@ def test_rebirth_template_matches_premium_clash_contract():
         'id="play-button"',
         'id="next-turn-button"',
         'id="result-panel"',
+        'id="tactics-strip"',
         'id="ability-events"',
         'id="reward-panel"',
         'id="guide-rule-title"',
@@ -87,13 +92,14 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v30" in service_worker
+    assert "ambitionz-rebirth-season0-v33" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
-    assert "/rebirth/history" in service_worker
-    assert "/rebirth/support" in service_worker
-    assert "/rebirth/onboarding" in service_worker
-    assert "/rebirth/release" in service_worker
+    assert "/rebirth/lab" in service_worker
+    assert "/rebirth/history" not in service_worker
+    assert "/rebirth/support" not in service_worker
+    assert "/rebirth/onboarding" not in service_worker
+    assert "/rebirth/release" not in service_worker
     assert "/static/js/rebirth_product.js" in service_worker
     assert "dreadclaw-art.png" in service_worker
     assert "bot-card-back.png" in service_worker
@@ -116,12 +122,15 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthAssets",
         "RebirthErrors",
         "RebirthFeel",
+        "RebirthTactics",
         "guide-rule-title",
         "X-Rebirth-CSRF",
         "match_reward",
         "navigator.vibrate",
         "player-hp-fill",
         "bot-hp-fill",
+        "player-deck-count",
+        "tactics-strip",
         "evolution-card-thumbnail",
         "rb-mini-card",
         "card.art",
