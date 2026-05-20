@@ -50,6 +50,9 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
         "result-label",
         "result-title",
         "result-copy",
+        "ability-events",
+        "reward-panel",
+        "bot-profile-label",
         "phase-label",
         "turn-log",
     ):
@@ -69,6 +72,7 @@ def test_start_api_returns_clear_json_state(client):
     assert payload["state"]["player"]["max_hp"] == 30
     assert len(payload["state"]["player"]["hand"]) == 5
     assert payload["state"]["bot"]["hand_count"] == 5
+    assert payload["state"]["bot_profile"]["id"] in {"defensive", "aggressive", "opportunist"}
 
 
 def test_play_card_api_resolves_turn(client):
@@ -87,6 +91,7 @@ def test_play_card_api_resolves_turn(client):
     assert payload["state"]["phase"] == "result"
     assert payload["state"]["last_clash"]["player_card"]["id"] == "dreadclaw"
     assert payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
+    assert payload["match_reward"]["persisted"] is False
 
 
 def test_evolve_api_combines_duplicate(client):

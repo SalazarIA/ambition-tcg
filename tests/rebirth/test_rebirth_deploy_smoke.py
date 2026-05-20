@@ -15,6 +15,17 @@ def test_rebirth_deploy_smoke_flow(client):
         "architecture": "Ambitionz Rebirth",
     }
 
+    client.post(
+        "/api/rebirth/auth/register",
+        json={"username": "deploy_user", "email": "deploy@example.com", "password": "password123"},
+    )
+    collection = client.get("/rebirth/collection")
+    booster = client.post("/api/rebirth/booster/open", json={"seed": "deploy-smoke-booster"})
+    assert collection.status_code == 200
+    assert "Collection + Loadout" in collection.get_data(as_text=True)
+    assert booster.status_code == 200
+    assert booster.get_json()["booster"]["summary"]["count"] == 4
+
     start = client.post("/api/rebirth/start", json={"seed": "deploy-smoke"})
     start_payload = start.get_json()
     assert start.status_code == 200
