@@ -237,7 +237,7 @@ It lists 13 active monster PNG assets:
 - `voidstalker-art.png`
 - `nightfang-art.png`
 
-The active service worker cache is `ambitionz-rebirth-polish-v28` and
+The active service worker cache is `ambitionz-rebirth-polish-v29` and
 does not cache Arena or Ascension assets.
 
 ## Active Card Set

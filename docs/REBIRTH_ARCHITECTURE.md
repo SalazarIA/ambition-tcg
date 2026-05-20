@@ -279,7 +279,7 @@ Primary active assets:
 - `/static/assets/rebirth/ui/bot-card-back.png`
 - `/static/assets/rebirth/ui/bot-emblem.png`
 
-The service worker cache is versioned as `ambitionz-rebirth-polish-v28` and lists only active Rebirth assets plus app shell essentials.
+The service worker cache is versioned as `ambitionz-rebirth-polish-v29` and lists only active Rebirth assets plus app shell essentials.
 
 The active starter set is documented in `docs/REBIRTH_CARD_SET_STATUS.md`.
 Rebirth 021 requires every active card to have unique PNG art, a manifest

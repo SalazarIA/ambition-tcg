@@ -6,10 +6,12 @@ from services.rebirth_engine import (
     RebirthError,
     compare_power,
     evolve_duplicate,
+    evolve_bot_if_ready,
     next_turn,
     play_card,
     start_match,
 )
+from services.rebirth_cards import create_card_instance
 from services.rebirth_state import public_state
 
 
@@ -40,6 +42,7 @@ def test_compare_power_returns_expected_winner():
 def test_play_card_resolves_turn_and_applies_life_damage():
     match = start_match(seed="damage")
     card = next(card for card in match["player"]["hand"] if card["id"] == "dreadclaw")
+    match["bot"]["hand"] = [create_card_instance("ironbastion", "bot", 1)]
 
     play_card(match, card_instance_id=card["instance_id"])
 
@@ -117,12 +120,47 @@ def test_match_finishes_when_hp_reaches_zero():
     match = start_match(seed="finish")
     match["bot"]["hp"] = 3
     card = next(card for card in match["player"]["hand"] if card["id"] == "dreadclaw")
+    match["bot"]["hand"] = [create_card_instance("ironbastion", "bot", 1)]
 
     play_card(match, card_instance_id=card["instance_id"])
 
     assert match["is_finished"] is True
     assert match["phase"] == "finished"
     assert match["winner"] == "player"
+
+
+def test_match_finishes_by_hp_when_future_cards_are_exhausted():
+    match = start_match(seed="exhaustion", bot_profile_id="defensive")
+    match["player"]["hp"] = 21
+    match["bot"]["hp"] = 7
+    match["player"]["deck"] = []
+    match["bot"]["deck"] = []
+    match["player"]["hand"] = [create_card_instance("dreadclaw", "player", 1)]
+    match["bot"]["hand"] = [create_card_instance("ironbastion", "bot", 1)]
+    card_instance_id = match["player"]["hand"][0]["instance_id"]
+
+    play_card(match, card_instance_id=card_instance_id)
+
+    assert match["is_finished"] is True
+    assert match["phase"] == "finished"
+    assert match["winner"] == "player"
+    assert "exhaustion" in match["result"]["message"]
+
+
+def test_bot_evolves_duplicate_before_answering():
+    match = start_match(seed="bot-evolve", bot_profile_id="aggressive")
+    match["bot"]["hand"] = [
+        create_card_instance("dreadclaw", "bot", 1),
+        create_card_instance("dreadclaw", "bot", 2),
+        create_card_instance("stoneshell", "bot", 3),
+    ]
+
+    evolved = evolve_bot_if_ready(match)
+
+    assert evolved["id"] == "dreadmaw"
+    assert match["bot"]["hand"][0]["id"] == "dreadmaw"
+    assert len([card for card in match["bot"]["discard"] if card["id"] == "dreadclaw"]) == 2
+    assert "Bot evolved Dreadclaw x2 into Dreadmaw." in match["log"][-1]
 
 
 def test_next_turn_resets_result_and_refills_hand():

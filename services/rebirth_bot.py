@@ -54,6 +54,77 @@ def ability_priority(card):
     return ABILITY_PRIORITIES.get(str(card.get("ability_key") or ""), 0)
 
 
+def ability_key(card):
+    return str(card.get("ability_key") or "")
+
+
+def estimated_attack(card, opponent_card, turn=1):
+    attack = card_attack(card)
+    key = ability_key(card)
+    if key == "high_guard" and card_guard(opponent_card) <= 3:
+        attack += 1
+    elif key == "silent_pursuit" and int(turn or 1) <= 2:
+        attack += 1
+    return attack
+
+
+def tie_priority(card, defender_wounded=False):
+    return 2 if ability_key(card) in {"fade_cut", "bleed_mark"} and defender_wounded else 0
+
+
+def estimated_damage(attacker, defender, defender_wounded=False):
+    amount = max(1, card_attack(attacker) - card_guard(defender) // 2)
+    attacker_key = ability_key(attacker)
+    defender_key = ability_key(defender)
+    if attacker_key == "rending_strike" and defender_wounded:
+        amount += 2
+    elif attacker_key == "apex_rend" and defender_wounded:
+        amount += 3
+    elif attacker_key == "molten_bite":
+        amount += 1
+    elif attacker_key == "inferno_bite":
+        amount += 3
+    elif attacker_key == "bleed_mark":
+        amount += 1
+    elif attacker_key == "storm_dive" and card_guard(defender) <= 3:
+        amount += 2
+    elif attacker_key == "immovable":
+        amount += 2
+    if attacker_key == "fortress_hit":
+        amount = max(3, amount)
+
+    reductions = {
+        "brace": 2,
+        "immovable": 3,
+        "fortress_hit": 4,
+    }
+    reduction = reductions.get(defender_key, 0)
+    if defender_key == "bulwark" and card_attack(attacker) <= 4:
+        reduction = 3
+    return max(1, amount - reduction) if reduction else amount
+
+
+def response_projection(card, player_card, *, turn=1, player_wounded=False, bot_wounded=False):
+    bot_attack = estimated_attack(card, player_card, turn=turn)
+    player_attack = estimated_attack(player_card, card, turn=turn)
+    if bot_attack > player_attack:
+        damage = estimated_damage(card, player_card, defender_wounded=player_wounded)
+        return {"outcome": "win", "damage_dealt": damage, "damage_taken": 0}
+    if player_attack > bot_attack:
+        damage = estimated_damage(player_card, card, defender_wounded=bot_wounded)
+        return {"outcome": "loss", "damage_dealt": 0, "damage_taken": damage}
+
+    bot_priority = tie_priority(card, defender_wounded=player_wounded)
+    player_priority = tie_priority(player_card, defender_wounded=bot_wounded)
+    if bot_priority > player_priority:
+        damage = estimated_damage(card, player_card, defender_wounded=player_wounded)
+        return {"outcome": "win", "damage_dealt": damage, "damage_taken": 0}
+    if player_priority > bot_priority:
+        damage = estimated_damage(player_card, card, defender_wounded=bot_wounded)
+        return {"outcome": "loss", "damage_dealt": 0, "damage_taken": damage}
+    return {"outcome": "tie", "damage_dealt": 0, "damage_taken": 0}
+
+
 def normalize_personality(profile_id=None):
     profile_id = str(profile_id or "defensive").strip().lower()
     if profile_id not in BOT_PERSONALITIES:
@@ -71,41 +142,75 @@ def choose_personality(seed=None, match_id=None):
     return BOT_PERSONALITY_ORDER[int(digest[:2], 16) % len(BOT_PERSONALITY_ORDER)]
 
 
-def winning_cards(bot_hand, player_card):
-    player_attack = card_attack(player_card)
-    return [card for card in bot_hand if card_attack(card) > player_attack]
+def winning_cards(bot_hand, player_card, **context):
+    return [
+        card
+        for card in bot_hand
+        if response_projection(card, player_card, **context)["outcome"] == "win"
+    ]
 
 
-def choose_defensive(bot_hand, player_card):
-    candidates = winning_cards(bot_hand, player_card) or list(bot_hand)
-    return sorted(candidates, key=lambda card: (card_guard(card), card_attack(card), card["name"]))[-1]
+def choose_defensive(bot_hand, player_card, **context):
+    def key(card):
+        projection = response_projection(card, player_card, **context)
+        return (
+            -projection["damage_taken"],
+            card_guard(card),
+            projection["damage_dealt"],
+            card_attack(card),
+            card["name"],
+        )
+
+    return sorted(bot_hand, key=key)[-1]
 
 
-def choose_aggressive(bot_hand, player_card):
-    winners = winning_cards(bot_hand, player_card)
-    candidates = winners or list(bot_hand)
-    return sorted(candidates, key=lambda card: (card_attack(card), ability_priority(card), card_guard(card), card["name"]))[-1]
+def choose_aggressive(bot_hand, player_card, **context):
+    def key(card):
+        projection = response_projection(card, player_card, **context)
+        outcome_rank = {"loss": 0, "tie": 1, "win": 2}[projection["outcome"]]
+        return (
+            outcome_rank,
+            card_attack(card),
+            projection["damage_dealt"],
+            -projection["damage_taken"],
+            ability_priority(card),
+            card_guard(card),
+            card["name"],
+        )
+
+    return sorted(bot_hand, key=key)[-1]
 
 
-def choose_opportunist(bot_hand, player_card):
-    winners = winning_cards(bot_hand, player_card)
-    if winners:
-        return sorted(
-            winners,
-            key=lambda card: (ability_priority(card), -card_attack(card), card_guard(card), card["name"]),
-        )[-1]
-    return sorted(bot_hand, key=lambda card: (ability_priority(card), card_attack(card), card_guard(card), card["name"]))[-1]
+def choose_opportunist(bot_hand, player_card, **context):
+    def key(card):
+        projection = response_projection(card, player_card, **context)
+        swing = projection["damage_dealt"] - projection["damage_taken"]
+        return (
+            swing,
+            ability_priority(card),
+            projection["damage_dealt"],
+            card_attack(card),
+            card_guard(card),
+            card["name"],
+        )
+
+    return sorted(bot_hand, key=key)[-1]
 
 
-def choose_response(bot_hand, player_card, profile_id=None):
+def choose_response(bot_hand, player_card, profile_id=None, *, turn=1, player_wounded=False, bot_wounded=False):
     if not bot_hand:
         return None
 
     profile_id = normalize_personality(profile_id)
+    context = {
+        "turn": turn,
+        "player_wounded": player_wounded,
+        "bot_wounded": bot_wounded,
+    }
     if profile_id == "aggressive":
-        choice = choose_aggressive(bot_hand, player_card)
+        choice = choose_aggressive(bot_hand, player_card, **context)
     elif profile_id == "opportunist":
-        choice = choose_opportunist(bot_hand, player_card)
+        choice = choose_opportunist(bot_hand, player_card, **context)
     else:
-        choice = choose_defensive(bot_hand, player_card)
+        choice = choose_defensive(bot_hand, player_card, **context)
     return deepcopy(choice)

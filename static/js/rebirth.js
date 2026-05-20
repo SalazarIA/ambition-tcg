@@ -70,6 +70,7 @@
                 "bot-card",
                 "focus-card",
                 "evolution-panel",
+                "evolution-status",
                 "evolution-name",
                 "evolution-card-thumbnail",
                 "evolve-button",
@@ -85,7 +86,13 @@
                 "reward-panel",
                 "result-panel",
                 "turn-log",
-                "phase-label"
+                "phase-label",
+                "guide-rule-label",
+                "guide-rule-title",
+                "guide-rule-copy",
+                "guide-combine-label",
+                "guide-combine-title",
+                "guide-combine-copy"
             ].forEach((id) => {
                 RebirthStore.elements[id] = this.byId(id);
             });
@@ -435,6 +442,7 @@
             this.evolutionPanel();
             this.hand();
             this.result();
+            this.guide();
             this.log();
             this.buttons();
             RebirthAssets.bindFallbacks(RebirthStore.elements["rebirth-board"]);
@@ -504,6 +512,7 @@
             button.dataset.cardId = canUse ? evolution.card_id : "";
 
             if (!canUse) {
+                RebirthDom.setText("evolution-status", RebirthStore.state.phase === "choose" ? "No Duplicate" : "Locked");
                 RebirthDom.setText("evolution-name", "No duplicate");
                 if (thumb) {
                     thumb.style.backgroundImage = "";
@@ -512,6 +521,7 @@
                 return;
             }
 
+            RebirthDom.setText("evolution-status", "Duplicate Found");
             RebirthDom.setText("evolution-name", `${evolution.name} x${evolution.count}`);
             const sourceCard = (RebirthStore.state.player.hand || []).find((card) => card.id === evolution.card_id);
             if (thumb && sourceCard) {
@@ -548,7 +558,7 @@
                 }
                 RebirthDom.setText("result-label", tied ? "Clash" : won ? "Victory" : "Defeat");
                 RebirthDom.setText("result-title", tied ? "Both sides fell." : won ? "You won the duel." : "Bot won the duel.");
-                RebirthDom.setText("result-copy", "Start a new match when ready.");
+                RebirthDom.setText("result-copy", result && result.message ? result.message : "Start a new match when ready.");
                 this.resultImpact();
                 return;
             }
@@ -566,6 +576,42 @@
             RebirthDom.setText("result-label", "Waiting");
             RebirthDom.setText("result-title", "Pick one monster.");
             RebirthDom.setText("result-copy", "The bot will answer with one monster. Higher attack wins the clash.");
+        },
+
+        guide() {
+            const state = RebirthStore.state;
+            const result = state && state.result;
+            const evolution = RebirthStore.firstEvolution();
+            if (!state) return;
+
+            if (state.is_finished) {
+                const title = state.winner === "player" ? "Duel secured" : state.winner === "bot" ? "Bot secured it" : "Final clash";
+                RebirthDom.setText("guide-rule-label", "Match");
+                RebirthDom.setText("guide-rule-title", title);
+                RebirthDom.setText("guide-rule-copy", result && result.message ? result.message : "Start a new match when ready.");
+                RebirthDom.setText("guide-combine-label", "Next");
+                RebirthDom.setText("guide-combine-title", "New match");
+                RebirthDom.setText("guide-combine-copy", "The current duel is locked. Start fresh to test another line.");
+                return;
+            }
+
+            if (result) {
+                const events = result.ability_events || [];
+                RebirthDom.setText("guide-rule-label", "Result");
+                RebirthDom.setText("guide-rule-title", result.outcome === "Clash" ? "No damage" : result.outcome);
+                RebirthDom.setText("guide-rule-copy", result.message || "Advance to the next turn.");
+                RebirthDom.setText("guide-combine-label", events.length ? "Ability" : "Next");
+                RebirthDom.setText("guide-combine-title", events.length ? "Triggered" : "Next turn");
+                RebirthDom.setText("guide-combine-copy", events.length ? events[0] : "Advance to refill hands and continue the duel.");
+                return;
+            }
+
+            RebirthDom.setText("guide-rule-label", "Rule");
+            RebirthDom.setText("guide-rule-title", "Pick one monster");
+            RebirthDom.setText("guide-rule-copy", "The bot answers with one monster. Higher attack wins the clash.");
+            RebirthDom.setText("guide-combine-label", evolution ? "Combine Ready" : "Combine");
+            RebirthDom.setText("guide-combine-title", evolution ? `${evolution.name} x${evolution.count}` : "Duplicates evolve");
+            RebirthDom.setText("guide-combine-copy", evolution ? "Merge the pair now, or keep both bodies for later pressure." : "Two matching monsters merge into their Rebirth form.");
         },
 
         resultImpact() {

@@ -15,7 +15,7 @@
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-028">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-029">
 </head>
 <body class="rb-page rb-game-page">
     <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
@@ -116,7 +116,7 @@
                 </article>
 
                 <aside id="evolution-panel" class="rb-duplicate-panel rb-evolution-panel" aria-live="polite">
-                    <span>Duplicate Found</span>
+                    <span id="evolution-status">Duplicate Found</span>
                     <div id="evolution-card-thumbnail" class="rb-evolution-thumb rb-asset-fallback" aria-hidden="true"></div>
                     <strong id="evolution-name">Monster x2</strong>
                     <small>Merge duplicates to evolve.</small>
@@ -170,14 +170,14 @@
 
         <aside class="rb-desktop-rail rb-desktop-rail-right" aria-label="Match guide">
             <article>
-                <span>Rule</span>
-                <strong>Pick one monster</strong>
-                <p>The bot answers with one monster. Higher attack wins the clash.</p>
+                <span id="guide-rule-label">Rule</span>
+                <strong id="guide-rule-title">Pick one monster</strong>
+                <p id="guide-rule-copy">The bot answers with one monster. Higher attack wins the clash.</p>
             </article>
             <article>
-                <span>Combine</span>
-                <strong>Duplicates evolve</strong>
-                <p>Two matching monsters merge into their Rebirth form.</p>
+                <span id="guide-combine-label">Combine</span>
+                <strong id="guide-combine-title">Duplicates evolve</strong>
+                <p id="guide-combine-copy">Two matching monsters merge into their Rebirth form.</p>
             </article>
             <a class="rb-secondary" href="{{ url_for('rebirth_desktop') }}">Desktop Notes</a>
         </aside>
@@ -198,7 +198,7 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-028"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-028"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-029"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-029"></script>
 </body>
 </html>

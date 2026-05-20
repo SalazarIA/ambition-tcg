@@ -29,6 +29,7 @@ def test_rebirth_template_matches_premium_clash_contract():
         'id="bot-card"',
         'id="focus-card"',
         'id="evolution-panel"',
+        'id="evolution-status"',
         'id="evolution-card-thumbnail"',
         'id="player-hand"',
         'id="play-button"',
@@ -36,6 +37,8 @@ def test_rebirth_template_matches_premium_clash_contract():
         'id="result-panel"',
         'id="ability-events"',
         'id="reward-panel"',
+        'id="guide-rule-title"',
+        'id="guide-combine-title"',
         'id="bot-profile-label"',
         'id="turn-log"',
         "One card.",
@@ -84,7 +87,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-polish-v28" in service_worker
+    assert "ambitionz-rebirth-polish-v29" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/onboarding" in service_worker
@@ -111,6 +114,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthAssets",
         "RebirthErrors",
         "RebirthFeel",
+        "guide-rule-title",
         "X-Rebirth-CSRF",
         "match_reward",
         "navigator.vibrate",

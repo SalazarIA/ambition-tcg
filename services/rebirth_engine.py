@@ -1,10 +1,11 @@
 from copy import deepcopy
 
-from services.rebirth_bot import choose_response
+from services.rebirth_bot import ability_priority, choose_response
 from services.rebirth_cards import create_card_instance, get_card
 from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESULT, RebirthError
 from services.rebirth_state import (
     RebirthStateError,
+    available_evolutions,
     clear_played_cards,
     create_match,
     draw_to_hand_size,
@@ -194,6 +195,50 @@ def finish_if_needed(match):
     return True
 
 
+def _future_cards_empty(side):
+    return not side.get("hand") and not side.get("deck")
+
+
+def finish_if_exhausted(match):
+    player_empty = _future_cards_empty(match["player"])
+    bot_empty = _future_cards_empty(match["bot"])
+    if not player_empty and not bot_empty:
+        return False
+
+    player_hp = int(match["player"]["hp"])
+    bot_hp = int(match["bot"]["hp"])
+    if player_hp > bot_hp:
+        winner = "player"
+        outcome = "Victory"
+        message = "The duel reaches exhaustion. You survive with more HP and win the duel."
+    elif bot_hp > player_hp:
+        winner = "bot"
+        outcome = "Defeat"
+        message = "The duel reaches exhaustion. The bot survives with more HP and wins the duel."
+    else:
+        winner = "clash"
+        outcome = "Clash"
+        message = "The duel reaches exhaustion with equal HP. The match ends in a final clash."
+
+    match["winner"] = winner
+    match["is_finished"] = True
+    match["phase"] = PHASE_FINISHED
+    result = match.get("result") or {
+        "damage": {"player": 0, "bot": 0},
+        "ability_events": [],
+        "effective_attack": {"player": 0, "bot": 0},
+    }
+    result["outcome"] = outcome
+    result["winner"] = winner if winner in {"player", "bot"} else None
+    result["message"] = f"{result.get('message', '').strip()} {message}".strip()
+    result.setdefault("damage", {"player": 0, "bot": 0})
+    result.setdefault("ability_events", [])
+    result.setdefault("effective_attack", {"player": 0, "bot": 0})
+    match["result"] = result
+    match["log"].append(message)
+    return True
+
+
 def resolve_turn(match, player_card, bot_card):
     winner, clash = compare_clash(match, player_card, bot_card)
     ability_events = list(clash["events"])
@@ -251,6 +296,69 @@ def resolve_turn(match, player_card, bot_card):
     return result
 
 
+def _side_sequence(side):
+    return (
+        len(side.get("deck", []))
+        + len(side.get("hand", []))
+        + len(side.get("discard", []))
+        + (1 if side.get("played_card") else 0)
+        + 1
+    )
+
+
+def _evolution_choice(side, profile_id=None):
+    options = available_evolutions(side)
+    if not options:
+        return None
+
+    def evolved_card(option):
+        return get_card(option["evolution_id"])
+
+    profile_id = str(profile_id or "defensive")
+    if profile_id == "aggressive":
+        return sorted(options, key=lambda option: (card_attack(evolved_card(option)), ability_priority(evolved_card(option))))[-1]
+    if profile_id == "opportunist":
+        return sorted(options, key=lambda option: (ability_priority(evolved_card(option)), card_attack(evolved_card(option))))[-1]
+    return sorted(options, key=lambda option: (card_guard(evolved_card(option)), card_attack(evolved_card(option))))[-1]
+
+
+def _evolve_side_duplicate(match, side_name, card_id):
+    side = match[side_name]
+    card = get_card(card_id)
+    evolution_id = card.get("evolution_id")
+    if not evolution_id:
+        raise RebirthError("This monster has no MVP evolution.", "duplicate_not_available")
+
+    matches = [hand_card for hand_card in side["hand"] if hand_card["id"] == card_id]
+    if len(matches) < 2:
+        raise RebirthError("Two matching monsters are required to evolve.", "duplicate_not_available")
+
+    consumed = []
+    for _ in range(2):
+        consumed.append(remove_from_hand(side, card_id=card_id))
+    for consumed_card in consumed:
+        side["discard"].append(consumed_card)
+
+    evolved = create_card_instance(evolution_id, side_name, _side_sequence(side))
+    evolved["evolved_from"] = [consumed_card["instance_id"] for consumed_card in consumed]
+    side["hand"].insert(0, evolved)
+    actor = "Bot" if side_name == "bot" else card["name"]
+    if side_name == "bot":
+        match["log"].append(f"Turn {match['turn']:02d}   Bot evolved {card['name']} x2 into {evolved['name']}.")
+    else:
+        match["log"].append(f"Turn {match['turn']:02d}   {actor} x2 evolved into {evolved['name']}.")
+    return deepcopy(evolved)
+
+
+def evolve_bot_if_ready(match):
+    if match.get("is_finished") or match.get("phase") != PHASE_CHOOSE:
+        return None
+    choice = _evolution_choice(match["bot"], (match.get("bot_profile") or {}).get("id"))
+    if not choice:
+        return None
+    return _evolve_side_duplicate(match, "bot", choice["card_id"])
+
+
 def play_card(match, *, card_instance_id=None, card_id=None):
     if match.get("is_finished"):
         raise RebirthError("Match is already finished.", "match_finished")
@@ -268,10 +376,19 @@ def play_card(match, *, card_instance_id=None, card_id=None):
     except RebirthStateError as exc:
         raise RebirthError(str(exc), "invalid_card") from exc
 
+    evolve_bot_if_ready(match)
     bot_profile_id = (match.get("bot_profile") or {}).get("id")
-    bot_choice = choose_response(match["bot"]["hand"], player_card, profile_id=bot_profile_id)
+    bot_choice = choose_response(
+        match["bot"]["hand"],
+        player_card,
+        profile_id=bot_profile_id,
+        turn=match.get("turn", 1),
+        player_wounded=match["player"].get("wounded", False),
+        bot_wounded=match["bot"].get("wounded", False),
+    )
     if not bot_choice:
-        raise RebirthError("Bot has no card to answer with.", "invalid_phase")
+        finish_if_exhausted(match)
+        return match
 
     bot_card = remove_from_hand(match["bot"], card_instance_id=bot_choice["instance_id"])
     match["player"]["played_card"] = player_card
@@ -280,6 +397,8 @@ def play_card(match, *, card_instance_id=None, card_id=None):
     match["log"].append(f"{turn_label}   You played {player_card['name']}.")
     match["log"].append(f"{turn_label}   Bot played {bot_card['name']}.")
     resolve_turn(match, player_card, bot_card)
+    if not match["is_finished"]:
+        finish_if_exhausted(match)
     return match
 
 
@@ -292,30 +411,11 @@ def evolve_duplicate(match, card_id):
         raise RebirthError("card_id is required.", "missing_card")
 
     try:
-        card = get_card(card_id)
+        return _evolve_side_duplicate(match, "player", card_id)
+    except RebirthError:
+        raise
     except ValueError as exc:
         raise RebirthError(str(exc), "invalid_card") from exc
-
-    evolution_id = card.get("evolution_id")
-    if not evolution_id:
-        raise RebirthError("This monster has no MVP evolution.", "duplicate_not_available")
-
-    matches = [hand_card for hand_card in match["player"]["hand"] if hand_card["id"] == card_id]
-    if len(matches) < 2:
-        raise RebirthError("Two matching monsters are required to evolve.", "duplicate_not_available")
-
-    consumed = []
-    for _ in range(2):
-        consumed.append(remove_from_hand(match["player"], card_id=card_id))
-    for consumed_card in consumed:
-        match["player"]["discard"].append(consumed_card)
-
-    sequence = len(match["player"]["deck"]) + len(match["player"]["hand"]) + len(match["player"]["discard"]) + 1
-    evolved = create_card_instance(evolution_id, "player", sequence)
-    evolved["evolved_from"] = [consumed_card["instance_id"] for consumed_card in consumed]
-    match["player"]["hand"].insert(0, evolved)
-    match["log"].append(f"Turn {match['turn']:02d}   {card['name']} x2 evolved into {evolved['name']}.")
-    return deepcopy(evolved)
 
 
 def next_turn(match):
@@ -332,4 +432,5 @@ def next_turn(match):
     match["last_clash"] = None
     match["phase"] = PHASE_CHOOSE
     match["log"].append(f"Turn {match['turn']:02d}   Choose one monster.")
+    finish_if_exhausted(match)
     return match

@@ -847,3 +847,40 @@ Next recommended block:
 - Production polish: screenshot baselines, admin/support tooling, backup/restore
   policy for the SQLite Rebirth store and numeric tuning from real playtest
   Balance Lab output.
+
+## Rebirth 029 - Ten-Match Playtest Fixes
+
+Decision:
+
+- Keep Rebirth as the only active runtime and fix the current game loop instead
+  of reviving any retired Arena/Ascension system.
+
+What changed:
+
+- Added an exhaustion rule: when a duel reaches a point where a side cannot
+  continue with playable monsters, the match now finishes by remaining HP
+  instead of becoming a no-winner dead end.
+- Added one defensive bot evolution pass before the bot answers, so the bot can
+  use Rebirth-form monsters instead of letting the player scale alone.
+- Tuned bot response selection to project damage, guard, tie breakers and
+  ability pressure while keeping defensive, aggressive and opportunist profiles
+  distinct.
+- Updated the clash shell result panel to show two lines of outcome copy and
+  more readable reward/ability chips.
+- Updated the desktop guide rail so it reflects choose, result and finished
+  states instead of staying stuck on the opening rule copy.
+- Bumped the active Rebirth shell cache to
+  `ambitionz-rebirth-polish-v29`.
+
+Validation executed for this block:
+
+- Ten-match playtest harness: 10/10 matches finished, no blocked matches,
+  no HTTP errors, with bot and player wins both represented.
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py services/rebirth_art.py services/rebirth_serializers.py`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/service-worker.js`
+- `node --check static/js/pwa.js`
+- `node --check static/js/rebirth_product.js`
+- `python3 -m pytest -q`
+- Browser smoke on `/rebirth`: evolve, clash, dynamic guide rail, evolution
+  locked state and console logs checked.

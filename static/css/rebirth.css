@@ -821,13 +821,13 @@ button {
 
 .rb-result-panel {
     left: 24px;
-    top: 1448px;
+    top: 1438px;
     display: flex;
     justify-content: space-between;
     gap: 14px;
     width: 804px;
-    height: 142px;
-    padding: 16px;
+    height: 174px;
+    padding: 18px;
     --impact-accent: var(--rb-gold);
 }
 
@@ -840,18 +840,18 @@ button {
 
 .rb-result-panel strong {
     display: block;
-    font-size: 24px;
+    font-size: 30px;
     line-height: 1.06;
 }
 
 .rb-result-panel p {
     margin: 0;
     color: var(--rb-muted);
-    font-size: 15px;
-    line-height: 1.18;
+    font-size: 18px;
+    line-height: 1.22;
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 1;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
@@ -883,13 +883,13 @@ button {
 
 .rb-ability-chip,
 .rb-reward-panel span {
-    max-width: 250px;
+    max-width: 340px;
     overflow: hidden;
     padding: 4px 8px;
     border: 1px solid rgba(255, 255, 255, 0.16);
     color: var(--rb-text);
     background: rgba(255, 255, 255, 0.055);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 900;
     line-height: 1;
     text-overflow: ellipsis;
@@ -967,9 +967,9 @@ button {
 
 .rb-log {
     left: 24px;
-    top: 1610px;
+    top: 1624px;
     width: 804px;
-    height: 132px;
+    height: 118px;
     padding: 0;
 }
 
@@ -989,7 +989,7 @@ button {
 .rb-log ol {
     display: grid;
     gap: 0;
-    max-height: 82px;
+    max-height: 68px;
     margin: 0;
     padding: 0;
     overflow: hidden;

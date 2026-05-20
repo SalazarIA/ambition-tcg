@@ -282,6 +282,8 @@ PLAYER_DECK = [
 ]
 
 BOT_DECK = [
+    "dreadclaw",
+    "dreadclaw",
     "voidstalker",
     "shadewisp",
     "stoneshell",
@@ -289,14 +291,12 @@ BOT_DECK = [
     "ironbastion",
     "embermaw",
     "shadewisp",
-    "dreadclaw",
     "stoneshell",
     "voidstalker",
     "shadewisp",
     "ironbastion",
     "skywarden",
     "embermaw",
-    "dreadclaw",
     "shadewisp",
 ]
 
