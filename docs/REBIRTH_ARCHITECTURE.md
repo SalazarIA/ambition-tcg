@@ -12,6 +12,7 @@ services/rebirth_cards.py
 services/rebirth_art.py
 services/rebirth_bot.py
 services/rebirth_state.py
+services/rebirth_events.py
 services/rebirth_serializers.py
 services/rebirth_match_store.py
 services/rebirth_engine.py
@@ -34,6 +35,7 @@ static/assets/rebirth/cards/*
 static/assets/rebirth/ui/*
 
 tests/rebirth/*
+tools/rebirth_balance_report.py
 ```
 
 The older `services/rebirth/` package is not part of the active Flask route or `/rebirth` product runtime. It remains repository history/legacy context only. Historical tests for retired systems live under `tests/legacy_disabled`.
@@ -50,6 +52,8 @@ The older `services/rebirth/` package is not part of the active Flask route or `
 - `services/rebirth_bot.py` owns bot personality definitions and response
   selection for defensive, aggressive and opportunist profiles.
 - `services/rebirth_state.py` owns match creation, draw helpers, hand/discard mutation and phase-neutral state helpers.
+- `services/rebirth_events.py` owns command/event append helpers, match
+  versioning, state hashing and compact snapshots.
 - `services/rebirth_engine.py` owns pure game rules: play card, compare attack,
   apply engine-backed card abilities, calculate damage, evolve duplicate,
   finish match and next turn.
@@ -59,7 +63,8 @@ The older `services/rebirth/` package is not part of the active Flask route or `
   notes and release hygiene.
 - `services/rebirth_persistence.py` owns SQLite schema creation, account
   creation/login, password hashing, account collection, loadout, progression,
-  daily rewards, booster history and achievements.
+  daily rewards, booster history, match history, economy ledger, account export,
+  account reset, admin grants and achievements.
 - `services/rebirth_balance.py` owns deterministic local balance simulations,
   per-card/per-ability impact summaries and bot profile comparisons.
 
@@ -77,6 +82,8 @@ Required public state fields:
 
 - `match_id`
 - `architecture`
+- `version`
+- `state_hash`
 - `turn`
 - `phase`
 - `player`
@@ -87,6 +94,7 @@ Required public state fields:
 - `result`
 - `winner`
 - `is_finished`
+- `events`
 - `log`
 
 Required player/bot side concepts:
@@ -113,6 +121,21 @@ It is server-authored and describes persisted XP, level-up state, achievement
 moments and daily readiness for signed-in players. Anonymous players receive a
 non-persisted reward payload.
 
+Each match has an internal command/event contract:
+
+- commands represent player intent such as `PLAY_CARD`, `EVOLVE_DUPLICATE` and
+  `NEXT_TURN`;
+- events represent server-authored consequences such as `CARD_PLAYED`,
+  `CARD_EVOLVED`, `CLASH_RESOLVED`, `DAMAGE_DEALT`, `ABILITY_TRIGGERED`,
+  `TURN_STARTED` and `MATCH_FINISHED`;
+- `version` increases as commands/events are appended;
+- `state_hash` gives support/debug tooling a stable fingerprint for the public
+  match snapshot.
+
+Signed-in matches are copied into SQLite `match_history`, `match_commands` and
+`match_events`. The in-progress live match object still lives in memory for the
+current MVP.
+
 ## API Contract
 
 Routes:
@@ -125,9 +148,11 @@ Routes:
 - `GET /rebirth/shop`
 - `GET /rebirth/progression`
 - `GET /rebirth/profile`
+- `GET /rebirth/history`
 - `GET /rebirth/desktop`
 - `GET /rebirth/onboarding`
 - `GET /rebirth/balance`
+- `GET /rebirth/support`
 - `GET /rebirth/release`
 - `POST /api/rebirth/start`
 - `POST /api/rebirth/play-card`
@@ -147,12 +172,18 @@ Routes:
 - `POST /api/rebirth/booster/open`
 - `GET /api/rebirth/progression`
 - `GET /api/rebirth/profile`
+- `GET /api/rebirth/match-history`
+- `GET /api/rebirth/match-history/<match_id>/events`
+- `GET /api/rebirth/economy-ledger`
 - `POST /api/rebirth/progression/claim-daily`
 - `GET /api/rebirth/desktop`
 - `GET /api/rebirth/onboarding`
 - `POST /api/rebirth/onboarding/complete`
 - `GET /api/rebirth/balance/simulate`
 - `GET /api/rebirth/release`
+- `GET /api/rebirth/support/export`
+- `POST /api/rebirth/support/reset`
+- `POST /api/rebirth/admin/grant`
 
 Collection, loadout, shop, booster, progression and tutorial routes persist to
 Rebirth accounts. They do not restore the retired economy, old collection
@@ -197,6 +228,11 @@ Stable expected error codes:
 - `rate_limited`
 - `invalid_loadout`
 - `reward_locked`
+- `match_forbidden`
+- `reset_confirmation_required`
+- `admin_disabled`
+- `admin_forbidden`
+- `invalid_admin_grant`
 
 Expected player mistakes return JSON and do not return 500.
 
@@ -238,7 +274,8 @@ The frontend calls the JSON API, renders returned state and never computes gamep
 `static/js/rebirth_product.js` is also framework-free. It binds account
 register/login/logout, the count-based loadout editor, no-payment booster
 opening, daily reward claiming, tutorial completion, password changes and
-balance reruns on product-shell pages.
+balance reruns on product-shell pages. It also exposes support export/reset
+actions for signed-in players.
 
 ## Single-Screen Board
 
@@ -279,7 +316,9 @@ Primary active assets:
 - `/static/assets/rebirth/ui/bot-card-back.png`
 - `/static/assets/rebirth/ui/bot-emblem.png`
 
-The service worker cache is versioned as `ambitionz-rebirth-polish-v29` and lists only active Rebirth assets plus app shell essentials.
+The service worker cache is versioned as `ambitionz-rebirth-season0-v30` and
+lists only active Rebirth assets plus app shell essentials. `static/js/pwa.js`
+shows a small update prompt when a waiting service worker is available.
 
 The active starter set is documented in `docs/REBIRTH_CARD_SET_STATUS.md`.
 Rebirth 021 requires every active card to have unique PNG art, a manifest
@@ -319,18 +358,28 @@ Tables:
 - `reward_claims`
 - `booster_history`
 - `user_achievements`
+- `match_history`
+- `match_commands`
+- `match_events`
+- `economy_ledger`
+- `admin_audit_log`
 
 The active store uses PBKDF2 password hashes and Flask signed session cookies.
 It does not use SQLAlchemy, migrations from the retired app, or legacy account
 models.
+
+`economy_ledger` is append-only for Season 0 movements: starter cards, booster
+cards, XP rewards, tutorial XP and admin grants. It intentionally records
+movement reasons instead of trusting only current balances.
 
 ## Active Page Policy
 
 - `/` is the Rebirth home and may scroll.
 - `/rebirth` is the playable single-screen game and must not scroll.
 - `/rebirth/account`, `/rebirth/collection`, `/rebirth/shop`,
-  `/rebirth/progression`, `/rebirth/profile`, `/rebirth/desktop`,
-  `/rebirth/onboarding`, `/rebirth/balance` and `/rebirth/release` are
+  `/rebirth/progression`, `/rebirth/profile`, `/rebirth/history`,
+  `/rebirth/desktop`, `/rebirth/onboarding`, `/rebirth/balance`,
+  `/rebirth/support` and `/rebirth/release` are
   Rebirth-native product shell pages and may scroll.
 - Legacy product routes redirect to `/rebirth` or return a safe retired API response.
 - Active Rebirth pages do not load old Arena, BE2, Ascension, collection, progression, shop or economy CSS/JS.

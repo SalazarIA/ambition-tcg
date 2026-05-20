@@ -884,3 +884,111 @@ Validation executed for this block:
 - `python3 -m pytest -q`
 - Browser smoke on `/rebirth`: evolve, clash, dynamic guide rail, evolution
   locked state and console logs checked.
+
+## Rebirth 030 - Season 0 Architecture Hardening
+
+Source material:
+
+- Local architecture audit of the current Rebirth runtime.
+- `/Users/lucassilverio/Downloads/relatorio_tcg_online_ambitionz.pdf`.
+
+Decision:
+
+- Apply the PDF recommendation as a foundation block, not as a legacy revival.
+- Keep Ambitionz Rebirth as the only active product.
+- Do not restore Arena, Ascension, BE2, SocketIO, SQLAlchemy or old economy
+  runtime.
+- Move toward a professional TCG contract: server authority, commands, events,
+  state hashes, match history, economy ledger, support tools and Balance Lab
+  parity.
+
+What changed:
+
+- Added `services/rebirth_events.py` for command/event append helpers,
+  versioning, public state hashes and compact snapshots.
+- Public match state now includes `version`, `state_hash` and recent `events`.
+- Engine actions now record `PLAY_CARD`, `EVOLVE_DUPLICATE` and `NEXT_TURN`
+  commands.
+- Engine consequences now emit `CARD_PLAYED`, `CARD_EVOLVED`,
+  `CLASH_RESOLVED`, `DAMAGE_DEALT`, `ABILITY_TRIGGERED`, `TURN_STARTED` and
+  `MATCH_FINISHED` events.
+- Signed-in matches persist to `match_history`, `match_commands` and
+  `match_events`.
+- Added `economy_ledger` and `admin_audit_log` tables.
+- Starter cards, match XP, booster cards, daily reward XP, tutorial XP and
+  admin grants now record ledger movements.
+- Added `/rebirth/history`, `/api/rebirth/match-history`,
+  `/api/rebirth/match-history/<match_id>/events` and
+  `/api/rebirth/economy-ledger`.
+- Added `/rebirth/support`, `/api/rebirth/support/export`,
+  `/api/rebirth/support/reset` and token-protected `/api/rebirth/admin/grant`.
+- Balance Lab now evolves player duplicates and chooses projected tactical
+  lines through the active engine.
+- Added `tools/rebirth_balance_report.py` and generated
+  `docs/REBIRTH_BALANCE_REPORT.md`.
+- Service worker cache moved to `ambitionz-rebirth-season0-v30`.
+- PWA registration now exposes an update prompt for waiting service workers.
+- Removed "Prototype" from the active Play Rebirth CTA and PWA shortcut.
+- Added `docs/PRODUCT_DECISION_LOG.md` and
+  `docs/REBIRTH_SEASON_0_HARDENING.md`.
+
+Files created in this block:
+
+- `docs/PRODUCT_DECISION_LOG.md`
+- `docs/REBIRTH_BALANCE_REPORT.md`
+- `docs/REBIRTH_SEASON_0_HARDENING.md`
+- `services/rebirth_events.py`
+- `tests/rebirth/test_rebirth_season0_hardening.py`
+- `tools/rebirth_balance_report.py`
+
+Files changed in this block:
+
+- `README.md`
+- `app.py`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+- `docs/REBIRTH_RELEASE_STATUS.md`
+- `services/rebirth_balance.py`
+- `services/rebirth_engine.py`
+- `services/rebirth_persistence.py`
+- `services/rebirth_product.py`
+- `services/rebirth_serializers.py`
+- `services/rebirth_state.py`
+- `static/css/rebirth.css`
+- `static/js/pwa.js`
+- `static/js/rebirth_product.js`
+- `static/js/service-worker.js`
+- `static/manifest.webmanifest`
+- `templates/index.html`
+- `templates/rebirth.html`
+- `templates/rebirth_product.html`
+- `tests/rebirth/test_rebirth_frontend_contract.py`
+- `tests/rebirth/test_rebirth_home_promotion.py`
+- `tests/rebirth/test_rebirth_product_shell.py`
+- `tests/rebirth/test_rebirth_routes.py`
+
+Validation executed:
+
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py services/rebirth_art.py services/rebirth_serializers.py services/rebirth_events.py`
+- `python3 -m pytest -q`
+- `python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/service-worker.js`
+- `node --check static/js/pwa.js`
+- `node --check static/js/rebirth_product.js`
+
+Validation result:
+
+- `py_compile`: passed
+- `pytest -q`: 66 passed
+- Balance report generated: 120 simulations, player win rate 33.3%, bot win
+  rate 66.7%, defensive/opportunist still flagged as hard profiles.
+- node checks: passed
+
+Known remaining production gaps:
+
+- Durable live match state and reconnect are not implemented.
+- SQLite backup/restore automation still needs an ops block.
+- Visual screenshot baselines are not committed yet.
+- Real multiplayer, seasons, ranked ladder and payments remain future product
+  decisions.

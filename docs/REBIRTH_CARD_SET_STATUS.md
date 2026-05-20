@@ -55,10 +55,10 @@ Required card gate:
 python3 -m pytest tests/rebirth/test_rebirth_card_set.py -q
 ```
 
-Full active suite after Rebirth 028:
+Full active suite after Season 0 hardening:
 
 ```text
-61 passed
+66 passed
 ```
 
 ## Current Limits

@@ -5,6 +5,7 @@ import uuid
 from services.rebirth_contracts import PHASE_CHOOSE
 from services.rebirth_cards import build_deck, catalog_payload
 from services.rebirth_bot import choose_personality, personality_payload
+from services.rebirth_events import append_event, append_snapshot, ensure_event_contract
 
 
 STARTING_HP = 30
@@ -64,9 +65,10 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
     draw_to_hand_size(bot)
     bot_profile = personality_payload(bot_profile_id or choose_personality(seed=seed, match_id=match_id))
 
-    return {
+    match = {
         "match_id": match_id,
         "architecture": "Ambitionz Rebirth",
+        "seed": str(seed or ""),
         "turn": 1,
         "phase": PHASE_CHOOSE,
         "player": player,
@@ -82,6 +84,21 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
         ],
         "catalog": catalog_payload(),
     }
+    ensure_event_contract(match)
+    append_event(
+        match,
+        "MATCH_STARTED",
+        payload={
+            "seed": str(seed or ""),
+            "player_name": player_name,
+            "bot_profile_id": bot_profile["id"],
+            "player_deck_count": len(player["deck"]) + len(player["hand"]),
+            "bot_deck_count": len(bot["deck"]) + len(bot["hand"]),
+        },
+        message="Rebirth clash initialized.",
+    )
+    append_snapshot(match, "match_started")
+    return match
 
 
 def remove_from_hand(player, *, card_instance_id=None, card_id=None):

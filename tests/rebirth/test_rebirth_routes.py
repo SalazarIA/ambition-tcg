@@ -26,7 +26,7 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
         "Combine duplicates",
         "Evolve monsters",
         "Win the duel",
-        "Play Rebirth Prototype",
+        "Play Rebirth",
         "New Match",
         "Combine",
         "Clash",

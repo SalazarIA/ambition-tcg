@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-029">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-030">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     <main class="rb-home-shell rb-product-shell">
@@ -153,6 +153,95 @@
                     </div>
                 </section>
             {% endif %}
+        {% elif page.key == "history" %}
+            {% if not page.account.authenticated %}
+                <section class="rb-product-panel rb-product-wide">
+                    <span>Guest Preview</span>
+                    <h2>History Locked</h2>
+                    <p>Create a Rebirth account to persist match events, state hashes and reward ledger entries.</p>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Create Account</a>
+                </section>
+            {% endif %}
+            <section class="rb-product-stats" aria-label="History summary">
+                <article><span>Matches</span><strong>{{ page.summary.matches }}</strong></article>
+                <article><span>Finished</span><strong>{{ page.summary.finished }}</strong></article>
+                <article><span>Ledger</span><strong>{{ page.summary.ledger_entries }}</strong></article>
+                <article><span>Contract</span><strong>Events</strong></article>
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Match history">
+                <h2>Recent Matches</h2>
+                <div class="rb-history-list rb-history-list-wide">
+                    {% for match in page.matches %}
+                        <article>
+                            <span>{{ match.updated_at }}</span>
+                            <strong>{{ match.match_id }}</strong>
+                            <p>{{ match.status }} / winner {{ match.winner or 'pending' }} / v{{ match.state.version }}</p>
+                            <small>{{ match.command_count }} commands / {{ match.event_count }} events / {{ match.state_hash[:12] }}</small>
+                        </article>
+                    {% else %}
+                        <article>
+                            <span>Empty</span>
+                            <strong>No persisted matches yet.</strong>
+                            <p>Play while signed in to create command and event history.</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Economy ledger">
+                <h2>Economy Ledger</h2>
+                <div class="rb-history-list rb-history-list-wide">
+                    {% for entry in page.ledger %}
+                        <article>
+                            <span>{{ entry.created_at }}</span>
+                            <strong>{{ entry.resource }} {{ '%+d'|format(entry.delta) }}</strong>
+                            <p>{{ entry.reason }} / balance {{ entry.balance_after }}</p>
+                            <small>{{ entry.reference_type or 'system' }} {{ entry.reference_id or '' }}</small>
+                        </article>
+                    {% else %}
+                        <article>
+                            <span>Empty</span>
+                            <strong>No ledger movements yet.</strong>
+                            <p>Rewards, boosters and starter ownership will appear here.</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% elif page.key == "support" %}
+            {% if not page.account.authenticated %}
+                <section class="rb-product-panel rb-product-wide">
+                    <span>Guest Preview</span>
+                    <h2>Support Locked</h2>
+                    <p>Sign in to export or reset your Rebirth account state.</p>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Account</a>
+                </section>
+            {% endif %}
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Support checks">
+                {% for check in page.checks %}
+                    <article class="rb-product-panel">
+                        <span>Support</span>
+                        <h2>{{ loop.index }}</h2>
+                        <p>{{ check }}</p>
+                    </article>
+                {% endfor %}
+            </section>
+            <section class="rb-auth-grid" aria-label="Support actions">
+                <article class="rb-product-panel">
+                    <span>Export</span>
+                    <h2>Account Data</h2>
+                    <p>Downloadable JSON contract through the Rebirth API, scoped to the signed-in account.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-export>Export</button>
+                </article>
+                <article class="rb-product-panel">
+                    <span>Reset</span>
+                    <h2>Starter State</h2>
+                    <p>Reset collection, loadout, rewards, match history and ledger back to the Rebirth starter account.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-reset>Reset Account</button>
+                </article>
+            </section>
+            <section class="rb-product-panel rb-product-wide">
+                <h2>Support Result</h2>
+                <pre class="rb-support-output" data-rebirth-support-result>Ready.</pre>
+            </section>
         {% elif page.key == "collection" %}
             <section class="rb-product-stats" aria-label="Collection summary">
                 <article><span>Owned</span><strong>{{ page.summary.owned_cards }}</strong></article>
@@ -416,10 +505,14 @@
             completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}",
             balance: "{{ url_for('api_rebirth_balance_simulate') }}",
             profile: "{{ url_for('api_rebirth_profile') }}",
+            history: "{{ url_for('api_rebirth_match_history') }}",
+            ledger: "{{ url_for('api_rebirth_economy_ledger') }}",
+            supportExport: "{{ url_for('api_rebirth_support_export') }}",
+            supportReset: "{{ url_for('api_rebirth_support_reset') }}",
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-029"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-029"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-030"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-030"></script>
 </body>
 </html>

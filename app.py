@@ -21,6 +21,7 @@ from services.rebirth_product import (
     balance_payload,
     collection_payload,
     desktop_payload,
+    history_payload,
     onboarding_payload,
     open_booster,
     profile_payload,
@@ -28,6 +29,7 @@ from services.rebirth_product import (
     progression_payload,
     release_payload,
     shop_payload,
+    support_payload,
     validate_loadout,
 )
 from services.rebirth_serializers import public_state
@@ -206,6 +208,30 @@ def get_match(match_id):
     return MATCH_STORE.get(match_id)
 
 
+def ensure_match_access(match, user=None):
+    owner_id = match.get("owner_user_id")
+    if owner_id and (not user or int(user["id"]) != int(owner_id)):
+        raise RebirthError("This match belongs to another Rebirth account.", "match_forbidden", status=403)
+    return match
+
+
+def persist_match_if_owned(repo, user, match):
+    if user and match:
+        match["owner_user_id"] = user["id"]
+        return repo.upsert_match_history(user["id"], match)
+    return None
+
+
+def require_admin_token():
+    expected = os.environ.get("REBIRTH_ADMIN_TOKEN") or app.config.get("REBIRTH_ADMIN_TOKEN")
+    supplied = request.headers.get("X-Rebirth-Admin-Token")
+    if not expected:
+        raise RebirthPersistenceError("Rebirth admin grants are disabled until REBIRTH_ADMIN_TOKEN is configured.", "admin_disabled", 403)
+    if not supplied or not secrets.compare_digest(str(expected), str(supplied)):
+        raise RebirthPersistenceError("Invalid Rebirth admin token.", "admin_forbidden", 403)
+    return "rebirth-admin"
+
+
 def request_json(required=False):
     payload = request.get_json(silent=True)
     if payload is None:
@@ -300,6 +326,18 @@ def rebirth_profile():
     return render_template("rebirth_product.html", page=profile_payload(account=account_payload(user), profile=profile))
 
 
+@app.get("/rebirth/history")
+def rebirth_history():
+    user = current_user()
+    repo = rebirth_repo()
+    matches = repo.match_history(user["id"], limit=12) if user else []
+    ledger = repo.economy_ledger(user["id"], limit=20) if user else []
+    return render_template(
+        "rebirth_product.html",
+        page=history_payload(account=account_payload(user), matches=matches, ledger=ledger),
+    )
+
+
 @app.get("/rebirth/desktop")
 def rebirth_desktop():
     return render_template("rebirth_product.html", page=desktop_payload())
@@ -320,6 +358,12 @@ def rebirth_balance():
 @app.get("/rebirth/release")
 def rebirth_release():
     return render_template("rebirth_product.html", page=release_payload())
+
+
+@app.get("/rebirth/support")
+def rebirth_support():
+    user = current_user()
+    return render_template("rebirth_product.html", page=support_payload(account=account_payload(user)))
 
 
 @app.get("/health")
@@ -361,13 +405,19 @@ def api_rebirth_start():
         if user:
             player_card_ids = rebirth_repo().loadout_card_ids(user["id"])
             player_name = user["username"]
-        match = MATCH_STORE.save(
-            start_match(
-                seed=payload.get("seed"),
-                player_card_ids=player_card_ids,
-                player_name=player_name,
-            )
+        requested_seed = payload.get("seed")
+        engine_seed = f"user:{user['id']}:{requested_seed}" if user and requested_seed is not None else requested_seed
+        match = start_match(
+            seed=engine_seed,
+            player_card_ids=player_card_ids,
+            player_name=player_name,
         )
+        if user:
+            match["owner_user_id"] = user["id"]
+            match["seed"] = str(requested_seed or "")
+        match = MATCH_STORE.save(match)
+        if user:
+            rebirth_repo().upsert_match_history(user["id"], match)
         state = public_state(match)
         return json_success(state, match.get("result"), match_id=match["match_id"])
     except RebirthPersistenceError as error:
@@ -381,20 +431,22 @@ def api_rebirth_play_card():
     try:
         payload = request_json(required=True)
         match = get_match(payload.get("match_id"))
+        user = current_user()
+        repo = rebirth_repo()
+        ensure_match_access(match, user=user)
         play_card(
             match,
             card_instance_id=payload.get("card_instance_id"),
             card_id=payload.get("card_id"),
         )
         state = public_state(match)
-        user = current_user()
         progress = None
         reward = match_reward_payload(None, None, state)
         if user:
-            repo = rebirth_repo()
             before = repo.progression(user["id"])
             progress = repo.record_clash_result(user["id"], state)
             reward = match_reward_payload(before, progress, state)
+            repo.upsert_match_history(user["id"], match)
         return json_success(state, match.get("result"), progression=progress, match_reward=reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -407,7 +459,10 @@ def api_rebirth_evolve():
     try:
         payload = request_json(required=True)
         match = get_match(payload.get("match_id"))
+        user = current_user()
+        ensure_match_access(match, user=user)
         evolved = evolve_duplicate(match, payload.get("card_id"))
+        persist_match_if_owned(rebirth_repo(), user, match)
         return json_success(public_state(match), match.get("result"), evolved=evolved)
     except RebirthError as error:
         return json_from_rebirth_error(error)
@@ -418,7 +473,10 @@ def api_rebirth_next_turn():
     try:
         payload = request_json(required=True)
         match = get_match(payload.get("match_id"))
+        user = current_user()
+        ensure_match_access(match, user=user)
         next_turn(match)
+        persist_match_if_owned(rebirth_repo(), user, match)
         return json_success(public_state(match), match.get("result"))
     except RebirthError as error:
         return json_from_rebirth_error(error)
@@ -572,6 +630,33 @@ def api_rebirth_profile():
     return json_payload(profile=profile_payload(account=account_payload(user), profile=profile))
 
 
+@app.get("/api/rebirth/match-history")
+def api_rebirth_match_history():
+    try:
+        user = require_user()
+        return json_payload(history=rebirth_repo().match_history(user["id"], limit=request.args.get("limit", 12)))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.get("/api/rebirth/match-history/<match_id>/events")
+def api_rebirth_match_events(match_id):
+    try:
+        user = require_user()
+        return json_payload(events=rebirth_repo().match_events(user["id"], match_id, limit=request.args.get("limit", 50)))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.get("/api/rebirth/economy-ledger")
+def api_rebirth_economy_ledger():
+    try:
+        user = require_user()
+        return json_payload(ledger=rebirth_repo().economy_ledger(user["id"], limit=request.args.get("limit", 30)))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
 @app.post("/api/rebirth/progression/claim-daily")
 def api_rebirth_progression_claim_daily():
     try:
@@ -613,6 +698,53 @@ def api_rebirth_balance_simulate():
 @app.get("/api/rebirth/release")
 def api_rebirth_release():
     return json_payload(release=release_payload())
+
+
+@app.get("/api/rebirth/support/export")
+def api_rebirth_support_export():
+    try:
+        user = require_user()
+        return json_payload(export=rebirth_repo().support_export(user["id"]))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.post("/api/rebirth/support/reset")
+def api_rebirth_support_reset():
+    try:
+        payload = request_json(required=True)
+        user = require_user()
+        if payload.get("confirm") != "RESET REBIRTH":
+            raise RebirthPersistenceError("Type RESET REBIRTH to reset this account.", "reset_confirmation_required", 409)
+        return json_payload(export=rebirth_repo().reset_account(user["id"]))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/admin/grant")
+def api_rebirth_admin_grant():
+    try:
+        actor = require_admin_token()
+        payload = request_json(required=True)
+        user_id = int(payload.get("user_id") or 0)
+        if user_id <= 0:
+            raise RebirthPersistenceError("user_id is required.", "invalid_admin_grant", 400)
+        return json_payload(
+            export=rebirth_repo().admin_grant(
+                actor,
+                user_id,
+                resource=payload.get("resource"),
+                amount=payload.get("amount", 1),
+                card_id=payload.get("card_id"),
+                reason=payload.get("reason", "admin_grant"),
+            )
+        )
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except (TypeError, ValueError) as error:
+        return json_error(str(error), "invalid_admin_grant", status=400)
 
 
 @app.route("/arena")

@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from services.rebirth_contracts import validate_phase
+from services.rebirth_events import state_hash
 from services.rebirth_state import STARTING_HP, available_evolutions
 
 
@@ -62,6 +63,8 @@ def public_state(match):
     return {
         "match_id": match["match_id"],
         "architecture": match["architecture"],
+        "version": int(match.get("version", 0) or 0),
+        "state_hash": state_hash(match),
         "turn": match["turn"],
         "phase": match["phase"],
         "player": side_payload(match["player"], reveal_hand=True),
@@ -72,5 +75,6 @@ def public_state(match):
         "result": deepcopy(match.get("result")),
         "winner": match.get("winner"),
         "is_finished": bool(match.get("is_finished")),
+        "events": deepcopy(match.get("events", [])[-12:]),
         "log": list(match.get("log", [])[-8:]),
     }

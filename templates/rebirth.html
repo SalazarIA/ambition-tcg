@@ -15,7 +15,7 @@
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-029">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-030">
 </head>
 <body class="rb-page rb-game-page">
     <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
@@ -159,8 +159,8 @@
                 <ol id="turn-log"></ol>
             </section>
 
-            <section class="rb-footer-actions rb-prototype-actions" aria-label="Prototype controls">
-                <a class="rb-button-primary rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Play Rebirth Prototype <i aria-hidden="true"></i></a>
+            <section class="rb-footer-actions rb-prototype-actions" aria-label="Rebirth controls">
+                <a class="rb-button-primary rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Play Rebirth <i aria-hidden="true"></i></a>
                 <button class="rb-button-secondary rb-secondary" type="button" data-new-match>+ New Match</button>
             </section>
 
@@ -198,7 +198,7 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-029"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-029"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-030"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-030"></script>
 </body>
 </html>

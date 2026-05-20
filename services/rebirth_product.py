@@ -11,8 +11,10 @@ PRODUCT_NAV = [
     {"key": "shop", "label": "Shop", "href": "/rebirth/shop"},
     {"key": "progression", "label": "Progression", "href": "/rebirth/progression"},
     {"key": "profile", "label": "Profile", "href": "/rebirth/profile"},
+    {"key": "history", "label": "History", "href": "/rebirth/history"},
     {"key": "tutorial", "label": "Tutorial", "href": "/rebirth/onboarding"},
     {"key": "balance", "label": "Balance", "href": "/rebirth/balance"},
+    {"key": "support", "label": "Support", "href": "/rebirth/support"},
     {"key": "account", "label": "Account", "href": "/rebirth/account"},
     {"key": "desktop", "label": "Desktop", "href": "/rebirth/desktop"},
     {"key": "release", "label": "Release", "href": "/rebirth/release"},
@@ -88,6 +90,9 @@ RELEASE_CHECKS = [
     {"name": "Frontend", "state": "passed", "copy": "Vanilla Rebirth pages avoid old Arena/Ascension assets."},
     {"name": "Card Feel", "state": "passed", "copy": "Clash results expose ability events, impact feedback and persisted reward moments."},
     {"name": "Balance Lab", "state": "passed", "copy": "Bot personality simulations report card, ability and profile impact."},
+    {"name": "History", "state": "passed", "copy": "Signed-in matches persist commands, events, state hash and final snapshot."},
+    {"name": "Economy Ledger", "state": "passed", "copy": "XP, starter cards, boosters, daily rewards and admin grants write an auditable ledger."},
+    {"name": "Support Tools", "state": "passed", "copy": "Players can export/reset account state; admin grants require an explicit server token."},
     {"name": "QA Gate", "state": "passed", "copy": "py_compile, pytest, node checks and Browser smoke passed for this block."},
 ]
 
@@ -167,6 +172,11 @@ def product_shell_payload(account=None):
                     "title": "Profile + Achievements",
                     "copy": "Inspect player identity, collection stats and unlocked Rebirth achievements.",
                     "href": "/rebirth/profile",
+                },
+                {
+                    "title": "History + Ledger",
+                    "copy": "Review persisted matches, event counts, state hashes and economy movements.",
+                    "href": "/rebirth/history",
                 },
                 {
                     "title": "Onboarding + QA",
@@ -440,6 +450,56 @@ def profile_payload(account=None, profile=None):
     return payload
 
 
+def history_payload(account=None, matches=None, ledger=None):
+    account = account or guest_account()
+    matches = matches or []
+    ledger = ledger or []
+    payload = page_payload(
+        "history",
+        "Match History + Economy Ledger",
+        "Persisted Rebirth matches now save command/event counts, state hashes and reward movements.",
+        primary_label="Play For History",
+        primary_href="/rebirth",
+    )
+    payload.update(
+        {
+            "account": account,
+            "matches": matches,
+            "ledger": ledger,
+            "summary": {
+                "matches": len(matches),
+                "ledger_entries": len(ledger),
+                "finished": len([match for match in matches if match.get("status") == "finished"]),
+            },
+        }
+    )
+    return payload
+
+
+def support_payload(account=None, export=None):
+    account = account or guest_account()
+    payload = page_payload(
+        "support",
+        "Support + Admin Safety",
+        "Account export, account reset and token-protected admin grants for the Rebirth MVP.",
+        primary_label="Open Profile",
+        primary_href="/rebirth/profile",
+    )
+    payload.update(
+        {
+            "account": account,
+            "export": export,
+            "checks": [
+                "Player export is self-service and scoped to the signed-in account.",
+                "Reset requires an explicit confirmation payload.",
+                "Admin grant is disabled unless REBIRTH_ADMIN_TOKEN is configured.",
+                "Every admin grant writes admin_audit_log and economy_ledger entries.",
+            ],
+        }
+    )
+    return payload
+
+
 def desktop_payload():
     payload = page_payload(
         "desktop",
@@ -498,6 +558,7 @@ def balance_payload(simulation=None):
                 "Aggressive bot pushes high attack and quick pressure.",
                 "Opportunist bot looks for ability swings, finishers and pressure windows.",
                 "The simulation is deterministic, capped and reports per-card/per-ability impact.",
+                "The player simulator now evolves available duplicates before choosing a tactical clash line.",
             ],
         }
     )
@@ -518,6 +579,7 @@ def release_payload():
             "commands": [
                 "python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py",
                 "python3 -m pytest -q",
+                "python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md",
                 "node --check static/js/rebirth.js",
                 "node --check static/js/service-worker.js",
                 "node --check static/js/pwa.js",

@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-rebirth-polish-v29";
+const CACHE_NAME = "ambitionz-rebirth-season0-v30";
 
 const CORE_ASSETS = [
     "/",
@@ -8,9 +8,11 @@ const CORE_ASSETS = [
     "/rebirth/shop",
     "/rebirth/progression",
     "/rebirth/profile",
+    "/rebirth/history",
     "/rebirth/desktop",
     "/rebirth/onboarding",
     "/rebirth/balance",
+    "/rebirth/support",
     "/rebirth/release",
     "/manifest.webmanifest",
     "/static/manifest.webmanifest",
@@ -65,6 +67,12 @@ self.addEventListener("activate", function (event) {
         })
     );
     self.clients.claim();
+});
+
+self.addEventListener("message", function (event) {
+    if (event.data && event.data.type === "SKIP_WAITING") {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener("fetch", function (event) {

@@ -7,8 +7,9 @@ Ambitionz Rebirth is the only active Ambitionz runtime product.
 The active product is a Flask-served, vanilla frontend, single-screen monster
 duel MVP with Rebirth-native auth, SQLite persistence, account collection,
 account loadout, no-payment booster ownership, progression, onboarding, balance
-simulation, player profile/achievements, auth hardening and release hygiene
-pages. The active 13-card starter set now has unique PNG art, stable ability
+simulation, player profile/achievements, match history, economy ledger,
+support/admin tooling, auth hardening and release hygiene pages. The active
+13-card starter set now has unique PNG art, stable ability
 keys, engine-backed card effects, clash feedback and balance telemetry. The old
 Arena, Ascension, BE2, SocketIO, economy, progression, shop, collection and deck
 builder systems are retired from runtime and must not be restored just to
@@ -22,6 +23,7 @@ satisfy historical tests.
 - `services/rebirth_art.py`
 - `services/rebirth_bot.py`
 - `services/rebirth_state.py`
+- `services/rebirth_events.py`
 - `services/rebirth_serializers.py`
 - `services/rebirth_match_store.py`
 - `services/rebirth_engine.py`
@@ -50,9 +52,11 @@ satisfy historical tests.
 - `GET /rebirth/shop`
 - `GET /rebirth/progression`
 - `GET /rebirth/profile`
+- `GET /rebirth/history`
 - `GET /rebirth/desktop`
 - `GET /rebirth/onboarding`
 - `GET /rebirth/balance`
+- `GET /rebirth/support`
 - `GET /rebirth/release`
 - `GET /health`
 - `GET /manifest.webmanifest`
@@ -84,12 +88,18 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `POST /api/rebirth/booster/open`
 - `GET /api/rebirth/progression`
 - `GET /api/rebirth/profile`
+- `GET /api/rebirth/match-history`
+- `GET /api/rebirth/match-history/<match_id>/events`
+- `GET /api/rebirth/economy-ledger`
 - `POST /api/rebirth/progression/claim-daily`
 - `GET /api/rebirth/desktop`
 - `GET /api/rebirth/onboarding`
 - `POST /api/rebirth/onboarding/complete`
 - `GET /api/rebirth/balance/simulate`
 - `GET /api/rebirth/release`
+- `GET /api/rebirth/support/export`
+- `POST /api/rebirth/support/reset`
+- `POST /api/rebirth/admin/grant`
 
 The collection, loadout, shop, booster and progression APIs now persist to
 Rebirth accounts. Booster opening mutates signed-in ownership, but no payment
@@ -137,11 +147,16 @@ Current Rebirth suite coverage includes:
 - clash feel contract for ability events, visual impact and match reward payloads
 - count-based collection/loadout editor contract
 - balance lab reports for card, ability and bot-profile impact
+- command/event/state hash contract for active matches
+- persisted match history and event replay source data
+- economy ledger entries for starter cards, match XP, boosters, daily rewards,
+  tutorial XP and admin grants
+- support export/reset and admin token safety
 
 Current local result for this block:
 
 ```text
-61 passed
+66 passed
 ```
 
 Browser QA also passed on a temporary local database for account registration,
@@ -207,11 +222,24 @@ Persisted Rebirth tables:
 - `reward_claims`
 - `booster_history`
 - `user_achievements`
+- `match_history`
+- `match_commands`
+- `match_events`
+- `economy_ledger`
+- `admin_audit_log`
 
 Passwords are hashed with PBKDF2. Flask session cookies use HttpOnly and
 SameSite defaults, Rebirth mutations use a session CSRF token, and auth
 endpoints have a small in-memory throttle. The runtime still does not use
 SQLAlchemy or legacy database models.
+
+Signed-in match snapshots are copied into `match_history`, `match_commands` and
+`match_events`. Live in-progress match objects still use the in-memory match
+store; this is not yet a durable reconnect system.
+
+`economy_ledger` records movement reasons and balances for XP and card grants.
+This is the active Season 0 economy audit path. There is still no payment
+processor and no retired economy runtime.
 
 ## Active Assets
 
@@ -237,8 +265,9 @@ It lists 13 active monster PNG assets:
 - `voidstalker-art.png`
 - `nightfang-art.png`
 
-The active service worker cache is `ambitionz-rebirth-polish-v29` and
-does not cache Arena or Ascension assets.
+The active service worker cache is `ambitionz-rebirth-season0-v30` and
+does not cache Arena or Ascension assets. The PWA registration now exposes an
+update prompt when a waiting worker is available.
 
 ## Active Card Set
 
@@ -265,7 +294,7 @@ are defensive, aggressive and opportunist.
 
 - No real multiplayer.
 - No payment processor.
-- No admin tools for account support yet.
+- Admin grant support is MVP-only and requires `REBIRTH_ADMIN_TOKEN`.
 - No database persistence for live in-progress match state.
 - In-memory matches are lost on process restart or deploy.
 - Rebirth has one starter collection.
@@ -276,9 +305,10 @@ are defensive, aggressive and opportunist.
 
 ## Next Steps
 
-- Add admin/support tooling for account reset and collection inspection.
+- Add backup/restore automation for the SQLite Rebirth store.
 - Add screenshot-based visual QA baselines for desktop/mobile `/rebirth`.
-- Tune card numbers against Balance Lab output after real play sessions.
+- Tune defensive/opportunist bot and low-impact cards against the generated
+  `docs/REBIRTH_BALANCE_REPORT.md` output plus real play sessions.
 - Add real payment/economy only if a future product decision asks for it.
 - Migrate only useful old-product ideas into Rebirth-native contracts.
 - Keep retired APIs and routes retired unless a future product decision says

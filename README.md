@@ -17,9 +17,12 @@ product path.
 - Vanilla HTML/CSS/JavaScript
 - PWA manifest and service worker
 - In-memory Rebirth match store with TTL and max-entry cleanup
+- Command/event log on Rebirth match state with state hashes
+- Match history and economy ledger persisted for signed-in accounts
 - 13-card Rebirth starter set with PNG art, stable ability keys and engine-backed effects
 - Defensive, aggressive and opportunist bot profiles
-- Count-based loadout editor, match reward moments and deterministic Balance Lab
+- Count-based loadout editor, match reward moments and deterministic Season 0 Balance Lab
+- Self-service support export/reset and token-protected admin grants
 - Gunicorn for deployment
 
 The current runtime does not initialize SocketIO, SQLAlchemy, legacy database
@@ -35,9 +38,11 @@ uses its own SQLite file at `instance/rebirth.db` by default.
 - `GET /rebirth/shop` - no-payment booster demo
 - `GET /rebirth/progression` - progression and rewards preview
 - `GET /rebirth/profile` - persisted player profile, achievements and account controls
+- `GET /rebirth/history` - persisted match history and economy ledger
 - `GET /rebirth/desktop` - desktop arena polish notes
 - `GET /rebirth/onboarding` - onboarding/tutorial
 - `GET /rebirth/balance` - balance and bot simulation
+- `GET /rebirth/support` - account export/reset and admin safety notes
 - `GET /rebirth/release` - release candidate hygiene
 - `GET /health` - deploy health JSON
 - `GET /manifest.webmanifest`
@@ -63,16 +68,25 @@ uses its own SQLite file at `instance/rebirth.db` by default.
 - `POST /api/rebirth/booster/open`
 - `GET /api/rebirth/progression`
 - `GET /api/rebirth/profile`
+- `GET /api/rebirth/match-history`
+- `GET /api/rebirth/match-history/<match_id>/events`
+- `GET /api/rebirth/economy-ledger`
 - `POST /api/rebirth/progression/claim-daily`
 - `GET /api/rebirth/desktop`
 - `GET /api/rebirth/onboarding`
 - `POST /api/rebirth/onboarding/complete`
 - `GET /api/rebirth/balance/simulate`
 - `GET /api/rebirth/release`
+- `GET /api/rebirth/support/export`
+- `POST /api/rebirth/support/reset`
+- `POST /api/rebirth/admin/grant`
 
 The Rebirth collection, shop and progression endpoints now persist to Rebirth
 accounts. Booster opening mutates signed-in ownership, but there is still no
 payment processor and no legacy economy.
+
+`/api/rebirth/admin/grant` is disabled unless `REBIRTH_ADMIN_TOKEN` is configured
+and the request sends the matching `X-Rebirth-Admin-Token` header.
 
 State-changing Rebirth APIs use a session CSRF token by default. Auth endpoints
 also have a small in-memory rate limit, and signed-in users can change their
@@ -136,6 +150,7 @@ http://127.0.0.1:8080/rebirth
 pip install -r requirements-dev.txt
 python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py
 python3 -m pytest -q
+python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md
 node --check static/js/rebirth.js
 node --check static/js/service-worker.js
 node --check static/js/pwa.js

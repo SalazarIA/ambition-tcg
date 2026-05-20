@@ -436,6 +436,50 @@
         });
     }
 
+    function bindSupport() {
+        const exportButton = document.querySelector("[data-rebirth-export]");
+        const resetButton = document.querySelector("[data-rebirth-reset]");
+        const result = document.querySelector("[data-rebirth-support-result]");
+        if (!result) {
+            return;
+        }
+        function write(payload) {
+            result.textContent = JSON.stringify(payload, null, 2);
+        }
+        if (exportButton && endpoints.supportExport) {
+            exportButton.addEventListener("click", function () {
+                exportButton.disabled = true;
+                result.textContent = "Exporting...";
+                getJson(endpoints.supportExport)
+                    .then(write)
+                    .catch(function (error) {
+                        result.textContent = error.message;
+                    })
+                    .finally(function () {
+                        exportButton.disabled = false;
+                    });
+            });
+        }
+        if (resetButton && endpoints.supportReset) {
+            resetButton.addEventListener("click", function () {
+                const confirmed = window.confirm("Reset this Rebirth account back to starter state?");
+                if (!confirmed) {
+                    return;
+                }
+                resetButton.disabled = true;
+                result.textContent = "Resetting...";
+                postJson(endpoints.supportReset, { confirm: "RESET REBIRTH" })
+                    .then(write)
+                    .catch(function (error) {
+                        result.textContent = error.message;
+                    })
+                    .finally(function () {
+                        resetButton.disabled = false;
+                    });
+            });
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         bindAuth();
         bindLogout();
@@ -445,5 +489,6 @@
         bindDailyReward();
         bindTutorial();
         bindBalance();
+        bindSupport();
     });
 }());

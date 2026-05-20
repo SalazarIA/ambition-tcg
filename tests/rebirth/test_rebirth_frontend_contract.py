@@ -47,7 +47,7 @@ def test_rebirth_template_matches_premium_clash_contract():
         "Combine duplicates.",
         "Evolve monsters.",
         "Win the duel.",
-        "Play Rebirth Prototype",
+        "Play Rebirth",
         "REBIRTH_ASSETS",
     ]:
         assert token in template
@@ -87,9 +87,11 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-polish-v29" in service_worker
+    assert "ambitionz-rebirth-season0-v30" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
+    assert "/rebirth/history" in service_worker
+    assert "/rebirth/support" in service_worker
     assert "/rebirth/onboarding" in service_worker
     assert "/rebirth/release" in service_worker
     assert "/static/js/rebirth_product.js" in service_worker

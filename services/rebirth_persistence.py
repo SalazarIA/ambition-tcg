@@ -189,6 +189,72 @@ class RebirthRepository:
                     PRIMARY KEY (user_id, achievement_key),
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS match_history (
+                    match_id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    seed TEXT,
+                    bot_profile_id TEXT,
+                    status TEXT NOT NULL,
+                    winner TEXT,
+                    started_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    final_state_hash TEXT,
+                    final_state_json TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS match_commands (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    match_id TEXT NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    command_id INTEGER NOT NULL,
+                    version INTEGER NOT NULL,
+                    command_type TEXT NOT NULL,
+                    command_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    UNIQUE (match_id, command_id),
+                    FOREIGN KEY (match_id) REFERENCES match_history(match_id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS match_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    match_id TEXT NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    event_id INTEGER NOT NULL,
+                    version INTEGER NOT NULL,
+                    event_type TEXT NOT NULL,
+                    event_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    UNIQUE (match_id, event_id),
+                    FOREIGN KEY (match_id) REFERENCES match_history(match_id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS economy_ledger (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    resource TEXT NOT NULL,
+                    delta INTEGER NOT NULL,
+                    reason TEXT NOT NULL,
+                    reference_type TEXT,
+                    reference_id TEXT,
+                    balance_after INTEGER NOT NULL,
+                    metadata_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS admin_audit_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    actor TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    user_id INTEGER,
+                    metadata_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                );
                 """
             )
 
@@ -273,6 +339,17 @@ class RebirthRepository:
                 """,
                 (user_id, card_id, int(copies), now),
             )
+            self._record_ledger_entry(
+                db,
+                user_id,
+                resource=f"card:{card_id}",
+                delta=int(copies),
+                reason="starter_collection",
+                reference_type="account",
+                reference_id=str(user_id),
+                metadata={"card_id": card_id, "copies": int(copies)},
+                now=now,
+            )
         for slot, card_id in enumerate(DEFAULT_LOADOUT, start=1):
             db.execute(
                 """
@@ -289,6 +366,46 @@ class RebirthRepository:
             (user_id, now),
         )
         self._unlock_achievements(db, user_id, ["founder"], now)
+
+    def _record_ledger_entry(
+        self,
+        db,
+        user_id,
+        *,
+        resource,
+        delta,
+        reason,
+        reference_type=None,
+        reference_id=None,
+        metadata=None,
+        now=None,
+    ):
+        now = now or utc_now()
+        delta = int(delta or 0)
+        row = db.execute(
+            "SELECT COALESCE(SUM(delta), 0) AS balance FROM economy_ledger WHERE user_id = ? AND resource = ?",
+            (user_id, resource),
+        ).fetchone()
+        balance_after = int(row["balance"] or 0) + delta
+        db.execute(
+            """
+            INSERT INTO economy_ledger
+                (user_id, resource, delta, reason, reference_type, reference_id, balance_after, metadata_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                resource,
+                delta,
+                reason,
+                reference_type,
+                reference_id,
+                balance_after,
+                json.dumps(metadata or {}, sort_keys=True),
+                now,
+            ),
+        )
+        return balance_after
 
     def _unlock_achievements(self, db, user_id, keys, now=None):
         now = now or utc_now()
@@ -381,6 +498,7 @@ class RebirthRepository:
         return selected
 
     def add_cards(self, user_id, cards):
+        self.ensure_schema()
         now = utc_now()
         with self.connect() as db:
             for card in cards:
@@ -394,13 +512,45 @@ class RebirthRepository:
                     """,
                     (user_id, card["id"], now),
                 )
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource=f"card:{card['id']}",
+                    delta=1,
+                    reason="card_granted",
+                    reference_type="collection",
+                    reference_id=card["id"],
+                    metadata={"card_id": card["id"], "name": card.get("name")},
+                    now=now,
+                )
 
     def record_booster(self, user_id, booster, seed):
         self.ensure_schema()
         cards = booster.get("cards", [])
         now = utc_now()
-        self.add_cards(user_id, cards)
         with self.connect() as db:
+            for card in cards:
+                db.execute(
+                    """
+                    INSERT INTO user_collection (user_id, card_id, copies, updated_at)
+                    VALUES (?, ?, 1, ?)
+                    ON CONFLICT(user_id, card_id) DO UPDATE SET
+                        copies = copies + 1,
+                        updated_at = excluded.updated_at
+                    """,
+                    (user_id, card["id"], now),
+                )
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource=f"card:{card['id']}",
+                    delta=1,
+                    reason="booster_card",
+                    reference_type="booster",
+                    reference_id=booster.get("booster_id", "starter_booster_demo"),
+                    metadata={"card_id": card["id"], "name": card.get("name"), "seed": str(seed or "")},
+                    now=now,
+                )
             db.execute(
                 """
                 INSERT INTO booster_history (user_id, booster_id, seed, cards_json, opened_at)
@@ -423,6 +573,17 @@ class RebirthRepository:
                 WHERE user_id = ?
                 """,
                 (now, user_id),
+            )
+            self._record_ledger_entry(
+                db,
+                user_id,
+                resource="xp",
+                delta=40,
+                reason="booster_opened",
+                reference_type="booster",
+                reference_id=booster.get("booster_id", "starter_booster_demo"),
+                metadata={"seed": str(seed or ""), "cards": [card["id"] for card in cards]},
+                now=now,
             )
             self._unlock_achievements(db, user_id, ["first_booster"], now)
 
@@ -493,6 +654,22 @@ class RebirthRepository:
                 """,
                 (win_delta, loss_delta, xp_delta, now, user_id),
             )
+            self._record_ledger_entry(
+                db,
+                user_id,
+                resource="xp",
+                delta=xp_delta,
+                reason="match_clash",
+                reference_type="match",
+                reference_id=public_match_state.get("match_id"),
+                metadata={
+                    "winner": winner,
+                    "is_finished": is_finished,
+                    "turn": public_match_state.get("turn"),
+                    "outcome": (public_match_state.get("result") or {}).get("outcome"),
+                },
+                now=now,
+            )
             unlocked = ["first_clash"]
             if win_delta:
                 unlocked.append("first_win")
@@ -514,6 +691,17 @@ class RebirthRepository:
                 db.execute(
                     "UPDATE user_progress SET xp = xp + 25, updated_at = ? WHERE user_id = ?",
                     (now, user_id),
+                )
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource="xp",
+                    delta=25,
+                    reason="daily_first_clash",
+                    reference_type="reward",
+                    reference_id=reward_key,
+                    metadata={"reward_key": reward_key},
+                    now=now,
                 )
                 self._unlock_achievements(db, user_id, ["daily_claimed"], now)
         except sqlite3.IntegrityError as exc:
@@ -538,6 +726,17 @@ class RebirthRepository:
                 WHERE user_id = ?
                 """,
                 (step, step, xp_delta, now, user_id),
+            )
+            self._record_ledger_entry(
+                db,
+                user_id,
+                resource="xp",
+                delta=xp_delta,
+                reason="tutorial_step",
+                reference_type="tutorial",
+                reference_id=str(step),
+                metadata={"step": step},
+                now=now,
             )
             if step >= 4:
                 self._unlock_achievements(db, user_id, ["tutorial_complete"], now)
@@ -591,3 +790,262 @@ class RebirthRepository:
             "unlocked_achievements": len(unlocked),
             "recent_boosters": history,
         }
+
+    def upsert_match_history(self, user_id, match):
+        if not user_id or not match:
+            return None
+        self.ensure_schema()
+        from services.rebirth_events import state_hash
+        from services.rebirth_serializers import public_state
+
+        now = utc_now()
+        public = public_state(match)
+        status = "finished" if match.get("is_finished") else "active"
+        bot_profile = match.get("bot_profile") or {}
+        with self.connect() as db:
+            db.execute(
+                """
+                INSERT INTO match_history
+                    (match_id, user_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(match_id) DO UPDATE SET
+                    status = excluded.status,
+                    winner = excluded.winner,
+                    updated_at = excluded.updated_at,
+                    final_state_hash = excluded.final_state_hash,
+                    final_state_json = excluded.final_state_json
+                """,
+                (
+                    match["match_id"],
+                    user_id,
+                    match.get("seed"),
+                    bot_profile.get("id"),
+                    status,
+                    match.get("winner"),
+                    now,
+                    now,
+                    state_hash(match),
+                    json.dumps(public, sort_keys=True),
+                ),
+            )
+            for command in match.get("commands", []):
+                db.execute(
+                    """
+                    INSERT OR IGNORE INTO match_commands
+                        (match_id, user_id, command_id, version, command_type, command_json, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        match["match_id"],
+                        user_id,
+                        int(command.get("id", 0) or 0),
+                        int(command.get("version", 0) or 0),
+                        command.get("type"),
+                        json.dumps(command, sort_keys=True),
+                        now,
+                    ),
+                )
+            for event in match.get("events", []):
+                db.execute(
+                    """
+                    INSERT OR IGNORE INTO match_events
+                        (match_id, user_id, event_id, version, event_type, event_json, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        match["match_id"],
+                        user_id,
+                        int(event.get("id", 0) or 0),
+                        int(event.get("version", 0) or 0),
+                        event.get("type"),
+                        json.dumps(event, sort_keys=True),
+                        now,
+                    ),
+                )
+        return self.match_history(user_id, limit=1)[0]
+
+    def match_history(self, user_id, limit=10):
+        self.ensure_schema()
+        limit = max(1, min(int(limit or 10), 50))
+        with self.connect() as db:
+            rows = db.execute(
+                """
+                SELECT match_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json
+                FROM match_history
+                WHERE user_id = ?
+                ORDER BY updated_at DESC
+                LIMIT ?
+                """,
+                (user_id, limit),
+            ).fetchall()
+            history = []
+            for row in rows:
+                command_count = db.execute(
+                    "SELECT COUNT(*) AS amount FROM match_commands WHERE match_id = ?",
+                    (row["match_id"],),
+                ).fetchone()["amount"]
+                event_count = db.execute(
+                    "SELECT COUNT(*) AS amount FROM match_events WHERE match_id = ?",
+                    (row["match_id"],),
+                ).fetchone()["amount"]
+                history.append(
+                    {
+                        "match_id": row["match_id"],
+                        "seed": row["seed"],
+                        "bot_profile_id": row["bot_profile_id"],
+                        "status": row["status"],
+                        "winner": row["winner"],
+                        "started_at": row["started_at"],
+                        "updated_at": row["updated_at"],
+                        "state_hash": row["final_state_hash"],
+                        "command_count": int(command_count),
+                        "event_count": int(event_count),
+                        "state": json.loads(row["final_state_json"]),
+                    }
+                )
+        return history
+
+    def match_events(self, user_id, match_id, limit=50):
+        self.ensure_schema()
+        limit = max(1, min(int(limit or 50), 200))
+        with self.connect() as db:
+            owner = db.execute(
+                "SELECT 1 FROM match_history WHERE user_id = ? AND match_id = ?",
+                (user_id, match_id),
+            ).fetchone()
+            if not owner:
+                raise RebirthPersistenceError("Match history not found.", "missing_match", status=404)
+            rows = db.execute(
+                """
+                SELECT event_json
+                FROM match_events
+                WHERE match_id = ?
+                ORDER BY event_id ASC
+                LIMIT ?
+                """,
+                (match_id, limit),
+            ).fetchall()
+        return [json.loads(row["event_json"]) for row in rows]
+
+    def economy_ledger(self, user_id, limit=30):
+        self.ensure_schema()
+        limit = max(1, min(int(limit or 30), 100))
+        with self.connect() as db:
+            rows = db.execute(
+                """
+                SELECT resource, delta, reason, reference_type, reference_id, balance_after, metadata_json, created_at
+                FROM economy_ledger
+                WHERE user_id = ?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (user_id, limit),
+            ).fetchall()
+        return [
+            {
+                "resource": row["resource"],
+                "delta": int(row["delta"]),
+                "reason": row["reason"],
+                "reference_type": row["reference_type"],
+                "reference_id": row["reference_id"],
+                "balance_after": int(row["balance_after"]),
+                "metadata": json.loads(row["metadata_json"]),
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ]
+
+    def support_export(self, user_id):
+        return {
+            "user": self.get_user(user_id),
+            "progression": self.progression(user_id),
+            "collection": dict(self.collection_counts(user_id)),
+            "loadout": self.loadout_card_ids(user_id),
+            "achievements": self.achievements(user_id),
+            "boosters": self.booster_history(user_id, limit=20),
+            "matches": self.match_history(user_id, limit=20),
+            "ledger": self.economy_ledger(user_id, limit=50),
+        }
+
+    def reset_account(self, user_id):
+        self.ensure_schema()
+        now = utc_now()
+        with self.connect() as db:
+            db.execute("DELETE FROM user_collection WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM user_loadout WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM reward_claims WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM booster_history WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM user_achievements WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM economy_ledger WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM match_history WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM user_progress WHERE user_id = ?", (user_id,))
+            self._seed_user_state(db, user_id, now)
+        return self.support_export(user_id)
+
+    def admin_grant(self, actor, user_id, *, resource, amount=1, card_id=None, reason="admin_grant"):
+        self.ensure_schema()
+        now = utc_now()
+        amount = int(amount or 1)
+        resource = str(resource or "").strip()
+        with self.connect() as db:
+            user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user:
+                raise RebirthPersistenceError("Target Rebirth user was not found.", "missing_user", 404)
+            if resource == "xp":
+                db.execute(
+                    "UPDATE user_progress SET xp = xp + ?, updated_at = ? WHERE user_id = ?",
+                    (amount, now, user_id),
+                )
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource="xp",
+                    delta=amount,
+                    reason=reason,
+                    reference_type="admin",
+                    reference_id=str(actor),
+                    metadata={"actor": actor},
+                    now=now,
+                )
+            elif resource == "card":
+                card = get_card(card_id)
+                db.execute(
+                    """
+                    INSERT INTO user_collection (user_id, card_id, copies, updated_at)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(user_id, card_id) DO UPDATE SET
+                        copies = copies + excluded.copies,
+                        updated_at = excluded.updated_at
+                    """,
+                    (user_id, card["id"], amount, now),
+                )
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource=f"card:{card['id']}",
+                    delta=amount,
+                    reason=reason,
+                    reference_type="admin",
+                    reference_id=str(actor),
+                    metadata={"actor": actor, "card_id": card["id"], "name": card["name"]},
+                    now=now,
+                )
+            else:
+                raise RebirthPersistenceError("Admin grant supports resource xp or card.", "invalid_admin_grant", 400)
+            db.execute(
+                """
+                INSERT INTO admin_audit_log (actor, action, user_id, metadata_json, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    str(actor),
+                    "grant",
+                    user_id,
+                    json.dumps(
+                        {"resource": resource, "amount": amount, "card_id": card_id, "reason": reason},
+                        sort_keys=True,
+                    ),
+                    now,
+                ),
+            )
+        return self.support_export(user_id)

@@ -1921,6 +1921,43 @@ button {
     display: none;
 }
 
+.rb-support-output {
+    overflow: auto;
+    max-height: 360px;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid rgba(232, 235, 243, 0.12);
+    background: rgba(0, 0, 0, 0.24);
+    color: var(--rb-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.rb-update-prompt {
+    position: fixed;
+    z-index: 50;
+    right: 18px;
+    bottom: 18px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid rgba(244, 173, 38, 0.65);
+    background: rgba(7, 9, 13, 0.94);
+    color: var(--rb-gold);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: var(--rb-cut);
+}
+
+.rb-update-prompt:disabled {
+    opacity: 0.65;
+    cursor: progress;
+}
+
 @media (min-width: 1180px) {
     .rb-desktop-rail {
         position: fixed;

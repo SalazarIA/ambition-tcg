@@ -15,9 +15,11 @@ def test_rebirth_product_pages_render_active_shell(client):
         "/rebirth/shop": "Shop + Booster Demo",
         "/rebirth/progression": "Progression + Rewards",
         "/rebirth/profile": "Player Profile",
+        "/rebirth/history": "Match History + Economy Ledger",
         "/rebirth/desktop": "Desktop Arena Polish",
         "/rebirth/onboarding": "Onboarding/Tutorial Rebirth",
         "/rebirth/balance": "Balance + Bot Tuning",
+        "/rebirth/support": "Support + Admin Safety",
         "/rebirth/release": "Release Candidate Hygiene",
     }
 
@@ -39,6 +41,8 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     shop = client.get("/api/rebirth/shop")
     progression = client.get("/api/rebirth/progression")
     profile = client.get("/api/rebirth/profile")
+    history_locked = client.get("/api/rebirth/match-history")
+    ledger_locked = client.get("/api/rebirth/economy-ledger")
     desktop = client.get("/api/rebirth/desktop")
     onboarding = client.get("/api/rebirth/onboarding")
     balance = client.get("/api/rebirth/balance/simulate?matches=8")
@@ -56,6 +60,10 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert progression.get_json()["progression"]["profile"]["level"] == 1
     assert profile.status_code == 200
     assert profile.get_json()["profile"]["stats"][0]["label"] == "Level"
+    assert history_locked.status_code == 401
+    assert history_locked.get_json()["error"]["code"] == "auth_required"
+    assert ledger_locked.status_code == 401
+    assert ledger_locked.get_json()["error"]["code"] == "auth_required"
     assert desktop.status_code == 200
     assert "Portrait board" in desktop.get_json()["desktop"]["checks"][0]
     assert onboarding.status_code == 200

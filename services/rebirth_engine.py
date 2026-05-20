@@ -3,6 +3,7 @@ from copy import deepcopy
 from services.rebirth_bot import ability_priority, choose_response
 from services.rebirth_cards import create_card_instance, get_card
 from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESULT, RebirthError
+from services.rebirth_events import append_command, append_event, append_snapshot
 from services.rebirth_state import (
     RebirthStateError,
     available_evolutions,
@@ -192,6 +193,13 @@ def finish_if_needed(match):
         match["log"].append("Defeat. You are out of lives.")
     else:
         match["log"].append("Final clash. Both sides fell together.")
+    append_event(
+        match,
+        "MATCH_FINISHED",
+        payload={"winner": match["winner"], "player_hp": player_hp, "bot_hp": bot_hp},
+        message=match["log"][-1],
+    )
+    append_snapshot(match, "match_finished")
     return True
 
 
@@ -236,6 +244,13 @@ def finish_if_exhausted(match):
     result.setdefault("effective_attack", {"player": 0, "bot": 0})
     match["result"] = result
     match["log"].append(message)
+    append_event(
+        match,
+        "MATCH_FINISHED",
+        payload={"winner": winner, "player_hp": player_hp, "bot_hp": bot_hp, "reason": "exhaustion"},
+        message=message,
+    )
+    append_snapshot(match, "match_exhausted")
     return True
 
 
@@ -290,9 +305,41 @@ def resolve_turn(match, player_card, bot_card):
         "effective_attack": deepcopy(result["effective_attack"]),
     }
     match["log"].append(result["message"])
+    append_event(
+        match,
+        "CLASH_RESOLVED",
+        payload={
+            "player_card_id": player_card["id"],
+            "bot_card_id": bot_card["id"],
+            "outcome": result["outcome"],
+            "winner": result["winner"],
+            "effective_attack": deepcopy(result["effective_attack"]),
+        },
+        message=result["message"],
+    )
+    damage = result.get("damage") or {}
+    if int(damage.get("player", 0) or 0) or int(damage.get("bot", 0) or 0):
+        append_event(
+            match,
+            "DAMAGE_DEALT",
+            payload={
+                "player": int(damage.get("player", 0) or 0),
+                "bot": int(damage.get("bot", 0) or 0),
+                "player_hp": match["player"]["hp"],
+                "bot_hp": match["bot"]["hp"],
+            },
+        )
+    for ability_event in ability_events:
+        append_event(
+            match,
+            "ABILITY_TRIGGERED",
+            payload={"message": ability_event},
+            message=ability_event,
+        )
     finish_if_needed(match)
     if not match["is_finished"]:
         match["phase"] = PHASE_RESULT
+    append_snapshot(match, "clash_resolved")
     return result
 
 
@@ -347,6 +394,19 @@ def _evolve_side_duplicate(match, side_name, card_id):
         match["log"].append(f"Turn {match['turn']:02d}   Bot evolved {card['name']} x2 into {evolved['name']}.")
     else:
         match["log"].append(f"Turn {match['turn']:02d}   {actor} x2 evolved into {evolved['name']}.")
+    append_event(
+        match,
+        "CARD_EVOLVED",
+        actor=side_name,
+        payload={
+            "source_card_id": card_id,
+            "evolution_id": evolution_id,
+            "consumed_instance_ids": list(evolved["evolved_from"]),
+            "created_instance_id": evolved["instance_id"],
+        },
+        message=match["log"][-1],
+    )
+    append_snapshot(match, f"{side_name}_evolved")
     return deepcopy(evolved)
 
 
@@ -366,6 +426,12 @@ def play_card(match, *, card_instance_id=None, card_id=None):
         raise RebirthError("Advance to the next turn before playing another card.", "invalid_phase")
     if not card_instance_id and not card_id:
         raise RebirthError("A card_instance_id or card_id is required.", "missing_card")
+    append_command(
+        match,
+        "PLAY_CARD",
+        actor="player",
+        payload={"card_instance_id": card_instance_id, "card_id": card_id},
+    )
 
     try:
         player_card = remove_from_hand(
@@ -396,6 +462,20 @@ def play_card(match, *, card_instance_id=None, card_id=None):
     turn_label = f"Turn {match['turn']:02d}"
     match["log"].append(f"{turn_label}   You played {player_card['name']}.")
     match["log"].append(f"{turn_label}   Bot played {bot_card['name']}.")
+    append_event(
+        match,
+        "CARD_PLAYED",
+        actor="player",
+        payload={"card_id": player_card["id"], "instance_id": player_card["instance_id"]},
+        message=match["log"][-2],
+    )
+    append_event(
+        match,
+        "CARD_PLAYED",
+        actor="bot",
+        payload={"card_id": bot_card["id"], "instance_id": bot_card["instance_id"]},
+        message=match["log"][-1],
+    )
     resolve_turn(match, player_card, bot_card)
     if not match["is_finished"]:
         finish_if_exhausted(match)
@@ -409,6 +489,7 @@ def evolve_duplicate(match, card_id):
         raise RebirthError("Evolution is only available before playing a card.", "invalid_phase")
     if not card_id:
         raise RebirthError("card_id is required.", "missing_card")
+    append_command(match, "EVOLVE_DUPLICATE", actor="player", payload={"card_id": card_id})
 
     try:
         return _evolve_side_duplicate(match, "player", card_id)
@@ -424,6 +505,7 @@ def next_turn(match):
     if match.get("phase") != PHASE_RESULT:
         raise RebirthError("Next turn is available only after a clash result.", "invalid_phase")
 
+    append_command(match, "NEXT_TURN", actor="player", payload={"turn": match.get("turn")})
     clear_played_cards(match)
     match["turn"] += 1
     draw_to_hand_size(match["player"])
@@ -432,5 +514,16 @@ def next_turn(match):
     match["last_clash"] = None
     match["phase"] = PHASE_CHOOSE
     match["log"].append(f"Turn {match['turn']:02d}   Choose one monster.")
+    append_event(
+        match,
+        "TURN_STARTED",
+        payload={
+            "turn": match["turn"],
+            "player_hand_count": len(match["player"]["hand"]),
+            "bot_hand_count": len(match["bot"]["hand"]),
+        },
+        message=match["log"][-1],
+    )
+    append_snapshot(match, "turn_started")
     finish_if_exhausted(match)
     return match
