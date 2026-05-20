@@ -49,6 +49,32 @@ are historical and are not active runtime APIs.
 - `POST /api/rebirth/evolve` combines two matching base monsters into one
   evolved card when available.
 - `POST /api/rebirth/next-turn` advances from `result` to `choose`.
+- `GET /api/rebirth/shell` returns the product shell summary.
+- `GET /api/rebirth/session` returns the active Rebirth account session.
+- `GET /api/rebirth/csrf` returns the current session CSRF token.
+- `POST /api/rebirth/auth/register` creates a Rebirth account and starter
+  ownership.
+- `POST /api/rebirth/auth/login` signs in an existing Rebirth account.
+- `POST /api/rebirth/auth/logout` clears the Rebirth session.
+- `POST /api/rebirth/auth/change-password` updates the signed-in account
+  password after current-password verification.
+- `GET /api/rebirth/auth-plan` returns the Rebirth-native auth plan.
+- `GET /api/rebirth/collection` returns account collection/loadout state.
+- `POST /api/rebirth/loadout` validates and persists an eight-card account
+  loadout.
+- `GET /api/rebirth/shop` returns the no-payment shop payload and booster
+  history.
+- `POST /api/rebirth/booster/open` opens a no-payment booster and persists
+  ownership for the signed-in account.
+- `GET /api/rebirth/progression` returns the progression/reward state.
+- `GET /api/rebirth/profile` returns profile stats, achievements and recent
+  booster context.
+- `POST /api/rebirth/progression/claim-daily` claims the current daily reward.
+- `GET /api/rebirth/desktop` returns the desktop arena polish notes.
+- `GET /api/rebirth/onboarding` returns tutorial state.
+- `POST /api/rebirth/onboarding/complete` persists tutorial completion.
+- `GET /api/rebirth/balance/simulate` returns a deterministic balance report.
+- `GET /api/rebirth/release` returns the release hygiene checklist.
 
 ## Retired API
 
@@ -79,5 +105,11 @@ them.
 The frontend renders server state, sends player actions through fetch, disables
 invalid buttons, preloads active Rebirth art and keeps `/rebirth` locked as a
 single-screen board.
+
+The product-shell frontend renders server-provided payloads, signs users in,
+persists loadouts through `/api/rebirth/loadout`, opens no-payment boosters
+through `/api/rebirth/booster/open`, claims rewards, completes onboarding and
+changes signed-in passwords. Mutating Rebirth requests send
+`X-Rebirth-CSRF`.
 
 The frontend does not compute gameplay outcomes.

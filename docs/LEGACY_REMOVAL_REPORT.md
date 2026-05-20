@@ -16,11 +16,45 @@ work should migrate useful ideas into Rebirth-native contracts instead.
 
 - `GET /`
 - `GET /rebirth`
+- `GET /rebirth/account`
+- `GET /rebirth/collection`
+- `GET /rebirth/shop`
+- `GET /rebirth/progression`
+- `GET /rebirth/profile`
+- `GET /rebirth/desktop`
+- `GET /rebirth/onboarding`
+- `GET /rebirth/balance`
+- `GET /rebirth/release`
 - `GET /health`
 - `POST /api/rebirth/start`
 - `POST /api/rebirth/play-card`
 - `POST /api/rebirth/evolve`
 - `POST /api/rebirth/next-turn`
+- `GET /api/rebirth/shell`
+- `GET /api/rebirth/session`
+- `GET /api/rebirth/csrf`
+- `POST /api/rebirth/auth/register`
+- `POST /api/rebirth/auth/login`
+- `POST /api/rebirth/auth/logout`
+- `POST /api/rebirth/auth/change-password`
+- `GET /api/rebirth/auth-plan`
+- `GET /api/rebirth/collection`
+- `POST /api/rebirth/loadout`
+- `GET /api/rebirth/shop`
+- `POST /api/rebirth/booster/open`
+- `GET /api/rebirth/progression`
+- `GET /api/rebirth/profile`
+- `POST /api/rebirth/progression/claim-daily`
+- `GET /api/rebirth/desktop`
+- `GET /api/rebirth/onboarding`
+- `POST /api/rebirth/onboarding/complete`
+- `GET /api/rebirth/balance/simulate`
+- `GET /api/rebirth/release`
+
+The `/rebirth/collection`, `/rebirth/shop`, `/rebirth/progression` and
+`/rebirth/profile` pages are new Rebirth-native persisted surfaces. They do not
+reactivate the retired top-level `/collection`, `/shop`, `/progression`,
+`/profile`, old economy, old deck builder or old account runtime.
 
 ## Redirected Legacy Browser Routes
 
@@ -38,6 +72,7 @@ The following retired browser routes redirect to `/rebirth`:
 - `/progression`
 - `/campaign`
 - `/tutorial`
+- `/profile`
 - `/how-to-play`
 - `/inventory`
 - `/economy`

@@ -12,8 +12,8 @@ from services.rebirth_state import (
 )
 
 
-def start_match(seed=None):
-    return create_match(seed=seed)
+def start_match(seed=None, player_card_ids=None, player_name="You"):
+    return create_match(seed=seed, player_card_ids=player_card_ids, player_name=player_name)
 
 
 def compare_power(player_card, bot_card):

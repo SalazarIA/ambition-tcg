@@ -81,7 +81,12 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-release-hygiene-v6" in service_worker
+    assert "ambitionz-rebirth-final-mvp-v20" in service_worker
+    assert "/rebirth/collection" in service_worker
+    assert "/rebirth/profile" in service_worker
+    assert "/rebirth/onboarding" in service_worker
+    assert "/rebirth/release" in service_worker
+    assert "/static/js/rebirth_product.js" in service_worker
     assert "dreadclaw-art.png" in service_worker
     assert "bot-card-back.png" in service_worker
     assert "bot-emblem.png" in service_worker
@@ -102,6 +107,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthBoardScaler",
         "RebirthAssets",
         "RebirthErrors",
+        "X-Rebirth-CSRF",
         "player-hp-fill",
         "bot-hp-fill",
         "evolution-card-thumbnail",
@@ -115,11 +121,16 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     ]:
         assert token in js
 
+    product_js = read("static/js/rebirth_product.js")
+    assert "X-Rebirth-CSRF" in product_js
+    assert "data-rebirth-change-password" in read("templates/rebirth_product.html")
+
 
 def test_active_home_and_rebirth_do_not_load_legacy_assets():
     home = read("templates/index.html")
     rebirth = read("templates/rebirth.html")
-    combined = home + rebirth
+    product = read("templates/rebirth_product.html")
+    combined = home + rebirth + product
 
     for forbidden in [
         "style.css",

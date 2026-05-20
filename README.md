@@ -13,18 +13,29 @@ product path.
 
 - Python
 - Flask
+- SQLite persistence through Python stdlib
 - Vanilla HTML/CSS/JavaScript
 - PWA manifest and service worker
 - In-memory Rebirth match store with TTL and max-entry cleanup
 - Gunicorn for deployment
 
-The current runtime does not initialize SocketIO, SQLAlchemy, a database,
-legacy economy systems or the old multiplayer arena.
+The current runtime does not initialize SocketIO, SQLAlchemy, legacy database
+models, legacy economy systems or the old multiplayer arena. Rebirth persistence
+uses its own SQLite file at `instance/rebirth.db` by default.
 
 ## Active Routes
 
 - `GET /` - Rebirth home
 - `GET /rebirth` - playable Rebirth MVP
+- `GET /rebirth/account` - Rebirth-native login/auth plan
+- `GET /rebirth/collection` - collection and loadout preview
+- `GET /rebirth/shop` - no-payment booster demo
+- `GET /rebirth/progression` - progression and rewards preview
+- `GET /rebirth/profile` - persisted player profile, achievements and account controls
+- `GET /rebirth/desktop` - desktop arena polish notes
+- `GET /rebirth/onboarding` - onboarding/tutorial
+- `GET /rebirth/balance` - balance and bot simulation
+- `GET /rebirth/release` - release candidate hygiene
 - `GET /health` - deploy health JSON
 - `GET /manifest.webmanifest`
 - `GET /service-worker.js`
@@ -35,10 +46,38 @@ legacy economy systems or the old multiplayer arena.
 - `POST /api/rebirth/play-card`
 - `POST /api/rebirth/evolve`
 - `POST /api/rebirth/next-turn`
+- `GET /api/rebirth/shell`
+- `GET /api/rebirth/session`
+- `GET /api/rebirth/csrf`
+- `POST /api/rebirth/auth/register`
+- `POST /api/rebirth/auth/login`
+- `POST /api/rebirth/auth/logout`
+- `POST /api/rebirth/auth/change-password`
+- `GET /api/rebirth/auth-plan`
+- `GET /api/rebirth/collection`
+- `POST /api/rebirth/loadout`
+- `GET /api/rebirth/shop`
+- `POST /api/rebirth/booster/open`
+- `GET /api/rebirth/progression`
+- `GET /api/rebirth/profile`
+- `POST /api/rebirth/progression/claim-daily`
+- `GET /api/rebirth/desktop`
+- `GET /api/rebirth/onboarding`
+- `POST /api/rebirth/onboarding/complete`
+- `GET /api/rebirth/balance/simulate`
+- `GET /api/rebirth/release`
+
+The Rebirth collection, shop and progression endpoints now persist to Rebirth
+accounts. Booster opening mutates signed-in ownership, but there is still no
+payment processor and no legacy economy.
+
+State-changing Rebirth APIs use a session CSRF token by default. Auth endpoints
+also have a small in-memory rate limit, and signed-in users can change their
+password from the Rebirth profile page.
 
 Retired browser routes such as `/arena`, `/training`, `/collection`,
 `/deck-builder`, `/shop`, `/missions`, `/progression`, `/campaign`,
-`/tutorial`, `/inventory`, `/economy` and `/match-history` redirect to
+`/tutorial`, `/profile`, `/inventory`, `/economy` and `/match-history` redirect to
 `/rebirth`.
 
 Retired API groups such as `/api/ascension/*`, `/api/beta/*` and
@@ -64,11 +103,12 @@ http://127.0.0.1:8080/rebirth
 
 ```bash
 pip install -r requirements-dev.txt
-python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py
+python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py
 python3 -m pytest -q
 node --check static/js/rebirth.js
 node --check static/js/service-worker.js
 node --check static/js/pwa.js
+node --check static/js/rebirth_product.js
 ```
 
 The standard pytest suite is scoped to `tests/rebirth` through `pytest.ini`.

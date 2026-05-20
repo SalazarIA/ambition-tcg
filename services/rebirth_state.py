@@ -21,12 +21,12 @@ def _match_id(seed=None):
     return f"rebirth-{digest}"
 
 
-def create_player(name, owner):
+def create_player(name, owner, card_ids=None):
     return {
         "name": name,
         "hp": STARTING_HP,
         "max_hp": STARTING_HP,
-        "deck": build_deck(owner),
+        "deck": build_deck(owner, card_ids=card_ids),
         "hand": [],
         "discard": [],
         "played_card": None,
@@ -52,8 +52,11 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
     return drawn
 
 
-def create_match(seed=None):
-    player = create_player("You", "player")
+def create_match(seed=None, player_card_ids=None, player_name="You"):
+    deck_ids = None
+    if player_card_ids:
+        deck_ids = list(player_card_ids) + list(player_card_ids)
+    player = create_player(player_name, "player", card_ids=deck_ids)
     bot = create_player("Bot", "bot")
     draw_to_hand_size(player)
     draw_to_hand_size(bot)

@@ -1,12 +1,22 @@
-const CACHE_NAME = "ambitionz-rebirth-release-hygiene-v6";
+const CACHE_NAME = "ambitionz-rebirth-final-mvp-v20";
 
 const CORE_ASSETS = [
     "/",
     "/rebirth",
+    "/rebirth/account",
+    "/rebirth/collection",
+    "/rebirth/shop",
+    "/rebirth/progression",
+    "/rebirth/profile",
+    "/rebirth/desktop",
+    "/rebirth/onboarding",
+    "/rebirth/balance",
+    "/rebirth/release",
     "/manifest.webmanifest",
     "/static/manifest.webmanifest",
     "/static/css/rebirth.css",
     "/static/js/rebirth.js",
+    "/static/js/rebirth_product.js",
     "/static/js/pwa.js",
     "/static/assets/rebirth/manifest.json",
     "/static/assets/rebirth/cards/dreadclaw-art.png",

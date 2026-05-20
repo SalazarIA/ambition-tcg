@@ -15,10 +15,32 @@
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-005">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-020">
 </head>
 <body class="rb-page rb-game-page">
     <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
+        <aside class="rb-desktop-rail rb-desktop-rail-left" aria-label="Rebirth status">
+            <a class="rb-brand rb-rail-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
+                <span>A</span>
+                <strong>Ambitionz Rebirth</strong>
+            </a>
+            <article>
+                <span>Mode</span>
+                <strong>One Card Clash</strong>
+            </article>
+            <article>
+                <span>Loadout</span>
+                <strong>8-card preview</strong>
+            </article>
+            <nav aria-label="Rebirth product links">
+                <a href="{{ url_for('rebirth_collection') }}">Collection</a>
+                <a href="{{ url_for('rebirth_shop') }}">Shop Demo</a>
+                <a href="{{ url_for('rebirth_progression') }}">Progression</a>
+                <a href="{{ url_for('rebirth_profile') }}">Profile</a>
+                <a href="{{ url_for('rebirth_onboarding') }}">Tutorial</a>
+            </nav>
+        </aside>
+
         <main id="rebirth-board" class="rb-game-board rb-clash-shell" aria-label="Ambitionz Rebirth Premium Clash UI">
             <section class="rb-hud" aria-label="Match HUD">
                 <div class="rb-hud-side rb-hud-player">
@@ -142,9 +164,24 @@
             <div class="rb-loading" id="rebirth-loading" aria-hidden="true">Loading</div>
             <div class="rb-error" id="rebirth-error" aria-live="polite"></div>
         </main>
+
+        <aside class="rb-desktop-rail rb-desktop-rail-right" aria-label="Match guide">
+            <article>
+                <span>Rule</span>
+                <strong>Pick one monster</strong>
+                <p>The bot answers with one monster. Higher attack wins the clash.</p>
+            </article>
+            <article>
+                <span>Combine</span>
+                <strong>Duplicates evolve</strong>
+                <p>Two matching monsters merge into their Rebirth form.</p>
+            </article>
+            <a class="rb-secondary" href="{{ url_for('rebirth_desktop') }}">Desktop Notes</a>
+        </aside>
     </div>
 
     <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
         window.REBIRTH_ENDPOINTS = {
             start: "{{ url_for('api_rebirth_start') }}",
             playCard: "{{ url_for('api_rebirth_play_card') }}",
@@ -158,7 +195,7 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-005"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-005"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-020"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-020"></script>
 </body>
 </html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page.title }} - Ambitionz Rebirth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#050608">
+    <meta name="description" content="{{ page.subtitle }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-020">
+</head>
+<body class="rb-page rb-home-page rb-product-page">
+    <main class="rb-home-shell rb-product-shell">
+        <header class="rb-home-nav rb-shell-nav" aria-label="Ambitionz Rebirth product shell">
+            <a class="rb-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
+                <span>A</span>
+                <strong>Ambitionz Rebirth</strong>
+            </a>
+            <nav aria-label="Rebirth sections">
+                {% for item in page.nav %}
+                    <a href="{{ item.href }}" class="{{ 'is-active' if item.active else '' }}">{{ item.label }}</a>
+                {% endfor %}
+            </nav>
+        </header>
+
+        <section class="rb-product-hero" aria-label="{{ page.title }}">
+            <div>
+                <span class="rb-product-kicker">Rebirth {{ page.key }}</span>
+                <h1>{{ page.title }}</h1>
+                <p>{{ page.subtitle }}</p>
+            </div>
+            <a class="rb-cta rb-cta-wide" href="{{ page.primary_href }}"><span>A</span> {{ page.primary_label }} <i aria-hidden="true"></i></a>
+        </section>
+
+        {% if page.account is defined %}
+            <section class="rb-account-strip" aria-label="Account state">
+                {% if page.account.authenticated %}
+                    <span>Signed in</span>
+                    <strong>{{ page.account.user.username }}</strong>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_profile') }}">Profile</a>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-logout>Logout</button>
+                {% else %}
+                    <span>Guest</span>
+                    <strong>Sign in to persist ownership</strong>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Account</a>
+                {% endif %}
+            </section>
+        {% endif %}
+
+        {% if page.key == "account" %}
+            {% if page.account.authenticated %}
+                <section class="rb-product-panel rb-product-wide" aria-label="Signed in account">
+                    <span>Active Session</span>
+                    <h2>{{ page.account.user.username }}</h2>
+                    <p>{{ page.account.user.email }}</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-logout>Logout</button>
+                    <div class="rb-product-result" data-rebirth-auth-result aria-live="polite">Account persisted.</div>
+                </section>
+            {% else %}
+                <section class="rb-auth-grid" aria-label="Rebirth auth">
+                    <form class="rb-product-panel rb-auth-form" data-rebirth-register>
+                        <span>Create</span>
+                        <h2>Register</h2>
+                        <label>Username<input name="username" autocomplete="username" required minlength="3"></label>
+                        <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
+                        <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="8"></label>
+                        <button class="rb-button-primary rb-cta" type="submit">Create Account</button>
+                    </form>
+                    <form class="rb-product-panel rb-auth-form" data-rebirth-login>
+                        <span>Return</span>
+                        <h2>Login</h2>
+                        <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
+                        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+                        <button class="rb-button-secondary rb-secondary" type="submit">Login</button>
+                    </form>
+                </section>
+                <div class="rb-product-result" data-rebirth-auth-result aria-live="polite">Ready.</div>
+            {% endif %}
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Auth plan">
+                {% for step in page.steps %}
+                    <article class="rb-product-panel">
+                        <span>{{ step.status }}</span>
+                        <h2>{{ step.title }}</h2>
+                        <p>{{ step["copy"] }}</p>
+                    </article>
+                {% endfor %}
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Auth constraints">
+                <h2>Runtime Contract</h2>
+                <ul class="rb-product-list">
+                    {% for item in page.constraints %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% elif page.key == "profile" %}
+            {% if not page.account.authenticated %}
+                <section class="rb-product-panel rb-product-wide">
+                    <span>Guest Preview</span>
+                    <h2>Profile Locked</h2>
+                    <p>Create a Rebirth account to persist achievements, rewards, loadout and password controls.</p>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Create Account</a>
+                </section>
+            {% endif %}
+            <section class="rb-product-stats" aria-label="Profile summary">
+                {% for stat in page.stats %}
+                    <article><span>{{ stat.label }}</span><strong>{{ stat.value }}</strong></article>
+                {% endfor %}
+            </section>
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Achievements">
+                {% for achievement in page.profile.achievements %}
+                    <article class="rb-product-panel rb-achievement-card {{ 'is-unlocked' if achievement.unlocked else 'is-locked' }}">
+                        <span>{{ 'Unlocked' if achievement.unlocked else 'Locked' }}</span>
+                        <h2>{{ achievement.name }}</h2>
+                        <p>{{ achievement["copy"] }}</p>
+                        {% if achievement.unlocked_at %}
+                            <small>{{ achievement.unlocked_at }}</small>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </section>
+            {% if page.account.authenticated %}
+                <section class="rb-auth-grid" aria-label="Account controls">
+                    <form class="rb-product-panel rb-auth-form" data-rebirth-change-password>
+                        <span>Security</span>
+                        <h2>Password</h2>
+                        <label>Current<input name="current_password" type="password" autocomplete="current-password" required minlength="8"></label>
+                        <label>New<input name="new_password" type="password" autocomplete="new-password" required minlength="8"></label>
+                        <button class="rb-button-secondary rb-secondary" type="submit">Change Password</button>
+                        <div class="rb-product-result" data-rebirth-password-result aria-live="polite">Password controls ready.</div>
+                    </form>
+                    <article class="rb-product-panel">
+                        <span>Collection</span>
+                        <h2>{{ page.profile.collection.unique_owned }} Unique</h2>
+                        <p>{{ page.profile.collection.owned_cards }} total owned cards and {{ page.profile.collection.loadout_size }} cards in the active loadout.</p>
+                        <a class="rb-secondary" href="{{ url_for('rebirth_collection') }}">Open Collection</a>
+                    </article>
+                </section>
+            {% endif %}
+            {% if page.profile.recent_boosters %}
+                <section class="rb-product-panel rb-product-wide" aria-label="Recent profile boosters">
+                    <h2>Recent Boosters</h2>
+                    <div class="rb-history-list">
+                        {% for booster in page.profile.recent_boosters %}
+                            <article>
+                                <span>{{ booster.opened_at }}</span>
+                                <strong>{{ booster.booster_id }}</strong>
+                                <p>{{ booster.cards | length }} cards persisted</p>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+        {% elif page.key == "collection" %}
+            <section class="rb-product-stats" aria-label="Collection summary">
+                <article><span>Owned</span><strong>{{ page.summary.owned_cards }}</strong></article>
+                <article><span>Unique</span><strong>{{ page.summary.unique_owned }}</strong></article>
+                <article><span>Loadout</span><strong>{{ page.summary.loadout_size }}</strong></article>
+                <article><span>Evolutions</span><strong>{{ page.summary.preview_evolutions }}</strong></article>
+            </section>
+            {% if not page.account.authenticated %}
+                <section class="rb-product-panel rb-product-wide">
+                    <span>Guest Preview</span>
+                    <h2>Persistence Locked</h2>
+                    <p>Create a Rebirth account to save loadout changes and booster ownership.</p>
+                </section>
+            {% endif %}
+
+            <section class="rb-product-panel rb-product-wide" aria-label="Loadout preview">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Eight-card preview</span>
+                        <h2>Loadout</h2>
+                    </div>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-loadout-submit>Validate</button>
+                </div>
+                <form class="rb-product-loadout" data-rebirth-loadout-form>
+                    {% for card in page.loadout %}
+                        <label>
+                            <input type="checkbox" name="card_ids" value="{{ card.id }}" checked>
+                            <span>{{ loop.index }}</span>
+                            <strong>{{ card.name }}</strong>
+                            <small>{{ card.attack }} ATK / {{ card.guard }} GRD</small>
+                        </label>
+                    {% endfor %}
+                </form>
+                <div class="rb-product-result" data-rebirth-loadout-result aria-live="polite">Loadout ready for validation.</div>
+            </section>
+
+            <section class="rb-product-card-grid" aria-label="Rebirth collection">
+                {% for card in page.cards %}
+                    <article class="rb-product-card">
+                        <img src="{{ card.art }}" alt="{{ card.name }} art">
+                        <div>
+                            <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
+                            <h2>{{ card.name }}</h2>
+                            <p>{{ card.role }} - {{ card.element }} - Tier {{ card.tier }}</p>
+                            <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% elif page.key == "shop" %}
+            <section class="rb-product-grid" aria-label="Shop demo">
+                {% for offer in page.offers %}
+                    <article class="rb-product-panel rb-shop-offer">
+                        <span>{{ offer.state }}</span>
+                        <h2>{{ offer.name }}</h2>
+                        <p>{{ offer.contents }}</p>
+                        <strong>{{ offer.price }}</strong>
+                        <button class="rb-button-primary rb-cta" type="button" data-rebirth-booster>Open Booster</button>
+                    </article>
+                {% endfor %}
+                <article class="rb-product-panel">
+                    <span>Contract</span>
+                    <h2>No Economy Runtime</h2>
+                    <p>{{ page.disclaimer }}</p>
+                </article>
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Booster result">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Demo result</span>
+                        <h2>Booster Pull</h2>
+                    </div>
+                </div>
+                <div id="rebirth-booster-result" class="rb-product-result rb-booster-result" aria-live="polite">Open a booster to reveal four Rebirth cards.</div>
+            </section>
+            {% if page.history %}
+                <section class="rb-product-panel rb-product-wide" aria-label="Booster history">
+                    <h2>Booster History</h2>
+                    <div class="rb-history-list">
+                        {% for booster in page.history %}
+                            <article>
+                                <span>{{ booster.opened_at }}</span>
+                                <strong>{{ booster.booster_id }}</strong>
+                                <p>{{ booster.cards | length }} cards persisted</p>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+        {% elif page.key == "progression" %}
+            <section class="rb-product-stats" aria-label="Progression profile">
+                <article><span>Level</span><strong>{{ page.profile.level }}</strong></article>
+                <article><span>XP</span><strong>{{ page.profile.xp }}/{{ page.profile.next_level_xp }}</strong></article>
+                <article><span>Wins</span><strong>{{ page.profile.wins }}</strong></article>
+                <article><span>Clashes</span><strong>{{ page.profile.clashes }}</strong></article>
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Reward track">
+                <h2>Reward Track</h2>
+                <div class="rb-track">
+                    {% for reward in page.track %}
+                        <article>
+                            <span>Level {{ reward.level }} - {{ reward.state }}</span>
+                            <strong>{{ reward.name }}</strong>
+                            <p>{{ reward.reward }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Daily reward">
+                <span>{{ page.daily.state }}</span>
+                <h2>{{ page.daily.name }}</h2>
+                <p>{{ page.daily.progress }}/{{ page.daily.goal }} complete - {{ page.daily.reward }}</p>
+                <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-claim-daily>Claim Daily</button>
+                <div class="rb-product-result" data-rebirth-progression-result aria-live="polite">Reward state ready.</div>
+            </section>
+        {% elif page.key == "desktop" %}
+            <section class="rb-product-grid" aria-label="Desktop polish checks">
+                {% for check in page.checks %}
+                    <article class="rb-product-panel">
+                        <span>Check</span>
+                        <h2>{{ loop.index }}</h2>
+                        <p>{{ check }}</p>
+                    </article>
+                {% endfor %}
+            </section>
+            <section class="rb-product-panel rb-product-wide rb-desktop-preview" aria-label="Desktop arena preview">
+                <div class="rb-desktop-preview-board">
+                    <div></div>
+                    <strong>Portrait Arena</strong>
+                    <p>Desktop rails frame the board; the playable contract stays untouched.</p>
+                </div>
+            </section>
+        {% elif page.key == "tutorial" %}
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Tutorial steps">
+                {% for step in page.steps %}
+                    <article class="rb-product-panel">
+                        <span>Step {{ step.step }}</span>
+                        <h2>{{ step.title }}</h2>
+                        <p>{{ step["copy"] }}</p>
+                    </article>
+                {% endfor %}
+            </section>
+            <section class="rb-product-panel rb-product-wide">
+                <span>{{ 'Complete' if page.complete else 'In progress' }}</span>
+                <h2>Current Step {{ page.current_step }}</h2>
+                <p>Finish the onboarding to persist tutorial XP on the active account.</p>
+                <button class="rb-button-primary rb-cta" type="button" data-rebirth-tutorial-complete>Complete Tutorial</button>
+                <div class="rb-product-result" data-rebirth-tutorial-result aria-live="polite">Tutorial ready.</div>
+            </section>
+        {% elif page.key == "balance" %}
+            <section class="rb-product-grid" aria-label="Balance notes">
+                {% for note in page.notes %}
+                    <article class="rb-product-panel">
+                        <span>Bot</span>
+                        <h2>{{ loop.index }}</h2>
+                        <p>{{ note }}</p>
+                    </article>
+                {% endfor %}
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Balance simulation">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Simulation</span>
+                        <h2>{{ page.simulation.matches }} Matches</h2>
+                    </div>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-balance-run>Run</button>
+                </div>
+                <div class="rb-product-stats rb-product-stats-compact" data-rebirth-balance-result>
+                    <article><span>Player</span><strong>{{ page.simulation.summary.player_win_rate }}</strong></article>
+                    <article><span>Bot</span><strong>{{ page.simulation.summary.bot_win_rate }}</strong></article>
+                    <article><span>Avg Turns</span><strong>{{ page.simulation.summary.average_turns }}</strong></article>
+                    <article><span>Status</span><strong>{{ page.simulation.bot_tuning.status }}</strong></article>
+                </div>
+            </section>
+        {% elif page.key == "release" %}
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Release checks">
+                {% for check in page.checks %}
+                    <article class="rb-product-panel">
+                        <span>{{ check.state }}</span>
+                        <h2>{{ check.name }}</h2>
+                        <p>{{ check["copy"] }}</p>
+                    </article>
+                {% endfor %}
+            </section>
+            <section class="rb-product-panel rb-product-wide">
+                <h2>Commands</h2>
+                <ul class="rb-product-list">
+                    {% for command in page.commands %}
+                        <li><code>{{ command }}</code></li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+    </main>
+
+    <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_PRODUCT_ENDPOINTS = {
+            loadout: "{{ url_for('api_rebirth_loadout') }}",
+            booster: "{{ url_for('api_rebirth_booster_open') }}",
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            changePassword: "{{ url_for('api_rebirth_auth_change_password') }}",
+            claimDaily: "{{ url_for('api_rebirth_progression_claim_daily') }}",
+            completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}",
+            balance: "{{ url_for('api_rebirth_balance_simulate') }}",
+            profile: "{{ url_for('api_rebirth_profile') }}",
+            csrf: "{{ url_for('api_rebirth_csrf') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-020"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-020"></script>
+</body>
+</html>

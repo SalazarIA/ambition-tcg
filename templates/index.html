@@ -9,16 +9,20 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-005">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-020">
 </head>
 <body class="rb-page rb-home-page">
     <main class="rb-home-shell">
-        <header class="rb-home-nav" aria-label="Ambitionz Rebirth">
+        <header class="rb-home-nav rb-shell-nav" aria-label="Ambitionz Rebirth">
             <a class="rb-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
                 <span>A</span>
                 <strong>Ambitionz Rebirth</strong>
             </a>
-            <a class="rb-small-link" href="{{ url_for('rebirth') }}">Play</a>
+            <nav aria-label="Rebirth sections">
+                {% for item in page.nav %}
+                    <a href="{{ item.href }}">{{ item.label }}</a>
+                {% endfor %}
+            </nav>
         </header>
 
         <section id="rebirth-home-hero" class="rb-home-hero" aria-label="Ambitionz Rebirth prototype">
@@ -71,8 +75,25 @@
                 </div>
             </div>
         </section>
+
+        <section class="rb-product-stats rb-home-status" aria-label="Rebirth status">
+            {% for item in page.status %}
+                <article><span>{{ item.label }}</span><strong>{{ item.value }}</strong></article>
+            {% endfor %}
+        </section>
+
+        <section class="rb-product-grid rb-home-product-grid" aria-label="Rebirth product shell">
+            {% for block in page.blocks %}
+                <article class="rb-product-panel">
+                    <span>Rebirth</span>
+                    <h2>{{ block.title }}</h2>
+                    <p>{{ block["copy"] }}</p>
+                    <a class="rb-secondary" href="{{ block.href }}">Open</a>
+                </article>
+            {% endfor %}
+        </section>
     </main>
 
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-005"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-020"></script>
 </body>
 </html>

@@ -15,12 +15,17 @@ services/rebirth_state.py
 services/rebirth_serializers.py
 services/rebirth_match_store.py
 services/rebirth_engine.py
+services/rebirth_product.py
+services/rebirth_persistence.py
+services/rebirth_balance.py
 
 templates/index.html
 templates/rebirth.html
+templates/rebirth_product.html
 
 static/css/rebirth.css
 static/js/rebirth.js
+static/js/rebirth_product.js
 static/js/pwa.js
 static/js/service-worker.js
 static/manifest.webmanifest
@@ -44,6 +49,14 @@ The older `services/rebirth/` package is not part of the active Flask route or `
 - `services/rebirth_state.py` owns match creation, draw helpers, hand/discard mutation and phase-neutral state helpers.
 - `services/rebirth_engine.py` owns pure game rules: play card, compare attack, calculate damage, evolve duplicate, finish match and next turn.
 - `services/rebirth_serializers.py` owns public JSON state, side payloads and card contract validation.
+- `services/rebirth_product.py` owns Rebirth-native product shell payloads for
+  auth, collection/loadout, booster, progression, onboarding, balance, desktop
+  notes and release hygiene.
+- `services/rebirth_persistence.py` owns SQLite schema creation, account
+  creation/login, password hashing, account collection, loadout, progression,
+  daily rewards, booster history and achievements.
+- `services/rebirth_balance.py` owns deterministic local balance simulations
+  and bot tuning summaries.
 
 Flask does not contain game rules. Browser JavaScript does not contain game rules. The simulation is the source of truth.
 
@@ -88,10 +101,43 @@ Routes:
 - `GET /health`
 - `GET /`
 - `GET /rebirth`
+- `GET /rebirth/account`
+- `GET /rebirth/collection`
+- `GET /rebirth/shop`
+- `GET /rebirth/progression`
+- `GET /rebirth/profile`
+- `GET /rebirth/desktop`
+- `GET /rebirth/onboarding`
+- `GET /rebirth/balance`
+- `GET /rebirth/release`
 - `POST /api/rebirth/start`
 - `POST /api/rebirth/play-card`
 - `POST /api/rebirth/evolve`
 - `POST /api/rebirth/next-turn`
+- `GET /api/rebirth/shell`
+- `GET /api/rebirth/session`
+- `GET /api/rebirth/csrf`
+- `POST /api/rebirth/auth/register`
+- `POST /api/rebirth/auth/login`
+- `POST /api/rebirth/auth/logout`
+- `POST /api/rebirth/auth/change-password`
+- `GET /api/rebirth/auth-plan`
+- `GET /api/rebirth/collection`
+- `POST /api/rebirth/loadout`
+- `GET /api/rebirth/shop`
+- `POST /api/rebirth/booster/open`
+- `GET /api/rebirth/progression`
+- `GET /api/rebirth/profile`
+- `POST /api/rebirth/progression/claim-daily`
+- `GET /api/rebirth/desktop`
+- `GET /api/rebirth/onboarding`
+- `POST /api/rebirth/onboarding/complete`
+- `GET /api/rebirth/balance/simulate`
+- `GET /api/rebirth/release`
+
+Collection, loadout, shop, booster, progression and tutorial routes persist to
+Rebirth accounts. They do not restore the retired economy, old collection
+system, old deck builder or legacy account stack.
 
 Success:
 
@@ -124,6 +170,13 @@ Stable expected error codes:
 - `duplicate_not_available`
 - `match_finished`
 - `malformed_request`
+- `auth_required`
+- `auth_conflict`
+- `invalid_credentials`
+- `csrf_required`
+- `rate_limited`
+- `invalid_loadout`
+- `reward_locked`
 
 Expected player mistakes return JSON and do not return 500.
 
@@ -141,6 +194,11 @@ Expected player mistakes return JSON and do not return 500.
 
 `/service-worker.js` is served from the app root with `Service-Worker-Allowed: /`.
 
+State-changing `/api/rebirth/*` routes require `X-Rebirth-CSRF` by default.
+The token is stored in the Flask signed session and injected into Rebirth
+templates. Register/login rotate the Rebirth session. Auth endpoints also use
+a small in-memory rate limit for the current process.
+
 ## Frontend Runtime
 
 `static/js/rebirth.js` is deliberately framework-free and split into internal modules:
@@ -154,6 +212,11 @@ Expected player mistakes return JSON and do not return 500.
 - `RebirthErrors`: non-breaking visual error messaging.
 
 The frontend calls the JSON API, renders returned state and never computes gameplay outcomes.
+
+`static/js/rebirth_product.js` is also framework-free. It binds account
+register/login/logout, account loadout persistence, no-payment booster opening,
+daily reward claiming, tutorial completion, password changes and balance reruns
+on product-shell pages.
 
 ## Single-Screen Board
 
@@ -194,7 +257,7 @@ Primary active assets:
 - `/static/assets/rebirth/ui/bot-card-back.png`
 - `/static/assets/rebirth/ui/bot-emblem.png`
 
-The service worker cache is versioned as `ambitionz-rebirth-release-hygiene-v6` and lists only active Rebirth assets plus app shell essentials.
+The service worker cache is versioned as `ambitionz-rebirth-final-mvp-v20` and lists only active Rebirth assets plus app shell essentials.
 
 ## Match Store
 
@@ -206,12 +269,43 @@ uses:
 - defensive cleanup on save/get/len/raw;
 - basic locking around store operations for threaded Gunicorn.
 
-It does not persist match history and does not introduce a database.
+It does not persist live match state. Account data uses the Rebirth SQLite
+store below.
+
+## Persistence Store
+
+Rebirth uses SQLite through Python stdlib. Default path:
+
+```text
+instance/rebirth.db
+```
+
+Override:
+
+- `REBIRTH_DB_PATH`
+
+Tables:
+
+- `users`
+- `user_collection`
+- `user_loadout`
+- `user_progress`
+- `reward_claims`
+- `booster_history`
+- `user_achievements`
+
+The active store uses PBKDF2 password hashes and Flask signed session cookies.
+It does not use SQLAlchemy, migrations from the retired app, or legacy account
+models.
 
 ## Active Page Policy
 
 - `/` is the Rebirth home and may scroll.
 - `/rebirth` is the playable single-screen game and must not scroll.
+- `/rebirth/account`, `/rebirth/collection`, `/rebirth/shop`,
+  `/rebirth/progression`, `/rebirth/profile`, `/rebirth/desktop`,
+  `/rebirth/onboarding`, `/rebirth/balance` and `/rebirth/release` are
+  Rebirth-native product shell pages and may scroll.
 - Legacy product routes redirect to `/rebirth` or return a safe retired API response.
 - Active Rebirth pages do not load old Arena, BE2, Ascension, collection, progression, shop or economy CSS/JS.
 - Historical tests are archived under `tests/legacy_disabled` and are not the active release gate.
@@ -221,11 +315,12 @@ It does not persist match history and does not introduce a database.
 Mandatory commands:
 
 ```bash
-python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py
+python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py
 python3 -m pytest -q
 node --check static/js/rebirth.js
 node --check static/js/service-worker.js
 node --check static/js/pwa.js
+node --check static/js/rebirth_product.js
 ```
 
 Rendered QA must verify:

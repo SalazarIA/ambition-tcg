@@ -296,8 +296,9 @@ def create_card_instance(card_id, owner, sequence):
     return card
 
 
-def build_deck(owner):
-    card_ids = PLAYER_DECK if owner == "player" else BOT_DECK
+def build_deck(owner, card_ids=None):
+    if card_ids is None:
+        card_ids = PLAYER_DECK if owner == "player" else BOT_DECK
     return [create_card_instance(card_id, owner, index + 1) for index, card_id in enumerate(card_ids)]
 
 

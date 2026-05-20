@@ -388,7 +388,283 @@ Validation result:
 - `node --check static/js/service-worker.js`: passed
 - `node --check static/js/pwa.js`: passed
 
+Next recommended block at the time:
+
+- Superseded by Rebirth 005-010 below.
+
+## Rebirth 005-010 - Restore Product Shell Through Desktop Arena Polish
+
+This block restores the active Rebirth product shell without reactivating the
+retired Arena/Ascension/economy runtime.
+
+Decision applied:
+
+- Ambitionz Rebirth remains the only active runtime product.
+- New collection, shop, progression and account surfaces live under
+  `/rebirth/...`; retired top-level legacy routes still redirect to `/rebirth`.
+- Booster, loadout and progression behavior are explicit demo/preview contracts.
+- No database, SocketIO, SQLAlchemy, payment flow or legacy economy was added.
+
+Blocks completed:
+
+- Rebirth 005 - restored the product shell on `/` and added Rebirth section
+  navigation.
+- Rebirth 006 - added `/rebirth/account`, `/api/rebirth/auth-plan` and
+  `docs/REBIRTH_AUTH_PLAN.md` as the real auth plan without fake login.
+- Rebirth 007 - added Rebirth-native collection/loadout preview and loadout
+  validation.
+- Rebirth 008 - added no-payment shop and booster demo under
+  `/rebirth/shop` and `/api/rebirth/booster/open`.
+- Rebirth 009 - added progression/rewards preview without old economy
+  mutation.
+- Rebirth 010 - added desktop arena rails around the fixed portrait board
+  without changing game rules.
+
+Files created in this block:
+
+- `services/rebirth_product.py`
+- `templates/rebirth_product.html`
+- `static/js/rebirth_product.js`
+- `tests/rebirth/test_rebirth_product_shell.py`
+- `docs/REBIRTH_AUTH_PLAN.md`
+
+Files changed in this block:
+
+- `app.py`
+- `README.md`
+- `templates/index.html`
+- `templates/rebirth.html`
+- `static/css/rebirth.css`
+- `static/js/service-worker.js`
+- `tests/rebirth/test_rebirth_deploy_smoke.py`
+- `tests/rebirth/test_rebirth_frontend_contract.py`
+- `docs/REBIRTH_RELEASE_STATUS.md`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/LEGACY_REMOVAL_REPORT.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+
+Files moved or archived:
+
+- None in this block. Legacy tests remain archived under
+  `tests/legacy_disabled` from Rebirth 004.
+
+QA executed for this block:
+
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py`
+- `python3 -m pytest -q`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/service-worker.js`
+- `node --check static/js/pwa.js`
+- `node --check static/js/rebirth_product.js`
+- Browser smoke on `/rebirth/account`, `/rebirth/profile`, `/rebirth/shop`,
+  `/rebirth`, `/rebirth/onboarding`, `/rebirth/progression`,
+  `/rebirth/balance` and `/rebirth/release`.
+- Browser mobile smoke on `/rebirth/profile` and `/rebirth` at `390x844`.
+- Browser render smoke on `/`, `/rebirth`, `/rebirth/account`,
+  `/rebirth/collection`, `/rebirth/shop`, `/rebirth/progression` and
+  `/rebirth/desktop`.
+- Browser interaction smoke for booster opening and loadout validation.
+
+Validation result:
+
+- `py_compile`: passed
+- `pytest -q`: 41 passed
+- `node --check static/js/rebirth.js`: passed
+- `node --check static/js/service-worker.js`: passed
+- `node --check static/js/pwa.js`: passed
+- Browser smoke: passed; account registration, CSRF-backed booster opening,
+  clash resolution, tutorial completion, daily reward claim, profile
+  achievements, balance rerun and release page rendered without console errors.
+- `node --check static/js/rebirth_product.js`: passed
+- Browser smoke: passed; no console errors observed in the checked flows.
+
 Next recommended block:
 
-- Rebirth 005: Rebirth-native persistence and balance/visual QA, without
-  reactivating legacy systems.
+- Rebirth 011: Real persistence/auth implementation plan execution, starting
+  with a deliberate storage choice and Rebirth-native user/session schema.
+
+## Rebirth 011-019 - Persisted MVP Release Candidate
+
+This block turns the Rebirth product shell into a persisted MVP release
+candidate while keeping all retired systems retired.
+
+Decision applied:
+
+- Rebirth persistence uses Python stdlib SQLite at `instance/rebirth.db` by
+  default.
+- No SQLAlchemy, SocketIO, old economy, old collection, old shop, old
+  progression or legacy account runtime was restored.
+- Anonymous users can browse product pages, but ownership mutations require a
+  signed-in Rebirth account.
+
+Blocks completed:
+
+- Real Auth/Persistence: account register/login/logout/session with PBKDF2
+  password hashes.
+- User Collection Persistida: starter collection and booster cards persist per
+  Rebirth user.
+- Deck/Loadout Real por Conta: loadout validation persists and `/api/rebirth/start`
+  uses the signed-in account loadout.
+- Progression + Rewards Persistidos: clashes, wins/losses, XP, boosters, daily
+  reward and tutorial completion persist.
+- Shop + Booster Ownership: no-payment booster opening mutates signed-in
+  collection and booster history.
+- Onboarding/Tutorial Rebirth: `/rebirth/onboarding` and completion endpoint.
+- Balance + Bot Tuning + Simulations: deterministic simulation endpoint and
+  `/rebirth/balance` page.
+- QA Visual/PWA/Offline/Responsivo: service worker cache bumped to
+  `ambitionz-rebirth-release-candidate-v19` with only active Rebirth routes and
+  assets.
+- Release Candidate + Deploy Hygiene Final: `/rebirth/release` and
+  `docs/REBIRTH_RELEASE_CANDIDATE.md`.
+
+Files created in this block:
+
+- `services/rebirth_persistence.py`
+- `services/rebirth_balance.py`
+- `tests/rebirth/test_rebirth_persistence.py`
+- `docs/REBIRTH_RELEASE_CANDIDATE.md`
+
+Files changed in this block:
+
+- `app.py`
+- `README.md`
+- `services/rebirth_cards.py`
+- `services/rebirth_state.py`
+- `services/rebirth_engine.py`
+- `services/rebirth_product.py`
+- `templates/index.html`
+- `templates/rebirth.html`
+- `templates/rebirth_product.html`
+- `static/css/rebirth.css`
+- `static/js/rebirth_product.js`
+- `static/js/service-worker.js`
+- `tests/conftest.py`
+- `tests/rebirth/test_rebirth_deploy_smoke.py`
+- `tests/rebirth/test_rebirth_frontend_contract.py`
+- `tests/rebirth/test_rebirth_product_shell.py`
+- `docs/REBIRTH_RELEASE_STATUS.md`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/LEGACY_REMOVAL_REPORT.md`
+- `docs/REBIRTH_UI_CONTRACT.md`
+- `docs/REBIRTH_AUTH_PLAN.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+
+Files moved or archived:
+
+- None. Legacy tests remain archived under `tests/legacy_disabled`.
+
+QA executed for this block:
+
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py`
+- `python3 -m pytest -q`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/rebirth_product.js`
+- `node --check static/js/service-worker.js`
+- `node --check static/js/pwa.js`
+- Browser smoke on `/`, `/rebirth/account`, `/rebirth/shop`,
+  `/rebirth/collection`, `/rebirth/onboarding`, `/rebirth/balance`,
+  `/rebirth/release` and `/rebirth`.
+- Browser mobile smoke on `/rebirth/collection` at `390x844`.
+
+Validation result at this point:
+
+- `py_compile`: passed
+- `pytest -q`: 47 passed
+- `node --check static/js/rebirth.js`: passed
+- `node --check static/js/rebirth_product.js`: passed
+- `node --check static/js/service-worker.js`: passed
+- `node --check static/js/pwa.js`: passed
+- Browser smoke: passed; account registration, booster ownership, loadout save,
+  tutorial completion and balance rerun all rendered without console errors.
+
+Next recommended block:
+
+- Rebirth 020: production auth hardening, including CSRF/rate limiting/session
+  rotation and admin support tooling.
+
+## Rebirth 020 - Final MVP Hardening + Profile
+
+This block closes the remaining MVP gaps without reactivating any retired
+Arena, Ascension, SocketIO, SQLAlchemy or economy runtime.
+
+Decision applied:
+
+- Ambitionz Rebirth remains the only active product.
+- Rebirth accounts, collection, loadout, progression, rewards, achievements and
+  profile state are persisted in the Rebirth SQLite store.
+- State-changing Rebirth JSON APIs use a session CSRF token by default.
+- Auth endpoints have a small process-local throttle.
+- Password changes are supported for signed-in Rebirth accounts.
+
+Blocks completed:
+
+- Auth hardening: CSRF endpoint, template token injection, JS header wiring,
+  session rotation on register/login and logout session clearing.
+- Rate limiting: register/login/change-password throttling with stable
+  `rate_limited` JSON errors.
+- Profile + Achievements: `/rebirth/profile`, `/api/rebirth/profile`,
+  persisted achievement unlocks and profile stats.
+- Account controls: signed-in password change flow in the Rebirth product shell.
+- PWA final cache: service worker cache bumped to
+  `ambitionz-rebirth-final-mvp-v20` and includes `/rebirth/profile`.
+- Release truth: README/status/architecture/auth/UI/release docs updated with
+  the current active routes, APIs and test count.
+
+Files created in this block:
+
+- `tests/rebirth/test_rebirth_auth_security.py`
+
+Files changed in this block:
+
+- `app.py`
+- `README.md`
+- `services/rebirth_persistence.py`
+- `services/rebirth_product.py`
+- `templates/index.html`
+- `templates/rebirth.html`
+- `templates/rebirth_product.html`
+- `static/css/rebirth.css`
+- `static/js/rebirth.js`
+- `static/js/rebirth_product.js`
+- `static/js/service-worker.js`
+- `tests/conftest.py`
+- `tests/rebirth/test_rebirth_frontend_contract.py`
+- `tests/rebirth/test_rebirth_persistence.py`
+- `tests/rebirth/test_rebirth_product_shell.py`
+- `docs/REBIRTH_RELEASE_STATUS.md`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_UI_CONTRACT.md`
+- `docs/REBIRTH_AUTH_PLAN.md`
+- `docs/REBIRTH_RELEASE_CANDIDATE.md`
+- `docs/LEGACY_REMOVAL_REPORT.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+
+Files moved or archived:
+
+- None. Legacy tests remain archived under `tests/legacy_disabled`.
+
+QA executed for this block:
+
+- `python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py`
+- `python3 -m pytest -q`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/rebirth_product.js`
+- `node --check static/js/service-worker.js`
+- `node --check static/js/pwa.js`
+
+Validation result at this point:
+
+- `py_compile`: passed
+- `pytest -q`: 51 passed
+- `node --check static/js/rebirth.js`: passed
+- `node --check static/js/rebirth_product.js`: passed
+- `node --check static/js/service-worker.js`: passed
+- `node --check static/js/pwa.js`: passed
+
+Next recommended block:
+
+- No new gameplay block is required for the current MVP. The next logical work
+  is production operations: deploy target config, admin support tooling,
+  backup/restore policy for `REBIRTH_DB_PATH`, screenshot baselines and a real
+  payment/multiplayer decision only if product scope expands.

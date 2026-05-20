@@ -5,9 +5,12 @@
 Ambitionz Rebirth is the only active Ambitionz runtime product.
 
 The active product is a Flask-served, vanilla frontend, single-screen monster
-duel MVP. The old Arena, Ascension, BE2, SocketIO, economy, progression, shop,
-collection and deck builder systems are retired from runtime and must not be
-restored just to satisfy historical tests.
+duel MVP with Rebirth-native auth, SQLite persistence, account collection,
+account loadout, no-payment booster ownership, progression, onboarding, balance
+simulation, player profile/achievements, auth hardening and release hygiene
+pages. The old Arena, Ascension, BE2, SocketIO,
+economy, progression, shop, collection and deck builder systems are retired from
+runtime and must not be restored just to satisfy historical tests.
 
 ## Active Runtime
 
@@ -20,10 +23,15 @@ restored just to satisfy historical tests.
 - `services/rebirth_serializers.py`
 - `services/rebirth_match_store.py`
 - `services/rebirth_engine.py`
+- `services/rebirth_product.py`
+- `services/rebirth_persistence.py`
+- `services/rebirth_balance.py`
 - `templates/index.html`
 - `templates/rebirth.html`
+- `templates/rebirth_product.html`
 - `static/css/rebirth.css`
 - `static/js/rebirth.js`
+- `static/js/rebirth_product.js`
 - `static/js/pwa.js`
 - `static/js/service-worker.js`
 - `static/manifest.webmanifest`
@@ -35,6 +43,15 @@ restored just to satisfy historical tests.
 
 - `GET /`
 - `GET /rebirth`
+- `GET /rebirth/account`
+- `GET /rebirth/collection`
+- `GET /rebirth/shop`
+- `GET /rebirth/progression`
+- `GET /rebirth/profile`
+- `GET /rebirth/desktop`
+- `GET /rebirth/onboarding`
+- `GET /rebirth/balance`
+- `GET /rebirth/release`
 - `GET /health`
 - `GET /manifest.webmanifest`
 - `GET /service-worker.js`
@@ -42,7 +59,8 @@ restored just to satisfy historical tests.
 Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 `/training`, `/training-legacy`, `/collection`, `/deck-builder`, `/shop`,
 `/ranking`, `/leaderboard`, `/missions`, `/progression`, `/campaign`,
-`/tutorial`, `/how-to-play`, `/inventory`, `/economy` and `/match-history`.
+`/tutorial`, `/profile`, `/how-to-play`, `/inventory`, `/economy` and
+`/match-history`.
 
 ## Active APIs
 
@@ -50,6 +68,34 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `POST /api/rebirth/play-card`
 - `POST /api/rebirth/evolve`
 - `POST /api/rebirth/next-turn`
+- `GET /api/rebirth/shell`
+- `GET /api/rebirth/session`
+- `GET /api/rebirth/csrf`
+- `POST /api/rebirth/auth/register`
+- `POST /api/rebirth/auth/login`
+- `POST /api/rebirth/auth/logout`
+- `POST /api/rebirth/auth/change-password`
+- `GET /api/rebirth/auth-plan`
+- `GET /api/rebirth/collection`
+- `POST /api/rebirth/loadout`
+- `GET /api/rebirth/shop`
+- `POST /api/rebirth/booster/open`
+- `GET /api/rebirth/progression`
+- `GET /api/rebirth/profile`
+- `POST /api/rebirth/progression/claim-daily`
+- `GET /api/rebirth/desktop`
+- `GET /api/rebirth/onboarding`
+- `POST /api/rebirth/onboarding/complete`
+- `GET /api/rebirth/balance/simulate`
+- `GET /api/rebirth/release`
+
+The collection, loadout, shop, booster and progression APIs now persist to
+Rebirth accounts. Booster opening mutates signed-in ownership, but no payment
+processor or retired economy runtime is active.
+
+State-changing Rebirth APIs are guarded by a session CSRF token by default.
+Auth endpoints use a small in-memory throttle. Password changes are available
+for signed-in Rebirth users.
 
 Retired API groups return JSON `410 legacy_disabled`:
 
@@ -75,12 +121,25 @@ Current Rebirth suite coverage includes:
 - frontend template/CSS/JS/service-worker asset contract
 - security headers on public surfaces
 - in-memory match store save/get/expiry/cleanup/max-limit behavior
+- product shell routes and Rebirth-native preview APIs
+- collection loadout validation and no-payment booster demo
+- register/login/logout/session persistence
+- CSRF protection, auth rate limiting and password change behavior
+- account-owned collection, loadout, booster history and progression
+- player profile and persisted achievement unlocks
+- tutorial completion and daily reward persistence
+- deterministic balance simulation and release route contracts
 
 Current local result for this block:
 
 ```text
-36 passed
+51 passed
 ```
+
+Browser QA also passed on a temporary local database for account registration,
+booster ownership, clash progression, tutorial completion, daily reward,
+profile achievements, balance rerun, release page, and mobile `390x844`
+rendering.
 
 Do not reuse old historical counts such as `242 passed`; they described a
 different product surface.
@@ -112,7 +171,35 @@ Environment overrides:
 - `REBIRTH_MATCH_TTL_SECONDS`
 - `REBIRTH_MAX_MATCHES`
 
-No database has been added in this block.
+Rebirth account, collection, loadout, progression and booster ownership now use
+SQLite through Python stdlib. Match state itself remains in memory.
+
+## Persistence
+
+Default database path:
+
+```text
+instance/rebirth.db
+```
+
+Environment override:
+
+- `REBIRTH_DB_PATH`
+
+Persisted Rebirth tables:
+
+- `users`
+- `user_collection`
+- `user_loadout`
+- `user_progress`
+- `reward_claims`
+- `booster_history`
+- `user_achievements`
+
+Passwords are hashed with PBKDF2. Flask session cookies use HttpOnly and
+SameSite defaults, Rebirth mutations use a session CSRF token, and auth
+endpoints have a small in-memory throttle. The runtime still does not use
+SQLAlchemy or legacy database models.
 
 ## Active Assets
 
@@ -138,25 +225,26 @@ It lists 13 active monster PNG assets:
 - `voidstalker-art.png`
 - `nightfang-art.png`
 
-The active service worker cache is `ambitionz-rebirth-release-hygiene-v6` and
+The active service worker cache is `ambitionz-rebirth-final-mvp-v20` and
 does not cache Arena or Ascension assets.
 
 ## Current Limitations
 
 - No real multiplayer.
-- No account progression.
-- No database persistence for match history.
+- No payment processor.
+- No admin tools for account support yet.
+- No database persistence for live in-progress match state.
 - In-memory matches are lost on process restart or deploy.
-- Rebirth has one starter deck and deterministic bot behavior.
-- Browser visual QA is still recommended before public release.
+- Rebirth has one starter collection and deterministic bot behavior.
+- Screenshot baselines are not committed yet.
 - Historical docs and archived tests may describe retired systems; current
   Rebirth docs are authoritative.
 
 ## Next Steps
 
-- Add Rebirth-native persistence only after the active state contract stabilizes.
-- Add Rebirth balance simulations and tuning.
-- Add screenshot-based visual QA for desktop/mobile `/rebirth`.
+- Add admin/support tooling for account reset and collection inspection.
+- Add screenshot-based visual QA baselines for desktop/mobile `/rebirth`.
+- Add real payment/economy only if a future product decision asks for it.
 - Migrate only useful old-product ideas into Rebirth-native contracts.
 - Keep retired APIs and routes retired unless a future product decision says
   otherwise.
