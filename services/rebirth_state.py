@@ -1,4 +1,5 @@
 from copy import deepcopy
+from enum import Enum
 import hashlib
 import uuid
 
@@ -10,6 +11,13 @@ from services.rebirth_events import append_event, append_snapshot, ensure_event_
 
 STARTING_HP = 30
 HAND_SIZE = 5
+
+
+class TurnPhase(Enum):
+    DRAW_PHASE = "DRAW_PHASE"
+    MAIN_PHASE = "MAIN_PHASE"
+    COMBAT_PHASE = "COMBAT_PHASE"
+    END_PHASE = "END_PHASE"
 
 
 class RebirthStateError(ValueError):
@@ -71,6 +79,7 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
         "seed": str(seed or ""),
         "turn": 1,
         "phase": PHASE_CHOOSE,
+        "turn_phase": TurnPhase.MAIN_PHASE.value,
         "player": player,
         "bot": bot,
         "bot_profile": bot_profile,
@@ -99,6 +108,22 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
     )
     append_snapshot(match, "match_started")
     return match
+
+
+def set_turn_phase(match, phase):
+    phase_value = phase.value if isinstance(phase, TurnPhase) else str(phase or "")
+    if phase_value not in {item.value for item in TurnPhase}:
+        raise RebirthStateError(f"Invalid turn phase: {phase_value}")
+    match["turn_phase"] = phase_value
+    return match
+
+
+def current_turn_phase(match):
+    return str(match.get("turn_phase") or TurnPhase.MAIN_PHASE.value)
+
+
+def is_main_phase(match):
+    return current_turn_phase(match) == TurnPhase.MAIN_PHASE.value
 
 
 def remove_from_hand(player, *, card_instance_id=None, card_id=None):

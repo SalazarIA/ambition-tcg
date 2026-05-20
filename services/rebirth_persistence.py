@@ -7,6 +7,12 @@ import secrets
 import sqlite3
 from collections import Counter
 from datetime import datetime, timezone
+from typing import Optional
+
+from sqlalchemy import DateTime, Integer, JSON, String
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from services.rebirth_cards import PLAYER_DECK, get_card
 
@@ -24,6 +30,65 @@ DEFAULT_LOADOUT = [
 
 HASH_ITERATIONS = 180000
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,24}$")
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class UserAccount(Base):
+    __tablename__ = "user_accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    xp: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    balance_coins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class UserCollection(Base):
+    __tablename__ = "user_collections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    card_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    evolved_tier: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class GameSession(Base):
+    __tablename__ = "game_sessions"
+
+    match_id: Mapped[str] = mapped_column(String(96), primary_key=True)
+    player_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    bot_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="ACTIVE")
+    current_turn: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    turn_phase: Mapped[str] = mapped_column(String(32), nullable=False, default="MAIN_PHASE")
+    live_match_state: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    state_hash: Mapped[str] = mapped_column(String(96), nullable=False, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class EconomyTransaction(Base):
+    __tablename__ = "economy_transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    transaction_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(String(24), nullable=False)
+    reference_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+ASYNC_DATABASE_ENV_NAMES = ("REBIRTH_DATABASE_URL", "DATABASE_URL", "POSTGRES_URL")
+_async_engine: Optional[AsyncEngine] = None
+_async_sessionmaker: Optional[async_sessionmaker[AsyncSession]] = None
+_async_schema_initialized = False
 
 ACHIEVEMENTS = [
     {
@@ -68,6 +133,244 @@ class RebirthPersistenceError(ValueError):
 
 def utc_now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def utc_datetime():
+    return datetime.now(timezone.utc)
+
+
+def _normalize_async_database_url(database_url):
+    database_url = str(database_url or "").strip()
+    if not database_url:
+        return ""
+    if database_url.startswith("postgres://"):
+        return database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if database_url.startswith("postgresql://") and "+asyncpg" not in database_url.split("://", 1)[0]:
+        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return database_url
+
+
+def async_database_url():
+    for env_name in ASYNC_DATABASE_ENV_NAMES:
+        value = os.environ.get(env_name)
+        if value:
+            return _normalize_async_database_url(value)
+    return ""
+
+
+def configure_async_database(database_url=None, *, engine=None, session_factory=None):
+    global _async_engine, _async_sessionmaker, _async_schema_initialized
+    _async_schema_initialized = False
+    if session_factory is not None:
+        _async_sessionmaker = session_factory
+        _async_engine = engine
+        return _async_sessionmaker
+    if engine is not None:
+        _async_engine = engine
+        _async_sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+        return _async_sessionmaker
+    database_url = _normalize_async_database_url(database_url) or async_database_url()
+    if not database_url:
+        _async_engine = None
+        _async_sessionmaker = None
+        return None
+    _async_engine = create_async_engine(database_url, pool_pre_ping=True)
+    _async_sessionmaker = async_sessionmaker(_async_engine, expire_on_commit=False)
+    return _async_sessionmaker
+
+
+def async_session_factory():
+    global _async_sessionmaker
+    if _async_sessionmaker is None:
+        configure_async_database()
+    if _async_sessionmaker is None:
+        raise RebirthPersistenceError(
+            "REBIRTH_DATABASE_URL is required for PostgreSQL async persistence.",
+            "database_not_configured",
+            status=503,
+        )
+    return _async_sessionmaker
+
+
+async def ensure_async_schema():
+    global _async_engine
+    if _async_engine is None:
+        configure_async_database()
+    if _async_engine is None:
+        raise RebirthPersistenceError(
+            "REBIRTH_DATABASE_URL is required for PostgreSQL async schema creation.",
+            "database_not_configured",
+            status=503,
+        )
+    async with _async_engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+
+
+async def ensure_async_schema_once():
+    global _async_schema_initialized
+    if _async_schema_initialized:
+        return
+    await ensure_async_schema()
+    _async_schema_initialized = True
+
+
+def _stable_state_hash(state_dict):
+    return hashlib.sha256(json.dumps(state_dict or {}, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:32]
+
+
+async def _ensure_async_user_account(session, user_id, *, username=None, password_hash="external-account"):
+    user_id = int(user_id or 0)
+    if user_id <= 0:
+        raise RebirthPersistenceError("A valid user_id is required.", "invalid_user", status=400)
+    account = await session.get(UserAccount, user_id)
+    if account:
+        return account
+    account = UserAccount(
+        id=user_id,
+        username=normalize_username(username) or f"rebirth_user_{user_id}",
+        password_hash=str(password_hash or "external-account"),
+        xp=0,
+        level=1,
+        balance_coins=0,
+        created_at=utc_datetime(),
+    )
+    session.add(account)
+    await session.flush()
+    return account
+
+
+async def save_match_state(match_id: str, state_dict: dict) -> bool:
+    if not match_id:
+        raise RebirthPersistenceError("match_id is required.", "missing_match", status=400)
+    if not isinstance(state_dict, dict):
+        raise RebirthPersistenceError("state_dict must be a dictionary.", "malformed_request", status=400)
+
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    now = utc_datetime()
+    player_id = state_dict.get("owner_user_id") or state_dict.get("player_id") or state_dict.get("user_id")
+    bot_id = state_dict.get("bot_id")
+    status = "FINISHED" if state_dict.get("is_finished") or state_dict.get("winner") else "ACTIVE"
+    turn_phase = str(state_dict.get("turn_phase") or state_dict.get("phase") or "MAIN_PHASE")
+    state_hash = str(state_dict.get("state_hash") or _stable_state_hash(state_dict))
+
+    try:
+        async with session_maker() as session:
+            async with session.begin():
+                existing = await session.get(GameSession, match_id)
+                if existing:
+                    existing.player_id = int(player_id) if player_id else existing.player_id
+                    existing.bot_id = int(bot_id) if bot_id else existing.bot_id
+                    existing.status = status
+                    existing.current_turn = int(state_dict.get("turn", existing.current_turn) or existing.current_turn)
+                    existing.turn_phase = turn_phase
+                    existing.live_match_state = state_dict
+                    existing.version = int(existing.version or 0) + 1
+                    existing.state_hash = state_hash
+                    existing.updated_at = now
+                else:
+                    session.add(
+                        GameSession(
+                            match_id=str(match_id),
+                            player_id=int(player_id) if player_id else None,
+                            bot_id=int(bot_id) if bot_id else None,
+                            status=status,
+                            current_turn=int(state_dict.get("turn", 1) or 1),
+                            turn_phase=turn_phase,
+                            live_match_state=state_dict,
+                            version=int(state_dict.get("version", 1) or 1),
+                            state_hash=state_hash,
+                            updated_at=now,
+                        )
+                    )
+        return True
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to save live match state.", "database_write_failed", status=500) from exc
+
+
+async def load_match_state(match_id: str) -> dict:
+    if not match_id:
+        raise RebirthPersistenceError("match_id is required.", "missing_match", status=400)
+
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    try:
+        async with session_maker() as session:
+            game_session = await session.get(GameSession, match_id)
+            return dict(game_session.live_match_state or {}) if game_session else {}
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to load live match state.", "database_read_failed", status=500) from exc
+
+
+async def log_transaction(user_id: int, t_type: str, amount: int, currency: str) -> None:
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    try:
+        async with session_maker() as session:
+            async with session.begin():
+                await _ensure_async_user_account(session, user_id)
+                session.add(
+                    EconomyTransaction(
+                        user_id=int(user_id),
+                        transaction_type=str(t_type or "").strip() or "UNKNOWN",
+                        amount=int(amount or 0),
+                        currency=str(currency or "").strip() or "coins",
+                        reference_id=None,
+                        timestamp=utc_datetime(),
+                    )
+                )
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to log economy transaction.", "database_write_failed", status=500) from exc
+
+
+async def credit_verified_purchase(
+    user_id: int,
+    *,
+    amount: int,
+    currency: str,
+    reference_id: str,
+    username: Optional[str] = None,
+    transaction_type: str = "IN_APP_PURCHASE",
+) -> dict:
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    try:
+        async with session_maker() as session:
+            async with session.begin():
+                account = await _ensure_async_user_account(session, user_id, username=username)
+                amount = int(amount or 0)
+                currency = str(currency or "coins").strip().lower()
+                if amount <= 0:
+                    raise RebirthPersistenceError("Purchase amount must be positive.", "invalid_purchase", status=400)
+                if currency == "coins":
+                    account.balance_coins = int(account.balance_coins or 0) + amount
+                elif currency == "xp":
+                    account.xp = int(account.xp or 0) + amount
+                    account.level = calculate_level(account.xp)
+                transaction = EconomyTransaction(
+                    user_id=int(user_id),
+                    transaction_type=str(transaction_type or "IN_APP_PURCHASE"),
+                    amount=amount,
+                    currency=currency,
+                    reference_id=str(reference_id or ""),
+                    timestamp=utc_datetime(),
+                )
+                session.add(transaction)
+                await session.flush()
+                return {
+                    "user_id": account.id,
+                    "balance_coins": int(account.balance_coins or 0),
+                    "xp": int(account.xp or 0),
+                    "level": int(account.level or 1),
+                    "transaction_id": int(transaction.id),
+                    "amount": amount,
+                    "currency": currency,
+                    "reference_id": str(reference_id or ""),
+                }
+    except RebirthPersistenceError:
+        raise
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to credit verified purchase.", "database_write_failed", status=500) from exc
 
 
 def normalize_email(email):

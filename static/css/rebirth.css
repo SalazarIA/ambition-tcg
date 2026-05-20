@@ -15,6 +15,12 @@
     --rb-board-width: 852px;
     --rb-board-height: 1846px;
     --rb-scale: 0.45;
+    --rb-safe-top: env(safe-area-inset-top, 0px);
+    --rb-safe-right: env(safe-area-inset-right, 0px);
+    --rb-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --rb-safe-left: env(safe-area-inset-left, 0px);
+    --rb-safe-offset-x: 0px;
+    --rb-safe-offset-y: 0px;
     --rb-cut: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
     --rb-shadow: 0 26px 80px rgba(0, 0, 0, 0.68);
 }
@@ -72,6 +78,7 @@ button {
     overflow: hidden;
     display: grid;
     place-items: center;
+    padding: var(--rb-safe-top) var(--rb-safe-right) var(--rb-safe-bottom) var(--rb-safe-left);
     background:
         linear-gradient(90deg, rgba(244, 173, 38, 0.04), transparent 32%, transparent 68%, rgba(88, 214, 255, 0.035)),
         repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 82px),
@@ -85,7 +92,7 @@ button {
     width: var(--rb-board-width);
     height: var(--rb-board-height);
     overflow: hidden;
-    transform: translate(-50%, -50%) scale(var(--rb-scale));
+    transform: translate(calc(-50% + var(--rb-safe-offset-x)), calc(-50% + var(--rb-safe-offset-y))) scale(var(--rb-scale));
     transform-origin: center center;
     background:
         linear-gradient(90deg, rgba(244, 173, 38, 0.05), transparent 28%, transparent 72%, rgba(88, 214, 255, 0.045)),
@@ -316,6 +323,49 @@ button {
     text-transform: uppercase;
 }
 
+.rb-turn-phase-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 82px;
+    min-height: 26px;
+    padding: 5px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: var(--rb-text);
+    background: rgba(255, 255, 255, 0.065);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.025);
+    font-size: 13px !important;
+    letter-spacing: 0;
+    transition: color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+}
+
+.rb-turn-phase-pill[data-turn-phase="draw"] {
+    border-color: rgba(88, 214, 255, 0.48);
+    color: var(--rb-cyan);
+    background: rgba(88, 214, 255, 0.1);
+}
+
+.rb-turn-phase-pill[data-turn-phase="main"] {
+    border-color: rgba(244, 173, 38, 0.52);
+    color: var(--rb-gold-2);
+    background: rgba(244, 173, 38, 0.105);
+}
+
+.rb-turn-phase-pill[data-turn-phase="combat"] {
+    border-color: rgba(255, 115, 95, 0.58);
+    color: var(--rb-red);
+    background: rgba(255, 115, 95, 0.11);
+    box-shadow: 0 0 18px rgba(255, 115, 95, 0.18);
+}
+
+.rb-turn-phase-pill[data-turn-phase="end"],
+.rb-turn-phase-pill[data-turn-phase="finished"] {
+    border-color: rgba(120, 242, 170, 0.42);
+    color: var(--rb-green);
+    background: rgba(120, 242, 170, 0.09);
+}
+
 .rb-slogans {
     left: 22px;
     top: 192px;
@@ -532,6 +582,90 @@ button {
     font-family: Georgia, "Times New Roman", serif;
     font-size: 46px;
     font-weight: 900;
+}
+
+.rb-status-strip {
+    position: absolute;
+    z-index: 5;
+    right: 32px;
+    top: 312px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    max-width: 220px;
+    pointer-events: none;
+}
+
+.rb-status-strip span,
+.rb-mini-status {
+    border: 1px solid rgba(255, 115, 95, 0.58);
+    color: #fff7f3;
+    background: rgba(86, 16, 12, 0.82);
+    box-shadow: 0 0 18px rgba(255, 72, 48, 0.24);
+    font-size: 12px;
+    font-weight: 1000;
+    line-height: 1;
+    text-transform: uppercase;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+
+.rb-status-strip span {
+    padding: 6px 9px;
+}
+
+.rb-mini-status {
+    position: absolute;
+    z-index: 4;
+    right: 7px;
+    top: 8px;
+    padding: 4px 6px;
+    font-size: 10px;
+    pointer-events: none;
+}
+
+.rb-monster-card.is-burn,
+.rb-mini-card.is-burn {
+    border-color: rgba(255, 93, 65, 0.94);
+    animation: rb-burn-border 1.18s ease-in-out infinite;
+}
+
+.rb-monster-card.is-burn::before {
+    border-color: rgba(255, 115, 95, 0.58);
+    box-shadow: inset 0 0 34px rgba(255, 67, 45, 0.2);
+}
+
+.rb-monster-card.is-burn .rb-card-art img,
+.rb-mini-card.is-burn .rb-mini-art {
+    filter: contrast(1.08) saturate(1.12) sepia(0.08);
+}
+
+.rb-monster-card.is-shield,
+.rb-mini-card.is-shield {
+    border-color: rgba(88, 214, 255, 0.82);
+    box-shadow: 0 0 0 2px rgba(88, 214, 255, 0.08), 0 34px 90px rgba(0, 0, 0, 0.74);
+}
+
+.rb-bot-revealed .rb-status-strip {
+    right: 9px;
+    top: auto;
+    bottom: 9px;
+    max-width: 132px;
+}
+
+.rb-bot-revealed .rb-status-strip span {
+    padding: 4px 6px;
+    font-size: 9px;
+}
+
+@keyframes rb-burn-border {
+    0%,
+    100% {
+        box-shadow: 0 34px 90px rgba(0, 0, 0, 0.74), 0 0 0 rgba(255, 115, 95, 0);
+    }
+    48% {
+        box-shadow: 0 34px 90px rgba(0, 0, 0, 0.74), 0 0 0 4px rgba(255, 115, 95, 0.26), 0 0 28px rgba(255, 115, 95, 0.28);
+    }
 }
 
 .rb-asset-fallback {
@@ -1135,7 +1269,9 @@ button {
 @media (prefers-reduced-motion: reduce) {
     .rb-result-panel.is-impacting,
     .rb-main-card.is-impacting,
-    .rb-bot-card.is-impacting {
+    .rb-bot-card.is-impacting,
+    .rb-monster-card.is-burn,
+    .rb-mini-card.is-burn {
         animation: none;
     }
 }
@@ -2320,6 +2456,17 @@ button {
 
     .rb-card-art {
         height: 246px;
+    }
+
+    .rb-status-strip {
+        right: 24px;
+        top: 218px;
+        max-width: 170px;
+    }
+
+    .rb-status-strip span {
+        padding: 5px 7px;
+        font-size: 10px;
     }
 
     .rb-card-rule {

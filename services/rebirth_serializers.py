@@ -50,6 +50,7 @@ def side_payload(side, *, reveal_hand=True):
         "discard_count": len(side.get("discard", [])),
         "played_card": deepcopy(side.get("played_card")),
         "wounded": bool(side.get("wounded")),
+        "statuses": deepcopy(side.get("statuses", {})),
     }
     if reveal_hand:
         payload["hand"] = deepcopy(side.get("hand", []))
@@ -67,6 +68,7 @@ def public_state(match):
         "state_hash": state_hash(match),
         "turn": match["turn"],
         "phase": match["phase"],
+        "turn_phase": match.get("turn_phase"),
         "player": side_payload(match["player"], reveal_hand=True),
         "bot": side_payload(match["bot"], reveal_hand=False),
         "bot_profile": deepcopy(match.get("bot_profile")),

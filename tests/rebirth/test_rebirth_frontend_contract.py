@@ -26,6 +26,7 @@ def test_rebirth_template_matches_premium_clash_contract():
         'id="player-deck-count"',
         'id="player-discard-count"',
         'id="turn-number"',
+        'id="phase-label"',
         'id="bot-hp"',
         'id="bot-hp-fill"',
         'id="bot-deck-count"',
@@ -80,6 +81,9 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         "--rb-board-width",
         "--rb-board-height",
         "--rb-scale",
+        "safe-area-inset-top",
+        "rb-turn-phase-pill",
+        ".rb-monster-card.is-burn",
         "--rb-gold",
         "--rb-cyan",
         "bot-card-back.png",
@@ -92,7 +96,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v33" in service_worker
+    assert "ambitionz-rebirth-season0-v34" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -123,6 +127,9 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthErrors",
         "RebirthFeel",
         "RebirthTactics",
+        "renderTurnPhase",
+        "initiateMobilePurchase",
+        "turn_phase",
         "guide-rule-title",
         "X-Rebirth-CSRF",
         "match_reward",
@@ -144,6 +151,8 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
 
     product_js = read("static/js/rebirth_product.js")
     assert "X-Rebirth-CSRF" in product_js
+    assert "initiateMobilePurchase" in product_js
+    assert "verifyReceipt" in read("templates/rebirth_product.html")
     assert "data-rebirth-card-option" in read("templates/rebirth_product.html")
     assert "data-rebirth-loadout-summary" in read("templates/rebirth_product.html")
     assert "data-rebirth-balance-details" in read("templates/rebirth_product.html")

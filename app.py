@@ -1,4 +1,5 @@
 import os
+import asyncio
 import secrets
 import threading
 import time
@@ -14,7 +15,15 @@ from services.rebirth_engine import (
     start_match,
 )
 from services.rebirth_match_store import MATCH_STORE
-from services.rebirth_persistence import RebirthPersistenceError, RebirthRepository
+from services.rebirth_monetization import verify_mobile_receipt
+from services.rebirth_persistence import (
+    RebirthPersistenceError,
+    RebirthRepository,
+    async_database_url,
+    credit_verified_purchase,
+    load_match_state,
+    save_match_state,
+)
 from services.rebirth_product import (
     account_payload,
     auth_plan_payload,
@@ -179,6 +188,20 @@ def csrf_payload():
 
 def rebirth_repo():
     return RebirthRepository(app.config["REBIRTH_DB_PATH"])
+
+
+def run_async(coro):
+    return asyncio.run(coro)
+
+
+def persist_live_match_state_if_configured(match, user=None):
+    if not async_database_url():
+        return None
+    state = public_state(match)
+    if user:
+        state["owner_user_id"] = int(user["id"])
+        state["player_id"] = int(user["id"])
+    return run_async(save_match_state(match["match_id"], state))
 
 
 def current_user():
@@ -453,6 +476,7 @@ def api_rebirth_start():
         if user:
             repo.upsert_match_history(user["id"], match)
         state = public_state(match)
+        persist_live_match_state_if_configured(match, user=user)
         return json_success(state, match.get("result"), match_id=match["match_id"])
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -481,6 +505,7 @@ def api_rebirth_play_card():
             progress = repo.record_clash_result(user["id"], state)
             reward = match_reward_payload(before, progress, state)
             repo.upsert_match_history(user["id"], match)
+        persist_live_match_state_if_configured(match, user=user)
         return json_success(state, match.get("result"), progression=progress, match_reward=reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -497,7 +522,10 @@ def api_rebirth_evolve():
         ensure_match_access(match, user=user)
         evolved = evolve_duplicate(match, payload.get("card_id"))
         persist_match_if_owned(rebirth_repo(), user, match)
+        persist_live_match_state_if_configured(match, user=user)
         return json_success(public_state(match), match.get("result"), evolved=evolved)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
     except RebirthError as error:
         return json_from_rebirth_error(error)
 
@@ -511,7 +539,10 @@ def api_rebirth_next_turn():
         ensure_match_access(match, user=user)
         next_turn(match)
         persist_match_if_owned(rebirth_repo(), user, match)
+        persist_live_match_state_if_configured(match, user=user)
         return json_success(public_state(match), match.get("result"))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
     except RebirthError as error:
         return json_from_rebirth_error(error)
 
@@ -650,6 +681,29 @@ def api_rebirth_booster_open():
         return json_from_rebirth_error(error)
 
 
+@app.post("/api/rebirth/shop/verify-receipt")
+def api_rebirth_shop_verify_receipt():
+    try:
+        user = require_user()
+        receipt_payload = request_json(required=True)
+        verified = run_async(verify_mobile_receipt(receipt_payload))
+        credit = run_async(
+            credit_verified_purchase(
+                int(user["id"]),
+                amount=verified["amount"],
+                currency=verified["currency"],
+                reference_id=verified["reference_id"],
+                username=user["username"],
+                transaction_type="IN_APP_PURCHASE",
+            )
+        )
+        return json_payload(purchase={"receipt": verified, "credit": credit})
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
 @app.get("/api/rebirth/progression")
 def api_rebirth_progression():
     user = current_user()
@@ -680,6 +734,21 @@ def api_rebirth_match_events(match_id):
         return json_payload(events=rebirth_repo().match_events(user["id"], match_id, limit=request.args.get("limit", 50)))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
+
+
+@app.get("/api/rebirth/match-state/<match_id>")
+def api_rebirth_match_state(match_id):
+    try:
+        user = require_user()
+        state = run_async(load_match_state(match_id))
+        owner_id = state.get("owner_user_id") or state.get("player_id")
+        if owner_id and int(owner_id) != int(user["id"]):
+            raise RebirthPersistenceError("Match state belongs to another account.", "match_forbidden", 403)
+        return json_payload(state=state)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
 
 
 @app.get("/api/rebirth/economy-ledger")

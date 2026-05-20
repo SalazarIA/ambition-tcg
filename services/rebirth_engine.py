@@ -7,11 +7,15 @@ from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESUL
 from services.rebirth_events import append_command, append_event, append_snapshot
 from services.rebirth_state import (
     RebirthStateError,
+    TurnPhase,
     available_evolutions,
     clear_played_cards,
     create_match,
+    current_turn_phase,
     draw_to_hand_size,
+    is_main_phase,
     remove_from_hand,
+    set_turn_phase,
 )
 
 
@@ -30,6 +34,110 @@ ENGINE_ABILITY_KEYS = {
     "inferno_bite",
     "silent_pursuit",
 }
+
+
+class EffectStack:
+    def __init__(self, effects=None):
+        self.effects = list(effects or [])
+
+    def push_effect(self, effect_data: dict):
+        if not isinstance(effect_data, dict):
+            raise RebirthError("Effect data must be an object.", "malformed_request")
+        self.effects.append(deepcopy(effect_data))
+        return effect_data
+
+    def resolve_stack(self, match_state: dict):
+        events = []
+        while self.effects:
+            effect = self.effects.pop()
+            event = self._apply_effect(match_state, effect)
+            if event:
+                events.append(event)
+        match_state["effect_stack"] = list(self.effects)
+        return events
+
+    def _apply_effect(self, match_state, effect):
+        effect_type = str(effect.get("type") or effect.get("effect_type") or "").strip().lower()
+        side_name = str(effect.get("side") or effect.get("target") or "").strip()
+        side = match_state.get(side_name) if side_name in {"player", "bot"} else None
+
+        if effect_type == "status_tick":
+            return self._tick_statuses(side_name, side)
+        if side is None:
+            return None
+
+        if effect_type == "status":
+            status_name = str(effect.get("status") or "").strip().lower()
+            if not status_name:
+                return None
+            statuses = side.setdefault("statuses", {})
+            current = statuses.get(status_name, {})
+            turns = max(int(current.get("turns", 0) or 0), int(effect.get("turns", 1) or 1))
+            potency = max(int(current.get("potency", 0) or 0), int(effect.get("potency", 1) or 1))
+            statuses[status_name] = {"turns": turns, "potency": potency}
+            return f"{side['name']} is affected by {status_name}."
+
+        if effect_type == "damage":
+            amount = max(0, int(effect.get("amount", 0) or 0))
+            if amount <= 0:
+                return None
+            side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
+            side["wounded"] = True
+            return f"{side['name']} takes {amount} stack damage."
+
+        if effect_type == "heal":
+            amount = max(0, int(effect.get("amount", 0) or 0))
+            if amount <= 0:
+                return None
+            side["hp"] = min(int(side.get("max_hp", side.get("hp", 0)) or 0), int(side.get("hp", 0) or 0) + amount)
+            return f"{side['name']} heals {amount} HP."
+
+        if effect_type == "shield":
+            statuses = side.setdefault("statuses", {})
+            amount = max(1, int(effect.get("amount", 1) or 1))
+            statuses["shield"] = {"turns": max(1, int(effect.get("turns", 1) or 1)), "potency": amount}
+            return f"{side['name']} gains a {amount}-point shield."
+
+        return None
+
+    def _tick_statuses(self, side_name, side):
+        if side is None:
+            return None
+        statuses = side.setdefault("statuses", {})
+        if not statuses:
+            return None
+
+        messages = []
+        expired = []
+        burn = statuses.get("burn")
+        if burn:
+            amount = max(1, int(burn.get("potency", 1) or 1))
+            side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
+            side["wounded"] = True
+            messages.append(f"{side['name']} suffers {amount} burn damage.")
+
+        for status_name, status in list(statuses.items()):
+            turns = int(status.get("turns", 1) or 1) - 1
+            if turns <= 0:
+                expired.append(status_name)
+            else:
+                status["turns"] = turns
+        for status_name in expired:
+            statuses.pop(status_name, None)
+            messages.append(f"{side['name']}'s {status_name} fades.")
+
+        if side_name and messages:
+            return " ".join(messages)
+        return None
+
+
+def effect_stack_for(match):
+    return EffectStack(match.setdefault("effect_stack", []))
+
+
+def _persist_effect_stack(match, stack):
+    match["effect_stack"] = list(stack.effects)
+    return match["effect_stack"]
 
 
 def start_match(seed=None, player_card_ids=None, player_name="You", bot_profile_id=None):
@@ -166,11 +274,23 @@ def damage_details(attacker, defender, defender_wounded=False):
 
 def apply_turn_damage(match, loser, amount):
     if loser == "player":
-        match["player"]["hp"] = max(0, int(match["player"]["hp"]) - amount)
-        match["player"]["wounded"] = amount > 0
+        side = match["player"]
     elif loser == "bot":
-        match["bot"]["hp"] = max(0, int(match["bot"]["hp"]) - amount)
-        match["bot"]["wounded"] = amount > 0
+        side = match["bot"]
+    else:
+        return 0
+
+    amount = max(0, int(amount or 0))
+    shield = (side.get("statuses") or {}).get("shield")
+    if shield and amount:
+        absorbed = min(amount, max(0, int(shield.get("potency", 0) or 0)))
+        amount -= absorbed
+        shield["potency"] = max(0, int(shield.get("potency", 0) or 0) - absorbed)
+        if shield["potency"] <= 0:
+            side.setdefault("statuses", {}).pop("shield", None)
+    side["hp"] = max(0, int(side["hp"]) - amount)
+    side["wounded"] = amount > 0
+    return amount
 
 
 def finish_if_needed(match):
@@ -188,6 +308,7 @@ def finish_if_needed(match):
 
     match["is_finished"] = True
     match["phase"] = PHASE_FINISHED
+    set_turn_phase(match, TurnPhase.END_PHASE)
     if match["winner"] == "player":
         match["log"].append("Victory. The bot is out of lives.")
     elif match["winner"] == "bot":
@@ -232,6 +353,7 @@ def finish_if_exhausted(match):
     match["winner"] = winner
     match["is_finished"] = True
     match["phase"] = PHASE_FINISHED
+    set_turn_phase(match, TurnPhase.END_PHASE)
     result = match.get("result") or {
         "damage": {"player": 0, "bot": 0},
         "ability_events": [],
@@ -256,13 +378,17 @@ def finish_if_exhausted(match):
 
 
 def resolve_turn(match, player_card, bot_card):
+    pre_stack = effect_stack_for(match)
+    pre_stack_events = pre_stack.resolve_stack(match)
+    _persist_effect_stack(match, pre_stack)
+
     winner, clash = compare_clash(match, player_card, bot_card)
-    ability_events = list(clash["events"])
+    ability_events = list(pre_stack_events) + list(clash["events"])
     if winner == "player":
         damage_payload = damage_details(player_card, bot_card, match["bot"].get("wounded", False))
         damage = damage_payload["amount"]
         ability_events.extend(damage_payload["events"])
-        apply_turn_damage(match, "bot", damage)
+        damage = apply_turn_damage(match, "bot", damage)
         result = {
             "outcome": "Victory",
             "winner": "player",
@@ -273,7 +399,7 @@ def resolve_turn(match, player_card, bot_card):
         damage_payload = damage_details(bot_card, player_card, match["player"].get("wounded", False))
         damage = damage_payload["amount"]
         ability_events.extend(damage_payload["events"])
-        apply_turn_damage(match, "player", damage)
+        damage = apply_turn_damage(match, "player", damage)
         result = {
             "outcome": "Defeat",
             "winner": "bot",
@@ -289,6 +415,15 @@ def resolve_turn(match, player_card, bot_card):
             "damage": {"player": 0, "bot": 0},
             "message": f"{player_card['name']} and {bot_card['name']} lock blades. No damage lands.",
         }
+
+    status_stack = effect_stack_for(match)
+    if winner == "player" and ability_key(player_card) in {"molten_bite", "inferno_bite"}:
+        status_stack.push_effect({"type": "status", "side": "bot", "status": "burn", "potency": 1, "turns": 2})
+    elif winner == "bot" and ability_key(bot_card) in {"molten_bite", "inferno_bite"}:
+        status_stack.push_effect({"type": "status", "side": "player", "status": "burn", "potency": 1, "turns": 2})
+    status_events = status_stack.resolve_stack(match)
+    _persist_effect_stack(match, status_stack)
+    ability_events.extend(status_events)
 
     if ability_events:
         result["message"] = f"{result['message']} {' '.join(ability_events)}"
@@ -340,6 +475,7 @@ def resolve_turn(match, player_card, bot_card):
     finish_if_needed(match)
     if not match["is_finished"]:
         match["phase"] = PHASE_RESULT
+        set_turn_phase(match, TurnPhase.END_PHASE)
     append_snapshot(match, "clash_resolved")
     return result
 
@@ -412,7 +548,7 @@ def _evolve_side_duplicate(match, side_name, card_id):
 
 
 def evolve_bot_if_ready(match):
-    if match.get("is_finished") or match.get("phase") != PHASE_CHOOSE:
+    if match.get("is_finished") or match.get("phase") != PHASE_CHOOSE or not is_main_phase(match):
         return None
     choice = _evolution_choice(match["bot"], (match.get("bot_profile") or {}).get("id"))
     if not choice:
@@ -431,6 +567,8 @@ def play_card(match, *, card_instance_id=None, card_id=None):
         raise RebirthError("Match is already finished.", "match_finished")
     if match.get("phase") != PHASE_CHOOSE:
         raise RebirthError("Advance to the next turn before playing another card.", "invalid_phase")
+    if not is_main_phase(match):
+        raise RebirthError(f"Cards can only be played during MAIN_PHASE. Current phase: {current_turn_phase(match)}.", "invalid_phase")
     if not card_instance_id and not card_id:
         raise RebirthError("A card_instance_id or card_id is required.", "missing_card")
     append_command(
@@ -450,6 +588,7 @@ def play_card(match, *, card_instance_id=None, card_id=None):
         raise RebirthError(str(exc), "invalid_card") from exc
 
     evolve_bot_if_ready(match)
+    set_turn_phase(match, TurnPhase.COMBAT_PHASE)
     bot_profile_id = (match.get("bot_profile") or {}).get("id")
     bot_choice = choose_response(
         match["bot"]["hand"],
@@ -495,6 +634,8 @@ def evolve_duplicate(match, card_id):
         raise RebirthError("Match is already finished.", "match_finished")
     if match.get("phase") != PHASE_CHOOSE:
         raise RebirthError("Evolution is only available before playing a card.", "invalid_phase")
+    if not is_main_phase(match):
+        raise RebirthError(f"Evolution is only available during MAIN_PHASE. Current phase: {current_turn_phase(match)}.", "invalid_phase")
     if not card_id:
         raise RebirthError("card_id is required.", "missing_card")
     append_command(match, "EVOLVE_DUPLICATE", actor="player", payload={"card_id": card_id})
@@ -514,13 +655,26 @@ def next_turn(match):
         raise RebirthError("Next turn is available only after a clash result.", "invalid_phase")
 
     append_command(match, "NEXT_TURN", actor="player", payload={"turn": match.get("turn")})
+    set_turn_phase(match, TurnPhase.END_PHASE)
     clear_played_cards(match)
     match["turn"] += 1
+    set_turn_phase(match, TurnPhase.DRAW_PHASE)
+    draw_stack = effect_stack_for(match)
+    draw_stack.push_effect({"type": "status_tick", "side": "player"})
+    draw_stack.push_effect({"type": "status_tick", "side": "bot"})
+    status_events = draw_stack.resolve_stack(match)
+    _persist_effect_stack(match, draw_stack)
+    for status_event in status_events:
+        match["log"].append(f"Turn {match['turn']:02d}   {status_event}")
+        append_event(match, "ABILITY_TRIGGERED", payload={"message": status_event}, message=status_event)
+    if finish_if_needed(match):
+        return match
     draw_to_hand_size(match["player"])
     draw_to_hand_size(match["bot"])
     match["result"] = None
     match["last_clash"] = None
     match["phase"] = PHASE_CHOOSE
+    set_turn_phase(match, TurnPhase.MAIN_PHASE)
     match["log"].append(f"Turn {match['turn']:02d}   Choose one monster.")
     append_event(
         match,

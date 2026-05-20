@@ -193,16 +193,91 @@
             const viewport = window.visualViewport || window;
             const width = Math.max(1, viewport.width || window.innerWidth || RebirthConfig.boardWidth);
             const height = Math.max(1, viewport.height || window.innerHeight || RebirthConfig.boardHeight);
+            const safe = this.safeInsets();
+            const safeWidth = Math.max(1, width - safe.left - safe.right);
+            const safeHeight = Math.max(1, height - safe.top - safe.bottom);
             const desktop = width >= 1180 && height >= 680;
             const baseWidth = desktop ? 1180 : RebirthConfig.boardWidth;
             const baseHeight = desktop ? 760 : RebirthConfig.boardHeight;
             document.documentElement.style.setProperty("--rb-board-width", `${baseWidth}px`);
             document.documentElement.style.setProperty("--rb-board-height", `${baseHeight}px`);
-            const scale = Math.min(width / baseWidth, height / baseHeight);
+            document.documentElement.style.setProperty("--rb-safe-offset-x", `${(safe.left - safe.right) / 2}px`);
+            document.documentElement.style.setProperty("--rb-safe-offset-y", `${(safe.top - safe.bottom) / 2}px`);
+            const scale = Math.min(safeWidth / baseWidth, safeHeight / baseHeight);
             document.documentElement.style.setProperty("--rb-scale", String(scale));
             window.scrollTo(0, 0);
+        },
+
+        safeInsets() {
+            const styles = window.getComputedStyle(document.documentElement);
+            const read = (name) => {
+                const value = parseFloat(styles.getPropertyValue(name));
+                return Number.isFinite(value) ? value : 0;
+            };
+            return {
+                top: read("--rb-safe-top"),
+                right: read("--rb-safe-right"),
+                bottom: read("--rb-safe-bottom"),
+                left: read("--rb-safe-left")
+            };
         }
     };
+
+    const RebirthStatus = {
+        names(statuses) {
+            return Object.keys(statuses || {}).filter((name) => {
+                const status = statuses[name];
+                return status && Number(status.turns || 0) !== 0;
+            });
+        },
+
+        className(statuses) {
+            const names = this.names(statuses);
+            return names.map((name) => ` is-${String(name).toLowerCase()}`).join("");
+        },
+
+        badges(statuses) {
+            const names = this.names(statuses);
+            if (!names.length) return "";
+            return '<div class="rb-status-strip">' + names.slice(0, 3).map((name) => {
+                const status = statuses[name] || {};
+                const turns = status.turns == null ? "" : " " + RebirthText.escape(status.turns);
+                return '<span data-status="' + RebirthText.escape(name) + '">' + RebirthText.escape(name) + turns + "</span>";
+            }).join("") + "</div>";
+        },
+
+        miniBadge(statuses) {
+            const name = this.names(statuses)[0];
+            return name ? '<span class="rb-mini-status">' + RebirthText.escape(name) + "</span>" : "";
+        }
+    };
+
+    function renderTurnPhase(phase) {
+        const phaseValue = String(phase || "MAIN_PHASE").toUpperCase();
+        const phases = {
+            DRAW_PHASE: { label: "Draw", tone: "draw", title: "Draw Phase" },
+            MAIN_PHASE: { label: "Main", tone: "main", title: "Main Phase" },
+            COMBAT_PHASE: { label: "Combat", tone: "combat", title: "Combat Phase" },
+            END_PHASE: { label: "End", tone: "end", title: "End Phase" },
+            CHOOSE: { label: "Main", tone: "main", title: "Main Phase" },
+            RESULT: { label: "End", tone: "end", title: "End Phase" },
+            FINISHED: { label: "Done", tone: "finished", title: "Match Finished" }
+        };
+        const meta = phases[phaseValue] || phases.MAIN_PHASE;
+        const element = RebirthStore.elements["phase-label"];
+        const board = RebirthStore.elements["rebirth-board"];
+        if (element) {
+            element.textContent = meta.label;
+            element.classList.add("rb-turn-phase-pill");
+            element.dataset.turnPhase = meta.tone;
+            element.setAttribute("title", meta.title);
+            element.setAttribute("aria-label", meta.title);
+        }
+        if (board) {
+            board.dataset.turnPhase = meta.tone;
+        }
+        return meta;
+    }
 
     const RebirthAssets = {
         manifest: null,
@@ -301,7 +376,7 @@
             return "Duelist";
         },
 
-        card(card) {
+        card(card, statuses) {
             return `
                 <div class="rb-card-topline">
                     <div>
@@ -313,6 +388,7 @@
                 <div class="rb-card-art" ${RebirthAssets.artStyle(card)}>
                     ${RebirthAssets.imageMarkup(card)}
                 </div>
+                ${RebirthStatus.badges(statuses)}
                 <div class="rb-card-rule">
                     <strong>${RebirthText.escape(card.ability_name || "Clash")}</strong>
                     <p>${RebirthText.escape(card.ability_text || card.flavor)}</p>
@@ -334,9 +410,12 @@
             const selected = options && options.selected ? " is-selected" : "";
             const recommended = options && options.recommended ? " is-recommended" : "";
             const evolved = Number(card.tier || 1) > 1 ? " is-evolved" : "";
+            const statuses = options && options.statuses ? options.statuses : null;
+            const statusClass = RebirthStatus.className(statuses);
             return `
-                <button class="rb-mini-card${selected}${recommended}${evolved}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
+                <button class="rb-mini-card${selected}${recommended}${evolved}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
                     <b class="rb-power">${RebirthText.escape(card.attack || card.power)}</b>
+                    ${RebirthStatus.miniBadge(statuses)}
                     <div class="rb-mini-art" ${RebirthAssets.artStyle(card)}></div>
                     <div class="rb-mini-copy">
                         <span>${RebirthText.escape(card.element)} - Tier ${RebirthText.escape(card.tier)}</span>
@@ -629,6 +708,7 @@
                 board.dataset.phase = state.phase;
                 board.dataset.winner = state.winner || "";
             }
+            renderTurnPhase(state.turn_phase || state.phase);
             RebirthAssets.preloadState(state);
             RebirthDom.setText("player-hp", state.player.hp);
             RebirthDom.setText("bot-hp", state.bot.hp);
@@ -637,7 +717,6 @@
             RebirthDom.setText("bot-deck-count", `Deck ${state.bot.deck_count || 0}`);
             RebirthDom.setText("bot-discard-count", `Void ${state.bot.discard_count || 0}`);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
-            RebirthDom.setText("phase-label", state.phase);
             RebirthDom.setText("bot-profile-label", (state.bot_profile && state.bot_profile.name) || "Bot Profile");
             this.hpBars();
             this.focusCard();
@@ -675,15 +754,18 @@
                 host.className = "rb-main-card rb-monster-card rb-monster-card-main rb-empty-card";
                 host.removeAttribute("data-element");
                 host.removeAttribute("data-art-key");
+                host.removeAttribute("data-statuses");
                 host.removeAttribute("style");
                 host.innerHTML = RebirthMarkup.emptyFocus();
                 return;
             }
-            host.className = `rb-main-card rb-monster-card rb-monster-card-main${Number(card.tier || 1) > 1 ? " is-evolved" : ""}`;
+            const statuses = (RebirthStore.state.player && RebirthStore.state.player.statuses) || {};
+            host.className = `rb-main-card rb-monster-card rb-monster-card-main${Number(card.tier || 1) > 1 ? " is-evolved" : ""}${RebirthStatus.className(statuses)}`;
             host.setAttribute("data-element", card.element);
             host.setAttribute("data-art-key", card.art_key || card.id);
+            host.setAttribute("data-statuses", RebirthStatus.names(statuses).join(" "));
             host.setAttribute("style", RebirthAssets.cssVars(card));
-            host.innerHTML = RebirthMarkup.card(card);
+            host.innerHTML = RebirthMarkup.card(card, statuses);
         },
 
         botCard() {
@@ -694,15 +776,18 @@
                 host.className = "rb-bot-card rb-card-back";
                 host.removeAttribute("data-element");
                 host.removeAttribute("data-art-key");
+                host.removeAttribute("data-statuses");
                 host.removeAttribute("style");
                 host.innerHTML = "<span>Bot's Card</span>";
                 return;
             }
-            host.className = "rb-bot-card rb-monster-card rb-bot-revealed";
+            const statuses = (RebirthStore.state.bot && RebirthStore.state.bot.statuses) || {};
+            host.className = `rb-bot-card rb-monster-card rb-bot-revealed${RebirthStatus.className(statuses)}`;
             host.setAttribute("data-element", card.element);
             host.setAttribute("data-art-key", card.art_key || card.id);
+            host.setAttribute("data-statuses", RebirthStatus.names(statuses).join(" "));
             host.setAttribute("style", RebirthAssets.cssVars(card));
-            host.innerHTML = RebirthMarkup.card(card);
+            host.innerHTML = RebirthMarkup.card(card, statuses);
         },
 
         evolutionPanel() {
@@ -744,7 +829,8 @@
             RebirthDom.setText("hand-count", `${hand.length} cards`);
             host.innerHTML = hand.map((card) => RebirthMarkup.miniCard(card, {
                 selected: card.instance_id === RebirthStore.selectedInstanceId,
-                recommended: recommended && card.instance_id === recommended.instance_id
+                recommended: recommended && card.instance_id === recommended.instance_id,
+                statuses: card.instance_id === RebirthStore.selectedInstanceId ? RebirthStore.state.player.statuses : null
             })).join("");
         },
 
@@ -1058,6 +1144,33 @@
         }
     };
 
+    async function initiateMobilePurchase(productId) {
+        const capacitor = window.Capacitor || null;
+        const nativePlatform = capacitor && typeof capacitor.getPlatform === "function"
+            ? capacitor.getPlatform()
+            : "web";
+        const platform = nativePlatform === "ios" ? "ios" : "google_play";
+        const receipt = [
+            "simulated",
+            nativePlatform,
+            String(productId || "coins_100"),
+            Date.now(),
+            Math.random().toString(16).slice(2)
+        ].join("-");
+        const payload = {
+            platform,
+            product_id: productId || "coins_100",
+            receipt
+        };
+        const endpoint = RebirthConfig.endpoints.verifyReceipt || "/api/rebirth/shop/verify-receipt";
+
+        if (capacitor && capacitor.Plugins && capacitor.Plugins.Haptics && typeof capacitor.Plugins.Haptics.impact === "function") {
+            capacitor.Plugins.Haptics.impact({ style: "medium" }).catch(() => {});
+        }
+
+        return RebirthApi.post(endpoint, payload);
+    }
+
     const RebirthInput = {
         bind() {
             document.querySelectorAll("[data-new-match]").forEach((button) => {
@@ -1109,6 +1222,9 @@
         RebirthInput.bind();
         RebirthFlow.startMatch();
     }
+
+    window.initiateMobilePurchase = initiateMobilePurchase;
+    window.renderTurnPhase = renderTurnPhase;
 
     document.addEventListener("DOMContentLoaded", init);
 })();

@@ -526,12 +526,13 @@
             profile: "{{ url_for('api_rebirth_profile') }}",
             history: "{{ url_for('api_rebirth_match_history') }}",
             ledger: "{{ url_for('api_rebirth_economy_ledger') }}",
+            verifyReceipt: "{{ url_for('api_rebirth_shop_verify_receipt') }}",
             supportExport: "{{ url_for('api_rebirth_support_export') }}",
             supportReset: "{{ url_for('api_rebirth_support_reset') }}",
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-033"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-033"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-034"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-034"></script>
 </body>
 </html>

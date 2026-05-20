@@ -15,7 +15,7 @@
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-033">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-034">
 </head>
 <body class="rb-page rb-game-page">
     <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
@@ -207,7 +207,8 @@
             playCard: "{{ url_for('api_rebirth_play_card') }}",
             evolve: "{{ url_for('api_rebirth_evolve') }}",
             nextTurn: "{{ url_for('api_rebirth_next_turn') }}",
-            completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}"
+            completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}",
+            verifyReceipt: "{{ url_for('api_rebirth_shop_verify_receipt') }}"
         };
         window.REBIRTH_PLAYER_CONTEXT = {{ {"account": account, "progression": progression} | tojson }};
         window.REBIRTH_ASSETS = {
@@ -217,7 +218,7 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-033"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-033"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-034"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-034"></script>
 </body>
 </html>

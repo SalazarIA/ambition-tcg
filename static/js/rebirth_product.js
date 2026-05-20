@@ -32,6 +32,31 @@
         });
     }
 
+    function initiateMobilePurchase(productId) {
+        const capacitor = window.Capacitor || null;
+        const nativePlatform = capacitor && typeof capacitor.getPlatform === "function"
+            ? capacitor.getPlatform()
+            : "web";
+        const platform = nativePlatform === "ios" ? "ios" : "google_play";
+        const receipt = [
+            "simulated",
+            nativePlatform,
+            String(productId || "coins_100"),
+            Date.now(),
+            Math.random().toString(16).slice(2)
+        ].join("-");
+
+        if (capacitor && capacitor.Plugins && capacitor.Plugins.Haptics && typeof capacitor.Plugins.Haptics.impact === "function") {
+            capacitor.Plugins.Haptics.impact({ style: "medium" }).catch(function () {});
+        }
+
+        return postJson(endpoints.verifyReceipt || "/api/rebirth/shop/verify-receipt", {
+            platform: platform,
+            product_id: productId || "coins_100",
+            receipt: receipt
+        });
+    }
+
     function getJson(url) {
         return fetch(url).then(function (response) {
             return response.json().then(function (body) {
@@ -489,6 +514,8 @@
             });
         }
     }
+
+    window.initiateMobilePurchase = initiateMobilePurchase;
 
     document.addEventListener("DOMContentLoaded", function () {
         bindAuth();
