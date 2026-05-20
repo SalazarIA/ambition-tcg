@@ -43,11 +43,16 @@ The older `services/rebirth/` package is not part of the active Flask route or `
 - `app.py` owns Flask routes, request parsing, response formatting and HTTP status codes.
 - `services/rebirth_contracts.py` owns phase constants, stable error codes and `RebirthError`.
 - `services/rebirth_match_store.py` owns the active in-memory match store.
-- `services/rebirth_cards.py` owns card catalog, lookup, deck construction and card instances.
-- `services/rebirth_art.py` owns active card-art metadata, palette data and art paths.
-- `services/rebirth_bot.py` owns bot response selection.
+- `services/rebirth_cards.py` owns card catalog, stable `ability_key` values,
+  lookup, deck construction and card instances.
+- `services/rebirth_art.py` owns active card-art metadata, palette data, art
+  paths and the Rebirth art version.
+- `services/rebirth_bot.py` owns bot personality definitions and response
+  selection for defensive, aggressive and opportunist profiles.
 - `services/rebirth_state.py` owns match creation, draw helpers, hand/discard mutation and phase-neutral state helpers.
-- `services/rebirth_engine.py` owns pure game rules: play card, compare attack, calculate damage, evolve duplicate, finish match and next turn.
+- `services/rebirth_engine.py` owns pure game rules: play card, compare attack,
+  apply engine-backed card abilities, calculate damage, evolve duplicate,
+  finish match and next turn.
 - `services/rebirth_serializers.py` owns public JSON state, side payloads and card contract validation.
 - `services/rebirth_product.py` owns Rebirth-native product shell payloads for
   auth, collection/loadout, booster, progression, onboarding, balance, desktop
@@ -55,8 +60,8 @@ The older `services/rebirth/` package is not part of the active Flask route or `
 - `services/rebirth_persistence.py` owns SQLite schema creation, account
   creation/login, password hashing, account collection, loadout, progression,
   daily rewards, booster history and achievements.
-- `services/rebirth_balance.py` owns deterministic local balance simulations
-  and bot tuning summaries.
+- `services/rebirth_balance.py` owns deterministic local balance simulations,
+  per-card/per-ability impact summaries and bot profile comparisons.
 
 Flask does not contain game rules. Browser JavaScript does not contain game rules. The simulation is the source of truth.
 
@@ -76,6 +81,7 @@ Required public state fields:
 - `phase`
 - `player`
 - `bot`
+- `bot_profile`
 - `available_evolutions`
 - `last_clash`
 - `result`
@@ -93,6 +99,19 @@ Required player/bot side concepts:
 - `wounded`
 - player `hand`
 - bot `hand_count`
+
+Clash `result` and `last_clash` may include:
+
+- `ability_events`
+- `effective_attack`
+
+These fields are server-authored and are used to make card abilities visible
+without moving gameplay rules into browser JavaScript.
+
+`POST /api/rebirth/play-card` also returns a top-level `match_reward` payload.
+It is server-authored and describes persisted XP, level-up state, achievement
+moments and daily readiness for signed-in players. Anonymous players receive a
+non-persisted reward payload.
 
 ## API Contract
 
@@ -145,7 +164,8 @@ Success:
 {
   "ok": true,
   "state": {},
-  "result": null
+  "result": null,
+  "match_reward": null
 }
 ```
 
@@ -210,13 +230,15 @@ a small in-memory rate limit for the current process.
 - `RebirthBoardScaler`: single-screen scaling and anti-scroll behavior.
 - `RebirthAssets`: preload and fallback handling.
 - `RebirthErrors`: non-breaking visual error messaging.
+- `RebirthFeel`: ability-result feedback, impact pulses and optional
+  browser-supported haptics/audio.
 
 The frontend calls the JSON API, renders returned state and never computes gameplay outcomes.
 
 `static/js/rebirth_product.js` is also framework-free. It binds account
-register/login/logout, account loadout persistence, no-payment booster opening,
-daily reward claiming, tutorial completion, password changes and balance reruns
-on product-shell pages.
+register/login/logout, the count-based loadout editor, no-payment booster
+opening, daily reward claiming, tutorial completion, password changes and
+balance reruns on product-shell pages.
 
 ## Single-Screen Board
 
@@ -257,7 +279,11 @@ Primary active assets:
 - `/static/assets/rebirth/ui/bot-card-back.png`
 - `/static/assets/rebirth/ui/bot-emblem.png`
 
-The service worker cache is versioned as `ambitionz-rebirth-final-mvp-v20` and lists only active Rebirth assets plus app shell essentials.
+The service worker cache is versioned as `ambitionz-rebirth-polish-v28` and lists only active Rebirth assets plus app shell essentials.
+
+The active starter set is documented in `docs/REBIRTH_CARD_SET_STATUS.md`.
+Rebirth 021 requires every active card to have unique PNG art, a manifest
+entry, an art profile, a stable `ability_key` and a corresponding engine rule.
 
 ## Match Store
 

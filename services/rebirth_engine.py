@@ -12,8 +12,30 @@ from services.rebirth_state import (
 )
 
 
-def start_match(seed=None, player_card_ids=None, player_name="You"):
-    return create_match(seed=seed, player_card_ids=player_card_ids, player_name=player_name)
+ENGINE_ABILITY_KEYS = {
+    "rending_strike",
+    "apex_rend",
+    "brace",
+    "immovable",
+    "fade_cut",
+    "bleed_mark",
+    "high_guard",
+    "storm_dive",
+    "bulwark",
+    "fortress_hit",
+    "molten_bite",
+    "inferno_bite",
+    "silent_pursuit",
+}
+
+
+def start_match(seed=None, player_card_ids=None, player_name="You", bot_profile_id=None):
+    return create_match(
+        seed=seed,
+        player_card_ids=player_card_ids,
+        player_name=player_name,
+        bot_profile_id=bot_profile_id,
+    )
 
 
 def compare_power(player_card, bot_card):
@@ -27,13 +49,116 @@ def compare_power(player_card, bot_card):
     return "clash"
 
 
+def card_attack(card):
+    return int(card.get("attack", card.get("power", 0)) or 0)
+
+
+def card_guard(card):
+    return int(card.get("guard", 0) or 0)
+
+
+def ability_key(card):
+    return str(card.get("ability_key") or "").strip()
+
+
+def ability_name(card):
+    return str(card.get("ability_name") or card.get("name") or "Ability")
+
+
+def clash_attack(card, opponent_card, *, turn=1):
+    attack = card_attack(card)
+    events = []
+    key = ability_key(card)
+    if key == "high_guard" and card_guard(opponent_card) <= 3:
+        attack += 1
+        events.append(f"{card['name']} used High Guard for +1 clash attack.")
+    elif key == "silent_pursuit" and int(turn or 1) <= 2:
+        attack += 1
+        events.append(f"{card['name']} used Silent Pursuit for +1 early clash attack.")
+    return attack, events
+
+
+def tie_priority(card, defender_wounded=False):
+    key = ability_key(card)
+    if key in {"fade_cut", "bleed_mark"} and defender_wounded:
+        return 2
+    return 0
+
+
+def compare_clash(match, player_card, bot_card):
+    player_attack, player_events = clash_attack(player_card, bot_card, turn=match.get("turn", 1))
+    bot_attack, bot_events = clash_attack(bot_card, player_card, turn=match.get("turn", 1))
+    events = player_events + bot_events
+
+    if player_attack > bot_attack:
+        return "player", {"player_attack": player_attack, "bot_attack": bot_attack, "events": events}
+    if bot_attack > player_attack:
+        return "bot", {"player_attack": player_attack, "bot_attack": bot_attack, "events": events}
+
+    player_priority = tie_priority(player_card, match["bot"].get("wounded", False))
+    bot_priority = tie_priority(bot_card, match["player"].get("wounded", False))
+    if player_priority > bot_priority:
+        events.append(f"{player_card['name']} cut through the tie against a wounded target.")
+        return "player", {"player_attack": player_attack, "bot_attack": bot_attack, "events": events}
+    if bot_priority > player_priority:
+        events.append(f"{bot_card['name']} cut through the tie against a wounded target.")
+        return "bot", {"player_attack": player_attack, "bot_attack": bot_attack, "events": events}
+    return "clash", {"player_attack": player_attack, "bot_attack": bot_attack, "events": events}
+
+
 def calculate_damage(attacker, defender, defender_wounded=False):
-    attack = int(attacker.get("attack", attacker.get("power", 0)) or 0)
-    guard = int(defender.get("guard", 0) or 0)
-    mitigated = max(1, attack - guard // 2)
-    if defender_wounded and "wounded" in str(attacker.get("ability_text", "")).lower():
-        mitigated += 2
-    return mitigated
+    return damage_details(attacker, defender, defender_wounded=defender_wounded)["amount"]
+
+
+def damage_details(attacker, defender, defender_wounded=False):
+    amount = max(1, card_attack(attacker) - card_guard(defender) // 2)
+    events = []
+    attacker_key = ability_key(attacker)
+    defender_key = ability_key(defender)
+
+    if attacker_key == "rending_strike" and defender_wounded:
+        amount += 2
+        events.append(f"{attacker['name']} found the wound for +2 damage.")
+    elif attacker_key == "apex_rend" and defender_wounded:
+        amount += 3
+        events.append(f"{attacker['name']} tore into the old wound for +3 damage.")
+    elif attacker_key == "molten_bite":
+        amount += 1
+        events.append(f"{attacker['name']} added +1 damage with Molten Bite.")
+    elif attacker_key == "inferno_bite":
+        amount += 3
+        events.append(f"{attacker['name']} added +3 damage with Inferno Bite.")
+    elif attacker_key == "bleed_mark":
+        amount += 1
+        events.append(f"{attacker['name']} marked the target for +1 damage.")
+    elif attacker_key == "storm_dive" and card_guard(defender) <= 3:
+        amount += 2
+        events.append(f"{attacker['name']} dove through low guard for +2 damage.")
+    elif attacker_key == "immovable":
+        amount += 2
+        events.append(f"{attacker['name']} turned guard into +2 counter damage.")
+
+    if attacker_key == "fortress_hit":
+        before_minimum = amount
+        amount = max(3, amount)
+        if amount > before_minimum:
+            events.append(f"{attacker['name']} guaranteed 3 damage with Fortress Hit.")
+
+    reductions = {
+        "brace": 2,
+        "immovable": 3,
+        "fortress_hit": 4,
+    }
+    reduction = reductions.get(defender_key, 0)
+    if defender_key == "bulwark" and card_attack(attacker) <= 4:
+        reduction = 3
+    if reduction:
+        before_reduction = amount
+        amount = max(1, amount - reduction)
+        if amount < before_reduction:
+            events.append(f"{defender['name']} reduced incoming damage by {before_reduction - amount}.")
+
+    return {"amount": amount, "events": events}
 
 
 def apply_turn_damage(match, loser, amount):
@@ -70,9 +195,12 @@ def finish_if_needed(match):
 
 
 def resolve_turn(match, player_card, bot_card):
-    winner = compare_power(player_card, bot_card)
+    winner, clash = compare_clash(match, player_card, bot_card)
+    ability_events = list(clash["events"])
     if winner == "player":
-        damage = calculate_damage(player_card, bot_card, match["bot"].get("wounded", False))
+        damage_payload = damage_details(player_card, bot_card, match["bot"].get("wounded", False))
+        damage = damage_payload["amount"]
+        ability_events.extend(damage_payload["events"])
         apply_turn_damage(match, "bot", damage)
         result = {
             "outcome": "Victory",
@@ -81,7 +209,9 @@ def resolve_turn(match, player_card, bot_card):
             "message": f"{player_card['name']} overpowers {bot_card['name']}. Bot takes {damage} damage.",
         }
     elif winner == "bot":
-        damage = calculate_damage(bot_card, player_card, match["player"].get("wounded", False))
+        damage_payload = damage_details(bot_card, player_card, match["player"].get("wounded", False))
+        damage = damage_payload["amount"]
+        ability_events.extend(damage_payload["events"])
         apply_turn_damage(match, "player", damage)
         result = {
             "outcome": "Defeat",
@@ -99,11 +229,20 @@ def resolve_turn(match, player_card, bot_card):
             "message": f"{player_card['name']} and {bot_card['name']} lock blades. No damage lands.",
         }
 
+    if ability_events:
+        result["message"] = f"{result['message']} {' '.join(ability_events)}"
+    result["ability_events"] = ability_events
+    result["effective_attack"] = {
+        "player": clash["player_attack"],
+        "bot": clash["bot_attack"],
+    }
     match["result"] = result
     match["last_clash"] = {
         "player_card": deepcopy(player_card),
         "bot_card": deepcopy(bot_card),
         "outcome": result["outcome"],
+        "ability_events": ability_events,
+        "effective_attack": deepcopy(result["effective_attack"]),
     }
     match["log"].append(result["message"])
     finish_if_needed(match)
@@ -129,7 +268,8 @@ def play_card(match, *, card_instance_id=None, card_id=None):
     except RebirthStateError as exc:
         raise RebirthError(str(exc), "invalid_card") from exc
 
-    bot_choice = choose_response(match["bot"]["hand"], player_card)
+    bot_profile_id = (match.get("bot_profile") or {}).get("id")
+    bot_choice = choose_response(match["bot"]["hand"], player_card, profile_id=bot_profile_id)
     if not bot_choice:
         raise RebirthError("Bot has no card to answer with.", "invalid_phase")
 

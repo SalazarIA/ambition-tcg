@@ -668,3 +668,182 @@ Next recommended block:
   is production operations: deploy target config, admin support tooling,
   backup/restore policy for `REBIRTH_DB_PATH`, screenshot baselines and a real
   payment/multiplayer decision only if product scope expands.
+
+## Rebirth 021 - Starter Card Set Completion
+
+This block finishes the active starter cards before expanding the game with new
+systems.
+
+Decision applied:
+
+- The first Rebirth set stays small and readable.
+- Every active card must have unique PNG art, a manifest entry, an art profile,
+  stable `ability_key` metadata and an engine-backed ability.
+- Shadewisp now evolves into Nightfang as a tier-2 card; evolved cards are not
+  present in default player or bot decks.
+- No legacy card, economy, Arena, Ascension or deck-builder runtime was
+  restored.
+
+Cards completed:
+
+- Base: Dreadclaw, Stoneshell, Shadewisp, Skywarden, Ironbastion, Embermaw,
+  Voidstalker.
+- Evolutions: Dreadmaw, Stonewarden, Nightfang, Stormwarden, Ironbulwark,
+  Embermaw Alpha.
+
+Engine abilities completed:
+
+- wounded-target damage for Dreadclaw and Dreadmaw;
+- guardian mitigation for Stoneshell, Stonewarden, Ironbastion and
+  Ironbulwark;
+- wounded tie-breaks for Shadewisp and Nightfang;
+- low-guard pressure for Skywarden and Stormwarden;
+- fire finisher bonuses for Embermaw and Embermaw Alpha;
+- early-turn pressure for Voidstalker.
+
+Files created in this block:
+
+- `docs/REBIRTH_CARD_SET_STATUS.md`
+- `tests/rebirth/test_rebirth_card_set.py`
+
+Files changed in this block:
+
+- `README.md`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+- `docs/REBIRTH_RELEASE_CANDIDATE.md`
+- `docs/REBIRTH_RELEASE_STATUS.md`
+- `docs/REBIRTH_UI_CONTRACT.md`
+- `services/rebirth_art.py`
+- `services/rebirth_cards.py`
+- `services/rebirth_engine.py`
+- `services/rebirth_serializers.py`
+- `static/assets/rebirth/manifest.json`
+- `static/css/rebirth.css`
+- `static/js/service-worker.js`
+- `templates/index.html`
+- `templates/rebirth.html`
+- `templates/rebirth_product.html`
+- `tests/rebirth/test_rebirth_engine.py`
+- `tests/rebirth/test_rebirth_frontend_contract.py`
+
+Files moved or archived:
+
+- None.
+
+QA executed for this block:
+
+- `python3 -m py_compile services/rebirth_cards.py services/rebirth_art.py services/rebirth_engine.py services/rebirth_serializers.py`
+- `python3 -m pytest tests/rebirth/test_rebirth_card_set.py tests/rebirth/test_rebirth_engine.py -q`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/rebirth_product.js`
+- `node --check static/js/service-worker.js`
+- `node --check static/js/pwa.js`
+- `python3 -m pytest -q`
+- Browser smoke on `/rebirth/collection` and `/rebirth`.
+- Browser mobile smoke on `/rebirth/collection` at `390x844`.
+
+Validation result at this point:
+
+- `py_compile`: passed
+- card/engine tests: 16 passed
+- `pytest -q`: passed for the Rebirth 021 scope; current full-suite count is
+  documented in the latest block below.
+- node checks: passed
+- Browser smoke: passed; collection renders final card ability text, the game
+  remains playable, and no console warnings/errors were observed.
+
+Follow-up status:
+
+- Completed by Rebirth 024-028 below: ability feedback, reward moment, bot
+  profiles and Balance Lab are now active in the Rebirth runtime.
+
+## Rebirth 024-028 - Card Feel, Loadout UX, Rewards, Bot Profiles and Balance Lab
+
+This block turns the completed starter card set into a more readable playable
+loop without expanding into legacy systems.
+
+Decision applied:
+
+- Rebirth remains the only active product surface.
+- The 13-card starter set is still the scope; no new legacy systems or old APIs
+  were restored.
+- Card abilities are server-authored, surfaced through result payloads and
+  rendered by the frontend as feedback only.
+- Account rewards remain Rebirth-native SQLite progression, not the retired
+  economy.
+
+What changed:
+
+- `/rebirth` now shows bot personality, ability event chips, impact feedback
+  and a match reward moment after a clash.
+- `POST /api/rebirth/play-card` now returns `match_reward` with persisted XP,
+  level-up state, first-clash/first-win achievement moments and daily readiness.
+- `/rebirth/collection` now has a count-based eight-card loadout editor with
+  owned-copy limits, selected count, attack total, guard total and duplicate
+  pair preview.
+- The bot now has three explicit profiles: defensive, aggressive and
+  opportunist.
+- Balance Lab now rotates those profiles and reports per-card, per-ability and
+  per-profile impact.
+- The service worker cache moved to `ambitionz-rebirth-polish-v28`.
+
+Files created in this block:
+
+- `tests/rebirth/test_rebirth_bot_personalities.py`
+
+Files changed in this block:
+
+- `README.md`
+- `app.py`
+- `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_CARD_SET_STATUS.md`
+- `docs/REBIRTH_REBUILD_REPORT.md`
+- `docs/REBIRTH_RELEASE_STATUS.md`
+- `docs/REBIRTH_UI_CONTRACT.md`
+- `services/rebirth_balance.py`
+- `services/rebirth_bot.py`
+- `services/rebirth_engine.py`
+- `services/rebirth_product.py`
+- `services/rebirth_serializers.py`
+- `services/rebirth_state.py`
+- `static/css/rebirth.css`
+- `static/js/rebirth.js`
+- `static/js/rebirth_product.js`
+- `static/js/service-worker.js`
+- `templates/index.html`
+- `templates/rebirth.html`
+- `templates/rebirth_product.html`
+- `tests/rebirth/test_rebirth_engine.py`
+- `tests/rebirth/test_rebirth_frontend_contract.py`
+- `tests/rebirth/test_rebirth_persistence.py`
+- `tests/rebirth/test_rebirth_routes.py`
+
+Files moved or archived:
+
+- None.
+
+QA executed for this block:
+
+- `python3 -m py_compile app.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_engine.py services/rebirth_serializers.py services/rebirth_balance.py services/rebirth_product.py`
+- `node --check static/js/rebirth.js`
+- `node --check static/js/rebirth_product.js`
+- `node --check static/js/service-worker.js`
+- `python3 -m pytest -q`
+- Selenium/Chrome Browser QA on `/rebirth`, `/rebirth/collection`,
+  `/rebirth/balance` and mobile `/rebirth/collection`.
+
+Validation result at this point:
+
+- `py_compile`: passed
+- node checks: passed
+- `pytest -q`: 61 passed
+- Browser QA: passed; clash reward/ability feedback rendered, loadout counters
+  updated, Balance Lab reran, mobile collection had no horizontal overflow and
+  no severe console logs were observed.
+
+Next recommended block:
+
+- Production polish: screenshot baselines, admin/support tooling, backup/restore
+  policy for the SQLite Rebirth store and numeric tuning from real playtest
+  Balance Lab output.

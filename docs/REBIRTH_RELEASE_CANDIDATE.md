@@ -16,7 +16,12 @@ Implemented:
 - Player profile and persisted achievement unlocks.
 - CSRF protection for Rebirth mutations.
 - Auth rate limiting and signed-in password changes.
-- Deterministic balance simulation endpoint.
+- Finished Rebirth 021 starter card set with unique PNG art, tier-2 evolution
+  truth and engine-backed abilities.
+- Clash ability feedback, impact feel and match reward moment.
+- Count-based collection/loadout editor with copy limits and curve preview.
+- Defensive, aggressive and opportunist bot personalities.
+- Deterministic Balance Lab with card, ability and profile impact.
 - Release hygiene page and service worker cache bump.
 
 Not implemented:
@@ -39,7 +44,7 @@ node --check static/js/rebirth_product.js
 
 Current local result:
 
-- `python3 -m pytest -q`: 51 passed
+- `python3 -m pytest -q`: 61 passed
 - Browser smoke: passed on desktop and mobile viewport with a temporary
   Rebirth database.
 

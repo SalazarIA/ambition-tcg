@@ -4,6 +4,7 @@ import uuid
 
 from services.rebirth_contracts import PHASE_CHOOSE
 from services.rebirth_cards import build_deck, catalog_payload
+from services.rebirth_bot import choose_personality, personality_payload
 
 
 STARTING_HP = 30
@@ -52,7 +53,8 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
     return drawn
 
 
-def create_match(seed=None, player_card_ids=None, player_name="You"):
+def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile_id=None):
+    match_id = _match_id(seed)
     deck_ids = None
     if player_card_ids:
         deck_ids = list(player_card_ids) + list(player_card_ids)
@@ -60,14 +62,16 @@ def create_match(seed=None, player_card_ids=None, player_name="You"):
     bot = create_player("Bot", "bot")
     draw_to_hand_size(player)
     draw_to_hand_size(bot)
+    bot_profile = personality_payload(bot_profile_id or choose_personality(seed=seed, match_id=match_id))
 
     return {
-        "match_id": _match_id(seed),
+        "match_id": match_id,
         "architecture": "Ambitionz Rebirth",
         "turn": 1,
         "phase": PHASE_CHOOSE,
         "player": player,
         "bot": bot,
+        "bot_profile": bot_profile,
         "last_clash": None,
         "result": None,
         "winner": None,

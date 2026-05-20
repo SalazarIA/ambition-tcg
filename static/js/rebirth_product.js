@@ -106,40 +106,137 @@
         const form = document.querySelector("[data-rebirth-loadout-form]");
         const button = document.querySelector("[data-rebirth-loadout-submit]");
         const result = document.querySelector("[data-rebirth-loadout-result]");
+        const summary = document.querySelector("[data-rebirth-loadout-summary]");
+        const hidden = document.querySelector("[data-rebirth-loadout-hidden]");
         if (!form || !button || !result || !endpoints.loadout) {
             return;
         }
+        const maxSize = Number(form.getAttribute("data-loadout-size") || 8);
+        const options = Array.from(form.querySelectorAll("[data-rebirth-card-option]"));
 
-        function validate() {
-            const cardIds = Array.from(form.querySelectorAll('input[name="card_ids"]:checked')).map(function (input) {
-                return input.value;
+        function optionCount(option) {
+            return Math.max(0, Number(option.getAttribute("data-selected-count") || 0));
+        }
+
+        function selectedIds() {
+            const ids = [];
+            options.forEach(function (option) {
+                const cardId = option.getAttribute("data-card-id");
+                const count = optionCount(option);
+                for (let index = 0; index < count; index += 1) {
+                    ids.push(cardId);
+                }
             });
+            return ids;
+        }
+
+        function selectedTotal() {
+            return selectedIds().length;
+        }
+
+        function duplicatePairs(ids) {
+            const counts = {};
+            ids.forEach(function (id) {
+                counts[id] = (counts[id] || 0) + 1;
+            });
+            return Object.keys(counts).filter(function (id) {
+                return counts[id] >= 2;
+            }).length;
+        }
+
+        function writeHidden(ids) {
+            if (!hidden) return;
+            hidden.innerHTML = ids.map(function (id) {
+                return '<input type="hidden" name="card_ids" value="' + escapeHtml(id) + '">';
+            }).join("");
+        }
+
+        function update(updateOptions) {
+            updateOptions = updateOptions || {};
+            const ids = selectedIds();
+            const total = ids.length;
+            let attack = 0;
+            let guard = 0;
+            options.forEach(function (option) {
+                const count = optionCount(option);
+                const owned = Number(option.getAttribute("data-owned-count") || 0);
+                attack += count * Number(option.getAttribute("data-attack") || 0);
+                guard += count * Number(option.getAttribute("data-guard") || 0);
+                const label = option.querySelector("[data-loadout-count]");
+                const increment = option.querySelector("[data-loadout-increment]");
+                const decrement = option.querySelector("[data-loadout-decrement]");
+                option.classList.toggle("is-selected", count > 0);
+                option.classList.toggle("is-maxed", count >= owned);
+                if (label) label.textContent = String(count);
+                if (increment) increment.disabled = count >= owned || total >= maxSize;
+                if (decrement) decrement.disabled = count <= 0;
+            });
+            writeHidden(ids);
+            if (summary) {
+                summary.innerHTML = [
+                    "<article><span>Selected</span><strong>" + escapeHtml(total) + "/" + escapeHtml(maxSize) + "</strong></article>",
+                    "<article><span>Attack</span><strong>" + escapeHtml(attack) + "</strong></article>",
+                    "<article><span>Guard</span><strong>" + escapeHtml(guard) + "</strong></article>",
+                    "<article><span>Pairs</span><strong>" + escapeHtml(duplicatePairs(ids)) + "</strong></article>"
+                ].join("");
+                summary.classList.toggle("is-invalid", total !== maxSize);
+            }
+            button.disabled = total !== maxSize;
+            if (!updateOptions.preserveResult) {
+                result.textContent = total === maxSize ? "Loadout ready to save." : "Select exactly " + maxSize + " cards to save.";
+            }
+        }
+
+        function save() {
+            const cardIds = selectedIds();
+            if (cardIds.length !== maxSize) {
+                update();
+                return;
+            }
             button.disabled = true;
-            result.textContent = "Validating loadout...";
+            result.textContent = "Saving loadout...";
             postJson(endpoints.loadout, { card_ids: cardIds })
                 .then(function (payload) {
-                    const summary = payload.loadout.summary;
+                    const saved = payload.loadout.summary;
                     result.innerHTML = [
-                        "<strong>Loadout valid.</strong> ",
-                        escapeHtml(summary.size) + " cards, ",
-                        escapeHtml(summary.attack_total) + " total attack, ",
-                        escapeHtml(summary.guard_total) + " total guard, ",
-                        escapeHtml(summary.duplicate_pairs) + " duplicate pair."
+                        "<strong>Loadout saved.</strong> ",
+                        escapeHtml(saved.size) + " cards, ",
+                        escapeHtml(saved.attack_total) + " total attack, ",
+                        escapeHtml(saved.guard_total) + " total guard, ",
+                        escapeHtml(saved.duplicate_pairs) + " duplicate pair."
                     ].join("");
                 })
                 .catch(function (error) {
                     result.textContent = error.message;
                 })
                 .finally(function () {
-                    button.disabled = false;
+                    update({ preserveResult: true });
                 });
         }
 
-        button.addEventListener("click", validate);
+        options.forEach(function (option) {
+            option.addEventListener("click", function (event) {
+                const increment = event.target.closest("[data-loadout-increment]");
+                const decrement = event.target.closest("[data-loadout-decrement]");
+                if (!increment && !decrement) return;
+                const owned = Number(option.getAttribute("data-owned-count") || 0);
+                const count = optionCount(option);
+                if (increment && count < owned && selectedTotal() < maxSize) {
+                    option.setAttribute("data-selected-count", String(count + 1));
+                }
+                if (decrement && count > 0) {
+                    option.setAttribute("data-selected-count", String(count - 1));
+                }
+                update();
+            });
+        });
+
+        button.addEventListener("click", save);
         form.addEventListener("submit", function (event) {
             event.preventDefault();
-            validate();
+            save();
         });
+        update();
     }
 
     function bindAuth() {
@@ -287,9 +384,27 @@
     function bindBalance() {
         const button = document.querySelector("[data-rebirth-balance-run]");
         const result = document.querySelector("[data-rebirth-balance-result]");
+        const details = document.querySelector("[data-rebirth-balance-details]");
+        const title = document.querySelector("[data-rebirth-balance-title]");
         if (!button || !result || !endpoints.balance) {
             return;
         }
+        function labSection(title, rows, labelKey) {
+            return [
+                "<section>",
+                "<h3>" + escapeHtml(title) + "</h3>",
+                rows.slice(0, 6).map(function (row) {
+                    const label = row[labelKey] || row.name || row.card_id || row.ability_key || row.profile_id;
+                    const rate = row.player_win_rate != null ? row.player_win_rate : row.win_rate;
+                    const detail = row.matches != null
+                        ? row.matches + " matches / " + row.average_turns + " avg turns"
+                        : row.plays + " plays / " + row.avg_damage + " avg damage";
+                    return "<article><span>" + escapeHtml(label) + "</span><strong>" + escapeHtml(rate) + "</strong><small>" + escapeHtml(detail) + "</small></article>";
+                }).join(""),
+                "</section>"
+            ].join("");
+        }
+
         button.addEventListener("click", function () {
             button.disabled = true;
             getJson(endpoints.balance + "?matches=40")
@@ -301,6 +416,16 @@
                         "<article><span>Avg Turns</span><strong>" + escapeHtml(summary.average_turns) + "</strong></article>",
                         "<article><span>Matches</span><strong>" + escapeHtml(payload.balance.matches) + "</strong></article>"
                     ].join("");
+                    if (details) {
+                        details.innerHTML = [
+                            labSection("Bot Profiles", payload.balance.profile_results || [], "name"),
+                            labSection("Card Impact", payload.balance.card_stats || [], "name"),
+                            labSection("Ability Impact", payload.balance.ability_stats || [], "name")
+                        ].join("");
+                    }
+                    if (title) {
+                        title.textContent = payload.balance.matches + " Matches";
+                    }
                 })
                 .catch(function (error) {
                     result.textContent = error.message;

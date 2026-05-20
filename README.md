@@ -17,6 +17,9 @@ product path.
 - Vanilla HTML/CSS/JavaScript
 - PWA manifest and service worker
 - In-memory Rebirth match store with TTL and max-entry cleanup
+- 13-card Rebirth starter set with PNG art, stable ability keys and engine-backed effects
+- Defensive, aggressive and opportunist bot profiles
+- Count-based loadout editor, match reward moments and deterministic Balance Lab
 - Gunicorn for deployment
 
 The current runtime does not initialize SocketIO, SQLAlchemy, legacy database
@@ -75,6 +78,21 @@ State-changing Rebirth APIs use a session CSRF token by default. Auth endpoints
 also have a small in-memory rate limit, and signed-in users can change their
 password from the Rebirth profile page.
 
+## Starter Card Set
+
+Rebirth 021 finishes the first active card set before expanding product scope.
+Every active card now has:
+
+- a unique `*-art.png` asset wired through `static/assets/rebirth/manifest.json`;
+- `ability_key`, `ability_name` and `ability_text` fields in the public card contract;
+- a Rebirth engine effect covered by `tests/rebirth/test_rebirth_card_set.py`;
+- a consistent evolution contract where evolved cards are tier 2 and are not in
+  the default starter decks.
+
+Active base monsters: Dreadclaw, Stoneshell, Shadewisp, Skywarden,
+Ironbastion, Embermaw and Voidstalker. Active evolutions: Dreadmaw,
+Stonewarden, Nightfang, Stormwarden, Ironbulwark and Embermaw Alpha.
+
 Retired browser routes such as `/arena`, `/training`, `/collection`,
 `/deck-builder`, `/shop`, `/missions`, `/progression`, `/campaign`,
 `/tutorial`, `/profile`, `/inventory`, `/economy` and `/match-history` redirect to
@@ -82,6 +100,19 @@ Retired browser routes such as `/arena`, `/training`, `/collection`,
 
 Retired API groups such as `/api/ascension/*`, `/api/beta/*` and
 `/api/booster/*` return `410 legacy_disabled`.
+
+## Current Gameplay Polish
+
+The active game shell now surfaces card feel instead of hiding rules in text:
+clash results include ability events, effective attack, impact feedback,
+optional lightweight haptics/audio and a match reward payload. Signed-in players
+see persisted XP, first-clash/first-win achievement moments and daily reward
+readiness after a clash.
+
+The collection page uses a count-based eight-card loadout editor with copy
+limits, attack/guard totals and duplicate-pair preview. The Balance page runs
+deterministic simulations across defensive, aggressive and opportunist bot
+profiles and reports per-card/per-ability impact.
 
 ## Run Locally
 
@@ -130,5 +161,6 @@ current Rebirth status document says otherwise. The current source of truth is:
 
 - `docs/REBIRTH_RELEASE_STATUS.md`
 - `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_CARD_SET_STATUS.md`
 - `docs/LEGACY_REMOVAL_REPORT.md`
 - `docs/REBIRTH_REBUILD_REPORT.md`

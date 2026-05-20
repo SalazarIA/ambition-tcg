@@ -34,6 +34,9 @@ def test_rebirth_template_matches_premium_clash_contract():
         'id="play-button"',
         'id="next-turn-button"',
         'id="result-panel"',
+        'id="ability-events"',
+        'id="reward-panel"',
+        'id="bot-profile-label"',
         'id="turn-log"',
         "One card.",
         "One decision.",
@@ -81,7 +84,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-final-mvp-v20" in service_worker
+    assert "ambitionz-rebirth-polish-v28" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/onboarding" in service_worker
@@ -107,7 +110,10 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthBoardScaler",
         "RebirthAssets",
         "RebirthErrors",
+        "RebirthFeel",
         "X-Rebirth-CSRF",
+        "match_reward",
+        "navigator.vibrate",
         "player-hp-fill",
         "bot-hp-fill",
         "evolution-card-thumbnail",
@@ -123,6 +129,10 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
 
     product_js = read("static/js/rebirth_product.js")
     assert "X-Rebirth-CSRF" in product_js
+    assert "data-rebirth-card-option" in read("templates/rebirth_product.html")
+    assert "data-rebirth-loadout-summary" in read("templates/rebirth_product.html")
+    assert "data-rebirth-balance-details" in read("templates/rebirth_product.html")
+    assert "data-rebirth-balance-title" in read("templates/rebirth_product.html")
     assert "data-rebirth-change-password" in read("templates/rebirth_product.html")
 
 

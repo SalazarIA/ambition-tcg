@@ -11,6 +11,8 @@
     const RebirthStore = {
         state: null,
         selectedInstanceId: null,
+        reward: null,
+        lastResultSignature: null,
         pending: false,
         elements: {},
 
@@ -64,6 +66,7 @@
                 "bot-hp",
                 "bot-hp-fill",
                 "turn-number",
+                "bot-profile-label",
                 "bot-card",
                 "focus-card",
                 "evolution-panel",
@@ -78,6 +81,8 @@
                 "result-label",
                 "result-title",
                 "result-copy",
+                "ability-events",
+                "reward-panel",
                 "result-panel",
                 "turn-log",
                 "phase-label"
@@ -324,6 +329,96 @@
         }
     };
 
+    const RebirthFeel = {
+        reducedMotion() {
+            return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        },
+
+        resultSignature(state) {
+            if (!state || !state.result || !state.last_clash) return "";
+            const player = state.last_clash.player_card || {};
+            const bot = state.last_clash.bot_card || {};
+            return [state.turn, state.result.outcome, player.instance_id || player.id, bot.instance_id || bot.id].join(":");
+        },
+
+        impactCard(state) {
+            const clash = (state && state.last_clash) || {};
+            const result = (state && state.result) || {};
+            if (result.winner === "bot") return clash.bot_card || null;
+            if (result.winner === "player") return clash.player_card || null;
+            return clash.player_card || clash.bot_card || null;
+        },
+
+        accent(card) {
+            return (card && card.palette && card.palette.accent) || "#f4ad26";
+        },
+
+        abilityKey(card) {
+            return (card && card.ability_key) || "base_clash";
+        },
+
+        pulse(state) {
+            const panel = RebirthStore.elements["result-panel"];
+            const focus = RebirthStore.elements["focus-card"];
+            const bot = RebirthStore.elements["bot-card"];
+            const card = this.impactCard(state);
+            const key = this.abilityKey(card);
+            const accent = this.accent(card);
+
+            [panel, focus, bot].forEach((element) => {
+                if (!element) return;
+                element.classList.remove("is-impacting");
+                element.style.setProperty("--impact-accent", accent);
+                element.setAttribute("data-ability-key", key);
+            });
+            if (panel) {
+                panel.setAttribute("data-outcome", (state.result && state.result.outcome) || "Clash");
+                panel.classList.add("is-impacting");
+            }
+            if (focus) focus.classList.add("is-impacting");
+            if (bot) bot.classList.add("is-impacting");
+
+            window.setTimeout(() => {
+                [panel, focus, bot].forEach((element) => {
+                    if (element) element.classList.remove("is-impacting");
+                });
+            }, 620);
+
+            this.haptics(state.result);
+            this.tone(card, state.result);
+        },
+
+        haptics(result) {
+            if (this.reducedMotion() || !navigator.vibrate || !result) return;
+            if (result.outcome === "Clash") {
+                navigator.vibrate(18);
+            } else {
+                navigator.vibrate([18, 24, 18]);
+            }
+        },
+
+        tone(card, result) {
+            if (this.reducedMotion() || !window.AudioContext || !result) return;
+            try {
+                const context = new window.AudioContext();
+                const oscillator = context.createOscillator();
+                const gain = context.createGain();
+                const key = this.abilityKey(card);
+                const base = result.outcome === "Defeat" ? 154 : result.outcome === "Clash" ? 220 : 330;
+                oscillator.frequency.value = base + (key.length % 7) * 24;
+                oscillator.type = "triangle";
+                gain.gain.setValueAtTime(0.0001, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.035, context.currentTime + 0.018);
+                gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.16);
+                oscillator.connect(gain);
+                gain.connect(context.destination);
+                oscillator.start();
+                oscillator.stop(context.currentTime + 0.18);
+                oscillator.addEventListener("ended", () => context.close());
+            } catch (_error) {}
+        }
+    };
+
     const RebirthRenderer = {
         render() {
             if (!RebirthStore.state) return;
@@ -333,6 +428,7 @@
             RebirthDom.setText("bot-hp", state.bot.hp);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
             RebirthDom.setText("phase-label", state.phase);
+            RebirthDom.setText("bot-profile-label", (state.bot_profile && state.bot_profile.name) || "Bot Profile");
             this.hpBars();
             this.focusCard();
             this.botCard();
@@ -442,6 +538,8 @@
             if (panel) {
                 panel.classList.remove("is-victory", "is-defeat", "is-clash");
             }
+            this.abilityEvents(result);
+            this.rewardPanel();
             if (state.is_finished) {
                 const won = state.winner === "player";
                 const tied = state.winner === "clash";
@@ -451,6 +549,7 @@
                 RebirthDom.setText("result-label", tied ? "Clash" : won ? "Victory" : "Defeat");
                 RebirthDom.setText("result-title", tied ? "Both sides fell." : won ? "You won the duel." : "Bot won the duel.");
                 RebirthDom.setText("result-copy", "Start a new match when ready.");
+                this.resultImpact();
                 return;
             }
             if (result) {
@@ -460,11 +559,60 @@
                 RebirthDom.setText("result-label", result.outcome);
                 RebirthDom.setText("result-title", result.outcome === "Clash" ? "No damage." : result.outcome);
                 RebirthDom.setText("result-copy", result.message);
+                this.resultImpact();
                 return;
             }
+            RebirthStore.lastResultSignature = null;
             RebirthDom.setText("result-label", "Waiting");
             RebirthDom.setText("result-title", "Pick one monster.");
             RebirthDom.setText("result-copy", "The bot will answer with one monster. Higher attack wins the clash.");
+        },
+
+        resultImpact() {
+            const signature = RebirthFeel.resultSignature(RebirthStore.state);
+            if (!signature || signature === RebirthStore.lastResultSignature) return;
+            RebirthStore.lastResultSignature = signature;
+            RebirthFeel.pulse(RebirthStore.state);
+        },
+
+        abilityEvents(result) {
+            const host = RebirthStore.elements["ability-events"];
+            if (!host) return;
+            const events = (result && result.ability_events) || [];
+            if (!result) {
+                host.innerHTML = "";
+                return;
+            }
+            if (!events.length) {
+                host.innerHTML = '<span class="rb-ability-chip is-muted">Base clash</span>';
+                return;
+            }
+            host.innerHTML = events.slice(0, 2).map((event) => {
+                return '<span class="rb-ability-chip">' + RebirthText.escape(event) + "</span>";
+            }).join("");
+        },
+
+        rewardPanel() {
+            const host = RebirthStore.elements["reward-panel"];
+            if (!host) return;
+            const reward = RebirthStore.reward;
+            if (!reward) {
+                host.innerHTML = "";
+                host.hidden = true;
+                return;
+            }
+            host.hidden = false;
+            if (!reward.persisted) {
+                host.innerHTML = '<span class="rb-reward-muted">' + RebirthText.escape(reward.message) + "</span>";
+                return;
+            }
+            const achievements = (reward.achievements || []).map((item) => item.name).join(", ");
+            host.innerHTML = [
+                '<span class="rb-reward-xp">+' + RebirthText.escape(reward.xp) + " XP</span>",
+                "<span>Level " + RebirthText.escape(reward.level) + (reward.level_up ? " up" : "") + "</span>",
+                achievements ? "<span>" + RebirthText.escape(achievements) + "</span>" : "",
+                reward.daily && reward.daily.ready ? '<span class="rb-reward-daily">Daily ready</span>' : ""
+            ].join("");
         },
 
         log() {
@@ -551,6 +699,7 @@
             await this.request(async () => {
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.start, {});
                 RebirthStore.selectedInstanceId = null;
+                RebirthStore.reward = null;
                 this.applyState(payload.state);
             });
         },
@@ -576,6 +725,7 @@
                     card_instance_id: RebirthStore.selectedInstanceId
                 });
                 RebirthStore.selectedInstanceId = null;
+                RebirthStore.reward = payload.match_reward || null;
                 this.applyState(payload.state);
             });
         },
@@ -586,6 +736,7 @@
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.nextTurn, {
                     match_id: RebirthStore.state.match_id
                 });
+                RebirthStore.reward = null;
                 this.applyState(payload.state);
             });
         }

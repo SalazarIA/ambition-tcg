@@ -32,6 +32,12 @@ are historical and are not active runtime APIs.
     "wounded": false,
     "hand_count": 5
   },
+  "bot_profile": {
+    "id": "defensive",
+    "name": "Defensive Bot",
+    "copy": "Prioritizes guard and stable answers before damage spikes.",
+    "policy": "win with guarded bodies; otherwise absorb with the highest guard"
+  },
   "available_evolutions": [],
   "last_clash": null,
   "result": null,
@@ -40,6 +46,37 @@ are historical and are not active runtime APIs.
   "log": []
 }
 ```
+
+When a clash resolves, `result` and `last_clash` can include:
+
+```json
+{
+  "ability_events": [],
+  "effective_attack": {
+    "player": 6,
+    "bot": 5
+  }
+}
+```
+
+The frontend may display those fields, but must not calculate them.
+
+`POST /api/rebirth/play-card` also includes top-level `match_reward`:
+
+```json
+{
+  "persisted": true,
+  "xp": 25,
+  "level": 1,
+  "level_up": false,
+  "achievements": [{"key": "first_clash", "name": "First Clash"}],
+  "daily": {"name": "Play one clash", "progress": 1, "goal": 1, "ready": true},
+  "message": "Victory: +25 XP saved to your Rebirth account."
+}
+```
+
+Anonymous players receive the same shape with `persisted: false`. The frontend
+may render the reward moment, but it must not calculate XP or achievements.
 
 ## Active API
 
@@ -96,8 +133,9 @@ them.
 - Player hand is public to the player.
 - Bot hand is hidden and represented by `hand_count`.
 - `log` returns the latest entries needed by the current UI.
-- Cards must include art metadata: `art`, `art_key`, `art_status`,
-  `art_version`, `palette` and `silhouette`.
+- Cards must include ability and art metadata: `ability_key`, `ability_name`,
+  `ability_text`, `art`, `art_key`, `art_status`, `art_version`, `palette` and
+  `silhouette`.
 - Expected player/request mistakes return JSON errors, not 500s.
 
 ## Frontend Responsibilities
@@ -107,9 +145,9 @@ invalid buttons, preloads active Rebirth art and keeps `/rebirth` locked as a
 single-screen board.
 
 The product-shell frontend renders server-provided payloads, signs users in,
-persists loadouts through `/api/rebirth/loadout`, opens no-payment boosters
-through `/api/rebirth/booster/open`, claims rewards, completes onboarding and
-changes signed-in passwords. Mutating Rebirth requests send
-`X-Rebirth-CSRF`.
+persists loadouts through a count-based `/api/rebirth/loadout` editor, opens
+no-payment boosters through `/api/rebirth/booster/open`, claims rewards,
+completes onboarding, changes signed-in passwords and reruns Balance Lab.
+Mutating Rebirth requests send `X-Rebirth-CSRF`.
 
 The frontend does not compute gameplay outcomes.

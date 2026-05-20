@@ -8,9 +8,11 @@ The active product is a Flask-served, vanilla frontend, single-screen monster
 duel MVP with Rebirth-native auth, SQLite persistence, account collection,
 account loadout, no-payment booster ownership, progression, onboarding, balance
 simulation, player profile/achievements, auth hardening and release hygiene
-pages. The old Arena, Ascension, BE2, SocketIO,
-economy, progression, shop, collection and deck builder systems are retired from
-runtime and must not be restored just to satisfy historical tests.
+pages. The active 13-card starter set now has unique PNG art, stable ability
+keys, engine-backed card effects, clash feedback and balance telemetry. The old
+Arena, Ascension, BE2, SocketIO, economy, progression, shop, collection and deck
+builder systems are retired from runtime and must not be restored just to
+satisfy historical tests.
 
 ## Active Runtime
 
@@ -129,17 +131,27 @@ Current Rebirth suite coverage includes:
 - player profile and persisted achievement unlocks
 - tutorial completion and daily reward persistence
 - deterministic balance simulation and release route contracts
+- Rebirth card set art/manifest truth, tier-2 evolution contract and
+  engine-backed abilities
+- bot personality contracts for defensive, aggressive and opportunist profiles
+- clash feel contract for ability events, visual impact and match reward payloads
+- count-based collection/loadout editor contract
+- balance lab reports for card, ability and bot-profile impact
 
 Current local result for this block:
 
 ```text
-51 passed
+61 passed
 ```
 
 Browser QA also passed on a temporary local database for account registration,
 booster ownership, clash progression, tutorial completion, daily reward,
 profile achievements, balance rerun, release page, and mobile `390x844`
-rendering.
+rendering. Rebirth 021 Browser QA also verified `/rebirth/collection` card
+ability text and the playable `/rebirth` clash flow with no console issues.
+Rebirth 028 Browser QA verified clash ability/reward rendering, loadout counter
+updates, Balance Lab rerun/title sync, mobile collection layout and no severe
+console logs.
 
 Do not reuse old historical counts such as `242 passed`; they described a
 different product surface.
@@ -225,8 +237,29 @@ It lists 13 active monster PNG assets:
 - `voidstalker-art.png`
 - `nightfang-art.png`
 
-The active service worker cache is `ambitionz-rebirth-final-mvp-v20` and
+The active service worker cache is `ambitionz-rebirth-polish-v28` and
 does not cache Arena or Ascension assets.
+
+## Active Card Set
+
+Card art and ability truth are documented in:
+
+```text
+docs/REBIRTH_CARD_SET_STATUS.md
+```
+
+The active public card contract includes `ability_key`, `ability_name`,
+`ability_text`, attack, guard, element, family, tier and art metadata. The
+engine recognizes each active `ability_key`; ability events are returned in
+clash results and logged into `last_clash`.
+
+`/api/rebirth/play-card` also returns `match_reward`, which reports whether
+progression was persisted, XP gained, level-up state, first-clash/first-win
+achievement moments and daily reward readiness. Anonymous players receive a
+non-persisted reward payload instead of silent failure.
+
+The bot profile is exposed as `bot_profile` in public state. The active profiles
+are defensive, aggressive and opportunist.
 
 ## Current Limitations
 
@@ -235,7 +268,8 @@ does not cache Arena or Ascension assets.
 - No admin tools for account support yet.
 - No database persistence for live in-progress match state.
 - In-memory matches are lost on process restart or deploy.
-- Rebirth has one starter collection and deterministic bot behavior.
+- Rebirth has one starter collection.
+- Ability haptics/audio are optional browser features and remain lightweight.
 - Screenshot baselines are not committed yet.
 - Historical docs and archived tests may describe retired systems; current
   Rebirth docs are authoritative.
@@ -244,6 +278,7 @@ does not cache Arena or Ascension assets.
 
 - Add admin/support tooling for account reset and collection inspection.
 - Add screenshot-based visual QA baselines for desktop/mobile `/rebirth`.
+- Tune card numbers against Balance Lab output after real play sessions.
 - Add real payment/economy only if a future product decision asks for it.
 - Migrate only useful old-product ideas into Rebirth-native contracts.
 - Keep retired APIs and routes retired unless a future product decision says

@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-020">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-028">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     <main class="rb-home-shell rb-product-shell">
@@ -171,19 +171,41 @@
             <section class="rb-product-panel rb-product-wide" aria-label="Loadout preview">
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>Eight-card preview</span>
+                        <span>Eight-card editor</span>
                         <h2>Loadout</h2>
                     </div>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-loadout-submit>Validate</button>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-loadout-submit>Save Loadout</button>
                 </div>
-                <form class="rb-product-loadout" data-rebirth-loadout-form>
-                    {% for card in page.loadout %}
-                        <label>
-                            <input type="checkbox" name="card_ids" value="{{ card.id }}" checked>
-                            <span>{{ loop.index }}</span>
-                            <strong>{{ card.name }}</strong>
-                            <small>{{ card.attack }} ATK / {{ card.guard }} GRD</small>
-                        </label>
+                <div class="rb-loadout-summary" data-rebirth-loadout-summary aria-live="polite">
+                    <article><span>Selected</span><strong>0/8</strong></article>
+                    <article><span>Attack</span><strong>0</strong></article>
+                    <article><span>Guard</span><strong>0</strong></article>
+                    <article><span>Pairs</span><strong>0</strong></article>
+                </div>
+                <form class="rb-product-loadout rb-loadout-builder" data-rebirth-loadout-form data-loadout-size="8">
+                    <div data-rebirth-loadout-hidden></div>
+                    {% for card in page.cards if card.owned_count %}
+                        <article
+                            class="rb-loadout-row"
+                            data-rebirth-card-option
+                            data-card-id="{{ card.id }}"
+                            data-owned-count="{{ card.owned_count }}"
+                            data-selected-count="{{ card.in_loadout_count }}"
+                            data-attack="{{ card.attack }}"
+                            data-guard="{{ card.guard }}"
+                        >
+                            <img src="{{ card.art }}" alt="{{ card.name }} art">
+                            <div>
+                                <span>Owned x{{ card.owned_count }}</span>
+                                <strong>{{ card.name }}</strong>
+                                <small>{{ card.attack }} ATK / {{ card.guard }} GRD - {{ card.ability_name }}</small>
+                            </div>
+                            <div class="rb-loadout-stepper" aria-label="{{ card.name }} loadout copies">
+                                <button type="button" data-loadout-decrement aria-label="Remove {{ card.name }}">-</button>
+                                <strong data-loadout-count>{{ card.in_loadout_count }}</strong>
+                                <button type="button" data-loadout-increment aria-label="Add {{ card.name }}">+</button>
+                            </div>
+                        </article>
                     {% endfor %}
                 </form>
                 <div class="rb-product-result" data-rebirth-loadout-result aria-live="polite">Loadout ready for validation.</div>
@@ -197,6 +219,7 @@
                             <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
                             <h2>{{ card.name }}</h2>
                             <p>{{ card.role }} - {{ card.element }} - Tier {{ card.tier }}</p>
+                            <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
                             <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
                         </div>
                     </article>
@@ -316,7 +339,7 @@
                 <div class="rb-product-panel-head">
                     <div>
                         <span>Simulation</span>
-                        <h2>{{ page.simulation.matches }} Matches</h2>
+                        <h2 data-rebirth-balance-title>{{ page.simulation.matches }} Matches</h2>
                     </div>
                     <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-balance-run>Run</button>
                 </div>
@@ -325,6 +348,38 @@
                     <article><span>Bot</span><strong>{{ page.simulation.summary.bot_win_rate }}</strong></article>
                     <article><span>Avg Turns</span><strong>{{ page.simulation.summary.average_turns }}</strong></article>
                     <article><span>Status</span><strong>{{ page.simulation.bot_tuning.status }}</strong></article>
+                </div>
+                <div class="rb-balance-lab" data-rebirth-balance-details>
+                    <section>
+                        <h3>Bot Profiles</h3>
+                        {% for profile in page.simulation.profile_results %}
+                            <article>
+                                <span>{{ profile.name }}</span>
+                                <strong>{{ profile.player_win_rate }}</strong>
+                                <small>{{ profile.matches }} matches / {{ profile.average_turns }} avg turns</small>
+                            </article>
+                        {% endfor %}
+                    </section>
+                    <section>
+                        <h3>Card Impact</h3>
+                        {% for card in page.simulation.card_stats[:6] %}
+                            <article>
+                                <span>{{ card.name }}</span>
+                                <strong>{{ card.win_rate }}</strong>
+                                <small>{{ card.plays }} plays / {{ card.avg_damage }} avg damage</small>
+                            </article>
+                        {% endfor %}
+                    </section>
+                    <section>
+                        <h3>Ability Impact</h3>
+                        {% for ability in page.simulation.ability_stats[:6] %}
+                            <article>
+                                <span>{{ ability.name }}</span>
+                                <strong>{{ ability.win_rate }}</strong>
+                                <small>{{ ability.plays }} plays / {{ ability.avg_damage }} avg damage</small>
+                            </article>
+                        {% endfor %}
+                    </section>
                 </div>
             </section>
         {% elif page.key == "release" %}
@@ -364,7 +419,7 @@
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-020"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-020"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-028"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-028"></script>
 </body>
 </html>

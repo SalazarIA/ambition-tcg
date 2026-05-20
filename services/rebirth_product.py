@@ -86,6 +86,8 @@ RELEASE_CHECKS = [
     {"name": "Persistence", "state": "passed", "copy": "Auth, collection, loadout, progression and boosters persist in SQLite."},
     {"name": "Account Safety", "state": "passed", "copy": "CSRF, auth throttling and password changes are active in the Rebirth shell."},
     {"name": "Frontend", "state": "passed", "copy": "Vanilla Rebirth pages avoid old Arena/Ascension assets."},
+    {"name": "Card Feel", "state": "passed", "copy": "Clash results expose ability events, impact feedback and persisted reward moments."},
+    {"name": "Balance Lab", "state": "passed", "copy": "Bot personality simulations report card, ability and profile impact."},
     {"name": "QA Gate", "state": "passed", "copy": "py_compile, pytest, node checks and Browser smoke passed for this block."},
 ]
 
@@ -484,7 +486,7 @@ def balance_payload(simulation=None):
     payload = page_payload(
         "balance",
         "Balance + Bot Tuning",
-        "Deterministic simulations watch the one-card loop without adding legacy battle systems.",
+        "Deterministic simulations watch card, ability and bot personality impact without adding legacy battle systems.",
         primary_label="Open Arena",
         primary_href="/rebirth",
     )
@@ -492,9 +494,10 @@ def balance_payload(simulation=None):
         {
             "simulation": simulation,
             "notes": [
-                "The bot answers with the smallest winning attack when possible.",
-                "If it cannot win, it plays the highest guard answer.",
-                "The simulation is deterministic and capped for release checks.",
+                "Defensive bot prioritizes guarded wins and absorption lines.",
+                "Aggressive bot pushes high attack and quick pressure.",
+                "Opportunist bot looks for ability swings, finishers and pressure windows.",
+                "The simulation is deterministic, capped and reports per-card/per-ability impact.",
             ],
         }
     )

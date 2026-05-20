@@ -266,6 +266,14 @@ button {
     text-align: center;
 }
 
+.rb-turn-core small {
+    color: var(--rb-muted);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
 .rb-slogans {
     left: 22px;
     top: 192px;
@@ -813,22 +821,25 @@ button {
 
 .rb-result-panel {
     left: 24px;
-    top: 1458px;
+    top: 1448px;
     display: flex;
     justify-content: space-between;
     gap: 14px;
     width: 804px;
-    height: 102px;
+    height: 142px;
     padding: 16px;
+    --impact-accent: var(--rb-gold);
 }
 
 .rb-result-panel div {
+    display: grid;
+    align-content: center;
+    gap: 4px;
     min-width: 0;
 }
 
 .rb-result-panel strong {
     display: block;
-    margin: 5px 0;
     font-size: 24px;
     line-height: 1.06;
 }
@@ -836,8 +847,12 @@ button {
 .rb-result-panel p {
     margin: 0;
     color: var(--rb-muted);
-    font-size: 17px;
-    line-height: 1.28;
+    font-size: 15px;
+    line-height: 1.18;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
 }
 
 .rb-result-panel .rb-secondary {
@@ -858,11 +873,103 @@ button {
     border-color: rgba(88, 214, 255, 0.5);
 }
 
+.rb-ability-events,
+.rb-reward-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 20px;
+}
+
+.rb-ability-chip,
+.rb-reward-panel span {
+    max-width: 250px;
+    overflow: hidden;
+    padding: 4px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--rb-text);
+    background: rgba(255, 255, 255, 0.055);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+
+.rb-ability-chip {
+    border-color: color-mix(in srgb, var(--impact-accent), transparent 48%);
+    color: var(--impact-accent);
+}
+
+.rb-ability-chip.is-muted,
+.rb-reward-muted {
+    color: var(--rb-muted);
+}
+
+.rb-reward-xp {
+    border-color: rgba(120, 242, 170, 0.36);
+    color: var(--rb-green) !important;
+}
+
+.rb-reward-daily {
+    color: var(--rb-gold) !important;
+}
+
+.rb-result-panel.is-impacting {
+    animation: rb-result-impact 620ms ease both;
+}
+
+.rb-main-card.is-impacting {
+    animation: rb-card-impact 620ms ease both;
+}
+
+.rb-bot-card.is-impacting {
+    animation: rb-bot-impact 620ms ease both;
+}
+
+@keyframes rb-result-impact {
+    0% {
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0), var(--rb-shadow);
+        transform: translateY(0);
+    }
+    38% {
+        border-color: var(--impact-accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--impact-accent), transparent 70%), var(--rb-shadow);
+        transform: translateY(-2px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes rb-card-impact {
+    0% { transform: translateX(0) scale(1); }
+    36% { transform: translateX(-7px) scale(1.015); }
+    70% { transform: translateX(4px) scale(1.005); }
+    100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes rb-bot-impact {
+    0% { transform: translateY(0) rotate(0); }
+    42% { transform: translateY(-5px) rotate(-1deg); }
+    100% { transform: translateY(0) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rb-result-panel.is-impacting,
+    .rb-main-card.is-impacting,
+    .rb-bot-card.is-impacting {
+        animation: none;
+    }
+}
+
 .rb-log {
     left: 24px;
-    top: 1580px;
+    top: 1610px;
     width: 804px;
-    height: 162px;
+    height: 132px;
     padding: 0;
 }
 
@@ -882,7 +989,7 @@ button {
 .rb-log ol {
     display: grid;
     gap: 0;
-    max-height: 112px;
+    max-height: 82px;
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -1479,6 +1586,14 @@ button {
     color: var(--rb-gold);
 }
 
+.rb-product-card small {
+    display: block;
+    margin-top: 8px;
+    color: var(--rb-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
 .rb-product-card-compact h2 {
     font-size: 18px;
 }
@@ -1487,6 +1602,125 @@ button {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
+}
+
+.rb-loadout-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.rb-loadout-summary article,
+.rb-loadout-row {
+    border: 1px solid var(--rb-line);
+    background: rgba(255, 255, 255, 0.035);
+    clip-path: var(--rb-cut);
+}
+
+.rb-loadout-summary article {
+    min-height: 78px;
+    padding: 14px;
+}
+
+.rb-loadout-summary span,
+.rb-loadout-row span {
+    color: var(--rb-gold);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.rb-loadout-summary strong {
+    display: block;
+    margin-top: 6px;
+    color: var(--rb-text);
+    font-size: 26px;
+    line-height: 1;
+}
+
+.rb-loadout-summary.is-invalid article:first-child {
+    border-color: rgba(255, 115, 95, 0.52);
+}
+
+.rb-loadout-builder {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rb-loadout-builder [data-rebirth-loadout-hidden] {
+    display: none;
+}
+
+.rb-loadout-row {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr) 112px;
+    gap: 12px;
+    align-items: center;
+    min-height: 122px;
+    padding: 10px;
+}
+
+.rb-loadout-row.is-selected {
+    border-color: rgba(244, 173, 38, 0.64);
+}
+
+.rb-loadout-row.is-maxed {
+    background: rgba(244, 173, 38, 0.055);
+}
+
+.rb-loadout-row img {
+    width: 74px;
+    height: 96px;
+    object-fit: cover;
+    background: #101317;
+    clip-path: var(--rb-cut);
+}
+
+.rb-loadout-row strong {
+    display: block;
+    margin: 4px 0;
+    color: var(--rb-text);
+    font-size: 18px;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.rb-loadout-row small {
+    display: block;
+    color: var(--rb-muted);
+    font-size: 12px;
+    line-height: 1.25;
+}
+
+.rb-loadout-stepper {
+    display: grid;
+    grid-template-columns: 34px 38px 34px;
+    align-items: center;
+    justify-content: end;
+    gap: 4px;
+}
+
+.rb-loadout-stepper button,
+.rb-loadout-stepper strong {
+    display: grid;
+    min-width: 0;
+    height: 34px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--rb-text);
+    background: rgba(0, 0, 0, 0.28);
+    font-size: 18px;
+    font-weight: 900;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+
+.rb-loadout-stepper button {
+    cursor: pointer;
+}
+
+.rb-loadout-stepper button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
 }
 
 .rb-product-loadout label {
@@ -1571,6 +1805,52 @@ button {
 
 .rb-history-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rb-balance-lab {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.rb-balance-lab section {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.rb-balance-lab h3 {
+    margin: 0 0 2px;
+    color: var(--rb-gold);
+    font-size: 16px;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.rb-balance-lab article {
+    min-height: 78px;
+    padding: 12px;
+    border: 1px solid var(--rb-line);
+    background: rgba(255, 255, 255, 0.035);
+    clip-path: var(--rb-cut);
+}
+
+.rb-balance-lab span,
+.rb-balance-lab small {
+    display: block;
+    color: var(--rb-muted);
+    font-size: 12px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.rb-balance-lab strong {
+    display: block;
+    margin: 4px 0;
+    color: var(--rb-text);
+    font-size: 24px;
+    line-height: 1;
 }
 
 .rb-history-list article {
@@ -1716,9 +1996,11 @@ button {
     .rb-product-stats,
     .rb-product-card-grid,
     .rb-product-loadout,
+    .rb-loadout-summary,
     .rb-track,
     .rb-product-card-grid-result,
-    .rb-history-list {
+    .rb-history-list,
+    .rb-balance-lab {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -1750,10 +2032,21 @@ button {
     .rb-product-stats,
     .rb-product-card-grid,
     .rb-product-loadout,
+    .rb-loadout-summary,
     .rb-track,
     .rb-product-card-grid-result,
-    .rb-history-list {
+    .rb-history-list,
+    .rb-balance-lab {
         grid-template-columns: 1fr;
+    }
+
+    .rb-loadout-row {
+        grid-template-columns: 64px minmax(0, 1fr);
+    }
+
+    .rb-loadout-stepper {
+        grid-column: 1 / -1;
+        justify-content: start;
     }
 
     .rb-account-strip {

@@ -15,7 +15,7 @@
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-020">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-028">
 </head>
 <body class="rb-page rb-game-page">
     <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
@@ -58,6 +58,7 @@
                 <div class="rb-turn-core rb-hud-turn">
                     <span>Turn</span>
                     <strong id="turn-number">01</strong>
+                    <small id="bot-profile-label">Bot Profile</small>
                 </div>
 
                 <div class="rb-hud-side rb-hud-bot">
@@ -144,6 +145,8 @@
                     <span id="result-label">Waiting</span>
                     <strong id="result-title">Pick one monster.</strong>
                     <p id="result-copy">The bot will answer with one monster. Higher attack wins the clash.</p>
+                    <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
+                    <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
                 </div>
                 <button class="rb-button-secondary rb-secondary" type="button" data-new-match>New Match</button>
             </section>
@@ -195,7 +198,7 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-020"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-020"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-028"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-028"></script>
 </body>
 </html>

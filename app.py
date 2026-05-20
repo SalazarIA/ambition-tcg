@@ -92,6 +92,49 @@ def json_from_persistence_error(error):
     return json_error(str(error), error.code, status=getattr(error, "status", 400))
 
 
+def match_reward_payload(before, after, state):
+    if not after:
+        return {
+            "persisted": False,
+            "xp": 0,
+            "level": 1,
+            "level_up": False,
+            "achievements": [],
+            "daily": {"name": "Play one clash", "progress": 0, "goal": 1, "ready": False},
+            "message": "Sign in to persist XP, rewards and achievements.",
+        }
+
+    before = before or {}
+    before_level = int(before.get("level", 1) or 1)
+    before_xp = int(before.get("xp", 0) or 0)
+    before_clashes = int(before.get("clashes", 0) or 0)
+    before_wins = int(before.get("wins", 0) or 0)
+    xp_delta = max(0, int(after.get("xp", 0) or 0) - before_xp)
+    achievements = []
+    if before_clashes == 0 and int(after.get("clashes", 0) or 0) >= 1:
+        achievements.append({"key": "first_clash", "name": "First Clash"})
+    if before_wins == 0 and int(after.get("wins", 0) or 0) >= 1:
+        achievements.append({"key": "first_win", "name": "First Victory"})
+
+    level = int(after.get("level", 1) or 1)
+    daily_progress = min(1, int(after.get("clashes", 0) or 0))
+    outcome = ((state or {}).get("result") or {}).get("outcome") or ((state or {}).get("winner") or "Clash")
+    return {
+        "persisted": True,
+        "xp": xp_delta,
+        "level": level,
+        "level_up": level > before_level,
+        "achievements": achievements,
+        "daily": {
+            "name": "Play one clash",
+            "progress": daily_progress,
+            "goal": 1,
+            "ready": daily_progress >= 1,
+        },
+        "message": f"{outcome}: +{xp_delta} XP saved to your Rebirth account.",
+    }
+
+
 def csrf_token():
     token = session.get("rebirth_csrf_token")
     if not token:
@@ -345,8 +388,14 @@ def api_rebirth_play_card():
         )
         state = public_state(match)
         user = current_user()
-        progress = rebirth_repo().record_clash_result(user["id"], state) if user else None
-        return json_success(state, match.get("result"), progression=progress)
+        progress = None
+        reward = match_reward_payload(None, None, state)
+        if user:
+            repo = rebirth_repo()
+            before = repo.progression(user["id"])
+            progress = repo.record_clash_result(user["id"], state)
+            reward = match_reward_payload(before, progress, state)
+        return json_success(state, match.get("result"), progression=progress, match_reward=reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
