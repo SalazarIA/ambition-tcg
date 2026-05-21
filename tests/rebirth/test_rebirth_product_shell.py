@@ -10,9 +10,9 @@ def read(path):
 
 def test_rebirth_product_pages_render_active_shell(client):
     expected = {
-        "/rebirth/account": "Create Account",
-        "/rebirth/collection": "Cards",
-        "/rebirth/shop": "Packs",
+        "/rebirth/account": "Login / Registro",
+        "/rebirth/collection": "Minha Colecao",
+        "/rebirth/shop": "Loja &amp; Mercado",
         "/rebirth/progression": "Rewards",
         "/rebirth/profile": "Player Profile",
         "/rebirth/lab": "Rebirth Lab",
@@ -50,13 +50,13 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     release = client.get("/api/rebirth/release")
 
     assert shell.status_code == 200
-    assert shell.get_json()["shell"]["status"][0]["value"] == "One Card Clash"
+    assert shell.get_json()["shell"]["status"][0]["value"] == "TCG Clash"
     assert auth.status_code == 200
     assert auth.get_json()["auth"]["steps"][0]["title"] == "Create"
     assert collection.status_code == 200
-    assert collection.get_json()["collection"]["summary"]["loadout_size"] == 8
+    assert collection.get_json()["collection"]["summary"]["loadout_size"] == 30
     assert shop.status_code == 200
-    assert shop.get_json()["shop"]["offers"][0]["price"] == "Free"
+    assert shop.get_json()["shop"]["offers"][0]["price"] == "Gratis na beta"
     assert progression.status_code == 200
     assert progression.get_json()["progression"]["profile"]["level"] == 1
     assert profile.status_code == 200
@@ -80,30 +80,21 @@ def test_rebirth_loadout_preview_validates_owned_cards(client):
         "/api/rebirth/auth/register",
         json={"username": "loadout_user", "email": "loadout@example.com", "password": "password123"},
     )
-    valid = [
-        "dreadclaw",
-        "dreadclaw",
-        "stoneshell",
-        "shadewisp",
-        "skywarden",
-        "ironbastion",
-        "embermaw",
-        "voidstalker",
-    ]
+    valid = [card["id"] for card in client.get("/api/rebirth/collection").get_json()["collection"]["loadout"]]
     response = client.post("/api/rebirth/loadout", json={"card_ids": valid})
     payload = response.get_json()
 
     assert response.status_code == 200
     assert payload["ok"] is True
-    assert payload["loadout"]["summary"]["size"] == 8
-    assert payload["loadout"]["summary"]["duplicate_pairs"] == 1
+    assert payload["loadout"]["summary"]["size"] == 30
+    assert payload["loadout"]["summary"]["duplicate_pairs"] >= 1
 
-    invalid = client.post("/api/rebirth/loadout", json={"card_ids": ["dreadclaw"]})
+    invalid = client.post("/api/rebirth/loadout", json={"card_ids": ["card_001"]})
     assert invalid.status_code == 400
     assert invalid.get_json()["error"]["code"] == "invalid_loadout"
 
 
-def test_rebirth_booster_demo_returns_four_cards_without_economy(client):
+def test_rebirth_booster_demo_returns_five_cards_without_economy(client):
     unauthenticated = client.post("/api/rebirth/booster/open", json={"seed": "booster-test"})
     assert unauthenticated.status_code == 401
     assert unauthenticated.get_json()["error"]["code"] == "auth_required"
@@ -118,11 +109,12 @@ def test_rebirth_booster_demo_returns_four_cards_without_economy(client):
     assert response.status_code == 200
     assert payload["ok"] is True
     assert payload["booster"]["booster_id"] == "starter_booster_demo"
-    assert payload["booster"]["summary"]["count"] == 4
-    assert len(payload["booster"]["cards"]) == 4
+    assert payload["booster"]["summary"]["count"] == 5
+    assert payload["booster"]["summary"]["rarity_slots"] == ["COMMON", "COMMON", "COMMON", "UNCOMMON", "RARE_PLUS"]
+    assert len(payload["booster"]["cards"]) == 5
 
     shop = client.get("/api/rebirth/shop").get_json()["shop"]
-    assert "Packs are free during the Rebirth beta" in shop["disclaimer"]
+    assert "Boosters sao gratis durante a beta Rebirth" in shop["disclaimer"]
 
 
 def test_rebirth_product_shell_does_not_load_legacy_assets():

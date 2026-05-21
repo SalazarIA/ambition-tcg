@@ -1,9 +1,10 @@
 from collections import Counter, defaultdict
 
 from services.rebirth_bot import BOT_PERSONALITY_ORDER, BOT_PERSONALITIES
-from services.rebirth_cards import catalog_payload
+from services.rebirth_cards import catalog_payload, is_monster
 from services.rebirth_engine import (
     compare_clash,
+    declare_attack,
     damage_details,
     evolve_duplicate,
     next_turn,
@@ -15,6 +16,7 @@ from services.rebirth_bot import ability_priority, choose_response
 
 
 def choose_player_card(hand):
+    hand = [card for card in hand if is_monster(card)]
     if not hand:
         return None
     return sorted(
@@ -27,6 +29,12 @@ def choose_player_card(hand):
         ),
         reverse=True,
     )[0]
+
+
+def card_cost(card):
+    if is_monster(card):
+        return max(1, min(10, int(card.get("cost") or card.get("tier") or 1)))
+    return max(0, int(card.get("cost", 0) or 0))
 
 
 def choose_player_evolution(match):
@@ -77,13 +85,55 @@ def projected_player_score(match, player_card):
 
 
 def choose_tactical_player_card(match):
-    hand = match["player"]["hand"]
+    energy = int(match["player"].get("energy", 0) or 0)
+    hand = [card for card in match["player"]["hand"] if is_monster(card) and card_cost(card) <= energy]
     if not hand:
         return None
     return sorted(
         hand,
         key=lambda card: (projected_player_score(match, card), int(card.get("guard", 0)), card["name"]),
     )[-1]
+
+
+def choose_ready_attacker(match):
+    ready = [
+        card
+        for card in match["player"].get("battlefield", [])
+        if not card.get("exhausted") and not card.get("has_attacked")
+    ]
+    if not ready:
+        return None
+    return sorted(
+        ready,
+        key=lambda card: (
+            int(card.get("attack", card.get("power", 0)) or 0),
+            ability_priority(card),
+            int(card.get("current_guard", card.get("guard", 0)) or 0),
+            card["name"],
+        ),
+    )[-1]
+
+
+def choose_bot_target(match):
+    if not match["bot"].get("battlefield"):
+        return None
+    return sorted(
+        match["bot"]["battlefield"],
+        key=lambda field_card: (
+            int(field_card.get("current_guard", field_card.get("guard", 0)) or 0),
+            -int(field_card.get("attack", field_card.get("power", 0)) or 0),
+            field_card["name"],
+        ),
+    )[0]
+
+
+def declare_best_attack(match, attacker):
+    target = choose_bot_target(match)
+    return declare_attack(
+        match,
+        attacker_instance_id=attacker["instance_id"],
+        target_instance_id=target["instance_id"] if target else None,
+    )
 
 
 def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
@@ -100,14 +150,40 @@ def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
     first_turn_wins = Counter()
     turns = 0
     while not match.get("is_finished") and turns < max_turns:
-        evolution = choose_player_evolution(match)
-        if evolution:
-            evolved = evolve_duplicate(match, evolution["card_id"])
-            evolution_usage[evolved["id"]] += 1
-        card = choose_tactical_player_card(match)
-        if not card:
-            break
-        play_card(match, card_instance_id=card["instance_id"])
+        field_full = len(match["player"].get("battlefield", [])) >= 4
+        ready_attacker = choose_ready_attacker(match)
+        if field_full and ready_attacker:
+            declare_best_attack(match, ready_attacker)
+        else:
+            evolution = choose_player_evolution(match)
+            if evolution and int(match["player"].get("energy", 0) or 0) >= 2:
+                evolved = evolve_duplicate(match, evolution["card_id"])
+                evolution_usage[evolved["id"]] += 1
+            card = choose_tactical_player_card(match)
+            if not card:
+                if ready_attacker:
+                    declare_best_attack(match, ready_attacker)
+                elif match.get("phase") in {"choose", "result"}:
+                    next_turn(match)
+                    turns += 1
+                    continue
+                else:
+                    break
+            else:
+                play_card(match, card_instance_id=card["instance_id"])
+                if not match.get("is_finished"):
+                    attacker = next(
+                        (
+                            field_card
+                            for field_card in match["player"].get("battlefield", [])
+                            if field_card.get("instance_id") == card["instance_id"]
+                            and not field_card.get("exhausted")
+                            and not field_card.get("has_attacked")
+                        ),
+                        None,
+                    )
+                    if attacker:
+                        declare_best_attack(match, attacker)
         clash = match.get("last_clash") or {}
         result = match.get("result") or {}
         played_cards = [

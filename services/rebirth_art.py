@@ -1,4 +1,5 @@
 from copy import deepcopy
+import re
 
 
 REBIRTH_ART_VERSION = "rebirth-021"
@@ -178,8 +179,35 @@ CARD_ART_PROFILES = {
 }
 
 
+def _generic_palette(card_id):
+    number = int(str(card_id).split("_")[-1])
+    if number <= 20:
+        return {"accent": "#ffb347", "secondary": "#ff5b35", "shadow": "#2a0f0b"}
+    if number <= 40:
+        return {"accent": "#b8fff6", "secondary": "#37c7ff", "shadow": "#092033"}
+    if number <= 60:
+        return {"accent": "#f0e2a0", "secondary": "#8bd05f", "shadow": "#17220d"}
+    if number <= 80:
+        return {"accent": "#f2d9ff", "secondary": "#9b5cff", "shadow": "#221437"}
+    if number <= 90:
+        return {"accent": "#f9e27d", "secondary": "#2f245f", "shadow": "#ffffff"}
+    return {"accent": "#ff4f8b", "secondary": "#181022", "shadow": "#ffc6df"}
+
+
 def art_profile(card_id):
-    return deepcopy(CARD_ART_PROFILES[card_id])
+    if card_id in CARD_ART_PROFILES:
+        return deepcopy(CARD_ART_PROFILES[card_id])
+    if re.fullmatch(r"card_\d{3}", str(card_id or "")):
+        return {
+            "art_key": f"rebirth.card.{card_id}.v1",
+            "path": f"static/img/cards/{card_id}.png",
+            "status": "default_png_path",
+            "silhouette": "tcg catalog sigil",
+            "finish": "tcg card frame",
+            "palette": _generic_palette(card_id),
+            "prompt": f"Ambitionz Rebirth premium card art placeholder for {card_id}.",
+        }
+    raise KeyError(card_id)
 
 
 def attach_art_profile(card):

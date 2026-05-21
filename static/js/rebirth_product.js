@@ -24,8 +24,10 @@
         }).then(function (response) {
             return response.json().then(function (body) {
                 if (!response.ok || !body.ok) {
-                    const error = body && body.error ? body.error.message : "Request failed.";
-                    throw new Error(error);
+                    const serverError = body && body.error ? body.error : {};
+                    const error = new Error(serverError.message || "Request failed.");
+                    error.code = serverError.code || "rebirth_error";
+                    throw error;
                 }
                 return body;
             });
@@ -80,12 +82,54 @@
         return payload;
     }
 
-    function cardMarkup(card) {
+    const unsplashFallbacks = {
+        fire: "https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=900&q=80",
+        water: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80",
+        earth: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=80",
+        shadow: "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=80",
+        arcane: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?auto=format&fit=crop&w=900&q=80",
+        hidden: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80",
+        default: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80"
+    };
+
+    function slug(value) {
+        return String(value || "default").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "default";
+    }
+
+    function fallbackArt(card) {
+        const element = slug(card && card.element);
+        return unsplashFallbacks[element] || unsplashFallbacks.default;
+    }
+
+    function cardArtSource(card) {
+        if (!card || card.art_status === "default_png_path") {
+            return fallbackArt(card);
+        }
+        if (!card.art) {
+            return fallbackArt(card);
+        }
+        return String(card.art).charAt(0) === "/" ? card.art : "/" + card.art;
+    }
+
+    function bindImageFallbacks(root) {
+        Array.from((root || document).querySelectorAll("img[data-rebirth-unsplash-fallback]")).forEach(function (image) {
+            image.addEventListener("error", function () {
+                if (image.dataset.fallbackApplied === "true") return;
+                image.dataset.fallbackApplied = "true";
+                image.src = image.getAttribute("data-rebirth-unsplash-fallback");
+            });
+        });
+    }
+
+    function cardMarkup(card, index) {
+        const rarity = slug(card.rarity || "common");
+        const element = slug(card.element || "default");
+        const source = cardArtSource(card);
         return [
-            '<article class="rb-product-card rb-product-card-compact">',
-            '<img src="' + escapeHtml(card.art) + '" alt="' + escapeHtml(card.name) + ' art">',
+            '<article class="rb-product-card rb-product-card-compact rb-booster-card is-' + escapeHtml(rarity) + ' is-element-' + escapeHtml(element) + '">',
+            '<img src="' + escapeHtml(source) + '" data-rebirth-unsplash-fallback="' + escapeHtml(fallbackArt(card)) + '" alt="' + escapeHtml(card.name) + ' art">',
             "<div>",
-            "<span>Tier " + escapeHtml(card.tier) + " - " + escapeHtml(card.element) + "</span>",
+            "<span>Slot " + escapeHtml(index + 1) + " - " + escapeHtml(card.rarity) + " - " + escapeHtml(card.element) + "</span>",
             "<h2>" + escapeHtml(card.name) + "</h2>",
             "<p>" + escapeHtml(card.role) + "</p>",
             "<strong>" + escapeHtml(card.attack) + " ATK / " + escapeHtml(card.guard) + " GRD</strong>",
@@ -94,37 +138,114 @@
         ].join("");
     }
 
+    function marketOfferMarkup(offer) {
+        const card = offer.card || {};
+        return [
+            '<article class="rb-product-card rb-market-offer" data-market-offer-id="' + escapeHtml(offer.id) + '">',
+            '<img src="' + escapeHtml(card.art || "") + '" alt="' + escapeHtml(card.name || offer.card_id) + ' art">',
+            "<div>",
+            "<span>" + escapeHtml(offer.currency_type) + " - " + escapeHtml(offer.seller_name || "Player") + "</span>",
+            "<h2>" + escapeHtml(card.name || offer.card_id) + "</h2>",
+            "<p>" + escapeHtml(card.role || "Market card") + "</p>",
+            "<strong>" + escapeHtml(offer.price) + " " + escapeHtml(offer.currency_type) + "</strong>",
+            '<button class="rb-button-secondary rb-secondary" type="button" data-rebirth-market-buy="' + escapeHtml(offer.id) + '">Buy</button>',
+            "</div>",
+            "</article>"
+        ].join("");
+    }
+
     function bindBooster() {
-        const button = document.querySelector("[data-rebirth-booster]");
+        const buttons = document.querySelectorAll("[data-rebirth-booster]");
         const result = document.getElementById("rebirth-booster-result");
-        if (!button || !result || !endpoints.booster) {
+        if (!buttons.length || !result || !endpoints.booster) {
             return;
         }
 
-        button.addEventListener("click", function () {
-            button.disabled = true;
-            result.textContent = "Opening pack...";
-            postJson(endpoints.booster, { seed: "booster-" + Date.now() })
+        Array.from(buttons).forEach(function (button) {
+            button.addEventListener("click", function () {
+                button.disabled = true;
+                result.textContent = "Abrindo booster...";
+                postJson(endpoints.booster, { seed: "booster-" + Date.now() })
+                    .then(function (payload) {
+                        const booster = payload.booster;
+                        const cards = booster.cards.map(cardMarkup).join("");
+                        const raritySlots = booster.summary.rarity_slots || [];
+                        result.innerHTML = [
+                            '<div class="rb-booster-summary">',
+                            "<strong>" + escapeHtml(booster.summary.elevated_slot) + "</strong>",
+                            "<span>" + escapeHtml(booster.summary.count) + " cartas reveladas</span>",
+                            "</div>",
+                            raritySlots.length ? '<div class="rb-booster-rarity-line">' + raritySlots.map(function (slot) {
+                                return "<span>" + escapeHtml(slot.replace("_", " ")) + "</span>";
+                            }).join("") + "</div>" : "",
+                            '<div class="rb-product-card-grid rb-product-card-grid-result">',
+                            cards,
+                            "</div>"
+                        ].join("");
+                        bindImageFallbacks(result);
+                    })
+                    .catch(function (error) {
+                        result.textContent = error.message;
+                        if (error.code === "auth_required" && window.RebirthGlobalAuth) {
+                            window.RebirthGlobalAuth.open("Entre para guardar as cartas abertas no booster.");
+                        }
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                    });
+            });
+        });
+    }
+
+    function bindMarket() {
+        const list = document.querySelector("[data-rebirth-market-offers]");
+        const result = document.querySelector("[data-rebirth-market-result]");
+        if (!list || !endpoints.marketOffers) {
+            return;
+        }
+
+        function renderOffers(offers) {
+            if (!offers || !offers.length) {
+                list.innerHTML = '<article class="rb-product-panel"><span>Market</span><h2>No active offers</h2><p>Active player listings will appear here.</p></article>';
+                return;
+            }
+            list.innerHTML = offers.map(marketOfferMarkup).join("");
+        }
+
+        function refresh() {
+            getJson(endpoints.marketOffers)
                 .then(function (payload) {
-                    const booster = payload.booster;
-                    const cards = booster.cards.map(cardMarkup).join("");
-                    result.innerHTML = [
-                        '<div class="rb-booster-summary">',
-                        "<strong>" + escapeHtml(booster.summary.elevated_slot) + "</strong>",
-                        "<span>" + escapeHtml(booster.summary.count) + " cards persisted</span>",
-                        "</div>",
-                        '<div class="rb-product-card-grid rb-product-card-grid-result">',
-                        cards,
-                        "</div>"
-                    ].join("");
+                    renderOffers((payload.market && payload.market.offers) || []);
                 })
                 .catch(function (error) {
-                    result.textContent = error.message;
+                    if (result) result.textContent = error.message;
+                });
+        }
+
+        list.addEventListener("click", function (event) {
+            const button = event.target.closest("[data-rebirth-market-buy]");
+            if (!button || !endpoints.marketBuy) {
+                return;
+            }
+            button.disabled = true;
+            if (result) result.textContent = "Buying market offer...";
+            postJson(endpoints.marketBuy, { offer_id: button.getAttribute("data-rebirth-market-buy") })
+                .then(function (payload) {
+                    const purchase = payload.market.purchase;
+                    if (result) {
+                        result.textContent = "Bought " + purchase.offer.card.name + " for " + purchase.price + " " + purchase.currency_type + ".";
+                    }
+                    renderOffers(payload.market.offers || []);
+                })
+                .catch(function (error) {
+                    if (result) result.textContent = error.message;
                 })
                 .finally(function () {
                     button.disabled = false;
                 });
         });
+
+        refresh();
     }
 
     function bindLoadout() {
@@ -136,7 +257,7 @@
         if (!form || !button || !result || !endpoints.loadout) {
             return;
         }
-        const maxSize = Number(form.getAttribute("data-loadout-size") || 8);
+        const maxSize = Number(form.getAttribute("data-loadout-size") || 30);
         const options = Array.from(form.querySelectorAll("[data-rebirth-card-option]"));
 
         function optionCount(option) {
@@ -518,10 +639,9 @@
     window.initiateMobilePurchase = initiateMobilePurchase;
 
     document.addEventListener("DOMContentLoaded", function () {
-        bindAuth();
-        bindLogout();
         bindPasswordChange();
         bindBooster();
+        bindMarket();
         bindLoadout();
         bindDailyReward();
         bindTutorial();

@@ -5,40 +5,30 @@
     <title>Ambitionz Rebirth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#050608">
-    <meta name="description" content="Ambitionz Rebirth is a fast one-card monster duel. Combine duplicates, evolve monsters and win the clash.">
+    <meta name="description" content="Ambitionz Rebirth e uma plataforma TCG de fantasia sombria para duelar, colecionar e abrir boosters.">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-036">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-045">
 </head>
-<body class="rb-page rb-home-page">
+<body class="rb-page rb-home-page rb-landing-page">
+    {% include "_rebirth_global_nav.html" %}
     <main class="rb-home-shell">
-        <header class="rb-home-nav rb-shell-nav" aria-label="Ambitionz Rebirth">
-            <a class="rb-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
-                <span>A</span>
-                <strong>Ambitionz Rebirth</strong>
-            </a>
-            <nav aria-label="Rebirth sections">
-                {% for item in page.nav %}
-                    <a href="{{ item.href }}">{{ item.label }}</a>
-                {% endfor %}
-            </nav>
-        </header>
-
         <section id="rebirth-home-hero" class="rb-home-hero" aria-label="Ambitionz Rebirth product">
             <div class="rb-home-copy">
                 <h1>Ambitionz Rebirth</h1>
-                <p class="rb-home-line">One card. One decision. One clash.</p>
-                <p>Combine duplicates. Evolve monsters. Win the duel.</p>
-                <p>A fast premium monster clash built around one card at a time, clear pressure and instant decisions.</p>
+                <p class="rb-home-line">Duelos, colecao e mercado em uma mesa viva.</p>
+                <p>Convoque monstros, combine duplicatas, evolua cartas raras e lute por recompensas de temporada.</p>
+                <p>Uma plataforma TCG de alta fantasia com economia em GOLD e Coinz.</p>
                 <div class="rb-home-actions">
-                    <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Play Rebirth <i aria-hidden="true"></i></a>
-                    <a class="rb-secondary" href="{{ url_for('rebirth_profile') }}">Profile</a>
+                    <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Entrar na Arena <i aria-hidden="true"></i></a>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_collection') }}">Minha Colecao</a>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_shop') }}">Loja & Mercado</a>
                 </div>
                 <div class="rb-home-proof" aria-label="Product pillars">
-                    <article><span>Loop</span><strong>One card clash</strong></article>
-                    <article><span>Screen</span><strong>Single cockpit</strong></article>
-                    <article><span>System</span><strong>Rebirth engine</strong></article>
+                    <article><span>Arena</span><strong>Clash tatico</strong></article>
+                    <article><span>Colecao</span><strong>100 cartas</strong></article>
+                    <article><span>Economia</span><strong>GOLD + Coinz</strong></article>
                 </div>
             </div>
 
@@ -94,6 +84,15 @@
         </section>
     </main>
 
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-036"></script>
+    <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-045"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-045"></script>
 </body>
 </html>

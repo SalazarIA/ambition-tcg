@@ -1,4 +1,4 @@
-const CACHE_NAME = "ambitionz-rebirth-season0-v36";
+const CACHE_NAME = "ambitionz-rebirth-season0-v45";
 
 const CORE_ASSETS = [
     "/",
@@ -13,6 +13,7 @@ const CORE_ASSETS = [
     "/static/manifest.webmanifest",
     "/static/css/rebirth.css",
     "/static/js/rebirth.js",
+    "/static/js/rebirth_global.js",
     "/static/js/rebirth_product.js",
     "/static/js/pwa.js",
     "/static/assets/rebirth/manifest.json",

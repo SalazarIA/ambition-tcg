@@ -8,8 +8,11 @@ from services.rebirth_state import STARTING_HP, available_evolutions
 REQUIRED_CARD_FIELDS = {
     "id",
     "name",
+    "type",
+    "card_type",
     "family",
     "tier",
+    "cost",
     "attack",
     "guard",
     "element",
@@ -39,6 +42,10 @@ def side_payload(side, *, reveal_hand=True):
         validate_card_contract(card)
     for card in side.get("discard", []):
         validate_card_contract(card)
+    for card in side.get("battlefield", []):
+        validate_card_contract(card)
+    for card in side.get("traps", []):
+        validate_card_contract(card)
     if side.get("played_card"):
         validate_card_contract(side["played_card"])
 
@@ -46,16 +53,25 @@ def side_payload(side, *, reveal_hand=True):
         "name": side["name"],
         "hp": side["hp"],
         "max_hp": side.get("max_hp", STARTING_HP),
+        "energy": int(side.get("energy", 0) or 0),
+        "max_energy": int(side.get("max_energy", 0) or 0),
         "deck_count": len(side.get("deck", [])),
         "discard_count": len(side.get("discard", [])),
         "played_card": deepcopy(side.get("played_card")),
+        "battlefield": deepcopy(side.get("battlefield", [])),
+        "trap_count": len(side.get("traps", [])),
         "wounded": bool(side.get("wounded")),
         "statuses": deepcopy(side.get("statuses", {})),
     }
     if reveal_hand:
         payload["hand"] = deepcopy(side.get("hand", []))
+        payload["traps"] = deepcopy(side.get("traps", []))
     else:
         payload["hand_count"] = len(side.get("hand", []))
+        payload["traps"] = [
+            {"face_down": True, "armed": bool(trap.get("armed", True)), "slot": trap.get("slot")}
+            for trap in side.get("traps", [])
+        ]
     return payload
 
 

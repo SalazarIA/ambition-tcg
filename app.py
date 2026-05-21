@@ -9,6 +9,7 @@ from flask import Flask, jsonify, redirect, render_template, request, send_from_
 from services.rebirth_contracts import RebirthError
 from services.rebirth_balance import simulate_balance
 from services.rebirth_engine import (
+    declare_attack,
     evolve_duplicate,
     next_turn,
     play_card,
@@ -19,7 +20,10 @@ from services.rebirth_monetization import verify_mobile_receipt
 from services.rebirth_persistence import (
     RebirthPersistenceError,
     RebirthRepository,
+    active_market_offers as async_active_market_offers,
     async_database_url,
+    buy_market_offer as async_buy_market_offer,
+    create_market_offer as async_create_market_offer,
     credit_verified_purchase,
     load_match_state,
     save_match_state,
@@ -68,7 +72,7 @@ CONTENT_SECURITY_POLICY = "; ".join(
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline'",
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data:",
+        "img-src 'self' data: https://images.unsplash.com",
         "font-src 'self' data:",
         "connect-src 'self'",
         "manifest-src 'self'",
@@ -117,8 +121,8 @@ def match_reward_payload(before, after, state):
             "level_up": False,
             "achievements": [],
             "daily": {"name": "Play one clash", "progress": 0, "goal": 1, "state": "locked", "ready": False},
-            "next_goal": "Create an account to save XP and unlock the reward track.",
-            "message": "Sign in to persist XP, rewards and achievements.",
+            "next_goal": "Abra Login / Registro no topo para guardar recompensas futuras.",
+            "message": "Partida concluida como visitante.",
         }
 
     before = before or {}
@@ -215,6 +219,30 @@ def current_account():
     return account_payload(current_user())
 
 
+def rebirth_navbar_payload(user=None, progression=None):
+    progress = progression
+    if user and progress is None:
+        progress = rebirth_repo().progression(user["id"]) or {}
+    progress = progress or {}
+    level = int(progress.get("level", 1) or 1)
+    xp = int(progress.get("xp", 0) or 0)
+    next_level = int(progress.get("next_level_xp", level * 500) or level * 500)
+    xp_percent = 0 if next_level <= 0 else min(100, max(0, round((xp / next_level) * 100)))
+    gold = int(progress.get("gold", 0) or 0)
+    coinz = int(progress.get("premium", progress.get("coinz", 0)) or 0)
+    return {
+        "authenticated": bool(user),
+        "player_name": user["username"] if user else "Visitante",
+        "player_label": "Jogador" if user else "Visitante",
+        "level": level,
+        "xp": xp,
+        "next_level_xp": next_level,
+        "xp_percent": xp_percent,
+        "gold": gold,
+        "coinz": coinz,
+    }
+
+
 def require_user():
     user = current_user()
     if not user:
@@ -260,6 +288,23 @@ def persist_match_if_owned(repo, user, match):
     return None
 
 
+def start_memory_rebirth_match(payload):
+    player_card_ids = DEFAULT_LOADOUT if payload.get("tutorial") else None
+    bot_profile_id = "aggressive" if payload.get("tutorial") else None
+    requested_seed = payload.get("seed")
+    if payload.get("tutorial") and requested_seed is None:
+        requested_seed = "guided-first-match"
+    match = start_match(
+        seed=requested_seed,
+        player_card_ids=player_card_ids,
+        player_name="You",
+        bot_profile_id=bot_profile_id,
+    )
+    match = MATCH_STORE.save(match)
+    state = public_state(match)
+    return json_success(state, match.get("result"), match_id=match["match_id"])
+
+
 def require_admin_token():
     expected = os.environ.get("REBIRTH_ADMIN_TOKEN") or app.config.get("REBIRTH_ADMIN_TOKEN")
     supplied = request.headers.get("X-Rebirth-Admin-Token")
@@ -283,7 +328,11 @@ def request_json(required=False):
 
 @app.context_processor
 def inject_rebirth_security():
-    return {"csrf_token": csrf_token}
+    user = current_user()
+    return {
+        "csrf_token": csrf_token,
+        "rebirth_navbar": rebirth_navbar_payload(user),
+    }
 
 
 @app.before_request
@@ -348,8 +397,17 @@ def rebirth_collection():
 @app.get("/rebirth/shop")
 def rebirth_shop():
     user = current_user()
-    history = rebirth_repo().booster_history(user["id"]) if user else []
-    return render_template("rebirth_product.html", page=shop_payload(account=account_payload(user), booster_history=history))
+    repo = rebirth_repo()
+    history = repo.booster_history(user["id"]) if user else []
+    market = (
+        run_async(async_active_market_offers(exclude_user_id=user["id"] if user else None))
+        if async_database_url()
+        else repo.market_offers(exclude_user_id=user["id"] if user else None)
+    )
+    return render_template(
+        "rebirth_product.html",
+        page=shop_payload(account=account_payload(user), booster_history=history, market_offers=market),
+    )
 
 
 @app.get("/rebirth/progression")
@@ -444,6 +502,8 @@ def webmanifest():
 def api_rebirth_start():
     try:
         payload = request_json(required=False)
+        if not async_database_url() and not session.get("rebirth_user_id"):
+            return start_memory_rebirth_match(payload)
         user = current_user()
         repo = rebirth_repo()
         player_card_ids = None
@@ -492,18 +552,56 @@ def api_rebirth_play_card():
         user = current_user()
         repo = rebirth_repo()
         ensure_match_access(match, user=user)
-        play_card(
+        if payload.get("attacker_instance_id"):
+            declare_attack(
+                match,
+                attacker_instance_id=payload.get("attacker_instance_id"),
+                target_instance_id=payload.get("target_instance_id"),
+            )
+        else:
+            play_card(
+                match,
+                card_instance_id=payload.get("card_instance_id"),
+                card_id=payload.get("card_id"),
+            )
+        state = public_state(match)
+        progress = None
+        reward = match_reward_payload(None, None, state)
+        if user:
+            if state.get("last_clash") and state.get("phase") in {"result", "finished"}:
+                before = repo.progression(user["id"])
+                progress = repo.record_clash_result(user["id"], state)
+                reward = match_reward_payload(before, progress, state)
+            repo.upsert_match_history(user["id"], match)
+        persist_live_match_state_if_configured(match, user=user)
+        return json_success(state, match.get("result"), progression=progress, match_reward=reward)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/attack")
+def api_rebirth_attack():
+    try:
+        payload = request_json(required=True)
+        match = get_match(payload.get("match_id"))
+        user = current_user()
+        repo = rebirth_repo()
+        ensure_match_access(match, user=user)
+        declare_attack(
             match,
-            card_instance_id=payload.get("card_instance_id"),
-            card_id=payload.get("card_id"),
+            attacker_instance_id=payload.get("attacker_instance_id"),
+            target_instance_id=payload.get("target_instance_id"),
         )
         state = public_state(match)
         progress = None
         reward = match_reward_payload(None, None, state)
         if user:
-            before = repo.progression(user["id"])
-            progress = repo.record_clash_result(user["id"], state)
-            reward = match_reward_payload(before, progress, state)
+            if state.get("last_clash") and state.get("phase") in {"result", "finished"}:
+                before = repo.progression(user["id"])
+                progress = repo.record_clash_result(user["id"], state)
+                reward = match_reward_payload(before, progress, state)
             repo.upsert_match_history(user["id"], match)
         persist_live_match_state_if_configured(match, user=user)
         return json_success(state, match.get("result"), progression=progress, match_reward=reward)
@@ -653,8 +751,75 @@ def api_rebirth_loadout():
 @app.get("/api/rebirth/shop")
 def api_rebirth_shop():
     user = current_user()
-    history = rebirth_repo().booster_history(user["id"]) if user else []
-    return json_payload(shop=shop_payload(account=account_payload(user), booster_history=history))
+    repo = rebirth_repo()
+    history = repo.booster_history(user["id"]) if user else []
+    market = (
+        run_async(async_active_market_offers(exclude_user_id=user["id"] if user else None))
+        if async_database_url()
+        else repo.market_offers(exclude_user_id=user["id"] if user else None)
+    )
+    return json_payload(shop=shop_payload(account=account_payload(user), booster_history=history, market_offers=market))
+
+
+@app.get("/api/rebirth/market/offers")
+def api_rebirth_market_offers():
+    try:
+        user = current_user()
+        if async_database_url():
+            offers = run_async(async_active_market_offers(exclude_user_id=user["id"] if user else None))
+        else:
+            offers = rebirth_repo().market_offers(exclude_user_id=user["id"] if user else None)
+        return json_payload(market={"offers": offers, "fee_rate": "5%", "currencies": ["GOLD", "PREMIUM"]})
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.post("/api/rebirth/market/list")
+def api_rebirth_market_list():
+    try:
+        user = require_user()
+        payload = request_json(required=True)
+        if async_database_url():
+            offer = run_async(
+                async_create_market_offer(
+                    int(user["id"]),
+                    payload.get("card_id"),
+                    payload.get("price"),
+                    payload.get("currency_type"),
+                    username=user["username"],
+                )
+            )
+            offers = run_async(async_active_market_offers(exclude_user_id=user["id"]))
+        else:
+            repo = rebirth_repo()
+            offer = repo.create_market_offer(user["id"], payload.get("card_id"), payload.get("price"), payload.get("currency_type"))
+            offers = repo.market_offers(exclude_user_id=user["id"])
+        return json_payload(market={"offer": offer, "offers": offers})
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except ValueError as error:
+        return json_error(str(error), "invalid_market_card", status=400)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/market/buy")
+def api_rebirth_market_buy():
+    try:
+        user = require_user()
+        payload = request_json(required=True)
+        if async_database_url():
+            purchase = run_async(async_buy_market_offer(int(user["id"]), payload.get("offer_id"), username=user["username"]))
+            offers = run_async(async_active_market_offers(exclude_user_id=user["id"]))
+        else:
+            repo = rebirth_repo()
+            purchase = repo.buy_market_offer(user["id"], payload.get("offer_id"))
+            offers = repo.market_offers(exclude_user_id=user["id"])
+        return json_payload(market={"purchase": purchase, "offers": offers})
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
 
 
 @app.post("/api/rebirth/booster/open")

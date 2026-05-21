@@ -22,9 +22,9 @@ def test_rebirth_deploy_smoke_flow(client):
     collection = client.get("/rebirth/collection")
     booster = client.post("/api/rebirth/booster/open", json={"seed": "deploy-smoke-booster"})
     assert collection.status_code == 200
-    assert "Cards" in collection.get_data(as_text=True)
+    assert "Minha Colecao" in collection.get_data(as_text=True)
     assert booster.status_code == 200
-    assert booster.get_json()["booster"]["summary"]["count"] == 4
+    assert booster.get_json()["booster"]["summary"]["count"] == 5
 
     start = client.post("/api/rebirth/start", json={"seed": "deploy-smoke"})
     start_payload = start.get_json()
@@ -32,32 +32,51 @@ def test_rebirth_deploy_smoke_flow(client):
     assert start_payload["ok"] is True
     assert start_payload["state"]["phase"] == "choose"
     assert start_payload["state"]["match_id"].startswith("rebirth-")
+    evolution = start_payload["state"]["available_evolutions"][0]
 
     evolve = client.post(
         "/api/rebirth/evolve",
         json={
             "match_id": start_payload["state"]["match_id"],
-            "card_id": "dreadclaw",
+            "card_id": evolution["card_id"],
         },
     )
     evolve_payload = evolve.get_json()
     assert evolve.status_code == 200
     assert evolve_payload["ok"] is True
-    assert evolve_payload["evolved"]["id"] == "dreadmaw"
+    assert evolve_payload["evolved"]["id"] == evolution["evolution_id"]
 
-    played_card = evolve_payload["state"]["player"]["hand"][0]
-    clash = client.post(
+    turn_two = client.post("/api/rebirth/next-turn", json={"match_id": evolve_payload["state"]["match_id"]})
+    turn_two_payload = turn_two.get_json()
+    assert turn_two.status_code == 200
+    assert turn_two_payload["state"]["player"]["max_energy"] == 2
+
+    played_card = next(card for card in turn_two_payload["state"]["player"]["hand"] if card["id"] == evolution["evolution_id"])
+    summon = client.post(
         "/api/rebirth/play-card",
         json={
-            "match_id": evolve_payload["state"]["match_id"],
+            "match_id": turn_two_payload["state"]["match_id"],
             "card_instance_id": played_card["instance_id"],
         },
     )
+    summon_payload = summon.get_json()
+    assert summon.status_code == 200
+    assert summon_payload["ok"] is True
+    assert summon_payload["state"]["phase"] == "choose"
+    assert summon_payload["state"]["player"]["battlefield"][-1]["id"] == evolution["evolution_id"]
+
+    attack_json = {
+        "match_id": summon_payload["state"]["match_id"],
+        "attacker_instance_id": summon_payload["state"]["player"]["battlefield"][-1]["instance_id"],
+    }
+    if summon_payload["state"]["bot"]["battlefield"]:
+        attack_json["target_instance_id"] = summon_payload["state"]["bot"]["battlefield"][0]["instance_id"]
+    clash = client.post("/api/rebirth/attack", json=attack_json)
     clash_payload = clash.get_json()
     assert clash.status_code == 200
     assert clash_payload["ok"] is True
     assert clash_payload["state"]["phase"] in {"result", "finished"}
-    assert clash_payload["state"]["last_clash"]["player_card"]["id"] == "dreadmaw"
+    assert clash_payload["state"]["last_clash"]["player_card"]["id"] == evolution["evolution_id"]
 
     legacy_browser = client.get("/training")
     legacy_api = client.post("/api/beta/telemetry", json={"event": "retired"})

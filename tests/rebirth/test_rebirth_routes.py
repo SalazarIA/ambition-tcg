@@ -4,7 +4,7 @@ def test_home_rebirth_and_health_routes_return_200(client):
     health = client.get("/health")
 
     assert home.status_code == 200
-    assert "One card. One decision. One clash." in home.get_data(as_text=True)
+    assert "Duelos, colecao e mercado em uma mesa viva." in home.get_data(as_text=True)
     assert rebirth.status_code == 200
     assert "data-rebirth-app" in rebirth.get_data(as_text=True)
     assert health.status_code == 200
@@ -20,16 +20,16 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
     assert "js/rebirth.js" in body
 
     for text in (
-        "One card",
-        "One decision",
-        "One clash",
+        "Build field",
+        "Pick target",
+        "Break guard",
         "Combine duplicates",
         "Evolve monsters",
         "Win the duel",
         "Play Rebirth",
         "New Match",
-        "Combine",
-        "Clash",
+        "Summon",
+        "Battle Zone",
     ):
         assert text in body
 
@@ -38,6 +38,8 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
         "turn-number",
         "bot-hp",
         "bot-card",
+        "bot-battlefield",
+        "player-battlefield",
         "focus-card",
         "evolution-panel",
         "evolution-name",
@@ -75,10 +77,10 @@ def test_start_api_returns_clear_json_state(client):
     assert payload["state"]["bot_profile"]["id"] in {"defensive", "aggressive", "opportunist"}
 
 
-def test_play_card_api_resolves_turn(client):
+def test_play_card_api_summons_then_attack_resolves_combat(client):
     start = client.post("/api/rebirth/start", json={"seed": "routes-play"})
     state = start.get_json()["state"]
-    card = next(card for card in state["player"]["hand"] if card["id"] == "dreadclaw")
+    card = next(card for card in state["player"]["hand"] if card["id"] == "card_001")
 
     response = client.post(
         "/api/rebirth/play-card",
@@ -88,10 +90,28 @@ def test_play_card_api_resolves_turn(client):
 
     assert response.status_code == 200
     assert payload["ok"] is True
-    assert payload["state"]["phase"] == "result"
-    assert payload["state"]["last_clash"]["player_card"]["id"] == "dreadclaw"
-    assert payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
+    assert payload["state"]["phase"] == "choose"
+    assert payload["state"]["result"]["outcome"] == "Summon"
+    assert payload["state"]["player"]["battlefield"][0]["id"] == "card_001"
+    assert payload["state"]["last_clash"] is None
     assert payload["match_reward"]["persisted"] is False
+
+    target = payload["state"]["bot"]["battlefield"][0]
+    attack = client.post(
+        "/api/rebirth/attack",
+        json={
+            "match_id": payload["state"]["match_id"],
+            "attacker_instance_id": payload["state"]["player"]["battlefield"][0]["instance_id"],
+            "target_instance_id": target["instance_id"],
+        },
+    )
+    attack_payload = attack.get_json()
+
+    assert attack.status_code == 200
+    assert attack_payload["ok"] is True
+    assert attack_payload["state"]["phase"] == "result"
+    assert attack_payload["state"]["last_clash"]["player_card"]["id"] == "card_001"
+    assert attack_payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
 
 
 def test_evolve_api_combines_duplicate(client):
@@ -100,14 +120,14 @@ def test_evolve_api_combines_duplicate(client):
 
     response = client.post(
         "/api/rebirth/evolve",
-        json={"match_id": state["match_id"], "card_id": "dreadclaw"},
+        json={"match_id": state["match_id"], "card_id": "card_001"},
     )
     payload = response.get_json()
 
     assert response.status_code == 200
     assert payload["ok"] is True
-    assert payload["evolved"]["id"] == "dreadmaw"
-    assert payload["state"]["player"]["hand"][0]["id"] == "dreadmaw"
+    assert payload["evolved"]["id"] == "card_011"
+    assert payload["state"]["player"]["hand"][0]["id"] == "card_011"
 
 
 def test_next_turn_api_advances_after_result(client):
@@ -127,12 +147,14 @@ def test_next_turn_api_advances_after_result(client):
     assert payload["ok"] is True
     assert payload["state"]["turn"] == 2
     assert payload["state"]["phase"] == "choose"
+    assert payload["state"]["player"]["max_energy"] == 2
+    assert payload["state"]["player"]["battlefield"]
 
 
 def test_invalid_api_returns_json_error(client):
     response = client.post(
         "/api/rebirth/play-card",
-        json={"match_id": "missing", "card_id": "dreadclaw"},
+        json={"match_id": "missing", "card_id": "card_001"},
     )
     payload = response.get_json()
 
@@ -147,7 +169,7 @@ def test_expected_action_errors_do_not_return_500(client):
 
     missing_match = client.post(
         "/api/rebirth/play-card",
-        json={"match_id": "missing", "card_id": "dreadclaw"},
+        json={"match_id": "missing", "card_id": "card_001"},
     )
     malformed = client.post(
         "/api/rebirth/play-card",
@@ -160,10 +182,10 @@ def test_expected_action_errors_do_not_return_500(client):
     )
     duplicate = client.post(
         "/api/rebirth/evolve",
-        json={"match_id": state["match_id"], "card_id": "voidstalker"},
+        json={"match_id": state["match_id"], "card_id": "card_002"},
     )
-    invalid_phase = client.post(
-        "/api/rebirth/next-turn",
+    invalid_attack = client.post(
+        "/api/rebirth/attack",
         json={"match_id": state["match_id"]},
     )
 
@@ -172,7 +194,7 @@ def test_expected_action_errors_do_not_return_500(client):
         (malformed, 400, "malformed_request"),
         (invalid_card, 400, "invalid_card"),
         (duplicate, 400, "duplicate_not_available"),
-        (invalid_phase, 409, "invalid_phase"),
+        (invalid_attack, 400, "missing_attacker"),
     ]
     for response, status, code in expected:
         payload = response.get_json()

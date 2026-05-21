@@ -2,15 +2,24 @@ from collections import Counter
 from copy import deepcopy
 from random import Random
 
-from services.rebirth_cards import BASE_MONSTERS, EVOLVED_MONSTERS, PLAYER_DECK, catalog_payload, get_card
+from services.rebirth_cards import (
+    BASE_MONSTERS,
+    EVOLVED_MONSTERS,
+    PLAYER_DECK,
+    SPELL_CARDS,
+    TRAP_CARDS,
+    catalog_payload,
+    get_card,
+    validate_deck_distribution,
+)
 
 
 PRODUCT_NAV = [
-    {"key": "play", "label": "Play", "href": "/rebirth"},
-    {"key": "collection", "label": "Cards", "href": "/rebirth/collection"},
-    {"key": "shop", "label": "Packs", "href": "/rebirth/shop"},
-    {"key": "progression", "label": "Rewards", "href": "/rebirth/progression"},
-    {"key": "profile", "label": "Profile", "href": "/rebirth/profile"},
+    {"key": "play", "label": "Arena", "href": "/rebirth"},
+    {"key": "collection", "label": "Colecao", "href": "/rebirth/collection"},
+    {"key": "shop", "label": "Loja", "href": "/rebirth/shop"},
+    {"key": "progression", "label": "Recompensas", "href": "/rebirth/progression"},
+    {"key": "profile", "label": "Perfil", "href": "/rebirth/profile"},
 ]
 
 LAB_LINKS = [
@@ -22,16 +31,7 @@ LAB_LINKS = [
     {"key": "release", "label": "Release Gate", "href": "/rebirth/release"},
 ]
 
-DEFAULT_LOADOUT = [
-    "dreadclaw",
-    "dreadclaw",
-    "stoneshell",
-    "shadewisp",
-    "skywarden",
-    "ironbastion",
-    "embermaw",
-    "voidstalker",
-]
+DEFAULT_LOADOUT = list(PLAYER_DECK)
 
 AUTH_PLAN_STEPS = [
     {
@@ -52,7 +52,7 @@ AUTH_PLAN_STEPS = [
     {
         "title": "Build",
         "status": "Step 4",
-        "copy": "Open packs, tune your eight-card loadout and bring it into the next duel.",
+        "copy": "Open packs, tune your 30-card deck and bring it into the next duel.",
     },
 ]
 
@@ -82,7 +82,7 @@ TUTORIAL_STEPS = [
 RELEASE_CHECKS = [
     {"name": "Product Truth", "state": "passed", "copy": "Ambitionz Rebirth is the active product surface."},
     {"name": "Legacy Disabled", "state": "passed", "copy": "Retired browser routes redirect and retired APIs return 410."},
-    {"name": "Persistence", "state": "passed", "copy": "Auth, collection, loadout, progression and boosters persist in SQLite."},
+    {"name": "Persistence", "state": "passed", "copy": "Auth, collection, 30-card decks, progression and boosters persist in SQLite/PostgreSQL paths."},
     {"name": "Account Safety", "state": "passed", "copy": "CSRF, auth throttling and password changes are active in the Rebirth shell."},
     {"name": "Frontend", "state": "passed", "copy": "Vanilla Rebirth pages avoid old Arena/Ascension assets."},
     {"name": "Card Feel", "state": "passed", "copy": "Clash results expose ability events, impact feedback and persisted reward moments."},
@@ -126,7 +126,7 @@ def nav(active):
     return items
 
 
-def page_payload(key, title, subtitle, primary_label="Play Rebirth", primary_href="/rebirth"):
+def page_payload(key, title, subtitle, primary_label="Entrar na Arena", primary_href="/rebirth"):
     return {
         "key": key,
         "title": title,
@@ -150,40 +150,40 @@ def product_shell_payload(account=None):
     payload = page_payload(
         "home",
         "Ambitionz Rebirth",
-        "A fast one-card monster duel where every choice has pressure, payoff and progress.",
+        "Uma plataforma TCG de fantasia sombria para duelar, colecionar e abrir pacotes.",
     )
     payload.update(
         {
             "account": account,
             "status": [
-                {"label": "Mode", "value": "One Card Clash"},
-                {"label": "Cards", "value": "13 monsters"},
-                {"label": "Progress", "value": "Saved account"},
+                {"label": "Modo", "value": "TCG Clash"},
+                {"label": "Cartas", "value": "100 no catalogo"},
+                {"label": "Economia", "value": "Gold + Coinz"},
             ],
             "blocks": [
                 {
-                    "title": "Create Account",
-                    "copy": "Save your cards, rewards, badges and match progress.",
-                    "href": "/rebirth/account",
+                    "title": "Entrar na Arena",
+                    "copy": "Comece um duelo contra o bot e leia a mesa viva em tempo real.",
+                    "href": "/rebirth",
                 },
                 {
-                    "title": "Cards",
-                    "copy": "Build an eight-card loadout around damage, guard and evolution pairs.",
+                    "title": "Minha Colecao",
+                    "copy": "Monte um deck de 30 cartas com monstros, magias, armadilhas e evolucoes.",
                     "href": "/rebirth/collection",
                 },
                 {
-                    "title": "Packs",
-                    "copy": "Open Rebirth packs and add monsters to your collection.",
+                    "title": "Loja & Mercado",
+                    "copy": "Abra boosters de 5 cartas e veja ofertas ativas de outros jogadores.",
                     "href": "/rebirth/shop",
                 },
                 {
-                    "title": "Rewards",
-                    "copy": "Climb a 20-level reward track with daily XP and pack milestones.",
+                    "title": "Recompensas",
+                    "copy": "Suba de nivel com XP, missoes diarias e marcos de temporada.",
                     "href": "/rebirth/progression",
                 },
                 {
-                    "title": "Profile",
-                    "copy": "Track level, badges, owned cards and account controls.",
+                    "title": "Perfil",
+                    "copy": "Acompanhe nivel, badges, carteira e controles da conta.",
                     "href": "/rebirth/profile",
                 },
             ],
@@ -196,16 +196,16 @@ def auth_plan_payload(account=None):
     account = account or guest_account()
     payload = page_payload(
         "account",
-        "Create Account",
-        "Save your cards, rewards and guided first match.",
-        primary_label="Start Tutorial",
+        "Login / Registro",
+        "Entre para guardar colecao, recompensas, Gold e Coinz.",
+        primary_label="Entrar na Arena",
         primary_href="/rebirth?firstRun=1",
     )
     payload["account"] = account
     payload["steps"] = deepcopy(AUTH_PLAN_STEPS)
     payload["constraints"] = [
         "Every clash earns account XP.",
-        "The first match starts with card-choice coaching.",
+        "The first match starts with coaching across monsters, spells and traps.",
         "Daily rewards unlock after one clash.",
         "Packs and loadout changes persist to this player.",
         "Password controls live inside the Profile screen.",
@@ -240,9 +240,9 @@ def collection_payload(account=None, collection_counts=None, loadout_card_ids=No
     base_owned = [card for card in cards if card["owned_count"]]
     payload = page_payload(
         "collection",
-        "Cards",
-        "Tune your eight-card loadout around attack, guard and evolution pairs.",
-        primary_label="Enter Arena",
+        "Minha Colecao",
+        "Ajuste seu deck de 30 cartas entre monstros, magias, armadilhas e pares de evolucao.",
+        primary_label="Entrar na Arena",
         primary_href="/rebirth",
     )
     payload.update(
@@ -266,8 +266,7 @@ def validate_loadout(card_ids, collection_counts=None):
     if not isinstance(card_ids, list):
         raise ValueError("card_ids must be a list.")
     selected = [str(card_id) for card_id in card_ids if str(card_id or "").strip()]
-    if len(selected) != 8:
-        raise ValueError("Rebirth loadout preview requires exactly 8 cards.")
+    validate_deck_distribution(selected)
 
     owned = owned_counts(collection_counts)
     selected_counts = Counter(selected)
@@ -291,13 +290,13 @@ def validate_loadout(card_ids, collection_counts=None):
     }
 
 
-def shop_payload(account=None, booster_history=None):
+def shop_payload(account=None, booster_history=None, market_offers=None):
     account = account or guest_account()
     payload = page_payload(
         "shop",
-        "Packs",
-        "Open Rebirth packs and add monsters to your saved collection.",
-        primary_label="Open Pack",
+        "Loja & Mercado",
+        "Abra boosters, revele cartas por raridade e acompanhe ofertas do mercado.",
+        primary_label="Abrir Booster",
         primary_href="/rebirth/shop",
     )
     payload.update(
@@ -305,15 +304,20 @@ def shop_payload(account=None, booster_history=None):
             "offers": [
                 {
                     "id": "starter_booster_demo",
-                    "name": "Rebirth Starter Pack",
-                    "price": "Free",
-                    "contents": "4 cards, one elevated slot, saved to your collection",
+                    "name": "Booster Rebirth",
+                    "price": "Gratis na beta",
+                    "contents": "5 cartas: 3 comuns, 1 incomum e 1 rara+",
                     "state": "available",
                 }
             ],
+            "market": {
+                "offers": market_offers or [],
+                "fee_rate": "5%",
+                "currencies": ["GOLD", "PREMIUM"],
+            },
             "account": account,
             "history": booster_history or [],
-            "disclaimer": "Packs are free during the Rebirth beta. Cards persist for signed-in players.",
+            "disclaimer": "Boosters sao gratis durante a beta Rebirth. O mercado bloqueia cartas listadas ate venda ou cancelamento.",
         }
     )
     return payload
@@ -321,11 +325,20 @@ def shop_payload(account=None, booster_history=None):
 
 def open_booster(seed=None):
     rng = Random(str(seed or "rebirth-booster-demo"))
-    base_pool = [card["id"] for card in BASE_MONSTERS]
-    elevated_pool = [card["id"] for card in EVOLVED_MONSTERS] + ["embermaw", "dreadclaw"]
-    card_ids = [rng.choice(base_pool) for _ in range(3)]
-    card_ids.append(rng.choice(elevated_pool))
+    common_pool = [card["id"] for card in BASE_MONSTERS if card.get("rarity") == "COMMON"]
+    uncommon_pool = [card["id"] for card in SPELL_CARDS + TRAP_CARDS if card.get("rarity") == "UNCOMMON"]
+    rare_pool = [card["id"] for card in EVOLVED_MONSTERS + SPELL_CARDS + TRAP_CARDS if card.get("rarity") == "RARE"]
+    epic_pool = [card["id"] for card in EVOLVED_MONSTERS if card.get("rarity") == "EPIC"]
+    elevated_pool = epic_pool if rng.random() < 0.2 and epic_pool else rare_pool
+    card_ids = [
+        rng.choice(common_pool),
+        rng.choice(common_pool),
+        rng.choice(common_pool),
+        rng.choice(uncommon_pool),
+        rng.choice(elevated_pool),
+    ]
     cards = [get_card(card_id) for card_id in card_ids]
+    rarity_counts = Counter(card["rarity"] for card in cards)
     return {
         "booster_id": "starter_booster_demo",
         "cards": cards,
@@ -333,6 +346,8 @@ def open_booster(seed=None):
             "count": len(cards),
             "highest_attack": max(card["attack"] for card in cards),
             "elevated_slot": cards[-1]["name"],
+            "rarity_counts": dict(rarity_counts),
+            "rarity_slots": ["COMMON", "COMMON", "COMMON", "UNCOMMON", "RARE_PLUS"],
         },
     }
 
@@ -405,7 +420,7 @@ def guest_profile():
             "tutorial_complete": False,
             "daily_claimed": False,
         },
-        "collection": {"owned_cards": len(PLAYER_DECK), "unique_owned": len(set(PLAYER_DECK)), "loadout_size": 8},
+        "collection": {"owned_cards": len(PLAYER_DECK), "unique_owned": len(set(PLAYER_DECK)), "loadout_size": len(PLAYER_DECK)},
         "achievements": [
             {
                 "key": key,
@@ -447,6 +462,7 @@ def profile_payload(account=None, profile=None):
             "stats": [
                 {"label": "Level", "value": progress.get("level", 1)},
                 {"label": "XP", "value": f"{progress.get('xp', 0)}/{progress.get('next_level_xp', 500)}"},
+                {"label": "Gold", "value": progress.get("gold", 0)},
                 {"label": "Owned", "value": collection.get("owned_cards", 0)},
                 {"label": "Badges", "value": profile.get("unlocked_achievements", 0)},
             ],

@@ -5,28 +5,29 @@ import os
 import re
 import secrets
 import sqlite3
+import uuid
 from collections import Counter
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import DateTime, Integer, JSON, String
+from sqlalchemy import DateTime, Integer, JSON, String, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from services.rebirth_cards import PLAYER_DECK, get_card
+from services.rebirth_cards import (
+    CARD_CATALOG,
+    PLAYER_DECK,
+    STARTER_DECK_SIZE,
+    get_card,
+    is_monster,
+    is_spell,
+    is_trap,
+    validate_deck_distribution,
+)
 
 
-DEFAULT_LOADOUT = [
-    "dreadclaw",
-    "dreadclaw",
-    "stoneshell",
-    "shadewisp",
-    "skywarden",
-    "ironbastion",
-    "embermaw",
-    "voidstalker",
-]
+DEFAULT_LOADOUT = list(PLAYER_DECK)
 
 HASH_ITERATIONS = 180000
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,24}$")
@@ -45,6 +46,7 @@ class UserAccount(Base):
     xp: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     balance_coins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    balance_premium: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
@@ -55,6 +57,7 @@ class UserCollection(Base):
     user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     card_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    locked_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     evolved_tier: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
@@ -83,6 +86,18 @@ class EconomyTransaction(Base):
     currency: Mapped[str] = mapped_column(String(24), nullable=False)
     reference_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class MarketOffer(Base):
+    __tablename__ = "market_offers"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    seller_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    card_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    price: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="ACTIVE", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 ASYNC_DATABASE_ENV_NAMES = ("REBIRTH_DATABASE_URL", "DATABASE_URL", "POSTGRES_URL")
@@ -231,12 +246,39 @@ async def _ensure_async_user_account(session, user_id, *, username=None, passwor
         password_hash=str(password_hash or "external-account"),
         xp=0,
         level=1,
-        balance_coins=0,
+        balance_coins=1000,
+        balance_premium=0,
         created_at=utc_datetime(),
     )
     session.add(account)
     await session.flush()
+    await _seed_async_user_collection(session, account, f"{account.id}:{account.username}")
+    session.add(
+        EconomyTransaction(
+            user_id=int(account.id),
+            transaction_type="STARTER_WALLET",
+            amount=1000,
+            currency="GOLD",
+            reference_id=str(account.id),
+            timestamp=utc_datetime(),
+        )
+    )
     return account
+
+
+async def _seed_async_user_collection(session, account, seed_source):
+    deck = deterministic_starter_deck(seed_source)
+    for card_id in deck:
+        card = get_card(card_id)
+        session.add(
+            UserCollection(
+                user_id=int(account.id),
+                card_id=card_id,
+                quantity=1,
+                locked_quantity=0,
+                evolved_tier=int(card.get("tier", 1) or 1),
+            )
+        )
 
 
 async def save_match_state(match_id: str, state_dict: dict) -> bool:
@@ -344,6 +386,8 @@ async def credit_verified_purchase(
                     raise RebirthPersistenceError("Purchase amount must be positive.", "invalid_purchase", status=400)
                 if currency == "coins":
                     account.balance_coins = int(account.balance_coins or 0) + amount
+                elif currency in {"premium", "gems"}:
+                    account.balance_premium = int(account.balance_premium or 0) + amount
                 elif currency == "xp":
                     account.xp = int(account.xp or 0) + amount
                     account.level = calculate_level(account.xp)
@@ -360,6 +404,7 @@ async def credit_verified_purchase(
                 return {
                     "user_id": account.id,
                     "balance_coins": int(account.balance_coins or 0),
+                    "balance_premium": int(account.balance_premium or 0),
                     "xp": int(account.xp or 0),
                     "level": int(account.level or 1),
                     "transaction_id": int(transaction.id),
@@ -371,6 +416,230 @@ async def credit_verified_purchase(
         raise
     except SQLAlchemyError as exc:
         raise RebirthPersistenceError("Failed to credit verified purchase.", "database_write_failed", status=500) from exc
+
+
+def normalize_market_currency(currency_type):
+    currency = str(currency_type or "GOLD").strip().upper()
+    if currency not in {"GOLD", "PREMIUM"}:
+        raise RebirthPersistenceError("currency_type must be GOLD or PREMIUM.", "invalid_market_currency", status=400)
+    return currency
+
+
+def _normalize_market_price(price):
+    try:
+        price = int(price)
+    except (TypeError, ValueError) as exc:
+        raise RebirthPersistenceError("Market price must be a positive integer.", "invalid_market_price", status=400) from exc
+    if price <= 0:
+        raise RebirthPersistenceError("Market price must be a positive integer.", "invalid_market_price", status=400)
+    return price
+
+
+def _market_fee(price):
+    return max(1, int(price * 5 // 100)) if price >= 20 else 1
+
+
+def _account_balance(account, currency_type):
+    if currency_type == "PREMIUM":
+        return int(getattr(account, "balance_premium", 0) or 0)
+    return int(getattr(account, "balance_coins", 0) or 0)
+
+
+def _set_account_balance(account, currency_type, value):
+    value = max(0, int(value or 0))
+    if currency_type == "PREMIUM":
+        account.balance_premium = value
+    else:
+        account.balance_coins = value
+
+
+async def _set_serializable_if_postgres(session):
+    bind = session.get_bind()
+    if bind is not None and getattr(bind.dialect, "name", "") == "postgresql":
+        await session.execute(text("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"))
+
+
+def _market_offer_payload(offer, *, seller_name=None):
+    card = get_card(offer.card_id)
+    return {
+        "id": str(offer.id),
+        "seller_id": int(offer.seller_id),
+        "seller_name": seller_name,
+        "card_id": offer.card_id,
+        "card": card,
+        "price": int(offer.price),
+        "currency_type": str(offer.currency_type),
+        "status": str(offer.status),
+        "created_at": offer.created_at.isoformat() if hasattr(offer.created_at, "isoformat") else str(offer.created_at),
+    }
+
+
+async def create_market_offer(user_id: int, card_id: str, price: int, currency_type: str, *, username: Optional[str] = None) -> dict:
+    card = get_card(card_id)
+    price = _normalize_market_price(price)
+    currency_type = normalize_market_currency(currency_type)
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    try:
+        async with session_maker() as session:
+            async with session.begin():
+                await _set_serializable_if_postgres(session)
+                await _ensure_async_user_account(session, user_id, username=username)
+                rows = (
+                    await session.execute(
+                        select(UserCollection)
+                        .where(UserCollection.user_id == int(user_id), UserCollection.card_id == card["id"])
+                        .with_for_update()
+                    )
+                ).scalars().all()
+                available = sum(max(0, int(row.quantity or 0) - int(row.locked_quantity or 0)) for row in rows)
+                if available <= 0:
+                    raise RebirthPersistenceError("Card is not available for market listing.", "card_not_available", status=409)
+                for row in rows:
+                    if int(row.quantity or 0) - int(row.locked_quantity or 0) > 0:
+                        row.locked_quantity = int(row.locked_quantity or 0) + 1
+                        break
+                offer = MarketOffer(
+                    id=str(uuid.uuid4()),
+                    seller_id=int(user_id),
+                    card_id=card["id"],
+                    price=price,
+                    currency_type=currency_type,
+                    status="ACTIVE",
+                    created_at=utc_datetime(),
+                )
+                session.add(offer)
+                await session.flush()
+                return _market_offer_payload(offer, seller_name=username)
+    except RebirthPersistenceError:
+        raise
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to list card on market.", "database_write_failed", status=500) from exc
+
+
+async def active_market_offers(exclude_user_id: Optional[int] = None, limit: int = 40) -> list[dict]:
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    limit = max(1, min(int(limit or 40), 100))
+    try:
+        async with session_maker() as session:
+            statement = select(MarketOffer).where(MarketOffer.status == "ACTIVE").order_by(MarketOffer.created_at.desc()).limit(limit)
+            if exclude_user_id:
+                statement = statement.where(MarketOffer.seller_id != int(exclude_user_id))
+            rows = (await session.execute(statement)).scalars().all()
+            return [_market_offer_payload(row) for row in rows]
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to load market offers.", "database_read_failed", status=500) from exc
+
+
+async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[str] = None) -> dict:
+    if not offer_id:
+        raise RebirthPersistenceError("offer_id is required.", "missing_market_offer", status=400)
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    try:
+        async with session_maker() as session:
+            async with session.begin():
+                await _set_serializable_if_postgres(session)
+                buyer = await _ensure_async_user_account(session, user_id, username=username)
+                offer = (
+                    await session.execute(
+                        select(MarketOffer).where(MarketOffer.id == str(offer_id)).with_for_update()
+                    )
+                ).scalar_one_or_none()
+                if not offer or offer.status != "ACTIVE":
+                    raise RebirthPersistenceError("Market offer is no longer active.", "market_offer_unavailable", status=409)
+                if int(offer.seller_id) == int(user_id):
+                    raise RebirthPersistenceError("Players cannot buy their own market offer.", "market_self_buy", status=409)
+                seller = (
+                    await session.execute(
+                        select(UserAccount).where(UserAccount.id == int(offer.seller_id)).with_for_update()
+                    )
+                ).scalar_one_or_none()
+                if not seller:
+                    raise RebirthPersistenceError("Market seller account is missing.", "market_seller_missing", status=409)
+
+                currency_type = normalize_market_currency(offer.currency_type)
+                price = int(offer.price)
+                buyer_balance = _account_balance(buyer, currency_type)
+                if buyer_balance < price:
+                    raise RebirthPersistenceError("Insufficient balance for market purchase.", "insufficient_balance", status=409)
+                fee = _market_fee(price)
+                seller_net = price - fee
+                _set_account_balance(buyer, currency_type, buyer_balance - price)
+                _set_account_balance(seller, currency_type, _account_balance(seller, currency_type) + seller_net)
+
+                collection_rows = (
+                    await session.execute(
+                        select(UserCollection)
+                        .where(
+                            UserCollection.user_id == int(offer.seller_id),
+                            UserCollection.card_id == offer.card_id,
+                            UserCollection.locked_quantity > 0,
+                        )
+                        .with_for_update()
+                    )
+                ).scalars().all()
+                locked_row = next((row for row in collection_rows if int(row.locked_quantity or 0) > 0), None)
+                if not locked_row:
+                    raise RebirthPersistenceError("Locked market item is missing.", "market_item_lock_missing", status=409)
+                locked_row.quantity = max(0, int(locked_row.quantity or 0) - 1)
+                locked_row.locked_quantity = max(0, int(locked_row.locked_quantity or 0) - 1)
+                session.add(
+                    UserCollection(
+                        user_id=int(user_id),
+                        card_id=offer.card_id,
+                        quantity=1,
+                        locked_quantity=0,
+                        evolved_tier=int(get_card(offer.card_id).get("tier", 1) or 1),
+                    )
+                )
+                offer.status = "SOLD"
+                reference_id = str(offer.id)
+                session.add_all(
+                    [
+                        EconomyTransaction(
+                            user_id=int(user_id),
+                            transaction_type="MARKET_BUY",
+                            amount=-price,
+                            currency=currency_type,
+                            reference_id=reference_id,
+                            timestamp=utc_datetime(),
+                        ),
+                        EconomyTransaction(
+                            user_id=int(offer.seller_id),
+                            transaction_type="MARKET_SALE",
+                            amount=seller_net,
+                            currency=currency_type,
+                            reference_id=reference_id,
+                            timestamp=utc_datetime(),
+                        ),
+                        EconomyTransaction(
+                            user_id=int(offer.seller_id),
+                            transaction_type="MARKET_FEE",
+                            amount=-fee,
+                            currency=currency_type,
+                            reference_id=reference_id,
+                            timestamp=utc_datetime(),
+                        ),
+                    ]
+                )
+                await session.flush()
+                return {
+                    "offer": _market_offer_payload(offer),
+                    "buyer_id": int(user_id),
+                    "seller_id": int(offer.seller_id),
+                    "price": price,
+                    "fee": fee,
+                    "seller_net": seller_net,
+                    "currency_type": currency_type,
+                    "buyer_balance": _account_balance(buyer, currency_type),
+                    "seller_balance": _account_balance(seller, currency_type),
+                }
+    except RebirthPersistenceError:
+        raise
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to buy market offer.", "database_write_failed", status=500) from exc
 
 
 def normalize_email(email):
@@ -406,8 +675,38 @@ def verify_password(password, salt, expected_digest):
     return hmac.compare_digest(digest, expected_digest)
 
 
-def starter_collection_counts():
-    return Counter(PLAYER_DECK)
+def _stable_rank(seed, card_id, salt):
+    payload = f"{seed}:{salt}:{card_id}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _ranked_ids(seed, card_ids, salt):
+    return sorted(card_ids, key=lambda card_id: (_stable_rank(seed, card_id, salt), card_id))
+
+
+def deterministic_starter_deck(seed_source):
+    seed = str(seed_source or "rebirth-starter")
+    monster_pool = [card["id"] for card in CARD_CATALOG if is_monster(card) and int(card.get("tier", 1) or 1) == 1]
+    spell_pool = [card["id"] for card in CARD_CATALOG if is_spell(card)]
+    trap_pool = [card["id"] for card in CARD_CATALOG if is_trap(card)]
+    monster_count = 18 + (int(hashlib.sha256(seed.encode("utf-8")).hexdigest()[:2], 16) % 5)
+    remaining = STARTER_DECK_SIZE - monster_count
+    spell_count = remaining // 2
+    trap_count = remaining - spell_count
+
+    ranked_monsters = _ranked_ids(seed, monster_pool, "monster")
+    duplicate_anchor = ranked_monsters[0]
+    monsters = [duplicate_anchor, duplicate_anchor]
+    monsters.extend([card_id for card_id in ranked_monsters[1:] if card_id != duplicate_anchor][: monster_count - 2])
+    spells = _ranked_ids(seed, spell_pool, "spell")[:spell_count]
+    traps = _ranked_ids(seed, trap_pool, "trap")[:trap_count]
+    deck = monsters + spells + traps
+    validate_deck_distribution(deck)
+    return deck
+
+
+def starter_collection_counts(seed_source=None):
+    return Counter(deterministic_starter_deck(seed_source or "rebirth-starter"))
 
 
 class RebirthRepository:
@@ -440,6 +739,7 @@ class RebirthRepository:
                     user_id INTEGER NOT NULL,
                     card_id TEXT NOT NULL,
                     copies INTEGER NOT NULL DEFAULT 0,
+                    locked_copies INTEGER NOT NULL DEFAULT 0,
                     updated_at TEXT NOT NULL,
                     PRIMARY KEY (user_id, card_id),
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -463,6 +763,8 @@ class RebirthRepository:
                     boosters_opened INTEGER NOT NULL DEFAULT 0,
                     tutorial_step INTEGER NOT NULL DEFAULT 0,
                     tutorial_complete INTEGER NOT NULL DEFAULT 0,
+                    gold INTEGER NOT NULL DEFAULT 0,
+                    premium INTEGER NOT NULL DEFAULT 0,
                     updated_at TEXT NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
@@ -549,6 +851,17 @@ class RebirthRepository:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS economy_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    transaction_type TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    currency TEXT NOT NULL,
+                    reference_id TEXT,
+                    timestamp TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
                 CREATE TABLE IF NOT EXISTS admin_audit_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     actor TEXT NOT NULL,
@@ -558,8 +871,32 @@ class RebirthRepository:
                     created_at TEXT NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS market_offers (
+                    id TEXT PRIMARY KEY,
+                    seller_id INTEGER NOT NULL,
+                    card_id TEXT NOT NULL,
+                    price INTEGER NOT NULL,
+                    currency_type TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'ACTIVE',
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_market_offers_status_created
+                    ON market_offers(status, created_at);
+                CREATE INDEX IF NOT EXISTS idx_market_offers_seller_status
+                    ON market_offers(seller_id, status);
                 """
             )
+            self._ensure_sqlite_column(db, "user_collection", "locked_copies", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_sqlite_column(db, "user_progress", "gold", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_sqlite_column(db, "user_progress", "premium", "INTEGER NOT NULL DEFAULT 0")
+
+    def _ensure_sqlite_column(self, db, table, column, definition):
+        columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
+        if column not in columns:
+            db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def create_user(self, username, email, password):
         self.ensure_schema()
@@ -588,7 +925,7 @@ class RebirthRepository:
                     (username, email, salt, digest, now),
                 )
                 user_id = int(cursor.lastrowid)
-                self._seed_user_state(db, user_id, now)
+                self._seed_user_state(db, user_id, now, seed_source=f"{user_id}:{username}:{email}")
         except sqlite3.IntegrityError as exc:
             raise RebirthPersistenceError(
                 "A Rebirth account with this username or email already exists.",
@@ -633,8 +970,9 @@ class RebirthRepository:
             row = db.execute("SELECT id, username, email, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
         return dict(row) if row else None
 
-    def _seed_user_state(self, db, user_id, now):
-        for card_id, copies in starter_collection_counts().items():
+    def _seed_user_state(self, db, user_id, now, seed_source=None):
+        starter_deck = deterministic_starter_deck(seed_source or f"{user_id}:starter")
+        for card_id, copies in Counter(starter_deck).items():
             db.execute(
                 """
                 INSERT INTO user_collection (user_id, card_id, copies, updated_at)
@@ -650,10 +988,10 @@ class RebirthRepository:
                 reason="starter_collection",
                 reference_type="account",
                 reference_id=str(user_id),
-                metadata={"card_id": card_id, "copies": int(copies)},
+                metadata={"card_id": card_id, "copies": int(copies), "starter_deck_size": len(starter_deck)},
                 now=now,
             )
-        for slot, card_id in enumerate(DEFAULT_LOADOUT, start=1):
+        for slot, card_id in enumerate(starter_deck, start=1):
             db.execute(
                 """
                 INSERT INTO user_loadout (user_id, slot, card_id, updated_at)
@@ -663,10 +1001,21 @@ class RebirthRepository:
             )
         db.execute(
             """
-            INSERT INTO user_progress (user_id, xp, wins, losses, clashes, boosters_opened, tutorial_step, tutorial_complete, updated_at)
-            VALUES (?, 0, 0, 0, 0, 0, 0, 0, ?)
+            INSERT INTO user_progress (user_id, xp, wins, losses, clashes, boosters_opened, tutorial_step, tutorial_complete, gold, premium, updated_at)
+            VALUES (?, 0, 0, 0, 0, 0, 0, 0, 1000, 0, ?)
             """,
             (user_id, now),
+        )
+        self._record_ledger_entry(
+            db,
+            user_id,
+            resource="gold",
+            delta=1000,
+            reason="starter_wallet",
+            reference_type="account",
+            reference_id=str(user_id),
+            metadata={"currency_type": "GOLD"},
+            now=now,
         )
         self._unlock_achievements(db, user_id, ["founder"], now)
 
@@ -753,10 +1102,25 @@ class RebirthRepository:
         self.ensure_schema()
         with self.connect() as db:
             rows = db.execute(
-                "SELECT card_id, copies FROM user_collection WHERE user_id = ?",
+                "SELECT card_id, copies, locked_copies FROM user_collection WHERE user_id = ?",
                 (user_id,),
             ).fetchall()
-        return Counter({row["card_id"]: int(row["copies"]) for row in rows})
+        return Counter(
+            {
+                row["card_id"]: max(0, int(row["copies"] or 0) - int(row["locked_copies"] or 0))
+                for row in rows
+                if max(0, int(row["copies"] or 0) - int(row["locked_copies"] or 0)) > 0
+            }
+        )
+
+    def locked_collection_counts(self, user_id):
+        self.ensure_schema()
+        with self.connect() as db:
+            rows = db.execute(
+                "SELECT card_id, locked_copies FROM user_collection WHERE user_id = ? AND locked_copies > 0",
+                (user_id,),
+            ).fetchall()
+        return Counter({row["card_id"]: int(row["locked_copies"] or 0) for row in rows})
 
     def loadout_card_ids(self, user_id):
         self.ensure_schema()
@@ -766,7 +1130,13 @@ class RebirthRepository:
                 (user_id,),
             ).fetchall()
         card_ids = [row["card_id"] for row in rows]
-        return card_ids or list(DEFAULT_LOADOUT)
+        if card_ids:
+            try:
+                validate_deck_distribution(card_ids)
+                return card_ids
+            except ValueError:
+                return list(DEFAULT_LOADOUT)
+        return list(DEFAULT_LOADOUT)
 
     def validate_and_save_loadout(self, user_id, card_ids):
         selected = self._validate_owned_cards(user_id, card_ids)
@@ -787,8 +1157,10 @@ class RebirthRepository:
         if not isinstance(card_ids, list):
             raise RebirthPersistenceError("card_ids must be a list.", "invalid_loadout")
         selected = [str(card_id) for card_id in card_ids if str(card_id or "").strip()]
-        if len(selected) != 8:
-            raise RebirthPersistenceError("Rebirth loadout requires exactly 8 cards.", "invalid_loadout")
+        try:
+            validate_deck_distribution(selected)
+        except ValueError as exc:
+            raise RebirthPersistenceError(str(exc), "invalid_loadout") from exc
         owned = self.collection_counts(user_id)
         selected_counts = Counter(selected)
         for card_id, amount in selected_counts.items():
@@ -799,6 +1171,267 @@ class RebirthRepository:
             if owned.get(card_id, 0) < amount:
                 raise RebirthPersistenceError(f"{card_id} exceeds owned copies.", "invalid_loadout")
         return selected
+
+    def _currency_column(self, currency_type):
+        currency_type = normalize_market_currency(currency_type)
+        return "premium" if currency_type == "PREMIUM" else "gold"
+
+    def _currency_balance(self, db, user_id, currency_type):
+        column = self._currency_column(currency_type)
+        row = db.execute(f"SELECT {column} AS balance FROM user_progress WHERE user_id = ?", (user_id,)).fetchone()
+        if not row:
+            raise RebirthPersistenceError("Account wallet is missing.", "missing_wallet", status=409)
+        return int(row["balance"] or 0)
+
+    def _set_currency_balance(self, db, user_id, currency_type, amount):
+        column = self._currency_column(currency_type)
+        db.execute(f"UPDATE user_progress SET {column} = ?, updated_at = ? WHERE user_id = ?", (int(amount), utc_now(), user_id))
+
+    def _record_economy_transaction(self, db, user_id, transaction_type, amount, currency, reference_id, now=None):
+        db.execute(
+            """
+            INSERT INTO economy_transactions (user_id, transaction_type, amount, currency, reference_id, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (int(user_id), str(transaction_type), int(amount), str(currency), str(reference_id or ""), now or utc_now()),
+        )
+
+    def _sqlite_offer_payload(self, row):
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "seller_id": int(row["seller_id"]),
+            "seller_name": row["seller_name"] if "seller_name" in row.keys() else None,
+            "card_id": row["card_id"],
+            "card": get_card(row["card_id"]),
+            "price": int(row["price"]),
+            "currency_type": row["currency_type"],
+            "status": row["status"],
+            "created_at": row["created_at"],
+        }
+
+    def market_offers(self, exclude_user_id=None, limit=40):
+        self.ensure_schema()
+        limit = max(1, min(int(limit or 40), 100))
+        params = []
+        where = ["market_offers.status = 'ACTIVE'"]
+        if exclude_user_id:
+            where.append("market_offers.seller_id != ?")
+            params.append(int(exclude_user_id))
+        params.append(limit)
+        with self.connect() as db:
+            rows = db.execute(
+                f"""
+                SELECT market_offers.*, users.username AS seller_name
+                FROM market_offers
+                JOIN users ON users.id = market_offers.seller_id
+                WHERE {' AND '.join(where)}
+                ORDER BY market_offers.created_at DESC
+                LIMIT ?
+                """,
+                params,
+            ).fetchall()
+        return [self._sqlite_offer_payload(row) for row in rows]
+
+    def create_market_offer(self, user_id, card_id, price, currency_type):
+        self.ensure_schema()
+        card = get_card(card_id)
+        price = _normalize_market_price(price)
+        currency_type = normalize_market_currency(currency_type)
+        offer_id = str(uuid.uuid4())
+        now = utc_now()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user:
+                raise RebirthPersistenceError("Seller account was not found.", "missing_user", status=404)
+            row = db.execute(
+                "SELECT copies, locked_copies FROM user_collection WHERE user_id = ? AND card_id = ?",
+                (user_id, card["id"]),
+            ).fetchone()
+            copies = int(row["copies"] or 0) if row else 0
+            locked = int(row["locked_copies"] or 0) if row else 0
+            available = max(0, copies - locked)
+            if available <= 0:
+                raise RebirthPersistenceError("Card is not available for market listing.", "card_not_available", status=409)
+            loadout_count = db.execute(
+                "SELECT COUNT(*) AS amount FROM user_loadout WHERE user_id = ? AND card_id = ?",
+                (user_id, card["id"]),
+            ).fetchone()["amount"]
+            if int(loadout_count or 0) > available - 1:
+                raise RebirthPersistenceError(
+                    "This card is still required by the active 30-card loadout.",
+                    "card_locked_by_loadout",
+                    status=409,
+                )
+            db.execute(
+                "UPDATE user_collection SET locked_copies = locked_copies + 1, updated_at = ? WHERE user_id = ? AND card_id = ?",
+                (now, user_id, card["id"]),
+            )
+            db.execute(
+                """
+                INSERT INTO market_offers (id, seller_id, card_id, price, currency_type, status, created_at)
+                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)
+                """,
+                (offer_id, user_id, card["id"], price, currency_type, now),
+            )
+            offer = db.execute(
+                """
+                SELECT market_offers.*, users.username AS seller_name
+                FROM market_offers
+                JOIN users ON users.id = market_offers.seller_id
+                WHERE market_offers.id = ?
+                """,
+                (offer_id,),
+            ).fetchone()
+        return self._sqlite_offer_payload(offer)
+
+    def buy_market_offer(self, buyer_id, offer_id):
+        self.ensure_schema()
+        if not offer_id:
+            raise RebirthPersistenceError("offer_id is required.", "missing_market_offer", status=400)
+        now = utc_now()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            buyer = db.execute("SELECT id FROM users WHERE id = ?", (buyer_id,)).fetchone()
+            if not buyer:
+                raise RebirthPersistenceError("Buyer account was not found.", "missing_user", status=404)
+            offer = db.execute(
+                """
+                SELECT market_offers.*, users.username AS seller_name
+                FROM market_offers
+                JOIN users ON users.id = market_offers.seller_id
+                WHERE market_offers.id = ? AND market_offers.status = 'ACTIVE'
+                """,
+                (str(offer_id),),
+            ).fetchone()
+            if not offer:
+                raise RebirthPersistenceError("Market offer is no longer active.", "market_offer_unavailable", status=409)
+            seller_id = int(offer["seller_id"])
+            if seller_id == int(buyer_id):
+                raise RebirthPersistenceError("Players cannot buy their own market offer.", "market_self_buy", status=409)
+
+            currency_type = normalize_market_currency(offer["currency_type"])
+            price = int(offer["price"])
+            buyer_balance = self._currency_balance(db, buyer_id, currency_type)
+            if buyer_balance < price:
+                raise RebirthPersistenceError("Insufficient balance for market purchase.", "insufficient_balance", status=409)
+            seller_balance = self._currency_balance(db, seller_id, currency_type)
+            fee = _market_fee(price)
+            seller_net = price - fee
+            self._set_currency_balance(db, buyer_id, currency_type, buyer_balance - price)
+            self._set_currency_balance(db, seller_id, currency_type, seller_balance + seller_net)
+
+            collection = db.execute(
+                """
+                SELECT copies, locked_copies
+                FROM user_collection
+                WHERE user_id = ? AND card_id = ? AND locked_copies > 0
+                """,
+                (seller_id, offer["card_id"]),
+            ).fetchone()
+            if not collection:
+                raise RebirthPersistenceError("Locked market item is missing.", "market_item_lock_missing", status=409)
+            db.execute(
+                """
+                UPDATE user_collection
+                SET copies = MAX(copies - 1, 0),
+                    locked_copies = MAX(locked_copies - 1, 0),
+                    updated_at = ?
+                WHERE user_id = ? AND card_id = ?
+                """,
+                (now, seller_id, offer["card_id"]),
+            )
+            db.execute(
+                """
+                INSERT INTO user_collection (user_id, card_id, copies, locked_copies, updated_at)
+                VALUES (?, ?, 1, 0, ?)
+                ON CONFLICT(user_id, card_id) DO UPDATE SET
+                    copies = copies + 1,
+                    updated_at = excluded.updated_at
+                """,
+                (buyer_id, offer["card_id"], now),
+            )
+            db.execute("UPDATE market_offers SET status = 'SOLD' WHERE id = ?", (offer["id"],))
+            self._record_economy_transaction(db, buyer_id, "MARKET_BUY", -price, currency_type, offer["id"], now)
+            self._record_economy_transaction(db, seller_id, "MARKET_SALE", seller_net, currency_type, offer["id"], now)
+            self._record_economy_transaction(db, seller_id, "MARKET_FEE", -fee, currency_type, offer["id"], now)
+            self._record_ledger_entry(
+                db,
+                buyer_id,
+                resource=currency_type.lower(),
+                delta=-price,
+                reason="market_buy",
+                reference_type="market_offer",
+                reference_id=offer["id"],
+                metadata={"card_id": offer["card_id"], "seller_id": seller_id, "fee": fee},
+                now=now,
+            )
+            self._record_ledger_entry(
+                db,
+                seller_id,
+                resource=currency_type.lower(),
+                delta=price,
+                reason="market_sale_gross",
+                reference_type="market_offer",
+                reference_id=offer["id"],
+                metadata={"card_id": offer["card_id"], "buyer_id": buyer_id},
+                now=now,
+            )
+            self._record_ledger_entry(
+                db,
+                seller_id,
+                resource=currency_type.lower(),
+                delta=-fee,
+                reason="market_fee_sink",
+                reference_type="market_offer",
+                reference_id=offer["id"],
+                metadata={"card_id": offer["card_id"], "buyer_id": buyer_id, "fee_rate": "5%"},
+                now=now,
+            )
+            self._record_ledger_entry(
+                db,
+                seller_id,
+                resource=f"card:{offer['card_id']}",
+                delta=-1,
+                reason="market_card_sold",
+                reference_type="market_offer",
+                reference_id=offer["id"],
+                metadata={"buyer_id": buyer_id},
+                now=now,
+            )
+            self._record_ledger_entry(
+                db,
+                buyer_id,
+                resource=f"card:{offer['card_id']}",
+                delta=1,
+                reason="market_card_bought",
+                reference_type="market_offer",
+                reference_id=offer["id"],
+                metadata={"seller_id": seller_id},
+                now=now,
+            )
+            sold_offer = db.execute(
+                """
+                SELECT market_offers.*, users.username AS seller_name
+                FROM market_offers
+                JOIN users ON users.id = market_offers.seller_id
+                WHERE market_offers.id = ?
+                """,
+                (offer["id"],),
+            ).fetchone()
+        return {
+            "offer": self._sqlite_offer_payload(sold_offer),
+            "buyer_id": int(buyer_id),
+            "seller_id": seller_id,
+            "price": price,
+            "fee": fee,
+            "seller_net": seller_net,
+            "currency_type": currency_type,
+            "buyer_balance": buyer_balance - price,
+            "seller_balance": seller_balance + seller_net,
+        }
 
     def add_cards(self, user_id, cards):
         self.ensure_schema()
@@ -905,12 +1538,23 @@ class RebirthRepository:
             ).fetchall()
         history = []
         for row in rows:
-            card_ids = json.loads(row["cards_json"])
+            try:
+                card_ids = json.loads(row["cards_json"])
+            except (TypeError, json.JSONDecodeError):
+                card_ids = []
+            cards = []
+            invalid_card_ids = []
+            for card_id in card_ids:
+                try:
+                    cards.append(get_card(card_id))
+                except ValueError:
+                    invalid_card_ids.append(str(card_id))
             history.append(
                 {
                     "booster_id": row["booster_id"],
                     "opened_at": row["opened_at"],
-                    "cards": [get_card(card_id) for card_id in card_ids],
+                    "cards": cards,
+                    "invalid_card_ids": invalid_card_ids,
                 }
             )
         return history
@@ -940,6 +1584,8 @@ class RebirthRepository:
             "tutorial_step": int(row["tutorial_step"]),
             "tutorial_complete": bool(row["tutorial_complete"]),
             "daily_claimed": daily_claimed,
+            "gold": int(row["gold"] or 0) if "gold" in row.keys() else 0,
+            "premium": int(row["premium"] or 0) if "premium" in row.keys() else 0,
         }
 
     def record_clash_result(self, user_id, public_match_state):

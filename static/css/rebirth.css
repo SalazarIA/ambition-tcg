@@ -159,6 +159,7 @@ button {
 
 .rb-hud,
 .rb-slogans,
+.rb-battle-zone,
 .rb-card-stage,
 .rb-player-hand,
 .rb-actions,
@@ -497,9 +498,238 @@ button {
 
 .rb-card-stage {
     left: 0;
-    top: 404px;
+    top: 738px;
     width: 852px;
-    height: 650px;
+    height: 318px;
+}
+
+.rb-battle-zone {
+    left: 24px;
+    top: 398px;
+    z-index: 2;
+    display: grid;
+    grid-template-rows: 1fr 42px 1fr;
+    gap: 8px;
+    width: 804px;
+    height: 324px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background:
+        linear-gradient(180deg, rgba(88, 214, 255, 0.08), transparent 36%, rgba(244, 173, 38, 0.08)),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.07), transparent 62%),
+        rgba(3, 5, 8, 0.72);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.54), inset 0 0 48px rgba(244, 173, 38, 0.035);
+    clip-path: var(--rb-cut);
+}
+
+.rb-battle-zone::before {
+    content: "";
+    position: absolute;
+    inset: 14px 18px;
+    z-index: 0;
+    pointer-events: none;
+    border-top: 1px solid rgba(88, 214, 255, 0.18);
+    border-bottom: 1px solid rgba(244, 173, 38, 0.18);
+    background:
+        linear-gradient(90deg, transparent 0 24%, rgba(255, 255, 255, 0.08) 24% 24.3%, transparent 24.3% 75.7%, rgba(255, 255, 255, 0.08) 75.7% 76%, transparent 76%),
+        radial-gradient(ellipse at 50% 50%, rgba(244, 173, 38, 0.08), transparent 48%);
+}
+
+.rb-field-row {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.rb-field-row > span {
+    color: var(--rb-muted);
+    font-size: 13px;
+    font-weight: 1000;
+    line-height: 1.05;
+    text-transform: uppercase;
+}
+
+.rb-field-row-bot > span {
+    color: var(--rb-cyan);
+}
+
+.rb-field-row-player > span {
+    color: var(--rb-gold);
+}
+
+.rb-field-slots {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    min-width: 0;
+}
+
+.rb-field-vs {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 22px;
+    font-weight: 1000;
+    letter-spacing: 0;
+    text-shadow: 0 0 18px rgba(244, 173, 38, 0.28);
+}
+
+.rb-field-card,
+.rb-field-slot-empty {
+    width: 100%;
+    height: 112px;
+    cursor: pointer;
+}
+
+.rb-field-card {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-rows: 1fr auto auto 8px;
+    gap: 3px 7px;
+    padding: 8px;
+    text-align: left;
+    transform: perspective(620px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+    will-change: transform;
+}
+
+.rb-field-card::before,
+.rb-field-card::after {
+    inset: 5px;
+}
+
+.rb-field-card::after {
+    inset: 10px;
+}
+
+.rb-field-card > b {
+    z-index: 3;
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    color: #090603;
+    background: var(--rb-gold);
+    font-size: 15px;
+    font-weight: 1000;
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.rb-field-art {
+    position: relative;
+    z-index: 1;
+    grid-row: 1 / 4;
+    overflow: hidden;
+    min-width: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #11161c center / cover no-repeat;
+}
+
+.rb-card-art,
+.rb-mini-art,
+.rb-field-art,
+.rb-evolution-thumb {
+    background-position: center 58%;
+    background-size: cover;
+    background-blend-mode: normal;
+}
+
+.rb-card-art img,
+.rb-temp-art img {
+    filter: brightness(1.04) contrast(1.12) saturate(1.34);
+    mix-blend-mode: normal;
+    opacity: 0.98;
+}
+
+.rb-mini-art,
+.rb-field-art,
+.rb-evolution-thumb {
+    filter: brightness(1.08) contrast(1.1) saturate(1.34);
+}
+
+.rb-field-card strong,
+.rb-field-card small {
+    position: relative;
+    z-index: 3;
+    grid-column: 1 / 3;
+    min-width: 0;
+}
+
+.rb-field-card strong {
+    overflow: hidden;
+    color: var(--rb-text);
+    font-size: 13px;
+    font-weight: 1000;
+    line-height: 1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.rb-field-card small {
+    color: var(--rb-cyan);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.rb-field-card > i {
+    position: relative;
+    z-index: 3;
+    grid-column: 1 / 3;
+    overflow: hidden;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+}
+
+.rb-field-card > i::before {
+    content: "";
+    display: block;
+    width: calc(var(--guard-scale, 1) * 100%);
+    height: 100%;
+    background: linear-gradient(90deg, var(--rb-cyan), var(--rb-green));
+    transition: width 180ms ease;
+}
+
+.rb-field-card.is-selected {
+    border-color: var(--rb-gold-2);
+    box-shadow: 0 0 0 2px rgba(244, 173, 38, 0.16), 0 20px 52px rgba(244, 173, 38, 0.2);
+}
+
+.rb-field-card.is-exhausted {
+    opacity: 0.58;
+    filter: saturate(0.72);
+}
+
+.rb-field-card.is-exhausted .rb-field-art {
+    filter: grayscale(0.22) brightness(0.72);
+}
+
+.rb-field-slot-empty {
+    display: grid;
+    place-items: center;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.38);
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 12px;
+    font-weight: 1000;
+    text-transform: uppercase;
+    clip-path: var(--rb-cut);
+}
+
+.rb-field-slot-empty[data-direct-attack="true"] {
+    border-color: rgba(255, 115, 95, 0.46);
+    color: var(--rb-red);
+    background: rgba(255, 115, 95, 0.08);
+    box-shadow: inset 0 0 22px rgba(255, 115, 95, 0.08);
 }
 
 .rb-monster-card {
@@ -532,8 +762,8 @@ button {
     position: absolute;
     left: 190px;
     top: 0;
-    width: 454px;
-    height: 642px;
+    width: 302px;
+    height: 316px;
 }
 
 .rb-main-card {
@@ -645,7 +875,7 @@ button {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: contrast(1.06) saturate(1.03);
+    object-position: center 58%;
 }
 
 .rb-card-art::after {
@@ -655,8 +885,8 @@ button {
     z-index: 1;
     pointer-events: none;
     background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.02), transparent 38%, rgba(0, 0, 0, 0.36)),
-        radial-gradient(circle at 50% 44%, transparent 48%, rgba(0, 0, 0, 0.46) 100%);
+        linear-gradient(180deg, rgba(0, 0, 0, 0.01), transparent 48%, rgba(0, 0, 0, 0.24)),
+        radial-gradient(circle at 50% 44%, transparent 62%, rgba(0, 0, 0, 0.28) 100%);
 }
 
 .rb-card-art::before,
@@ -854,15 +1084,13 @@ button {
 }
 
 .rb-asset-fallback::before {
-    content: "A";
+    content: "";
     position: absolute;
     inset: 0;
-    display: grid;
-    place-items: center;
-    color: rgba(244, 173, 38, 0.42);
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 72px;
-    font-weight: 900;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(244, 173, 38, 0.24), transparent 28%),
+        linear-gradient(135deg, transparent 0 44%, rgba(88, 214, 255, 0.18) 45% 47%, transparent 48%),
+        linear-gradient(45deg, transparent 0 47%, rgba(244, 173, 38, 0.18) 48% 50%, transparent 51%);
 }
 
 .rb-card-rule {
@@ -928,6 +1156,69 @@ button {
     color: var(--rb-cyan);
 }
 
+.rb-monster-card-main .rb-card-topline {
+    inset: 18px 20px auto;
+}
+
+.rb-monster-card-main .rb-card-topline strong {
+    max-width: 190px;
+    font-size: 28px;
+}
+
+.rb-monster-card-main .rb-card-topline span {
+    margin-top: 5px;
+    font-size: 14px;
+}
+
+.rb-monster-card-main .rb-card-rank {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+}
+
+.rb-monster-card-main .rb-card-art {
+    height: 156px;
+}
+
+.rb-monster-card-main .rb-status-strip {
+    right: 18px;
+    top: 132px;
+    max-width: 150px;
+}
+
+.rb-monster-card-main .rb-card-rule {
+    min-height: 94px;
+    gap: 5px;
+    padding: 12px 42px 10px 48px;
+}
+
+.rb-monster-card-main .rb-card-rule strong {
+    font-size: 15px;
+}
+
+.rb-monster-card-main .rb-card-rule p {
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.24;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.rb-monster-card-main .rb-card-tags span {
+    padding: 3px 5px;
+    font-size: 8px;
+}
+
+.rb-monster-card-main .rb-card-stats {
+    gap: 10px;
+    padding: 8px 22px 10px;
+}
+
+.rb-monster-card-main .rb-card-stats span {
+    font-size: 20px;
+}
+
 .rb-stat-sword,
 .rb-action-sword {
     width: 27px;
@@ -954,13 +1245,13 @@ button {
 .rb-evolution-panel {
     position: absolute;
     left: 665px;
-    top: 116px;
+    top: 0;
     display: grid;
     gap: 13px;
     align-content: center;
     justify-items: center;
     width: 154px;
-    height: 404px;
+    height: 316px;
     padding: 18px 14px;
     text-align: center;
 }
@@ -1006,12 +1297,12 @@ button {
 
 .rb-coach-panel {
     left: 24px;
-    top: 420px;
+    top: 738px;
     display: grid;
     align-content: start;
     gap: 10px;
     width: 150px;
-    min-height: 286px;
+    min-height: 316px;
     padding: 18px 14px;
     --coach-accent: var(--rb-gold);
 }
@@ -1710,6 +2001,258 @@ button {
     font-size: 20px;
 }
 
+.rb-global-nav {
+    position: sticky;
+    z-index: 40;
+    top: 0;
+    display: grid;
+    grid-template-columns: auto minmax(260px, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    width: min(calc(100% - 28px), 1280px);
+    margin: 14px auto 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background:
+        linear-gradient(90deg, rgba(244, 173, 38, 0.11), rgba(8, 10, 13, 0.92) 34%, rgba(88, 214, 255, 0.08)),
+        rgba(5, 7, 10, 0.94);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(18px);
+    clip-path: var(--rb-cut);
+}
+
+.rb-game-page .rb-global-nav {
+    position: fixed;
+    top: calc(8px + var(--rb-safe-top));
+    left: 50%;
+    width: min(calc(100% - 20px), 1180px);
+    margin: 0;
+    transform: translateX(-50%);
+}
+
+.rb-game-page .rb-global-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+}
+
+.rb-global-brand strong {
+    white-space: nowrap;
+}
+
+.rb-global-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.rb-global-tabs a,
+.rb-nav-auth {
+    min-height: 38px;
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--rb-text);
+    background: rgba(0, 0, 0, 0.24);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.rb-global-tabs a:hover,
+.rb-global-tabs a.is-active,
+.rb-nav-auth:hover {
+    border-color: rgba(244, 173, 38, 0.72);
+    color: var(--rb-gold-2);
+}
+
+.rb-global-player {
+    display: grid;
+    grid-template-columns: minmax(118px, auto) minmax(142px, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+}
+
+.rb-global-identity,
+.rb-global-xp,
+.rb-global-wallet {
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.22);
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.rb-global-identity span,
+.rb-global-xp span,
+.rb-global-wallet span {
+    display: block;
+    color: var(--rb-muted);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.rb-global-identity strong,
+.rb-global-xp strong,
+.rb-global-wallet strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--rb-text);
+    font-size: 14px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rb-global-xp i {
+    display: block;
+    overflow: hidden;
+    height: 5px;
+    margin-top: 6px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.rb-global-xp b {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--rb-cyan), var(--rb-gold-2));
+}
+
+.rb-global-wallet {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    min-width: 142px;
+}
+
+.rb-global-wallet span {
+    color: var(--rb-gold);
+}
+
+.rb-global-wallet .rb-coinz,
+.rb-global-wallet .rb-coinz strong {
+    color: #ffd84d;
+    text-shadow: 0 0 18px rgba(255, 216, 77, 0.42);
+}
+
+.rb-nav-logout {
+    color: var(--rb-muted);
+}
+
+.rb-auth-modal[hidden] {
+    display: none;
+}
+
+.rb-auth-modal {
+    position: fixed;
+    z-index: 80;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.rb-auth-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(9px);
+    cursor: pointer;
+}
+
+.rb-auth-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 760px);
+    max-height: min(760px, calc(100dvh - 40px));
+    overflow: auto;
+    padding: 28px;
+    border: 1px solid rgba(244, 173, 38, 0.34);
+    background:
+        linear-gradient(135deg, rgba(244, 173, 38, 0.13), transparent 32%),
+        linear-gradient(315deg, rgba(88, 214, 255, 0.09), transparent 30%),
+        rgba(7, 9, 12, 0.98);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.72);
+    clip-path: var(--rb-cut);
+}
+
+.rb-auth-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: var(--rb-text);
+    background: rgba(0, 0, 0, 0.32);
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.rb-auth-dialog-copy span,
+.rb-auth-entry > span,
+.rb-shop-gacha-copy > span {
+    color: var(--rb-gold);
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.rb-auth-dialog-copy h2,
+.rb-shop-gacha-copy h2 {
+    margin: 8px 0 10px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 0.95;
+}
+
+.rb-auth-dialog-copy p,
+.rb-shop-gacha-copy p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--rb-muted);
+    line-height: 1.45;
+}
+
+.rb-auth-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.rb-auth-modal-form {
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.24);
+    clip-path: var(--rb-cut);
+}
+
+.rb-auth-modal-result {
+    margin-top: 16px;
+}
+
+.rb-auth-entry-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+}
+
 .rb-small-link {
     min-width: 110px;
     padding: 12px 18px;
@@ -2352,6 +2895,80 @@ button {
     min-height: 156px;
 }
 
+.rb-shop-gacha {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+.rb-shop-gacha-copy,
+.rb-shop-pack-list {
+    border: 1px solid var(--rb-line);
+    background:
+        linear-gradient(145deg, rgba(244, 173, 38, 0.11), transparent 36%),
+        linear-gradient(315deg, rgba(88, 214, 255, 0.08), transparent 30%),
+        rgba(8, 10, 13, 0.9);
+    box-shadow: var(--rb-shadow);
+    clip-path: var(--rb-cut);
+}
+
+.rb-shop-gacha-copy {
+    display: grid;
+    align-content: center;
+    min-height: 330px;
+    padding: 30px;
+}
+
+.rb-gacha-slots {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.rb-gacha-slots span,
+.rb-booster-rarity-line span {
+    display: grid;
+    min-height: 44px;
+    place-items: center;
+    border: 1px solid rgba(244, 173, 38, 0.24);
+    color: var(--rb-text);
+    background: rgba(0, 0, 0, 0.28);
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.rb-gacha-slots span:nth-child(4),
+.rb-booster-rarity-line span:nth-child(4) {
+    border-color: rgba(88, 214, 255, 0.46);
+    color: var(--rb-cyan);
+}
+
+.rb-gacha-slots span:nth-child(5),
+.rb-booster-rarity-line span:nth-child(5) {
+    border-color: rgba(255, 216, 77, 0.72);
+    color: #ffd84d;
+    box-shadow: inset 0 0 18px rgba(255, 216, 77, 0.12);
+}
+
+.rb-shop-pack-list {
+    display: grid;
+    gap: 14px;
+    padding: 14px;
+}
+
+.rb-shop-pack {
+    box-shadow: none;
+}
+
+.rb-shop-pack-note {
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.035);
+}
+
 .rb-booster-summary {
     display: flex;
     align-items: baseline;
@@ -2368,6 +2985,31 @@ button {
 
 .rb-product-card-grid-result {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.rb-booster-rarity-line {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.rb-booster-card {
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.rb-booster-card.is-uncommon {
+    border-color: rgba(88, 214, 255, 0.46);
+}
+
+.rb-booster-card.is-rare {
+    border-color: rgba(255, 216, 77, 0.62);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.58), 0 0 24px rgba(255, 216, 77, 0.14);
+}
+
+.rb-booster-card.is-epic {
+    border-color: rgba(199, 126, 255, 0.68);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.58), 0 0 26px rgba(199, 126, 255, 0.18);
 }
 
 .rb-shop-offer strong {
@@ -2679,6 +3321,54 @@ button {
         text-align: left;
     }
 
+    .rb-battle-zone {
+        left: 324px;
+        top: 122px;
+        width: 460px;
+        height: 454px;
+        grid-template-rows: 1fr 34px 1fr;
+        gap: 7px;
+        padding: 10px;
+    }
+
+    .rb-field-row {
+        grid-template-columns: 76px minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .rb-field-row > span {
+        font-size: 10px;
+    }
+
+    .rb-field-slots {
+        gap: 7px;
+    }
+
+    .rb-field-card,
+    .rb-field-slot-empty {
+        height: 184px;
+    }
+
+    .rb-field-card {
+        grid-template-columns: 28px minmax(0, 1fr);
+        padding: 7px;
+    }
+
+    .rb-field-card > b {
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
+    }
+
+    .rb-field-card strong {
+        font-size: 11px;
+    }
+
+    .rb-field-card small,
+    .rb-field-slot-empty {
+        font-size: 9px;
+    }
+
     .rb-card-back,
     .rb-bot-revealed {
         width: 126px;
@@ -2959,9 +3649,214 @@ button {
     .rb-error {
         top: 104px;
     }
+
+    .rb-game-board {
+        display: grid;
+        grid-template-areas:
+            "hud hud hud"
+            "left arena result"
+            "left arena evo"
+            "coach arena log"
+            "hand hand actions";
+        grid-template-columns: 270px minmax(0, 500px) 330px;
+        grid-template-rows: 82px 162px 146px 140px 150px;
+        gap: 12px 20px;
+        padding: 16px;
+    }
+
+    .rb-hud,
+    .rb-slogans,
+    .rb-battle-zone,
+    .rb-coach-panel,
+    .rb-player-hand,
+    .rb-actions-row,
+    .rb-result-panel,
+    .rb-log {
+        position: relative;
+        left: auto;
+        top: auto;
+        width: auto;
+        height: auto;
+        min-height: 0;
+    }
+
+    .rb-hud {
+        grid-area: hud;
+    }
+
+    .rb-slogans {
+        grid-area: left;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+        padding: 2px 0 0;
+    }
+
+    .rb-bot-card-zone {
+        justify-content: start;
+        align-content: center;
+    }
+
+    .rb-slogan-bot {
+        display: none;
+    }
+
+    .rb-battle-zone {
+        grid-area: arena;
+        align-self: stretch;
+        width: auto;
+        height: auto;
+        grid-template-rows: minmax(0, 1fr) 34px minmax(0, 1fr);
+        gap: 8px;
+        z-index: 1;
+    }
+
+    .rb-field-row {
+        min-height: 0;
+    }
+
+    .rb-field-slots {
+        min-height: 0;
+    }
+
+    .rb-field-card,
+    .rb-field-slot-empty {
+        height: 100%;
+        min-height: 0;
+    }
+
+    .rb-card-stage {
+        display: contents;
+    }
+
+    .rb-monster-card-main {
+        grid-area: arena;
+        position: relative;
+        left: auto;
+        top: auto;
+        align-self: center;
+        justify-self: center;
+        width: 286px;
+        height: 448px;
+        z-index: 3;
+    }
+
+    .rb-evolution-panel {
+        grid-area: evo;
+        position: relative;
+        left: auto;
+        top: auto;
+        align-self: stretch;
+        width: auto;
+        height: auto;
+        min-height: 0;
+        padding: 14px 12px;
+    }
+
+    .rb-result-panel {
+        grid-area: result;
+        align-self: stretch;
+    }
+
+    .rb-coach-panel {
+        grid-area: coach;
+        align-self: stretch;
+    }
+
+    .rb-log,
+    .rb-log:not(.is-open),
+    .rb-log.is-open {
+        grid-area: log;
+        left: auto;
+        top: auto;
+        width: auto;
+        height: auto;
+        align-self: stretch;
+    }
+
+    .rb-log:not(.is-open) .rb-log-head {
+        display: flex;
+        height: 48px;
+        place-items: initial;
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .rb-log:not(.is-open) ol,
+    .rb-log.is-open ol {
+        display: block;
+        max-height: 84px;
+    }
+
+    .rb-log:not(.is-open) .rb-log-head strong,
+    .rb-log:not(.is-open) .rb-log-head .rb-turn-phase-pill,
+    .rb-log:not(.is-open) .rb-log-head span {
+        display: inline-flex;
+    }
+
+    .rb-log-toggle {
+        display: none;
+    }
+
+    .rb-player-hand {
+        grid-area: hand;
+        overflow: visible;
+    }
+
+    .rb-hand {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        height: 140px;
+        overflow: visible;
+        padding-top: 14px;
+    }
+
+    .rb-hand .rb-mini-card {
+        grid-template-rows: 68px 1fr;
+        width: 100%;
+        height: 126px;
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.52);
+    }
+
+    .rb-hand .rb-mini-card:hover,
+    .rb-hand .rb-mini-card:focus-visible {
+        --card-lift: -15px;
+        border-color: var(--rb-gold-2);
+        box-shadow: 0 24px 54px rgba(0, 0, 0, 0.66), 0 0 22px rgba(244, 173, 38, 0.22);
+    }
+
+    .rb-mini-copy {
+        min-height: 58px;
+    }
+
+    .rb-actions-row {
+        grid-area: actions;
+        align-self: stretch;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .rb-actions-row > div {
+        align-content: start;
+    }
 }
 
 @media (max-width: 980px) {
+    .rb-global-nav {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    .rb-global-tabs {
+        justify-content: flex-start;
+    }
+
+    .rb-global-player {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .rb-shell-nav {
         align-items: flex-start;
         flex-direction: column;
@@ -2974,7 +3869,8 @@ button {
     .rb-product-hero,
     .rb-product-grid,
     .rb-product-grid-steps,
-    .rb-auth-grid {
+    .rb-auth-grid,
+    .rb-shop-gacha {
         grid-template-columns: 1fr;
     }
 
@@ -2995,6 +3891,61 @@ button {
 }
 
 @media (max-width: 560px) {
+    .rb-global-nav {
+        width: min(calc(100% - 16px), 1280px);
+        margin-top: 8px;
+        padding: 9px;
+    }
+
+    .rb-game-page .rb-global-nav {
+        width: calc(100% - 12px);
+        top: calc(6px + var(--rb-safe-top));
+    }
+
+    .rb-global-brand span {
+        width: 38px;
+        height: 38px;
+        font-size: 24px;
+    }
+
+    .rb-global-brand strong {
+        font-size: 17px;
+    }
+
+    .rb-global-tabs a,
+    .rb-nav-auth {
+        min-height: 34px;
+        padding: 8px 9px;
+        font-size: 11px;
+    }
+
+    .rb-global-player,
+    .rb-auth-modal-grid,
+    .rb-gacha-slots,
+    .rb-booster-rarity-line {
+        grid-template-columns: 1fr;
+    }
+
+    .rb-global-wallet {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rb-global-player {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rb-game-page .rb-global-player {
+        grid-template-columns: max-content max-content max-content max-content;
+        overflow-x: auto;
+    }
+
+    .rb-game-page .rb-global-identity,
+    .rb-game-page .rb-global-xp,
+    .rb-game-page .rb-global-wallet,
+    .rb-game-page .rb-nav-auth {
+        min-width: max-content;
+    }
+
     .rb-home-shell,
     .rb-product-shell {
         padding: 18px 12px 30px;
@@ -3046,4 +3997,19 @@ button {
         align-items: stretch;
         flex-direction: column;
     }
+
+    .rb-auth-dialog {
+        padding: 22px;
+    }
+}
+
+.rb-card-art,
+.rb-mini-art,
+.rb-field-art,
+.rb-evolution-thumb {
+    background-position: center 58%;
+}
+
+.rb-card-art img {
+    object-position: center 58%;
 }

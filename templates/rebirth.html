@@ -5,7 +5,7 @@
     <title>Play Ambitionz Rebirth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#030405">
-    <meta name="description" content="Play Ambitionz Rebirth: one card, one decision, one clash.">
+    <meta name="description" content="Play Ambitionz Rebirth: summon monsters, pick targets, and break guard in a persistent TCG arena.">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
@@ -15,9 +15,10 @@
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-036">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-045">
 </head>
 <body class="rb-page rb-game-page">
+    {% include "_rebirth_global_nav.html" %}
     <div class="rb-game-viewport" data-rebirth-app data-board-base-width="852" data-board-base-height="1846" aria-label="Ambitionz Rebirth single screen game">
         <aside class="rb-desktop-rail rb-desktop-rail-left" aria-label="Rebirth status">
             <a class="rb-brand rb-rail-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
@@ -26,20 +27,17 @@
             </a>
             <article>
                 <span>Mode</span>
-                <strong>One Card Clash</strong>
+                <strong>Living TCG Table</strong>
             </article>
             <article>
                 <span>Loadout</span>
-                <strong>8-card preview</strong>
+                <strong>30-card deck</strong>
             </article>
             <nav aria-label="Rebirth product links">
-                <a href="{{ url_for('rebirth_collection') }}">Cards</a>
-                <a href="{{ url_for('rebirth_shop') }}">Packs</a>
-                <a href="{{ url_for('rebirth_progression') }}">Rewards</a>
-                <a href="{{ url_for('rebirth_profile') }}">Profile</a>
-                {% if not account.authenticated %}
-                    <a href="{{ url_for('rebirth_account') }}">Create Account</a>
-                {% endif %}
+                <a href="{{ url_for('rebirth_collection') }}">Colecao</a>
+                <a href="{{ url_for('rebirth_shop') }}">Loja</a>
+                <a href="{{ url_for('rebirth_progression') }}">Recompensas</a>
+                <a href="{{ url_for('rebirth_profile') }}">Perfil</a>
             </nav>
         </aside>
 
@@ -55,6 +53,7 @@
                         </div>
                         <div class="rb-hp-meter" aria-hidden="true"><b id="player-hp-fill"></b></div>
                         <div class="rb-zone-row" aria-label="Player card zones">
+                            <span>Mana <b id="player-energy">1</b>/<b id="player-max-energy">1</b></span>
                             <span id="player-deck-count">Deck 0</span>
                             <span id="player-discard-count">Void 0</span>
                         </div>
@@ -76,6 +75,7 @@
                         </div>
                         <div class="rb-hp-meter" aria-hidden="true"><b id="bot-hp-fill"></b></div>
                         <div class="rb-zone-row" aria-label="Bot card zones">
+                            <span>Mana <b id="bot-energy">1</b>/<b id="bot-max-energy">1</b></span>
                             <span id="bot-deck-count">Deck 0</span>
                             <span id="bot-discard-count">Void 0</span>
                         </div>
@@ -86,9 +86,9 @@
 
             <section class="rb-slogans rb-slogan-grid" aria-label="Core promise">
                 <p class="rb-slogan rb-slogan-player">
-                    <span>One card.</span>
-                    <span>One decision.</span>
-                    <strong>One clash.</strong>
+                    <span>Build field.</span>
+                    <span>Pick target.</span>
+                    <strong>Break guard.</strong>
                 </p>
                 <div class="rb-bot-card-zone" aria-label="Bot card zone">
                     <div id="bot-card" class="rb-bot-card rb-card-back">
@@ -100,6 +100,18 @@
                     <span>Evolve monsters.</span>
                     <strong>Win the duel.</strong>
                 </p>
+            </section>
+
+            <section class="rb-battle-zone" aria-label="Battle Zone">
+                <div class="rb-field-row rb-field-row-bot">
+                    <span>BOT Battle Zone</span>
+                    <div id="bot-battlefield" class="rb-field-slots" aria-label="Bot summoned monsters"></div>
+                </div>
+                <div class="rb-field-vs" aria-hidden="true">VS</div>
+                <div class="rb-field-row rb-field-row-player">
+                    <span>Your Battle Zone</span>
+                    <div id="player-battlefield" class="rb-field-slots" aria-label="Your summoned monsters"></div>
+                </div>
             </section>
 
             <section class="rb-coach-panel" id="coach-panel" aria-label="Coach" aria-live="polite">
@@ -121,8 +133,8 @@
                         <span>Choose</span>
                     </div>
                     <div class="rb-card-rule">
-                        <strong>One Card Clash</strong>
-                        <p>Your card becomes the center of the duel.</p>
+                        <strong>Living Battle Zone</strong>
+                        <p>Summoned monsters stay until their Guard is broken.</p>
                     </div>
                     <div class="rb-card-stats">
                         <span><i class="rb-stat-sword"></i><b>0</b></span>
@@ -147,20 +159,20 @@
 
             <section class="rb-actions rb-actions-row" aria-label="Primary actions">
                 <div>
-                    <button class="rb-button-primary rb-cta" type="button" id="play-button"><i class="rb-action-sword"></i>Clash</button>
-                    <small>Resolve the clash</small>
+                    <button class="rb-button-primary rb-cta" type="button" id="play-button"><i class="rb-action-sword"></i>Summon</button>
+                    <small>Spend energy to invoke</small>
                 </div>
                 <div>
-                    <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>Combine</button>
-                    <small id="secondary-action-copy">Merge duplicates to evolve</small>
+                    <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>End Turn</button>
+                    <small id="secondary-action-copy">Pass to refill energy</small>
                 </div>
             </section>
 
             <section class="rb-result rb-result-panel" id="result-panel" aria-live="polite">
                 <div>
                     <span id="result-label">Waiting</span>
-                    <strong id="result-title">Pick one monster.</strong>
-                    <p id="result-copy">The bot will answer with one monster. Higher attack wins the clash.</p>
+                    <strong id="result-title">Build your field.</strong>
+                    <p id="result-copy">Summon monsters, then select an attacker and choose a target.</p>
                     <div id="tactics-strip" class="rb-tactics-strip" aria-label="Tactical read"></div>
                     <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
                     <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
@@ -188,8 +200,8 @@
         <aside class="rb-desktop-rail rb-desktop-rail-right" aria-label="Match guide">
             <article>
                 <span id="guide-rule-label">Rule</span>
-                <strong id="guide-rule-title">Pick one monster</strong>
-                <p id="guide-rule-copy">The bot answers with one monster. Higher attack wins the clash.</p>
+                <strong id="guide-rule-title">Summon and attack</strong>
+                <p id="guide-rule-copy">Monsters stay on the board until their Guard reaches zero.</p>
             </article>
             <article>
                 <span id="guide-combine-label">Combine</span>
@@ -205,10 +217,19 @@
         window.REBIRTH_ENDPOINTS = {
             start: "{{ url_for('api_rebirth_start') }}",
             playCard: "{{ url_for('api_rebirth_play_card') }}",
+            attack: "{{ url_for('api_rebirth_attack') }}",
             evolve: "{{ url_for('api_rebirth_evolve') }}",
             nextTurn: "{{ url_for('api_rebirth_next_turn') }}",
             completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}",
-            verifyReceipt: "{{ url_for('api_rebirth_shop_verify_receipt') }}"
+            verifyReceipt: "{{ url_for('api_rebirth_shop_verify_receipt') }}",
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}"
+        };
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}"
         };
         window.REBIRTH_PLAYER_CONTEXT = {{ {"account": account, "progression": progression} | tojson }};
         window.REBIRTH_ASSETS = {
@@ -218,7 +239,8 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-036"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-036"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-045"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-045"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-045"></script>
 </body>
 </html>

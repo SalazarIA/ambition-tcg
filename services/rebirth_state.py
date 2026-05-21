@@ -36,10 +36,15 @@ def create_player(name, owner, card_ids=None):
         "name": name,
         "hp": STARTING_HP,
         "max_hp": STARTING_HP,
+        "energy": 1,
+        "max_energy": 1,
         "deck": build_deck(owner, card_ids=card_ids),
         "hand": [],
+        "battlefield": [],
         "discard": [],
         "played_card": None,
+        "traps": [],
+        "statuses": {},
         "wounded": False,
     }
 
@@ -66,7 +71,7 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
     match_id = _match_id(seed)
     deck_ids = None
     if player_card_ids:
-        deck_ids = list(player_card_ids) + list(player_card_ids)
+        deck_ids = list(player_card_ids)
     player = create_player(player_name, "player", card_ids=deck_ids)
     bot = create_player("Bot", "bot")
     draw_to_hand_size(player)
@@ -89,7 +94,7 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
         "is_finished": False,
         "log": [
             "Turn 01   Rebirth clash initialized.",
-            "Turn 01   Choose one monster.",
+            "Turn 01   Choose a card.",
         ],
         "catalog": catalog_payload(),
     }
@@ -163,8 +168,6 @@ def available_evolutions(player):
 
 
 def clear_played_cards(match):
-    add_to_discard(match["player"], match["player"].get("played_card"))
-    add_to_discard(match["bot"], match["bot"].get("played_card"))
     match["player"]["played_card"] = None
     match["bot"]["played_card"] = None
 
@@ -174,15 +177,25 @@ def side_payload(side, *, reveal_hand=True):
         "name": side["name"],
         "hp": side["hp"],
         "max_hp": side.get("max_hp", STARTING_HP),
+        "energy": int(side.get("energy", 0) or 0),
+        "max_energy": int(side.get("max_energy", 0) or 0),
         "deck_count": len(side["deck"]),
         "discard_count": len(side["discard"]),
         "played_card": deepcopy(side.get("played_card")),
+        "battlefield": deepcopy(side.get("battlefield", [])),
+        "trap_count": len(side.get("traps", [])),
         "wounded": bool(side.get("wounded")),
+        "statuses": deepcopy(side.get("statuses", {})),
     }
     if reveal_hand:
         payload["hand"] = deepcopy(side["hand"])
+        payload["traps"] = deepcopy(side.get("traps", []))
     else:
         payload["hand_count"] = len(side["hand"])
+        payload["traps"] = [
+            {"face_down": True, "armed": bool(trap.get("armed", True)), "slot": trap.get("slot")}
+            for trap in side.get("traps", [])
+        ]
     return payload
 
 

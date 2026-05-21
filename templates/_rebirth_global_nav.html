@@ -1,0 +1,63 @@
+{% set rb_nav = rebirth_navbar %}
+{% set auth_redirect = request.path if request.path.startswith('/rebirth') else url_for('rebirth') %}
+<header class="rb-global-nav" data-rebirth-global-nav aria-label="Navegacao global Ambitionz Rebirth">
+    <a class="rb-brand rb-global-brand" href="{{ url_for('index') }}" aria-label="Ambitionz Rebirth home">
+        <span>A</span>
+        <strong>Ambitionz Rebirth</strong>
+    </a>
+    <nav class="rb-global-tabs" aria-label="Produtos Rebirth">
+        <a href="{{ url_for('rebirth') }}" class="{{ 'is-active' if request.path == url_for('rebirth') else '' }}">Arena</a>
+        <a href="{{ url_for('rebirth_collection') }}" class="{{ 'is-active' if request.path == url_for('rebirth_collection') else '' }}">Colecao</a>
+        <a href="{{ url_for('rebirth_shop') }}" class="{{ 'is-active' if request.path == url_for('rebirth_shop') else '' }}">Loja</a>
+        <a href="{{ url_for('rebirth_progression') }}" class="{{ 'is-active' if request.path == url_for('rebirth_progression') else '' }}">Recompensas</a>
+        <a href="{{ url_for('rebirth_profile') }}" class="{{ 'is-active' if request.path == url_for('rebirth_profile') else '' }}">Perfil</a>
+    </nav>
+    <section class="rb-global-player" aria-label="Jogador e carteira">
+        <div class="rb-global-identity">
+            <span>{{ rb_nav.player_label }}</span>
+            <strong>{{ rb_nav.player_name }}</strong>
+        </div>
+        <div class="rb-global-xp" aria-label="Nivel e XP">
+            <span>Nivel {{ rb_nav.level }}</span>
+            <strong>{{ rb_nav.xp }}/{{ rb_nav.next_level_xp }} XP</strong>
+            <i aria-hidden="true"><b style="width: {{ rb_nav.xp_percent }}%"></b></i>
+        </div>
+        <div class="rb-global-wallet" aria-label="Carteira">
+            <span>GOLD <strong>{{ rb_nav.gold }}</strong></span>
+            <span class="rb-coinz">Coinz <strong>{{ rb_nav.coinz }}</strong></span>
+        </div>
+        {% if rb_nav.authenticated %}
+            <button class="rb-nav-auth rb-nav-logout" type="button" data-rebirth-logout>Logout</button>
+        {% else %}
+            <button class="rb-nav-auth" type="button" data-rebirth-auth-open>Login / Registro</button>
+        {% endif %}
+    </section>
+</header>
+
+<div class="rb-auth-modal" data-rebirth-auth-modal hidden>
+    <button class="rb-auth-backdrop" type="button" data-rebirth-auth-close aria-label="Fechar login"></button>
+    <section class="rb-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="rebirth-auth-title">
+        <button class="rb-auth-close" type="button" data-rebirth-auth-close aria-label="Fechar">x</button>
+        <div class="rb-auth-dialog-copy">
+            <span>Ambitionz Rebirth</span>
+            <h2 id="rebirth-auth-title">Login / Registro</h2>
+            <p>Entre para guardar sua colecao, nivel, Gold e Coinz entre duelos.</p>
+        </div>
+        <div class="rb-auth-modal-grid">
+            <form class="rb-auth-form rb-auth-modal-form" data-rebirth-login data-auth-redirect="{{ auth_redirect }}">
+                <span>Login</span>
+                <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
+                <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
+                <button class="rb-button-secondary rb-secondary" type="submit">Entrar</button>
+            </form>
+            <form class="rb-auth-form rb-auth-modal-form" data-rebirth-register data-auth-redirect="{{ url_for('rebirth') }}?firstRun=1">
+                <span>Registro</span>
+                <label>Jogador<input name="username" autocomplete="username" required minlength="3"></label>
+                <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
+                <label>Senha<input name="password" type="password" autocomplete="new-password" required minlength="8"></label>
+                <button class="rb-button-primary rb-cta" type="submit">Criar conta</button>
+            </form>
+        </div>
+        <div class="rb-product-result rb-auth-modal-result" data-rebirth-auth-result aria-live="polite">Pronto.</div>
+    </section>
+</div>

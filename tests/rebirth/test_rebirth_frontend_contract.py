@@ -23,15 +23,21 @@ def test_rebirth_template_matches_premium_clash_contract():
         'class="rb-hud"',
         'id="player-hp"',
         'id="player-hp-fill"',
+        'id="player-energy"',
+        'id="player-max-energy"',
         'id="player-deck-count"',
         'id="player-discard-count"',
         'id="turn-number"',
         'id="phase-label"',
         'id="bot-hp"',
         'id="bot-hp-fill"',
+        'id="bot-energy"',
+        'id="bot-max-energy"',
         'id="bot-deck-count"',
         'id="bot-discard-count"',
         'id="bot-card"',
+        'id="bot-battlefield"',
+        'id="player-battlefield"',
         'id="focus-card"',
         'id="evolution-panel"',
         'id="evolution-status"',
@@ -47,9 +53,9 @@ def test_rebirth_template_matches_premium_clash_contract():
         'id="guide-combine-title"',
         'id="bot-profile-label"',
         'id="turn-log"',
-        "One card.",
-        "One decision.",
-        "One clash.",
+        "Build field.",
+        "Pick target.",
+        "Break guard.",
         "Combine duplicates.",
         "Evolve monsters.",
         "Win the duel.",
@@ -70,6 +76,8 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         ".rb-hud-bot",
         ".rb-turn-core",
         ".rb-slogans",
+        ".rb-battle-zone",
+        ".rb-field-card",
         ".rb-card-back",
         ".rb-main-card",
         ".rb-monster-card-main",
@@ -102,7 +110,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v36" in service_worker
+    assert "ambitionz-rebirth-season0-v45" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -111,6 +119,7 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     assert "/rebirth/onboarding" not in service_worker
     assert "/rebirth/release" not in service_worker
     assert "/static/js/rebirth_product.js" in service_worker
+    assert "/static/js/rebirth_global.js" in service_worker
     assert "dreadclaw-art.png" in service_worker
     assert "bot-card-back.png" in service_worker
     assert "bot-emblem.png" in service_worker
@@ -134,6 +143,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthFeel",
         "RebirthTactics",
         "RebirthParallax",
+        "attackTarget",
         "renderTurnPhase",
         "triggerScreenShake",
         "initiateMobilePurchase",
@@ -146,6 +156,8 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "navigator.vibrate",
         "player-hp-fill",
         "bot-hp-fill",
+        "player-energy",
+        "bot-energy",
         "player-deck-count",
         "tactics-strip",
         "evolution-card-thumbnail",
@@ -153,7 +165,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "card.art",
         "attack",
         "guard",
-        "Combine",
+        "Summon",
         "Next Turn",
         "scrollRestoration",
     ]:

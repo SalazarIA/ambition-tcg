@@ -12,6 +12,7 @@
     const RebirthStore = {
         state: null,
         selectedInstanceId: null,
+        selectedAttackerId: null,
         reward: null,
         lastResultSignature: null,
         guidedFirstMatch: false,
@@ -32,7 +33,10 @@
             if (!this.handContains(this.selectedInstanceId)) {
                 this.selectedInstanceId = null;
             }
-            if (!this.selectedInstanceId && state && state.phase === "choose" && state.player && state.player.hand.length) {
+            if (!this.fieldContains(this.selectedAttackerId)) {
+                this.selectedAttackerId = null;
+            }
+            if (!this.selectedInstanceId && !this.selectedAttackerId && state && state.phase === "choose" && state.player && state.player.hand.length) {
                 this.selectedInstanceId = state.player.hand[0].instance_id;
             }
         },
@@ -42,10 +46,28 @@
             return this.state.player.hand.some((card) => card.instance_id === instanceId);
         },
 
+        handCard(instanceId) {
+            if (!instanceId || !this.state || !this.state.player) return null;
+            return this.state.player.hand.find((card) => card.instance_id === instanceId) || null;
+        },
+
+        fieldContains(instanceId) {
+            if (!instanceId || !this.state || !this.state.player) return false;
+            return (this.state.player.battlefield || []).some((card) => card.instance_id === instanceId);
+        },
+
+        fieldCard(instanceId) {
+            if (!instanceId || !this.state || !this.state.player) return null;
+            return (this.state.player.battlefield || []).find((card) => card.instance_id === instanceId) || null;
+        },
+
         selectedCard() {
             if (!this.state || !this.state.player) return null;
             if (this.selectedInstanceId) {
                 return this.state.player.hand.find((card) => card.instance_id === this.selectedInstanceId) || null;
+            }
+            if (this.selectedAttackerId) {
+                return (this.state.player.battlefield || []).find((card) => card.instance_id === this.selectedAttackerId) || null;
             }
             return this.state.player.played_card || null;
         },
@@ -66,16 +88,22 @@
                 "rebirth-error",
                 "player-hp",
                 "player-hp-fill",
+                "player-energy",
+                "player-max-energy",
                 "player-deck-count",
                 "player-discard-count",
                 "bot-hp",
                 "bot-hp-fill",
+                "bot-energy",
+                "bot-max-energy",
                 "bot-deck-count",
                 "bot-discard-count",
                 "turn-number",
                 "bot-profile-label",
-                "bot-card",
-                "focus-card",
+            "bot-card",
+            "focus-card",
+            "player-battlefield",
+            "bot-battlefield",
                 "evolution-panel",
                 "evolution-status",
                 "evolution-name",
@@ -196,18 +224,25 @@
             const width = Math.max(1, viewport.width || window.innerWidth || RebirthConfig.boardWidth);
             const height = Math.max(1, viewport.height || window.innerHeight || RebirthConfig.boardHeight);
             const safe = this.safeInsets();
+            const navHeight = this.globalNavHeight();
             const safeWidth = Math.max(1, width - safe.left - safe.right);
-            const safeHeight = Math.max(1, height - safe.top - safe.bottom);
+            const safeHeight = Math.max(1, height - safe.top - safe.bottom - navHeight);
             const desktop = width >= 1180 && height >= 680;
             const baseWidth = desktop ? 1180 : RebirthConfig.boardWidth;
             const baseHeight = desktop ? 760 : RebirthConfig.boardHeight;
             document.documentElement.style.setProperty("--rb-board-width", `${baseWidth}px`);
             document.documentElement.style.setProperty("--rb-board-height", `${baseHeight}px`);
             document.documentElement.style.setProperty("--rb-safe-offset-x", `${(safe.left - safe.right) / 2}px`);
-            document.documentElement.style.setProperty("--rb-safe-offset-y", `${(safe.top - safe.bottom) / 2}px`);
+            document.documentElement.style.setProperty("--rb-safe-offset-y", `${(safe.top + navHeight - safe.bottom) / 2}px`);
             const scale = Math.min(safeWidth / baseWidth, safeHeight / baseHeight);
             document.documentElement.style.setProperty("--rb-scale", String(scale));
             window.scrollTo(0, 0);
+        },
+
+        globalNavHeight() {
+            if (!document.body || !document.body.classList.contains("rb-game-page")) return 0;
+            const nav = document.querySelector("[data-rebirth-global-nav]");
+            return nav ? Math.ceil(nav.getBoundingClientRect().height) + 10 : 0;
         },
 
         safeInsets() {
@@ -282,7 +317,7 @@
     }
 
     const RebirthParallax = {
-        selector: ".rb-mini-card, .rb-main-card, .rb-bot-card, .rb-card-back",
+        selector: ".rb-mini-card, .rb-main-card, .rb-bot-card, .rb-card-back, .rb-field-card",
         bound: false,
 
         init() {
@@ -350,6 +385,32 @@
     const RebirthAssets = {
         manifest: null,
         seen: new Set(),
+        temporaryPools: {
+            FIRE: [
+                "https://images.unsplash.com/photo-1523861751938-121b5323b48b?auto=format&fit=crop&w=900&q=82",
+                "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=900&q=82"
+            ],
+            WATER: [
+                "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=82",
+                "https://images.unsplash.com/photo-1439405326854-014607f694d7?auto=format&fit=crop&w=900&q=82"
+            ],
+            EARTH: [
+                "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=82",
+                "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=82"
+            ],
+            SHADOW: [
+                "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=900&q=82",
+                "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=82"
+            ],
+            ARCANE: [
+                "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=900&q=82",
+                "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=900&q=82"
+            ],
+            HIDDEN: [
+                "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=900&q=82",
+                "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=82"
+            ]
+        },
 
         preload() {
             [
@@ -381,18 +442,71 @@
             if (card && card.art) {
                 this.preloadUrl(card.art);
             }
+            this.preloadUrl(this.temporaryArtUrl(card));
         },
 
         preloadState(state) {
             if (!state) return;
             ((state.player && state.player.hand) || []).forEach((card) => this.preloadCard(card));
+            ((state.player && state.player.battlefield) || []).forEach((card) => this.preloadCard(card));
+            ((state.bot && state.bot.battlefield) || []).forEach((card) => this.preloadCard(card));
             this.preloadCard(state.player && state.player.played_card);
             this.preloadCard(state.bot && state.bot.played_card);
         },
 
         artStyle(card) {
-            const source = card && card.art ? card.art : RebirthConfig.assets.fallbackCardArt;
-            return source ? `style="background-image: url('${RebirthText.escape(source)}')"` : "";
+            const background = this.artBackground(card);
+            return background ? `style="${background}"` : "";
+        },
+
+        hexRgba(hex, alpha) {
+            const match = String(hex || "").trim().match(/^#?([0-9a-f]{6})$/i);
+            if (!match) return `rgba(244, 173, 38, ${alpha})`;
+            const value = match[1];
+            const red = parseInt(value.slice(0, 2), 16);
+            const green = parseInt(value.slice(2, 4), 16);
+            const blue = parseInt(value.slice(4, 6), 16);
+            return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+        },
+
+        artBackground(card) {
+            const palette = card && card.palette ? card.palette : {};
+            const accent = /^#[0-9a-f]{6}$/i.test(String(palette.accent || "")) ? palette.accent : "#f4ad26";
+            const secondary = /^#[0-9a-f]{6}$/i.test(String(palette.secondary || "")) ? palette.secondary : "#58d6ff";
+            const layers = [
+                "linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.3))",
+                `radial-gradient(circle at 50% 58%, ${this.hexRgba(accent, 0.42)}, rgba(0, 0, 0, 0) 58%)`,
+                `linear-gradient(135deg, ${this.hexRgba(secondary, 0.18)}, rgba(0, 0, 0, 0) 64%)`
+            ];
+            const temporary = this.temporaryArtUrl(card);
+            if (temporary) {
+                layers.push(`url('${RebirthText.escape(temporary)}')`);
+            }
+            if (card && card.art) {
+                layers.push(`url('${RebirthText.escape(card.art)}')`);
+            } else if (RebirthConfig.assets.fallbackCardArt) {
+                layers.push(`url('${RebirthText.escape(RebirthConfig.assets.fallbackCardArt)}')`);
+            }
+            return layers.length > 1 ? `background-image:${layers.join(",")}` : "";
+        },
+
+        temporaryArtUrl(card) {
+            if (!card) return "";
+            const element = String(card.element || card.family || card.type || "").trim().toUpperCase();
+            const family = String(card.family || "").trim().toUpperCase();
+            const type = String(card.type || card.card_type || "").trim().toUpperCase();
+            const key = this.temporaryPools[element]
+                ? element
+                : this.temporaryPools[family]
+                    ? family
+                    : type === "TRAP"
+                        ? "HIDDEN"
+                        : type === "SPELL"
+                            ? "ARCANE"
+                            : "SHADOW";
+            const pool = this.temporaryPools[key] || this.temporaryPools.SHADOW;
+            const digits = parseInt(String(card.id || card.instance_id || "0").replace(/\D/g, ""), 10) || 0;
+            return pool[Math.max(0, digits - 1) % pool.length];
         },
 
         cssVars(card) {
@@ -408,20 +522,27 @@
         imageMarkup(card) {
             const source = card && card.art ? card.art : RebirthConfig.assets.fallbackCardArt;
             if (!source) return "";
-            return `<img data-rebirth-art data-art-key="${RebirthText.escape(card && card.art_key ? card.art_key : "fallback")}" src="${RebirthText.escape(source)}" alt="" loading="eager">`;
+            const fallback = this.temporaryArtUrl(card) || RebirthConfig.assets.fallbackCardArt || "";
+            return `<img data-rebirth-art data-art-key="${RebirthText.escape(card && card.art_key ? card.art_key : "fallback")}" data-fallback-src="${RebirthText.escape(fallback)}" src="${RebirthText.escape(source)}" alt="" loading="eager">`;
         },
 
         bindFallbacks(root) {
             const host = root || document;
             host.querySelectorAll("img[data-rebirth-art]").forEach((image) => {
                 image.addEventListener("error", () => {
-                    const frame = image.closest(".rb-card-art, .rb-mini-art, .rb-evolution-thumb");
+                    const frame = image.closest(".rb-card-art, .rb-mini-art, .rb-field-art, .rb-evolution-thumb");
+                    const fallback = image.dataset.fallbackSrc || "";
+                    if (frame) {
+                        frame.classList.add("rb-temp-art");
+                    }
+                    if (fallback && image.dataset.fallbackApplied !== "true") {
+                        image.dataset.fallbackApplied = "true";
+                        image.src = fallback;
+                        return;
+                    }
                     image.hidden = true;
                     if (frame) {
                         frame.classList.add("rb-asset-fallback");
-                        if (RebirthConfig.assets.fallbackCardArt) {
-                            frame.style.backgroundImage = `url('${RebirthConfig.assets.fallbackCardArt}')`;
-                        }
                     }
                 }, { once: true });
             });
@@ -497,6 +618,41 @@
             `;
         },
 
+        cardCost(card) {
+            const type = String((card && (card.type || card.card_type)) || "MONSTER").toUpperCase();
+            if (type === "MONSTER") {
+                return Math.max(1, Math.min(10, Number(card.cost || card.tier || 1)));
+            }
+            return Math.max(0, Number(card && card.cost || 0));
+        },
+
+        fieldCard(card, side, selected, statuses) {
+            const guard = Number(card.current_guard != null ? card.current_guard : card.guard || 0);
+            const maxGuard = Number(card.max_guard || card.guard || 1);
+            const guardScale = Math.max(0, Math.min(1, guard / maxGuard));
+            const exhausted = card.exhausted || card.has_attacked ? " is-exhausted" : "";
+            const selectedClass = selected ? " is-selected" : "";
+            const evolved = Number(card.tier || 1) > 1 ? " is-evolved" : "";
+            const statusClass = RebirthStatus.className(statuses);
+            const targetAttr = side === "bot"
+                ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
+                : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
+            return `
+                <button class="rb-field-card rb-monster-card${selectedClass}${exhausted}${evolved}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
+                    <b>${RebirthText.escape(card.attack || card.power)}</b>
+                    <span class="rb-field-art" ${RebirthAssets.artStyle(card)}></span>
+                    ${RebirthStatus.miniBadge(statuses)}
+                    <strong>${RebirthText.escape(card.name)}</strong>
+                    <small>${RebirthText.escape(guard)}/${RebirthText.escape(maxGuard)} Guard</small>
+                    <i></i>
+                </button>
+            `;
+        },
+
+        emptyFieldSlot(copy, direct) {
+            return `<button class="rb-field-slot-empty" type="button" ${direct ? "data-direct-attack=\"true\"" : ""}><span>${RebirthText.escape(copy)}</span></button>`;
+        },
+
         emptyFocus() {
             return `
                 <div class="rb-card-topline">
@@ -510,8 +666,8 @@
                     <span>Choose</span>
                 </div>
                 <div class="rb-card-rule">
-                    <strong>One Card Clash</strong>
-                    <p>Your card becomes the center of the duel.</p>
+                    <strong>Living Battle Zone</strong>
+                    <p>Summoned monsters stay until their Guard is broken.</p>
                 </div>
                 <div class="rb-card-stats">
                     <span><i class="rb-stat-sword"></i><b>0</b></span>
@@ -716,9 +872,9 @@
             }
             if (!this.account().authenticated) {
                 return {
-                    badge: "Save",
-                    title: "Create an account when ready.",
-                    copy: "You can play now, but cards, XP and rewards only persist after account creation."
+                    badge: "Visitante",
+                    title: "A mesa esta liberada.",
+                    copy: "Use Login / Registro no topo quando quiser guardar colecao e recompensas."
                 };
             }
             if (state.is_finished) {
@@ -734,7 +890,7 @@
                 if (reward && reward.daily && reward.daily.ready) {
                     return { badge: "Reward", title: "Daily reward is ready.", copy: "After this match, claim the daily XP on Rewards." };
                 }
-                return { badge: "Read", title: "Read the result before moving.", copy: "The log explains damage, ability triggers and why the clash resolved that way." };
+                return { badge: "Read", title: "Read the result before moving.", copy: "The log explains damage, ability triggers and why combat resolved that way." };
             }
             const evolution = RebirthStore.firstEvolution();
             const selected = RebirthStore.selectedCard();
@@ -743,17 +899,24 @@
                 return {
                     badge: "Evolve",
                     title: "Evolve now for a stronger line.",
-                    copy: `${evolution.name} x${evolution.count} can merge before you clash. That usually adds attack, guard and pressure.`
+                    copy: `${evolution.name} x${evolution.count} can merge before you commit. That usually adds attack, guard and pressure.`
                 };
             }
             if (!selected) {
-                return { badge: "Choose", title: "Pick one monster.", copy: "The highlighted card is the safest starting line from your hand." };
+                return { badge: "Choose", title: "Pick a card or attacker.", copy: "Summon from hand, or select a ready monster on the field to declare an attack." };
             }
             if (recommended && selected.instance_id === recommended.instance_id) {
                 return {
                     badge: "Good",
                     title: `${selected.name} is the clean read.`,
                     copy: `Best pressure in hand: ${selected.attack} attack, ${selected.guard} guard. Commit it unless you want to bait with defense.`
+                };
+            }
+            if (RebirthStore.selectedAttackerId) {
+                return {
+                    badge: "Attack",
+                    title: `${selected.name} is ready.`,
+                    copy: "Click a bot defender to attack it, or click the bot HP lane if the field is clear."
                 };
             }
             if (Number(selected.guard || 0) <= 2) {
@@ -792,6 +955,10 @@
             RebirthAssets.preloadState(state);
             RebirthDom.setText("player-hp", state.player.hp);
             RebirthDom.setText("bot-hp", state.bot.hp);
+            RebirthDom.setText("player-energy", state.player.energy);
+            RebirthDom.setText("player-max-energy", state.player.max_energy);
+            RebirthDom.setText("bot-energy", state.bot.energy);
+            RebirthDom.setText("bot-max-energy", state.bot.max_energy);
             RebirthDom.setText("player-deck-count", `Deck ${state.player.deck_count || 0}`);
             RebirthDom.setText("player-discard-count", `Void ${state.player.discard_count || 0}`);
             RebirthDom.setText("bot-deck-count", `Deck ${state.bot.deck_count || 0}`);
@@ -799,6 +966,7 @@
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
             RebirthDom.setText("bot-profile-label", (state.bot_profile && state.bot_profile.name) || "Bot Profile");
             this.hpBars();
+            this.battlefield();
             this.focusCard();
             this.botCard();
             this.evolutionPanel();
@@ -825,6 +993,30 @@
             if (RebirthStore.elements["bot-hp-fill"]) {
                 RebirthStore.elements["bot-hp-fill"].style.transform = `scaleX(${botScale})`;
             }
+        },
+
+        battlefield() {
+            const playerHost = RebirthStore.elements["player-battlefield"];
+            const botHost = RebirthStore.elements["bot-battlefield"];
+            const state = RebirthStore.state;
+            if (!playerHost || !botHost || !state) return;
+            const playerCards = state.player.battlefield || [];
+            const botCards = state.bot.battlefield || [];
+            const playerStatuses = (state.player && state.player.statuses) || {};
+            const botStatuses = (state.bot && state.bot.statuses) || {};
+            playerHost.innerHTML = [
+                ...playerCards.map((card) => RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses)),
+                ...Array.from({ length: Math.max(0, 4 - playerCards.length) }, () => RebirthMarkup.emptyFieldSlot("Open Slot", false))
+            ].join("");
+            botHost.innerHTML = botCards.length
+                ? [
+                    ...botCards.map((card) => RebirthMarkup.fieldCard(card, "bot", false, botStatuses)),
+                    ...Array.from({ length: Math.max(0, 4 - botCards.length) }, () => RebirthMarkup.emptyFieldSlot("Guard Line", false))
+                ].join("")
+                : [
+                    RebirthMarkup.emptyFieldSlot("Direct HP", true),
+                    ...Array.from({ length: 3 }, () => RebirthMarkup.emptyFieldSlot("No Defender", false))
+                ].join("");
         },
 
         focusCard() {
@@ -897,7 +1089,7 @@
             const sourceCard = (RebirthStore.state.player.hand || []).find((card) => card.id === evolution.card_id);
             if (thumb && sourceCard) {
                 thumb.classList.remove("rb-asset-fallback");
-                thumb.style.backgroundImage = `url('${sourceCard.art}')`;
+                thumb.setAttribute("style", `${RebirthAssets.artBackground(sourceCard)}; --card-accent: ${(sourceCard.palette && sourceCard.palette.accent) || "#f4ad26"}`);
                 thumb.style.setProperty("--card-accent", (sourceCard.palette && sourceCard.palette.accent) || "#f4ad26");
             }
         },
@@ -921,7 +1113,7 @@
             const insight = RebirthCoach.insight();
             panel.dataset.coachTone = String(insight.badge || "Coach").toLowerCase();
             RebirthDom.setText("coach-badge", insight.badge || "Coach");
-            RebirthDom.setText("coach-title", insight.title || "Pick one monster.");
+            RebirthDom.setText("coach-title", insight.title || "Build your field.");
             RebirthDom.setText("coach-copy", insight.copy || "I will call out the safest line before you commit.");
         },
 
@@ -958,8 +1150,8 @@
             }
             RebirthStore.lastResultSignature = null;
             RebirthDom.setText("result-label", "Waiting");
-            RebirthDom.setText("result-title", "Pick one monster.");
-            RebirthDom.setText("result-copy", "The bot will answer with one monster. Higher attack wins the clash.");
+            RebirthDom.setText("result-title", "Build your field.");
+            RebirthDom.setText("result-copy", "Summon monsters, then select a ready ally and choose its target.");
         },
 
         tactics() {
@@ -1009,8 +1201,8 @@
             }
 
             RebirthDom.setText("guide-rule-label", "Rule");
-            RebirthDom.setText("guide-rule-title", "Pick one monster");
-            RebirthDom.setText("guide-rule-copy", "The bot answers with one monster. Higher attack wins the clash.");
+            RebirthDom.setText("guide-rule-title", "Summon and attack");
+            RebirthDom.setText("guide-rule-copy", "Monsters stay on the field until their Guard reaches zero.");
             RebirthDom.setText("guide-combine-label", evolution ? "Combine Ready" : "Combine");
             RebirthDom.setText("guide-combine-title", evolution ? `${evolution.name} x${evolution.count}` : "Duplicates evolve");
             RebirthDom.setText("guide-combine-copy", evolution ? "Merge the pair now, or keep both bodies for later pressure." : "Two matching monsters merge into their Rebirth form.");
@@ -1032,7 +1224,7 @@
                 return;
             }
             if (!events.length) {
-                host.innerHTML = '<span class="rb-ability-chip is-muted">Base clash</span>';
+                host.innerHTML = '<span class="rb-ability-chip is-muted">Base combat</span>';
                 return;
             }
             host.innerHTML = events.slice(0, 2).map((event) => {
@@ -1087,24 +1279,40 @@
             const state = RebirthStore.state;
             if (!state) return;
             const canChoose = state.phase === "choose" && !state.is_finished && !RebirthStore.pending;
-            const canNext = state.phase === "result" && !state.is_finished && !RebirthStore.pending;
+            const canNext = (state.phase === "result" || state.phase === "choose") && !state.is_finished && !RebirthStore.pending;
             const evolution = RebirthStore.firstEvolution();
+            const selected = RebirthStore.selectedInstanceId
+                ? (state.player.hand || []).find((card) => card.instance_id === RebirthStore.selectedInstanceId)
+                : null;
+            const selectedAttacker = RebirthStore.selectedAttackerId
+                ? (state.player.battlefield || []).find((card) => card.instance_id === RebirthStore.selectedAttackerId)
+                : null;
+            const energy = Number((state.player && state.player.energy) || 0);
+            const cost = selected ? RebirthMarkup.cardCost(selected) : 0;
+            const canPay = !selected || energy >= cost;
+            const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked;
             if (RebirthStore.elements["play-button"]) {
-                RebirthStore.elements["play-button"].disabled = !canChoose || !RebirthStore.selectedInstanceId;
+                if (selectedAttacker) {
+                    RebirthStore.elements["play-button"].innerHTML = '<i class="rb-action-sword"></i>Clash';
+                    RebirthStore.elements["play-button"].disabled = !canChoose || !attackerReady;
+                } else {
+                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>Summon${selected ? ` ${cost}` : ""}`;
+                    RebirthStore.elements["play-button"].disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay;
+                }
             }
             if (RebirthStore.elements["next-turn-button"]) {
                 if (state.phase === "result") {
                     RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Next Turn';
                     RebirthStore.elements["next-turn-button"].disabled = !canNext;
-                    RebirthDom.setText("secondary-action-copy", "Advance to the next clash");
+                    RebirthDom.setText("secondary-action-copy", "Ready your battlefield");
                 } else if (state.is_finished) {
                     RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Finished';
                     RebirthStore.elements["next-turn-button"].disabled = true;
                     RebirthDom.setText("secondary-action-copy", "Start a new match");
                 } else {
-                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Combine';
-                    RebirthStore.elements["next-turn-button"].disabled = !canChoose || !evolution;
-                    RebirthDom.setText("secondary-action-copy", "Merge duplicates to evolve");
+                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>End Turn';
+                    RebirthStore.elements["next-turn-button"].disabled = !canNext;
+                    RebirthDom.setText("secondary-action-copy", evolution ? "You can still evolve before ending" : "Pass to refill energy next turn");
                 }
             }
             if (RebirthStore.elements["evolve-button"]) {
@@ -1181,16 +1389,65 @@
 
         async playSelectedCard() {
             if (!RebirthStore.selectedInstanceId || !RebirthStore.state) return;
+            const selectedCard = RebirthStore.handCard(RebirthStore.selectedInstanceId);
+            if (!selectedCard) return;
+            const energy = Number((RebirthStore.state.player && RebirthStore.state.player.energy) || 0);
+            const cost = RebirthMarkup.cardCost(selectedCard);
+            if (energy < cost) {
+                RebirthErrors.show(`Not enough energy to summon ${selectedCard.name}.`);
+                RebirthRenderer.buttons();
+                return;
+            }
             await this.request(async () => {
+                const summonedInstanceId = selectedCard.instance_id;
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.playCard, {
                     match_id: RebirthStore.state.match_id,
-                    card_instance_id: RebirthStore.selectedInstanceId
+                    card_instance_id: selectedCard.instance_id,
+                    card_id: selectedCard.id
                 });
                 RebirthStore.selectedInstanceId = null;
+                RebirthStore.selectedAttackerId = summonedInstanceId;
                 RebirthStore.reward = payload.match_reward || null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
             });
+        },
+
+        async attackTarget(targetInstanceId) {
+            if (!RebirthStore.selectedAttackerId || !RebirthStore.state || !RebirthStore.fieldCard(RebirthStore.selectedAttackerId)) {
+                RebirthStore.selectedAttackerId = null;
+                RebirthErrors.show("Select one ready monster on your battlefield first.");
+                RebirthRenderer.render();
+                return;
+            }
+            await this.request(async () => {
+                const payload = await RebirthApi.post(RebirthConfig.endpoints.attack, {
+                    match_id: RebirthStore.state.match_id,
+                    attacker_instance_id: RebirthStore.selectedAttackerId,
+                    target_instance_id: targetInstanceId || null
+                });
+                RebirthStore.selectedAttackerId = null;
+                RebirthStore.reward = payload.match_reward || null;
+                this.applyState(payload.state);
+                this.completeTutorialIfNeeded(payload.state);
+            });
+        },
+
+        async clashSelectedAttacker() {
+            const attacker = RebirthStore.fieldCard(RebirthStore.selectedAttackerId);
+            if (!RebirthStore.selectedAttackerId || !RebirthStore.state || !attacker) {
+                RebirthErrors.show("Select one ready monster on your battlefield first.");
+                RebirthRenderer.buttons();
+                return;
+            }
+            if (attacker.exhausted || attacker.has_attacked) {
+                RebirthErrors.show("That monster has already attacked this turn.");
+                RebirthRenderer.buttons();
+                return;
+            }
+            const botField = (RebirthStore.state.bot && RebirthStore.state.bot.battlefield) || [];
+            const firstDefender = botField[0] || null;
+            await this.attackTarget(firstDefender ? firstDefender.instance_id : null);
         },
 
         async nextTurn() {
@@ -1200,6 +1457,7 @@
                     match_id: RebirthStore.state.match_id
                 });
                 RebirthStore.reward = null;
+                RebirthStore.selectedAttackerId = null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
             });
@@ -1263,16 +1521,20 @@
 
             const playButton = RebirthStore.elements["play-button"];
             if (playButton) {
-                playButton.addEventListener("click", () => RebirthFlow.playSelectedCard());
+                playButton.addEventListener("click", () => {
+                    if (RebirthStore.selectedAttackerId) {
+                        RebirthFlow.clashSelectedAttacker();
+                        return;
+                    }
+                    RebirthFlow.playSelectedCard();
+                });
             }
 
             const nextButton = RebirthStore.elements["next-turn-button"];
             if (nextButton) {
                 nextButton.addEventListener("click", () => {
                     if (!RebirthStore.state) return;
-                    if (RebirthStore.state.phase === "choose") {
-                        RebirthFlow.evolveFirstDuplicate();
-                    } else if (RebirthStore.state.phase === "result") {
+                    if (RebirthStore.state.phase === "choose" || RebirthStore.state.phase === "result") {
                         RebirthFlow.nextTurn();
                     }
                 });
@@ -1287,9 +1549,35 @@
             if (hand) {
                 hand.addEventListener("click", (event) => {
                     const button = event.target.closest("[data-card-instance]");
-                    if (!button || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
+                    if (!button || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
                     RebirthStore.selectedInstanceId = button.getAttribute("data-card-instance");
+                    RebirthStore.selectedAttackerId = null;
+                    RebirthErrors.clear();
                     RebirthRenderer.render();
+                    RebirthFlow.playSelectedCard();
+                });
+            }
+
+            const playerField = RebirthStore.elements["player-battlefield"];
+            if (playerField) {
+                playerField.addEventListener("click", (event) => {
+                    const button = event.target.closest("[data-attacker-instance]");
+                    if (!button || !RebirthStore.state || RebirthStore.state.is_finished) return;
+                    RebirthStore.selectedInstanceId = null;
+                    RebirthStore.selectedAttackerId = button.getAttribute("data-attacker-instance");
+                    RebirthErrors.clear();
+                    RebirthRenderer.render();
+                });
+            }
+
+            const botField = RebirthStore.elements["bot-battlefield"];
+            if (botField) {
+                botField.addEventListener("click", (event) => {
+                    const direct = event.target.closest("[data-direct-attack]");
+                    const target = event.target.closest("[data-target-instance]");
+                    if (!direct && !target) return;
+                    if (!RebirthStore.state || RebirthStore.state.is_finished) return;
+                    RebirthFlow.attackTarget(target ? target.getAttribute("data-target-instance") : null);
                 });
             }
         },

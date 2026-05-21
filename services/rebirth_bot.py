@@ -1,6 +1,8 @@
 from copy import deepcopy
 import hashlib
 
+from services.rebirth_cards import is_monster
+
 
 BOT_PERSONALITY_ORDER = ("defensive", "aggressive", "opportunist")
 
@@ -26,6 +28,22 @@ BOT_PERSONALITIES = {
 }
 
 ABILITY_PRIORITIES = {
+    "fire_execute": 9,
+    "shadow_drain": 9,
+    "shadow_lifesteal": 8,
+    "shadow_mark": 8,
+    "fire_burn": 7,
+    "fire_direct": 7,
+    "earth_counter": 6,
+    "water_tide": 6,
+    "shadow_decay": 6,
+    "fire_surge": 5,
+    "earth_shield": 5,
+    "water_heal": 5,
+    "earth_fortify": 4,
+    "earth_bulwark": 4,
+    "water_cleanse": 4,
+    "water_guard": 3,
     "bleed_mark": 8,
     "fade_cut": 7,
     "inferno_bite": 7,
@@ -51,7 +69,7 @@ def card_guard(card):
 
 
 def ability_priority(card):
-    return ABILITY_PRIORITIES.get(str(card.get("ability_key") or ""), 0)
+    return ABILITY_PRIORITIES.get(str(card.get("ability_key") or ""), int(card.get("ability_weight", 0) or 0))
 
 
 def ability_key(card):
@@ -238,6 +256,7 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
 
 
 def choose_response(bot_hand, player_card, profile_id=None, *, turn=1, player_wounded=False, bot_wounded=False, match_id=None):
+    bot_hand = [card for card in bot_hand if is_monster(card)]
     if not bot_hand:
         return None
 

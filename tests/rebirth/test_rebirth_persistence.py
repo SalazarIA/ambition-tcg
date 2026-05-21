@@ -1,3 +1,4 @@
+from services.rebirth_cards import CARD_CATALOG, get_card
 from services.rebirth_persistence import RebirthRepository
 
 
@@ -6,6 +7,23 @@ def register(client, username="persist_user", email="persist@example.com"):
         "/api/rebirth/auth/register",
         json={"username": username, "email": email, "password": "password123"},
     )
+
+
+def summon_and_attack(client, state, card=None):
+    card = card or state["player"]["hand"][0]
+    summoned = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": state["match_id"], "card_instance_id": card["instance_id"]},
+    )
+    assert summoned.status_code == 200
+    after_summon = summoned.get_json()["state"]
+    attack_payload = {
+        "match_id": after_summon["match_id"],
+        "attacker_instance_id": after_summon["player"]["battlefield"][-1]["instance_id"],
+    }
+    if after_summon["bot"]["battlefield"]:
+        attack_payload["target_instance_id"] = after_summon["bot"]["battlefield"][0]["instance_id"]
+    return client.post("/api/rebirth/attack", json=attack_payload)
 
 
 def test_register_login_logout_and_session_are_persisted(client, flask_app):
@@ -44,20 +62,11 @@ def test_duplicate_account_and_bad_login_return_stable_errors(client):
 
 def test_loadout_persists_and_start_match_uses_account_loadout(client):
     register(client, username="deck_user", email="deck@example.com")
-    card_ids = [
-        "dreadclaw",
-        "dreadclaw",
-        "dreadclaw",
-        "stoneshell",
-        "stoneshell",
-        "skywarden",
-        "ironbastion",
-        "embermaw",
-    ]
+    card_ids = [card["id"] for card in client.get("/api/rebirth/collection").get_json()["collection"]["loadout"]]
 
     saved = client.post("/api/rebirth/loadout", json={"card_ids": card_ids})
     assert saved.status_code == 200
-    assert saved.get_json()["loadout"]["summary"]["size"] == 8
+    assert saved.get_json()["loadout"]["summary"]["size"] == 30
 
     start = client.post("/api/rebirth/start", json={"seed": "account-loadout"})
     state = start.get_json()["state"]
@@ -77,20 +86,100 @@ def test_booster_mutates_collection_and_progression(client):
     progress = client.get("/api/rebirth/progression").get_json()["progression"]["profile"]
 
     assert opened.status_code == 200
-    assert payload["booster"]["summary"]["count"] == 4
-    assert after == before + 4
+    assert payload["booster"]["summary"]["count"] == 5
+    assert after == before + 5
     assert progress["boosters_opened"] == 1
     assert progress["xp"] >= 40
+
+
+def test_legacy_booster_history_card_ids_do_not_break_product_pages(client, flask_app):
+    user = register(client, username="legacy_booster_user", email="legacy-booster@example.com").get_json()["account"]["user"]
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+    repo.ensure_schema()
+    with repo.connect() as db:
+        db.execute(
+            """
+            INSERT INTO booster_history (user_id, booster_id, seed, cards_json, opened_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user["id"], "legacy_pack", "legacy", '["voidstalker", "card_001"]', "2026-05-21T00:00:00"),
+        )
+
+    history = repo.booster_history(user["id"])
+    shop = client.get("/rebirth/shop")
+    profile = client.get("/rebirth/profile")
+
+    assert history[0]["invalid_card_ids"] == ["voidstalker"]
+    assert [card["id"] for card in history[0]["cards"]] == ["card_001"]
+    assert shop.status_code == 200
+    assert profile.status_code == 200
+
+
+def test_market_listing_locks_card_and_purchase_transfers_value(client, flask_app):
+    seller = register(client, username="seller_user", email="seller@example.com").get_json()["account"]["user"]
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+    seller_loadout = repo.loadout_card_ids(seller["id"])
+    extra_card_id = next(card["id"] for card in CARD_CATALOG if card["id"] not in set(seller_loadout))
+    repo.add_cards(seller["id"], [get_card(extra_card_id)])
+
+    listed = client.post(
+        "/api/rebirth/market/list",
+        json={"card_id": extra_card_id, "price": 100, "currency_type": "GOLD"},
+    )
+    listed_payload = listed.get_json()
+
+    assert listed.status_code == 200
+    assert listed_payload["market"]["offer"]["card_id"] == extra_card_id
+    assert repo.collection_counts(seller["id"]).get(extra_card_id, 0) == 0
+
+    double_list = client.post(
+        "/api/rebirth/market/list",
+        json={"card_id": extra_card_id, "price": 100, "currency_type": "GOLD"},
+    )
+    assert double_list.status_code == 409
+    assert double_list.get_json()["error"]["code"] == "card_not_available"
+
+    client.post("/api/rebirth/auth/logout", json={})
+    buyer = register(client, username="buyer_user", email="buyer@example.com").get_json()["account"]["user"]
+    market = client.get("/api/rebirth/market/offers").get_json()["market"]["offers"]
+    assert any(offer["id"] == listed_payload["market"]["offer"]["id"] for offer in market)
+
+    bought = client.post("/api/rebirth/market/buy", json={"offer_id": listed_payload["market"]["offer"]["id"]})
+    bought_payload = bought.get_json()
+
+    assert bought.status_code == 200
+    assert bought_payload["market"]["purchase"]["fee"] == 5
+    assert bought_payload["market"]["purchase"]["seller_net"] == 95
+    assert bought_payload["market"]["purchase"]["buyer_balance"] == 900
+    assert repo.collection_counts(buyer["id"])[extra_card_id] >= 1
+    assert all(offer["id"] != listed_payload["market"]["offer"]["id"] for offer in bought_payload["market"]["offers"])
+
+    repeated = client.post("/api/rebirth/market/buy", json={"offer_id": listed_payload["market"]["offer"]["id"]})
+    assert repeated.status_code == 409
+    assert repeated.get_json()["error"]["code"] == "market_offer_unavailable"
+
+    ledger = repo.economy_ledger(seller["id"], limit=20)
+    assert any(entry["reason"] == "market_fee_sink" and entry["delta"] == -5 for entry in ledger)
+
+
+def test_market_listing_rejects_card_required_by_active_loadout(client, flask_app):
+    created = register(client, username="locked_seller", email="locked-seller@example.com").get_json()["account"]["user"]
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+    locked_card_id = repo.loadout_card_ids(created["id"])[0]
+
+    response = client.post(
+        "/api/rebirth/market/list",
+        json={"card_id": locked_card_id, "price": 50, "currency_type": "GOLD"},
+    )
+
+    assert response.status_code == 409
+    assert response.get_json()["error"]["code"] == "card_locked_by_loadout"
 
 
 def test_match_progression_daily_reward_and_tutorial_are_persisted(client):
     register(client, username="reward_user", email="reward@example.com")
     start = client.post("/api/rebirth/start", json={"seed": "reward-match"}).get_json()["state"]
-    card = start["player"]["hand"][0]
-    played = client.post(
-        "/api/rebirth/play-card",
-        json={"match_id": start["match_id"], "card_instance_id": card["instance_id"]},
-    )
+    played = summon_and_attack(client, start)
 
     assert played.status_code == 200
     assert played.get_json()["progression"]["clashes"] == 1
@@ -122,11 +211,7 @@ def test_profile_achievements_follow_rebirth_actions(client):
 
     opened = client.post("/api/rebirth/booster/open", json={"seed": "badge-booster"})
     start = client.post("/api/rebirth/start", json={"seed": "badge-match"}).get_json()["state"]
-    card = start["player"]["hand"][0]
-    played = client.post(
-        "/api/rebirth/play-card",
-        json={"match_id": start["match_id"], "card_instance_id": card["instance_id"]},
-    )
+    played = summon_and_attack(client, start)
     daily = client.post("/api/rebirth/progression/claim-daily", json={})
     tutorial = client.post("/api/rebirth/onboarding/complete", json={"step": 4})
 

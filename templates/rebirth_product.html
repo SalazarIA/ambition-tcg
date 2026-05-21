@@ -9,22 +9,11 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-036">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-045">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
+    {% include "_rebirth_global_nav.html" %}
     <main class="rb-home-shell rb-product-shell">
-        <header class="rb-home-nav rb-shell-nav" aria-label="Ambitionz Rebirth product shell">
-            <a class="rb-brand" href="{{ url_for('index') }}" aria-label="Ambitionz home">
-                <span>A</span>
-                <strong>Ambitionz Rebirth</strong>
-            </a>
-            <nav aria-label="Rebirth sections">
-                {% for item in page.nav %}
-                    <a href="{{ item.href }}" class="{{ 'is-active' if item.active else '' }}">{{ item.label }}</a>
-                {% endfor %}
-            </nav>
-        </header>
-
         <section class="rb-product-hero" aria-label="{{ page.title }}">
             <div>
                 <span class="rb-product-kicker">Rebirth {{ page.key }}</span>
@@ -34,49 +23,25 @@
             <a class="rb-cta rb-cta-wide" href="{{ page.primary_href }}"><span>A</span> {{ page.primary_label }} <i aria-hidden="true"></i></a>
         </section>
 
-        {% if page.account is defined %}
-            <section class="rb-account-strip" aria-label="Account state">
-                {% if page.account.authenticated %}
-                    <span>Signed in</span>
-                    <strong>{{ page.account.user.username }}</strong>
-                    <a class="rb-secondary" href="{{ url_for('rebirth_profile') }}">Profile</a>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-logout>Logout</button>
-                {% else %}
-                    <span>Guest</span>
-                    <strong>Sign in to persist ownership</strong>
-                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Account</a>
-                {% endif %}
-            </section>
-        {% endif %}
-
         {% if page.key == "account" %}
             {% if page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide" aria-label="Signed in account">
-                    <span>Active Session</span>
+                    <span>Sessao ativa</span>
                     <h2>{{ page.account.user.username }}</h2>
                     <p>{{ page.account.user.email }}</p>
                     <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-logout>Logout</button>
-                    <div class="rb-product-result" data-rebirth-auth-result aria-live="polite">Account persisted.</div>
+                    <div class="rb-product-result" aria-live="polite">Conta conectada a sua colecao Rebirth.</div>
                 </section>
             {% else %}
-                <section class="rb-auth-grid" aria-label="Rebirth auth">
-                    <form class="rb-product-panel rb-auth-form" data-rebirth-register>
-                        <span>Create</span>
-                        <h2>Register</h2>
-                        <label>Username<input name="username" autocomplete="username" required minlength="3"></label>
-                        <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
-                        <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="8"></label>
-                        <button class="rb-button-primary rb-cta" type="submit">Create Account</button>
-                    </form>
-                    <form class="rb-product-panel rb-auth-form" data-rebirth-login>
-                        <span>Return</span>
-                        <h2>Login</h2>
-                        <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
-                        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
-                        <button class="rb-button-secondary rb-secondary" type="submit">Login</button>
-                    </form>
+                <section class="rb-product-panel rb-product-wide rb-auth-entry" aria-label="Rebirth auth">
+                    <span>Acesso do jogador</span>
+                    <h2>Entre na sua conta Rebirth</h2>
+                    <p>Login e registro vivem em um modal unico para manter a arena limpa.</p>
+                    <div class="rb-auth-entry-actions">
+                        <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Login / Registro</button>
+                        <a class="rb-button-secondary rb-secondary" href="{{ url_for('rebirth') }}">Jogar como visitante</a>
+                    </div>
                 </section>
-                <div class="rb-product-result" data-rebirth-auth-result aria-live="polite">Ready.</div>
             {% endif %}
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Auth plan">
                 {% for step in page.steps %}
@@ -98,10 +63,10 @@
         {% elif page.key == "profile" %}
             {% if not page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide">
-                    <span>Guest Preview</span>
-                    <h2>Profile Locked</h2>
-                    <p>Create a Rebirth account to persist achievements, rewards, loadout and password controls.</p>
-                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Create Account</a>
+                    <span>Visitante</span>
+                    <h2>Perfil em espera</h2>
+                    <p>Entre quando quiser guardar conquistas, recompensas, deck e carteira.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
                 </section>
             {% endif %}
             <section class="rb-product-stats" aria-label="Profile summary">
@@ -156,10 +121,10 @@
         {% elif page.key == "history" %}
             {% if not page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide">
-                    <span>Guest Preview</span>
-                    <h2>History Locked</h2>
-                    <p>Create a Rebirth account to persist match events, state hashes and reward ledger entries.</p>
-                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Create Account</a>
+                    <span>Visitante</span>
+                    <h2>Historico em espera</h2>
+                    <p>Entre para guardar partidas, recompensas e movimentos de economia.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
                 </section>
             {% endif %}
             <section class="rb-product-stats" aria-label="History summary">
@@ -209,10 +174,10 @@
         {% elif page.key == "support" %}
             {% if not page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide">
-                    <span>Guest Preview</span>
-                    <h2>Support Locked</h2>
-                    <p>Sign in to export or reset your Rebirth account state.</p>
-                    <a class="rb-secondary" href="{{ url_for('rebirth_account') }}">Account</a>
+                    <span>Visitante</span>
+                    <h2>Suporte da conta</h2>
+                    <p>Entre para exportar ou reiniciar seu estado Rebirth.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
                 </section>
             {% endif %}
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Support checks">
@@ -251,9 +216,10 @@
             </section>
             {% if not page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide">
-                    <span>Guest Preview</span>
-                    <h2>Persistence Locked</h2>
-                    <p>Create a Rebirth account to save loadout changes and booster ownership.</p>
+                    <span>Visitante</span>
+                    <h2>Colecao demonstrativa</h2>
+                    <p>Entre para guardar ajustes do deck e cartas de booster.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
                 </section>
             {% endif %}
 
@@ -271,7 +237,7 @@
                     <article><span>Guard</span><strong>0</strong></article>
                     <article><span>Pairs</span><strong>0</strong></article>
                 </div>
-                <form class="rb-product-loadout rb-loadout-builder" data-rebirth-loadout-form data-loadout-size="8">
+                <form class="rb-product-loadout rb-loadout-builder" data-rebirth-loadout-form data-loadout-size="30">
                     <div data-rebirth-loadout-hidden></div>
                     {% for card in page.cards if card.owned_count %}
                         <article
@@ -315,30 +281,75 @@
                 {% endfor %}
             </section>
         {% elif page.key == "shop" %}
-            <section class="rb-product-grid" aria-label="Shop demo">
-                {% for offer in page.offers %}
-                    <article class="rb-product-panel rb-shop-offer">
-                        <span>{{ offer.state }}</span>
-                        <h2>{{ offer.name }}</h2>
-                        <p>{{ offer.contents }}</p>
-                        <strong>{{ offer.price }}</strong>
-                        <button class="rb-button-primary rb-cta" type="button" data-rebirth-booster>Open Pack</button>
+            <section class="rb-shop-gacha" aria-label="Gacha de boosters">
+                <div class="rb-shop-gacha-copy">
+                    <span>Gacha Rebirth</span>
+                    <h2>Pacote de 5 cartas</h2>
+                    <p>O backend sorteia 3 comuns, 1 incomum e 1 slot rara+ antes da interface revelar o resultado.</p>
+                    <div class="rb-gacha-slots" aria-label="Slots de raridade">
+                        <span>Comum</span>
+                        <span>Comum</span>
+                        <span>Comum</span>
+                        <span>Incomum</span>
+                        <span>Rara+</span>
+                    </div>
+                </div>
+                <div class="rb-shop-pack-list">
+                    {% for offer in page.offers %}
+                        <article class="rb-product-panel rb-shop-offer rb-shop-pack">
+                            <span>{{ offer.state }}</span>
+                            <h2>{{ offer.name }}</h2>
+                            <p>{{ offer.contents }}</p>
+                            <strong>{{ offer.price }}</strong>
+                            <button class="rb-button-primary rb-cta" type="button" data-rebirth-booster>Comprar Booster</button>
+                        </article>
+                    {% endfor %}
+                    <article class="rb-product-panel rb-shop-pack-note">
+                        <span>Beta</span>
+                        <h2>Economia ativa</h2>
+                        <p>{{ page.disclaimer }}</p>
                     </article>
-                {% endfor %}
-                <article class="rb-product-panel">
-                    <span>Beta</span>
-                    <h2>Free Packs</h2>
-                    <p>{{ page.disclaimer }}</p>
-                </article>
+                </div>
             </section>
             <section class="rb-product-panel rb-product-wide" aria-label="Booster result">
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>Pack result</span>
-                        <h2>Pack Pull</h2>
+                        <span>Resultado do pacote</span>
+                        <h2>Cartas reveladas</h2>
                     </div>
                 </div>
-                <div id="rebirth-booster-result" class="rb-product-result rb-booster-result" aria-live="polite">Open a pack to reveal four Rebirth cards.</div>
+                <div id="rebirth-booster-result" class="rb-product-result rb-booster-result" aria-live="polite">Compre um booster para revelar 5 cartas Rebirth.</div>
+            </section>
+            <section class="rb-product-panel rb-product-wide" aria-label="Player market">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>5% sink fee</span>
+                        <h2>Player Market</h2>
+                    </div>
+                </div>
+                <div class="rb-product-result" data-rebirth-market-result aria-live="polite">Market listings are live.</div>
+                <div class="rb-product-card-grid rb-product-card-grid-result" data-rebirth-market-offers>
+                    {% for offer in page.market.offers %}
+                        <article class="rb-product-card rb-market-offer" data-market-offer-id="{{ offer.id }}">
+                            <img src="{{ offer.card.art }}" alt="{{ offer.card.name }} art">
+                            <div>
+                                <span>{{ offer.currency_type }} - {{ offer.seller_name or 'Player' }}</span>
+                                <h2>{{ offer.card.name }}</h2>
+                                <p>{{ offer.card.role }}</p>
+                                <strong>{{ offer.price }} {{ offer.currency_type }}</strong>
+                                {% if page.account.authenticated %}
+                                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-market-buy="{{ offer.id }}">Buy</button>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% else %}
+                        <article class="rb-product-panel">
+                            <span>Market</span>
+                            <h2>No active offers</h2>
+                            <p>Active player listings will appear here.</p>
+                        </article>
+                    {% endfor %}
+                </div>
             </section>
             {% if page.history %}
                 <section class="rb-product-panel rb-product-wide" aria-label="Booster history">
@@ -527,12 +538,21 @@
             history: "{{ url_for('api_rebirth_match_history') }}",
             ledger: "{{ url_for('api_rebirth_economy_ledger') }}",
             verifyReceipt: "{{ url_for('api_rebirth_shop_verify_receipt') }}",
+            marketOffers: "{{ url_for('api_rebirth_market_offers') }}",
+            marketList: "{{ url_for('api_rebirth_market_list') }}",
+            marketBuy: "{{ url_for('api_rebirth_market_buy') }}",
             supportExport: "{{ url_for('api_rebirth_support_export') }}",
             supportReset: "{{ url_for('api_rebirth_support_reset') }}",
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}"
+        };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-036"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-036"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-045"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-045"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-045"></script>
 </body>
 </html>

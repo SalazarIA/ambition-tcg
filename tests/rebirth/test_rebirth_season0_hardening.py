@@ -12,15 +12,27 @@ def test_match_command_event_history_and_ledger_are_persisted(client):
     assert start["version"] >= 1
     assert start["state_hash"]
     assert start["events"][0]["type"] == "MATCH_STARTED"
+    evolution = start["available_evolutions"][0]
 
     evolved = client.post(
         "/api/rebirth/evolve",
-        json={"match_id": start["match_id"], "card_id": "dreadclaw"},
+        json={"match_id": start["match_id"], "card_id": evolution["card_id"]},
     ).get_json()["state"]
-    played_card = evolved["player"]["hand"][0]
-    played = client.post(
+    turn_two = client.post("/api/rebirth/next-turn", json={"match_id": evolved["match_id"]}).get_json()["state"]
+    played_card = next(card for card in turn_two["player"]["hand"] if card["id"] == evolution["evolution_id"])
+    summoned = client.post(
         "/api/rebirth/play-card",
-        json={"match_id": evolved["match_id"], "card_instance_id": played_card["instance_id"]},
+        json={"match_id": turn_two["match_id"], "card_instance_id": played_card["instance_id"]},
+    ).get_json()
+    attack_json = {
+        "match_id": summoned["state"]["match_id"],
+        "attacker_instance_id": summoned["state"]["player"]["battlefield"][-1]["instance_id"],
+    }
+    if summoned["state"]["bot"]["battlefield"]:
+        attack_json["target_instance_id"] = summoned["state"]["bot"]["battlefield"][0]["instance_id"]
+    played = client.post(
+        "/api/rebirth/attack",
+        json=attack_json,
     ).get_json()
 
     assert played["state"]["version"] > start["version"]

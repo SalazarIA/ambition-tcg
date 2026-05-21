@@ -7,7 +7,10 @@ from services.rebirth_engine import EffectStack, RebirthError, play_card, start_
 from services.rebirth_persistence import (
     Base,
     RebirthPersistenceError,
+    active_market_offers,
+    buy_market_offer,
     configure_async_database,
+    create_market_offer,
     load_match_state,
     log_transaction,
     save_match_state,
@@ -54,12 +57,15 @@ def test_async_postgres_persistence_contract_is_declared(monkeypatch):
     monkeypatch.delenv("POSTGRES_URL", raising=False)
     configure_async_database("")
 
-    assert {"user_accounts", "user_collections", "game_sessions", "economy_transactions"}.issubset(
+    assert {"user_accounts", "user_collections", "game_sessions", "economy_transactions", "market_offers"}.issubset(
         set(Base.metadata.tables)
     )
     assert inspect.iscoroutinefunction(save_match_state)
     assert inspect.iscoroutinefunction(load_match_state)
     assert inspect.iscoroutinefunction(log_transaction)
+    assert inspect.iscoroutinefunction(create_market_offer)
+    assert inspect.iscoroutinefunction(buy_market_offer)
+    assert inspect.iscoroutinefunction(active_market_offers)
 
     with pytest.raises(RebirthPersistenceError) as error:
         asyncio.run(save_match_state("rebirth-test", {"turn": 1, "phase": "choose"}))
