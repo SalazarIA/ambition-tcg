@@ -214,9 +214,9 @@ def _monster_card(card_number, *, family, name, tier, slot):
     ability_key, ability_name, ability_text = config["abilities"][slot % len(config["abilities"])]
     attack_curve = [4, 5, 5, 6, 6, 7, 7, 8, 8, 9]
     guard_curve = [3, 3, 4, 2, 4, 3, 5, 2, 4, 5]
-    attack = attack_curve[slot] + (2 if is_evolved else 0)
-    guard = guard_curve[slot] + (2 if is_evolved else 0)
-    rarity = "RARE" if is_evolved and slot < 7 else "EPIC" if is_evolved else "COMMON"
+    attack = attack_curve[slot] + (1 if is_evolved else 0)
+    guard = guard_curve[slot] + (1 if is_evolved else 0)
+    rarity = "UNCOMMON" if is_evolved else "COMMON"
     card = {
         "id": card_id,
         "name": name,
@@ -226,7 +226,7 @@ def _monster_card(card_number, *, family, name, tier, slot):
         "role": config["role"],
         "tier": tier,
         "rarity": rarity,
-        "cost": 1 if card_id in TURN_ONE_TEST_CARD_IDS else 0,
+        "cost": 2 if is_evolved else 1,
         "attack": attack,
         "power": attack,
         "guard": guard,
@@ -253,9 +253,9 @@ def _spell_card(offset, definition):
         "card_type": "SPELL",
         "family": "SPELL",
         "role": "Instant stack effect",
-        "tier": 1 if offset < 6 else 2,
-        "rarity": "UNCOMMON" if offset < 6 else "RARE",
-        "cost": cost,
+        "tier": 1,
+        "rarity": "UNCOMMON",
+        "cost": min(2, cost),
         "attack": 0,
         "power": 0,
         "guard": 0,
@@ -283,9 +283,9 @@ def _trap_card(offset, definition):
         "card_type": "TRAP",
         "family": "TRAP",
         "role": "Hidden combat trigger",
-        "tier": 1 if offset < 6 else 2,
-        "rarity": "UNCOMMON" if offset < 6 else "RARE",
-        "cost": cost,
+        "tier": 1,
+        "rarity": "UNCOMMON",
+        "cost": min(2, cost),
         "attack": 0,
         "power": 0,
         "guard": 0,

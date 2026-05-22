@@ -297,13 +297,13 @@ async def _ensure_async_starter_wallet(session, account):
 
 async def _seed_async_user_collection(session, account, seed_source):
     deck = deterministic_starter_deck(seed_source)
-    for card_id in deck:
+    for card_id, copies in Counter(deck).items():
         card = get_card(card_id)
         session.add(
             UserCollection(
                 user_id=int(account.id),
                 card_id=card_id,
-                quantity=1,
+                quantity=int(copies),
                 locked_quantity=0,
                 evolved_tier=int(card.get("tier", 1) or 1),
             )

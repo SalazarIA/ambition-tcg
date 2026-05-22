@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-051">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-052">
 </head>
 <body class="rb-page rb-home-page rb-landing-page">
     {% include "_rebirth_global_nav.html" %}
@@ -18,7 +18,7 @@
             <div class="rb-home-copy">
                 <h1>Ambitionz Rebirth</h1>
                 <p class="rb-home-line">Duelos, colecao e mercado em uma mesa viva.</p>
-                <p>Convoque monstros, combine duplicatas, evolua cartas raras e lute por recompensas de temporada.</p>
+                <p>Convoque monstros, combine duplicatas, evolua cartas incomuns e lute por recompensas de temporada.</p>
                 <p>Uma plataforma TCG de alta fantasia com economia em GOLD e Coinz.</p>
                 <div class="rb-home-actions">
                     <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Entrar na Arena <i aria-hidden="true"></i></a>
@@ -93,7 +93,7 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-051"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-051"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-052"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-052"></script>
 </body>
 </html>

@@ -507,8 +507,10 @@ def _first_empty_battlefield_slot(side):
 
 def _resolve_battlefield_slot(side, field_slot=None):
     if _battlefield_slots_available(side) <= 0:
-        raise RebirthError("Battlefield is full.", "battlefield_full")
-    if field_slot is None or field_slot == "":
+        raise RebirthError("The duel slot is already occupied.", "battlefield_full")
+    if BATTLEFIELD_LIMIT == 1:
+        slot = 0
+    elif field_slot is None or field_slot == "":
         slot = _first_empty_battlefield_slot(side)
     else:
         try:
@@ -516,9 +518,9 @@ def _resolve_battlefield_slot(side, field_slot=None):
         except (TypeError, ValueError) as exc:
             raise RebirthError("field_slot must be 0, 1 or 2.", "invalid_slot") from exc
     if slot is None or slot < 0 or slot >= BATTLEFIELD_LIMIT:
-        raise RebirthError("field_slot must be 0, 1 or 2.", "invalid_slot")
+        raise RebirthError("field_slot is outside the active duel zone.", "invalid_slot")
     if field_slots(side)[slot] is not None:
-        raise RebirthError("That battlefield slot is already occupied.", "slot_occupied")
+        raise RebirthError("The duel slot is already occupied.", "slot_occupied")
     return slot
 
 
@@ -1120,8 +1122,9 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
         _target_index, target = _find_battlefield_card(match["bot"], target_instance_id)
         if target is None:
             raise RebirthError("Target is not on the bot battlefield.", "invalid_target")
-    elif compact_battlefield(match["bot"]):
-        raise RebirthError("Direct attack is blocked while the bot controls defenders.", "defenders_block_direct")
+    else:
+        target = compact_battlefield(match["bot"])[0] if compact_battlefield(match["bot"]) else None
+        target_instance_id = target.get("instance_id") if target else None
 
     append_command(
         match,

@@ -24,8 +24,8 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
     assert "js/rebirth.js" in body
 
     for text in (
-        "Build field",
-        "Pick target",
+        "Summon one",
+        "Strike fast",
         "Break guard",
         "Combine duplicates",
         "Evolve monsters",
@@ -197,10 +197,8 @@ def test_play_card_api_accepts_explicit_monster_slot(client):
 
     assert response.status_code == 200
     assert payload["ok"] is True
-    assert payload["state"]["player_field"][0] is None
-    assert payload["state"]["player_field"][1]["instance_id"] == card["instance_id"]
-    assert payload["state"]["player_field"][2] is None
-    assert payload["state"]["player"]["battlefield"][0]["field_slot"] == 1
+    assert payload["state"]["player_field"][0]["instance_id"] == card["instance_id"]
+    assert payload["state"]["player"]["battlefield"][0]["field_slot"] == 0
 
 
 def test_evolve_api_combines_duplicate(client):

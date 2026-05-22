@@ -1,4 +1,4 @@
-from services.rebirth_cards import validate_deck_distribution
+from services.rebirth_cards import get_card, validate_deck_distribution
 from services.rebirth_persistence import RebirthRepository
 
 
@@ -25,6 +25,7 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
     assert sum(collection_counts.values()) == 30
     assert len(loadout_ids) == 30
     assert validate_deck_distribution(loadout_ids)
+    assert {get_card(card_id)["rarity"] for card_id in collection_counts} <= {"COMMON", "UNCOMMON"}
 
     started = client.post("/api/rebirth/start", json={"seed": "player-test-aaa-e2e"})
     started_payload = started.get_json()

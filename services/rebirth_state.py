@@ -11,7 +11,7 @@ from services.rebirth_events import append_event, append_snapshot, ensure_event_
 
 STARTING_HP = 30
 HAND_SIZE = 5
-FIELD_SLOT_COUNT = 3
+FIELD_SLOT_COUNT = 1
 
 
 class TurnPhase(Enum):
@@ -52,15 +52,25 @@ def create_player(name, owner, card_ids=None):
 
 
 def field_slots(side):
-    compact = [card for card in side.get("battlefield", []) if card]
     raw_slots = side.get("field")
-    if not isinstance(raw_slots, list):
-        raw_slots = compact
-    slots = list(raw_slots[:FIELD_SLOT_COUNT])
-    slots.extend([None for _ in range(FIELD_SLOT_COUNT - len(slots))])
-    if compact and not any(slots):
-        slots = compact[:FIELD_SLOT_COUNT]
-        slots.extend([None for _ in range(FIELD_SLOT_COUNT - len(slots))])
+    raw_slots = raw_slots if isinstance(raw_slots, list) else []
+    seen = set()
+    compact = []
+    for source in (side.get("battlefield", []), raw_slots):
+        for card in source or []:
+            if not card:
+                continue
+            key = card.get("instance_id") or card.get("id") or id(card)
+            if key in seen:
+                continue
+            seen.add(key)
+            compact.append(card)
+
+    slots = [None for _ in range(FIELD_SLOT_COUNT)]
+    for card in compact[:FIELD_SLOT_COUNT]:
+        slots[0] = card
+        card["field_slot"] = 0
+        card["slot"] = 1
     side["field"] = slots
     return slots
 

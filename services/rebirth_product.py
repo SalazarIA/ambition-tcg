@@ -101,7 +101,7 @@ PROGRESSION_TRACK = [
     {"level": 5, "name": "Pack Runner", "reward": "Pack ticket", "state": "locked"},
     {"level": 6, "name": "Guard Breaker", "reward": "Card upgrade spark", "state": "locked"},
     {"level": 7, "name": "Clean Read", "reward": "Coach insight badge", "state": "locked"},
-    {"level": 8, "name": "Pressure Line", "reward": "Rare card chance", "state": "locked"},
+    {"level": 8, "name": "Pressure Line", "reward": "Uncommon card chance", "state": "locked"},
     {"level": 9, "name": "Twin Flame", "reward": "Duplicate bonus", "state": "locked"},
     {"level": 10, "name": "Arena Name", "reward": "Profile title", "state": "locked"},
     {"level": 11, "name": "Counterplay", "reward": "Pack ticket", "state": "locked"},
@@ -111,7 +111,7 @@ PROGRESSION_TRACK = [
     {"level": 15, "name": "Vault Spark", "reward": "Collection frame", "state": "locked"},
     {"level": 16, "name": "Duel Sense", "reward": "Coach badge", "state": "locked"},
     {"level": 17, "name": "Pack Master", "reward": "Pack ticket", "state": "locked"},
-    {"level": 18, "name": "Wounded Read", "reward": "Rare card chance", "state": "locked"},
+    {"level": 18, "name": "Wounded Read", "reward": "Uncommon card chance", "state": "locked"},
     {"level": 19, "name": "Rebirth Chain", "reward": "Duplicate bonus", "state": "locked"},
     {"level": 20, "name": "Season Spark", "reward": "Season 0 badge", "state": "locked"},
 ]
@@ -306,7 +306,7 @@ def shop_payload(account=None, booster_history=None, market_offers=None):
                     "id": "starter_booster_demo",
                     "name": "Booster Rebirth",
                     "price": "Gratis na beta",
-                    "contents": "5 cartas: 3 comuns, 1 incomum e 1 rara+",
+                    "contents": "5 cartas: 3 comuns e 2 incomuns",
                     "state": "available",
                 }
             ],
@@ -326,16 +326,13 @@ def shop_payload(account=None, booster_history=None, market_offers=None):
 def open_booster(seed=None):
     rng = Random(str(seed or "rebirth-booster-demo"))
     common_pool = [card["id"] for card in BASE_MONSTERS if card.get("rarity") == "COMMON"]
-    uncommon_pool = [card["id"] for card in SPELL_CARDS + TRAP_CARDS if card.get("rarity") == "UNCOMMON"]
-    rare_pool = [card["id"] for card in EVOLVED_MONSTERS + SPELL_CARDS + TRAP_CARDS if card.get("rarity") == "RARE"]
-    epic_pool = [card["id"] for card in EVOLVED_MONSTERS if card.get("rarity") == "EPIC"]
-    elevated_pool = epic_pool if rng.random() < 0.2 and epic_pool else rare_pool
+    uncommon_pool = [card["id"] for card in EVOLVED_MONSTERS + SPELL_CARDS + TRAP_CARDS if card.get("rarity") == "UNCOMMON"]
     card_ids = [
         rng.choice(common_pool),
         rng.choice(common_pool),
         rng.choice(common_pool),
         rng.choice(uncommon_pool),
-        rng.choice(elevated_pool),
+        rng.choice(uncommon_pool),
     ]
     cards = [get_card(card_id) for card_id in card_ids]
     rarity_counts = Counter(card["rarity"] for card in cards)
@@ -347,7 +344,7 @@ def open_booster(seed=None):
             "highest_attack": max(card["attack"] for card in cards),
             "elevated_slot": cards[-1]["name"],
             "rarity_counts": dict(rarity_counts),
-            "rarity_slots": ["COMMON", "COMMON", "COMMON", "UNCOMMON", "RARE_PLUS"],
+            "rarity_slots": ["COMMON", "COMMON", "COMMON", "UNCOMMON", "UNCOMMON"],
         },
     }
 

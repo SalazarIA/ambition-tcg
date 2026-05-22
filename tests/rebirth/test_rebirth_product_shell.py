@@ -110,7 +110,7 @@ def test_rebirth_booster_demo_returns_five_cards_without_economy(client):
     assert payload["ok"] is True
     assert payload["booster"]["booster_id"] == "starter_booster_demo"
     assert payload["booster"]["summary"]["count"] == 5
-    assert payload["booster"]["summary"]["rarity_slots"] == ["COMMON", "COMMON", "COMMON", "UNCOMMON", "RARE_PLUS"]
+    assert payload["booster"]["summary"]["rarity_slots"] == ["COMMON", "COMMON", "COMMON", "UNCOMMON", "UNCOMMON"]
     assert len(payload["booster"]["cards"]) == 5
 
     shop = client.get("/api/rebirth/shop").get_json()["shop"]

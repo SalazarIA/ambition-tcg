@@ -40,6 +40,7 @@ def test_rebirth_catalog_has_100_cards_default_art_and_engine_abilities():
     }
     assert len(SPELL_CARDS) == 10
     assert len(TRAP_CARDS) == 10
+    assert {card["rarity"] for card in CARD_CATALOG} == {"COMMON", "UNCOMMON"}
 
     for card in CARD_CATALOG:
         assert card["ability_key"] in ENGINE_ABILITY_KEYS

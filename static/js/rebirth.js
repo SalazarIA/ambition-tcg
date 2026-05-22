@@ -13,7 +13,6 @@
         state: null,
         selectedInstanceId: null,
         selectedAttackerId: null,
-        selectedSummonSlot: null,
         reward: null,
         lastResultSignature: null,
         guidedFirstMatch: false,
@@ -36,9 +35,6 @@
             }
             if (!this.fieldContains(this.selectedAttackerId)) {
                 this.selectedAttackerId = null;
-            }
-            if (this.selectedSummonSlot !== null && !this.fieldSlotOpen("player", this.selectedSummonSlot)) {
-                this.selectedSummonSlot = null;
             }
             if (!this.selectedInstanceId && !this.selectedAttackerId && state && state.phase === "choose" && state.player && state.player.hand.length) {
                 this.selectedInstanceId = state.player.hand[0].instance_id;
@@ -77,7 +73,7 @@
         },
 
         fieldSlots(sideName) {
-            if (!this.state) return [null, null, null];
+            if (!this.state) return [null];
             const side = this.state[sideName] || {};
             const rootField = sideName === "player" ? this.state.player_field : this.state.bot_field;
             const source = Array.isArray(rootField)
@@ -85,17 +81,19 @@
                 : Array.isArray(side.field)
                     ? side.field
                     : null;
-            const slots = [null, null, null];
+            const slots = [null];
             if (source) {
-                source.slice(0, 3).forEach((card, index) => {
+                source.slice(0, 1).forEach((card, index) => {
                     slots[index] = card || null;
                 });
                 return slots;
             }
             (side.battlefield || []).forEach((card, index) => {
                 const slot = Number.isInteger(Number(card && card.field_slot)) ? Number(card.field_slot) : index;
-                if (slot >= 0 && slot < 3 && !slots[slot]) {
+                if (slot >= 0 && slot < 1 && !slots[slot]) {
                     slots[slot] = card;
+                } else if (!slots[0]) {
+                    slots[0] = card;
                 }
             });
             return slots;
@@ -113,7 +111,8 @@
 
         fieldSlotOpen(sideName, slot) {
             const index = this.fieldSlotIndex(slot);
-            return Number.isInteger(index) && index >= 0 && index < 3 && !this.fieldSlots(sideName)[index];
+            const slots = this.fieldSlots(sideName);
+            return Number.isInteger(index) && index >= 0 && index < slots.length && !slots[index];
         },
 
         firstOpenFieldSlot(sideName) {
@@ -730,7 +729,7 @@
         rarityClass(card) {
             const rarity = String((card && card.rarity) || "COMMON").trim().toLowerCase();
             const safeRarity = rarity.replace(/[^a-z0-9-]/g, "-") || "common";
-            const premium = ["rare", "epic", "legendary", "mythic"].includes(safeRarity) ? " is-premium-rarity" : "";
+            const premium = safeRarity === "uncommon" ? " is-premium-rarity" : "";
             return ` is-rarity-${safeRarity}${premium}`;
         },
 
@@ -778,13 +777,12 @@
 
         emptyFieldSlot(copy, options) {
             const direct = options && options.direct;
-            const summonSlot = options && options.summonSlot;
             const summonTarget = options && options.summonTarget ? " is-summon-target" : "";
             const selected = options && options.selected ? " is-selected" : "";
             const locked = options && options.locked ? " is-locked" : "";
             const disabled = locked && !direct ? "disabled aria-disabled=\"true\"" : "";
-            const slotAttr = Number.isInteger(summonSlot) && summonTarget ? `data-summon-slot="${summonSlot}"` : "";
-            return `<button class="rb-field-slot-empty${summonTarget}${selected}${locked}" type="button" ${direct ? "data-direct-attack=\"true\"" : ""} ${slotAttr} ${disabled}><span>${RebirthText.escape(copy)}</span></button>`;
+            const summonAttr = summonTarget ? 'data-summon-action="true"' : "";
+            return `<button class="rb-field-slot-empty${summonTarget}${selected}${locked}" type="button" ${direct ? "data-direct-attack=\"true\"" : ""} ${summonAttr} ${disabled}><span>${RebirthText.escape(copy)}</span></button>`;
         },
 
         emptyFocus() {
@@ -1050,7 +1048,7 @@
                 return {
                     badge: "Attack",
                     title: `${selected.name} is ready.`,
-                    copy: "Click a bot defender to attack it, or click the bot HP lane if the field is clear."
+                    copy: "Click Attack or the enemy side to resolve the duel immediately."
                 };
             }
             if (Number(selected.guard || 0) <= 2) {
@@ -1149,30 +1147,28 @@
                     ? "No Mana"
                     : state.phase !== "choose" || state.is_finished || RebirthStore.pending
                         ? "Locked"
-                        : "Open Slot";
+                        : "Duel Busy";
             const canSummonSelected = selectedHandCard
                 && RebirthMarkup.isMonster(selectedHandCard)
                 && state.phase === "choose"
                 && !state.is_finished
                 && !RebirthStore.pending
                 && selectedEnergy >= selectedCost;
-            playerHost.innerHTML = playerSlots.map((card, index) => {
+            playerHost.innerHTML = playerSlots.map((card) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses);
                 }
-                return RebirthMarkup.emptyFieldSlot(canSummonSelected ? `Slot ${index + 1}` : summonLockCopy, {
-                    summonSlot: index,
+                return RebirthMarkup.emptyFieldSlot(canSummonSelected ? "Summon" : summonLockCopy, {
                     summonTarget: Boolean(canSummonSelected),
-                    selected: RebirthStore.selectedSummonSlot === index,
                     locked: !canSummonSelected
                 });
             }).join("");
-            botHost.innerHTML = botSlots.map((card, index) => {
+            botHost.innerHTML = botSlots.map((card) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "bot", false, botStatuses);
                 }
-                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Guard Line" : (index === 1 ? "Direct HP" : "No Defender"), {
-                    direct: !botCards.length && index === 1
+                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Guard Line" : "Direct HP", {
+                    direct: !botCards.length
                 });
             }).join("");
         },
@@ -1468,7 +1464,7 @@
                 } else {
                     const emptySlot = RebirthStore.firstOpenFieldSlot("player");
                     const isMonster = selected && RebirthMarkup.isMonster(selected);
-                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Summon Slot" : "Play"}${selected ? ` ${cost}` : ""}`;
+                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Summon" : "Play"}${selected ? ` ${cost}` : ""}`;
                     RebirthStore.elements["play-button"].disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || (isMonster && emptySlot < 0);
                 }
             }
@@ -1545,7 +1541,6 @@
                     tutorial: RebirthStore.guidedFirstMatch
                 });
                 RebirthStore.selectedInstanceId = null;
-                RebirthStore.selectedSummonSlot = null;
                 RebirthStore.reward = null;
                 this.applyState(payload.state);
             });
@@ -1560,12 +1555,11 @@
                     card_id: evolution.card_id
                 });
                 RebirthStore.selectedInstanceId = payload.evolved ? payload.evolved.instance_id : null;
-                RebirthStore.selectedSummonSlot = null;
                 this.applyState(payload.state);
             });
         },
 
-        async playSelectedCard(fieldSlot) {
+        async playSelectedCard() {
             if (!RebirthStore.selectedInstanceId || !RebirthStore.state) return;
             if (RebirthStore.state.is_finished || RebirthStore.state.phase !== "choose") {
                 RebirthErrors.show("Cards can only be played during your main phase.");
@@ -1582,15 +1576,9 @@
                 return;
             }
             const isMonster = RebirthMarkup.isMonster(selectedCard);
-            const requestedSlot = RebirthStore.fieldSlotIndex(fieldSlot);
-            const selectedSlot = RebirthStore.fieldSlotIndex(RebirthStore.selectedSummonSlot);
-            const slot = requestedSlot !== null
-                ? requestedSlot
-                : selectedSlot !== null
-                    ? selectedSlot
-                    : null;
+            const slot = 0;
             if (isMonster && !RebirthStore.fieldSlotOpen("player", slot)) {
-                RebirthErrors.show("Choose an empty monster slot first.");
+                RebirthErrors.show("Your duel slot is occupied. Attack, survive, or start the next turn.");
                 RebirthRenderer.render();
                 return;
             }
@@ -1601,12 +1589,8 @@
                     card_instance_id: selectedCard.instance_id,
                     card_id: selectedCard.id
                 };
-                if (isMonster) {
-                    requestPayload.field_slot = slot;
-                }
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.playCard, requestPayload);
                 RebirthStore.selectedInstanceId = null;
-                RebirthStore.selectedSummonSlot = null;
                 RebirthStore.selectedAttackerId = isMonster ? summonedInstanceId : null;
                 RebirthStore.reward = payload.match_reward || null;
                 this.applyState(payload.state);
@@ -1633,11 +1617,6 @@
                 return;
             }
             const botField = RebirthStore.fieldCards("bot");
-            if (!targetInstanceId && botField.length) {
-                RebirthErrors.show("Choose a defender before attacking.");
-                RebirthRenderer.render();
-                return;
-            }
             if (targetInstanceId && !botField.some((card) => card.instance_id === targetInstanceId)) {
                 RebirthErrors.show("That defender is no longer on the field.");
                 RebirthRenderer.render();
@@ -1668,9 +1647,7 @@
                 RebirthRenderer.buttons();
                 return;
             }
-            const botField = RebirthStore.fieldCards("bot");
-            const firstDefender = botField[0] || null;
-            await this.attackTarget(firstDefender ? firstDefender.instance_id : null);
+            await this.attackTarget(null);
         },
 
         async nextTurn() {
@@ -1681,7 +1658,6 @@
                 });
                 RebirthStore.reward = null;
                 RebirthStore.selectedAttackerId = null;
-                RebirthStore.selectedSummonSlot = null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
             });
@@ -1776,7 +1752,6 @@
                     if (!button || button.disabled || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
                     RebirthStore.selectedInstanceId = button.getAttribute("data-card-instance");
                     RebirthStore.selectedAttackerId = null;
-                    RebirthStore.selectedSummonSlot = null;
                     RebirthErrors.clear();
                     RebirthRenderer.render();
                 });
@@ -1785,19 +1760,16 @@
             const playerField = RebirthStore.elements["player-battlefield"];
             if (playerField) {
                 playerField.addEventListener("click", (event) => {
-                    const summonSlot = event.target.closest("[data-summon-slot]");
-                    if (summonSlot && !summonSlot.disabled && RebirthStore.state && !RebirthStore.state.is_finished) {
-                        const slot = Number(summonSlot.getAttribute("data-summon-slot"));
-                        RebirthStore.selectedSummonSlot = slot;
+                    const summonAction = event.target.closest("[data-summon-action]");
+                    if (summonAction && !summonAction.disabled && RebirthStore.state && !RebirthStore.state.is_finished) {
                         RebirthErrors.clear();
                         RebirthRenderer.render();
-                        RebirthFlow.playSelectedCard(slot);
+                        RebirthFlow.playSelectedCard();
                         return;
                     }
                     const button = event.target.closest("[data-attacker-instance]");
                     if (!button || !RebirthStore.state || RebirthStore.state.is_finished) return;
                     RebirthStore.selectedInstanceId = null;
-                    RebirthStore.selectedSummonSlot = null;
                     RebirthStore.selectedAttackerId = button.getAttribute("data-attacker-instance");
                     RebirthErrors.clear();
                     RebirthRenderer.render();

@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-051">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-052">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     {% include "_rebirth_global_nav.html" %}
@@ -285,13 +285,13 @@
                 <div class="rb-shop-gacha-copy">
                     <span>Gacha Rebirth</span>
                     <h2>Pacote de 5 cartas</h2>
-                    <p>O backend sorteia 3 comuns, 1 incomum e 1 slot rara+ antes da interface revelar o resultado.</p>
+                    <p>O backend sorteia 3 comuns e 2 incomuns antes da interface revelar o resultado.</p>
                     <div class="rb-gacha-slots" aria-label="Slots de raridade">
                         <span>Comum</span>
                         <span>Comum</span>
                         <span>Comum</span>
                         <span>Incomum</span>
-                        <span>Rara+</span>
+                        <span>Incomum</span>
                     </div>
                 </div>
                 <div class="rb-shop-pack-list">
@@ -553,8 +553,8 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-051"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-051"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-051"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-052"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-052"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-052"></script>
 </body>
 </html>
