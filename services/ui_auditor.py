@@ -87,6 +87,9 @@ def severity_for_event(event: Dict[str, Any]) -> Optional[str]:
     if event_type == "pageerror":
         return "high"
     if event_type == "requestfailed":
+        failure = str(event.get("failure") or "")
+        if event.get("resource_type") == "image" and "ERR_ABORTED" in failure:
+            return None
         return "high"
     if status >= 500:
         return "high"
@@ -357,7 +360,18 @@ def capture_step(
     step_name: str,
 ) -> Dict[str, Any]:
     safe_wait(page)
-    metrics = collect_dom_metrics(page)
+    last_error: Optional[Exception] = None
+    for _attempt in range(3):
+        try:
+            metrics = collect_dom_metrics(page)
+            break
+        except PlaywrightError as exc:
+            last_error = exc
+            if "Execution context was destroyed" not in str(exc):
+                raise
+            safe_wait(page, state="domcontentloaded", timeout=8_000)
+    else:
+        raise last_error or RuntimeError("Failed to collect DOM metrics.")
     shot = screenshot(page, debug_dir, stamp, viewport_name, step_name)
     return {
         "name": step_name,
