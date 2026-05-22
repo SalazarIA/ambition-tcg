@@ -4,7 +4,7 @@ import secrets
 import threading
 import time
 
-from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session
+from flask import Flask, jsonify, make_response, redirect, render_template, request, send_from_directory, session
 
 from services.rebirth_contracts import RebirthError
 from services.rebirth_balance import simulate_balance
@@ -436,10 +436,14 @@ def rebirth_shop():
     page = shop_payload(account=account_payload(user), booster_history=history, market_offers=market)
     if warnings:
         page["warnings"] = warnings
-    return render_template(
-        "rebirth_product.html",
-        page=page,
+    response = make_response(
+        render_template(
+            "rebirth_product.html",
+            page=page,
+        )
     )
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/rebirth/progression")

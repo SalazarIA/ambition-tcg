@@ -4027,6 +4027,7 @@ button {
     --rarity-ring: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
     position: relative;
     isolation: isolate;
+    border: 1px solid color-mix(in srgb, var(--element-core), white 12%);
     border-color: color-mix(in srgb, var(--element-core), white 12%);
     background: #05070a;
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.48), 0 0 20px var(--element-soft);
@@ -4064,22 +4065,37 @@ button {
 
 .rb-card-image-layer,
 .rb-card-frame-layer {
-    position: absolute;
     pointer-events: none;
 }
 
 .rb-card-image-layer {
+    position: relative;
     z-index: 1;
-    inset: 0;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-color: #05070a;
-    filter: brightness(1.02) contrast(1.14) saturate(1.18);
+    display: block;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    background:
+        radial-gradient(circle at 50% 42%, var(--element-soft), rgba(0, 0, 0, 0) 64%),
+        #05070a;
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.62);
+}
+
+.rb-card-image-layer img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    filter: brightness(1.04) contrast(1.1) saturate(1.16);
+    mix-blend-mode: normal;
 }
 
 .rb-card-frame-layer {
-    z-index: 2;
+    position: absolute;
+    z-index: 3;
     inset: 0;
     background:
         linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.72)),
@@ -4110,6 +4126,54 @@ button {
     overflow: hidden;
 }
 
+.rb-field-card,
+.rb-field-slot-empty {
+    height: 112px;
+    min-height: 112px;
+}
+
+.rb-card-titlebar,
+.rb-card-statline {
+    position: relative;
+    z-index: 4;
+    min-width: 0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(3, 5, 9, 0.88);
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.34);
+}
+
+.rb-card-titlebar {
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    min-height: 0;
+    padding: 5px 7px 5px 34px;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.rb-card-titlebar .rb-card-nameplate {
+    overflow: hidden;
+    max-width: 100%;
+    color: #fff7de;
+    font-weight: 1000;
+    line-height: 1.02;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.rb-card-titlebar span,
+.rb-card-titlebar small {
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 8px;
+    font-weight: 900;
+    line-height: 1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
 .rb-hand .rb-mini-card > .rb-card-cost,
 .rb-field-card > .rb-card-cost {
     position: absolute;
@@ -4131,35 +4195,25 @@ button {
 }
 
 .rb-hand .rb-mini-card .rb-mini-art {
-    inset: 0;
-    grid-row: auto;
+    grid-row: 2;
+    height: 100%;
 }
 
 .rb-hand .rb-mini-card .rb-mini-copy {
-    position: absolute;
-    z-index: 4;
-    right: 8px;
-    bottom: 8px;
-    left: 8px;
+    grid-row: 1;
     min-height: 0;
-    padding: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(180deg, rgba(4, 5, 8, 0.48), rgba(4, 5, 8, 0.9));
-    backdrop-filter: blur(6px);
+    padding-left: 36px;
 }
 
 .rb-mini-copy .rb-card-nameplate {
-    display: block;
-    overflow: hidden;
-    max-width: 100%;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: 11px;
 }
 
 .rb-card-statline {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
+    padding: 5px;
 }
 
 .rb-card-stat {
@@ -4185,50 +4239,32 @@ button {
 }
 
 .rb-field-card {
-    display: block;
+    display: grid;
+    grid-template-rows: 32px minmax(0, 1fr) 31px 6px;
+    gap: 5px;
     min-height: 112px;
-    padding: 0;
+    padding: 7px;
 }
 
 .rb-field-card .rb-field-art {
-    inset: 0;
-    grid-row: auto;
-    border: 0;
+    grid-row: 2;
 }
 
-.rb-field-card > .rb-card-nameplate {
-    position: absolute;
-    z-index: 4;
-    top: 9px;
-    right: 10px;
-    left: 44px;
-    overflow: hidden;
-    color: #fff7de;
-    font-size: 11px;
-    font-weight: 1000;
-    line-height: 1.05;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-    white-space: nowrap;
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.72);
+.rb-field-card > .rb-card-titlebar {
+    grid-row: 1;
 }
 
 .rb-field-card > .rb-card-statline {
-    position: absolute;
-    z-index: 4;
-    right: 8px;
-    bottom: 17px;
-    left: 8px;
+    grid-row: 3;
 }
 
 .rb-field-card > .rb-guard-meter {
-    position: absolute;
+    position: relative;
     z-index: 4;
-    right: 8px;
-    bottom: 7px;
-    left: 8px;
+    grid-row: 4;
     overflow: hidden;
-    height: 6px;
+    width: 100%;
+    height: 100%;
     background: rgba(255, 255, 255, 0.16);
     clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
 }
@@ -4253,6 +4289,47 @@ button {
     color: #ffffff;
 }
 
+.rb-hand .rb-mini-card {
+    grid-template-rows: 34px minmax(0, 1fr) 42px;
+    gap: 6px;
+    height: 166px;
+    padding: 7px;
+}
+
+.rb-hand {
+    height: 176px;
+}
+
+.rb-mini-stats {
+    grid-row: 3;
+}
+
+.rb-hand .rb-mini-card.is-locked,
+.rb-field-slot-empty.is-locked {
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.42);
+    background: #050607;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.rb-hand .rb-mini-card.is-locked {
+    opacity: 0.68;
+    filter: grayscale(0.96) brightness(0.58);
+    transform: none;
+}
+
+.rb-hand .rb-mini-card.is-locked .rb-card-image-layer img {
+    filter: grayscale(1) brightness(0.46) contrast(0.92);
+}
+
+.rb-hand .rb-mini-card.is-locked:hover,
+.rb-hand .rb-mini-card.is-locked:focus-visible {
+    --card-lift: 0px;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: none;
+}
+
 @media (max-width: 430px) {
     .rb-field-slots {
         gap: 5px;
@@ -4260,7 +4337,14 @@ button {
 
     .rb-field-card,
     .rb-field-slot-empty {
+        height: 92px;
         min-height: 92px;
+    }
+
+    .rb-field-card {
+        grid-template-rows: 28px minmax(0, 1fr) 27px 5px;
+        gap: 4px;
+        padding: 5px;
     }
 
     .rb-field-card > .rb-card-cost,
@@ -4270,17 +4354,31 @@ button {
         font-size: 12px;
     }
 
-    .rb-field-card > .rb-card-nameplate {
-        right: 6px;
-        left: 36px;
+    .rb-card-titlebar {
+        padding: 4px 5px 4px 28px;
+    }
+
+    .rb-card-titlebar .rb-card-nameplate {
         font-size: 8px;
     }
 
     .rb-field-card > .rb-card-statline {
-        right: 5px;
-        bottom: 14px;
-        left: 5px;
         gap: 4px;
+    }
+
+    .rb-card-image-layer {
+        padding: 5px;
+    }
+
+    .rb-hand {
+        height: 138px;
+    }
+
+    .rb-hand .rb-mini-card {
+        grid-template-rows: 28px minmax(0, 1fr) 34px;
+        gap: 4px;
+        height: 126px;
+        padding: 5px;
     }
 
     .rb-card-stat {

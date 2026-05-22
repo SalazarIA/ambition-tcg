@@ -382,6 +382,10 @@
             const card = event.target && event.target.closest ? event.target.closest(this.selector) : null;
             const board = RebirthStore.elements["rebirth-board"];
             if (!card || !board || !board.contains(card)) return;
+            if (card.classList.contains("is-locked")) {
+                this.reset(card);
+                return;
+            }
             const rect = card.getBoundingClientRect();
             if (!rect.width || !rect.height) return;
             const x = (event.clientX - rect.left) / rect.width;
@@ -663,21 +667,26 @@
         miniCard(card, options) {
             const selected = options && options.selected ? " is-selected" : "";
             const recommended = options && options.recommended ? " is-recommended" : "";
+            const locked = options && options.locked ? " is-locked" : "";
+            const lockedReason = options && options.lockedReason ? String(options.lockedReason) : "";
+            const disabled = locked ? `disabled aria-disabled="true" title="${RebirthText.escape(lockedReason)}"` : "";
             const statuses = options && options.statuses ? options.statuses : null;
             const statusClass = RebirthStatus.className(statuses);
             return `
-                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
-                    <span class="rb-card-image-layer rb-mini-art" ${RebirthAssets.artStyle(card)}></span>
+                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${RebirthStatus.miniBadge(statuses)}
-                    <div class="rb-mini-copy rb-card-hud-layer">
-                        <span>${RebirthText.escape(card.element)} - Tier ${RebirthText.escape(card.tier)}</span>
+                    <div class="rb-card-titlebar rb-mini-copy rb-card-hud-layer">
                         <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
-                        <div class="rb-card-statline rb-mini-stats">
-                            <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
-                            <span class="rb-card-stat is-guard"><b>${RebirthText.escape(card.guard || 0)}</b><small>GUARD</small></span>
-                        </div>
+                        <span>${RebirthText.escape(card.element)} - T${RebirthText.escape(card.tier)}</span>
+                    </div>
+                    <span class="rb-card-image-layer rb-mini-art">
+                        ${RebirthAssets.imageMarkup(card)}
+                    </span>
+                    <div class="rb-card-statline rb-mini-stats rb-card-hud-layer">
+                        <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
+                        <span class="rb-card-stat is-guard"><b>${RebirthText.escape(card.guard || 0)}</b><small>GUARD</small></span>
                     </div>
                 </button>
             `;
@@ -729,11 +738,16 @@
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
                 <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
-                    <span class="rb-card-image-layer rb-field-art" ${RebirthAssets.artStyle(card)}></span>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
-                    <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
+                    <span class="rb-card-titlebar rb-card-hud-layer">
+                        <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
+                        <small>${RebirthText.escape(card.element || card.family || "Void")} - T${RebirthText.escape(card.tier || 1)}</small>
+                    </span>
+                    <span class="rb-card-image-layer rb-field-art">
+                        ${RebirthAssets.imageMarkup(card)}
+                    </span>
                     <span class="rb-card-statline">
                         <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
                         <span class="rb-card-stat is-guard"><b>${RebirthText.escape(guard)}</b><small>GUARD</small></span>
@@ -748,8 +762,10 @@
             const summonSlot = options && options.summonSlot;
             const summonTarget = options && options.summonTarget ? " is-summon-target" : "";
             const selected = options && options.selected ? " is-selected" : "";
-            const slotAttr = Number.isInteger(summonSlot) ? `data-summon-slot="${summonSlot}"` : "";
-            return `<button class="rb-field-slot-empty${summonTarget}${selected}" type="button" ${direct ? "data-direct-attack=\"true\"" : ""} ${slotAttr}><span>${RebirthText.escape(copy)}</span></button>`;
+            const locked = options && options.locked ? " is-locked" : "";
+            const disabled = locked && !direct ? "disabled aria-disabled=\"true\"" : "";
+            const slotAttr = Number.isInteger(summonSlot) && summonTarget ? `data-summon-slot="${summonSlot}"` : "";
+            return `<button class="rb-field-slot-empty${summonTarget}${selected}${locked}" type="button" ${direct ? "data-direct-attack=\"true\"" : ""} ${slotAttr} ${disabled}><span>${RebirthText.escape(copy)}</span></button>`;
         },
 
         emptyFocus() {
@@ -1105,20 +1121,30 @@
             const playerStatuses = (state.player && state.player.statuses) || {};
             const botStatuses = (state.bot && state.bot.statuses) || {};
             const selectedHandCard = RebirthStore.handCard(RebirthStore.selectedInstanceId);
+            const selectedCost = RebirthMarkup.cardCost(selectedHandCard);
+            const selectedEnergy = Number((state.player && state.player.energy) || 0);
+            const summonLockCopy = !selectedHandCard
+                ? "Select Card"
+                : selectedEnergy < selectedCost
+                    ? "No Mana"
+                    : state.phase !== "choose" || state.is_finished || RebirthStore.pending
+                        ? "Locked"
+                        : "Open Slot";
             const canSummonSelected = selectedHandCard
                 && RebirthMarkup.isMonster(selectedHandCard)
                 && state.phase === "choose"
                 && !state.is_finished
                 && !RebirthStore.pending
-                && Number((state.player && state.player.energy) || 0) >= RebirthMarkup.cardCost(selectedHandCard);
+                && selectedEnergy >= selectedCost;
             playerHost.innerHTML = playerSlots.map((card, index) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses);
                 }
-                return RebirthMarkup.emptyFieldSlot(canSummonSelected ? `Slot ${index + 1}` : "Open Slot", {
+                return RebirthMarkup.emptyFieldSlot(canSummonSelected ? `Slot ${index + 1}` : summonLockCopy, {
                     summonSlot: index,
                     summonTarget: Boolean(canSummonSelected),
-                    selected: RebirthStore.selectedSummonSlot === index
+                    selected: RebirthStore.selectedSummonSlot === index,
+                    locked: !canSummonSelected
                 });
             }).join("");
             botHost.innerHTML = botSlots.map((card, index) => {
@@ -1209,13 +1235,25 @@
         hand() {
             const host = RebirthStore.elements["player-hand"];
             if (!host) return;
+            const state = RebirthStore.state;
             const hand = RebirthStore.state.player.hand || [];
             const recommended = RebirthCoach.recommendedCard();
             RebirthDom.setText("hand-count", `${hand.length} cards`);
+            const canChoose = state.phase === "choose" && !state.is_finished && !RebirthStore.pending;
+            const energy = Number((state.player && state.player.energy) || 0);
+            const hasOpenSlot = RebirthStore.firstOpenFieldSlot("player") >= 0;
             host.innerHTML = hand.map((card) => RebirthMarkup.miniCard(card, {
                 selected: card.instance_id === RebirthStore.selectedInstanceId,
                 recommended: recommended && card.instance_id === recommended.instance_id,
-                statuses: card.instance_id === RebirthStore.selectedInstanceId ? RebirthStore.state.player.statuses : null
+                statuses: card.instance_id === RebirthStore.selectedInstanceId ? RebirthStore.state.player.statuses : null,
+                locked: !canChoose || energy < RebirthMarkup.cardCost(card) || (RebirthMarkup.isMonster(card) && !hasOpenSlot),
+                lockedReason: !canChoose
+                    ? "Action unavailable outside your main phase"
+                    : energy < RebirthMarkup.cardCost(card)
+                        ? `Not enough mana: needs ${RebirthMarkup.cardCost(card)}`
+                        : RebirthMarkup.isMonster(card) && !hasOpenSlot
+                            ? "No empty monster slot"
+                            : ""
             })).join("");
         },
 
@@ -1466,7 +1504,11 @@
                 RebirthDom.setText("result-copy", error.message || "Action failed.");
             } finally {
                 RebirthStore.setPending(false);
-                RebirthRenderer.buttons();
+                if (RebirthStore.state) {
+                    RebirthRenderer.render();
+                } else {
+                    RebirthRenderer.buttons();
+                }
             }
         },
 
@@ -1711,7 +1753,7 @@
             if (hand) {
                 hand.addEventListener("click", (event) => {
                     const button = event.target.closest("[data-card-instance]");
-                    if (!button || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
+                    if (!button || button.disabled || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
                     RebirthStore.selectedInstanceId = button.getAttribute("data-card-instance");
                     RebirthStore.selectedAttackerId = null;
                     RebirthStore.selectedSummonSlot = null;
@@ -1724,7 +1766,7 @@
             if (playerField) {
                 playerField.addEventListener("click", (event) => {
                     const summonSlot = event.target.closest("[data-summon-slot]");
-                    if (summonSlot && RebirthStore.state && !RebirthStore.state.is_finished) {
+                    if (summonSlot && !summonSlot.disabled && RebirthStore.state && !RebirthStore.state.is_finished) {
                         const slot = Number(summonSlot.getAttribute("data-summon-slot"));
                         RebirthStore.selectedSummonSlot = slot;
                         RebirthErrors.clear();

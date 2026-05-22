@@ -136,6 +136,17 @@ def test_shop_survives_async_market_read_failure(client, monkeypatch):
     assert payload["shop"]["warnings"][0]["surface"] == "market"
 
 
+def test_shop_route_is_server_rendered_with_native_nav(client):
+    response = client.get("/rebirth/shop")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    assert 'href="/rebirth/shop"' in body
+    assert 'data-rebirth-market-offers' in body
+    assert 'js/rebirth_product.js' in body
+
+
 def test_play_card_api_summons_then_attack_resolves_combat(client):
     start = client.post("/api/rebirth/start", json={"seed": "routes-play"})
     state = start.get_json()["state"]

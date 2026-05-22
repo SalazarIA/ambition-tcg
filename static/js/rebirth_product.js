@@ -65,7 +65,7 @@
     }
 
     function getJson(url) {
-        return fetch(url).then(function (response) {
+        return fetch(url, { credentials: "same-origin" }).then(function (response) {
             return response.json().then(function (body) {
                 if (!response.ok || !body.ok) {
                     const error = body && body.error ? body.error.message : "Request failed.";

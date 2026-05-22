@@ -102,6 +102,10 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         "--rb-cyan",
         "object-fit: contain",
         "background-size: contain",
+        ".rb-card-image-layer img",
+        ".rb-card-titlebar",
+        ".rb-hand .rb-mini-card.is-locked",
+        "cursor: not-allowed",
         "bot-card-back.png",
         "bot-emblem.png",
         "overflow: hidden",
@@ -112,7 +116,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v49" in service_worker
+    assert "ambitionz-rebirth-season0-v50" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -150,6 +154,8 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "data-summon-slot",
         "field_slot",
         "attackTarget",
+        "is-locked",
+        "rb-card-titlebar",
         "renderTurnPhase",
         "triggerScreenShake",
         "initiateMobilePurchase",
@@ -182,6 +188,9 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
 
     product_js = read("static/js/rebirth_product.js")
     assert "X-Rebirth-CSRF" in product_js
+    assert '.rb-global-tabs' not in product_js
+    assert "history.pushState" not in product_js
+    assert 'fetch(url, { credentials: "same-origin" })' in product_js
     assert "initiateMobilePurchase" in product_js
     assert "verifyReceipt" in read("templates/rebirth_product.html")
     assert "data-rebirth-card-option" in read("templates/rebirth_product.html")
@@ -200,7 +209,7 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-049" in combined
+    assert "v=rebirth-050" in combined
     assert "v=rebirth-047" not in combined
 
     for forbidden in [
