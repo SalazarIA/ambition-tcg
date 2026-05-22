@@ -129,7 +129,20 @@
                         if (result && payload.account && payload.account.user) {
                             result.textContent = "Bem-vindo, " + payload.account.user.username + ".";
                         }
-                        window.location.href = form.getAttribute("data-auth-redirect") || "/rebirth";
+                        return syncAfterAuth(payload, isRegister).then(function (sync) {
+                            const redirect = form.getAttribute("data-auth-redirect") || "/rebirth";
+                            if (result) {
+                                const loadoutSize = sync && sync.collection && sync.collection.summary
+                                    ? sync.collection.summary.loadout_size
+                                    : 30;
+                                result.textContent = "Conta sincronizada. Baralho: " + loadoutSize + " cartas.";
+                            }
+                            if (sync && sync.handled && samePath(redirect, window.location.href)) {
+                                closeAuth();
+                                return;
+                            }
+                            window.location.href = redirect;
+                        });
                     })
                     .catch(function (error) {
                         if (result) result.textContent = error.message;
@@ -141,10 +154,22 @@
         });
     }
 
+    function samePath(targetUrl, currentUrl) {
+        try {
+            const target = new URL(targetUrl, currentUrl);
+            const current = new URL(currentUrl);
+            return target.pathname === current.pathname && target.search === current.search;
+        } catch (_error) {
+            return false;
+        }
+    }
+
     function bindLogout() {
         const buttons = document.querySelectorAll("[data-rebirth-logout]");
         if (!buttons.length || !endpoints.logout) return;
         Array.from(buttons).forEach(function (button) {
+            if (button.dataset.rebirthLogoutBound === "true") return;
+            button.dataset.rebirthLogoutBound = "true";
             button.addEventListener("click", function () {
                 button.disabled = true;
                 postJson(endpoints.logout, {})
@@ -165,6 +190,69 @@
             Array.from(document.querySelectorAll('[data-rebirth-wallet-value="' + currency + '"]')).forEach(function (node) {
                 node.textContent = String(value == null ? 0 : value);
             });
+        });
+    }
+
+    function applyAccount(account) {
+        if (!account) return;
+        const identity = document.querySelector(".rb-global-identity");
+        if (identity) {
+            const label = identity.querySelector("span");
+            const name = identity.querySelector("strong");
+            if (label) {
+                label.textContent = account.authenticated ? "Jogador" : "Visitante";
+            }
+            if (name) {
+                name.textContent = account.user && account.user.username ? account.user.username : "Guest Duelist";
+            }
+        }
+        if (account.authenticated) {
+            Array.from(document.querySelectorAll("[data-rebirth-auth-open]")).forEach(function (button) {
+                button.textContent = "Logout";
+                button.removeAttribute("data-rebirth-auth-open");
+                button.setAttribute("data-rebirth-logout", "");
+                button.classList.add("rb-nav-logout");
+            });
+            bindLogout();
+        }
+    }
+
+    function refreshCollection() {
+        const url = endpoints.collection || "/api/rebirth/collection";
+        return getJson(url)
+            .then(function (payload) {
+                return payload.collection || null;
+            })
+            .catch(function () {
+                return null;
+            });
+    }
+
+    function syncAfterAuth(payload, isRegister) {
+        const walletPromise = payload.wallet ? Promise.resolve(payload.wallet) : refreshWallet();
+        const collectionPromise = payload.collection ? Promise.resolve(payload.collection) : refreshCollection();
+        applyAccount(payload.account);
+        return Promise.all([walletPromise, collectionPromise]).then(function (values) {
+            const wallet = values[0];
+            const collection = values[1];
+            if (wallet) applyWallet(wallet);
+            window.REBIRTH_ACCOUNT = payload.account || null;
+            window.REBIRTH_COLLECTION = collection || null;
+            const detail = {
+                account: payload.account || null,
+                wallet: wallet || null,
+                collection: collection || null,
+                csrf: payload.csrf || window.REBIRTH_CSRF || "",
+                isRegister: Boolean(isRegister),
+                payload: payload
+            };
+            document.dispatchEvent(new CustomEvent("rebirth:auth-synced", { detail: detail }));
+            if (window.RebirthArena && typeof window.RebirthArena.refreshAfterAuth === "function") {
+                return window.RebirthArena.refreshAfterAuth(detail).then(function (arenaResult) {
+                    return Object.assign({}, detail, arenaResult || {});
+                });
+            }
+            return detail;
         });
     }
 
@@ -189,7 +277,9 @@
         open: openAuth,
         close: closeAuth,
         applyWallet: applyWallet,
-        refreshWallet: refreshWallet
+        refreshWallet: refreshWallet,
+        refreshCollection: refreshCollection,
+        syncAfterAuth: syncAfterAuth
     };
 
     document.addEventListener("DOMContentLoaded", function () {

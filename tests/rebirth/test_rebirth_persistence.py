@@ -33,6 +33,8 @@ def test_register_login_logout_and_session_are_persisted(client, flask_app):
     assert created.status_code == 200
     assert payload["account"]["authenticated"] is True
     assert payload["account"]["user"]["username"] == "persist_user"
+    assert payload["wallet"]["COINZ"] >= 0
+    assert payload["collection"]["summary"]["loadout_size"] == 30
 
     db_user = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"]).get_user(payload["account"]["user"]["id"])
     assert db_user["email"] == "persist@example.com"
@@ -47,6 +49,7 @@ def test_register_login_logout_and_session_are_persisted(client, flask_app):
     login = client.post("/api/rebirth/auth/login", json={"email": "persist@example.com", "password": "password123"})
     assert login.status_code == 200
     assert login.get_json()["account"]["user"]["username"] == "persist_user"
+    assert login.get_json()["collection"]["summary"]["loadout_size"] == 30
 
 
 def test_duplicate_account_and_bad_login_return_stable_errors(client):

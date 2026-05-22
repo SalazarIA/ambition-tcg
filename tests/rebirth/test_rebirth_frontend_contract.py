@@ -109,6 +109,12 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         "perspective: 1200px",
         "0 18px 34px rgba(0, 0, 0, 0.56)",
         ".rb-field-card.is-attacking",
+        ".rb-field-card.is-targetable",
+        ".rb-field-card.is-attack-lunging",
+        ".rb-field-card.is-taking-hit",
+        ".rb-result-panel.is-result-reading",
+        "rb-target-line-pulse",
+        "rb-result-copy-fade",
         ".rb-hand .rb-mini-card.is-locked",
         "cursor: not-allowed",
         "bot-card-back.png",
@@ -124,7 +130,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v52" in service_worker
+    assert "ambitionz-rebirth-season0-v53" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -155,6 +161,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthAssets",
         "RebirthErrors",
         "RebirthFeel",
+        "RebirthCombatMotion",
         "RebirthTactics",
         "RebirthParallax",
         "player_field",
@@ -166,6 +173,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "rb-card-titlebar",
         "renderTurnPhase",
         "triggerScreenShake",
+        "refreshAfterAuth",
         "initiateMobilePurchase",
         "turn_phase",
         "botProfile",
@@ -195,7 +203,11 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert 'const temporary = cardImage ? "" : this.temporaryArtUrl(card);' in js
 
     product_js = read("static/js/rebirth_product.js")
+    global_js = read("static/js/rebirth_global.js")
     assert "X-Rebirth-CSRF" in product_js
+    assert "syncAfterAuth" in global_js
+    assert "rebirth:auth-synced" in global_js
+    assert "refreshCollection" in global_js
     assert '.rb-global-tabs' not in product_js
     assert "history.pushState" not in product_js
     assert 'fetch(url, { credentials: "same-origin" })' in product_js
@@ -217,7 +229,7 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-052" in combined
+    assert "v=rebirth-053" in combined
     assert "v=rebirth-051" not in combined
     assert "v=rebirth-050" not in combined
     assert "v=rebirth-047" not in combined

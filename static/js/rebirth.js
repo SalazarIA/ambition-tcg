@@ -15,6 +15,7 @@
         selectedAttackerId: null,
         reward: null,
         lastResultSignature: null,
+        lastResultTextSignature: null,
         guidedFirstMatch: false,
         tutorialCompletionSent: false,
         pending: false,
@@ -235,7 +236,7 @@
 
             if (!response.ok || !payload || payload.ok !== true) {
                 const serverError = payload && payload.error ? payload.error : {};
-                throw this.error(serverError.code || "rebirth_error", serverError.message || "Rebirth request failed.");
+            throw this.error(serverError.code || "rebirth_error", serverError.message || "Rebirth request failed.");
             }
 
             return payload;
@@ -247,6 +248,22 @@
             return error;
         }
     };
+
+    function wait(ms) {
+        return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function escapeSelectorValue(value) {
+        const text = String(value == null ? "" : value);
+        if (window.CSS && typeof window.CSS.escape === "function") {
+            return window.CSS.escape(text);
+        }
+        return text.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
 
     const RebirthBoardScaler = {
         init() {
@@ -738,20 +755,21 @@
             return `${baseClass} rb-tcg-card${this.elementClass(card)}${this.rarityClass(card)}${evolved}`;
         },
 
-        fieldCard(card, side, selected, statuses) {
+        fieldCard(card, side, selected, statuses, options) {
             const guard = Number(card.current_guard != null ? card.current_guard : card.guard || 0);
             const maxGuard = Number(card.max_guard || card.guard || 1);
             const guardScale = Math.max(0, Math.min(1, guard / maxGuard));
             const exhausted = card.exhausted || card.has_attacked ? " is-exhausted" : "";
             const selectedClass = selected ? " is-selected" : "";
             const attackingClass = side === "player" && selected ? " is-attacking" : "";
+            const targetableClass = options && options.targetable ? " is-targetable" : "";
             const statusClass = RebirthStatus.className(statuses);
             const ability = this.abilitySummary(card);
             const targetAttr = side === "bot"
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
+                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
@@ -877,7 +895,7 @@
             return (card && card.ability_key) || "base_clash";
         },
 
-        pulse(state) {
+        applyAccent(state) {
             const panel = RebirthStore.elements["result-panel"];
             const focus = RebirthStore.elements["focus-card"];
             const bot = RebirthStore.elements["bot-card"];
@@ -887,14 +905,26 @@
 
             [panel, focus, bot].forEach((element) => {
                 if (!element) return;
-                element.classList.remove("is-impacting");
                 element.style.setProperty("--impact-accent", accent);
                 element.setAttribute("data-ability-key", key);
             });
             if (panel) {
-                panel.setAttribute("data-outcome", (state.result && state.result.outcome) || "Clash");
-                panel.classList.add("is-impacting");
+                panel.setAttribute("data-outcome", (state && state.result && state.result.outcome) || "Clash");
             }
+            return { panel, focus, bot, card, key, accent };
+        },
+
+        pulse(state) {
+            const targets = this.applyAccent(state);
+            const panel = targets.panel;
+            const focus = targets.focus;
+            const bot = targets.bot;
+
+            [panel, focus, bot].forEach((element) => {
+                if (!element) return;
+                element.classList.remove("is-impacting");
+            });
+            if (panel) panel.classList.add("is-impacting");
             if (focus) focus.classList.add("is-impacting");
             if (bot) bot.classList.add("is-impacting");
 
@@ -905,7 +935,7 @@
             }, 620);
 
             this.haptics(state.result);
-            this.tone(card, state.result);
+            this.tone(targets.card, state.result);
             this.screenShake(state.result);
         },
 
@@ -947,6 +977,104 @@
             const totalDamage = Math.max(0, playerDamage) + Math.max(0, botDamage);
             if (!totalDamage) return;
             triggerScreenShake(Math.min(10, 2 + totalDamage));
+        }
+    };
+
+    const RebirthCombatMotion = {
+        impactMs: 180,
+        returnHoldMs: 180,
+        settleMs: 200,
+
+        attacker(attackerId) {
+            const host = RebirthStore.elements["player-battlefield"];
+            if (!host || !attackerId) return null;
+            return host.querySelector(`[data-attacker-instance="${escapeSelectorValue(attackerId)}"]`);
+        },
+
+        target(targetId) {
+            const host = RebirthStore.elements["bot-battlefield"];
+            if (!host) return null;
+            if (targetId) {
+                return host.querySelector(`[data-target-instance="${escapeSelectorValue(targetId)}"]`);
+            }
+            return host.querySelector("[data-direct-attack]") || host.querySelector("[data-target-instance]");
+        },
+
+        boardScale() {
+            const styles = window.getComputedStyle(document.documentElement);
+            const scale = parseFloat(styles.getPropertyValue("--rb-scale"));
+            return Number.isFinite(scale) && scale > 0 ? scale : 1;
+        },
+
+        vector(attacker, target) {
+            if (!attacker || !target) {
+                return { x: 0, y: -92 };
+            }
+            const scale = this.boardScale();
+            const attackerRect = attacker.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            const attackerX = attackerRect.left + attackerRect.width / 2;
+            const attackerY = attackerRect.top + attackerRect.height / 2;
+            const targetX = targetRect.left + targetRect.width / 2;
+            const targetY = targetRect.top + targetRect.height / 2;
+            return {
+                x: clamp(((targetX - attackerX) / scale) * 0.62, -320, 320),
+                y: clamp(((targetY - attackerY) / scale) * 0.62, -190, 190)
+            };
+        },
+
+        markImpact(target, state) {
+            if (target) {
+                target.classList.remove("is-taking-hit");
+                void target.offsetWidth;
+                target.classList.add("is-taking-hit");
+            }
+            const result = state && state.result;
+            const card = RebirthFeel.impactCard(state);
+            RebirthFeel.haptics(result);
+            RebirthFeel.tone(card, result);
+            RebirthFeel.screenShake(result);
+        },
+
+        cleanup(attacker, target) {
+            const board = RebirthStore.elements["rebirth-board"];
+            if (board) {
+                board.classList.remove("is-resolving-attack");
+            }
+            [attacker, target].forEach((element) => {
+                if (!element) return;
+                element.classList.remove("is-attack-primed", "is-attack-lunging", "is-taking-hit", "is-target-locked");
+                element.style.removeProperty("--attack-x");
+                element.style.removeProperty("--attack-y");
+            });
+        },
+
+        async play(attackerId, targetId, resolvedState) {
+            const attacker = this.attacker(attackerId);
+            const target = this.target(targetId);
+            if (!attacker || RebirthFeel.reducedMotion()) {
+                this.markImpact(target, resolvedState);
+                await wait(80);
+                if (target) target.classList.remove("is-taking-hit");
+                return;
+            }
+
+            const board = RebirthStore.elements["rebirth-board"];
+            const vector = this.vector(attacker, target);
+            attacker.style.setProperty("--attack-x", `${vector.x.toFixed(1)}px`);
+            attacker.style.setProperty("--attack-y", `${vector.y.toFixed(1)}px`);
+            attacker.classList.add("is-attack-primed");
+            if (target) target.classList.add("is-target-locked");
+            if (board) board.classList.add("is-resolving-attack");
+            void attacker.offsetWidth;
+
+            attacker.classList.add("is-attack-lunging");
+            await wait(this.impactMs);
+            this.markImpact(target, resolvedState);
+            await wait(this.returnHoldMs);
+            attacker.classList.remove("is-attack-lunging");
+            await wait(this.settleMs);
+            this.cleanup(attacker, target);
         }
     };
 
@@ -1136,6 +1264,10 @@
             const playerSlots = RebirthStore.fieldSlots("player");
             const botSlots = RebirthStore.fieldSlots("bot");
             const botCards = RebirthStore.fieldCards("bot");
+            const choosingAttack = Boolean(RebirthStore.selectedAttackerId)
+                && state.phase === "choose"
+                && !state.is_finished
+                && !RebirthStore.pending;
             const playerStatuses = (state.player && state.player.statuses) || {};
             const botStatuses = (state.bot && state.bot.statuses) || {};
             const selectedHandCard = RebirthStore.handCard(RebirthStore.selectedInstanceId);
@@ -1165,10 +1297,13 @@
             }).join("");
             botHost.innerHTML = botSlots.map((card) => {
                 if (card) {
-                    return RebirthMarkup.fieldCard(card, "bot", false, botStatuses);
+                    return RebirthMarkup.fieldCard(card, "bot", choosingAttack, botStatuses, {
+                        targetable: choosingAttack
+                    });
                 }
                 return RebirthMarkup.emptyFieldSlot(botCards.length ? "Guard Line" : "Direct HP", {
-                    direct: !botCards.length
+                    direct: !botCards.length,
+                    selected: choosingAttack && !botCards.length
                 });
             }).join("");
         },
@@ -1301,6 +1436,7 @@
                 RebirthDom.setText("result-label", tied ? "Clash" : won ? "Victory" : "Defeat");
                 RebirthDom.setText("result-title", tied ? "Both sides fell." : won ? "You won the duel." : "Bot won the duel.");
                 RebirthDom.setText("result-copy", result && result.message ? result.message : "Start a new match when ready.");
+                this.resultReadability(`finished:${state.turn}:${state.winner}:${result && result.message}`);
                 this.resultImpact();
                 return;
             }
@@ -1311,10 +1447,12 @@
                 RebirthDom.setText("result-label", result.outcome);
                 RebirthDom.setText("result-title", result.outcome === "Clash" ? "No damage." : result.outcome);
                 RebirthDom.setText("result-copy", result.message);
+                this.resultReadability(`${state.turn}:${result.outcome}:${result.message}`);
                 this.resultImpact();
                 return;
             }
             RebirthStore.lastResultSignature = null;
+            RebirthStore.lastResultTextSignature = null;
             RebirthDom.setText("result-label", "Waiting");
             RebirthDom.setText("result-title", "Build your field.");
             RebirthDom.setText("result-copy", "Summon monsters, then select a ready ally and choose its target.");
@@ -1379,6 +1517,15 @@
             if (!signature || signature === RebirthStore.lastResultSignature) return;
             RebirthStore.lastResultSignature = signature;
             RebirthFeel.pulse(RebirthStore.state);
+        },
+
+        resultReadability(signature) {
+            const panel = RebirthStore.elements["result-panel"];
+            if (!panel || !signature || signature === RebirthStore.lastResultTextSignature) return;
+            RebirthStore.lastResultTextSignature = signature;
+            panel.classList.remove("is-result-reading");
+            void panel.offsetWidth;
+            panel.classList.add("is-result-reading");
         },
 
         abilityEvents(result) {
@@ -1617,19 +1764,27 @@
                 return;
             }
             const botField = RebirthStore.fieldCards("bot");
+            const visualTargetId = targetInstanceId || (botField[0] && botField[0].instance_id) || null;
             if (targetInstanceId && !botField.some((card) => card.instance_id === targetInstanceId)) {
                 RebirthErrors.show("That defender is no longer on the field.");
                 RebirthRenderer.render();
                 return;
             }
             await this.request(async () => {
+                const attackerInstanceId = RebirthStore.selectedAttackerId;
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.attack, {
                     match_id: RebirthStore.state.match_id,
-                    attacker_instance_id: RebirthStore.selectedAttackerId,
+                    attacker_instance_id: attackerInstanceId,
                     target_instance_id: targetInstanceId || null
                 });
+                await RebirthCombatMotion.play(attackerInstanceId, visualTargetId, payload.state);
                 RebirthStore.selectedAttackerId = null;
                 RebirthStore.reward = payload.match_reward || null;
+                const signature = RebirthFeel.resultSignature(payload.state);
+                if (signature) {
+                    RebirthStore.lastResultSignature = signature;
+                    RebirthFeel.applyAccent(payload.state);
+                }
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
             });
@@ -1681,6 +1836,23 @@
                     RebirthStore.tutorialCompletionSent = false;
                 });
         }
+    };
+
+    RebirthFlow.refreshAfterAuth = async function (detail) {
+        const account = detail && detail.account ? detail.account : detail && detail.payload ? detail.payload.account : null;
+        if (account) {
+            RebirthConfig.player.account = account;
+        }
+        RebirthStore.selectedInstanceId = null;
+        RebirthStore.selectedAttackerId = null;
+        RebirthStore.reward = null;
+        RebirthStore.lastResultSignature = null;
+        RebirthStore.lastResultTextSignature = null;
+        RebirthStore.guidedFirstMatch = false;
+        RebirthStore.tutorialCompletionSent = false;
+        RebirthStore.setPending(false);
+        await this.startMatch();
+        return { handled: true };
     };
 
     async function initiateMobilePurchase(productId) {
@@ -1837,6 +2009,11 @@
     window.initiateMobilePurchase = initiateMobilePurchase;
     window.renderTurnPhase = renderTurnPhase;
     window.triggerScreenShake = triggerScreenShake;
+    window.RebirthArena = {
+        refreshAfterAuth(detail) {
+            return RebirthFlow.refreshAfterAuth(detail);
+        }
+    };
 
     document.addEventListener("DOMContentLoaded", init);
 })();

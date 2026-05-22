@@ -4000,7 +4000,7 @@ button {
     object-position: center 58%;
 }
 
-/* Rebirth v52: single-duel full-art cards, lighter board depth and attack targeting. */
+/* Rebirth v53: single-duel full-art cards, physical clash motion and synced auth refresh. */
 .rb-battle-zone {
     perspective: 1200px;
     perspective-origin: 50% 52%;
@@ -4818,5 +4818,173 @@ button {
 
     .rb-mini-textbox {
         min-height: 42px;
+    }
+}
+
+.rb-game-board.is-resolving-attack .rb-loading {
+    display: none;
+}
+
+.rb-game-board.is-choosing-attack .rb-battle-zone::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 50%;
+    width: 3px;
+    height: 116px;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(117, 238, 255, 0), rgba(117, 238, 255, 0.88) 48%, rgba(255, 226, 138, 0.78), rgba(255, 226, 138, 0));
+    box-shadow: 0 0 18px rgba(117, 238, 255, 0.52), 0 0 28px rgba(255, 226, 138, 0.26);
+    opacity: 0.78;
+    transform: translate3d(-50%, -50%, 0);
+    animation: rb-target-line-pulse 960ms ease-in-out infinite;
+}
+
+.rb-field-card.is-targetable,
+.rb-field-slot-empty[data-direct-attack="true"].is-selected {
+    border-color: rgba(255, 101, 80, 0.92);
+    outline: 2px solid rgba(255, 101, 80, 0.54);
+    outline-offset: 4px;
+    box-shadow:
+        0 0 0 2px rgba(255, 101, 80, 0.14),
+        0 0 26px rgba(255, 101, 80, 0.42),
+        0 20px 54px rgba(0, 0, 0, 0.62),
+        inset 0 0 30px rgba(255, 101, 80, 0.1);
+    animation: rb-targetable-aura 1.1s ease-in-out infinite;
+}
+
+.rb-field-card.is-target-locked,
+.rb-field-slot-empty.is-target-locked {
+    border-color: rgba(255, 226, 138, 0.98);
+    outline-color: rgba(255, 226, 138, 0.82);
+}
+
+.rb-field-card.is-attack-primed {
+    z-index: 20;
+    transition:
+        transform 150ms cubic-bezier(0.18, 0.9, 0.24, 1.18),
+        border-color 120ms ease,
+        box-shadow 120ms ease;
+}
+
+.rb-field-card.is-attack-lunging {
+    transform: translate3d(var(--attack-x, 0px), var(--attack-y, -92px), 34px) scale(1.06) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    border-color: rgba(255, 226, 138, 0.98);
+    box-shadow:
+        0 30px 64px rgba(0, 0, 0, 0.68),
+        0 0 34px rgba(255, 226, 138, 0.42),
+        inset 0 0 30px rgba(255, 226, 138, 0.14);
+}
+
+.rb-field-card.is-taking-hit,
+.rb-field-slot-empty.is-taking-hit,
+.rb-bot-card.is-taking-hit {
+    animation: rb-target-hit 280ms cubic-bezier(0.2, 0.9, 0.24, 1) both;
+}
+
+.rb-result-panel.is-result-reading #result-label,
+.rb-result-panel.is-result-reading #result-title,
+.rb-result-panel.is-result-reading #result-copy,
+.rb-result-panel.is-result-reading .rb-ability-events,
+.rb-result-panel.is-result-reading .rb-reward-panel {
+    animation: rb-result-copy-fade 360ms ease both;
+}
+
+.rb-result-panel.is-result-reading #result-title {
+    animation-delay: 40ms;
+}
+
+.rb-result-panel.is-result-reading #result-copy,
+.rb-result-panel.is-result-reading .rb-ability-events,
+.rb-result-panel.is-result-reading .rb-reward-panel {
+    animation-delay: 80ms;
+}
+
+@keyframes rb-target-line-pulse {
+    0%,
+    100% {
+        opacity: 0.44;
+        transform: translate3d(-50%, -50%, 0) scaleY(0.88);
+    }
+    50% {
+        opacity: 0.88;
+        transform: translate3d(-50%, -50%, 0) scaleY(1.04);
+    }
+}
+
+@keyframes rb-targetable-aura {
+    0%,
+    100% {
+        outline-offset: 3px;
+        box-shadow:
+            0 0 0 2px rgba(255, 101, 80, 0.12),
+            0 0 22px rgba(255, 101, 80, 0.34),
+            0 20px 54px rgba(0, 0, 0, 0.62),
+            inset 0 0 26px rgba(255, 101, 80, 0.08);
+    }
+    52% {
+        outline-offset: 6px;
+        box-shadow:
+            0 0 0 3px rgba(255, 101, 80, 0.22),
+            0 0 34px rgba(255, 101, 80, 0.62),
+            0 24px 62px rgba(0, 0, 0, 0.68),
+            inset 0 0 34px rgba(255, 101, 80, 0.16);
+    }
+}
+
+@keyframes rb-target-hit {
+    0% {
+        border-color: rgba(255, 101, 80, 0.4);
+        box-shadow:
+            0 20px 54px rgba(0, 0, 0, 0.62),
+            0 0 0 rgba(255, 101, 80, 0);
+        transform: translateZ(16px) scale(1);
+    }
+    38% {
+        border-color: rgba(255, 101, 80, 1);
+        box-shadow:
+            0 0 0 4px rgba(255, 101, 80, 0.24),
+            0 0 38px rgba(255, 40, 32, 0.72),
+            0 24px 62px rgba(0, 0, 0, 0.72),
+            inset 0 0 36px rgba(255, 40, 32, 0.22);
+        transform: translate3d(0, -3px, 18px) scale(1.035);
+    }
+    100% {
+        transform: translateZ(16px) scale(1);
+    }
+}
+
+@keyframes rb-result-copy-fade {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 7px, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rb-game-board.is-choosing-attack .rb-battle-zone::after {
+        display: none;
+    }
+
+    .rb-field-card.is-targetable,
+    .rb-field-slot-empty[data-direct-attack="true"].is-selected,
+    .rb-field-card.is-taking-hit,
+    .rb-field-slot-empty.is-taking-hit,
+    .rb-bot-card.is-taking-hit,
+    .rb-result-panel.is-result-reading #result-label,
+    .rb-result-panel.is-result-reading #result-title,
+    .rb-result-panel.is-result-reading #result-copy,
+    .rb-result-panel.is-result-reading .rb-ability-events,
+    .rb-result-panel.is-result-reading .rb-reward-panel {
+        animation: none;
+    }
+
+    .rb-field-card.is-attack-primed {
+        transition: none;
     }
 }

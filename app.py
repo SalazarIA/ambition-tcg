@@ -252,6 +252,20 @@ def current_account():
     return account_payload(current_user())
 
 
+def auth_sync_payload(user):
+    repo = rebirth_repo()
+    collection_counts = repo.collection_counts(user["id"])
+    loadout_ids = repo.loadout_card_ids(user["id"])
+    return {
+        "wallet": repo.wallet_payload(user["id"]),
+        "collection": collection_payload(
+            account=account_payload(user),
+            collection_counts=collection_counts,
+            loadout_card_ids=loadout_ids,
+        ),
+    }
+
+
 def rebirth_navbar_payload(user=None, progression=None):
     progress = progression
     if user and progress is None:
@@ -726,7 +740,7 @@ def api_rebirth_auth_register():
             payload.get("password"),
         )
         token = establish_rebirth_session(user)
-        return json_payload(account=account_payload(user), csrf=token)
+        return json_payload(account=account_payload(user), csrf=token, **auth_sync_payload(user))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -740,7 +754,7 @@ def api_rebirth_auth_login():
         enforce_auth_rate_limit("login", payload.get("email"))
         user = rebirth_repo().authenticate(payload.get("email"), payload.get("password"))
         token = establish_rebirth_session(user)
-        return json_payload(account=account_payload(user), csrf=token)
+        return json_payload(account=account_payload(user), csrf=token, **auth_sync_payload(user))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:

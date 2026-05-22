@@ -16,6 +16,8 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
     assert register.status_code == 200
     assert register_payload["ok"] is True
     assert register_payload["account"]["authenticated"] is True
+    assert register_payload["collection"]["summary"]["loadout_size"] == 30
+    assert register_payload["wallet"]["COINZ"] >= 0
     user_id = register_payload["account"]["user"]["id"]
 
     repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
