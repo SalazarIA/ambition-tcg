@@ -88,6 +88,9 @@
 
     function bindAuthTriggers() {
         document.addEventListener("click", function (event) {
+            if (event.target.closest(".rb-global-tabs a[href], .rb-global-brand[href]")) {
+                return;
+            }
             const openButton = event.target.closest("[data-rebirth-auth-open]");
             if (openButton) {
                 event.preventDefault();

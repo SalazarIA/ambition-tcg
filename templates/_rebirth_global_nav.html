@@ -1,16 +1,16 @@
 {% set rb_nav = rebirth_navbar %}
 {% set auth_redirect = request.path if request.path.startswith('/rebirth') else url_for('rebirth') %}
 <header class="rb-global-nav" data-rebirth-global-nav data-rebirth-wallet aria-label="Navegacao global Ambitionz Rebirth">
-    <a class="rb-brand rb-global-brand" href="{{ url_for('index') }}" aria-label="Ambitionz Rebirth home">
+    <a class="rb-brand rb-global-brand" href="/" aria-label="Ambitionz Rebirth home">
         <span>A</span>
         <strong>Ambitionz Rebirth</strong>
     </a>
     <nav class="rb-global-tabs" aria-label="Produtos Rebirth">
-        <a href="{{ url_for('rebirth') }}" class="{{ 'is-active' if request.path == url_for('rebirth') else '' }}">Arena</a>
-        <a href="{{ url_for('rebirth_collection') }}" class="{{ 'is-active' if request.path == url_for('rebirth_collection') else '' }}">Colecao</a>
-        <a href="{{ url_for('rebirth_shop') }}" class="{{ 'is-active' if request.path == url_for('rebirth_shop') else '' }}">Loja</a>
-        <a href="{{ url_for('rebirth_progression') }}" class="{{ 'is-active' if request.path == url_for('rebirth_progression') else '' }}">Recompensas</a>
-        <a href="{{ url_for('rebirth_profile') }}" class="{{ 'is-active' if request.path == url_for('rebirth_profile') else '' }}">Perfil</a>
+        <a href="/rebirth" class="{{ 'is-active' if request.path == '/rebirth' else '' }}">Arena</a>
+        <a href="/rebirth/collection" class="{{ 'is-active' if request.path == '/rebirth/collection' else '' }}">Colecao</a>
+        <a href="/rebirth/shop" class="{{ 'is-active' if request.path == '/rebirth/shop' else '' }}">Loja</a>
+        <a href="/rebirth/progression" class="{{ 'is-active' if request.path == '/rebirth/progression' else '' }}">Recompensas</a>
+        <a href="/rebirth/profile" class="{{ 'is-active' if request.path == '/rebirth/profile' else '' }}">Perfil</a>
     </nav>
     <section class="rb-global-player" aria-label="Jogador e carteira">
         <div class="rb-global-identity">
