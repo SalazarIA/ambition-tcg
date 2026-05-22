@@ -13,6 +13,7 @@
         state: null,
         selectedInstanceId: null,
         selectedAttackerId: null,
+        selectedSummonSlot: null,
         reward: null,
         lastResultSignature: null,
         guidedFirstMatch: false,
@@ -36,6 +37,9 @@
             if (!this.fieldContains(this.selectedAttackerId)) {
                 this.selectedAttackerId = null;
             }
+            if (this.selectedSummonSlot !== null && !this.fieldSlotOpen("player", this.selectedSummonSlot)) {
+                this.selectedSummonSlot = null;
+            }
             if (!this.selectedInstanceId && !this.selectedAttackerId && state && state.phase === "choose" && state.player && state.player.hand.length) {
                 this.selectedInstanceId = state.player.hand[0].instance_id;
             }
@@ -53,12 +57,12 @@
 
         fieldContains(instanceId) {
             if (!instanceId || !this.state || !this.state.player) return false;
-            return (this.state.player.battlefield || []).some((card) => card.instance_id === instanceId);
+            return this.fieldCards("player").some((card) => card.instance_id === instanceId);
         },
 
         fieldCard(instanceId) {
             if (!instanceId || !this.state || !this.state.player) return null;
-            return (this.state.player.battlefield || []).find((card) => card.instance_id === instanceId) || null;
+            return this.fieldCards("player").find((card) => card.instance_id === instanceId) || null;
         },
 
         selectedCard() {
@@ -67,9 +71,53 @@
                 return this.state.player.hand.find((card) => card.instance_id === this.selectedInstanceId) || null;
             }
             if (this.selectedAttackerId) {
-                return (this.state.player.battlefield || []).find((card) => card.instance_id === this.selectedAttackerId) || null;
+                return this.fieldCards("player").find((card) => card.instance_id === this.selectedAttackerId) || null;
             }
             return this.state.player.played_card || null;
+        },
+
+        fieldSlots(sideName) {
+            if (!this.state) return [null, null, null];
+            const side = this.state[sideName] || {};
+            const rootField = sideName === "player" ? this.state.player_field : this.state.bot_field;
+            const source = Array.isArray(rootField)
+                ? rootField
+                : Array.isArray(side.field)
+                    ? side.field
+                    : null;
+            const slots = [null, null, null];
+            if (source) {
+                source.slice(0, 3).forEach((card, index) => {
+                    slots[index] = card || null;
+                });
+                return slots;
+            }
+            (side.battlefield || []).forEach((card, index) => {
+                const slot = Number.isInteger(Number(card && card.field_slot)) ? Number(card.field_slot) : index;
+                if (slot >= 0 && slot < 3 && !slots[slot]) {
+                    slots[slot] = card;
+                }
+            });
+            return slots;
+        },
+
+        fieldCards(sideName) {
+            return this.fieldSlots(sideName).filter(Boolean);
+        },
+
+        fieldSlotIndex(slot) {
+            if (slot === null || slot === undefined || slot === "") return null;
+            const index = Number(slot);
+            return Number.isInteger(index) ? index : null;
+        },
+
+        fieldSlotOpen(sideName, slot) {
+            const index = this.fieldSlotIndex(slot);
+            return Number.isInteger(index) && index >= 0 && index < 3 && !this.fieldSlots(sideName)[index];
+        },
+
+        firstOpenFieldSlot(sideName) {
+            return this.fieldSlots(sideName).findIndex((card) => !card);
         },
 
         firstEvolution() {
@@ -317,7 +365,7 @@
     }
 
     const RebirthParallax = {
-        selector: ".rb-mini-card, .rb-main-card, .rb-bot-card, .rb-card-back, .rb-field-card",
+        selector: ".rb-tcg-card, .rb-mini-card, .rb-main-card, .rb-bot-card, .rb-card-back, .rb-field-card",
         bound: false,
 
         init() {
@@ -439,17 +487,15 @@
         },
 
         preloadCard(card) {
-            if (card && card.art) {
-                this.preloadUrl(card.art);
-            }
+            this.preloadUrl(this.cardImageUrl(card));
             this.preloadUrl(this.temporaryArtUrl(card));
         },
 
         preloadState(state) {
             if (!state) return;
             ((state.player && state.player.hand) || []).forEach((card) => this.preloadCard(card));
-            ((state.player && state.player.battlefield) || []).forEach((card) => this.preloadCard(card));
-            ((state.bot && state.bot.battlefield) || []).forEach((card) => this.preloadCard(card));
+            (state.player_field || (state.player && state.player.field) || (state.player && state.player.battlefield) || []).filter(Boolean).forEach((card) => this.preloadCard(card));
+            (state.bot_field || (state.bot && state.bot.field) || (state.bot && state.bot.battlefield) || []).filter(Boolean).forEach((card) => this.preloadCard(card));
             this.preloadCard(state.player && state.player.played_card);
             this.preloadCard(state.bot && state.bot.played_card);
         },
@@ -478,16 +524,31 @@
                 `radial-gradient(circle at 50% 58%, ${this.hexRgba(accent, 0.42)}, rgba(0, 0, 0, 0) 58%)`,
                 `linear-gradient(135deg, ${this.hexRgba(secondary, 0.18)}, rgba(0, 0, 0, 0) 64%)`
             ];
+            const cardImage = this.cardImageUrl(card);
+            if (cardImage) {
+                layers.push(`url('${RebirthText.escape(cardImage)}')`);
+            }
             const temporary = this.temporaryArtUrl(card);
             if (temporary) {
                 layers.push(`url('${RebirthText.escape(temporary)}')`);
             }
-            if (card && card.art) {
-                layers.push(`url('${RebirthText.escape(card.art)}')`);
-            } else if (RebirthConfig.assets.fallbackCardArt) {
+            if (!cardImage && RebirthConfig.assets.fallbackCardArt) {
                 layers.push(`url('${RebirthText.escape(RebirthConfig.assets.fallbackCardArt)}')`);
             }
             return layers.length > 1 ? `background-image:${layers.join(",")}` : "";
+        },
+
+        cardImageUrl(card) {
+            if (!card) return "";
+            const manifestCards = (this.manifest && this.manifest.cards) || {};
+            if (manifestCards[card.id]) {
+                return manifestCards[card.id];
+            }
+            const digits = parseInt(String(card.id || "").replace(/\D/g, ""), 10);
+            if (digits > 0) {
+                return `/static/img/cards/baralho/${digits}.png`;
+            }
+            return card.art || RebirthConfig.assets.fallbackCardArt || "";
         },
 
         temporaryArtUrl(card) {
@@ -520,7 +581,7 @@
         },
 
         imageMarkup(card) {
-            const source = card && card.art ? card.art : RebirthConfig.assets.fallbackCardArt;
+            const source = this.cardImageUrl(card);
             if (!source) return "";
             const fallback = this.temporaryArtUrl(card) || RebirthConfig.assets.fallbackCardArt || "";
             return `<img data-rebirth-art data-art-key="${RebirthText.escape(card && card.art_key ? card.art_key : "fallback")}" data-fallback-src="${RebirthText.escape(fallback)}" src="${RebirthText.escape(source)}" alt="" loading="eager">`;
@@ -598,20 +659,20 @@
         miniCard(card, options) {
             const selected = options && options.selected ? " is-selected" : "";
             const recommended = options && options.recommended ? " is-recommended" : "";
-            const evolved = Number(card.tier || 1) > 1 ? " is-evolved" : "";
             const statuses = options && options.statuses ? options.statuses : null;
             const statusClass = RebirthStatus.className(statuses);
             return `
-                <button class="rb-mini-card${selected}${recommended}${evolved}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
-                    <b class="rb-power">${RebirthText.escape(card.attack || card.power)}</b>
+                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}">
+                    <span class="rb-card-image-layer rb-mini-art" ${RebirthAssets.artStyle(card)}></span>
+                    <span class="rb-card-frame-layer" aria-hidden="true"></span>
+                    <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${RebirthStatus.miniBadge(statuses)}
-                    <div class="rb-mini-art" ${RebirthAssets.artStyle(card)}></div>
-                    <div class="rb-mini-copy">
+                    <div class="rb-mini-copy rb-card-hud-layer">
                         <span>${RebirthText.escape(card.element)} - Tier ${RebirthText.escape(card.tier)}</span>
-                        <strong>${RebirthText.escape(card.name)}</strong>
-                        <div class="rb-mini-stats">
-                            <b>${RebirthText.escape(card.attack || card.power)}</b>
-                            <b>${RebirthText.escape(card.guard || 0)}</b>
+                        <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
+                        <div class="rb-card-statline rb-mini-stats">
+                            <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
+                            <span class="rb-card-stat is-guard"><b>${RebirthText.escape(card.guard || 0)}</b><small>GUARD</small></span>
                         </div>
                     </div>
                 </button>
@@ -626,31 +687,65 @@
             return Math.max(0, Number(card && card.cost || 0));
         },
 
+        cardType(card) {
+            return String((card && (card.type || card.card_type)) || "MONSTER").toUpperCase();
+        },
+
+        isMonster(card) {
+            return this.cardType(card) === "MONSTER";
+        },
+
+        elementClass(card) {
+            const element = String((card && (card.element || card.family)) || "Shadow").trim().toLowerCase();
+            const safeElement = element.replace(/[^a-z0-9-]/g, "-") || "shadow";
+            return ` is-element-${safeElement}`;
+        },
+
+        rarityClass(card) {
+            const rarity = String((card && card.rarity) || "COMMON").trim().toLowerCase();
+            const safeRarity = rarity.replace(/[^a-z0-9-]/g, "-") || "common";
+            const premium = ["rare", "epic", "legendary", "mythic"].includes(safeRarity) ? " is-premium-rarity" : "";
+            return ` is-rarity-${safeRarity}${premium}`;
+        },
+
+        cardShellClasses(card, baseClass) {
+            const evolved = Number(card && card.tier || 1) > 1 ? " is-evolved" : "";
+            return `${baseClass} rb-tcg-card${this.elementClass(card)}${this.rarityClass(card)}${evolved}`;
+        },
+
         fieldCard(card, side, selected, statuses) {
             const guard = Number(card.current_guard != null ? card.current_guard : card.guard || 0);
             const maxGuard = Number(card.max_guard || card.guard || 1);
             const guardScale = Math.max(0, Math.min(1, guard / maxGuard));
             const exhausted = card.exhausted || card.has_attacked ? " is-exhausted" : "";
             const selectedClass = selected ? " is-selected" : "";
-            const evolved = Number(card.tier || 1) > 1 ? " is-evolved" : "";
             const statusClass = RebirthStatus.className(statuses);
             const targetAttr = side === "bot"
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
-                <button class="rb-field-card rb-monster-card${selectedClass}${exhausted}${evolved}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
-                    <b>${RebirthText.escape(card.attack || card.power)}</b>
-                    <span class="rb-field-art" ${RebirthAssets.artStyle(card)}></span>
+                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
+                    <span class="rb-card-image-layer rb-field-art" ${RebirthAssets.artStyle(card)}></span>
+                    <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
-                    <strong>${RebirthText.escape(card.name)}</strong>
-                    <small>${RebirthText.escape(guard)}/${RebirthText.escape(maxGuard)} Guard</small>
-                    <i></i>
+                    <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
+                    <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
+                    <span class="rb-card-statline">
+                        <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
+                        <span class="rb-card-stat is-guard"><b>${RebirthText.escape(guard)}</b><small>GUARD</small></span>
+                    </span>
+                    <i class="rb-guard-meter" aria-label="${RebirthText.escape(guard)}/${RebirthText.escape(maxGuard)} Guard"></i>
                 </button>
             `;
         },
 
-        emptyFieldSlot(copy, direct) {
-            return `<button class="rb-field-slot-empty" type="button" ${direct ? "data-direct-attack=\"true\"" : ""}><span>${RebirthText.escape(copy)}</span></button>`;
+        emptyFieldSlot(copy, options) {
+            const direct = options && options.direct;
+            const summonSlot = options && options.summonSlot;
+            const summonTarget = options && options.summonTarget ? " is-summon-target" : "";
+            const selected = options && options.selected ? " is-selected" : "";
+            const slotAttr = Number.isInteger(summonSlot) ? `data-summon-slot="${summonSlot}"` : "";
+            return `<button class="rb-field-slot-empty${summonTarget}${selected}" type="button" ${direct ? "data-direct-attack=\"true\"" : ""} ${slotAttr}><span>${RebirthText.escape(copy)}</span></button>`;
         },
 
         emptyFocus() {
@@ -1000,23 +1095,36 @@
             const botHost = RebirthStore.elements["bot-battlefield"];
             const state = RebirthStore.state;
             if (!playerHost || !botHost || !state) return;
-            const playerCards = state.player.battlefield || [];
-            const botCards = state.bot.battlefield || [];
+            const playerSlots = RebirthStore.fieldSlots("player");
+            const botSlots = RebirthStore.fieldSlots("bot");
+            const botCards = RebirthStore.fieldCards("bot");
             const playerStatuses = (state.player && state.player.statuses) || {};
             const botStatuses = (state.bot && state.bot.statuses) || {};
-            playerHost.innerHTML = [
-                ...playerCards.map((card) => RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses)),
-                ...Array.from({ length: Math.max(0, 4 - playerCards.length) }, () => RebirthMarkup.emptyFieldSlot("Open Slot", false))
-            ].join("");
-            botHost.innerHTML = botCards.length
-                ? [
-                    ...botCards.map((card) => RebirthMarkup.fieldCard(card, "bot", false, botStatuses)),
-                    ...Array.from({ length: Math.max(0, 4 - botCards.length) }, () => RebirthMarkup.emptyFieldSlot("Guard Line", false))
-                ].join("")
-                : [
-                    RebirthMarkup.emptyFieldSlot("Direct HP", true),
-                    ...Array.from({ length: 3 }, () => RebirthMarkup.emptyFieldSlot("No Defender", false))
-                ].join("");
+            const selectedHandCard = RebirthStore.handCard(RebirthStore.selectedInstanceId);
+            const canSummonSelected = selectedHandCard
+                && RebirthMarkup.isMonster(selectedHandCard)
+                && state.phase === "choose"
+                && !state.is_finished
+                && !RebirthStore.pending
+                && Number((state.player && state.player.energy) || 0) >= RebirthMarkup.cardCost(selectedHandCard);
+            playerHost.innerHTML = playerSlots.map((card, index) => {
+                if (card) {
+                    return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses);
+                }
+                return RebirthMarkup.emptyFieldSlot(canSummonSelected ? `Slot ${index + 1}` : "Open Slot", {
+                    summonSlot: index,
+                    summonTarget: Boolean(canSummonSelected),
+                    selected: RebirthStore.selectedSummonSlot === index
+                });
+            }).join("");
+            botHost.innerHTML = botSlots.map((card, index) => {
+                if (card) {
+                    return RebirthMarkup.fieldCard(card, "bot", false, botStatuses);
+                }
+                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Guard Line" : (index === 1 ? "Direct HP" : "No Defender"), {
+                    direct: !botCards.length && index === 1
+                });
+            }).join("");
         },
 
         focusCard() {
@@ -1285,7 +1393,7 @@
                 ? (state.player.hand || []).find((card) => card.instance_id === RebirthStore.selectedInstanceId)
                 : null;
             const selectedAttacker = RebirthStore.selectedAttackerId
-                ? (state.player.battlefield || []).find((card) => card.instance_id === RebirthStore.selectedAttackerId)
+                ? RebirthStore.fieldCard(RebirthStore.selectedAttackerId)
                 : null;
             const energy = Number((state.player && state.player.energy) || 0);
             const cost = selected ? RebirthMarkup.cardCost(selected) : 0;
@@ -1293,11 +1401,13 @@
             const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked;
             if (RebirthStore.elements["play-button"]) {
                 if (selectedAttacker) {
-                    RebirthStore.elements["play-button"].innerHTML = '<i class="rb-action-sword"></i>Clash';
+                    RebirthStore.elements["play-button"].innerHTML = '<i class="rb-action-sword"></i>Attack';
                     RebirthStore.elements["play-button"].disabled = !canChoose || !attackerReady;
                 } else {
-                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>Summon${selected ? ` ${cost}` : ""}`;
-                    RebirthStore.elements["play-button"].disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay;
+                    const emptySlot = RebirthStore.firstOpenFieldSlot("player");
+                    const isMonster = selected && RebirthMarkup.isMonster(selected);
+                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Summon Slot" : "Play"}${selected ? ` ${cost}` : ""}`;
+                    RebirthStore.elements["play-button"].disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || (isMonster && emptySlot < 0);
                 }
             }
             if (RebirthStore.elements["next-turn-button"]) {
@@ -1369,6 +1479,7 @@
                     tutorial: RebirthStore.guidedFirstMatch
                 });
                 RebirthStore.selectedInstanceId = null;
+                RebirthStore.selectedSummonSlot = null;
                 RebirthStore.reward = null;
                 this.applyState(payload.state);
             });
@@ -1383,12 +1494,18 @@
                     card_id: evolution.card_id
                 });
                 RebirthStore.selectedInstanceId = payload.evolved ? payload.evolved.instance_id : null;
+                RebirthStore.selectedSummonSlot = null;
                 this.applyState(payload.state);
             });
         },
 
-        async playSelectedCard() {
+        async playSelectedCard(fieldSlot) {
             if (!RebirthStore.selectedInstanceId || !RebirthStore.state) return;
+            if (RebirthStore.state.is_finished || RebirthStore.state.phase !== "choose") {
+                RebirthErrors.show("Cards can only be played during your main phase.");
+                RebirthRenderer.buttons();
+                return;
+            }
             const selectedCard = RebirthStore.handCard(RebirthStore.selectedInstanceId);
             if (!selectedCard) return;
             const energy = Number((RebirthStore.state.player && RebirthStore.state.player.energy) || 0);
@@ -1398,15 +1515,33 @@
                 RebirthRenderer.buttons();
                 return;
             }
+            const isMonster = RebirthMarkup.isMonster(selectedCard);
+            const requestedSlot = RebirthStore.fieldSlotIndex(fieldSlot);
+            const selectedSlot = RebirthStore.fieldSlotIndex(RebirthStore.selectedSummonSlot);
+            const slot = requestedSlot !== null
+                ? requestedSlot
+                : selectedSlot !== null
+                    ? selectedSlot
+                    : null;
+            if (isMonster && !RebirthStore.fieldSlotOpen("player", slot)) {
+                RebirthErrors.show("Choose an empty monster slot first.");
+                RebirthRenderer.render();
+                return;
+            }
             await this.request(async () => {
                 const summonedInstanceId = selectedCard.instance_id;
-                const payload = await RebirthApi.post(RebirthConfig.endpoints.playCard, {
+                const requestPayload = {
                     match_id: RebirthStore.state.match_id,
                     card_instance_id: selectedCard.instance_id,
                     card_id: selectedCard.id
-                });
+                };
+                if (isMonster) {
+                    requestPayload.field_slot = slot;
+                }
+                const payload = await RebirthApi.post(RebirthConfig.endpoints.playCard, requestPayload);
                 RebirthStore.selectedInstanceId = null;
-                RebirthStore.selectedAttackerId = summonedInstanceId;
+                RebirthStore.selectedSummonSlot = null;
+                RebirthStore.selectedAttackerId = isMonster ? summonedInstanceId : null;
                 RebirthStore.reward = payload.match_reward || null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
@@ -1417,6 +1552,28 @@
             if (!RebirthStore.selectedAttackerId || !RebirthStore.state || !RebirthStore.fieldCard(RebirthStore.selectedAttackerId)) {
                 RebirthStore.selectedAttackerId = null;
                 RebirthErrors.show("Select one ready monster on your battlefield first.");
+                RebirthRenderer.render();
+                return;
+            }
+            if (RebirthStore.state.is_finished || !["choose", "result"].includes(RebirthStore.state.phase)) {
+                RebirthErrors.show("Attacks are not available in this phase.");
+                RebirthRenderer.buttons();
+                return;
+            }
+            const attacker = RebirthStore.fieldCard(RebirthStore.selectedAttackerId);
+            if (attacker && (attacker.exhausted || attacker.has_attacked)) {
+                RebirthErrors.show("That monster has already attacked this turn.");
+                RebirthRenderer.buttons();
+                return;
+            }
+            const botField = RebirthStore.fieldCards("bot");
+            if (!targetInstanceId && botField.length) {
+                RebirthErrors.show("Choose a defender before attacking.");
+                RebirthRenderer.render();
+                return;
+            }
+            if (targetInstanceId && !botField.some((card) => card.instance_id === targetInstanceId)) {
+                RebirthErrors.show("That defender is no longer on the field.");
                 RebirthRenderer.render();
                 return;
             }
@@ -1445,7 +1602,7 @@
                 RebirthRenderer.buttons();
                 return;
             }
-            const botField = (RebirthStore.state.bot && RebirthStore.state.bot.battlefield) || [];
+            const botField = RebirthStore.fieldCards("bot");
             const firstDefender = botField[0] || null;
             await this.attackTarget(firstDefender ? firstDefender.instance_id : null);
         },
@@ -1458,6 +1615,7 @@
                 });
                 RebirthStore.reward = null;
                 RebirthStore.selectedAttackerId = null;
+                RebirthStore.selectedSummonSlot = null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
             });
@@ -1552,18 +1710,28 @@
                     if (!button || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
                     RebirthStore.selectedInstanceId = button.getAttribute("data-card-instance");
                     RebirthStore.selectedAttackerId = null;
+                    RebirthStore.selectedSummonSlot = null;
                     RebirthErrors.clear();
                     RebirthRenderer.render();
-                    RebirthFlow.playSelectedCard();
                 });
             }
 
             const playerField = RebirthStore.elements["player-battlefield"];
             if (playerField) {
                 playerField.addEventListener("click", (event) => {
+                    const summonSlot = event.target.closest("[data-summon-slot]");
+                    if (summonSlot && RebirthStore.state && !RebirthStore.state.is_finished) {
+                        const slot = Number(summonSlot.getAttribute("data-summon-slot"));
+                        RebirthStore.selectedSummonSlot = slot;
+                        RebirthErrors.clear();
+                        RebirthRenderer.render();
+                        RebirthFlow.playSelectedCard(slot);
+                        return;
+                    }
                     const button = event.target.closest("[data-attacker-instance]");
                     if (!button || !RebirthStore.state || RebirthStore.state.is_finished) return;
                     RebirthStore.selectedInstanceId = null;
+                    RebirthStore.selectedSummonSlot = null;
                     RebirthStore.selectedAttackerId = button.getAttribute("data-attacker-instance");
                     RebirthErrors.clear();
                     RebirthRenderer.render();

@@ -313,7 +313,7 @@ def shop_payload(account=None, booster_history=None, market_offers=None):
             "market": {
                 "offers": market_offers or [],
                 "fee_rate": "5%",
-                "currencies": ["GOLD", "PREMIUM"],
+                "currencies": ["GOLD", "COINZ"],
             },
             "account": account,
             "history": booster_history or [],
@@ -463,6 +463,7 @@ def profile_payload(account=None, profile=None):
                 {"label": "Level", "value": progress.get("level", 1)},
                 {"label": "XP", "value": f"{progress.get('xp', 0)}/{progress.get('next_level_xp', 500)}"},
                 {"label": "Gold", "value": progress.get("gold", 0)},
+                {"label": "Coinz", "value": progress.get("coinz", progress.get("premium", 0))},
                 {"label": "Owned", "value": collection.get("owned_cards", 0)},
                 {"label": "Badges", "value": profile.get("unlocked_achievements", 0)},
             ],

@@ -151,6 +151,9 @@ def test_market_listing_locks_card_and_purchase_transfers_value(client, flask_ap
     assert bought_payload["market"]["purchase"]["fee"] == 5
     assert bought_payload["market"]["purchase"]["seller_net"] == 95
     assert bought_payload["market"]["purchase"]["buyer_balance"] == 900
+    assert bought_payload["wallet"]["GOLD"] == 900
+    assert repo.get_user_balance(buyer["id"], "GOLD") == 900
+    assert repo.get_user_balance(seller["id"], "GOLD") == 1095
     assert repo.collection_counts(buyer["id"])[extra_card_id] >= 1
     assert all(offer["id"] != listed_payload["market"]["offer"]["id"] for offer in bought_payload["market"]["offers"])
 
@@ -160,6 +163,18 @@ def test_market_listing_locks_card_and_purchase_transfers_value(client, flask_ap
 
     ledger = repo.economy_ledger(seller["id"], limit=20)
     assert any(entry["reason"] == "market_fee_sink" and entry["delta"] == -5 for entry in ledger)
+    with repo.connect() as db:
+        wallet_rows = db.execute(
+            """
+            SELECT user_id, currency, entry_type, amount, source
+            FROM wallet_ledger
+            WHERE reference_id = ?
+            ORDER BY entry_type, amount
+            """,
+            (listed_payload["market"]["offer"]["id"],),
+        ).fetchall()
+    assert {row["source"] for row in wallet_rows} == {"MARKET_SALE"}
+    assert sum(row["amount"] if row["entry_type"] == "CREDIT" else -row["amount"] for row in wallet_rows) == -5
 
 
 def test_market_listing_rejects_card_required_by_active_loadout(client, flask_app):

@@ -1,6 +1,6 @@
 {% set rb_nav = rebirth_navbar %}
 {% set auth_redirect = request.path if request.path.startswith('/rebirth') else url_for('rebirth') %}
-<header class="rb-global-nav" data-rebirth-global-nav aria-label="Navegacao global Ambitionz Rebirth">
+<header class="rb-global-nav" data-rebirth-global-nav data-rebirth-wallet aria-label="Navegacao global Ambitionz Rebirth">
     <a class="rb-brand rb-global-brand" href="{{ url_for('index') }}" aria-label="Ambitionz Rebirth home">
         <span>A</span>
         <strong>Ambitionz Rebirth</strong>
@@ -23,8 +23,8 @@
             <i aria-hidden="true"><b style="width: {{ rb_nav.xp_percent }}%"></b></i>
         </div>
         <div class="rb-global-wallet" aria-label="Carteira">
-            <span>GOLD <strong>{{ rb_nav.gold }}</strong></span>
-            <span class="rb-coinz">Coinz <strong>{{ rb_nav.coinz }}</strong></span>
+            <span>GOLD <strong data-rebirth-wallet-value="GOLD">{{ rb_nav.gold }}</strong></span>
+            <span class="rb-coinz">Coinz <strong data-rebirth-wallet-value="COINZ">{{ rb_nav.coinz }}</strong></span>
         </div>
         {% if rb_nav.authenticated %}
             <button class="rb-nav-auth rb-nav-logout" type="button" data-rebirth-logout>Logout</button>

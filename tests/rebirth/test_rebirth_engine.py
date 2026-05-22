@@ -64,6 +64,29 @@ def test_play_card_summons_monster_to_persistent_battlefield():
     assert match["bot"]["battlefield"][0]["id"] == "card_041"
 
 
+def test_play_card_respects_chosen_monster_slot_and_preserves_hand_on_slot_error():
+    match = start_match(seed="summon-slot")
+    card = next(card for card in match["player"]["hand"] if card["id"] == "card_002")
+    match["bot"]["hand"] = []
+
+    play_card(match, card_instance_id=card["instance_id"], field_slot=2)
+
+    assert match["player"]["field"][0] is None
+    assert match["player"]["field"][1] is None
+    assert match["player"]["field"][2]["instance_id"] == card["instance_id"]
+    assert match["player"]["battlefield"][0]["field_slot"] == 2
+
+    second = create_card_instance("card_003", "player", 99)
+    match["player"]["hand"] = [second]
+    match["player"]["energy"] = 2
+
+    with pytest.raises(RebirthError) as error:
+        play_card(match, card_instance_id=second["instance_id"], field_slot=2)
+
+    assert error.value.code == "slot_occupied"
+    assert match["player"]["hand"][0]["instance_id"] == second["instance_id"]
+
+
 def test_equal_power_clash_causes_no_damage():
     match = start_match(seed="tie")
     player_card = next(card for card in match["player"]["hand"] if card["id"] == "card_002")
@@ -267,6 +290,8 @@ def test_public_state_exposes_player_hand_and_hides_bot_hand():
     assert state["player"]["max_hp"] == 30
     assert state["player"]["battlefield"] == []
     assert state["bot"]["battlefield"] == []
+    assert state["player_field"] == [None, None, None]
+    assert state["bot_field"] == [None, None, None]
     assert state["available_evolutions"][0]["card_id"] == "card_001"
 
     for field in [

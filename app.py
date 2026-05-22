@@ -228,8 +228,9 @@ def rebirth_navbar_payload(user=None, progression=None):
     xp = int(progress.get("xp", 0) or 0)
     next_level = int(progress.get("next_level_xp", level * 500) or level * 500)
     xp_percent = 0 if next_level <= 0 else min(100, max(0, round((xp / next_level) * 100)))
-    gold = int(progress.get("gold", 0) or 0)
-    coinz = int(progress.get("premium", progress.get("coinz", 0)) or 0)
+    wallet = progress.get("wallet") or {}
+    gold = int(wallet.get("GOLD", progress.get("gold", 0)) or 0)
+    coinz = int(wallet.get("COINZ", progress.get("coinz", progress.get("premium", 0))) or 0)
     return {
         "authenticated": bool(user),
         "player_name": user["username"] if user else "Visitante",
@@ -240,6 +241,7 @@ def rebirth_navbar_payload(user=None, progression=None):
         "xp_percent": xp_percent,
         "gold": gold,
         "coinz": coinz,
+        "wallet": {"GOLD": gold, "COINZ": coinz, "ledger_source": wallet.get("ledger_source", "wallet_ledger")},
     }
 
 
@@ -563,6 +565,7 @@ def api_rebirth_play_card():
                 match,
                 card_instance_id=payload.get("card_instance_id"),
                 card_id=payload.get("card_id"),
+                field_slot=payload.get("field_slot", payload.get("slot")),
             )
         state = public_state(match)
         progress = None
@@ -657,12 +660,23 @@ def api_rebirth_auth_plan():
 
 @app.get("/api/rebirth/session")
 def api_rebirth_session():
-    return json_payload(account=current_account(), **csrf_payload())
+    user = current_user()
+    wallet = rebirth_repo().wallet_payload(user["id"]) if user else {"GOLD": 0, "COINZ": 0, "ledger_source": "wallet_ledger"}
+    return json_payload(account=account_payload(user), wallet=wallet, **csrf_payload())
 
 
 @app.get("/api/rebirth/csrf")
 def api_rebirth_csrf():
     return json_payload(**csrf_payload())
+
+
+@app.get("/api/rebirth/wallet")
+def api_rebirth_wallet():
+    try:
+        user = require_user()
+        return json_payload(wallet=rebirth_repo().wallet_payload(user["id"]))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
 
 
 @app.post("/api/rebirth/auth/register")
@@ -769,7 +783,7 @@ def api_rebirth_market_offers():
             offers = run_async(async_active_market_offers(exclude_user_id=user["id"] if user else None))
         else:
             offers = rebirth_repo().market_offers(exclude_user_id=user["id"] if user else None)
-        return json_payload(market={"offers": offers, "fee_rate": "5%", "currencies": ["GOLD", "PREMIUM"]})
+        return json_payload(market={"offers": offers, "fee_rate": "5%", "currencies": ["GOLD", "COINZ"]})
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
 
@@ -815,7 +829,8 @@ def api_rebirth_market_buy():
             repo = rebirth_repo()
             purchase = repo.buy_market_offer(user["id"], payload.get("offer_id"))
             offers = repo.market_offers(exclude_user_id=user["id"])
-        return json_payload(market={"purchase": purchase, "offers": offers})
+        wallet = purchase.get("buyer_wallet") or rebirth_repo().wallet_payload(user["id"])
+        return json_payload(market={"purchase": purchase, "offers": offers}, wallet=wallet)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -862,7 +877,7 @@ def api_rebirth_shop_verify_receipt():
                 transaction_type="IN_APP_PURCHASE",
             )
         )
-        return json_payload(purchase={"receipt": verified, "credit": credit})
+        return json_payload(purchase={"receipt": verified, "credit": credit}, wallet=credit.get("wallet"))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:

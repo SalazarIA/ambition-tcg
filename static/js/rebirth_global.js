@@ -30,6 +30,20 @@
         });
     }
 
+    function getJson(url) {
+        return fetch(url, { credentials: "same-origin" }).then(function (response) {
+            return response.json().then(function (body) {
+                if (!response.ok || !body.ok) {
+                    const serverError = body && body.error ? body.error : {};
+                    const error = new Error(serverError.message || "Request failed.");
+                    error.code = serverError.code || "rebirth_error";
+                    throw error;
+                }
+                return body;
+            });
+        });
+    }
+
     function modal() {
         return document.querySelector("[data-rebirth-auth-modal]");
     }
@@ -141,14 +155,44 @@
         });
     }
 
+    function applyWallet(wallet) {
+        if (!wallet) return;
+        ["GOLD", "COINZ"].forEach(function (currency) {
+            const value = wallet[currency];
+            Array.from(document.querySelectorAll('[data-rebirth-wallet-value="' + currency + '"]')).forEach(function (node) {
+                node.textContent = String(value == null ? 0 : value);
+            });
+        });
+    }
+
+    function refreshWallet() {
+        if (!endpoints.wallet) {
+            return Promise.resolve(null);
+        }
+        return getJson(endpoints.wallet)
+            .then(function (payload) {
+                applyWallet(payload.wallet);
+                return payload.wallet;
+            })
+            .catch(function (error) {
+                if (error.code !== "auth_required") {
+                    throw error;
+                }
+                return null;
+            });
+    }
+
     window.RebirthGlobalAuth = {
         open: openAuth,
-        close: closeAuth
+        close: closeAuth,
+        applyWallet: applyWallet,
+        refreshWallet: refreshWallet
     };
 
     document.addEventListener("DOMContentLoaded", function () {
         bindAuthTriggers();
         bindAuthForms();
         bindLogout();
+        refreshWallet().catch(function () {});
     });
 }());

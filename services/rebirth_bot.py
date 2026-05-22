@@ -255,23 +255,64 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
     return roll < rates.get(profile_id, 0.3)
 
 
-def choose_response(bot_hand, player_card, profile_id=None, *, turn=1, player_wounded=False, bot_wounded=False, match_id=None):
-    bot_hand = [card for card in bot_hand if is_monster(card)]
-    if not bot_hand:
-        return None
-
-    profile_id = normalize_personality(profile_id)
-    context = {
-        "turn": turn,
-        "player_wounded": player_wounded,
-        "bot_wounded": bot_wounded,
+def bot_decision_payload(bot_hand, player_card, profile_id=None, *, turn=1, player_wounded=False, bot_wounded=False, match_id=None):
+    return {
+        "profile_id": normalize_personality(profile_id),
+        "bot_hand": [deepcopy(card) for card in bot_hand if is_monster(card)],
+        "player_card": deepcopy(player_card),
+        "context": {
+            "turn": int(turn or 1),
+            "player_wounded": bool(player_wounded),
+            "bot_wounded": bool(bot_wounded),
+            "match_id": match_id,
+        },
     }
-    if counter_window(profile_id, bot_hand, player_card, turn=turn, match_id=match_id):
-        choice = choose_projected_counter(bot_hand, player_card, **context)
+
+
+def resolve_bot_decision_payload(payload):
+    payload = deepcopy(payload or {})
+    profile_id = normalize_personality(payload.get("profile_id"))
+    bot_hand = [card for card in payload.get("bot_hand", []) if is_monster(card)]
+    player_card = payload.get("player_card")
+    if not bot_hand:
+        return {"profile_id": profile_id, "decision": None, "mode": "payload"}
+
+    context = payload.get("context") or {}
+    decision_context = {
+        "turn": int(context.get("turn", 1) or 1),
+        "player_wounded": bool(context.get("player_wounded", False)),
+        "bot_wounded": bool(context.get("bot_wounded", False)),
+    }
+    match_id = context.get("match_id")
+    if counter_window(profile_id, bot_hand, player_card, turn=decision_context["turn"], match_id=match_id):
+        choice = choose_projected_counter(bot_hand, player_card, **decision_context)
     elif profile_id == "aggressive":
-        choice = choose_aggressive(bot_hand, player_card, **context)
+        choice = choose_aggressive(bot_hand, player_card, **decision_context)
     elif profile_id == "opportunist":
-        choice = choose_opportunist(bot_hand, player_card, **context)
+        choice = choose_opportunist(bot_hand, player_card, **decision_context)
     else:
-        choice = choose_defensive(bot_hand, player_card, **context)
-    return deepcopy(choice)
+        choice = choose_defensive(bot_hand, player_card, **decision_context)
+    return {
+        "profile_id": profile_id,
+        "decision": deepcopy(choice),
+        "decision_card_id": choice.get("id"),
+        "decision_instance_id": choice.get("instance_id"),
+        "mode": "payload",
+    }
+
+
+async def choose_response_async(payload):
+    return resolve_bot_decision_payload(payload)
+
+
+def choose_response(bot_hand, player_card, profile_id=None, *, turn=1, player_wounded=False, bot_wounded=False, match_id=None):
+    payload = bot_decision_payload(
+        bot_hand,
+        player_card,
+        profile_id,
+        turn=turn,
+        player_wounded=player_wounded,
+        bot_wounded=bot_wounded,
+        match_id=match_id,
+    )
+    return resolve_bot_decision_payload(payload)["decision"]

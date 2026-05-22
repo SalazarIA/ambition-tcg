@@ -56,6 +56,11 @@
             platform: platform,
             product_id: productId || "coins_100",
             receipt: receipt
+        }).then(function (payload) {
+            if (payload.wallet && window.RebirthGlobalAuth && typeof window.RebirthGlobalAuth.applyWallet === "function") {
+                window.RebirthGlobalAuth.applyWallet(payload.wallet);
+            }
+            return payload;
         });
     }
 
@@ -234,6 +239,9 @@
                     const purchase = payload.market.purchase;
                     if (result) {
                         result.textContent = "Bought " + purchase.offer.card.name + " for " + purchase.price + " " + purchase.currency_type + ".";
+                    }
+                    if (payload.wallet && window.RebirthGlobalAuth && typeof window.RebirthGlobalAuth.applyWallet === "function") {
+                        window.RebirthGlobalAuth.applyWallet(payload.wallet);
                     }
                     renderOffers(payload.market.offers || []);
                 })

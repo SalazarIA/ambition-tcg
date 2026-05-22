@@ -4013,3 +4013,282 @@ button {
 .rb-card-art img {
     object-position: center 58%;
 }
+
+/* Dynamic TCG frames for the three-slot Rebirth board. */
+.rb-field-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rb-tcg-card {
+    --element-core: #9b5cff;
+    --element-glow: rgba(155, 92, 255, 0.52);
+    --element-soft: rgba(155, 92, 255, 0.16);
+    --rarity-ring: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
+    position: relative;
+    isolation: isolate;
+    border-color: color-mix(in srgb, var(--element-core), white 12%);
+    background: #05070a;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.48), 0 0 20px var(--element-soft);
+}
+
+.rb-tcg-card.is-element-fire {
+    --element-core: #ff4d2e;
+    --element-glow: rgba(255, 77, 46, 0.62);
+    --element-soft: rgba(255, 77, 46, 0.18);
+}
+
+.rb-tcg-card.is-element-water {
+    --element-core: #31d7ff;
+    --element-glow: rgba(49, 215, 255, 0.62);
+    --element-soft: rgba(49, 215, 255, 0.18);
+}
+
+.rb-tcg-card.is-element-earth {
+    --element-core: #66e18d;
+    --element-glow: rgba(102, 225, 141, 0.58);
+    --element-soft: rgba(102, 225, 141, 0.16);
+}
+
+.rb-tcg-card.is-element-shadow {
+    --element-core: #a15cff;
+    --element-glow: rgba(161, 92, 255, 0.62);
+    --element-soft: rgba(161, 92, 255, 0.18);
+}
+
+.rb-tcg-card.is-premium-rarity {
+    --rarity-ring: linear-gradient(135deg, #fff1a8 0%, #f4ad26 28%, #fff8cd 48%, #9f641b 72%, #ffd66e 100%);
+    border-color: rgba(255, 214, 110, 0.82);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.52), 0 0 24px rgba(244, 173, 38, 0.24), inset 0 0 28px rgba(244, 173, 38, 0.08);
+}
+
+.rb-card-image-layer,
+.rb-card-frame-layer {
+    position: absolute;
+    pointer-events: none;
+}
+
+.rb-card-image-layer {
+    z-index: 1;
+    inset: 0;
+    background-position: center;
+    background-size: cover;
+    filter: brightness(1.02) contrast(1.14) saturate(1.18);
+}
+
+.rb-card-frame-layer {
+    z-index: 2;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.72)),
+        linear-gradient(135deg, var(--element-soft), rgba(0, 0, 0, 0) 42%),
+        var(--rarity-ring);
+    mix-blend-mode: screen;
+    opacity: 0.88;
+}
+
+.rb-card-frame-layer::before,
+.rb-card-frame-layer::after {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border: 1px solid var(--element-core);
+    box-shadow: 0 0 14px var(--element-glow), inset 0 0 16px var(--element-soft);
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+}
+
+.rb-card-frame-layer::after {
+    inset: 14px;
+    border-color: rgba(255, 255, 255, 0.2);
+    opacity: 0.64;
+}
+
+.rb-hand .rb-mini-card,
+.rb-field-card {
+    overflow: hidden;
+}
+
+.rb-hand .rb-mini-card > .rb-card-cost,
+.rb-field-card > .rb-card-cost {
+    position: absolute;
+    z-index: 4;
+    top: 8px;
+    left: 8px;
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
+    color: #080603;
+    background: radial-gradient(circle at 35% 25%, #fff8c8, #f4ad26 55%, #9a5b12 100%);
+    box-shadow: 0 0 14px rgba(244, 173, 38, 0.46);
+    clip-path: none;
+    font-size: 14px;
+    font-weight: 1000;
+}
+
+.rb-hand .rb-mini-card .rb-mini-art {
+    inset: 0;
+    grid-row: auto;
+}
+
+.rb-hand .rb-mini-card .rb-mini-copy {
+    position: absolute;
+    z-index: 4;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    min-height: 0;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(180deg, rgba(4, 5, 8, 0.48), rgba(4, 5, 8, 0.9));
+    backdrop-filter: blur(6px);
+}
+
+.rb-mini-copy .rb-card-nameplate {
+    display: block;
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rb-card-statline {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.rb-card-stat {
+    display: grid;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--rb-text);
+    line-height: 1;
+    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+}
+
+.rb-card-stat b {
+    font-size: 15px;
+    font-weight: 1000;
+}
+
+.rb-card-stat small {
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 8px;
+    font-weight: 1000;
+}
+
+.rb-field-card {
+    display: block;
+    min-height: 112px;
+    padding: 0;
+}
+
+.rb-field-card .rb-field-art {
+    inset: 0;
+    grid-row: auto;
+    border: 0;
+}
+
+.rb-field-card > .rb-card-nameplate {
+    position: absolute;
+    z-index: 4;
+    top: 9px;
+    right: 10px;
+    left: 44px;
+    overflow: hidden;
+    color: #fff7de;
+    font-size: 11px;
+    font-weight: 1000;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.72);
+}
+
+.rb-field-card > .rb-card-statline {
+    position: absolute;
+    z-index: 4;
+    right: 8px;
+    bottom: 17px;
+    left: 8px;
+}
+
+.rb-field-card > .rb-guard-meter {
+    position: absolute;
+    z-index: 4;
+    right: 8px;
+    bottom: 7px;
+    left: 8px;
+    overflow: hidden;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.16);
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+}
+
+.rb-field-card > .rb-guard-meter::before {
+    content: "";
+    display: block;
+    width: calc(var(--guard-scale, 1) * 100%);
+    height: 100%;
+    background: linear-gradient(90deg, var(--element-core), var(--rb-gold));
+}
+
+.rb-field-slot-empty.is-summon-target {
+    border-color: var(--rb-gold-2);
+    color: var(--rb-gold-2);
+    background: rgba(244, 173, 38, 0.08);
+    box-shadow: inset 0 0 26px rgba(244, 173, 38, 0.12), 0 0 18px rgba(244, 173, 38, 0.12);
+}
+
+.rb-field-slot-empty.is-selected {
+    border-color: #ffffff;
+    color: #ffffff;
+}
+
+@media (max-width: 430px) {
+    .rb-field-slots {
+        gap: 5px;
+    }
+
+    .rb-field-card,
+    .rb-field-slot-empty {
+        min-height: 92px;
+    }
+
+    .rb-field-card > .rb-card-cost,
+    .rb-hand .rb-mini-card > .rb-card-cost {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
+
+    .rb-field-card > .rb-card-nameplate {
+        right: 6px;
+        left: 36px;
+        font-size: 8px;
+    }
+
+    .rb-field-card > .rb-card-statline {
+        right: 5px;
+        bottom: 14px;
+        left: 5px;
+        gap: 4px;
+    }
+
+    .rb-card-stat {
+        padding: 3px 4px;
+    }
+
+    .rb-card-stat b {
+        font-size: 12px;
+    }
+
+    .rb-card-stat small {
+        font-size: 7px;
+    }
+}

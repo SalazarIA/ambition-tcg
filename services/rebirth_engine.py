@@ -6,13 +6,16 @@ from services.rebirth_cards import CARD_ABILITY_KEYS, create_card_instance, get_
 from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESULT, RebirthError
 from services.rebirth_events import append_command, append_event, append_snapshot
 from services.rebirth_state import (
+    FIELD_SLOT_COUNT,
     RebirthStateError,
     TurnPhase,
     available_evolutions,
     clear_played_cards,
+    compact_battlefield,
     create_match,
     current_turn_phase,
     draw_to_hand_size,
+    field_slots,
     is_main_phase,
     remove_from_hand,
     set_turn_phase,
@@ -20,7 +23,7 @@ from services.rebirth_state import (
 
 
 ENGINE_ABILITY_KEYS = set(CARD_ABILITY_KEYS.values())
-BATTLEFIELD_LIMIT = 4
+BATTLEFIELD_LIMIT = FIELD_SLOT_COUNT
 
 
 class EffectStack:
@@ -450,7 +453,7 @@ def _refresh_energy_for_turn(match):
 
 
 def _ready_battlefield(side):
-    for card in side.get("battlefield", []):
+    for card in compact_battlefield(side):
         card["exhausted"] = False
         card["has_attacked"] = False
 
@@ -465,21 +468,25 @@ def _prepare_summoned_monster(card):
 
 
 def _find_battlefield_card(side, instance_id):
-    for index, card in enumerate(side.get("battlefield", [])):
-        if card.get("instance_id") == instance_id:
+    for index, card in enumerate(field_slots(side)):
+        if card and card.get("instance_id") == instance_id:
             return index, card
     return None, None
 
 
 def _remove_defeated_battlefield_cards(side):
     defeated = []
-    survivors = []
-    for card in side.get("battlefield", []):
+    slots = field_slots(side)
+    for index, card in enumerate(slots):
+        if not card:
+            continue
         if int(card.get("current_guard", card.get("guard", 0)) or 0) <= 0:
             defeated.append(card)
+            slots[index] = None
         else:
-            survivors.append(card)
-    side["battlefield"] = survivors
+            card["field_slot"] = index
+            card["slot"] = index + 1
+    compact_battlefield(side)
     for card in defeated:
         defeated_card = deepcopy(card)
         defeated_card["defeated"] = True
@@ -488,7 +495,40 @@ def _remove_defeated_battlefield_cards(side):
 
 
 def _battlefield_slots_available(side):
-    return max(0, BATTLEFIELD_LIMIT - len(side.get("battlefield", [])))
+    return sum(1 for card in field_slots(side) if card is None)
+
+
+def _first_empty_battlefield_slot(side):
+    for index, card in enumerate(field_slots(side)):
+        if card is None:
+            return index
+    return None
+
+
+def _resolve_battlefield_slot(side, field_slot=None):
+    if _battlefield_slots_available(side) <= 0:
+        raise RebirthError("Battlefield is full.", "battlefield_full")
+    if field_slot is None or field_slot == "":
+        slot = _first_empty_battlefield_slot(side)
+    else:
+        try:
+            slot = int(field_slot)
+        except (TypeError, ValueError) as exc:
+            raise RebirthError("field_slot must be 0, 1 or 2.", "invalid_slot") from exc
+    if slot is None or slot < 0 or slot >= BATTLEFIELD_LIMIT:
+        raise RebirthError("field_slot must be 0, 1 or 2.", "invalid_slot")
+    if field_slots(side)[slot] is not None:
+        raise RebirthError("That battlefield slot is already occupied.", "slot_occupied")
+    return slot
+
+
+def _hand_card(side, *, card_instance_id=None, card_id=None):
+    for card in side.get("hand", []):
+        if card_instance_id and card.get("instance_id") == card_instance_id:
+            return card
+        if not card_instance_id and card_id and card.get("id") == card_id:
+            return card
+    raise RebirthStateError("Card is not in hand.")
 
 
 def _opponent_side(side_name):
@@ -595,13 +635,15 @@ def _arm_trap_card(match, side_name, card):
     return match
 
 
-def _summon_monster_card(match, side_name, card):
+def _summon_monster_card(match, side_name, card, field_slot=None):
     side = match[side_name]
-    if _battlefield_slots_available(side) <= 0:
-        raise RebirthError("Battlefield is full.", "battlefield_full")
+    slot = _resolve_battlefield_slot(side, field_slot)
     cost = _spend_card_cost(match, side_name, card)
     summoned = _prepare_summoned_monster(card)
-    side.setdefault("battlefield", []).append(summoned)
+    summoned["field_slot"] = slot
+    summoned["slot"] = slot + 1
+    field_slots(side)[slot] = summoned
+    compact_battlefield(side)
     side["played_card"] = summoned
     match["last_clash"] = None
     match["result"] = {
@@ -629,7 +671,8 @@ def _summon_monster_card(match, side_name, card):
         payload={
             "card_id": summoned["id"],
             "instance_id": summoned["instance_id"],
-            "slot": len(side.get("battlefield", [])),
+            "slot": slot + 1,
+            "field_slot": slot,
             "current_guard": summoned["current_guard"],
         },
         message=match["result"]["message"],
@@ -920,7 +963,7 @@ def _side_sequence(side):
     return (
         len(side.get("deck", []))
         + len(side.get("hand", []))
-        + len(side.get("battlefield", []))
+        + len(compact_battlefield(side))
         + len(side.get("discard", []))
         + (1 if side.get("played_card") else 0)
         + 1
@@ -999,7 +1042,7 @@ def evolve_bot_if_ready(match):
     return _evolve_side_duplicate(match, "bot", choice["card_id"])
 
 
-def play_card(match, *, card_instance_id=None, card_id=None):
+def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
     if match.get("is_finished"):
         raise RebirthError("Match is already finished.", "match_finished")
     if match.get("phase") != PHASE_CHOOSE:
@@ -1012,8 +1055,20 @@ def play_card(match, *, card_instance_id=None, card_id=None):
         match,
         "PLAY_CARD",
         actor="player",
-        payload={"card_instance_id": card_instance_id, "card_id": card_id},
+        payload={"card_instance_id": card_instance_id, "card_id": card_id, "field_slot": field_slot},
     )
+
+    try:
+        preview_card = _hand_card(match["player"], card_instance_id=card_instance_id, card_id=card_id)
+    except RebirthStateError as exc:
+        raise RebirthError(str(exc), "invalid_card") from exc
+
+    if is_monster(preview_card):
+        _resolve_battlefield_slot(match["player"], field_slot)
+        cost = _card_cost(preview_card)
+        current_energy = int(match["player"].get("energy", match["player"].get("max_energy", 0)) or 0)
+        if current_energy < cost:
+            raise RebirthError(f"Not enough energy to play {preview_card['name']}.", "not_enough_energy")
 
     try:
         player_card = remove_from_hand(
@@ -1032,7 +1087,7 @@ def play_card(match, *, card_instance_id=None, card_id=None):
         raise RebirthError("Only monster, spell and trap cards can be played.", "invalid_card")
 
     evolve_bot_if_ready(match)
-    summoned = _summon_monster_card(match, "player", player_card)
+    summoned = _summon_monster_card(match, "player", player_card, field_slot=field_slot)
     player_result = deepcopy(match.get("result") or {})
     bot_summoned = _bot_auto_summon(match)
     if bot_summoned:
@@ -1065,7 +1120,7 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
         _target_index, target = _find_battlefield_card(match["bot"], target_instance_id)
         if target is None:
             raise RebirthError("Target is not on the bot battlefield.", "invalid_target")
-    elif match["bot"].get("battlefield"):
+    elif compact_battlefield(match["bot"]):
         raise RebirthError("Direct attack is blocked while the bot controls defenders.", "defenders_block_direct")
 
     append_command(

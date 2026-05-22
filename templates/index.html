@@ -89,7 +89,8 @@
         window.REBIRTH_AUTH_ENDPOINTS = {
             register: "{{ url_for('api_rebirth_auth_register') }}",
             login: "{{ url_for('api_rebirth_auth_login') }}",
-            logout: "{{ url_for('api_rebirth_auth_logout') }}"
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
     <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-045"></script>

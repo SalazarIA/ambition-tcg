@@ -110,7 +110,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v45" in service_worker
+    assert "ambitionz-rebirth-season0-v46" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -143,6 +143,10 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthFeel",
         "RebirthTactics",
         "RebirthParallax",
+        "player_field",
+        "bot_field",
+        "data-summon-slot",
+        "field_slot",
         "attackTarget",
         "renderTurnPhase",
         "triggerScreenShake",
@@ -166,6 +170,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "attack",
         "guard",
         "Summon",
+        "Summon Slot",
         "Next Turn",
         "scrollRestoration",
     ]:

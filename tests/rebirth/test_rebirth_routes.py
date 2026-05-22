@@ -114,6 +114,25 @@ def test_play_card_api_summons_then_attack_resolves_combat(client):
     assert attack_payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
 
 
+def test_play_card_api_accepts_explicit_monster_slot(client):
+    start = client.post("/api/rebirth/start", json={"seed": "routes-play-slot"})
+    state = start.get_json()["state"]
+    card = next(card for card in state["player"]["hand"] if card["id"] == "card_001")
+
+    response = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": state["match_id"], "card_instance_id": card["instance_id"], "field_slot": 1},
+    )
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["state"]["player_field"][0] is None
+    assert payload["state"]["player_field"][1]["instance_id"] == card["instance_id"]
+    assert payload["state"]["player_field"][2] is None
+    assert payload["state"]["player"]["battlefield"][0]["field_slot"] == 1
+
+
 def test_evolve_api_combines_duplicate(client):
     start = client.post("/api/rebirth/start", json={"seed": "routes-evolve"})
     state = start.get_json()["state"]

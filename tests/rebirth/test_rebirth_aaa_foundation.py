@@ -4,6 +4,7 @@ import inspect
 import pytest
 
 from services.rebirth_engine import EffectStack, RebirthError, play_card, start_match
+from services.rebirth_bot import bot_decision_payload, choose_response, choose_response_async, resolve_bot_decision_payload
 from services.rebirth_persistence import (
     Base,
     RebirthPersistenceError,
@@ -11,6 +12,7 @@ from services.rebirth_persistence import (
     buy_market_offer,
     configure_async_database,
     create_market_offer,
+    get_user_balance,
     load_match_state,
     log_transaction,
     save_match_state,
@@ -57,7 +59,7 @@ def test_async_postgres_persistence_contract_is_declared(monkeypatch):
     monkeypatch.delenv("POSTGRES_URL", raising=False)
     configure_async_database("")
 
-    assert {"user_accounts", "user_collections", "game_sessions", "economy_transactions", "market_offers"}.issubset(
+    assert {"user_accounts", "user_collections", "game_sessions", "economy_transactions", "market_offers", "wallet_ledger"}.issubset(
         set(Base.metadata.tables)
     )
     assert inspect.iscoroutinefunction(save_match_state)
@@ -66,8 +68,28 @@ def test_async_postgres_persistence_contract_is_declared(monkeypatch):
     assert inspect.iscoroutinefunction(create_market_offer)
     assert inspect.iscoroutinefunction(buy_market_offer)
     assert inspect.iscoroutinefunction(active_market_offers)
+    assert inspect.iscoroutinefunction(get_user_balance)
 
     with pytest.raises(RebirthPersistenceError) as error:
         asyncio.run(save_match_state("rebirth-test", {"turn": 1, "phase": "choose"}))
 
     assert error.value.code == "database_not_configured"
+
+
+def test_bot_decision_is_available_as_isolated_async_payload():
+    match = start_match(seed="bot-payload")
+    player_card = match["player"]["hand"][0]
+    payload = bot_decision_payload(
+        match["bot"]["hand"],
+        player_card,
+        "opportunist",
+        turn=match["turn"],
+        match_id=match["match_id"],
+    )
+    sync_choice = choose_response(match["bot"]["hand"], player_card, "opportunist", turn=match["turn"], match_id=match["match_id"])
+    projected = resolve_bot_decision_payload(payload)
+    async_projected = asyncio.run(choose_response_async(payload))
+
+    assert projected["decision"]["id"] == sync_choice["id"]
+    assert async_projected["decision_instance_id"] == projected["decision_instance_id"]
+    assert payload["context"]["match_id"] == match["match_id"]

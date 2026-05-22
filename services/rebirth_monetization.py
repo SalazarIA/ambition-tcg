@@ -7,9 +7,9 @@ from services.rebirth_contracts import RebirthError
 
 
 PRODUCT_GRANTS = {
-    "coins_100": {"amount": 100, "currency": "coins"},
-    "coins_550": {"amount": 550, "currency": "coins"},
-    "coins_1200": {"amount": 1200, "currency": "coins"},
+    "coins_100": {"amount": 100, "currency": "COINZ"},
+    "coins_550": {"amount": 550, "currency": "COINZ"},
+    "coins_1200": {"amount": 1200, "currency": "COINZ"},
 }
 
 

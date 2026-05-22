@@ -10,7 +10,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import DateTime, Integer, JSON, String, select, text
+from sqlalchemy import DateTime, Integer, JSON, String, case, func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -45,8 +45,6 @@ class UserAccount(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     xp: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    balance_coins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    balance_premium: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
@@ -85,6 +83,19 @@ class EconomyTransaction(Base):
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[str] = mapped_column(String(24), nullable=False)
     reference_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class WalletLedger(Base):
+    __tablename__ = "wallet_ledger"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    currency: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
+    entry_type: Mapped[str] = mapped_column(String(8), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    source: Mapped[str] = mapped_column(String(40), nullable=False)
+    reference_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
@@ -239,6 +250,7 @@ async def _ensure_async_user_account(session, user_id, *, username=None, passwor
         raise RebirthPersistenceError("A valid user_id is required.", "invalid_user", status=400)
     account = await session.get(UserAccount, user_id)
     if account:
+        await _ensure_async_starter_wallet(session, account)
         return account
     account = UserAccount(
         id=user_id,
@@ -246,24 +258,41 @@ async def _ensure_async_user_account(session, user_id, *, username=None, passwor
         password_hash=str(password_hash or "external-account"),
         xp=0,
         level=1,
-        balance_coins=1000,
-        balance_premium=0,
         created_at=utc_datetime(),
     )
     session.add(account)
     await session.flush()
     await _seed_async_user_collection(session, account, f"{account.id}:{account.username}")
-    session.add(
-        EconomyTransaction(
-            user_id=int(account.id),
-            transaction_type="STARTER_WALLET",
-            amount=1000,
-            currency="GOLD",
-            reference_id=str(account.id),
-            timestamp=utc_datetime(),
-        )
+    _add_async_wallet_entry(
+        session,
+        int(account.id),
+        "GOLD",
+        "CREDIT",
+        1000,
+        "MATCH_REWARD",
+        f"starter:{account.id}",
     )
     return account
+
+
+async def _ensure_async_starter_wallet(session, account):
+    result = await session.execute(
+        select(func.count(WalletLedger.id)).where(
+            WalletLedger.user_id == int(account.id),
+            WalletLedger.currency == "GOLD",
+        )
+    )
+    if int(result.scalar_one() or 0) > 0:
+        return
+    _add_async_wallet_entry(
+        session,
+        int(account.id),
+        "GOLD",
+        "CREDIT",
+        1000,
+        "MATCH_REWARD",
+        f"starter:{account.id}",
+    )
 
 
 async def _seed_async_user_collection(session, account, seed_source):
@@ -379,35 +408,49 @@ async def credit_verified_purchase(
     try:
         async with session_maker() as session:
             async with session.begin():
-                account = await _ensure_async_user_account(session, user_id, username=username)
+                await _set_serializable_if_postgres(session)
+                await _ensure_async_user_account(session, user_id, username=username)
+                account = (
+                    await session.execute(
+                        select(UserAccount).where(UserAccount.id == int(user_id)).with_for_update()
+                    )
+                ).scalar_one()
                 amount = int(amount or 0)
-                currency = str(currency or "coins").strip().lower()
+                currency = normalize_wallet_currency(currency)
                 if amount <= 0:
                     raise RebirthPersistenceError("Purchase amount must be positive.", "invalid_purchase", status=400)
-                if currency == "coins":
-                    account.balance_coins = int(account.balance_coins or 0) + amount
-                elif currency in {"premium", "gems"}:
-                    account.balance_premium = int(account.balance_premium or 0) + amount
-                elif currency == "xp":
-                    account.xp = int(account.xp or 0) + amount
-                    account.level = calculate_level(account.xp)
-                transaction = EconomyTransaction(
-                    user_id=int(user_id),
-                    transaction_type=str(transaction_type or "IN_APP_PURCHASE"),
+                _add_async_wallet_entry(
+                    session,
+                    int(user_id),
+                    currency,
+                    "CREDIT",
                     amount=amount,
-                    currency=currency,
+                    source="SHOP_PURCHASE",
                     reference_id=str(reference_id or ""),
-                    timestamp=utc_datetime(),
                 )
-                session.add(transaction)
+                session.add(
+                    EconomyTransaction(
+                        user_id=int(user_id),
+                        transaction_type=str(transaction_type or "IN_APP_PURCHASE"),
+                        amount=amount,
+                        currency=currency,
+                        reference_id=str(reference_id or ""),
+                        timestamp=utc_datetime(),
+                    )
+                )
                 await session.flush()
+                wallet = {
+                    "GOLD": await get_user_balance(int(user_id), "GOLD", session=session),
+                    "COINZ": await get_user_balance(int(user_id), "COINZ", session=session),
+                    "ledger_source": "wallet_ledger",
+                }
                 return {
                     "user_id": account.id,
-                    "balance_coins": int(account.balance_coins or 0),
-                    "balance_premium": int(account.balance_premium or 0),
+                    "balance_gold": wallet["GOLD"],
+                    "balance_coinz": wallet["COINZ"],
+                    "wallet": wallet,
                     "xp": int(account.xp or 0),
                     "level": int(account.level or 1),
-                    "transaction_id": int(transaction.id),
                     "amount": amount,
                     "currency": currency,
                     "reference_id": str(reference_id or ""),
@@ -418,11 +461,30 @@ async def credit_verified_purchase(
         raise RebirthPersistenceError("Failed to credit verified purchase.", "database_write_failed", status=500) from exc
 
 
+WALLET_CURRENCY_ALIASES = {
+    "GOLD": "GOLD",
+    "COIN": "COINZ",
+    "COINS": "COINZ",
+    "COINZ": "COINZ",
+    "PREMIUM": "COINZ",
+    "GEM": "COINZ",
+    "GEMS": "COINZ",
+}
+
+
+def normalize_wallet_currency(currency):
+    normalized = str(currency or "GOLD").strip().upper()
+    normalized = WALLET_CURRENCY_ALIASES.get(normalized, normalized)
+    if normalized not in {"GOLD", "COINZ"}:
+        raise RebirthPersistenceError("currency must be GOLD or COINZ.", "invalid_wallet_currency", status=400)
+    return normalized
+
+
 def normalize_market_currency(currency_type):
-    currency = str(currency_type or "GOLD").strip().upper()
-    if currency not in {"GOLD", "PREMIUM"}:
-        raise RebirthPersistenceError("currency_type must be GOLD or PREMIUM.", "invalid_market_currency", status=400)
-    return currency
+    try:
+        return normalize_wallet_currency(currency_type or "GOLD")
+    except RebirthPersistenceError as exc:
+        raise RebirthPersistenceError("currency_type must be GOLD or COINZ.", "invalid_market_currency", status=400) from exc
 
 
 def _normalize_market_price(price):
@@ -439,18 +501,60 @@ def _market_fee(price):
     return max(1, int(price * 5 // 100)) if price >= 20 else 1
 
 
-def _account_balance(account, currency_type):
-    if currency_type == "PREMIUM":
-        return int(getattr(account, "balance_premium", 0) or 0)
-    return int(getattr(account, "balance_coins", 0) or 0)
+def _normalize_wallet_entry(entry_type, amount):
+    entry_type = str(entry_type or "").strip().upper()
+    if entry_type not in {"CREDIT", "DEBIT"}:
+        raise RebirthPersistenceError("Wallet entry_type must be CREDIT or DEBIT.", "invalid_wallet_entry", status=400)
+    amount = int(amount or 0)
+    if amount <= 0:
+        raise RebirthPersistenceError("Wallet ledger amount must be positive.", "invalid_wallet_amount", status=400)
+    return entry_type, amount
 
 
-def _set_account_balance(account, currency_type, value):
-    value = max(0, int(value or 0))
-    if currency_type == "PREMIUM":
-        account.balance_premium = value
-    else:
-        account.balance_coins = value
+def _wallet_balance_expression():
+    return func.coalesce(
+        func.sum(case((WalletLedger.entry_type == "CREDIT", WalletLedger.amount), else_=-WalletLedger.amount)),
+        0,
+    )
+
+
+async def _wallet_balance_in_session(session, user_id: int, currency: str) -> int:
+    currency = normalize_wallet_currency(currency)
+    result = await session.execute(
+        select(_wallet_balance_expression()).where(
+            WalletLedger.user_id == int(user_id),
+            WalletLedger.currency == currency,
+        )
+    )
+    return int(result.scalar_one() or 0)
+
+
+async def get_user_balance(user_id: int, currency: str, *, session: Optional[AsyncSession] = None) -> int:
+    if session is not None:
+        return await _wallet_balance_in_session(session, user_id, currency)
+    await ensure_async_schema_once()
+    session_maker = async_session_factory()
+    try:
+        async with session_maker() as owned_session:
+            return await _wallet_balance_in_session(owned_session, user_id, currency)
+    except SQLAlchemyError as exc:
+        raise RebirthPersistenceError("Failed to calculate wallet balance.", "database_read_failed", status=500) from exc
+
+
+def _add_async_wallet_entry(session, user_id, currency, entry_type, amount, source, reference_id):
+    entry_type, amount = _normalize_wallet_entry(entry_type, amount)
+    session.add(
+        WalletLedger(
+            id=str(uuid.uuid4()),
+            user_id=int(user_id),
+            currency=normalize_wallet_currency(currency),
+            entry_type=entry_type,
+            amount=amount,
+            source=str(source or "MATCH_REWARD").strip().upper(),
+            reference_id=str(reference_id or ""),
+            timestamp=utc_datetime(),
+        )
+    )
 
 
 async def _set_serializable_if_postgres(session):
@@ -468,7 +572,7 @@ def _market_offer_payload(offer, *, seller_name=None):
         "card_id": offer.card_id,
         "card": card,
         "price": int(offer.price),
-        "currency_type": str(offer.currency_type),
+        "currency_type": normalize_market_currency(offer.currency_type),
         "status": str(offer.status),
         "created_at": offer.created_at.isoformat() if hasattr(offer.created_at, "isoformat") else str(offer.created_at),
     }
@@ -541,7 +645,12 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
         async with session_maker() as session:
             async with session.begin():
                 await _set_serializable_if_postgres(session)
-                buyer = await _ensure_async_user_account(session, user_id, username=username)
+                await _ensure_async_user_account(session, user_id, username=username)
+                buyer = (
+                    await session.execute(
+                        select(UserAccount).where(UserAccount.id == int(user_id)).with_for_update()
+                    )
+                ).scalar_one()
                 offer = (
                     await session.execute(
                         select(MarketOffer).where(MarketOffer.id == str(offer_id)).with_for_update()
@@ -561,13 +670,11 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
 
                 currency_type = normalize_market_currency(offer.currency_type)
                 price = int(offer.price)
-                buyer_balance = _account_balance(buyer, currency_type)
+                buyer_balance = await get_user_balance(int(user_id), currency_type, session=session)
                 if buyer_balance < price:
                     raise RebirthPersistenceError("Insufficient balance for market purchase.", "insufficient_balance", status=409)
                 fee = _market_fee(price)
                 seller_net = price - fee
-                _set_account_balance(buyer, currency_type, buyer_balance - price)
-                _set_account_balance(seller, currency_type, _account_balance(seller, currency_type) + seller_net)
 
                 collection_rows = (
                     await session.execute(
@@ -596,6 +703,9 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
                 )
                 offer.status = "SOLD"
                 reference_id = str(offer.id)
+                _add_async_wallet_entry(session, int(user_id), currency_type, "DEBIT", price, "MARKET_SALE", reference_id)
+                _add_async_wallet_entry(session, int(offer.seller_id), currency_type, "CREDIT", price, "MARKET_SALE", reference_id)
+                _add_async_wallet_entry(session, int(offer.seller_id), currency_type, "DEBIT", fee, "MARKET_SALE", reference_id)
                 session.add_all(
                     [
                         EconomyTransaction(
@@ -625,6 +735,16 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
                     ]
                 )
                 await session.flush()
+                buyer_wallet = {
+                    "GOLD": await get_user_balance(int(user_id), "GOLD", session=session),
+                    "COINZ": await get_user_balance(int(user_id), "COINZ", session=session),
+                    "ledger_source": "wallet_ledger",
+                }
+                seller_wallet = {
+                    "GOLD": await get_user_balance(int(offer.seller_id), "GOLD", session=session),
+                    "COINZ": await get_user_balance(int(offer.seller_id), "COINZ", session=session),
+                    "ledger_source": "wallet_ledger",
+                }
                 return {
                     "offer": _market_offer_payload(offer),
                     "buyer_id": int(user_id),
@@ -633,8 +753,10 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
                     "fee": fee,
                     "seller_net": seller_net,
                     "currency_type": currency_type,
-                    "buyer_balance": _account_balance(buyer, currency_type),
-                    "seller_balance": _account_balance(seller, currency_type),
+                    "buyer_balance": buyer_wallet[currency_type],
+                    "seller_balance": seller_wallet[currency_type],
+                    "buyer_wallet": buyer_wallet,
+                    "seller_wallet": seller_wallet,
                 }
     except RebirthPersistenceError:
         raise
@@ -763,8 +885,6 @@ class RebirthRepository:
                     boosters_opened INTEGER NOT NULL DEFAULT 0,
                     tutorial_step INTEGER NOT NULL DEFAULT 0,
                     tutorial_complete INTEGER NOT NULL DEFAULT 0,
-                    gold INTEGER NOT NULL DEFAULT 0,
-                    premium INTEGER NOT NULL DEFAULT 0,
                     updated_at TEXT NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
@@ -862,6 +982,18 @@ class RebirthRepository:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS wallet_ledger (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    currency TEXT NOT NULL CHECK(currency IN ('GOLD', 'COINZ')),
+                    entry_type TEXT NOT NULL CHECK(entry_type IN ('CREDIT', 'DEBIT')),
+                    amount INTEGER NOT NULL CHECK(amount > 0),
+                    source TEXT NOT NULL,
+                    reference_id TEXT NOT NULL DEFAULT '',
+                    timestamp TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
                 CREATE TABLE IF NOT EXISTS admin_audit_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     actor TEXT NOT NULL,
@@ -887,16 +1019,97 @@ class RebirthRepository:
                     ON market_offers(status, created_at);
                 CREATE INDEX IF NOT EXISTS idx_market_offers_seller_status
                     ON market_offers(seller_id, status);
+                CREATE INDEX IF NOT EXISTS idx_wallet_ledger_user_currency
+                    ON wallet_ledger(user_id, currency, timestamp);
+                CREATE INDEX IF NOT EXISTS idx_wallet_ledger_reference
+                    ON wallet_ledger(reference_id);
                 """
             )
             self._ensure_sqlite_column(db, "user_collection", "locked_copies", "INTEGER NOT NULL DEFAULT 0")
-            self._ensure_sqlite_column(db, "user_progress", "gold", "INTEGER NOT NULL DEFAULT 0")
-            self._ensure_sqlite_column(db, "user_progress", "premium", "INTEGER NOT NULL DEFAULT 0")
+            self._backfill_wallet_ledger(db)
 
     def _ensure_sqlite_column(self, db, table, column, definition):
         columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
         if column not in columns:
             db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+    def _sqlite_columns(self, db, table):
+        return {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
+
+    def _backfill_wallet_ledger(self, db):
+        columns = self._sqlite_columns(db, "user_progress")
+        legacy_currencies = []
+        if "gold" in columns:
+            legacy_currencies.append(("gold", "GOLD"))
+        if "premium" in columns:
+            legacy_currencies.append(("premium", "COINZ"))
+        if not legacy_currencies:
+            return
+        now = utc_now()
+        select_columns = ", ".join(["user_id"] + [column for column, _currency in legacy_currencies])
+        rows = db.execute(f"SELECT {select_columns} FROM user_progress").fetchall()
+        for row in rows:
+            user_id = int(row["user_id"])
+            for column, currency in legacy_currencies:
+                amount = int(row[column] or 0)
+                if amount <= 0:
+                    continue
+                existing = db.execute(
+                    "SELECT 1 FROM wallet_ledger WHERE user_id = ? AND currency = ? LIMIT 1",
+                    (user_id, currency),
+                ).fetchone()
+                if existing:
+                    continue
+                self._record_wallet_entry(
+                    db,
+                    user_id,
+                    currency=currency,
+                    entry_type="CREDIT",
+                    amount=amount,
+                    source="MATCH_REWARD",
+                    reference_id=f"legacy:{user_id}:{currency}",
+                    now=now,
+                )
+
+    def _record_wallet_entry(self, db, user_id, *, currency, entry_type, amount, source, reference_id, now=None):
+        entry_type, amount = _normalize_wallet_entry(entry_type, amount)
+        db.execute(
+            """
+            INSERT INTO wallet_ledger (id, user_id, currency, entry_type, amount, source, reference_id, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(uuid.uuid4()),
+                int(user_id),
+                normalize_wallet_currency(currency),
+                entry_type,
+                amount,
+                str(source or "MATCH_REWARD").strip().upper(),
+                str(reference_id or ""),
+                now or utc_now(),
+            ),
+        )
+
+    def get_user_balance(self, user_id, currency):
+        self.ensure_schema()
+        currency = normalize_wallet_currency(currency)
+        with self.connect() as db:
+            row = db.execute(
+                """
+                SELECT COALESCE(SUM(CASE WHEN entry_type = 'CREDIT' THEN amount ELSE -amount END), 0) AS balance
+                FROM wallet_ledger
+                WHERE user_id = ? AND currency = ?
+                """,
+                (int(user_id), currency),
+            ).fetchone()
+        return int(row["balance"] or 0)
+
+    def wallet_payload(self, user_id):
+        return {
+            "GOLD": self.get_user_balance(user_id, "GOLD"),
+            "COINZ": self.get_user_balance(user_id, "COINZ"),
+            "ledger_source": "wallet_ledger",
+        }
 
     def create_user(self, username, email, password):
         self.ensure_schema()
@@ -1001,10 +1214,20 @@ class RebirthRepository:
             )
         db.execute(
             """
-            INSERT INTO user_progress (user_id, xp, wins, losses, clashes, boosters_opened, tutorial_step, tutorial_complete, gold, premium, updated_at)
-            VALUES (?, 0, 0, 0, 0, 0, 0, 0, 1000, 0, ?)
+            INSERT INTO user_progress (user_id, xp, wins, losses, clashes, boosters_opened, tutorial_step, tutorial_complete, updated_at)
+            VALUES (?, 0, 0, 0, 0, 0, 0, 0, ?)
             """,
             (user_id, now),
+        )
+        self._record_wallet_entry(
+            db,
+            user_id,
+            currency="GOLD",
+            entry_type="CREDIT",
+            amount=1000,
+            source="MATCH_REWARD",
+            reference_id=f"starter:{user_id}",
+            now=now,
         )
         self._record_ledger_entry(
             db,
@@ -1172,20 +1395,20 @@ class RebirthRepository:
                 raise RebirthPersistenceError(f"{card_id} exceeds owned copies.", "invalid_loadout")
         return selected
 
-    def _currency_column(self, currency_type):
-        currency_type = normalize_market_currency(currency_type)
-        return "premium" if currency_type == "PREMIUM" else "gold"
-
     def _currency_balance(self, db, user_id, currency_type):
-        column = self._currency_column(currency_type)
-        row = db.execute(f"SELECT {column} AS balance FROM user_progress WHERE user_id = ?", (user_id,)).fetchone()
-        if not row:
+        user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not user:
             raise RebirthPersistenceError("Account wallet is missing.", "missing_wallet", status=409)
+        currency_type = normalize_market_currency(currency_type)
+        row = db.execute(
+            """
+            SELECT COALESCE(SUM(CASE WHEN entry_type = 'CREDIT' THEN amount ELSE -amount END), 0) AS balance
+            FROM wallet_ledger
+            WHERE user_id = ? AND currency = ?
+            """,
+            (int(user_id), currency_type),
+        ).fetchone()
         return int(row["balance"] or 0)
-
-    def _set_currency_balance(self, db, user_id, currency_type, amount):
-        column = self._currency_column(currency_type)
-        db.execute(f"UPDATE user_progress SET {column} = ?, updated_at = ? WHERE user_id = ?", (int(amount), utc_now(), user_id))
 
     def _record_economy_transaction(self, db, user_id, transaction_type, amount, currency, reference_id, now=None):
         db.execute(
@@ -1206,7 +1429,7 @@ class RebirthRepository:
             "card_id": row["card_id"],
             "card": get_card(row["card_id"]),
             "price": int(row["price"]),
-            "currency_type": row["currency_type"],
+            "currency_type": normalize_market_currency(row["currency_type"]),
             "status": row["status"],
             "created_at": row["created_at"],
         }
@@ -1320,8 +1543,36 @@ class RebirthRepository:
             seller_balance = self._currency_balance(db, seller_id, currency_type)
             fee = _market_fee(price)
             seller_net = price - fee
-            self._set_currency_balance(db, buyer_id, currency_type, buyer_balance - price)
-            self._set_currency_balance(db, seller_id, currency_type, seller_balance + seller_net)
+            self._record_wallet_entry(
+                db,
+                buyer_id,
+                currency=currency_type,
+                entry_type="DEBIT",
+                amount=price,
+                source="MARKET_SALE",
+                reference_id=offer["id"],
+                now=now,
+            )
+            self._record_wallet_entry(
+                db,
+                seller_id,
+                currency=currency_type,
+                entry_type="CREDIT",
+                amount=price,
+                source="MARKET_SALE",
+                reference_id=offer["id"],
+                now=now,
+            )
+            self._record_wallet_entry(
+                db,
+                seller_id,
+                currency=currency_type,
+                entry_type="DEBIT",
+                amount=fee,
+                source="MARKET_SALE",
+                reference_id=offer["id"],
+                now=now,
+            )
 
             collection = db.execute(
                 """
@@ -1421,6 +1672,16 @@ class RebirthRepository:
                 """,
                 (offer["id"],),
             ).fetchone()
+            buyer_wallet = {
+                "GOLD": self._currency_balance(db, buyer_id, "GOLD"),
+                "COINZ": self._currency_balance(db, buyer_id, "COINZ"),
+                "ledger_source": "wallet_ledger",
+            }
+            seller_wallet = {
+                "GOLD": self._currency_balance(db, seller_id, "GOLD"),
+                "COINZ": self._currency_balance(db, seller_id, "COINZ"),
+                "ledger_source": "wallet_ledger",
+            }
         return {
             "offer": self._sqlite_offer_payload(sold_offer),
             "buyer_id": int(buyer_id),
@@ -1429,8 +1690,10 @@ class RebirthRepository:
             "fee": fee,
             "seller_net": seller_net,
             "currency_type": currency_type,
-            "buyer_balance": buyer_balance - price,
-            "seller_balance": seller_balance + seller_net,
+            "buyer_balance": buyer_wallet[currency_type],
+            "seller_balance": seller_wallet[currency_type],
+            "buyer_wallet": buyer_wallet,
+            "seller_wallet": seller_wallet,
         }
 
     def add_cards(self, user_id, cards):
@@ -1573,6 +1836,7 @@ class RebirthRepository:
             return None
         xp = int(row["xp"])
         level = calculate_level(xp)
+        wallet = self.wallet_payload(user_id)
         return {
             "level": level,
             "xp": xp,
@@ -1584,8 +1848,10 @@ class RebirthRepository:
             "tutorial_step": int(row["tutorial_step"]),
             "tutorial_complete": bool(row["tutorial_complete"]),
             "daily_claimed": daily_claimed,
-            "gold": int(row["gold"] or 0) if "gold" in row.keys() else 0,
-            "premium": int(row["premium"] or 0) if "premium" in row.keys() else 0,
+            "gold": wallet["GOLD"],
+            "coinz": wallet["COINZ"],
+            "premium": wallet["COINZ"],
+            "wallet": wallet,
         }
 
     def record_clash_result(self, user_id, public_match_state):
@@ -1915,6 +2181,7 @@ class RebirthRepository:
         return {
             "user": self.get_user(user_id),
             "progression": self.progression(user_id),
+            "wallet": self.wallet_payload(user_id),
             "collection": dict(self.collection_counts(user_id)),
             "loadout": self.loadout_card_ids(user_id),
             "achievements": self.achievements(user_id),
@@ -1933,6 +2200,7 @@ class RebirthRepository:
             db.execute("DELETE FROM booster_history WHERE user_id = ?", (user_id,))
             db.execute("DELETE FROM user_achievements WHERE user_id = ?", (user_id,))
             db.execute("DELETE FROM economy_ledger WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM wallet_ledger WHERE user_id = ?", (user_id,))
             db.execute("DELETE FROM match_history WHERE user_id = ?", (user_id,))
             db.execute("DELETE FROM user_progress WHERE user_id = ?", (user_id,))
             self._seed_user_state(db, user_id, now)
@@ -1963,6 +2231,29 @@ class RebirthRepository:
                     metadata={"actor": actor},
                     now=now,
                 )
+            elif resource.upper() in {"GOLD", "COINZ", "COINS", "PREMIUM", "GEMS"}:
+                currency = normalize_wallet_currency(resource)
+                self._record_wallet_entry(
+                    db,
+                    user_id,
+                    currency=currency,
+                    entry_type="CREDIT" if amount >= 0 else "DEBIT",
+                    amount=abs(amount),
+                    source="MATCH_REWARD",
+                    reference_id=str(actor),
+                    now=now,
+                )
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource=currency.lower(),
+                    delta=amount,
+                    reason=reason,
+                    reference_type="admin",
+                    reference_id=str(actor),
+                    metadata={"actor": actor, "currency": currency},
+                    now=now,
+                )
             elif resource == "card":
                 card = get_card(card_id)
                 db.execute(
@@ -1987,7 +2278,7 @@ class RebirthRepository:
                     now=now,
                 )
             else:
-                raise RebirthPersistenceError("Admin grant supports resource xp or card.", "invalid_admin_grant", 400)
+                raise RebirthPersistenceError("Admin grant supports resource xp, card, GOLD or COINZ.", "invalid_admin_grant", 400)
             db.execute(
                 """
                 INSERT INTO admin_audit_log (actor, action, user_id, metadata_json, created_at)

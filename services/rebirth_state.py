@@ -11,6 +11,7 @@ from services.rebirth_events import append_event, append_snapshot, ensure_event_
 
 STARTING_HP = 30
 HAND_SIZE = 5
+FIELD_SLOT_COUNT = 3
 
 
 class TurnPhase(Enum):
@@ -41,12 +42,32 @@ def create_player(name, owner, card_ids=None):
         "deck": build_deck(owner, card_ids=card_ids),
         "hand": [],
         "battlefield": [],
+        "field": [None for _ in range(FIELD_SLOT_COUNT)],
         "discard": [],
         "played_card": None,
         "traps": [],
         "statuses": {},
         "wounded": False,
     }
+
+
+def field_slots(side):
+    compact = [card for card in side.get("battlefield", []) if card]
+    raw_slots = side.get("field")
+    if not isinstance(raw_slots, list):
+        raw_slots = compact
+    slots = list(raw_slots[:FIELD_SLOT_COUNT])
+    slots.extend([None for _ in range(FIELD_SLOT_COUNT - len(slots))])
+    if compact and not any(slots):
+        slots = compact[:FIELD_SLOT_COUNT]
+        slots.extend([None for _ in range(FIELD_SLOT_COUNT - len(slots))])
+    side["field"] = slots
+    return slots
+
+
+def compact_battlefield(side):
+    side["battlefield"] = [card for card in field_slots(side) if card]
+    return side["battlefield"]
 
 
 def draw_card(player):
@@ -173,6 +194,8 @@ def clear_played_cards(match):
 
 
 def side_payload(side, *, reveal_hand=True):
+    field = deepcopy(field_slots(side))
+    battlefield = deepcopy(compact_battlefield(side))
     payload = {
         "name": side["name"],
         "hp": side["hp"],
@@ -182,7 +205,8 @@ def side_payload(side, *, reveal_hand=True):
         "deck_count": len(side["deck"]),
         "discard_count": len(side["discard"]),
         "played_card": deepcopy(side.get("played_card")),
-        "battlefield": deepcopy(side.get("battlefield", [])),
+        "battlefield": battlefield,
+        "field": field,
         "trap_count": len(side.get("traps", [])),
         "wounded": bool(side.get("wounded")),
         "statuses": deepcopy(side.get("statuses", {})),
