@@ -672,18 +672,23 @@
             const disabled = locked ? `disabled aria-disabled="true" title="${RebirthText.escape(lockedReason)}"` : "";
             const statuses = options && options.statuses ? options.statuses : null;
             const statusClass = RebirthStatus.className(statuses);
+            const ability = this.abilitySummary(card);
             return `
                 <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${RebirthStatus.miniBadge(statuses)}
+                    <span class="rb-card-image-layer rb-mini-art">
+                        ${RebirthAssets.imageMarkup(card)}
+                    </span>
                     <div class="rb-card-titlebar rb-mini-copy rb-card-hud-layer">
                         <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
                         <span>${RebirthText.escape(card.element)} - T${RebirthText.escape(card.tier)}</span>
                     </div>
-                    <span class="rb-card-image-layer rb-mini-art">
-                        ${RebirthAssets.imageMarkup(card)}
-                    </span>
+                    <div class="rb-card-textbox rb-mini-textbox rb-card-hud-layer">
+                        <strong>${RebirthText.escape(ability.name)}</strong>
+                        <p>${RebirthText.escape(ability.copy)}</p>
+                    </div>
                     <div class="rb-card-statline rb-mini-stats rb-card-hud-layer">
                         <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
                         <span class="rb-card-stat is-guard"><b>${RebirthText.escape(card.guard || 0)}</b><small>GUARD</small></span>
@@ -693,11 +698,19 @@
         },
 
         cardCost(card) {
+            if (!card) return 0;
             const type = String((card && (card.type || card.card_type)) || "MONSTER").toUpperCase();
             if (type === "MONSTER") {
                 return Math.max(1, Math.min(10, Number(card.cost || card.tier || 1)));
             }
             return Math.max(0, Number(card && card.cost || 0));
+        },
+
+        abilitySummary(card) {
+            return {
+                name: card && (card.ability_name || this.cardRole(card) || "Clash"),
+                copy: card && (card.ability_text || card.flavor || "Declare attacks, break Guard, and pressure HP.")
+            };
         },
 
         cardType(card) {
@@ -732,21 +745,27 @@
             const guardScale = Math.max(0, Math.min(1, guard / maxGuard));
             const exhausted = card.exhausted || card.has_attacked ? " is-exhausted" : "";
             const selectedClass = selected ? " is-selected" : "";
+            const attackingClass = side === "player" && selected ? " is-attacking" : "";
             const statusClass = RebirthStatus.className(statuses);
+            const ability = this.abilitySummary(card);
             const targetAttr = side === "bot"
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
+                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
+                    <span class="rb-card-image-layer rb-field-art">
+                        ${RebirthAssets.imageMarkup(card)}
+                    </span>
                     <span class="rb-card-titlebar rb-card-hud-layer">
                         <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
                         <small>${RebirthText.escape(card.element || card.family || "Void")} - T${RebirthText.escape(card.tier || 1)}</small>
                     </span>
-                    <span class="rb-card-image-layer rb-field-art">
-                        ${RebirthAssets.imageMarkup(card)}
+                    <span class="rb-card-textbox rb-field-textbox rb-card-hud-layer">
+                        <strong>${RebirthText.escape(ability.name)}</strong>
+                        <p>${RebirthText.escape(ability.copy)}</p>
                     </span>
                     <span class="rb-card-statline">
                         <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
@@ -1065,6 +1084,7 @@
                 board.dataset.phase = state.phase;
                 board.dataset.winner = state.winner || "";
                 board.dataset.botProfile = (state.bot_profile && state.bot_profile.id) || "defensive";
+                board.classList.toggle("is-choosing-attack", Boolean(RebirthStore.selectedAttackerId) && !state.is_finished && !RebirthStore.pending);
             }
             renderTurnPhase(state.turn_phase || state.phase);
             RebirthAssets.preloadState(state);

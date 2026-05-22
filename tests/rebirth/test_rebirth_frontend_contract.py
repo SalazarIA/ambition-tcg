@@ -100,10 +100,15 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         'data-bot-profile="aggressive"',
         "--rb-gold",
         "--rb-cyan",
-        "object-fit: contain",
+        "object-fit: cover",
         "background-size: contain",
         ".rb-card-image-layer img",
         ".rb-card-titlebar",
+        ".rb-card-textbox",
+        "backdrop-filter: blur(4px)",
+        "perspective: 1200px",
+        "drop-shadow(0px 15px 10px rgba(0, 0, 0, 0.75))",
+        ".rb-field-card.is-attacking",
         ".rb-hand .rb-mini-card.is-locked",
         "cursor: not-allowed",
         "bot-card-back.png",
@@ -116,7 +121,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v50" in service_worker
+    assert "ambitionz-rebirth-season0-v51" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -209,7 +214,8 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-050" in combined
+    assert "v=rebirth-051" in combined
+    assert "v=rebirth-050" not in combined
     assert "v=rebirth-047" not in combined
 
     for forbidden in [
