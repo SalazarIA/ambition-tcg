@@ -25,6 +25,10 @@ services:
         fromDatabase:
           name: ambition-tcg-db
           property: connectionString
+      - key: REBIRTH_DATABASE_URL
+        fromDatabase:
+          name: ambition-tcg-db
+          property: connectionString
 
 databases:
   - name: ambition-tcg-db
