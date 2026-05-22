@@ -12,6 +12,30 @@
             .replace(/'/g, "&#39;");
     }
 
+    function numberValue(value, fallback) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : Number(fallback || 0);
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function levelProgress(profile) {
+        const level = Math.max(1, numberValue(profile && profile.level, 1));
+        const xp = Math.max(0, numberValue(profile && profile.xp, 0));
+        const next = Math.max(1, numberValue(profile && profile.next_level_xp, level * 500));
+        const floor = Math.max(0, (level - 1) * 500);
+        const span = Math.max(1, next - floor);
+        return {
+            level: level,
+            xp: xp,
+            next: next,
+            floor: floor,
+            percent: Math.round(clamp(((xp - floor) / span) * 100, 0, 100))
+        };
+    }
+
     function postJson(url, payload) {
         return fetch(url, {
             method: "POST",
@@ -68,8 +92,10 @@
         return fetch(url, { credentials: "same-origin" }).then(function (response) {
             return response.json().then(function (body) {
                 if (!response.ok || !body.ok) {
-                    const error = body && body.error ? body.error.message : "Request failed.";
-                    throw new Error(error);
+                    const serverError = body && body.error ? body.error : {};
+                    const error = new Error(serverError.message || "Request failed.");
+                    error.code = serverError.code || "rebirth_error";
+                    throw error;
                 }
                 return body;
             });
@@ -145,18 +171,79 @@
 
     function marketOfferMarkup(offer) {
         const card = offer.card || {};
+        const currency = String(offer.currency_type || "COINZ").toUpperCase();
+        const currencyLabel = currency === "COINZ" ? "Coinz" : currency;
+        const source = cardArtSource(card);
         return [
-            '<article class="rb-product-card rb-market-offer" data-market-offer-id="' + escapeHtml(offer.id) + '">',
-            '<img src="' + escapeHtml(card.art || "") + '" alt="' + escapeHtml(card.name || offer.card_id) + ' art">',
-            "<div>",
-            "<span>" + escapeHtml(offer.currency_type) + " - " + escapeHtml(offer.seller_name || "Player") + "</span>",
+            '<article class="rb-product-card rb-market-offer is-currency-' + escapeHtml(slug(currency)) + '" data-market-offer-id="' + escapeHtml(offer.id) + '">',
+            '<div class="rb-market-art">',
+            '<img src="' + escapeHtml(source) + '" data-rebirth-unsplash-fallback="' + escapeHtml(fallbackArt(card)) + '" alt="' + escapeHtml(card.name || offer.card_id) + ' art">',
+            '<span>' + escapeHtml(currencyLabel) + " P2P</span>",
+            "</div>",
+            '<div class="rb-market-copy">',
+            "<span>" + escapeHtml(offer.seller_name || "Player") + " listing</span>",
             "<h2>" + escapeHtml(card.name || offer.card_id) + "</h2>",
             "<p>" + escapeHtml(card.role || "Market card") + "</p>",
-            "<strong>" + escapeHtml(offer.price) + " " + escapeHtml(offer.currency_type) + "</strong>",
-            '<button class="rb-button-secondary rb-secondary" type="button" data-rebirth-market-buy="' + escapeHtml(offer.id) + '">Buy</button>',
+            '<div class="rb-market-price"><span>Preco</span><strong>' + escapeHtml(offer.price) + " " + escapeHtml(currencyLabel) + "</strong></div>",
+            '<button class="rb-button-secondary rb-secondary" type="button" data-rebirth-market-buy="' + escapeHtml(offer.id) + '">Comprar</button>',
             "</div>",
             "</article>"
         ].join("");
+    }
+
+    function ledgerEntryMarkup(entry) {
+        const delta = numberValue(entry.delta, 0);
+        const positive = delta >= 0;
+        return [
+            '<article class="rb-ledger-entry ' + (positive ? "is-credit" : "is-debit") + '">',
+            "<span>" + escapeHtml(entry.resource || "ledger") + "</span>",
+            "<strong>" + (positive ? "+" : "") + escapeHtml(delta) + "</strong>",
+            "<p>" + escapeHtml(entry.reason || "movement") + "</p>",
+            "<small>" + escapeHtml(entry.reference_type || "system") + " " + escapeHtml(entry.reference_id || "") + "</small>",
+            "</article>"
+        ].join("");
+    }
+
+    function updateGlobalProgress(profile) {
+        const progress = levelProgress(profile);
+        const xpBox = document.querySelector(".rb-global-xp");
+        if (!xpBox) return;
+        const label = xpBox.querySelector("span");
+        const value = xpBox.querySelector("strong");
+        const fill = xpBox.querySelector("i b");
+        if (label) label.textContent = "Nivel " + progress.level;
+        if (value) value.textContent = progress.xp + "/" + progress.next + " XP";
+        if (fill) fill.style.width = progress.percent + "%";
+    }
+
+    function renderProgressDashboard(root, profile, ledger) {
+        if (!root || !profile) return;
+        const progress = levelProgress(profile);
+        const level = root.querySelector("[data-rebirth-level]");
+        const xp = root.querySelector("[data-rebirth-xp]");
+        const next = root.querySelector("[data-rebirth-next-xp]");
+        const percent = root.querySelector("[data-rebirth-xp-percent]");
+        const fill = root.querySelector("[data-rebirth-xp-fill]");
+        const wins = root.querySelector("[data-rebirth-wins]");
+        const clashes = root.querySelector("[data-rebirth-clashes]");
+        const boosters = root.querySelector("[data-rebirth-boosters]");
+        const ledgerList = root.querySelector("[data-rebirth-ledger-list]");
+        if (level) level.textContent = String(progress.level);
+        if (xp) xp.textContent = String(progress.xp);
+        if (next) next.textContent = String(progress.next);
+        if (percent) percent.textContent = progress.percent + "%";
+        if (fill) fill.style.width = progress.percent + "%";
+        if (wins) wins.textContent = String(numberValue(profile.wins, 0));
+        if (clashes) clashes.textContent = String(numberValue(profile.clashes, 0));
+        if (boosters) boosters.textContent = String(numberValue(profile.boosters_opened, 0));
+        if (ledgerList) {
+            if (ledger && ledger.length) {
+                ledgerList.innerHTML = ledger.slice(0, 6).map(ledgerEntryMarkup).join("");
+            } else {
+                ledgerList.innerHTML = '<article class="rb-ledger-entry"><span>Ledger</span><strong>0</strong><p>Nenhum movimento persistido ainda.</p><small>Jogue, compre ou abra booster para registrar.</small></article>';
+            }
+        }
+        updateGlobalProgress(profile);
     }
 
     function bindBooster() {
@@ -221,6 +308,7 @@
             getJson(endpoints.marketOffers)
                 .then(function (payload) {
                     renderOffers((payload.market && payload.market.offers) || []);
+                    bindImageFallbacks(list);
                 })
                 .catch(function (error) {
                     if (result) result.textContent = error.message;
@@ -238,15 +326,20 @@
                 .then(function (payload) {
                     const purchase = payload.market.purchase;
                     if (result) {
-                        result.textContent = "Bought " + purchase.offer.card.name + " for " + purchase.price + " " + purchase.currency_type + ".";
+                        const wallet = payload.wallet || {};
+                        result.textContent = "Comprado: " + purchase.offer.card.name + " por " + purchase.price + " " + purchase.currency_type + ". Carteira: Gold " + (wallet.GOLD == null ? "0" : wallet.GOLD) + " / Coinz " + (wallet.COINZ == null ? "0" : wallet.COINZ) + ".";
                     }
                     if (payload.wallet && window.RebirthGlobalAuth && typeof window.RebirthGlobalAuth.applyWallet === "function") {
                         window.RebirthGlobalAuth.applyWallet(payload.wallet);
                     }
                     renderOffers(payload.market.offers || []);
+                    bindImageFallbacks(list);
                 })
                 .catch(function (error) {
                     if (result) result.textContent = error.message;
+                    if (error.code === "auth_required" && window.RebirthGlobalAuth) {
+                        window.RebirthGlobalAuth.open("Entre para comprar no Player Market.");
+                    }
                 })
                 .finally(function () {
                     button.disabled = false;
@@ -254,6 +347,36 @@
         });
 
         refresh();
+    }
+
+    function bindProgressionDashboard() {
+        const roots = Array.from(document.querySelectorAll("[data-rebirth-progression-dashboard]"));
+        if (!roots.length || !endpoints.progression) {
+            return;
+        }
+        const result = document.querySelector("[data-rebirth-progression-result]");
+        const progressionPromise = getJson(endpoints.progression).then(function (payload) {
+            return payload.progression && payload.progression.profile ? payload.progression.profile : null;
+        });
+        const ledgerPromise = endpoints.ledger
+            ? getJson(endpoints.ledger + "?limit=6").then(function (payload) {
+                return payload.ledger || [];
+            }).catch(function (error) {
+                if (error.code === "auth_required") {
+                    return [];
+                }
+                throw error;
+            })
+            : Promise.resolve([]);
+        Promise.all([progressionPromise, ledgerPromise])
+            .then(function (values) {
+                roots.forEach(function (root) {
+                    renderProgressDashboard(root, values[0], values[1]);
+                });
+            })
+            .catch(function (error) {
+                if (result) result.textContent = error.message;
+            });
     }
 
     function bindLoadout() {
@@ -505,6 +628,12 @@
                     button.textContent = "Claimed";
                     button.dataset.dailyState = "claimed";
                     button.disabled = true;
+                    if (payload.claim && payload.claim.progression) {
+                        Array.from(document.querySelectorAll("[data-rebirth-progression-dashboard]")).forEach(function (root) {
+                            renderProgressDashboard(root, payload.claim.progression, null);
+                        });
+                    }
+                    bindProgressionDashboard();
                 })
                 .catch(function (error) {
                     result.textContent = error.message;
@@ -647,9 +776,11 @@
     window.initiateMobilePurchase = initiateMobilePurchase;
 
     document.addEventListener("DOMContentLoaded", function () {
+        bindImageFallbacks(document);
         bindPasswordChange();
         bindBooster();
         bindMarket();
+        bindProgressionDashboard();
         bindLoadout();
         bindDailyReward();
         bindTutorial();

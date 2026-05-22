@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-053">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-054">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     {% include "_rebirth_global_nav.html" %}
@@ -73,6 +73,39 @@
                 {% for stat in page.stats %}
                     <article><span>{{ stat.label }}</span><strong>{{ stat.value }}</strong></article>
                 {% endfor %}
+            </section>
+            {% set profile_progress = page.profile.progression %}
+            <section
+                class="rb-product-panel rb-product-wide rb-progress-vitrine"
+                data-rebirth-progression-dashboard
+                data-profile-level="{{ profile_progress.level }}"
+                data-profile-xp="{{ profile_progress.xp }}"
+                data-profile-next-xp="{{ profile_progress.next_level_xp }}"
+                aria-label="XP rewards and ledger"
+            >
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>XP + Ledger</span>
+                        <h2>Reward Momentum</h2>
+                    </div>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_progression') }}">Ver Recompensas</a>
+                </div>
+                <div class="rb-level-meter">
+                    <div class="rb-level-meter-copy">
+                        <span>Nivel <b data-rebirth-level>{{ profile_progress.level }}</b></span>
+                        <strong><b data-rebirth-xp>{{ profile_progress.xp }}</b>/<b data-rebirth-next-xp>{{ profile_progress.next_level_xp }}</b> XP</strong>
+                    </div>
+                    <div class="rb-level-bar" aria-label="Level progress"><i data-rebirth-xp-fill style="width: 0%"></i></div>
+                    <small><b data-rebirth-xp-percent>0%</b> da barra atual. Vitorias contra o bot alimentam esta trilha.</small>
+                </div>
+                <div class="rb-progress-mini-stats">
+                    <article><span>Wins</span><strong data-rebirth-wins>{{ profile_progress.wins }}</strong></article>
+                    <article><span>Clashes</span><strong data-rebirth-clashes>{{ profile_progress.clashes }}</strong></article>
+                    <article><span>Boosters</span><strong data-rebirth-boosters>{{ profile_progress.boosters_opened }}</strong></article>
+                </div>
+                <div class="rb-ledger-preview" data-rebirth-ledger-list aria-live="polite">
+                    <article class="rb-ledger-entry"><span>Ledger</span><strong>...</strong><p>Carregando movimentos persistidos.</p><small>economy_ledger</small></article>
+                </div>
             </section>
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Achievements">
                 {% for achievement in page.profile.achievements %}
@@ -330,16 +363,19 @@
                 <div class="rb-product-result" data-rebirth-market-result aria-live="polite">Market listings are live.</div>
                 <div class="rb-product-card-grid rb-product-card-grid-result" data-rebirth-market-offers>
                     {% for offer in page.market.offers %}
-                        <article class="rb-product-card rb-market-offer" data-market-offer-id="{{ offer.id }}">
-                            <img src="{{ offer.card.art }}" alt="{{ offer.card.name }} art">
-                            <div>
-                                <span>{{ offer.currency_type }} - {{ offer.seller_name or 'Player' }}</span>
+                        {% set offer_currency = 'Coinz' if offer.currency_type == 'COINZ' else offer.currency_type %}
+                        {% set offer_art = offer.card.art if offer.card.art_status != 'default_png_path' else 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80' %}
+                        <article class="rb-product-card rb-market-offer is-currency-{{ offer.currency_type|lower }}" data-market-offer-id="{{ offer.id }}">
+                            <div class="rb-market-art">
+                                <img src="{{ offer_art }}" data-rebirth-unsplash-fallback="https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80" alt="{{ offer.card.name }} art">
+                                <span>{{ offer_currency }} P2P</span>
+                            </div>
+                            <div class="rb-market-copy">
+                                <span>{{ offer.seller_name or 'Player' }} listing</span>
                                 <h2>{{ offer.card.name }}</h2>
                                 <p>{{ offer.card.role }}</p>
-                                <strong>{{ offer.price }} {{ offer.currency_type }}</strong>
-                                {% if page.account.authenticated %}
-                                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-market-buy="{{ offer.id }}">Buy</button>
-                                {% endif %}
+                                <div class="rb-market-price"><span>Preco</span><strong>{{ offer.price }} {{ offer_currency }}</strong></div>
+                                <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-market-buy="{{ offer.id }}">Comprar</button>
                             </div>
                         </article>
                     {% else %}
@@ -371,6 +407,38 @@
                 <article><span>XP</span><strong>{{ page.profile.xp }}/{{ page.profile.next_level_xp }}</strong></article>
                 <article><span>Wins</span><strong>{{ page.profile.wins }}</strong></article>
                 <article><span>Clashes</span><strong>{{ page.profile.clashes }}</strong></article>
+            </section>
+            <section
+                class="rb-product-panel rb-product-wide rb-progress-vitrine"
+                data-rebirth-progression-dashboard
+                data-profile-level="{{ page.profile.level }}"
+                data-profile-xp="{{ page.profile.xp }}"
+                data-profile-next-xp="{{ page.profile.next_level_xp }}"
+                aria-label="Reward progress"
+            >
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Season 0 XP</span>
+                        <h2>Level Progress</h2>
+                    </div>
+                    <a class="rb-secondary" href="{{ url_for('rebirth') }}">Jogar agora</a>
+                </div>
+                <div class="rb-level-meter">
+                    <div class="rb-level-meter-copy">
+                        <span>Nivel <b data-rebirth-level>{{ page.profile.level }}</b></span>
+                        <strong><b data-rebirth-xp>{{ page.profile.xp }}</b>/<b data-rebirth-next-xp>{{ page.profile.next_level_xp }}</b> XP</strong>
+                    </div>
+                    <div class="rb-level-bar" aria-label="Level progress"><i data-rebirth-xp-fill style="width: 0%"></i></div>
+                    <small><b data-rebirth-xp-percent>0%</b> preenchido com XP de partidas, boosters e recompensas.</small>
+                </div>
+                <div class="rb-progress-mini-stats">
+                    <article><span>Wins</span><strong data-rebirth-wins>{{ page.profile.wins }}</strong></article>
+                    <article><span>Clashes</span><strong data-rebirth-clashes>{{ page.profile.clashes }}</strong></article>
+                    <article><span>Boosters</span><strong data-rebirth-boosters>{{ page.profile.boosters_opened }}</strong></article>
+                </div>
+                <div class="rb-ledger-preview" data-rebirth-ledger-list aria-live="polite">
+                    <article class="rb-ledger-entry"><span>Ledger</span><strong>...</strong><p>Carregando recompensas gravadas.</p><small>economy_ledger</small></article>
+                </div>
             </section>
             <section class="rb-product-panel rb-product-wide" aria-label="Reward track">
                 <h2>Reward Track</h2>
@@ -534,6 +602,7 @@
             claimDaily: "{{ url_for('api_rebirth_progression_claim_daily') }}",
             completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}",
             balance: "{{ url_for('api_rebirth_balance_simulate') }}",
+            progression: "{{ url_for('api_rebirth_progression') }}",
             profile: "{{ url_for('api_rebirth_profile') }}",
             history: "{{ url_for('api_rebirth_match_history') }}",
             ledger: "{{ url_for('api_rebirth_economy_ledger') }}",
@@ -553,8 +622,8 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-053"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-053"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-053"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-054"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-054"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-054"></script>
 </body>
 </html>

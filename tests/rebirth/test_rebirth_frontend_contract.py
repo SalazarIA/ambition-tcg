@@ -130,7 +130,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v53" in service_worker
+    assert "ambitionz-rebirth-season0-v54" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -212,7 +212,15 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert "history.pushState" not in product_js
     assert 'fetch(url, { credentials: "same-origin" })' in product_js
     assert "initiateMobilePurchase" in product_js
+    assert "bindProgressionDashboard" in product_js
+    assert "data-rebirth-ledger-list" in product_js
+    assert "is-currency-" in product_js
+    assert "applyWallet(payload.wallet)" in product_js
     assert "verifyReceipt" in read("templates/rebirth_product.html")
+    assert 'progression: "{{ url_for(' in read("templates/rebirth_product.html")
+    assert "data-rebirth-progression-dashboard" in read("templates/rebirth_product.html")
+    assert "data-rebirth-xp-fill" in read("templates/rebirth_product.html")
+    assert "data-rebirth-ledger-list" in read("templates/rebirth_product.html")
     assert "data-rebirth-card-option" in read("templates/rebirth_product.html")
     assert "data-rebirth-loadout-summary" in read("templates/rebirth_product.html")
     assert "data-rebirth-balance-details" in read("templates/rebirth_product.html")
@@ -229,7 +237,8 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-053" in combined
+    assert "v=rebirth-054" in combined
+    assert "v=rebirth-053" not in combined
     assert "v=rebirth-051" not in combined
     assert "v=rebirth-050" not in combined
     assert "v=rebirth-047" not in combined

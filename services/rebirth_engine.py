@@ -696,12 +696,41 @@ def _bot_auto_summon(match):
     if not affordable:
         return None
     profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
-    if profile_id == "aggressive":
-        chosen = sorted(affordable, key=lambda card: (card_attack(card), ability_priority(card), card_guard(card), card["name"]))[-1]
-    elif profile_id == "opportunist":
-        chosen = sorted(affordable, key=lambda card: (ability_priority(card), card_attack(card), card_guard(card), card["name"]))[-1]
-    else:
-        chosen = sorted(affordable, key=lambda card: (card_guard(card), card_attack(card), ability_priority(card), card["name"]))[-1]
+    player_card = match["player"].get("played_card") or (compact_battlefield(match["player"])[0] if compact_battlefield(match["player"]) else None)
+    chosen = None
+    if player_card:
+        decision = choose_response(
+            affordable,
+            player_card,
+            profile_id=profile_id,
+            turn=match.get("turn", 1),
+            player_wounded=match["player"].get("wounded", False),
+            bot_wounded=match["bot"].get("wounded", False),
+            match_id=match.get("match_id"),
+        )
+        if decision:
+            chosen = next((card for card in affordable if card.get("instance_id") == decision.get("instance_id")), None)
+            if chosen is None:
+                chosen = next((card for card in affordable if card.get("id") == decision.get("id")), None)
+    if chosen is None:
+        if profile_id == "aggressive":
+            chosen = sorted(affordable, key=lambda card: (card_attack(card), ability_priority(card), card_guard(card), card["name"]))[-1]
+        elif profile_id == "opportunist":
+            chosen = sorted(affordable, key=lambda card: (ability_priority(card), card_attack(card), card_guard(card), card["name"]))[-1]
+        else:
+            chosen = sorted(affordable, key=lambda card: (card_guard(card), card_attack(card), ability_priority(card), card["name"]))[-1]
+    append_event(
+        match,
+        "BOT_DECISION",
+        actor="bot",
+        payload={
+            "profile_id": profile_id,
+            "card_id": chosen["id"],
+            "instance_id": chosen["instance_id"],
+            "response_to": player_card.get("id") if player_card else None,
+        },
+        message=f"Bot brain selected {chosen['name']}.",
+    )
     bot_card = remove_from_hand(match["bot"], card_instance_id=chosen["instance_id"])
     return _summon_monster_card(match, "bot", bot_card)
 

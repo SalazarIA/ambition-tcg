@@ -33,6 +33,12 @@ def test_rebirth_product_pages_render_active_shell(client):
         assert label in body
         assert "rebirth_product.js" in body
         assert "Socket.IO" not in body
+        if path in {"/rebirth/profile", "/rebirth/progression"}:
+            assert "data-rebirth-progression-dashboard" in body
+            assert "data-rebirth-ledger-list" in body
+        if path == "/rebirth/shop":
+            assert "Player Market" in body
+            assert "data-rebirth-market-offers" in body
 
 
 def test_rebirth_product_api_contracts_are_rebirth_native(client):

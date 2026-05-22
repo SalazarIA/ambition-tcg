@@ -1240,6 +1240,7 @@ class RebirthRepository:
             metadata={"currency_type": "GOLD"},
             now=now,
         )
+        self._record_economy_transaction(db, user_id, "STARTER_WALLET", 1000, "GOLD", f"starter:{user_id}", now)
         self._unlock_achievements(db, user_id, ["founder"], now)
 
     def _record_ledger_entry(
@@ -1784,6 +1785,15 @@ class RebirthRepository:
                 metadata={"seed": str(seed or ""), "cards": [card["id"] for card in cards]},
                 now=now,
             )
+            self._record_economy_transaction(
+                db,
+                user_id,
+                "BOOSTER_OPENED",
+                40,
+                "XP",
+                booster.get("booster_id", "starter_booster_demo"),
+                now,
+            )
             self._unlock_achievements(db, user_id, ["first_booster"], now)
 
     def booster_history(self, user_id, limit=5):
@@ -1892,6 +1902,7 @@ class RebirthRepository:
                 },
                 now=now,
             )
+            self._record_economy_transaction(db, user_id, "MATCH_CLASH", xp_delta, "XP", public_match_state.get("match_id"), now)
             unlocked = ["first_clash"]
             if win_delta:
                 unlocked.append("first_win")
