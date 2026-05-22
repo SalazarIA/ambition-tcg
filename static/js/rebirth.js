@@ -487,7 +487,11 @@
         },
 
         preloadCard(card) {
-            this.preloadUrl(this.cardImageUrl(card));
+            const cardImage = this.cardImageUrl(card);
+            if (cardImage) {
+                this.preloadUrl(cardImage);
+                return;
+            }
             this.preloadUrl(this.temporaryArtUrl(card));
         },
 
@@ -528,7 +532,7 @@
             if (cardImage) {
                 layers.push(`url('${RebirthText.escape(cardImage)}')`);
             }
-            const temporary = this.temporaryArtUrl(card);
+            const temporary = cardImage ? "" : this.temporaryArtUrl(card);
             if (temporary) {
                 layers.push(`url('${RebirthText.escape(temporary)}')`);
             }

@@ -54,4 +54,5 @@ reports/qa/qa_run_*.md
 reports/qa/screenshots/
 reports/qa/local_server_browser_qa.log
 reports/prod_arena_browser_audit_*
+static/img/debug/
 # Local Python/runtime artifacts

@@ -177,6 +177,8 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "scrollRestoration",
     ]:
         assert token in js
+    assert "const cardImage = this.cardImageUrl(card);" in js
+    assert 'const temporary = cardImage ? "" : this.temporaryArtUrl(card);' in js
 
     product_js = read("static/js/rebirth_product.js")
     assert "X-Rebirth-CSRF" in product_js

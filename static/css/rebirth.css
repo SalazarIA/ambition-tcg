@@ -1277,7 +1277,7 @@ button {
     height: 126px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.22);
-    background: #090b0e center / cover no-repeat;
+    background: #090b0e center / contain no-repeat;
     clip-path: var(--rb-cut);
 }
 
@@ -1426,7 +1426,7 @@ button {
 .rb-mini-art {
     position: relative;
     overflow: hidden;
-    background: #101317 center / cover no-repeat;
+    background: #101317 center / contain no-repeat;
 }
 
 .rb-mini-copy {
@@ -2350,7 +2350,7 @@ button {
 
 .rb-preview-card .rb-card-art {
     height: 330px;
-    background: #101317 center / cover no-repeat;
+    background: #101317 center / contain no-repeat;
 }
 
 .rb-preview-card .rb-card-body {

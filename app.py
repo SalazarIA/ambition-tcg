@@ -199,13 +199,46 @@ def run_async(coro):
 
 
 def persist_live_match_state_if_configured(match, user=None):
-    if not async_database_url():
+    if not async_database_url() or not user:
         return None
     state = public_state(match)
+    state["owner_user_id"] = int(user["id"])
+    state["player_id"] = int(user["id"])
+    try:
+        return run_async(save_match_state(match["match_id"], state))
+    except RebirthPersistenceError as error:
+        match.setdefault("persistence_warnings", []).append(
+            {"code": error.code, "message": str(error)}
+        )
+        return None
+
+
+def guest_wallet_payload():
+    return {"GOLD": 0, "COINZ": 0, "ledger_source": "wallet_ledger", "guest": True}
+
+
+def shop_data_for_user(user):
+    repo = rebirth_repo()
+    history = []
+    market = []
+    warnings = []
     if user:
-        state["owner_user_id"] = int(user["id"])
-        state["player_id"] = int(user["id"])
-    return run_async(save_match_state(match["match_id"], state))
+        try:
+            history = repo.booster_history(user["id"])
+        except RebirthPersistenceError as error:
+            warnings.append(
+                {"surface": "booster_history", "code": error.code, "message": str(error)}
+            )
+    try:
+        if async_database_url():
+            market = run_async(
+                async_active_market_offers(exclude_user_id=user["id"] if user else None)
+            )
+        else:
+            market = repo.market_offers(exclude_user_id=user["id"] if user else None)
+    except RebirthPersistenceError as error:
+        warnings.append({"surface": "market", "code": error.code, "message": str(error)})
+    return history, market, warnings
 
 
 def current_user():
@@ -399,16 +432,13 @@ def rebirth_collection():
 @app.get("/rebirth/shop")
 def rebirth_shop():
     user = current_user()
-    repo = rebirth_repo()
-    history = repo.booster_history(user["id"]) if user else []
-    market = (
-        run_async(async_active_market_offers(exclude_user_id=user["id"] if user else None))
-        if async_database_url()
-        else repo.market_offers(exclude_user_id=user["id"] if user else None)
-    )
+    history, market, warnings = shop_data_for_user(user)
+    page = shop_payload(account=account_payload(user), booster_history=history, market_offers=market)
+    if warnings:
+        page["warnings"] = warnings
     return render_template(
         "rebirth_product.html",
-        page=shop_payload(account=account_payload(user), booster_history=history, market_offers=market),
+        page=page,
     )
 
 
@@ -661,7 +691,7 @@ def api_rebirth_auth_plan():
 @app.get("/api/rebirth/session")
 def api_rebirth_session():
     user = current_user()
-    wallet = rebirth_repo().wallet_payload(user["id"]) if user else {"GOLD": 0, "COINZ": 0, "ledger_source": "wallet_ledger"}
+    wallet = rebirth_repo().wallet_payload(user["id"]) if user else guest_wallet_payload()
     return json_payload(account=account_payload(user), wallet=wallet, **csrf_payload())
 
 
@@ -673,7 +703,9 @@ def api_rebirth_csrf():
 @app.get("/api/rebirth/wallet")
 def api_rebirth_wallet():
     try:
-        user = require_user()
+        user = current_user()
+        if not user:
+            return json_payload(wallet=guest_wallet_payload())
         return json_payload(wallet=rebirth_repo().wallet_payload(user["id"]))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -765,14 +797,11 @@ def api_rebirth_loadout():
 @app.get("/api/rebirth/shop")
 def api_rebirth_shop():
     user = current_user()
-    repo = rebirth_repo()
-    history = repo.booster_history(user["id"]) if user else []
-    market = (
-        run_async(async_active_market_offers(exclude_user_id=user["id"] if user else None))
-        if async_database_url()
-        else repo.market_offers(exclude_user_id=user["id"] if user else None)
-    )
-    return json_payload(shop=shop_payload(account=account_payload(user), booster_history=history, market_offers=market))
+    history, market, warnings = shop_data_for_user(user)
+    shop = shop_payload(account=account_payload(user), booster_history=history, market_offers=market)
+    if warnings:
+        shop["warnings"] = warnings
+    return json_payload(shop=shop)
 
 
 @app.get("/api/rebirth/market/offers")
