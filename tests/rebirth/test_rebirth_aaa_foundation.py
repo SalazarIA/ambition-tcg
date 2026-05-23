@@ -30,8 +30,8 @@ def test_effect_stack_applies_lifo_status_effects():
 
     events = stack.resolve_stack(match)
 
-    assert "gains a 3-point shield" in events[0]
-    assert "affected by burn" in events[1]
+    assert "escudo de 3 pontos" in events[0]
+    assert "afetado por queimadura" in events[1]
     assert match["player"]["statuses"]["shield"]["potency"] == 3
     assert match["bot"]["statuses"]["burn"]["potency"] == 2
 
@@ -40,7 +40,7 @@ def test_effect_stack_applies_lifo_status_effects():
     tick_events = tick_stack.resolve_stack(match)
 
     assert match["bot"]["hp"] == 28
-    assert "burn damage" in tick_events[0]
+    assert "dano de queimadura" in tick_events[0]
 
 
 def test_turn_phase_blocks_card_play_outside_main_phase():

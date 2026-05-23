@@ -12,8 +12,8 @@ TURN_ONE_TEST_CARD_IDS = {"card_001", "card_002", "card_021", "card_041", "card_
 
 FAMILY_CONFIGS = {
     "FIRE": {
-        "element": "Fire",
-        "role": "Direct damage / burn",
+        "element": "Fogo",
+        "role": "Dano direto / queimadura",
         "palette": ["#ff5b35", "#ffb347", "#2a0f0b"],
         "base_start": 1,
         "evolved_start": 11,
@@ -42,15 +42,15 @@ FAMILY_CONFIGS = {
             "Volcanic Avatar",
         ],
         "abilities": [
-            ("fire_direct", "Direct Spark", "Deals extra pressure when it wins combat."),
-            ("fire_burn", "Burn Brand", "Applies burn after a winning combat."),
-            ("fire_surge", "Heat Surge", "Gains early combat attack."),
-            ("fire_execute", "Cinder Execute", "Punishes wounded targets."),
+            ("fire_direct", "Faísca Direta", "Causa pressão adicional quando vence o combate."),
+            ("fire_burn", "Marca Ardente", "Aplica queimadura após vencer o combate."),
+            ("fire_surge", "Surto de Calor", "Ganha ataque nos primeiros combates."),
+            ("fire_execute", "Execução de Cinzas", "Pune alvos feridos."),
         ],
     },
     "WATER": {
-        "element": "Water",
-        "role": "Healing / cleanse",
+        "element": "Água",
+        "role": "Cura / purificação",
         "palette": ["#37c7ff", "#b8fff6", "#092033"],
         "base_start": 21,
         "evolved_start": 31,
@@ -79,15 +79,15 @@ FAMILY_CONFIGS = {
             "Riptide Grandmaster",
         ],
         "abilities": [
-            ("water_heal", "Healing Tide", "Restores HP after combat pressure."),
-            ("water_cleanse", "Cleanse Current", "Clears one harmful status after combat."),
-            ("water_tide", "Rising Tide", "Improves combat attack after turn two."),
-            ("water_guard", "Flowing Guard", "Reduces incoming combat damage."),
+            ("water_heal", "Maré Curativa", "Recupera PV após a pressão do combate."),
+            ("water_cleanse", "Corrente Purificadora", "Remove um efeito nocivo após o combate."),
+            ("water_tide", "Maré Crescente", "Melhora o ataque em combate após o segundo turno."),
+            ("water_guard", "Guarda Fluida", "Reduz o dano recebido em combate."),
         ],
     },
     "EARTH": {
-        "element": "Earth",
-        "role": "Shield / defense",
+        "element": "Terra",
+        "role": "Escudo / defesa",
         "palette": ["#8bd05f", "#f0e2a0", "#17220d"],
         "base_start": 41,
         "evolved_start": 51,
@@ -116,15 +116,15 @@ FAMILY_CONFIGS = {
             "Boulderwake Primordial",
         ],
         "abilities": [
-            ("earth_shield", "Shield Bloom", "Adds a persistent shield after combat."),
-            ("earth_fortify", "Fortify", "Turns guard into extra combat value."),
-            ("earth_counter", "Stone Counter", "Counters low-attack enemies."),
-            ("earth_bulwark", "Bulwark", "Heavily reduces incoming combat damage."),
+            ("earth_shield", "Florescer do Escudo", "Adiciona um escudo persistente após o combate."),
+            ("earth_fortify", "Fortificar", "Transforma guarda em valor extra de combate."),
+            ("earth_counter", "Contra-Golpe de Pedra", "Contra-ataca inimigos de baixo ataque."),
+            ("earth_bulwark", "Baluarte", "Reduz fortemente o dano recebido em combate."),
         ],
     },
     "SHADOW": {
-        "element": "Shadow",
-        "role": "Persistent statuses / lifesteal",
+        "element": "Sombra",
+        "role": "Efeitos persistentes / roubo de vida",
         "palette": ["#9b5cff", "#221437", "#f2d9ff"],
         "base_start": 61,
         "evolved_start": 71,
@@ -153,40 +153,40 @@ FAMILY_CONFIGS = {
             "Eclipse Avatar",
         ],
         "abilities": [
-            ("shadow_lifesteal", "Lifesteal", "Heals its controller after dealing damage."),
-            ("shadow_decay", "Decay", "Applies persistent decay to the target."),
-            ("shadow_mark", "Wound Mark", "Wins ties against wounded enemies."),
-            ("shadow_drain", "Soul Drain", "Steals HP through the effect stack."),
+            ("shadow_lifesteal", "Roubo de Vida", "Cura seu controlador após causar dano."),
+            ("shadow_decay", "Deterioração", "Aplica deterioração persistente ao alvo."),
+            ("shadow_mark", "Marca da Ferida", "Vence empates contra inimigos feridos."),
+            ("shadow_drain", "Drenagem de Alma", "Rouba PV através da pilha de efeitos."),
         ],
     },
 }
 
 
 SPELL_DEFINITIONS = [
-    ("DrawTwoCards", "Arcane Refill", "Draw two cards.", [{"type": "draw", "target": "self", "amount": 2}], 2),
-    ("CleanseAll", "Tidal Cleanse", "Remove all harmful statuses from your side.", [{"type": "cleanse", "target": "self", "mode": "all"}], 2),
-    ("DestroyShield", "Shardbreaker Hex", "Destroy the opponent shield.", [{"type": "destroy_shield", "target": "opponent"}], 1),
-    ("Fireball", "Arena Fireball", "Deal direct damage to the opponent.", [{"type": "damage", "target": "opponent", "amount": 3}], 2),
-    ("HealingRain", "Healing Rain", "Restore HP to your side.", [{"type": "heal", "target": "self", "amount": 4}], 2),
-    ("Fortify", "Runic Fortify", "Gain a shield.", [{"type": "shield", "target": "self", "amount": 3, "turns": 2}], 1),
-    ("BurningEdict", "Burning Edict", "Apply burn to the opponent.", [{"type": "status", "target": "opponent", "status": "burn", "potency": 1, "turns": 2}], 2),
-    ("TidalRenewal", "Tidal Renewal", "Cleanse and heal yourself.", [{"type": "cleanse", "target": "self", "mode": "all"}, {"type": "heal", "target": "self", "amount": 2}], 3),
-    ("StoneSkin", "Stone Skin", "Gain a stronger shield.", [{"type": "shield", "target": "self", "amount": 5, "turns": 1}], 3),
-    ("ShadowDrain", "Shadow Drain", "Damage the opponent and heal yourself.", [{"type": "damage", "target": "opponent", "amount": 2}, {"type": "heal", "target": "self", "amount": 2}], 3),
+    ("DrawTwoCards", "Recarga Arcana", "Compre duas cartas.", [{"type": "draw", "target": "self", "amount": 2}], 2),
+    ("CleanseAll", "Purificação das Marés", "Remova todos os efeitos nocivos do seu lado.", [{"type": "cleanse", "target": "self", "mode": "all"}], 2),
+    ("DestroyShield", "Hex do Quebra-Escudo", "Destrua o escudo do oponente.", [{"type": "destroy_shield", "target": "opponent"}], 1),
+    ("Fireball", "Bola de Fogo da Arena", "Cause dano direto ao oponente.", [{"type": "damage", "target": "opponent", "amount": 3}], 2),
+    ("HealingRain", "Chuva Curativa", "Recupere PV do seu lado.", [{"type": "heal", "target": "self", "amount": 4}], 2),
+    ("Fortify", "Fortificação Rúnica", "Ganhe um escudo.", [{"type": "shield", "target": "self", "amount": 3, "turns": 2}], 1),
+    ("BurningEdict", "Édito Ardente", "Aplique queimadura ao oponente.", [{"type": "status", "target": "opponent", "status": "burn", "potency": 1, "turns": 2}], 2),
+    ("TidalRenewal", "Renovação das Marés", "Purifique e cure seu lado.", [{"type": "cleanse", "target": "self", "mode": "all"}, {"type": "heal", "target": "self", "amount": 2}], 3),
+    ("StoneSkin", "Pele de Pedra", "Ganhe um escudo mais forte.", [{"type": "shield", "target": "self", "amount": 5, "turns": 1}], 3),
+    ("ShadowDrain", "Drenagem Sombria", "Cause dano ao oponente e cure seu lado.", [{"type": "damage", "target": "opponent", "amount": 2}, {"type": "heal", "target": "self", "amount": 2}], 3),
 ]
 
 
 TRAP_DEFINITIONS = [
-    ("NegateAttack", "Null Sigil", "Negate the next combat attack.", "opponent_attacks", "negate_attack", 2),
-    ("ReflectDamage", "Mirror Thorns", "Reflect damage during combat.", "opponent_attacks", "reflect_damage", 2),
-    ("BurnAttacker", "Ash Snare", "Burn the attacker.", "opponent_attacks", "burn_attacker", 1),
-    ("EmergencyShield", "Last Wall", "Raise a shield before combat damage.", "owner_attacked", "shield_owner", 1),
-    ("CleanseAmbush", "Pure Reversal", "Cleanse statuses before combat.", "owner_attacked", "cleanse_owner", 1),
-    ("FreezeStrike", "Frost Lock", "Freeze the attacker.", "opponent_attacks", "freeze_attacker", 2),
-    ("DrainCounter", "Night Toll", "Drain HP when attacked.", "owner_attacked", "drain_attacker", 2),
-    ("GuardBreakTrap", "Fault Line", "Destroy shields before combat.", "opponent_attacks", "destroy_shield", 1),
-    ("SecondWind", "Hidden Spring", "Heal when pressured.", "owner_attacked", "heal_owner", 1),
-    ("StunRune", "Stun Rune", "Lower the attacker's combat power.", "opponent_attacks", "weaken_attacker", 2),
+    ("NegateAttack", "Sigilo Nulo", "Negue o próximo ataque em combate.", "opponent_attacks", "negate_attack", 2),
+    ("ReflectDamage", "Espinhos Espelhados", "Reflita dano durante o combate.", "opponent_attacks", "reflect_damage", 2),
+    ("BurnAttacker", "Laço de Cinzas", "Queime o atacante.", "opponent_attacks", "burn_attacker", 1),
+    ("EmergencyShield", "Última Muralha", "Erga um escudo antes do dano de combate.", "owner_attacked", "shield_owner", 1),
+    ("CleanseAmbush", "Reversão Pura", "Purifique efeitos antes do combate.", "owner_attacked", "cleanse_owner", 1),
+    ("FreezeStrike", "Trava de Gelo", "Congele o atacante.", "opponent_attacks", "freeze_attacker", 2),
+    ("DrainCounter", "Tributo Noturno", "Drene PV quando for atacado.", "owner_attacked", "drain_attacker", 2),
+    ("GuardBreakTrap", "Linha de Falha", "Destrua escudos antes do combate.", "opponent_attacks", "destroy_shield", 1),
+    ("SecondWind", "Fonte Oculta", "Cure-se sob pressão.", "owner_attacked", "heal_owner", 1),
+    ("StunRune", "Runa Atordoante", "Reduza o poder de combate do atacante.", "opponent_attacks", "weaken_attacker", 2),
 ]
 
 
@@ -256,7 +256,7 @@ def _monster_card(card_number, *, family, name, tier, slot):
         "ability_key": ability_key,
         "ability_name": ability_name,
         "ability_text": ability_text,
-        "flavor": f"{name} carries the {family.lower()} line into the living arena.",
+        "flavor": f"{name} conduz a linhagem de {config['element'].lower()} à arena viva.",
         "status_affinity": family.lower(),
     }
     card.update(_art_payload(card_id, family, config["palette"]))
@@ -273,14 +273,14 @@ def _spell_card(offset, definition):
         "type": "SPELL",
         "card_type": "SPELL",
         "family": "SPELL",
-        "role": "Instant stack effect",
+        "role": "Efeito instantâneo de pilha",
         "tier": 1,
         "rarity": "UNCOMMON",
         "cost": min(2, cost),
         "attack": 0,
         "power": 0,
         "guard": 0,
-        "element": "Arcane",
+        "element": "Arcano",
         "evolution_id": None,
         "ability_key": f"spell_{action.lower()}",
         "ability_name": action,
@@ -303,14 +303,14 @@ def _trap_card(offset, definition):
         "type": "TRAP",
         "card_type": "TRAP",
         "family": "TRAP",
-        "role": "Hidden combat trigger",
+        "role": "Gatilho oculto de combate",
         "tier": 1,
         "rarity": "UNCOMMON",
         "cost": min(2, cost),
         "attack": 0,
         "power": 0,
         "guard": 0,
-        "element": "Hidden",
+        "element": "Oculto",
         "evolution_id": None,
         "ability_key": f"trap_{action.lower()}",
         "ability_name": action,
@@ -451,21 +451,21 @@ def cards_by_type(card_ids):
     for card_id in card_ids:
         ctype = card_type(card_id)
         if ctype not in counts:
-            raise ValueError(f"{card_id} is not a supported Rebirth card type.")
+            raise ValueError(f"{card_id} não é um tipo de carta Rebirth suportado.")
         counts[ctype] += 1
     return counts
 
 
 def validate_deck_distribution(card_ids, *, deck_size=STARTER_DECK_SIZE):
     if not isinstance(card_ids, list):
-        raise ValueError("Deck card_ids must be a list.")
+        raise ValueError("Os identificadores de cartas do baralho devem ser uma lista.")
     if len(card_ids) != deck_size:
         raise ValueError(f"Rebirth deck requires exactly {deck_size} cards.")
     counts = cards_by_type(card_ids)
     if not MONSTER_DECK_MIN <= counts["MONSTER"] <= MONSTER_DECK_MAX:
         raise ValueError("Rebirth deck requires between 18 and 22 monsters.")
     if abs(counts["SPELL"] - counts["TRAP"]) > 1:
-        raise ValueError("Rebirth deck spells and traps must be balanced.")
+        raise ValueError("Magias e armadilhas do baralho Rebirth devem estar equilibradas.")
     return counts
 
 

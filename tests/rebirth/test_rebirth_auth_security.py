@@ -42,7 +42,7 @@ def test_rebirth_password_change_updates_credentials(client):
         json={"current_password": "password123", "new_password": "new-password-123"},
     )
     assert changed.status_code == 200
-    assert changed.get_json()["message"] == "Password updated."
+    assert changed.get_json()["message"] == "Senha atualizada."
 
     client.post("/api/rebirth/auth/logout", json={})
     old_login = client.post("/api/rebirth/auth/login", json={"email": "secure@example.com", "password": "password123"})

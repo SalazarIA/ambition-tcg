@@ -23,7 +23,7 @@ class ReceiptPayload(BaseModel):
     def validate_platform(cls, value):
         normalized = str(value or "").strip().lower()
         if normalized not in {"ios", "app_store", "google_play", "android"}:
-            raise ValueError("platform must be ios/app_store/google_play/android")
+            raise ValueError("A plataforma deve ser ios/app_store/google_play/android.")
         return "ios" if normalized in {"ios", "app_store"} else "google_play"
 
 
@@ -31,7 +31,7 @@ async def verify_mobile_receipt(payload: Dict) -> Dict:
     try:
         receipt = ReceiptPayload.model_validate(payload or {})
     except ValidationError as exc:
-        raise RebirthError("Invalid mobile receipt payload.", "invalid_receipt", status=400) from exc
+        raise RebirthError("Comprovante móvel inválido.", "invalid_receipt", status=400) from exc
 
     if receipt.receipt.strip().lower().startswith("invalid"):
         raise RebirthError("Receipt was rejected by the platform validator.", "receipt_rejected", status=402)

@@ -22,6 +22,11 @@ def summon_and_attack(client, state, card=None):
     )
     assert summoned.status_code == 200
     after_summon = summoned.get_json()["state"]
+    if not after_summon["bot"]["battlefield"]:
+        after_summon = client.post(
+            "/api/rebirth/next-turn",
+            json={"match_id": after_summon["match_id"]},
+        ).get_json()["state"]
     attack_payload = {
         "match_id": after_summon["match_id"],
         "attacker_instance_id": after_summon["player"]["battlefield"][-1]["instance_id"],
@@ -210,7 +215,7 @@ def test_match_progression_daily_reward_and_tutorial_are_persisted(client):
     assert reward["persisted"] is True
     assert reward["xp"] >= 25
     assert reward["daily"]["ready"] is True
-    assert {"key": "first_clash", "name": "First Clash"} in reward["achievements"]
+    assert {"key": "first_clash", "name": "Primeiro Clash"} in reward["achievements"]
 
     daily = client.post("/api/rebirth/progression/claim-daily", json={})
     tutorial = client.post("/api/rebirth/onboarding/complete", json={"step": 4})
@@ -260,7 +265,7 @@ def test_balance_simulation_is_capped_and_deterministic(client):
     assert response.status_code == 200
     assert payload["matches"] == 200
     assert payload["summary"]["average_turns"] > 0
-    assert payload["bot_tuning"]["policy"].startswith("rotate defensive")
+    assert payload["bot_tuning"]["policy"].startswith("alterna perfis defensivo")
     assert {item["profile_id"] for item in payload["profile_results"]} == {"defensive", "aggressive", "opportunist"}
     assert payload["card_stats"][0]["ability_key"]
     assert payload["ability_stats"][0]["plays"] > 0

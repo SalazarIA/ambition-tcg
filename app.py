@@ -120,9 +120,9 @@ def match_reward_payload(before, after, state):
             "xp_to_next": 500,
             "level_up": False,
             "achievements": [],
-            "daily": {"name": "Play one clash", "progress": 0, "goal": 1, "state": "locked", "ready": False},
-            "next_goal": "Abra Login / Registro no topo para guardar recompensas futuras.",
-            "message": "Partida concluida como visitante.",
+            "daily": {"name": "Jogue um clash", "progress": 0, "goal": 1, "state": "locked", "ready": False},
+            "next_goal": "Abra Login / Cadastro no topo para guardar recompensas futuras.",
+            "message": "Partida concluída como visitante.",
         }
 
     before = before or {}
@@ -133,9 +133,9 @@ def match_reward_payload(before, after, state):
     xp_delta = max(0, int(after.get("xp", 0) or 0) - before_xp)
     achievements = []
     if before_clashes == 0 and int(after.get("clashes", 0) or 0) >= 1:
-        achievements.append({"key": "first_clash", "name": "First Clash"})
+        achievements.append({"key": "first_clash", "name": "Primeiro Clash"})
     if before_wins == 0 and int(after.get("wins", 0) or 0) >= 1:
-        achievements.append({"key": "first_win", "name": "First Victory"})
+        achievements.append({"key": "first_win", "name": "Primeira Vitória"})
 
     level = int(after.get("level", 1) or 1)
     daily_progress = min(1, int(after.get("clashes", 0) or 0))
@@ -144,6 +144,7 @@ def match_reward_payload(before, after, state):
     next_xp = int(after.get("next_level_xp", level * 500) or level * 500)
     xp_to_next = max(0, next_xp - xp_total)
     outcome = ((state or {}).get("result") or {}).get("outcome") or ((state or {}).get("winner") or "Clash")
+    outcome_label = {"Victory": "Vitória", "Defeat": "Derrota", "Clash": "Clash"}.get(outcome, outcome)
     return {
         "persisted": True,
         "xp": xp_delta,
@@ -154,14 +155,14 @@ def match_reward_payload(before, after, state):
         "level_up": level > before_level,
         "achievements": achievements,
         "daily": {
-            "name": "Play one clash",
+            "name": "Jogue um clash",
             "progress": daily_progress,
             "goal": 1,
             "state": daily_state,
             "ready": daily_state == "ready",
         },
-        "next_goal": "Claim your daily reward." if daily_state == "ready" else "Open Cards to tune your loadout." if level >= 3 else "Play the next guided clash.",
-        "message": f"{outcome}: +{xp_delta} XP saved to your Rebirth account.",
+        "next_goal": "Resgate sua recompensa diária." if daily_state == "ready" else "Abra Cartas para ajustar seu baralho." if level >= 3 else "Jogue o próximo clash guiado.",
+        "message": f"{outcome_label}: +{xp_delta} XP salvos na sua conta Rebirth.",
     }
 
 
@@ -295,7 +296,7 @@ def rebirth_navbar_payload(user=None, progression=None):
 def require_user():
     user = current_user()
     if not user:
-        raise RebirthPersistenceError("Sign in to use persisted Rebirth ownership.", "auth_required", status=401)
+        raise RebirthPersistenceError("Entre para usar a coleção persistida do Rebirth.", "auth_required", status=401)
     return user
 
 
@@ -316,7 +317,7 @@ def enforce_auth_rate_limit(action, identifier="anonymous"):
             attempts.append(now)
         AUTH_RATE_LIMITS[key] = attempts
     if blocked:
-        raise RebirthPersistenceError("Too many auth attempts. Try again later.", "rate_limited", status=429)
+        raise RebirthPersistenceError("Muitas tentativas de acesso. Tente novamente mais tarde.", "rate_limited", status=429)
 
 
 def get_match(match_id):
@@ -326,7 +327,7 @@ def get_match(match_id):
 def ensure_match_access(match, user=None):
     owner_id = match.get("owner_user_id")
     if owner_id and (not user or int(user["id"]) != int(owner_id)):
-        raise RebirthError("This match belongs to another Rebirth account.", "match_forbidden", status=403)
+        raise RebirthError("Esta partida pertence a outra conta Rebirth.", "match_forbidden", status=403)
     return match
 
 
@@ -346,7 +347,7 @@ def start_memory_rebirth_match(payload):
     match = start_match(
         seed=requested_seed,
         player_card_ids=player_card_ids,
-        player_name="You",
+        player_name="Você",
         bot_profile_id=bot_profile_id,
     )
     match = MATCH_STORE.save(match)
@@ -358,9 +359,9 @@ def require_admin_token():
     expected = os.environ.get("REBIRTH_ADMIN_TOKEN") or app.config.get("REBIRTH_ADMIN_TOKEN")
     supplied = request.headers.get("X-Rebirth-Admin-Token")
     if not expected:
-        raise RebirthPersistenceError("Rebirth admin grants are disabled until REBIRTH_ADMIN_TOKEN is configured.", "admin_disabled", 403)
+        raise RebirthPersistenceError("Concessões administrativas estão desativadas até configurar REBIRTH_ADMIN_TOKEN.", "admin_disabled", 403)
     if not supplied or not secrets.compare_digest(str(expected), str(supplied)):
-        raise RebirthPersistenceError("Invalid Rebirth admin token.", "admin_forbidden", 403)
+        raise RebirthPersistenceError("Token administrativo Rebirth inválido.", "admin_forbidden", 403)
     return "rebirth-admin"
 
 
@@ -368,10 +369,10 @@ def request_json(required=False):
     payload = request.get_json(silent=True)
     if payload is None:
         if required and request.data:
-            raise RebirthError("Request body must be valid JSON.", "malformed_request")
+            raise RebirthError("O corpo da requisição deve conter JSON válido.", "malformed_request")
         return {}
     if not isinstance(payload, dict):
-        raise RebirthError("Request body must be a JSON object.", "malformed_request")
+        raise RebirthError("O corpo da requisição deve ser um objeto JSON.", "malformed_request")
     return payload
 
 
@@ -396,7 +397,7 @@ def protect_rebirth_mutations():
     expected = session.get("rebirth_csrf_token")
     supplied = request.headers.get("X-Rebirth-CSRF")
     if not expected or not supplied or not secrets.compare_digest(str(expected), str(supplied)):
-        return json_error("Rebirth CSRF token is required.", "csrf_required", status=403)
+        return json_error("O token CSRF do Rebirth é obrigatório.", "csrf_required", status=403)
     return None
 
 
@@ -557,7 +558,7 @@ def api_rebirth_start():
         user = current_user()
         repo = rebirth_repo()
         player_card_ids = None
-        player_name = "You"
+        player_name = "Você"
         bot_profile_id = None
         progress = None
         if user:
@@ -774,7 +775,7 @@ def api_rebirth_auth_change_password():
         user = require_user()
         enforce_auth_rate_limit("change-password", user["id"])
         rebirth_repo().change_password(user["id"], payload.get("current_password"), payload.get("new_password"))
-        return json_payload(account=account_payload(user), message="Password updated.")
+        return json_payload(account=account_payload(user), message="Senha atualizada.")
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -970,7 +971,7 @@ def api_rebirth_match_state(match_id):
         state = run_async(load_match_state(match_id))
         owner_id = state.get("owner_user_id") or state.get("player_id")
         if owner_id and int(owner_id) != int(user["id"]):
-            raise RebirthPersistenceError("Match state belongs to another account.", "match_forbidden", 403)
+            raise RebirthPersistenceError("O estado da partida pertence a outra conta.", "match_forbidden", 403)
         return json_payload(state=state)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -1045,7 +1046,7 @@ def api_rebirth_support_reset():
         payload = request_json(required=True)
         user = require_user()
         if payload.get("confirm") != "RESET REBIRTH":
-            raise RebirthPersistenceError("Type RESET REBIRTH to reset this account.", "reset_confirmation_required", 409)
+            raise RebirthPersistenceError("Digite RESET REBIRTH para reiniciar esta conta.", "reset_confirmation_required", 409)
         return json_payload(export=rebirth_repo().reset_account(user["id"]))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -1060,7 +1061,7 @@ def api_rebirth_admin_grant():
         payload = request_json(required=True)
         user_id = int(payload.get("user_id") or 0)
         if user_id <= 0:
-            raise RebirthPersistenceError("user_id is required.", "invalid_admin_grant", 400)
+            raise RebirthPersistenceError("Informe user_id.", "invalid_admin_grant", 400)
         return json_payload(
             export=rebirth_repo().admin_grant(
                 actor,
@@ -1112,7 +1113,7 @@ def legacy_api_disabled(_unused):
 @app.errorhandler(404)
 def not_found(_error):
     if request.path.startswith("/api/"):
-        return json_error("Endpoint not found.", "not_found", status=404)
+        return json_error("Endpoint não encontrado.", "not_found", status=404)
     return redirect("/rebirth", code=302)
 
 

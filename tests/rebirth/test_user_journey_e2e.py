@@ -65,12 +65,28 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
     assert {"CARD_PLAYED", "MONSTER_SUMMONED"}.issubset({event["type"] for event in after_play["events"]})
     assert played_payload["match_reward"]["persisted"] is False
 
+    blocked = client.post(
+        "/api/rebirth/attack",
+        json={
+            "match_id": after_play["match_id"],
+            "attacker_instance_id": after_play["player"]["battlefield"][0]["instance_id"],
+        },
+    )
+    assert blocked.status_code == 409
+    assert blocked.get_json()["error"]["code"] == "first_turn_direct_attack_blocked"
+
+    bot_turn = client.post("/api/rebirth/next-turn", json={"match_id": after_play["match_id"]})
+    after_bot_turn = bot_turn.get_json()["state"]
+    assert bot_turn.status_code == 200
+    assert after_bot_turn["turn"] == 2
+    assert after_bot_turn["bot"]["hp"] == 30
+    assert after_bot_turn["bot"]["battlefield"]
+
     attack_payload_json = {
-        "match_id": after_play["match_id"],
-        "attacker_instance_id": after_play["player"]["battlefield"][0]["instance_id"],
+        "match_id": after_bot_turn["match_id"],
+        "attacker_instance_id": after_bot_turn["player"]["battlefield"][0]["instance_id"],
+        "target_instance_id": after_bot_turn["bot"]["battlefield"][0]["instance_id"],
     }
-    if after_play["bot"]["battlefield"]:
-        attack_payload_json["target_instance_id"] = after_play["bot"]["battlefield"][0]["instance_id"]
     attacked = client.post("/api/rebirth/attack", json=attack_payload_json)
     attacked_payload = attacked.get_json()
 
@@ -90,11 +106,11 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
     assert next_turn.status_code == 200
     assert next_turn_payload["ok"] is True
     after_next = next_turn_payload["state"]
-    assert after_next["turn"] == 2
+    assert after_next["turn"] == 3
     assert after_next["phase"] == "choose"
     assert after_next["turn_phase"] == "MAIN_PHASE"
     assert after_next["player"]["played_card"] is None
-    assert after_next["player"]["max_energy"] == 2
+    assert after_next["player"]["max_energy"] == 3
     assert after_next["player"]["battlefield"]
     assert len(after_next["player"]["hand"]) == 5
     assert after_next["bot"]["hand_count"] <= 5

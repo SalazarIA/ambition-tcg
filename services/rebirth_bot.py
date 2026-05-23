@@ -9,21 +9,21 @@ BOT_PERSONALITY_ORDER = ("defensive", "aggressive", "opportunist")
 BOT_PERSONALITIES = {
     "defensive": {
         "id": "defensive",
-        "name": "Defensive Bot",
-        "copy": "Prioritizes guard and stable answers before damage spikes.",
-        "policy": "win with guarded bodies; otherwise absorb with the highest guard",
+        "name": "Bot Defensivo",
+        "copy": "Prioriza guarda e respostas estáveis antes de picos de dano.",
+        "policy": "vence com corpos protegidos; caso contrário, absorve com a maior guarda",
     },
     "aggressive": {
         "id": "aggressive",
-        "name": "Aggressive Bot",
-        "copy": "Pushes the highest attack line and tries to end clashes quickly.",
-        "policy": "play the highest attack available, preferring winning attacks",
+        "name": "Bot Agressivo",
+        "copy": "Pressiona com a maior linha de ataque e tenta encerrar combates rapidamente.",
+        "policy": "joga o maior ataque disponível, priorizando ataques vencedores",
     },
     "opportunist": {
         "id": "opportunist",
-        "name": "Opportunist Bot",
-        "copy": "Looks for ability swings, finishers and pressure windows.",
-        "policy": "prefer ability swing cards, then the smallest clean win",
+        "name": "Bot Oportunista",
+        "copy": "Busca viradas por habilidades, finalizações e janelas de pressão.",
+        "policy": "prefere cartas de virada por habilidade e depois a menor vitória limpa",
     },
 }
 

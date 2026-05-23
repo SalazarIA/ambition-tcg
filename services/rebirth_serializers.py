@@ -31,7 +31,7 @@ REQUIRED_CARD_FIELDS = {
 def validate_card_contract(card):
     missing = [field for field in REQUIRED_CARD_FIELDS if field not in card]
     if missing:
-        raise ValueError(f"Rebirth card missing required fields: {', '.join(missing)}")
+        raise ValueError(f"Carta Rebirth sem campos obrigatórios: {', '.join(missing)}")
     return card
 
 

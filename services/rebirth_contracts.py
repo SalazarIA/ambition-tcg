@@ -12,6 +12,7 @@ ERROR_HTTP_STATUS = {
     "missing_match": 404,
     "invalid_phase": 409,
     "match_finished": 409,
+    "first_turn_direct_attack_blocked": 409,
 }
 
 
@@ -28,5 +29,5 @@ def error_status(code):
 
 def validate_phase(phase):
     if phase not in VALID_PHASES:
-        raise RebirthError(f"Invalid Rebirth phase: {phase}", "invalid_phase")
+        raise RebirthError(f"Fase Rebirth inválida: {phase}", "invalid_phase")
     return phase

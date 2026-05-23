@@ -13,7 +13,7 @@
         prompt.type = "button";
         prompt.className = "rb-update-prompt";
         prompt.setAttribute("data-rebirth-update", "");
-        prompt.textContent = "Update Rebirth";
+        prompt.textContent = "Atualizar Rebirth";
         prompt.addEventListener("click", function () {
             prompt.disabled = true;
             registration.waiting.postMessage({ type: "SKIP_WAITING" });

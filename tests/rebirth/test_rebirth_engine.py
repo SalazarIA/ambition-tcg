@@ -98,6 +98,22 @@ def test_play_card_fills_slots_in_order_and_blocks_when_battlefield_full():
     assert match["player"]["hand"][0]["instance_id"] == fourth["instance_id"]
 
 
+def test_first_turn_direct_damage_is_blocked_until_bot_responds():
+    match = start_match(seed="direct-turn-one")
+    card = next(card for card in match["player"]["hand"] if card["id"] == "card_001")
+    match["bot"]["hand"] = []
+
+    play_card(match, card_instance_id=card["instance_id"])
+
+    with pytest.raises(RebirthError) as error:
+        declare_attack(match, attacker_instance_id=card["instance_id"])
+
+    assert error.value.code == "first_turn_direct_attack_blocked"
+    assert match["bot"]["hp"] == 30
+    assert match["player"]["battlefield"][0]["exhausted"] is False
+    assert match["last_clash"] is None
+
+
 def test_equal_power_clash_causes_no_damage():
     match = start_match(seed="tie")
     player_card = next(card for card in match["player"]["hand"] if card["id"] == "card_002")
@@ -179,6 +195,7 @@ def test_match_finishes_when_hp_reaches_zero():
     match["bot"]["hand"] = []
 
     play_card(match, card_instance_id=card["instance_id"])
+    match["turn"] = 2
     declare_attack(match, attacker_instance_id=card["instance_id"])
 
     assert match["is_finished"] is True
@@ -201,7 +218,7 @@ def test_match_finishes_by_hp_when_future_cards_are_exhausted():
     assert match["is_finished"] is True
     assert match["phase"] == "finished"
     assert match["winner"] == "player"
-    assert "exhaustion" in match["result"]["message"]
+    assert "exaustão" in match["result"]["message"]
 
 
 def test_bot_evolves_duplicate_before_answering():
@@ -265,7 +282,7 @@ def test_trap_arms_face_down_and_triggers_in_combat():
     assert match["phase"] in {"result", "finished"}
     assert not match["player"]["traps"]
     assert any(card["id"] == "card_091" and card["revealed"] for card in match["player"]["discard"])
-    assert any("negates" in event for event in match["result"]["ability_events"])
+    assert any("anula" in event for event in match["result"]["ability_events"])
 
 
 def test_defeated_monster_leaves_battlefield_and_goes_to_discard():

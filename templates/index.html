@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>Ambitionz Rebirth</title>
@@ -9,37 +9,37 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-054">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-055">
 </head>
 <body class="rb-page rb-home-page rb-landing-page">
     {% include "_rebirth_global_nav.html" %}
     <main class="rb-home-shell">
-        <section id="rebirth-home-hero" class="rb-home-hero" aria-label="Ambitionz Rebirth product">
+        <section id="rebirth-home-hero" class="rb-home-hero" aria-label="Produto Ambitionz Rebirth">
             <div class="rb-home-copy">
                 <h1>Ambitionz Rebirth</h1>
-                <p class="rb-home-line">Duelos, colecao e mercado em uma mesa viva.</p>
+                <p class="rb-home-line">Duelos, coleção e mercado em uma mesa viva.</p>
                 <p>Convoque monstros, combine duplicatas, evolua cartas incomuns e lute por recompensas de temporada.</p>
-                <p>Uma plataforma TCG de alta fantasia com economia em GOLD e Coinz.</p>
+                <p>Uma plataforma TCG de alta fantasia com economia em Ouro e Gemas.</p>
                 <div class="rb-home-actions">
                     <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Entrar na Arena <i aria-hidden="true"></i></a>
                     <a class="rb-secondary" href="{{ url_for('rebirth_collection') }}">Minha Coleção</a>
                     <a class="rb-secondary" href="{{ url_for('rebirth_shop') }}">Loja & Mercado</a>
                 </div>
-                <div class="rb-home-proof" aria-label="Product pillars">
-                    <article><span>Arena</span><strong>Clash tatico</strong></article>
+                <div class="rb-home-proof" aria-label="Pilares do produto">
+                    <article><span>Arena</span><strong>Clash tático</strong></article>
                     <article><span>Coleção</span><strong>100 cartas</strong></article>
-                    <article><span>Economia</span><strong>GOLD + Coinz</strong></article>
+                    <article><span>Economia</span><strong>Ouro + Gemas</strong></article>
                 </div>
             </div>
 
             <div class="rb-home-preview" aria-hidden="true">
                 <div class="rb-score-frame">
                     <div>
-                        <span>You</span>
+                        <span>Você</span>
                         <strong>30 HP</strong>
                     </div>
                     <div>
-                        <span>Turn</span>
+                        <span>Turno</span>
                         <strong>01</strong>
                     </div>
                     <div>
@@ -50,9 +50,9 @@
                 <article class="rb-preview-card">
                     <div class="rb-card-art" style="background-image: url('{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}')"></div>
                     <div class="rb-card-body">
-                        <span>Beast - Tier 1</span>
+                        <span>Fera - Nível 1</span>
                         <strong>Dreadclaw</strong>
-                        <p>Pick one monster. Force one answer. Resolve one clash.</p>
+                        <p>Escolha um monstro. Force uma resposta. Resolva um clash.</p>
                     </div>
                     <b class="rb-power">6</b>
                 </article>
@@ -66,19 +66,19 @@
             </div>
         </section>
 
-        <section class="rb-product-stats rb-home-status" aria-label="Rebirth status">
+        <section class="rb-product-stats rb-home-status" aria-label="Status Rebirth">
             {% for item in page.status %}
                 <article><span>{{ item.label }}</span><strong>{{ item.value }}</strong></article>
             {% endfor %}
         </section>
 
-        <section class="rb-product-grid rb-home-product-grid" aria-label="Rebirth product shell">
+        <section class="rb-product-grid rb-home-product-grid" aria-label="Produto Rebirth">
             {% for block in page.blocks %}
                 <article class="rb-product-panel">
                     <span>Rebirth</span>
                     <h2>{{ block.title }}</h2>
                     <p>{{ block["copy"] }}</p>
-                    <a class="rb-secondary" href="{{ block.href }}">Open</a>
+                    <a class="rb-secondary" href="{{ block.href }}">Abrir</a>
                 </article>
             {% endfor %}
         </section>
@@ -93,7 +93,7 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-054"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-054"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-055"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-055"></script>
 </body>
 </html>

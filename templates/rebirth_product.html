@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>{{ page.title }} - Ambitionz Rebirth</title>
@@ -9,14 +9,14 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-054">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-055">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     {% include "_rebirth_global_nav.html" %}
     <main class="rb-home-shell rb-product-shell">
         <section class="rb-product-hero" aria-label="{{ page.title }}">
             <div>
-                <span class="rb-product-kicker">Rebirth {{ page.key }}</span>
+                <span class="rb-product-kicker">Ambitionz Rebirth</span>
                 <h1>{{ page.title }}</h1>
                 <p>{{ page.subtitle }}</p>
             </div>
@@ -25,25 +25,25 @@
 
         {% if page.key == "account" %}
             {% if page.account.authenticated %}
-                <section class="rb-product-panel rb-product-wide" aria-label="Signed in account">
-                    <span>Sessao ativa</span>
+                <section class="rb-product-panel rb-product-wide" aria-label="Conta conectada">
+                    <span>Sessão ativa</span>
                     <h2>{{ page.account.user.username }}</h2>
                     <p>{{ page.account.user.email }}</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-logout>Logout</button>
-                    <div class="rb-product-result" aria-live="polite">Conta conectada a sua colecao Rebirth.</div>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-logout>Sair</button>
+                    <div class="rb-product-result" aria-live="polite">Conta conectada à sua coleção Rebirth.</div>
                 </section>
             {% else %}
-                <section class="rb-product-panel rb-product-wide rb-auth-entry" aria-label="Rebirth auth">
+                <section class="rb-product-panel rb-product-wide rb-auth-entry" aria-label="Acesso Rebirth">
                     <span>Acesso do jogador</span>
                     <h2>Entre na sua conta Rebirth</h2>
-                    <p>Login e registro vivem em um modal unico para manter a arena limpa.</p>
+                    <p>Login e cadastro vivem em um modal único para manter a arena limpa.</p>
                     <div class="rb-auth-entry-actions">
-                        <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Login / Registro</button>
+                        <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
                         <a class="rb-button-secondary rb-secondary" href="{{ url_for('rebirth') }}">Jogar como visitante</a>
                     </div>
                 </section>
             {% endif %}
-            <section class="rb-product-grid rb-product-grid-steps" aria-label="Auth plan">
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Plano de acesso">
                 {% for step in page.steps %}
                     <article class="rb-product-panel">
                         <span>{{ step.status }}</span>
@@ -52,8 +52,8 @@
                     </article>
                 {% endfor %}
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Account benefits">
-                <h2>Account Benefits</h2>
+            <section class="rb-product-panel rb-product-wide" aria-label="Benefícios da conta">
+                <h2>Benefícios da Conta</h2>
                 <ul class="rb-product-list">
                     {% for item in page.constraints %}
                         <li>{{ item }}</li>
@@ -65,11 +65,11 @@
                 <section class="rb-product-panel rb-product-wide">
                     <span>Visitante</span>
                     <h2>Perfil em espera</h2>
-                    <p>Entre quando quiser guardar conquistas, recompensas, deck e carteira.</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
+                    <p>Entre quando quiser guardar conquistas, recompensas, baralho e carteira.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
                 </section>
             {% endif %}
-            <section class="rb-product-stats" aria-label="Profile summary">
+            <section class="rb-product-stats" aria-label="Resumo do perfil">
                 {% for stat in page.stats %}
                     <article><span>{{ stat.label }}</span><strong>{{ stat.value }}</strong></article>
                 {% endfor %}
@@ -81,12 +81,12 @@
                 data-profile-level="{{ profile_progress.level }}"
                 data-profile-xp="{{ profile_progress.xp }}"
                 data-profile-next-xp="{{ profile_progress.next_level_xp }}"
-                aria-label="XP rewards and ledger"
+                aria-label="Recompensas de XP e extrato"
             >
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>XP + Ledger</span>
-                        <h2>Reward Momentum</h2>
+                        <span>XP + Extrato</span>
+                        <h2>Ritmo de Recompensas</h2>
                     </div>
                     <a class="rb-secondary" href="{{ url_for('rebirth_progression') }}">Ver Recompensas</a>
                 </div>
@@ -95,22 +95,22 @@
                         <span>Nível <b data-rebirth-level>{{ profile_progress.level }}</b></span>
                         <strong><b data-rebirth-xp>{{ profile_progress.xp }}</b>/<b data-rebirth-next-xp>{{ profile_progress.next_level_xp }}</b> XP</strong>
                     </div>
-                    <div class="rb-level-bar" aria-label="Level progress"><i data-rebirth-xp-fill style="width: 0%"></i></div>
-                    <small><b data-rebirth-xp-percent>0%</b> da barra atual. Vitorias contra o bot alimentam esta trilha.</small>
+                    <div class="rb-level-bar" aria-label="Progresso de nível"><i data-rebirth-xp-fill style="width: 0%"></i></div>
+                    <small><b data-rebirth-xp-percent>0%</b> da barra atual. Vitórias contra o bot alimentam esta trilha.</small>
                 </div>
                 <div class="rb-progress-mini-stats">
-                    <article><span>Wins</span><strong data-rebirth-wins>{{ profile_progress.wins }}</strong></article>
+                    <article><span>Vitórias</span><strong data-rebirth-wins>{{ profile_progress.wins }}</strong></article>
                     <article><span>Clashes</span><strong data-rebirth-clashes>{{ profile_progress.clashes }}</strong></article>
                     <article><span>Boosters</span><strong data-rebirth-boosters>{{ profile_progress.boosters_opened }}</strong></article>
                 </div>
                 <div class="rb-ledger-preview" data-rebirth-ledger-list aria-live="polite">
-                    <article class="rb-ledger-entry"><span>Ledger</span><strong>...</strong><p>Carregando movimentos persistidos.</p><small>economy_ledger</small></article>
+                    <article class="rb-ledger-entry"><span>Extrato</span><strong>...</strong><p>Carregando movimentos persistidos.</p><small>economy_ledger</small></article>
                 </div>
             </section>
-            <section class="rb-product-grid rb-product-grid-steps" aria-label="Achievements">
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Conquistas">
                 {% for achievement in page.profile.achievements %}
                     <article class="rb-product-panel rb-achievement-card {{ 'is-unlocked' if achievement.unlocked else 'is-locked' }}">
-                        <span>{{ 'Unlocked' if achievement.unlocked else 'Locked' }}</span>
+                        <span>{{ 'Desbloqueada' if achievement.unlocked else 'Bloqueada' }}</span>
                         <h2>{{ achievement.name }}</h2>
                         <p>{{ achievement["copy"] }}</p>
                         {% if achievement.unlocked_at %}
@@ -120,7 +120,7 @@
                 {% endfor %}
             </section>
             {% if page.account.authenticated %}
-                <section class="rb-auth-grid" aria-label="Account controls">
+                <section class="rb-auth-grid" aria-label="Controles da conta">
                     <form class="rb-product-panel rb-auth-form" data-rebirth-change-password>
                         <span>Segurança</span>
                         <h2>Senha</h2>
@@ -138,14 +138,14 @@
                 </section>
             {% endif %}
             {% if page.profile.recent_boosters %}
-                <section class="rb-product-panel rb-product-wide" aria-label="Recent profile boosters">
-                    <h2>Recent Boosters</h2>
+                <section class="rb-product-panel rb-product-wide" aria-label="Boosters recentes do perfil">
+                    <h2>Boosters Recentes</h2>
                     <div class="rb-history-list">
                         {% for booster in page.profile.recent_boosters %}
                             <article>
                                 <span>{{ booster.opened_at }}</span>
                                 <strong>{{ booster.booster_id }}</strong>
-                                <p>{{ booster.cards | length }} cards persisted</p>
+                                <p>{{ booster.cards | length }} cartas persistidas</p>
                             </article>
                         {% endfor %}
                     </div>
@@ -155,45 +155,45 @@
             {% if not page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide">
                     <span>Visitante</span>
-                    <h2>Historico em espera</h2>
+                    <h2>Histórico em espera</h2>
                     <p>Entre para guardar partidas, recompensas e movimentos de economia.</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
                 </section>
             {% endif %}
-            <section class="rb-product-stats" aria-label="History summary">
-                <article><span>Matches</span><strong>{{ page.summary.matches }}</strong></article>
-                <article><span>Finished</span><strong>{{ page.summary.finished }}</strong></article>
-                <article><span>Ledger</span><strong>{{ page.summary.ledger_entries }}</strong></article>
-                <article><span>Contract</span><strong>Events</strong></article>
+            <section class="rb-product-stats" aria-label="Resumo do histórico">
+                <article><span>Partidas</span><strong>{{ page.summary.matches }}</strong></article>
+                <article><span>Concluídas</span><strong>{{ page.summary.finished }}</strong></article>
+                <article><span>Extrato</span><strong>{{ page.summary.ledger_entries }}</strong></article>
+                <article><span>Contrato</span><strong>Eventos</strong></article>
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Match history">
-                <h2>Recent Matches</h2>
+            <section class="rb-product-panel rb-product-wide" aria-label="Histórico de partidas">
+                <h2>Partidas Recentes</h2>
                 <div class="rb-history-list rb-history-list-wide">
                     {% for match in page.matches %}
                         <article>
                             <span>{{ match.updated_at }}</span>
                             <strong>{{ match.match_id }}</strong>
-                            <p>{{ match.status }} / winner {{ match.winner or 'pending' }} / v{{ match.state.version }}</p>
-                            <small>{{ match.command_count }} commands / {{ match.event_count }} events / {{ match.state_hash[:12] }}</small>
+                            <p>{{ match.status }} / vencedor {{ match.winner or 'pendente' }} / v{{ match.state.version }}</p>
+                            <small>{{ match.command_count }} comandos / {{ match.event_count }} eventos / {{ match.state_hash[:12] }}</small>
                         </article>
                     {% else %}
                         <article>
-                            <span>Empty</span>
-                            <strong>No persisted matches yet.</strong>
-                            <p>Play while signed in to create command and event history.</p>
+                            <span>Vazio</span>
+                            <strong>Nenhuma partida persistida ainda.</strong>
+                            <p>Jogue com a conta conectada para criar histórico de comandos e eventos.</p>
                         </article>
                     {% endfor %}
                 </div>
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Economy ledger">
-                <h2>Economy Ledger</h2>
+            <section class="rb-product-panel rb-product-wide" aria-label="Extrato econômico">
+                <h2>Extrato Econômico</h2>
                 <div class="rb-history-list rb-history-list-wide">
                     {% for entry in page.ledger %}
                         <article>
                             <span>{{ entry.created_at }}</span>
                             <strong>{{ entry.resource }} {{ '%+d'|format(entry.delta) }}</strong>
-                            <p>{{ entry.reason }} / balance {{ entry.balance_after }}</p>
-                            <small>{{ entry.reference_type or 'system' }} {{ entry.reference_id or '' }}</small>
+                            <p>{{ entry.reason }} / saldo {{ entry.balance_after }}</p>
+                            <small>{{ entry.reference_type or 'sistema' }} {{ entry.reference_id or '' }}</small>
                         </article>
                     {% else %}
                         <article>
@@ -210,53 +210,53 @@
                     <span>Visitante</span>
                     <h2>Suporte da conta</h2>
                     <p>Entre para exportar ou reiniciar seu estado Rebirth.</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
                 </section>
             {% endif %}
-            <section class="rb-product-grid rb-product-grid-steps" aria-label="Support checks">
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Verificações de suporte">
                 {% for check in page.checks %}
                     <article class="rb-product-panel">
-                        <span>Support</span>
+                        <span>Suporte</span>
                         <h2>{{ loop.index }}</h2>
                         <p>{{ check }}</p>
                     </article>
                 {% endfor %}
             </section>
-            <section class="rb-auth-grid" aria-label="Support actions">
+            <section class="rb-auth-grid" aria-label="Ações de suporte">
                 <article class="rb-product-panel">
-                    <span>Export</span>
-                    <h2>Account Data</h2>
-                    <p>Downloadable JSON contract through the Rebirth API, scoped to the signed-in account.</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-export>Export</button>
+                    <span>Exportar</span>
+                    <h2>Dados da Conta</h2>
+                    <p>Contrato JSON disponível pela API Rebirth, limitado à conta conectada.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-export>Exportar</button>
                 </article>
                 <article class="rb-product-panel">
-                    <span>Reset</span>
-                    <h2>Starter State</h2>
-                    <p>Reset collection, loadout, rewards, match history and ledger back to the Rebirth starter account.</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-reset>Reset Account</button>
+                    <span>Reiniciar</span>
+                    <h2>Estado Inicial</h2>
+                    <p>Reinicie coleção, baralho, recompensas, histórico e extrato para o estado inicial Rebirth.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-reset>Reiniciar Conta</button>
                 </article>
             </section>
             <section class="rb-product-panel rb-product-wide">
-                <h2>Support Result</h2>
-                <pre class="rb-support-output" data-rebirth-support-result>Ready.</pre>
+                <h2>Resultado do Suporte</h2>
+                <pre class="rb-support-output" data-rebirth-support-result>Pronto.</pre>
             </section>
         {% elif page.key == "collection" %}
-            <section class="rb-product-stats" aria-label="Collection summary">
-                <article><span>Owned</span><strong>{{ page.summary.owned_cards }}</strong></article>
-                <article><span>Unique</span><strong>{{ page.summary.unique_owned }}</strong></article>
-                <article><span>Loadout</span><strong>{{ page.summary.loadout_size }}</strong></article>
-                <article><span>Evolutions</span><strong>{{ page.summary.preview_evolutions }}</strong></article>
+            <section class="rb-product-stats" aria-label="Resumo da coleção">
+                <article><span>Possuídas</span><strong>{{ page.summary.owned_cards }}</strong></article>
+                <article><span>Únicas</span><strong>{{ page.summary.unique_owned }}</strong></article>
+                <article><span>Baralho</span><strong>{{ page.summary.loadout_size }}</strong></article>
+                <article><span>Evoluções</span><strong>{{ page.summary.preview_evolutions }}</strong></article>
             </section>
             {% if not page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide">
                     <span>Visitante</span>
                     <h2>Coleção demonstrativa</h2>
                     <p>Entre para guardar ajustes do deck e cartas de booster.</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Login / Registro</button>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
                 </section>
             {% endif %}
 
-            <section class="rb-product-panel rb-product-wide" aria-label="Loadout preview">
+            <section class="rb-product-panel rb-product-wide" aria-label="Prévia do baralho">
                 <div class="rb-product-panel-head">
                     <div>
                         <span>Editor de 30 cartas</span>
@@ -302,11 +302,11 @@
             <section class="rb-product-card-grid" aria-label="Rebirth collection">
                 {% for card in page.cards %}
                     <article class="rb-product-card">
-                        <img src="{{ card.art }}" alt="{{ card.name }} art">
+                        <img src="{{ card.art }}" alt="Arte de {{ card.name }}">
                         <div>
                             <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
                             <h2>{{ card.name }}</h2>
-                            <p>{{ card.role }} - {{ card.element }} - Tier {{ card.tier }}</p>
+                            <p>{{ card.role }} - {{ card.element }} - Nível {{ card.tier }}</p>
                             <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
                             <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
                         </div>
@@ -330,7 +330,7 @@
                 <div class="rb-shop-pack-list">
                     {% for offer in page.offers %}
                         <article class="rb-product-panel rb-shop-offer rb-shop-pack">
-                            <span>{{ offer.state }}</span>
+                            <span>{{ 'Disponível' if offer.state == 'available' else offer.state }}</span>
                             <h2>{{ offer.name }}</h2>
                             <p>{{ offer.contents }}</p>
                             <strong>{{ offer.price }}</strong>
@@ -353,25 +353,25 @@
                 </div>
                 <div id="rebirth-booster-result" class="rb-product-result rb-booster-result" aria-live="polite">Compre um booster para revelar 5 cartas Rebirth.</div>
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Player market">
+            <section class="rb-product-panel rb-product-wide" aria-label="Mercado de jogadores">
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>5% sink fee</span>
-                        <h2>Player Market</h2>
+                        <span>Taxa de 5%</span>
+                        <h2>Mercado de Jogadores</h2>
                     </div>
                 </div>
-                <div class="rb-product-result" data-rebirth-market-result aria-live="polite">Market listings are live.</div>
+                <div class="rb-product-result" data-rebirth-market-result aria-live="polite">Ofertas ativas no mercado.</div>
                 <div class="rb-product-card-grid rb-product-card-grid-result" data-rebirth-market-offers>
                     {% for offer in page.market.offers %}
-                        {% set offer_currency = 'Coinz' if offer.currency_type == 'COINZ' else offer.currency_type %}
+                        {% set offer_currency = 'Gemas' if offer.currency_type == 'COINZ' else 'Ouro' %}
                         {% set offer_art = offer.card.art if offer.card.art_status != 'default_png_path' else 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80' %}
                         <article class="rb-product-card rb-market-offer is-currency-{{ offer.currency_type|lower }}" data-market-offer-id="{{ offer.id }}">
                             <div class="rb-market-art">
-                                <img src="{{ offer_art }}" data-rebirth-unsplash-fallback="https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80" alt="{{ offer.card.name }} art">
+                                <img src="{{ offer_art }}" data-rebirth-unsplash-fallback="https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80" alt="Arte de {{ offer.card.name }}">
                                 <span>{{ offer_currency }} P2P</span>
                             </div>
                             <div class="rb-market-copy">
-                                <span>{{ offer.seller_name or 'Player' }} listing</span>
+                                <span>Oferta de {{ offer.seller_name or 'Jogador' }}</span>
                                 <h2>{{ offer.card.name }}</h2>
                                 <p>{{ offer.card.role }}</p>
                                 <div class="rb-market-price"><span>Preco</span><strong>{{ offer.price }} {{ offer_currency }}</strong></div>
@@ -380,32 +380,32 @@
                         </article>
                     {% else %}
                         <article class="rb-product-panel">
-                            <span>Market</span>
-                            <h2>No active offers</h2>
-                            <p>Active player listings will appear here.</p>
+                            <span>Mercado</span>
+                            <h2>Nenhuma oferta ativa</h2>
+                            <p>As ofertas dos jogadores aparecerão aqui.</p>
                         </article>
                     {% endfor %}
                 </div>
             </section>
             {% if page.history %}
-                <section class="rb-product-panel rb-product-wide" aria-label="Booster history">
-                    <h2>Booster History</h2>
+                <section class="rb-product-panel rb-product-wide" aria-label="Histórico de boosters">
+                    <h2>Histórico de Boosters</h2>
                     <div class="rb-history-list">
                         {% for booster in page.history %}
                             <article>
                                 <span>{{ booster.opened_at }}</span>
                                 <strong>{{ booster.booster_id }}</strong>
-                                <p>{{ booster.cards | length }} cards persisted</p>
+                                <p>{{ booster.cards | length }} cartas gravadas</p>
                             </article>
                         {% endfor %}
                     </div>
                 </section>
             {% endif %}
         {% elif page.key == "progression" %}
-            <section class="rb-product-stats" aria-label="Progression profile">
-                <article><span>Level</span><strong>{{ page.profile.level }}</strong></article>
+            <section class="rb-product-stats" aria-label="Perfil de progressão">
+                <article><span>Nível</span><strong>{{ page.profile.level }}</strong></article>
                 <article><span>XP</span><strong>{{ page.profile.xp }}/{{ page.profile.next_level_xp }}</strong></article>
-                <article><span>Wins</span><strong>{{ page.profile.wins }}</strong></article>
+                <article><span>Vitórias</span><strong>{{ page.profile.wins }}</strong></article>
                 <article><span>Clashes</span><strong>{{ page.profile.clashes }}</strong></article>
             </section>
             <section
@@ -414,12 +414,12 @@
                 data-profile-level="{{ page.profile.level }}"
                 data-profile-xp="{{ page.profile.xp }}"
                 data-profile-next-xp="{{ page.profile.next_level_xp }}"
-                aria-label="Reward progress"
+                aria-label="Progresso de recompensas"
             >
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>Season 0 XP</span>
-                        <h2>Level Progress</h2>
+                        <span>XP da Temporada 0</span>
+                        <h2>Progresso de Nível</h2>
                     </div>
                     <a class="rb-secondary" href="{{ url_for('rebirth') }}">Jogar agora</a>
                 </div>
@@ -428,32 +428,32 @@
                         <span>Nível <b data-rebirth-level>{{ page.profile.level }}</b></span>
                         <strong><b data-rebirth-xp>{{ page.profile.xp }}</b>/<b data-rebirth-next-xp>{{ page.profile.next_level_xp }}</b> XP</strong>
                     </div>
-                    <div class="rb-level-bar" aria-label="Level progress"><i data-rebirth-xp-fill style="width: 0%"></i></div>
+                    <div class="rb-level-bar" aria-label="Progresso de nível"><i data-rebirth-xp-fill style="width: 0%"></i></div>
                     <small><b data-rebirth-xp-percent>0%</b> preenchido com XP de partidas, boosters e recompensas.</small>
                 </div>
                 <div class="rb-progress-mini-stats">
-                    <article><span>Wins</span><strong data-rebirth-wins>{{ page.profile.wins }}</strong></article>
+                    <article><span>Vitórias</span><strong data-rebirth-wins>{{ page.profile.wins }}</strong></article>
                     <article><span>Clashes</span><strong data-rebirth-clashes>{{ page.profile.clashes }}</strong></article>
                     <article><span>Boosters</span><strong data-rebirth-boosters>{{ page.profile.boosters_opened }}</strong></article>
                 </div>
                 <div class="rb-ledger-preview" data-rebirth-ledger-list aria-live="polite">
-                    <article class="rb-ledger-entry"><span>Ledger</span><strong>...</strong><p>Carregando recompensas gravadas.</p><small>economy_ledger</small></article>
+                    <article class="rb-ledger-entry"><span>Extrato</span><strong>...</strong><p>Carregando recompensas gravadas.</p><small>economy_ledger</small></article>
                 </div>
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Reward track">
-                <h2>Reward Track</h2>
+            <section class="rb-product-panel rb-product-wide" aria-label="Trilha de recompensas">
+                <h2>Trilha de Recompensas</h2>
                 <div class="rb-track">
                     {% for reward in page.track %}
                         <article>
-                            <span>Level {{ reward.level }} - {{ reward.state }}</span>
+                            <span>Nível {{ reward.level }} - {{ 'Resgatada' if reward.state == 'claimed' else 'Disponível' if reward.state == 'ready' else 'Bloqueada' }}</span>
                             <strong>{{ reward.name }}</strong>
                             <p>{{ reward.reward }}</p>
                         </article>
                     {% endfor %}
                 </div>
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Daily reward">
-                <span>{{ page.daily.state }}</span>
+            <section class="rb-product-panel rb-product-wide" aria-label="Recompensa diária">
+                <span>{{ 'Resgatada' if page.daily.state == 'claimed' else 'Disponível' if page.daily.state == 'ready' else 'Bloqueada' }}</span>
                 <h2>{{ page.daily.name }}</h2>
                 <p>{{ page.daily.progress }}/{{ page.daily.goal }} concluído - {{ page.daily.reward }}</p>
                 <button
@@ -468,52 +468,52 @@
                 </div>
             </section>
         {% elif page.key == "lab" %}
-            <section class="rb-product-grid rb-product-grid-steps" aria-label="Rebirth lab links">
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Links do laboratório Rebirth">
                 {% for item in page.links %}
                     <article class="rb-product-panel">
                         <span>Lab</span>
                         <h2>{{ item.label }}</h2>
-                        <p>Internal Rebirth tooling kept outside the player navigation.</p>
-                        <a class="rb-secondary" href="{{ item.href }}">Open</a>
+                        <p>Ferramentas internas Rebirth fora da navegação do jogador.</p>
+                        <a class="rb-secondary" href="{{ item.href }}">Abrir</a>
                     </article>
                 {% endfor %}
             </section>
         {% elif page.key == "desktop" %}
-            <section class="rb-product-grid" aria-label="Desktop polish checks">
+            <section class="rb-product-grid" aria-label="Verificações de desktop">
                 {% for check in page.checks %}
                     <article class="rb-product-panel">
-                        <span>Check</span>
+                        <span>Verificação</span>
                         <h2>{{ loop.index }}</h2>
                         <p>{{ check }}</p>
                     </article>
                 {% endfor %}
             </section>
-            <section class="rb-product-panel rb-product-wide rb-desktop-preview" aria-label="Desktop arena preview">
+            <section class="rb-product-panel rb-product-wide rb-desktop-preview" aria-label="Prévia da arena desktop">
                 <div class="rb-desktop-preview-board">
                     <div></div>
-                    <strong>Portrait Arena</strong>
-                    <p>Desktop rails frame the board; the playable contract stays untouched.</p>
+                    <strong>Arena Vertical</strong>
+                    <p>As laterais de desktop enquadram a mesa; o contrato jogável permanece intacto.</p>
                 </div>
             </section>
         {% elif page.key == "tutorial" %}
-            <section class="rb-product-grid rb-product-grid-steps" aria-label="Tutorial steps">
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Etapas do tutorial">
                 {% for step in page.steps %}
                     <article class="rb-product-panel">
-                        <span>Step {{ step.step }}</span>
+                        <span>Etapa {{ step.step }}</span>
                         <h2>{{ step.title }}</h2>
                         <p>{{ step["copy"] }}</p>
                     </article>
                 {% endfor %}
             </section>
             <section class="rb-product-panel rb-product-wide">
-                <span>{{ 'Complete' if page.complete else 'In progress' }}</span>
-                <h2>Current Step {{ page.current_step }}</h2>
-                <p>Finish the onboarding to persist tutorial XP on the active account.</p>
-                <button class="rb-button-primary rb-cta" type="button" data-rebirth-tutorial-complete>Complete Tutorial</button>
-                <div class="rb-product-result" data-rebirth-tutorial-result aria-live="polite">Tutorial ready.</div>
+                <span>{{ 'Concluído' if page.complete else 'Em andamento' }}</span>
+                <h2>Etapa Atual {{ page.current_step }}</h2>
+                <p>Conclua a introdução para gravar o XP do tutorial na conta ativa.</p>
+                <button class="rb-button-primary rb-cta" type="button" data-rebirth-tutorial-complete>Concluir Tutorial</button>
+                <div class="rb-product-result" data-rebirth-tutorial-result aria-live="polite">Tutorial pronto.</div>
             </section>
         {% elif page.key == "balance" %}
-            <section class="rb-product-grid" aria-label="Balance notes">
+            <section class="rb-product-grid" aria-label="Notas de balanceamento">
                 {% for note in page.notes %}
                     <article class="rb-product-panel">
                         <span>Bot</span>
@@ -522,65 +522,65 @@
                     </article>
                 {% endfor %}
             </section>
-            <section class="rb-product-panel rb-product-wide" aria-label="Balance simulation">
+            <section class="rb-product-panel rb-product-wide" aria-label="Simulação de balanceamento">
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>Simulation</span>
-                        <h2 data-rebirth-balance-title>{{ page.simulation.matches }} Matches</h2>
+                        <span>Simulação</span>
+                        <h2 data-rebirth-balance-title>{{ page.simulation.matches }} Partidas</h2>
                     </div>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-balance-run>Run</button>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-balance-run>Executar</button>
                 </div>
                 <div class="rb-product-stats rb-product-stats-compact" data-rebirth-balance-result>
-                    <article><span>Player</span><strong>{{ page.simulation.summary.player_win_rate }}</strong></article>
+                    <article><span>Jogador</span><strong>{{ page.simulation.summary.player_win_rate }}</strong></article>
                     <article><span>Bot</span><strong>{{ page.simulation.summary.bot_win_rate }}</strong></article>
-                    <article><span>Avg Turns</span><strong>{{ page.simulation.summary.average_turns }}</strong></article>
+                    <article><span>Média de Turnos</span><strong>{{ page.simulation.summary.average_turns }}</strong></article>
                     <article><span>Status</span><strong>{{ page.simulation.bot_tuning.status }}</strong></article>
                 </div>
                 <div class="rb-balance-lab" data-rebirth-balance-details>
                     <section>
-                        <h3>Bot Profiles</h3>
+                        <h3>Perfis do Bot</h3>
                         {% for profile in page.simulation.profile_results %}
                             <article>
                                 <span>{{ profile.name }}</span>
                                 <strong>{{ profile.player_win_rate }}</strong>
-                                <small>{{ profile.matches }} matches / {{ profile.average_turns }} avg turns</small>
+                                <small>{{ profile.matches }} partidas / {{ profile.average_turns }} turnos em média</small>
                             </article>
                         {% endfor %}
                     </section>
                     <section>
-                        <h3>Card Impact</h3>
+                        <h3>Impacto das Cartas</h3>
                         {% for card in page.simulation.card_stats[:6] %}
                             <article>
                                 <span>{{ card.name }}</span>
                                 <strong>{{ card.win_rate }}</strong>
-                                <small>{{ card.plays }} plays / {{ card.avg_damage }} avg damage</small>
+                                <small>{{ card.plays }} jogadas / {{ card.avg_damage }} dano médio</small>
                             </article>
                         {% endfor %}
                     </section>
                     <section>
-                        <h3>Ability Impact</h3>
+                        <h3>Impacto das Habilidades</h3>
                         {% for ability in page.simulation.ability_stats[:6] %}
                             <article>
                                 <span>{{ ability.name }}</span>
                                 <strong>{{ ability.win_rate }}</strong>
-                                <small>{{ ability.plays }} plays / {{ ability.avg_damage }} avg damage</small>
+                                <small>{{ ability.plays }} jogadas / {{ ability.avg_damage }} dano médio</small>
                             </article>
                         {% endfor %}
                     </section>
                 </div>
             </section>
         {% elif page.key == "release" %}
-            <section class="rb-product-grid rb-product-grid-steps" aria-label="Release checks">
+            <section class="rb-product-grid rb-product-grid-steps" aria-label="Verificações da versão">
                 {% for check in page.checks %}
                     <article class="rb-product-panel">
-                        <span>{{ check.state }}</span>
+                        <span>{{ 'Aprovado' if check.state == 'passed' else check.state }}</span>
                         <h2>{{ check.name }}</h2>
                         <p>{{ check["copy"] }}</p>
                     </article>
                 {% endfor %}
             </section>
             <section class="rb-product-panel rb-product-wide">
-                <h2>Commands</h2>
+                <h2>Comandos</h2>
                 <ul class="rb-product-list">
                     {% for command in page.commands %}
                         <li><code>{{ command }}</code></li>
@@ -622,8 +622,8 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-054"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-054"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-054"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-055"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-055"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-055"></script>
 </body>
 </html>

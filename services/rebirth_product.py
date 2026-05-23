@@ -23,97 +23,97 @@ PRODUCT_NAV = [
 ]
 
 LAB_LINKS = [
-    {"key": "history", "label": "Match Journal", "href": "/rebirth/history"},
-    {"key": "tutorial", "label": "Tutorial Status", "href": "/rebirth/onboarding"},
-    {"key": "balance", "label": "Balance Lab", "href": "/rebirth/balance"},
-    {"key": "support", "label": "Support Tools", "href": "/rebirth/support"},
-    {"key": "desktop", "label": "Desktop Notes", "href": "/rebirth/desktop"},
-    {"key": "release", "label": "Release Gate", "href": "/rebirth/release"},
+    {"key": "history", "label": "Diário de Partidas", "href": "/rebirth/history"},
+    {"key": "tutorial", "label": "Status do Tutorial", "href": "/rebirth/onboarding"},
+    {"key": "balance", "label": "Laboratório de Balanceamento", "href": "/rebirth/balance"},
+    {"key": "support", "label": "Ferramentas de Suporte", "href": "/rebirth/support"},
+    {"key": "desktop", "label": "Notas de Desktop", "href": "/rebirth/desktop"},
+    {"key": "release", "label": "Controle de Lançamento", "href": "/rebirth/release"},
 ]
 
 DEFAULT_LOADOUT = list(PLAYER_DECK)
 
 AUTH_PLAN_STEPS = [
     {
-        "title": "Create",
-        "status": "Step 1",
-        "copy": "Create your Rebirth name and save every clash, card and reward to this account.",
+        "title": "Criar",
+        "status": "Etapa 1",
+        "copy": "Crie seu nome Rebirth e salve cada clash, carta e recompensa nesta conta.",
     },
     {
-        "title": "Learn",
-        "status": "Step 2",
-        "copy": "The first match opens with live coaching so each card choice has a clear reason.",
+        "title": "Aprender",
+        "status": "Etapa 2",
+        "copy": "A primeira partida abre com orientação ao vivo para explicar cada escolha de carta.",
     },
     {
-        "title": "Earn",
-        "status": "Step 3",
-        "copy": "Finish clashes, claim daily XP and unlock new reward milestones.",
+        "title": "Conquistar",
+        "status": "Etapa 3",
+        "copy": "Conclua clashes, resgate XP diário e desbloqueie novos marcos de recompensa.",
     },
     {
-        "title": "Build",
-        "status": "Step 4",
-        "copy": "Open packs, tune your 30-card deck and bring it into the next duel.",
+        "title": "Montar",
+        "status": "Etapa 4",
+        "copy": "Abra pacotes, ajuste seu baralho de 30 cartas e leve-o ao próximo duelo.",
     },
 ]
 
 TUTORIAL_STEPS = [
     {
         "step": 1,
-        "title": "Pick One Monster",
-        "copy": "Your hand is public to you. Choose the monster that creates the cleanest clash.",
+        "title": "Escolha Um Monstro",
+        "copy": "Sua mão está visível para você. Escolha o monstro que produz o clash mais limpo.",
     },
     {
         "step": 2,
-        "title": "Read The Answer",
-        "copy": "The bot answers with one monster. Attack decides the winner; guard reduces damage.",
+        "title": "Leia A Resposta",
+        "copy": "O bot responde com um monstro. O ataque decide a vitória; a guarda reduz dano.",
     },
     {
         "step": 3,
-        "title": "Combine Duplicates",
-        "copy": "Two matching base monsters can evolve before you commit a card.",
+        "title": "Combine Duplicatas",
+        "copy": "Dois monstros básicos iguais podem evoluir antes de você jogar uma carta.",
     },
     {
         "step": 4,
-        "title": "Claim Progress",
-        "copy": "Clashes, boosters and tutorial completion now persist to your Rebirth account.",
+        "title": "Resgate Progresso",
+        "copy": "Clashes, boosters e a conclusão do tutorial ficam salvos na sua conta Rebirth.",
     },
 ]
 
 RELEASE_CHECKS = [
-    {"name": "Product Truth", "state": "passed", "copy": "Ambitionz Rebirth is the active product surface."},
-    {"name": "Legacy Disabled", "state": "passed", "copy": "Retired browser routes redirect and retired APIs return 410."},
-    {"name": "Persistence", "state": "passed", "copy": "Auth, collection, 30-card decks, progression and boosters persist in SQLite/PostgreSQL paths."},
-    {"name": "Account Safety", "state": "passed", "copy": "CSRF, auth throttling and password changes are active in the Rebirth shell."},
-    {"name": "Frontend", "state": "passed", "copy": "Vanilla Rebirth pages avoid old Arena/Ascension assets."},
-    {"name": "Card Feel", "state": "passed", "copy": "Clash results expose ability events, impact feedback and persisted reward moments."},
-    {"name": "Balance Lab", "state": "passed", "copy": "Bot personality simulations report card, ability and profile impact."},
-    {"name": "History", "state": "passed", "copy": "Signed-in matches persist commands, events, state hash and final snapshot."},
-    {"name": "Economy Ledger", "state": "passed", "copy": "XP, starter cards, boosters, daily rewards and admin grants write an auditable ledger."},
-    {"name": "Support Tools", "state": "passed", "copy": "Players can export/reset account state; admin grants require an explicit server token."},
-    {"name": "QA Gate", "state": "passed", "copy": "py_compile, pytest, node checks and Browser smoke passed for this block."},
+    {"name": "Produto Ativo", "state": "passed", "copy": "Ambitionz Rebirth é a superfície ativa do produto."},
+    {"name": "Legado Desativado", "state": "passed", "copy": "Rotas antigas redirecionam e APIs aposentadas retornam 410."},
+    {"name": "Persistência", "state": "passed", "copy": "Acesso, coleção, baralhos de 30 cartas, progressão e boosters persistem em SQLite/PostgreSQL."},
+    {"name": "Segurança da Conta", "state": "passed", "copy": "CSRF, limitação de autenticação e troca de senha estão ativos no Rebirth."},
+    {"name": "Interface", "state": "passed", "copy": "As páginas Rebirth usam apenas os recursos atuais da Arena."},
+    {"name": "Sensação das Cartas", "state": "passed", "copy": "Resultados de clash exibem habilidades, impacto e recompensas persistidas."},
+    {"name": "Laboratório de Balanceamento", "state": "passed", "copy": "Simulações de personalidades do bot relatam impacto de cartas, habilidades e perfis."},
+    {"name": "Histórico", "state": "passed", "copy": "Partidas autenticadas persistem comandos, eventos, hash de estado e retrato final."},
+    {"name": "Extrato Econômico", "state": "passed", "copy": "XP, cartas iniciais, boosters, recompensas diárias e concessões escrevem um extrato auditável."},
+    {"name": "Ferramentas de Suporte", "state": "passed", "copy": "Jogadores podem exportar/reiniciar a conta; concessões exigem token do servidor."},
+    {"name": "Controle de QA", "state": "passed", "copy": "py_compile, pytest, verificação Node e teste do navegador passaram neste bloco."},
 ]
 
 PROGRESSION_TRACK = [
-    {"level": 1, "name": "First Spark", "reward": "Starter pack ready", "state": "claimed"},
-    {"level": 2, "name": "Second Clash", "reward": "25 XP boost", "state": "ready"},
-    {"level": 3, "name": "Monster Bond", "reward": "Loadout tune-up", "state": "locked"},
-    {"level": 4, "name": "Apex Trial", "reward": "Evolved frame", "state": "locked"},
-    {"level": 5, "name": "Pack Runner", "reward": "Pack ticket", "state": "locked"},
-    {"level": 6, "name": "Guard Breaker", "reward": "Card upgrade spark", "state": "locked"},
-    {"level": 7, "name": "Clean Read", "reward": "Coach insight badge", "state": "locked"},
-    {"level": 8, "name": "Pressure Line", "reward": "Uncommon card chance", "state": "locked"},
-    {"level": 9, "name": "Twin Flame", "reward": "Duplicate bonus", "state": "locked"},
-    {"level": 10, "name": "Arena Name", "reward": "Profile title", "state": "locked"},
-    {"level": 11, "name": "Counterplay", "reward": "Pack ticket", "state": "locked"},
-    {"level": 12, "name": "Apex Bond", "reward": "Evolved card chance", "state": "locked"},
-    {"level": 13, "name": "Steady Hand", "reward": "Loadout slot style", "state": "locked"},
-    {"level": 14, "name": "Hot Streak", "reward": "XP boost", "state": "locked"},
-    {"level": 15, "name": "Vault Spark", "reward": "Collection frame", "state": "locked"},
-    {"level": 16, "name": "Duel Sense", "reward": "Coach badge", "state": "locked"},
-    {"level": 17, "name": "Pack Master", "reward": "Pack ticket", "state": "locked"},
-    {"level": 18, "name": "Wounded Read", "reward": "Uncommon card chance", "state": "locked"},
-    {"level": 19, "name": "Rebirth Chain", "reward": "Duplicate bonus", "state": "locked"},
-    {"level": 20, "name": "Season Spark", "reward": "Season 0 badge", "state": "locked"},
+    {"level": 1, "name": "Primeira Centelha", "reward": "Pacote inicial pronto", "state": "claimed"},
+    {"level": 2, "name": "Segundo Clash", "reward": "Bônus de 25 XP", "state": "ready"},
+    {"level": 3, "name": "Vínculo Monstruoso", "reward": "Ajuste de baralho", "state": "locked"},
+    {"level": 4, "name": "Prova Apex", "reward": "Moldura evoluída", "state": "locked"},
+    {"level": 5, "name": "Corredor de Pacotes", "reward": "Bilhete de pacote", "state": "locked"},
+    {"level": 6, "name": "Quebra-Guarda", "reward": "Centelha de melhoria", "state": "locked"},
+    {"level": 7, "name": "Leitura Limpa", "reward": "Selo de orientação", "state": "locked"},
+    {"level": 8, "name": "Linha de Pressão", "reward": "Chance de carta incomum", "state": "locked"},
+    {"level": 9, "name": "Chama Gêmea", "reward": "Bônus de duplicata", "state": "locked"},
+    {"level": 10, "name": "Nome de Arena", "reward": "Título de perfil", "state": "locked"},
+    {"level": 11, "name": "Contra-Jogada", "reward": "Bilhete de pacote", "state": "locked"},
+    {"level": 12, "name": "Vínculo Apex", "reward": "Chance de carta evoluída", "state": "locked"},
+    {"level": 13, "name": "Mão Firme", "reward": "Estilo de slot do baralho", "state": "locked"},
+    {"level": 14, "name": "Sequência Quente", "reward": "Bônus de XP", "state": "locked"},
+    {"level": 15, "name": "Centelha do Cofre", "reward": "Moldura de coleção", "state": "locked"},
+    {"level": 16, "name": "Instinto de Duelo", "reward": "Selo de orientação", "state": "locked"},
+    {"level": 17, "name": "Mestre de Pacotes", "reward": "Bilhete de pacote", "state": "locked"},
+    {"level": 18, "name": "Leitura da Ferida", "reward": "Chance de carta incomum", "state": "locked"},
+    {"level": 19, "name": "Corrente Rebirth", "reward": "Bônus de duplicata", "state": "locked"},
+    {"level": 20, "name": "Centelha da Temporada", "reward": "Selo da Temporada 0", "state": "locked"},
 ]
 
 
@@ -156,9 +156,9 @@ def product_shell_payload(account=None):
         {
             "account": account,
             "status": [
-                {"label": "Modo", "value": "TCG Clash"},
-                {"label": "Cartas", "value": "100 no catalogo"},
-                {"label": "Economia", "value": "Gold + Coinz"},
+                {"label": "Modo", "value": "Clash TCG"},
+                {"label": "Cartas", "value": "100 no catálogo"},
+                {"label": "Economia", "value": "Ouro + Gemas"},
             ],
             "blocks": [
                 {
@@ -178,12 +178,12 @@ def product_shell_payload(account=None):
                 },
                 {
                     "title": "Recompensas",
-                    "copy": "Suba de nivel com XP, missoes diarias e marcos de temporada.",
+                    "copy": "Suba de nível com XP, missões diárias e marcos de temporada.",
                     "href": "/rebirth/progression",
                 },
                 {
                     "title": "Perfil",
-                    "copy": "Acompanhe nivel, badges, carteira e controles da conta.",
+                    "copy": "Acompanhe nível, selos, carteira e controles da conta.",
                     "href": "/rebirth/profile",
                 },
             ],
@@ -196,19 +196,19 @@ def auth_plan_payload(account=None):
     account = account or guest_account()
     payload = page_payload(
         "account",
-        "Login / Registro",
-        "Entre para guardar colecao, recompensas, Gold e Coinz.",
+        "Login / Cadastro",
+        "Entre para guardar coleção, recompensas, Ouro e Gemas.",
         primary_label="Entrar na Arena",
         primary_href="/rebirth?firstRun=1",
     )
     payload["account"] = account
     payload["steps"] = deepcopy(AUTH_PLAN_STEPS)
     payload["constraints"] = [
-        "Every clash earns account XP.",
-        "The first match starts with coaching across monsters, spells and traps.",
-        "Daily rewards unlock after one clash.",
-        "Packs and loadout changes persist to this player.",
-        "Password controls live inside the Profile screen.",
+        "Cada clash concede XP à conta.",
+        "A primeira partida começa com orientação sobre monstros, magias e armadilhas.",
+        "Recompensas diárias são liberadas após um clash.",
+        "Pacotes e alterações de baralho ficam salvos para este jogador.",
+        "Os controles de senha ficam na tela Perfil.",
     ]
     return payload
 
@@ -227,7 +227,7 @@ def card_collection(collection_counts=None, loadout_card_ids=None):
         card_copy = deepcopy(card)
         card_copy["owned_count"] = counts.get(card["id"], 0)
         card_copy["in_loadout_count"] = loadout_counts.get(card["id"], 0)
-        card_copy["unlock_state"] = "owned" if card_copy["owned_count"] else "preview"
+        card_copy["unlock_state"] = "Possuída" if card_copy["owned_count"] else "Prévia"
         card_copy["is_evolved"] = int(card_copy.get("tier", 1)) > 1
         cards.append(card_copy)
     return cards
@@ -264,7 +264,7 @@ def collection_payload(account=None, collection_counts=None, loadout_card_ids=No
 
 def validate_loadout(card_ids, collection_counts=None):
     if not isinstance(card_ids, list):
-        raise ValueError("card_ids must be a list.")
+        raise ValueError("card_ids deve ser uma lista.")
     selected = [str(card_id) for card_id in card_ids if str(card_id or "").strip()]
     validate_deck_distribution(selected)
 
@@ -272,9 +272,9 @@ def validate_loadout(card_ids, collection_counts=None):
     selected_counts = Counter(selected)
     for card_id, amount in selected_counts.items():
         if card_id not in owned:
-            raise ValueError(f"{card_id} is not owned in the Rebirth collection.")
+            raise ValueError(f"{card_id} não pertence à coleção Rebirth.")
         if amount > owned[card_id]:
-            raise ValueError(f"{card_id} exceeds owned copies.")
+            raise ValueError(f"{card_id} excede as cópias possuídas.")
 
     loadout = [get_card(card_id) for card_id in selected]
     families = sorted({card["family"] for card in loadout})
@@ -305,7 +305,7 @@ def shop_payload(account=None, booster_history=None, market_offers=None):
                 {
                     "id": "starter_booster_demo",
                     "name": "Booster Rebirth",
-                    "price": "Gratis na beta",
+                    "price": "Grátis na beta",
                     "contents": "5 cartas: 3 comuns e 2 incomuns",
                     "state": "available",
                 }
@@ -317,7 +317,7 @@ def shop_payload(account=None, booster_history=None, market_offers=None):
             },
             "account": account,
             "history": booster_history or [],
-            "disclaimer": "Boosters sao gratis durante a beta Rebirth. O mercado bloqueia cartas listadas ate venda ou cancelamento.",
+            "disclaimer": "Boosters são grátis durante a beta Rebirth. O mercado bloqueia cartas listadas até a venda ou o cancelamento.",
         }
     )
     return payload
@@ -378,7 +378,7 @@ def progression_payload(account=None, progression=None):
             "profile": profile,
             "track": progression_track(profile),
             "daily": {
-                "name": "Play one clash",
+                "name": "Jogue um clash",
                 "progress": min(1, int(profile.get("clashes", 0))),
                 "goal": 1,
                 "reward": "25 XP",
@@ -427,12 +427,12 @@ def guest_profile():
                 "unlocked_at": None,
             }
             for key, name, copy in [
-                ("founder", "Rebirth Founder", "Create a Rebirth account."),
-                ("first_clash", "First Clash", "Resolve one persisted Rebirth clash."),
-                ("first_win", "First Victory", "Win a persisted Rebirth match."),
-                ("first_booster", "Booster Opened", "Open one no-payment Rebirth booster."),
-                ("daily_claimed", "Daily Spark", "Claim the first-clash daily reward."),
-                ("tutorial_complete", "Awakened", "Complete the Rebirth onboarding path."),
+                ("founder", "Fundador Rebirth", "Crie uma conta Rebirth."),
+                ("first_clash", "Primeiro Clash", "Resolva um clash Rebirth persistido."),
+                ("first_win", "Primeira Vitória", "Vença uma partida Rebirth persistida."),
+                ("first_booster", "Booster Aberto", "Abra um booster Rebirth sem pagamento."),
+                ("daily_claimed", "Centelha Diária", "Resgate a recompensa diária do primeiro clash."),
+                ("tutorial_complete", "Desperto", "Conclua a introdução do Rebirth."),
             ]
         ],
         "unlocked_achievements": 0,
@@ -475,9 +475,9 @@ def history_payload(account=None, matches=None, ledger=None):
     ledger = ledger or []
     payload = page_payload(
         "history",
-        "Match History + Economy Ledger",
-        "Persisted Rebirth matches now save command/event counts, state hashes and reward movements.",
-        primary_label="Play For History",
+        "Histórico de Partidas + Extrato Econômico",
+        "Partidas Rebirth persistidas salvam comandos, eventos, hashes de estado e movimentos de recompensa.",
+        primary_label="Jogar pelo Histórico",
         primary_href="/rebirth",
     )
     payload.update(
@@ -499,9 +499,9 @@ def support_payload(account=None, export=None):
     account = account or guest_account()
     payload = page_payload(
         "support",
-        "Support + Admin Safety",
-        "Account export, account reset and token-protected admin grants for the Rebirth MVP.",
-        primary_label="Open Profile",
+        "Suporte + Segurança Administrativa",
+        "Exportação, reinício de conta e concessões protegidas por token para o MVP Rebirth.",
+        primary_label="Abrir Perfil",
         primary_href="/rebirth/profile",
     )
     payload.update(
@@ -509,10 +509,10 @@ def support_payload(account=None, export=None):
             "account": account,
             "export": export,
             "checks": [
-                "Player export is self-service and scoped to the signed-in account.",
-                "Reset requires an explicit confirmation payload.",
-                "Admin grant is disabled unless REBIRTH_ADMIN_TOKEN is configured.",
-                "Every admin grant writes admin_audit_log and economy_ledger entries.",
+                "A exportação é autônoma e limitada à conta conectada.",
+                "O reinício exige confirmação explícita.",
+                "A concessão administrativa fica desativada sem REBIRTH_ADMIN_TOKEN.",
+                "Toda concessão registra entradas em admin_audit_log e economy_ledger.",
             ],
         }
     )
@@ -522,9 +522,9 @@ def support_payload(account=None, export=None):
 def lab_payload():
     payload = page_payload(
         "lab",
-        "Rebirth Lab",
-        "Internal QA, support and release tools for the Rebirth team.",
-        primary_label="Back To Play",
+        "Laboratório Rebirth",
+        "Ferramentas internas de QA, suporte e lançamento para a equipe Rebirth.",
+        primary_label="Voltar ao Jogo",
         primary_href="/rebirth",
     )
     payload.update({"links": deepcopy(LAB_LINKS)})
@@ -534,18 +534,18 @@ def lab_payload():
 def desktop_payload():
     payload = page_payload(
         "desktop",
-        "Desktop Arena Polish",
-        "The desktop shell frames the portrait board with useful Rebirth status rails instead of stretching the game.",
-        primary_label="Open Arena",
+        "Polimento da Arena Desktop",
+        "A moldura desktop enquadra o tabuleiro vertical com status úteis sem esticar o jogo.",
+        primary_label="Abrir Arena",
         primary_href="/rebirth",
     )
     payload.update(
         {
             "checks": [
-                "Portrait board remains fixed and centered.",
-                "Desktop rails add status without changing game rules.",
-                "No document scroll on the playable arena.",
-                "Mobile keeps the single-screen composition.",
+                "O tabuleiro vertical permanece fixo e centralizado.",
+                "As laterais desktop adicionam status sem mudar as regras.",
+                "A arena jogável não cria rolagem da página.",
+                "O celular mantém a composição em uma única tela.",
             ]
         }
     )
@@ -557,9 +557,9 @@ def onboarding_payload(account=None, progression=None):
     progress = progression or {}
     payload = page_payload(
         "tutorial",
-        "Onboarding/Tutorial Rebirth",
-        "A short playable tutorial path for the persisted Rebirth loop.",
-        primary_label="Play Tutorial Clash",
+        "Introdução/Tutorial Rebirth",
+        "Um percurso jogável curto para aprender o ciclo persistido do Rebirth.",
+        primary_label="Jogar Clash Tutorial",
         primary_href="/rebirth",
     )
     payload.update(
@@ -576,20 +576,20 @@ def onboarding_payload(account=None, progression=None):
 def balance_payload(simulation=None):
     payload = page_payload(
         "balance",
-        "Balance + Bot Tuning",
-        "Deterministic simulations watch card, ability and bot personality impact without adding legacy battle systems.",
-        primary_label="Open Arena",
+        "Balanceamento + Ajuste do Bot",
+        "Simulações determinísticas medem cartas, habilidades e personalidades do bot sem reativar sistemas antigos.",
+        primary_label="Abrir Arena",
         primary_href="/rebirth",
     )
     payload.update(
         {
             "simulation": simulation,
             "notes": [
-                "Defensive bot prioritizes guarded wins and absorption lines.",
-                "Aggressive bot pushes high attack and quick pressure.",
-                "Opportunist bot looks for ability swings, finishers and pressure windows.",
-                "The simulation is deterministic, capped and reports per-card/per-ability impact.",
-                "The player simulator now evolves available duplicates before choosing a tactical clash line.",
+                "O bot defensivo prioriza vitórias protegidas e linhas de absorção.",
+                "O bot agressivo força ataque alto e pressão rápida.",
+                "O bot oportunista busca viradas por habilidade, finalizações e janelas de pressão.",
+                "A simulação é determinística, limitada e relata impacto por carta e habilidade.",
+                "O simulador do jogador evolui duplicatas disponíveis antes de escolher uma linha de clash.",
             ],
         }
     )
@@ -599,9 +599,9 @@ def balance_payload(simulation=None):
 def release_payload():
     payload = page_payload(
         "release",
-        "Release Candidate Hygiene",
-        "The final gate for Rebirth deploy truth, offline cache, tests and legacy containment.",
-        primary_label="Health",
+        "Higiene da Versão Candidata",
+        "O controle final de deploy, cache offline, testes e contenção do legado do Rebirth.",
+        primary_label="Saúde",
         primary_href="/health",
     )
     payload.update(

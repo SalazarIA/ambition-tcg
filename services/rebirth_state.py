@@ -107,7 +107,7 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
     return drawn
 
 
-def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile_id=None):
+def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profile_id=None):
     match_id = _match_id(seed)
     deck_ids = None
     if player_card_ids:
@@ -133,8 +133,8 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
         "winner": None,
         "is_finished": False,
         "log": [
-            "Turn 01   Rebirth clash initialized.",
-            "Turn 01   Choose a card.",
+            "Turno 01   Duelo Rebirth iniciado.",
+            "Turno 01   Escolha uma carta.",
         ],
         "catalog": catalog_payload(),
     }
@@ -149,7 +149,7 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
             "player_deck_count": len(player["deck"]) + len(player["hand"]),
             "bot_deck_count": len(bot["deck"]) + len(bot["hand"]),
         },
-        message="Rebirth clash initialized.",
+        message="Duelo Rebirth iniciado.",
     )
     append_snapshot(match, "match_started")
     return match
@@ -158,7 +158,7 @@ def create_match(seed=None, player_card_ids=None, player_name="You", bot_profile
 def set_turn_phase(match, phase):
     phase_value = phase.value if isinstance(phase, TurnPhase) else str(phase or "")
     if phase_value not in {item.value for item in TurnPhase}:
-        raise RebirthStateError(f"Invalid turn phase: {phase_value}")
+        raise RebirthStateError(f"Fase de turno inválida: {phase_value}")
     match["turn_phase"] = phase_value
     return match
 
@@ -177,7 +177,7 @@ def remove_from_hand(player, *, card_instance_id=None, card_id=None):
             return player["hand"].pop(index)
         if not card_instance_id and card_id and card["id"] == card_id:
             return player["hand"].pop(index)
-    raise RebirthStateError("Card is not in hand.")
+    raise RebirthStateError("A carta não está na mão.")
 
 
 def add_to_discard(player, card):

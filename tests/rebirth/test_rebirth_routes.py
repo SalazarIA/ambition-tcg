@@ -8,7 +8,7 @@ def test_home_rebirth_and_health_routes_return_200(client):
     health = client.get("/health")
 
     assert home.status_code == 200
-    assert "Duelos, colecao e mercado em uma mesa viva." in home.get_data(as_text=True)
+    assert "Duelos, coleção e mercado em uma mesa viva." in home.get_data(as_text=True)
     assert rebirth.status_code == 200
     assert "data-rebirth-app" in rebirth.get_data(as_text=True)
     assert health.status_code == 200
@@ -146,7 +146,7 @@ def test_shop_route_is_server_rendered_with_native_nav(client):
     assert 'js/rebirth_product.js' in body
 
 
-def test_play_card_api_summons_then_attack_resolves_combat(client):
+def test_play_card_api_blocks_first_turn_direct_damage_until_bot_responds(client):
     start = client.post("/api/rebirth/start", json={"seed": "routes-play"})
     state = start.get_json()["state"]
     card = next(card for card in state["player"]["hand"] if card["id"] == "card_001")
@@ -165,9 +165,8 @@ def test_play_card_api_summons_then_attack_resolves_combat(client):
     assert payload["state"]["last_clash"] is None
     assert payload["match_reward"]["persisted"] is False
 
-    # Bot field is empty right after the player's summon — bot now acts only
-    # in its own turn (see services.rebirth_engine.next_turn). So this attack
-    # resolves as a direct attack on the bot's HP, not a creature clash.
+    # O bot ainda não respondeu no turno inicial; dano direto não pode furar
+    # essa janela sem defesa.
     assert payload["state"]["bot"]["battlefield"] == []
     attack = client.post(
         "/api/rebirth/attack",
@@ -178,13 +177,29 @@ def test_play_card_api_summons_then_attack_resolves_combat(client):
     )
     attack_payload = attack.get_json()
 
-    assert attack.status_code == 200
-    assert attack_payload["ok"] is True
-    assert attack_payload["state"]["phase"] == "result"
-    assert attack_payload["state"]["last_clash"]["player_card"]["id"] == "card_001"
-    assert attack_payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
-    # Direct attack: bot HP must have dropped from 30.
-    assert attack_payload["state"]["bot"]["hp"] < 30
+    assert attack.status_code == 409
+    assert attack_payload["ok"] is False
+    assert attack_payload["error"]["code"] == "first_turn_direct_attack_blocked"
+
+    bot_turn = client.post("/api/rebirth/next-turn", json={"match_id": payload["state"]["match_id"]})
+    after_bot = bot_turn.get_json()["state"]
+    assert bot_turn.status_code == 200
+    assert after_bot["bot"]["hp"] == 30
+    assert after_bot["bot"]["battlefield"]
+
+    clash = client.post(
+        "/api/rebirth/attack",
+        json={
+            "match_id": after_bot["match_id"],
+            "attacker_instance_id": after_bot["player"]["battlefield"][0]["instance_id"],
+            "target_instance_id": after_bot["bot"]["battlefield"][0]["instance_id"],
+        },
+    )
+    clash_payload = clash.get_json()
+    assert clash.status_code == 200
+    assert clash_payload["ok"] is True
+    assert clash_payload["state"]["last_clash"]["player_card"]["id"] == "card_001"
+    assert clash_payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
 
 
 def test_play_card_api_accepts_explicit_monster_slot(client):

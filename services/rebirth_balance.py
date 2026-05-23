@@ -130,6 +130,8 @@ def choose_bot_target(match):
 
 def declare_best_attack(match, attacker):
     target = choose_bot_target(match)
+    if target is None and int(match.get("turn", 1) or 1) == 1:
+        return None
     return declare_attack(
         match,
         attacker_instance_id=attacker["instance_id"],
@@ -348,7 +350,7 @@ def simulate_balance(matches=40):
         "evolution_usage": [{"card_id": card_id, "count": count} for card_id, count in evolution_usage.most_common()],
         "samples": samples,
         "bot_tuning": {
-            "policy": "rotate defensive, aggressive and opportunist profiles; player evolves duplicates and picks projected tactical lines",
+            "policy": "alterna perfis defensivo, agressivo e oportunista; o jogador evolui duplicatas e escolhe linhas táticas projetadas",
             "status": "season 0 parity lab",
         },
     }

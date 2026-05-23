@@ -21,7 +21,7 @@
             return response.json().then(function (body) {
                 if (!response.ok || !body.ok) {
                     const serverError = body && body.error ? body.error : {};
-                    const error = new Error(serverError.message || "Request failed.");
+                    const error = new Error(serverError.message || "A solicitação falhou.");
                     error.code = serverError.code || "rebirth_error";
                     throw error;
                 }
@@ -35,7 +35,7 @@
             return response.json().then(function (body) {
                 if (!response.ok || !body.ok) {
                     const serverError = body && body.error ? body.error : {};
-                    const error = new Error(serverError.message || "Request failed.");
+                    const error = new Error(serverError.message || "A solicitação falhou.");
                     error.code = serverError.code || "rebirth_error";
                     throw error;
                 }
@@ -203,12 +203,12 @@
                 label.textContent = account.authenticated ? "Jogador" : "Visitante";
             }
             if (name) {
-                name.textContent = account.user && account.user.username ? account.user.username : "Guest Duelist";
+                name.textContent = account.user && account.user.username ? account.user.username : "Duelista Visitante";
             }
         }
         if (account.authenticated) {
             Array.from(document.querySelectorAll("[data-rebirth-auth-open]")).forEach(function (button) {
-                button.textContent = "Logout";
+                button.textContent = "Sair";
                 button.removeAttribute("data-rebirth-auth-open");
                 button.setAttribute("data-rebirth-logout", "");
                 button.classList.add("rb-nav-logout");

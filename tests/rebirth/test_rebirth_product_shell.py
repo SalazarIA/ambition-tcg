@@ -10,18 +10,18 @@ def read(path):
 
 def test_rebirth_product_pages_render_active_shell(client):
     expected = {
-        "/rebirth/account": "Login / Registro",
+        "/rebirth/account": "Login / Cadastro",
         "/rebirth/collection": "Minha Coleção",
         "/rebirth/shop": "Loja &amp; Mercado",
         "/rebirth/progression": "Recompensas",
         "/rebirth/profile": "Perfil do Jogador",
-        "/rebirth/lab": "Rebirth Lab",
-        "/rebirth/history": "Match History + Economy Ledger",
-        "/rebirth/desktop": "Desktop Arena Polish",
-        "/rebirth/onboarding": "Onboarding/Tutorial Rebirth",
-        "/rebirth/balance": "Balance + Bot Tuning",
-        "/rebirth/support": "Support + Admin Safety",
-        "/rebirth/release": "Release Candidate Hygiene",
+        "/rebirth/lab": "Laboratório Rebirth",
+        "/rebirth/history": "Histórico de Partidas + Extrato Econômico",
+        "/rebirth/desktop": "Polimento da Arena Desktop",
+        "/rebirth/onboarding": "Introdução/Tutorial Rebirth",
+        "/rebirth/balance": "Balanceamento + Ajuste do Bot",
+        "/rebirth/support": "Suporte + Segurança Administrativa",
+        "/rebirth/release": "Higiene da Versão Candidata",
     }
 
     for path, label in expected.items():
@@ -37,7 +37,7 @@ def test_rebirth_product_pages_render_active_shell(client):
             assert "data-rebirth-progression-dashboard" in body
             assert "data-rebirth-ledger-list" in body
         if path == "/rebirth/shop":
-            assert "Player Market" in body
+            assert "Mercado de Jogadores" in body
             assert "data-rebirth-market-offers" in body
 
 
@@ -56,13 +56,13 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     release = client.get("/api/rebirth/release")
 
     assert shell.status_code == 200
-    assert shell.get_json()["shell"]["status"][0]["value"] == "TCG Clash"
+    assert shell.get_json()["shell"]["status"][0]["value"] == "Clash TCG"
     assert auth.status_code == 200
-    assert auth.get_json()["auth"]["steps"][0]["title"] == "Create"
+    assert auth.get_json()["auth"]["steps"][0]["title"] == "Criar"
     assert collection.status_code == 200
     assert collection.get_json()["collection"]["summary"]["loadout_size"] == 30
     assert shop.status_code == 200
-    assert shop.get_json()["shop"]["offers"][0]["price"] == "Gratis na beta"
+    assert shop.get_json()["shop"]["offers"][0]["price"] == "Grátis na beta"
     assert progression.status_code == 200
     assert progression.get_json()["progression"]["profile"]["level"] == 1
     assert profile.status_code == 200
@@ -72,13 +72,13 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert ledger_locked.status_code == 401
     assert ledger_locked.get_json()["error"]["code"] == "auth_required"
     assert desktop.status_code == 200
-    assert "Portrait board" in desktop.get_json()["desktop"]["checks"][0]
+    assert "tabuleiro vertical" in desktop.get_json()["desktop"]["checks"][0]
     assert onboarding.status_code == 200
-    assert onboarding.get_json()["onboarding"]["steps"][0]["title"] == "Pick One Monster"
+    assert onboarding.get_json()["onboarding"]["steps"][0]["title"] == "Escolha Um Monstro"
     assert balance.status_code == 200
     assert balance.get_json()["balance"]["matches"] == 8
     assert release.status_code == 200
-    assert release.get_json()["release"]["checks"][0]["name"] == "Product Truth"
+    assert release.get_json()["release"]["checks"][0]["name"] == "Produto Ativo"
 
 
 def test_rebirth_loadout_preview_validates_owned_cards(client):
@@ -120,7 +120,7 @@ def test_rebirth_booster_demo_returns_five_cards_without_economy(client):
     assert len(payload["booster"]["cards"]) == 5
 
     shop = client.get("/api/rebirth/shop").get_json()["shop"]
-    assert "Boosters sao gratis durante a beta Rebirth" in shop["disclaimer"]
+    assert "Boosters são grátis durante a beta Rebirth" in shop["disclaimer"]
 
 
 def test_rebirth_product_shell_does_not_load_legacy_assets():

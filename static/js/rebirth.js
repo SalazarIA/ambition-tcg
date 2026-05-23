@@ -216,7 +216,7 @@
     const RebirthApi = {
         async post(url, body) {
             if (!url) {
-                throw this.error("missing_endpoint", "Rebirth endpoint is not configured.");
+                throw this.error("missing_endpoint", "O endpoint Rebirth não está configurado.");
             }
             let response;
             try {
@@ -230,19 +230,19 @@
                     body: JSON.stringify(body || {})
                 });
             } catch (error) {
-                throw this.error("network_error", error.message || "Network request failed.");
+                throw this.error("network_error", error.message || "Falha na requisição de rede.");
             }
 
             let payload = null;
             try {
                 payload = await response.json();
             } catch (_error) {
-                throw this.error("malformed_response", "The server returned an unreadable response.");
+                throw this.error("malformed_response", "O servidor retornou uma resposta ilegível.");
             }
 
             if (!response.ok || !payload || payload.ok !== true) {
                 const serverError = payload && payload.error ? payload.error : {};
-            throw this.error(serverError.code || "rebirth_error", serverError.message || "Rebirth request failed.");
+            throw this.error(serverError.code || "rebirth_error", serverError.message || "A requisição Rebirth falhou.");
             }
 
             return payload;
@@ -331,6 +331,16 @@
     };
 
     const RebirthStatus = {
+        label(name) {
+            return {
+                burn: "Queimadura",
+                decay: "Deterioração",
+                shield: "Escudo",
+                weaken: "Fraqueza",
+                freeze: "Congelamento"
+            }[String(name || "").toLowerCase()] || name;
+        },
+
         names(statuses) {
             return Object.keys(statuses || {}).filter((name) => {
                 const status = statuses[name];
@@ -349,13 +359,13 @@
             return '<div class="rb-status-strip">' + names.slice(0, 3).map((name) => {
                 const status = statuses[name] || {};
                 const turns = status.turns == null ? "" : " " + RebirthText.escape(status.turns);
-                return '<span data-status="' + RebirthText.escape(name) + '">' + RebirthText.escape(name) + turns + "</span>";
+                return '<span data-status="' + RebirthText.escape(name) + '">' + RebirthText.escape(this.label(name)) + turns + "</span>";
             }).join("") + "</div>";
         },
 
         miniBadge(statuses) {
             const name = this.names(statuses)[0];
-            return name ? '<span class="rb-mini-status">' + RebirthText.escape(name) + "</span>" : "";
+            return name ? '<span class="rb-mini-status">' + RebirthText.escape(this.label(name)) + "</span>" : "";
         }
     };
 
@@ -591,10 +601,10 @@
                 : this.temporaryPools[family]
                     ? family
                     : type === "TRAP"
-                        ? "HIDDEN"
+                        ? "OCULTO"
                         : type === "SPELL"
-                            ? "ARCANE"
-                            : "SHADOW";
+                            ? "ARCANO"
+                            : "SOMBRA";
             const pool = this.temporaryPools[key] || this.temporaryPools.SHADOW;
             const digits = parseInt(String(card.id || card.instance_id || "0").replace(/\D/g, ""), 10) || 0;
             return pool[Math.max(0, digits - 1) % pool.length];
@@ -696,7 +706,7 @@
             const statusClass = RebirthStatus.className(statuses);
             const ability = this.abilitySummary(card);
             return `
-                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Select ${RebirthText.escape(card.name)}, attack ${RebirthText.escape(card.attack)}, guard ${RebirthText.escape(card.guard)}" ${disabled}>
+                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${RebirthStatus.miniBadge(statuses)}
@@ -775,7 +785,7 @@
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} on ${side} battlefield">
+                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} no campo ${side === "player" ? "do jogador" : "do bot"}">
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
@@ -784,7 +794,7 @@
                     </span>
                     <span class="rb-card-titlebar rb-card-hud-layer">
                         <strong class="rb-card-nameplate">${RebirthText.escape(card.name)}</strong>
-                        <small>${RebirthText.escape(card.element || card.family || "Void")} - T${RebirthText.escape(card.tier || 1)}</small>
+                        <small>${RebirthText.escape(card.element || card.family || "Vazio")} - T${RebirthText.escape(card.tier || 1)}</small>
                     </span>
                     <span class="rb-card-textbox rb-field-textbox rb-card-hud-layer">
                         <strong>${RebirthText.escape(ability.name)}</strong>
@@ -794,7 +804,7 @@
                         <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
                         <span class="rb-card-stat is-guard"><b>${RebirthText.escape(guard)}</b><small>GUARD</small></span>
                     </span>
-                    <i class="rb-guard-meter" aria-label="${RebirthText.escape(guard)}/${RebirthText.escape(maxGuard)} Guard"></i>
+                    <i class="rb-guard-meter" aria-label="${RebirthText.escape(guard)}/${RebirthText.escape(maxGuard)} Guarda"></i>
                 </button>
             `;
         },
@@ -813,8 +823,8 @@
             return `
                 <div class="rb-card-topline">
                     <div>
-                        <strong>Select a monster</strong>
-                        <span>Ready</span>
+                        <strong>Selecione um monstro</strong>
+                        <span>Pronto</span>
                     </div>
                     <b class="rb-card-rank">?</b>
                 </div>
@@ -1134,7 +1144,7 @@
         insight() {
             const state = RebirthStore.state;
             if (!state) {
-                return { badge: "Coach", title: "Carregando arena.", copy: "Preparando sua primeira mão." };
+                return { badge: "Guia", title: "Carregando arena.", copy: "Preparando sua primeira mão." };
             }
             if (!this.account().authenticated) {
                 return {
@@ -1270,6 +1280,7 @@
             const playerSlots = RebirthStore.fieldSlots("player");
             const botSlots = RebirthStore.fieldSlots("bot");
             const botCards = RebirthStore.fieldCards("bot");
+            const firstTurnDirectLocked = Number(state.turn || 1) === 1 && !botCards.length;
             const choosingAttack = Boolean(RebirthStore.selectedAttackerId)
                 && state.phase === "choose"
                 && !state.is_finished
@@ -1307,9 +1318,10 @@
                         targetable: choosingAttack
                     });
                 }
-                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Linha de guarda" : "Dano direto", {
-                    direct: !botCards.length,
-                    selected: choosingAttack && !botCards.length
+                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Linha de guarda" : firstTurnDirectLocked ? "Protegido no turno 1" : "Dano direto", {
+                    direct: !botCards.length && !firstTurnDirectLocked,
+                    selected: choosingAttack && !botCards.length && !firstTurnDirectLocked,
+                    locked: firstTurnDirectLocked
                 });
             }).join("");
         },
@@ -1346,7 +1358,7 @@
                 host.removeAttribute("data-art-key");
                 host.removeAttribute("data-statuses");
                 host.removeAttribute("style");
-                host.innerHTML = "<span>Bot's Card</span>";
+                host.innerHTML = "<span>Carta do bot</span>";
                 return;
             }
             const statuses = (RebirthStore.state.bot && RebirthStore.state.bot.statuses) || {};
@@ -1371,7 +1383,7 @@
 
             if (!canUse) {
                 RebirthDom.setText("evolution-status", RebirthStore.state.phase === "choose" ? "Sem duplicata" : "Bloqueado");
-                RebirthDom.setText("evolution-name", "No duplicate");
+                RebirthDom.setText("evolution-name", "Sem duplicata");
                 if (thumb) {
                     thumb.style.backgroundImage = "";
                     thumb.classList.add("rb-asset-fallback");
@@ -1379,7 +1391,7 @@
                 return;
             }
 
-            RebirthDom.setText("evolution-status", "Duplicate Found");
+            RebirthDom.setText("evolution-status", "Duplicata encontrada");
             RebirthDom.setText("evolution-name", `${evolution.name} x${evolution.count}`);
             const sourceCard = (RebirthStore.state.player.hand || []).find((card) => card.id === evolution.card_id);
             if (thumb && sourceCard) {
@@ -1405,7 +1417,7 @@
                 statuses: card.instance_id === RebirthStore.selectedInstanceId ? RebirthStore.state.player.statuses : null,
                 locked: !canChoose || energy < RebirthMarkup.cardCost(card) || (RebirthMarkup.isMonster(card) && !hasOpenSlot),
                 lockedReason: !canChoose
-                    ? "Action unavailable outside your main phase"
+                    ? "Ação indisponível fora da sua fase principal"
                     : energy < RebirthMarkup.cardCost(card)
                         ? `Sem mana suficiente: precisa de ${RebirthMarkup.cardCost(card)}`
                         : RebirthMarkup.isMonster(card) && !hasOpenSlot
@@ -1418,8 +1430,8 @@
             const panel = RebirthStore.elements["coach-panel"];
             if (!panel) return;
             const insight = RebirthCoach.insight();
-            panel.dataset.coachTone = String(insight.badge || "Coach").toLowerCase();
-            RebirthDom.setText("coach-badge", insight.badge || "Coach");
+            panel.dataset.coachTone = String(insight.badge || "Guia").toLowerCase();
+            RebirthDom.setText("coach-badge", insight.badge || "Guia");
             RebirthDom.setText("coach-title", insight.title || "Monte seu campo.");
             RebirthDom.setText("coach-copy", insight.copy || "Vou apontar a linha mais segura antes de você confirmar.");
         },
@@ -1439,9 +1451,9 @@
                 if (panel) {
                     panel.classList.add(tied ? "is-clash" : won ? "is-victory" : "is-defeat");
                 }
-                RebirthDom.setText("result-label", tied ? "Clash" : won ? "Victory" : "Defeat");
-                RebirthDom.setText("result-title", tied ? "Both sides fell." : won ? "You won the duel." : "Bot won the duel.");
-                RebirthDom.setText("result-copy", result && result.message ? result.message : "Start a new match when ready.");
+                RebirthDom.setText("result-label", tied ? "Clash" : won ? "Vitória" : "Derrota");
+                RebirthDom.setText("result-title", tied ? "Os dois lados caíram." : won ? "Você venceu o duelo." : "O bot venceu o duelo.");
+                RebirthDom.setText("result-copy", result && result.message ? result.message : "Inicie uma nova partida quando quiser.");
                 this.resultReadability(`finished:${state.turn}:${state.winner}:${result && result.message}`);
                 this.resultImpact();
                 return;
@@ -1450,8 +1462,10 @@
                 if (panel) {
                     panel.classList.add(`is-${String(result.outcome || "clash").toLowerCase()}`);
                 }
-                RebirthDom.setText("result-label", result.outcome);
-                RebirthDom.setText("result-title", result.outcome === "Clash" ? "No damage." : result.outcome);
+                const outcomeLabels = { Victory: "Vitória", Defeat: "Derrota", Clash: "Clash", Summon: "Invocação", Spell: "Magia", "Trap Armed": "Armadilha armada" };
+                const outcome = outcomeLabels[result.outcome] || result.outcome;
+                RebirthDom.setText("result-label", outcome);
+                RebirthDom.setText("result-title", result.outcome === "Clash" ? "Nenhum dano." : outcome);
                 RebirthDom.setText("result-copy", result.message);
                 this.resultReadability(`${state.turn}:${result.outcome}:${result.message}`);
                 this.resultImpact();
@@ -1478,7 +1492,7 @@
                 `<span><b>${RebirthText.escape(intent.label)}</b>${RebirthText.escape(intent.copy)}</span>`,
                 `<span><b>${RebirthText.escape(read.label)}</b>${RebirthText.escape(read.copy)}</span>`,
                 `<span><b>${RebirthText.escape(advantage.label)}</b>${RebirthText.escape(advantage.copy)}</span>`,
-                `<span><b>Enemy Hand</b>${RebirthText.escape(botHand)} hidden cards</span>`
+                `<span><b>Mão inimiga</b>${RebirthText.escape(botHand)} cartas ocultas</span>`
             ].join("");
         },
 
@@ -1545,7 +1559,7 @@
                 return;
             }
             if (!events.length) {
-                host.innerHTML = '<span class="rb-ability-chip is-muted">Base combat</span>';
+                host.innerHTML = '<span class="rb-ability-chip is-muted">Combate básico</span>';
                 return;
             }
             host.innerHTML = events.slice(0, 2).map((event) => {
@@ -1569,16 +1583,16 @@
             }
             const achievements = (reward.achievements || []).map((item) => item.name).join(", ");
             const dailyLabel = reward.daily && reward.daily.state === "claimed"
-                ? "Daily claimed"
+                ? "Diária resgatada"
                 : reward.daily && reward.daily.ready
-                    ? "Daily ready"
+                    ? "Diária pronta"
                     : "";
             const nextLabel = reward.xp_to_next != null
-                ? RebirthText.escape(reward.xp_to_next) + " XP to next level"
+                ? RebirthText.escape(reward.xp_to_next) + " XP até o próximo nível"
                 : "";
             host.innerHTML = [
                 '<span class="rb-reward-xp">+' + RebirthText.escape(reward.xp) + " XP</span>",
-                "<span>Level " + RebirthText.escape(reward.level) + (reward.level_up ? " up" : "") + "</span>",
+                "<span>Nível " + RebirthText.escape(reward.level) + (reward.level_up ? " alcançado" : "") + "</span>",
                 nextLabel ? "<span>" + nextLabel + "</span>" : "",
                 achievements ? "<span>" + RebirthText.escape(achievements) + "</span>" : "",
                 dailyLabel ? '<span class="rb-reward-daily">' + RebirthText.escape(dailyLabel) + "</span>" : "",
@@ -1612,13 +1626,16 @@
             const cost = selected ? RebirthMarkup.cardCost(selected) : 0;
             const canPay = !selected || energy >= cost;
             const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked;
+            const directLocked = Number(state.turn || 1) === 1 && RebirthStore.fieldCards("bot").length === 0;
             if (RebirthStore.elements["play-button"]) {
                 const btn = RebirthStore.elements["play-button"];
                 if (selectedAttacker) {
                     btn.innerHTML = '<i class="rb-action-sword"></i>Atacar';
-                    btn.disabled = !canChoose || !attackerReady;
-                    btn.title = attackerReady
-                        ? "Ataca o monstro inimigo (ou direto, se o campo do oponente estiver vazio)."
+                    btn.disabled = !canChoose || !attackerReady || directLocked;
+                    btn.title = directLocked
+                        ? "Dano direto bloqueado no primeiro turno. Encerre o turno para o bot responder."
+                        : attackerReady
+                        ? "Ataca o monstro inimigo ou diretamente se o campo adversário estiver vazio."
                         : "Esse monstro já atacou neste turno.";
                 } else {
                     const emptySlot = RebirthStore.firstOpenFieldSlot("player");
@@ -1661,7 +1678,7 @@
         show(message) {
             const error = RebirthStore.elements["rebirth-error"];
             if (!error) return;
-            error.textContent = message || "Action refused.";
+            error.textContent = message || "Ação recusada.";
             error.classList.add("is-visible");
         },
 
@@ -1682,10 +1699,10 @@
             try {
                 await action();
             } catch (error) {
-                RebirthErrors.show(error.message || "Action failed.");
-                RebirthDom.setText("result-label", "Error");
-                RebirthDom.setText("result-title", "Action refused.");
-                RebirthDom.setText("result-copy", error.message || "Action failed.");
+                RebirthErrors.show(error.message || "A ação falhou.");
+                RebirthDom.setText("result-label", "Erro");
+                RebirthDom.setText("result-title", "Ação recusada.");
+                RebirthDom.setText("result-copy", error.message || "A ação falhou.");
             } finally {
                 RebirthStore.setPending(false);
                 if (RebirthStore.state) {
@@ -1788,6 +1805,11 @@
                 return;
             }
             const botField = RebirthStore.fieldCards("bot");
+            if (!targetInstanceId && !botField.length && Number(RebirthStore.state.turn || 1) === 1) {
+                RebirthErrors.show("Dano direto bloqueado no primeiro turno. Encerre o turno para o bot responder.");
+                RebirthRenderer.render();
+                return;
+            }
             const visualTargetId = targetInstanceId || (botField[0] && botField[0].instance_id) || null;
             if (targetInstanceId && !botField.some((card) => card.instance_id === targetInstanceId)) {
                 RebirthErrors.show("Esse defensor não está mais em campo.");
@@ -2002,8 +2024,8 @@
                 button.type = "button";
                 button.dataset.turnLogToggle = "true";
                 button.setAttribute("aria-controls", panel.id);
-                button.setAttribute("aria-label", "Open turn history");
-                button.innerHTML = '<i aria-hidden="true"></i><span>History</span>';
+                button.setAttribute("aria-label", "Abrir histórico do turno");
+                button.innerHTML = '<i aria-hidden="true"></i><span>Histórico</span>';
                 head.appendChild(button);
                 RebirthStore.elements["turn-log-toggle"] = button;
             }
@@ -2013,7 +2035,7 @@
                 const isOpen = !panel.classList.contains("is-open");
                 panel.classList.toggle("is-open", isOpen);
                 button.setAttribute("aria-expanded", isOpen ? "true" : "false");
-                button.setAttribute("aria-label", isOpen ? "Close turn history" : "Open turn history");
+                button.setAttribute("aria-label", isOpen ? "Fechar histórico do turno" : "Abrir histórico do turno");
             });
         }
     };

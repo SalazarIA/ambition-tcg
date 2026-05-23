@@ -65,8 +65,8 @@ def test_match_command_event_history_and_ledger_are_persisted(client):
 def test_history_and_support_pages_render(client):
     register(client, username="pages_user", email="pages@example.com")
     for path, label in {
-        "/rebirth/history": "Match History + Economy Ledger",
-        "/rebirth/support": "Support + Admin Safety",
+        "/rebirth/history": "Histórico de Partidas + Extrato Econômico",
+        "/rebirth/support": "Suporte + Segurança Administrativa",
     }.items():
         response = client.get(path)
         body = response.get_data(as_text=True)

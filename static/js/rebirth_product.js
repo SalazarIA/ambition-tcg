@@ -49,7 +49,7 @@
             return response.json().then(function (body) {
                 if (!response.ok || !body.ok) {
                     const serverError = body && body.error ? body.error : {};
-                    const error = new Error(serverError.message || "Request failed.");
+                    const error = new Error(serverError.message || "A requisição falhou.");
                     error.code = serverError.code || "rebirth_error";
                     throw error;
                 }
@@ -93,7 +93,7 @@
             return response.json().then(function (body) {
                 if (!response.ok || !body.ok) {
                     const serverError = body && body.error ? body.error : {};
-                    const error = new Error(serverError.message || "Request failed.");
+                    const error = new Error(serverError.message || "A requisição falhou.");
                     error.code = serverError.code || "rebirth_error";
                     throw error;
                 }
@@ -156,11 +156,12 @@
         const rarity = slug(card.rarity || "common");
         const element = slug(card.element || "default");
         const source = cardArtSource(card);
+        const rarityLabel = String(card.rarity || "").toUpperCase() === "UNCOMMON" ? "Incomum" : "Comum";
         return [
             '<article class="rb-product-card rb-product-card-compact rb-booster-card is-' + escapeHtml(rarity) + ' is-element-' + escapeHtml(element) + '">',
-            '<img src="' + escapeHtml(source) + '" data-rebirth-unsplash-fallback="' + escapeHtml(fallbackArt(card)) + '" alt="' + escapeHtml(card.name) + ' art">',
+            '<img src="' + escapeHtml(source) + '" data-rebirth-unsplash-fallback="' + escapeHtml(fallbackArt(card)) + '" alt="Arte de ' + escapeHtml(card.name) + '">',
             "<div>",
-            "<span>Slot " + escapeHtml(index + 1) + " - " + escapeHtml(card.rarity) + " - " + escapeHtml(card.element) + "</span>",
+            "<span>Slot " + escapeHtml(index + 1) + " - " + escapeHtml(rarityLabel) + " - " + escapeHtml(card.element) + "</span>",
             "<h2>" + escapeHtml(card.name) + "</h2>",
             "<p>" + escapeHtml(card.role) + "</p>",
             "<strong>" + escapeHtml(card.attack) + " ATK / " + escapeHtml(card.guard) + " GRD</strong>",
@@ -172,18 +173,18 @@
     function marketOfferMarkup(offer) {
         const card = offer.card || {};
         const currency = String(offer.currency_type || "COINZ").toUpperCase();
-        const currencyLabel = currency === "COINZ" ? "Coinz" : currency;
+        const currencyLabel = currency === "COINZ" ? "Gemas" : "Ouro";
         const source = cardArtSource(card);
         return [
             '<article class="rb-product-card rb-market-offer is-currency-' + escapeHtml(slug(currency)) + '" data-market-offer-id="' + escapeHtml(offer.id) + '">',
             '<div class="rb-market-art">',
-            '<img src="' + escapeHtml(source) + '" data-rebirth-unsplash-fallback="' + escapeHtml(fallbackArt(card)) + '" alt="' + escapeHtml(card.name || offer.card_id) + ' art">',
+            '<img src="' + escapeHtml(source) + '" data-rebirth-unsplash-fallback="' + escapeHtml(fallbackArt(card)) + '" alt="Arte de ' + escapeHtml(card.name || offer.card_id) + '">',
             '<span>' + escapeHtml(currencyLabel) + " P2P</span>",
             "</div>",
             '<div class="rb-market-copy">',
-            "<span>" + escapeHtml(offer.seller_name || "Player") + " listing</span>",
+            "<span>Oferta de " + escapeHtml(offer.seller_name || "Jogador") + "</span>",
             "<h2>" + escapeHtml(card.name || offer.card_id) + "</h2>",
-            "<p>" + escapeHtml(card.role || "Market card") + "</p>",
+            "<p>" + escapeHtml(card.role || "Carta do mercado") + "</p>",
             '<div class="rb-market-price"><span>Preco</span><strong>' + escapeHtml(offer.price) + " " + escapeHtml(currencyLabel) + "</strong></div>",
             '<button class="rb-button-secondary rb-secondary" type="button" data-rebirth-market-buy="' + escapeHtml(offer.id) + '">Comprar</button>',
             "</div>",
@@ -196,10 +197,10 @@
         const positive = delta >= 0;
         return [
             '<article class="rb-ledger-entry ' + (positive ? "is-credit" : "is-debit") + '">',
-            "<span>" + escapeHtml(entry.resource || "ledger") + "</span>",
+            "<span>" + escapeHtml(entry.resource || "extrato") + "</span>",
             "<strong>" + (positive ? "+" : "") + escapeHtml(delta) + "</strong>",
-            "<p>" + escapeHtml(entry.reason || "movement") + "</p>",
-            "<small>" + escapeHtml(entry.reference_type || "system") + " " + escapeHtml(entry.reference_id || "") + "</small>",
+            "<p>" + escapeHtml(entry.reason || "movimento") + "</p>",
+            "<small>" + escapeHtml(entry.reference_type || "sistema") + " " + escapeHtml(entry.reference_id || "") + "</small>",
             "</article>"
         ].join("");
     }
@@ -211,7 +212,7 @@
         const label = xpBox.querySelector("span");
         const value = xpBox.querySelector("strong");
         const fill = xpBox.querySelector("i b");
-        if (label) label.textContent = "Nivel " + progress.level;
+        if (label) label.textContent = "Nível " + progress.level;
         if (value) value.textContent = progress.xp + "/" + progress.next + " XP";
         if (fill) fill.style.width = progress.percent + "%";
     }
@@ -240,7 +241,7 @@
             if (ledger && ledger.length) {
                 ledgerList.innerHTML = ledger.slice(0, 6).map(ledgerEntryMarkup).join("");
             } else {
-                ledgerList.innerHTML = '<article class="rb-ledger-entry"><span>Ledger</span><strong>0</strong><p>Nenhum movimento persistido ainda.</p><small>Jogue, compre ou abra booster para registrar.</small></article>';
+                ledgerList.innerHTML = '<article class="rb-ledger-entry"><span>Extrato</span><strong>0</strong><p>Nenhum movimento persistido ainda.</p><small>Jogue, compre ou abra booster para registrar.</small></article>';
             }
         }
         updateGlobalProgress(profile);
@@ -298,7 +299,7 @@
 
         function renderOffers(offers) {
             if (!offers || !offers.length) {
-                list.innerHTML = '<article class="rb-product-panel"><span>Market</span><h2>No active offers</h2><p>Active player listings will appear here.</p></article>';
+                list.innerHTML = '<article class="rb-product-panel"><span>Mercado</span><h2>Nenhuma oferta ativa</h2><p>Ofertas ativas de jogadores aparecerão aqui.</p></article>';
                 return;
             }
             list.innerHTML = offers.map(marketOfferMarkup).join("");
@@ -321,13 +322,14 @@
                 return;
             }
             button.disabled = true;
-            if (result) result.textContent = "Buying market offer...";
+            if (result) result.textContent = "Comprando oferta do mercado...";
             postJson(endpoints.marketBuy, { offer_id: button.getAttribute("data-rebirth-market-buy") })
                 .then(function (payload) {
                     const purchase = payload.market.purchase;
                     if (result) {
                         const wallet = payload.wallet || {};
-                        result.textContent = "Comprado: " + purchase.offer.card.name + " por " + purchase.price + " " + purchase.currency_type + ". Carteira: Gold " + (wallet.GOLD == null ? "0" : wallet.GOLD) + " / Coinz " + (wallet.COINZ == null ? "0" : wallet.COINZ) + ".";
+                        const currency = purchase.currency_type === "COINZ" ? "Gemas" : "Ouro";
+                        result.textContent = "Comprado: " + purchase.offer.card.name + " por " + purchase.price + " " + currency + ". Carteira: Ouro " + (wallet.GOLD == null ? "0" : wallet.GOLD) + " / Gemas " + (wallet.COINZ == null ? "0" : wallet.COINZ) + ".";
                     }
                     if (payload.wallet && window.RebirthGlobalAuth && typeof window.RebirthGlobalAuth.applyWallet === "function") {
                         window.RebirthGlobalAuth.applyWallet(payload.wallet);
@@ -338,7 +340,7 @@
                 .catch(function (error) {
                     if (result) result.textContent = error.message;
                     if (error.code === "auth_required" && window.RebirthGlobalAuth) {
-                        window.RebirthGlobalAuth.open("Entre para comprar no Player Market.");
+                        window.RebirthGlobalAuth.open("Entre para comprar no Mercado de Jogadores.");
                     }
                 })
                 .finally(function () {
@@ -531,7 +533,7 @@
                 button.disabled = true;
             }
             if (authResult) {
-                authResult.textContent = "Working...";
+                authResult.textContent = "Processando...";
             }
             postJson(endpoint, formPayload(form))
                 .then(function (payload) {
@@ -539,7 +541,7 @@
                         window.REBIRTH_CSRF = payload.csrf;
                     }
                     if (authResult) {
-                        authResult.textContent = "Signed in as " + payload.account.user.username + ".";
+                        authResult.textContent = "Conectado como " + payload.account.user.username + ".";
                     }
                     window.location.href = redirectTo || "/rebirth";
                 })
@@ -598,10 +600,10 @@
             if (button) {
                 button.disabled = true;
             }
-            result.textContent = "Updating password...";
+            result.textContent = "Atualizando senha...";
             postJson(endpoints.changePassword, formPayload(form))
                 .then(function (payload) {
-                    result.textContent = payload.message || "Password updated.";
+                    result.textContent = payload.message || "Senha atualizada.";
                     form.reset();
                 })
                 .catch(function (error) {
@@ -623,11 +625,11 @@
         }
         button.addEventListener("click", function () {
             button.disabled = true;
-            result.textContent = "Claiming...";
+            result.textContent = "Resgatando...";
             postJson(endpoints.claimDaily, {})
                 .then(function (payload) {
-                    result.textContent = "Claimed " + payload.claim.xp + " XP.";
-                    button.textContent = "Claimed";
+                    result.textContent = payload.claim.xp + " XP resgatados.";
+                    button.textContent = "Resgatado";
                     button.dataset.dailyState = "claimed";
                     button.disabled = true;
                     if (payload.claim && payload.claim.progression) {
@@ -639,8 +641,8 @@
                 })
                 .catch(function (error) {
                     result.textContent = error.message;
-                    if (/already claimed/i.test(error.message)) {
-                        button.textContent = "Claimed";
+                    if (/já foi resgatada|already claimed/i.test(error.message)) {
+                        button.textContent = "Resgatado";
                         button.dataset.dailyState = "claimed";
                         button.disabled = true;
                     }
@@ -661,11 +663,11 @@
         }
         button.addEventListener("click", function () {
             button.disabled = true;
-            result.textContent = "Saving tutorial...";
+            result.textContent = "Salvando tutorial...";
             postJson(endpoints.completeTutorial, { step: 4 })
                 .then(function (payload) {
                     const progress = payload.tutorial.progression;
-                    result.textContent = "Tutorial complete. Level " + progress.level + ", " + progress.xp + " XP.";
+                    result.textContent = "Tutorial concluído. Nível " + progress.level + ", " + progress.xp + " XP.";
                 })
                 .catch(function (error) {
                     result.textContent = error.message;
@@ -692,8 +694,8 @@
                     const label = row[labelKey] || row.name || row.card_id || row.ability_key || row.profile_id;
                     const rate = row.player_win_rate != null ? row.player_win_rate : row.win_rate;
                     const detail = row.matches != null
-                        ? row.matches + " matches / " + row.average_turns + " avg turns"
-                        : row.plays + " plays / " + row.avg_damage + " avg damage";
+                        ? row.matches + " partidas / " + row.average_turns + " turnos médios"
+                        : row.plays + " jogadas / " + row.avg_damage + " dano médio";
                     return "<article><span>" + escapeHtml(label) + "</span><strong>" + escapeHtml(rate) + "</strong><small>" + escapeHtml(detail) + "</small></article>";
                 }).join(""),
                 "</section>"
@@ -706,20 +708,20 @@
                 .then(function (payload) {
                     const summary = payload.balance.summary;
                     result.innerHTML = [
-                        "<article><span>Player</span><strong>" + escapeHtml(summary.player_win_rate) + "</strong></article>",
+                        "<article><span>Jogador</span><strong>" + escapeHtml(summary.player_win_rate) + "</strong></article>",
                         "<article><span>Bot</span><strong>" + escapeHtml(summary.bot_win_rate) + "</strong></article>",
-                        "<article><span>Avg Turns</span><strong>" + escapeHtml(summary.average_turns) + "</strong></article>",
-                        "<article><span>Matches</span><strong>" + escapeHtml(payload.balance.matches) + "</strong></article>"
+                        "<article><span>Turnos Médios</span><strong>" + escapeHtml(summary.average_turns) + "</strong></article>",
+                        "<article><span>Partidas</span><strong>" + escapeHtml(payload.balance.matches) + "</strong></article>"
                     ].join("");
                     if (details) {
                         details.innerHTML = [
-                            labSection("Bot Profiles", payload.balance.profile_results || [], "name"),
-                            labSection("Card Impact", payload.balance.card_stats || [], "name"),
-                            labSection("Ability Impact", payload.balance.ability_stats || [], "name")
+                            labSection("Perfis do Bot", payload.balance.profile_results || [], "name"),
+                            labSection("Impacto das Cartas", payload.balance.card_stats || [], "name"),
+                            labSection("Impacto das Habilidades", payload.balance.ability_stats || [], "name")
                         ].join("");
                     }
                     if (title) {
-                        title.textContent = payload.balance.matches + " Matches";
+                        title.textContent = payload.balance.matches + " Partidas";
                     }
                 })
                 .catch(function (error) {
@@ -744,7 +746,7 @@
         if (exportButton && endpoints.supportExport) {
             exportButton.addEventListener("click", function () {
                 exportButton.disabled = true;
-                result.textContent = "Exporting...";
+                result.textContent = "Exportando...";
                 getJson(endpoints.supportExport)
                     .then(write)
                     .catch(function (error) {
@@ -757,12 +759,12 @@
         }
         if (resetButton && endpoints.supportReset) {
             resetButton.addEventListener("click", function () {
-                const confirmed = window.confirm("Reset this Rebirth account back to starter state?");
+                const confirmed = window.confirm("Reiniciar esta conta Rebirth para o estado inicial?");
                 if (!confirmed) {
                     return;
                 }
                 resetButton.disabled = true;
-                result.textContent = "Resetting...";
+                result.textContent = "Reiniciando...";
                 postJson(endpoints.supportReset, { confirm: "RESET REBIRTH" })
                     .then(write)
                     .catch(function (error) {

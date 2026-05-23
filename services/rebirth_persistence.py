@@ -122,33 +122,33 @@ _async_schema_initialized = False
 ACHIEVEMENTS = [
     {
         "key": "founder",
-        "name": "Rebirth Founder",
-        "copy": "Create a Rebirth account.",
+        "name": "Fundador Rebirth",
+        "copy": "Crie uma conta Rebirth.",
     },
     {
         "key": "first_clash",
-        "name": "First Clash",
-        "copy": "Resolve one persisted Rebirth clash.",
+        "name": "Primeiro Clash",
+        "copy": "Resolva um clash Rebirth persistido.",
     },
     {
         "key": "first_win",
-        "name": "First Victory",
-        "copy": "Win a persisted Rebirth match.",
+        "name": "Primeira Vitória",
+        "copy": "Vença uma partida Rebirth persistida.",
     },
     {
         "key": "first_booster",
-        "name": "Booster Opened",
-        "copy": "Open one no-payment Rebirth booster.",
+        "name": "Booster Aberto",
+        "copy": "Abra um booster Rebirth sem pagamento.",
     },
     {
         "key": "daily_claimed",
-        "name": "Daily Spark",
-        "copy": "Claim the first-clash daily reward.",
+        "name": "Centelha Diária",
+        "copy": "Resgate a recompensa diária do primeiro clash.",
     },
     {
         "key": "tutorial_complete",
-        "name": "Awakened",
-        "copy": "Complete the Rebirth onboarding path.",
+        "name": "Desperto",
+        "copy": "Conclua a introdução do Rebirth.",
     },
 ]
 
@@ -214,7 +214,7 @@ def async_session_factory():
         configure_async_database()
     if _async_sessionmaker is None:
         raise RebirthPersistenceError(
-            "REBIRTH_DATABASE_URL is required for PostgreSQL async persistence.",
+            "REBIRTH_DATABASE_URL é obrigatória para persistência assíncrona PostgreSQL.",
             "database_not_configured",
             status=503,
         )
@@ -227,7 +227,7 @@ async def ensure_async_schema():
         configure_async_database()
     if _async_engine is None:
         raise RebirthPersistenceError(
-            "REBIRTH_DATABASE_URL is required for PostgreSQL async schema creation.",
+            "REBIRTH_DATABASE_URL é obrigatória para criar o esquema assíncrono PostgreSQL.",
             "database_not_configured",
             status=503,
         )
@@ -250,7 +250,7 @@ def _stable_state_hash(state_dict):
 async def _ensure_async_user_account(session, user_id, *, username=None, password_hash="external-account"):
     user_id = int(user_id or 0)
     if user_id <= 0:
-        raise RebirthPersistenceError("A valid user_id is required.", "invalid_user", status=400)
+        raise RebirthPersistenceError("Informe um user_id válido.", "invalid_user", status=400)
     account = await session.get(UserAccount, user_id)
     if account:
         await _ensure_async_starter_wallet(session, account)
@@ -315,9 +315,9 @@ async def _seed_async_user_collection(session, account, seed_source):
 
 async def save_match_state(match_id: str, state_dict: dict) -> bool:
     if not match_id:
-        raise RebirthPersistenceError("match_id is required.", "missing_match", status=400)
+        raise RebirthPersistenceError("Informe match_id.", "missing_match", status=400)
     if not isinstance(state_dict, dict):
-        raise RebirthPersistenceError("state_dict must be a dictionary.", "malformed_request", status=400)
+        raise RebirthPersistenceError("state_dict deve ser um dicionário.", "malformed_request", status=400)
 
     await ensure_async_schema_once()
     session_maker = async_session_factory()
@@ -359,12 +359,12 @@ async def save_match_state(match_id: str, state_dict: dict) -> bool:
                     )
         return True
     except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to save live match state.", "database_write_failed", status=500) from exc
+        raise RebirthPersistenceError("Falha ao salvar o estado ao vivo da partida.", "database_write_failed", status=500) from exc
 
 
 async def load_match_state(match_id: str) -> dict:
     if not match_id:
-        raise RebirthPersistenceError("match_id is required.", "missing_match", status=400)
+        raise RebirthPersistenceError("Informe match_id.", "missing_match", status=400)
 
     await ensure_async_schema_once()
     session_maker = async_session_factory()
@@ -373,7 +373,7 @@ async def load_match_state(match_id: str) -> dict:
             game_session = await session.get(GameSession, match_id)
             return dict(game_session.live_match_state or {}) if game_session else {}
     except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to load live match state.", "database_read_failed", status=500) from exc
+        raise RebirthPersistenceError("Falha ao carregar o estado ao vivo da partida.", "database_read_failed", status=500) from exc
 
 
 async def log_transaction(user_id: int, t_type: str, amount: int, currency: str) -> None:
@@ -394,7 +394,7 @@ async def log_transaction(user_id: int, t_type: str, amount: int, currency: str)
                     )
                 )
     except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to log economy transaction.", "database_write_failed", status=500) from exc
+        raise RebirthPersistenceError("Falha ao registrar a transação econômica.", "database_write_failed", status=500) from exc
 
 
 async def credit_verified_purchase(
@@ -421,7 +421,7 @@ async def credit_verified_purchase(
                 amount = int(amount or 0)
                 currency = normalize_wallet_currency(currency)
                 if amount <= 0:
-                    raise RebirthPersistenceError("Purchase amount must be positive.", "invalid_purchase", status=400)
+                    raise RebirthPersistenceError("O valor da compra deve ser positivo.", "invalid_purchase", status=400)
                 _add_async_wallet_entry(
                     session,
                     int(user_id),
@@ -461,7 +461,7 @@ async def credit_verified_purchase(
     except RebirthPersistenceError:
         raise
     except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to credit verified purchase.", "database_write_failed", status=500) from exc
+        raise RebirthPersistenceError("Falha ao creditar a compra verificada.", "database_write_failed", status=500) from exc
 
 
 WALLET_CURRENCY_ALIASES = {
@@ -479,7 +479,7 @@ def normalize_wallet_currency(currency):
     normalized = str(currency or "GOLD").strip().upper()
     normalized = WALLET_CURRENCY_ALIASES.get(normalized, normalized)
     if normalized not in {"GOLD", "COINZ"}:
-        raise RebirthPersistenceError("currency must be GOLD or COINZ.", "invalid_wallet_currency", status=400)
+        raise RebirthPersistenceError("A moeda deve ser GOLD ou COINZ.", "invalid_wallet_currency", status=400)
     return normalized
 
 
@@ -487,16 +487,16 @@ def normalize_market_currency(currency_type):
     try:
         return normalize_wallet_currency(currency_type or "GOLD")
     except RebirthPersistenceError as exc:
-        raise RebirthPersistenceError("currency_type must be GOLD or COINZ.", "invalid_market_currency", status=400) from exc
+        raise RebirthPersistenceError("currency_type deve ser GOLD ou COINZ.", "invalid_market_currency", status=400) from exc
 
 
 def _normalize_market_price(price):
     try:
         price = int(price)
     except (TypeError, ValueError) as exc:
-        raise RebirthPersistenceError("Market price must be a positive integer.", "invalid_market_price", status=400) from exc
+        raise RebirthPersistenceError("O preço de mercado deve ser um número inteiro positivo.", "invalid_market_price", status=400) from exc
     if price <= 0:
-        raise RebirthPersistenceError("Market price must be a positive integer.", "invalid_market_price", status=400)
+        raise RebirthPersistenceError("O preço de mercado deve ser um número inteiro positivo.", "invalid_market_price", status=400)
     return price
 
 
@@ -507,10 +507,10 @@ def _market_fee(price):
 def _normalize_wallet_entry(entry_type, amount):
     entry_type = str(entry_type or "").strip().upper()
     if entry_type not in {"CREDIT", "DEBIT"}:
-        raise RebirthPersistenceError("Wallet entry_type must be CREDIT or DEBIT.", "invalid_wallet_entry", status=400)
+        raise RebirthPersistenceError("entry_type da carteira deve ser CREDIT ou DEBIT.", "invalid_wallet_entry", status=400)
     amount = int(amount or 0)
     if amount <= 0:
-        raise RebirthPersistenceError("Wallet ledger amount must be positive.", "invalid_wallet_amount", status=400)
+        raise RebirthPersistenceError("O valor do extrato da carteira deve ser positivo.", "invalid_wallet_amount", status=400)
     return entry_type, amount
 
 
@@ -541,7 +541,7 @@ async def get_user_balance(user_id: int, currency: str, *, session: Optional[Asy
         async with session_maker() as owned_session:
             return await _wallet_balance_in_session(owned_session, user_id, currency)
     except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to calculate wallet balance.", "database_read_failed", status=500) from exc
+        raise RebirthPersistenceError("Falha ao calcular o saldo da carteira.", "database_read_failed", status=500) from exc
 
 
 def _add_async_wallet_entry(session, user_id, currency, entry_type, amount, source, reference_id):
@@ -625,7 +625,7 @@ async def create_market_offer(user_id: int, card_id: str, price: int, currency_t
                     ).scalars().all()
                     available = sum(max(0, int(row.quantity or 0) - int(row.locked_quantity or 0)) for row in rows)
                     if available <= 0:
-                        raise RebirthPersistenceError("Card is not available for market listing.", "card_not_available", status=409)
+                        raise RebirthPersistenceError("A carta não está disponível para anúncio no mercado.", "card_not_available", status=409)
                     for row in rows:
                         if int(row.quantity or 0) - int(row.locked_quantity or 0) > 0:
                             row.locked_quantity = int(row.locked_quantity or 0) + 1
@@ -647,7 +647,7 @@ async def create_market_offer(user_id: int, card_id: str, price: int, currency_t
         except SQLAlchemyError as exc:
             retryable = _is_serialization_failure(exc) and attempt + 1 < MARKET_SERIALIZATION_MAX_ATTEMPTS
             if not retryable:
-                raise RebirthPersistenceError("Failed to list card on market.", "database_write_failed", status=500) from exc
+                raise RebirthPersistenceError("Falha ao anunciar a carta no mercado.", "database_write_failed", status=500) from exc
             await asyncio.sleep(MARKET_SERIALIZATION_RETRY_DELAY_SECONDS * (2**attempt))
 
 
@@ -663,12 +663,12 @@ async def active_market_offers(exclude_user_id: Optional[int] = None, limit: int
             rows = (await session.execute(statement)).scalars().all()
             return [_market_offer_payload(row) for row in rows]
     except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to load market offers.", "database_read_failed", status=500) from exc
+        raise RebirthPersistenceError("Falha ao carregar ofertas do mercado.", "database_read_failed", status=500) from exc
 
 
 async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[str] = None) -> dict:
     if not offer_id:
-        raise RebirthPersistenceError("offer_id is required.", "missing_market_offer", status=400)
+        raise RebirthPersistenceError("Informe offer_id.", "missing_market_offer", status=400)
     await ensure_async_schema_once()
     session_maker = async_session_factory()
     try:
@@ -687,22 +687,22 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
                     )
                 ).scalar_one_or_none()
                 if not offer or offer.status != "ACTIVE":
-                    raise RebirthPersistenceError("Market offer is no longer active.", "market_offer_unavailable", status=409)
+                    raise RebirthPersistenceError("A oferta do mercado não está mais ativa.", "market_offer_unavailable", status=409)
                 if int(offer.seller_id) == int(user_id):
-                    raise RebirthPersistenceError("Players cannot buy their own market offer.", "market_self_buy", status=409)
+                    raise RebirthPersistenceError("Jogadores não podem comprar a própria oferta.", "market_self_buy", status=409)
                 seller = (
                     await session.execute(
                         select(UserAccount).where(UserAccount.id == int(offer.seller_id)).with_for_update()
                     )
                 ).scalar_one_or_none()
                 if not seller:
-                    raise RebirthPersistenceError("Market seller account is missing.", "market_seller_missing", status=409)
+                    raise RebirthPersistenceError("A conta do vendedor não foi encontrada.", "market_seller_missing", status=409)
 
                 currency_type = normalize_market_currency(offer.currency_type)
                 price = int(offer.price)
                 buyer_balance = await get_user_balance(int(user_id), currency_type, session=session)
                 if buyer_balance < price:
-                    raise RebirthPersistenceError("Insufficient balance for market purchase.", "insufficient_balance", status=409)
+                    raise RebirthPersistenceError("Saldo insuficiente para a compra no mercado.", "insufficient_balance", status=409)
                 fee = _market_fee(price)
                 seller_net = price - fee
 
@@ -719,7 +719,7 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
                 ).scalars().all()
                 locked_row = next((row for row in collection_rows if int(row.locked_quantity or 0) > 0), None)
                 if not locked_row:
-                    raise RebirthPersistenceError("Locked market item is missing.", "market_item_lock_missing", status=409)
+                    raise RebirthPersistenceError("O item reservado no mercado não foi encontrado.", "market_item_lock_missing", status=409)
                 locked_row.quantity = max(0, int(locked_row.quantity or 0) - 1)
                 locked_row.locked_quantity = max(0, int(locked_row.locked_quantity or 0) - 1)
                 session.add(
@@ -791,7 +791,7 @@ async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[st
     except RebirthPersistenceError:
         raise
     except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to buy market offer.", "database_write_failed", status=500) from exc
+        raise RebirthPersistenceError("Falha ao comprar a oferta do mercado.", "database_write_failed", status=500) from exc
 
 
 def normalize_email(email):
@@ -1154,13 +1154,13 @@ class RebirthRepository:
         password = str(password or "")
         if not USERNAME_RE.match(username):
             raise RebirthPersistenceError(
-                "Username must be 3-24 characters and use letters, numbers or underscores.",
+                "O nome de jogador deve ter de 3 a 24 caracteres e usar letras, números ou sublinhados.",
                 "invalid_auth_payload",
             )
         if "@" not in email or "." not in email.split("@")[-1]:
-            raise RebirthPersistenceError("A valid email is required.", "invalid_auth_payload")
+            raise RebirthPersistenceError("Informe um email válido.", "invalid_auth_payload")
         if len(password) < 8:
-            raise RebirthPersistenceError("Password must be at least 8 characters.", "invalid_auth_payload")
+            raise RebirthPersistenceError("A senha deve ter pelo menos 8 caracteres.", "invalid_auth_payload")
 
         salt, digest = hash_password(password)
         now = utc_now()
@@ -1177,7 +1177,7 @@ class RebirthRepository:
                 self._seed_user_state(db, user_id, now, seed_source=f"{user_id}:{username}:{email}")
         except sqlite3.IntegrityError as exc:
             raise RebirthPersistenceError(
-                "A Rebirth account with this username or email already exists.",
+                "Já existe uma conta Rebirth com este nome de jogador ou email.",
                 "auth_conflict",
                 status=409,
             ) from exc
@@ -1189,21 +1189,21 @@ class RebirthRepository:
         with self.connect() as db:
             row = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
         if not row or not verify_password(password, row["password_salt"], row["password_hash"]):
-            raise RebirthPersistenceError("Invalid email or password.", "invalid_credentials", status=401)
+            raise RebirthPersistenceError("Email ou senha inválidos.", "invalid_credentials", status=401)
         return self.get_user(row["id"])
 
     def change_password(self, user_id, current_password, new_password):
         self.ensure_schema()
         new_password = str(new_password or "")
         if len(new_password) < 8:
-            raise RebirthPersistenceError("Password must be at least 8 characters.", "invalid_auth_payload")
+            raise RebirthPersistenceError("A senha deve ter pelo menos 8 caracteres.", "invalid_auth_payload")
         with self.connect() as db:
             row = db.execute(
                 "SELECT password_salt, password_hash FROM users WHERE id = ?",
                 (user_id,),
             ).fetchone()
             if not row or not verify_password(current_password, row["password_salt"], row["password_hash"]):
-                raise RebirthPersistenceError("Current password is invalid.", "invalid_credentials", status=401)
+                raise RebirthPersistenceError("A senha atual é inválida.", "invalid_credentials", status=401)
             salt, digest = hash_password(new_password)
             db.execute(
                 "UPDATE users SET password_salt = ?, password_hash = ? WHERE id = ?",
@@ -1415,7 +1415,7 @@ class RebirthRepository:
 
     def _validate_owned_cards(self, user_id, card_ids):
         if not isinstance(card_ids, list):
-            raise RebirthPersistenceError("card_ids must be a list.", "invalid_loadout")
+            raise RebirthPersistenceError("card_ids deve ser uma lista.", "invalid_loadout")
         selected = [str(card_id) for card_id in card_ids if str(card_id or "").strip()]
         try:
             validate_deck_distribution(selected)
@@ -1427,15 +1427,15 @@ class RebirthRepository:
             try:
                 get_card(card_id)
             except ValueError as exc:
-                raise RebirthPersistenceError(f"{card_id} is not a Rebirth card.", "invalid_loadout") from exc
+                raise RebirthPersistenceError(f"{card_id} não é uma carta Rebirth.", "invalid_loadout") from exc
             if owned.get(card_id, 0) < amount:
-                raise RebirthPersistenceError(f"{card_id} exceeds owned copies.", "invalid_loadout")
+                raise RebirthPersistenceError(f"{card_id} excede as cópias possuídas.", "invalid_loadout")
         return selected
 
     def _currency_balance(self, db, user_id, currency_type):
         user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
         if not user:
-            raise RebirthPersistenceError("Account wallet is missing.", "missing_wallet", status=409)
+            raise RebirthPersistenceError("A carteira da conta não foi encontrada.", "missing_wallet", status=409)
         currency_type = normalize_market_currency(currency_type)
         row = db.execute(
             """
@@ -1505,7 +1505,7 @@ class RebirthRepository:
             db.execute("BEGIN IMMEDIATE")
             user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
             if not user:
-                raise RebirthPersistenceError("Seller account was not found.", "missing_user", status=404)
+                raise RebirthPersistenceError("A conta do vendedor não foi encontrada.", "missing_user", status=404)
             row = db.execute(
                 "SELECT copies, locked_copies FROM user_collection WHERE user_id = ? AND card_id = ?",
                 (user_id, card["id"]),
@@ -1514,14 +1514,14 @@ class RebirthRepository:
             locked = int(row["locked_copies"] or 0) if row else 0
             available = max(0, copies - locked)
             if available <= 0:
-                raise RebirthPersistenceError("Card is not available for market listing.", "card_not_available", status=409)
+                raise RebirthPersistenceError("A carta não está disponível para anúncio no mercado.", "card_not_available", status=409)
             loadout_count = db.execute(
                 "SELECT COUNT(*) AS amount FROM user_loadout WHERE user_id = ? AND card_id = ?",
                 (user_id, card["id"]),
             ).fetchone()["amount"]
             if int(loadout_count or 0) > available - 1:
                 raise RebirthPersistenceError(
-                    "This card is still required by the active 30-card loadout.",
+                    "Esta carta ainda é necessária no baralho ativo de 30 cartas.",
                     "card_locked_by_loadout",
                     status=409,
                 )
@@ -1550,13 +1550,13 @@ class RebirthRepository:
     def buy_market_offer(self, buyer_id, offer_id):
         self.ensure_schema()
         if not offer_id:
-            raise RebirthPersistenceError("offer_id is required.", "missing_market_offer", status=400)
+            raise RebirthPersistenceError("Informe offer_id.", "missing_market_offer", status=400)
         now = utc_now()
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             buyer = db.execute("SELECT id FROM users WHERE id = ?", (buyer_id,)).fetchone()
             if not buyer:
-                raise RebirthPersistenceError("Buyer account was not found.", "missing_user", status=404)
+                raise RebirthPersistenceError("A conta do comprador não foi encontrada.", "missing_user", status=404)
             offer = db.execute(
                 """
                 SELECT market_offers.*, users.username AS seller_name
@@ -1567,16 +1567,16 @@ class RebirthRepository:
                 (str(offer_id),),
             ).fetchone()
             if not offer:
-                raise RebirthPersistenceError("Market offer is no longer active.", "market_offer_unavailable", status=409)
+                raise RebirthPersistenceError("A oferta do mercado não está mais ativa.", "market_offer_unavailable", status=409)
             seller_id = int(offer["seller_id"])
             if seller_id == int(buyer_id):
-                raise RebirthPersistenceError("Players cannot buy their own market offer.", "market_self_buy", status=409)
+                raise RebirthPersistenceError("Jogadores não podem comprar a própria oferta.", "market_self_buy", status=409)
 
             currency_type = normalize_market_currency(offer["currency_type"])
             price = int(offer["price"])
             buyer_balance = self._currency_balance(db, buyer_id, currency_type)
             if buyer_balance < price:
-                raise RebirthPersistenceError("Insufficient balance for market purchase.", "insufficient_balance", status=409)
+                raise RebirthPersistenceError("Saldo insuficiente para a compra no mercado.", "insufficient_balance", status=409)
             seller_balance = self._currency_balance(db, seller_id, currency_type)
             fee = _market_fee(price)
             seller_net = price - fee
@@ -1620,7 +1620,7 @@ class RebirthRepository:
                 (seller_id, offer["card_id"]),
             ).fetchone()
             if not collection:
-                raise RebirthPersistenceError("Locked market item is missing.", "market_item_lock_missing", status=409)
+                raise RebirthPersistenceError("O item reservado no mercado não foi encontrado.", "market_item_lock_missing", status=409)
             db.execute(
                 """
                 UPDATE user_collection
@@ -1948,7 +1948,7 @@ class RebirthRepository:
     def claim_daily_reward(self, user_id):
         progress = self.progression(user_id)
         if not progress or progress["clashes"] < 1:
-            raise RebirthPersistenceError("Play at least one clash before claiming the daily reward.", "reward_locked", 409)
+            raise RebirthPersistenceError("Jogue pelo menos um clash antes de resgatar a recompensa diária.", "reward_locked", 409)
         reward_key = "daily_first_clash"
         now = utc_now()
         try:
@@ -1974,7 +1974,7 @@ class RebirthRepository:
                 )
                 self._unlock_achievements(db, user_id, ["daily_claimed"], now)
         except sqlite3.IntegrityError as exc:
-            raise RebirthPersistenceError("Daily reward already claimed.", "reward_already_claimed", 409) from exc
+            raise RebirthPersistenceError("A recompensa diária já foi resgatada.", "reward_already_claimed", 409) from exc
         return {"reward_key": reward_key, "xp": 25, "progression": self.progression(user_id)}
 
     def complete_tutorial_step(self, user_id, step):
@@ -1982,7 +1982,7 @@ class RebirthRepository:
         now = utc_now()
         current = self.progression(user_id)
         if not current:
-            raise RebirthPersistenceError("Account progress is missing.", "missing_progress", 404)
+            raise RebirthPersistenceError("O progresso da conta não foi encontrado.", "missing_progress", 404)
         xp_delta = 60 if not current["tutorial_complete"] and step >= 4 else 10
         with self.connect() as db:
             db.execute(
@@ -2183,7 +2183,7 @@ class RebirthRepository:
                 (user_id, match_id),
             ).fetchone()
             if not owner:
-                raise RebirthPersistenceError("Match history not found.", "missing_match", status=404)
+                raise RebirthPersistenceError("Histórico da partida não encontrado.", "missing_match", status=404)
             rows = db.execute(
                 """
                 SELECT event_json
@@ -2261,7 +2261,7 @@ class RebirthRepository:
         with self.connect() as db:
             user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
             if not user:
-                raise RebirthPersistenceError("Target Rebirth user was not found.", "missing_user", 404)
+                raise RebirthPersistenceError("O jogador Rebirth de destino não foi encontrado.", "missing_user", 404)
             if resource == "xp":
                 db.execute(
                     "UPDATE user_progress SET xp = xp + ?, updated_at = ? WHERE user_id = ?",
@@ -2325,7 +2325,7 @@ class RebirthRepository:
                     now=now,
                 )
             else:
-                raise RebirthPersistenceError("Admin grant supports resource xp, card, GOLD or COINZ.", "invalid_admin_grant", 400)
+                raise RebirthPersistenceError("A concessão administrativa aceita xp, card, GOLD ou COINZ.", "invalid_admin_grant", 400)
             db.execute(
                 """
                 INSERT INTO admin_audit_log (actor, action, user_id, metadata_json, created_at)

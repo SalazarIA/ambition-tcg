@@ -45,10 +45,10 @@ class RebirthMatchStore:
         with self._lock:
             record = self._matches.get(key)
             if not record:
-                raise RebirthError("Match not found.", "missing_match")
+                raise RebirthError("Partida não encontrada.", "missing_match")
             if record["expires_at"] <= now:
                 self._matches.pop(key, None)
-                raise RebirthError("Match not found.", "missing_match")
+                raise RebirthError("Partida não encontrada.", "missing_match")
             record["expires_at"] = now + self.ttl_seconds
             self._matches.move_to_end(key)
             return record["match"]

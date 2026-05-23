@@ -74,24 +74,24 @@ def test_family_abilities_have_visible_combat_effects():
     match, player_card, bot_card = match_with_cards("card_002", "card_021")
     result = resolve_turn(match, player_card, bot_card)
     assert result["outcome"] == "Victory"
-    assert "burn" in result["message"].lower()
+    assert "queimadura" in result["message"].lower()
     assert match["bot"]["statuses"]["burn"]["turns"] == 2
 
     match, player_card, bot_card = match_with_cards("card_045", "card_021")
     result = resolve_turn(match, player_card, bot_card)
     assert result["outcome"] == "Victory"
-    assert "shield" in result["message"].lower()
+    assert "escudo" in result["message"].lower()
     assert match["player"]["statuses"]["shield"]["potency"] == 2
 
     match, player_card, bot_card = match_with_cards("card_063", "card_022", bot_wounded=True)
     result = resolve_turn(match, player_card, bot_card)
     assert result["outcome"] == "Victory"
     assert result["effective_attack"] == {"player": 5, "bot": 5}
-    assert "cut through the tie" in result["message"]
+    assert "desempatou" in result["message"]
 
     match, player_card, bot_card = match_with_cards("card_071", "card_021")
     match["player"]["hp"] = 20
     result = resolve_turn(match, player_card, bot_card)
     assert result["outcome"] == "Victory"
-    assert "heals 2 HP" in result["message"]
+    assert "recupera 2 PV" in result["message"]
     assert match["player"]["hp"] == 22

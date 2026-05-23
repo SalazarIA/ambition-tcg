@@ -4,11 +4,11 @@ def test_home_promotes_rebirth_first(client):
 
     assert response.status_code == 200
     assert "Ambitionz Rebirth" in body
-    assert "Duelos, colecao e mercado em uma mesa viva." in body
+    assert "Duelos, coleção e mercado em uma mesa viva." in body
     assert 'href="/rebirth"' in body
     assert "Entrar na Arena" in body
     assert "Loja &amp; Mercado" in body
-    assert "GOLD + Coinz" in body
+    assert "Ouro + Gemas" in body
 
 
 def test_home_does_not_make_ascension_primary_cta(client):

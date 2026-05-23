@@ -6,7 +6,7 @@ from services.rebirth_state import public_state
 
 def test_bot_personality_payloads_are_explicit():
     assert set(BOT_PERSONALITIES) == {"defensive", "aggressive", "opportunist"}
-    assert personality_payload("aggressive")["policy"].startswith("play the highest attack")
+    assert personality_payload("aggressive")["policy"].startswith("joga o maior ataque")
     assert personality_payload("missing")["id"] == "defensive"
 
 
@@ -33,7 +33,7 @@ def test_public_state_exposes_bot_profile_contract():
     state = public_state(match)
 
     assert state["bot_profile"]["id"] == "opportunist"
-    assert state["bot_profile"]["name"] == "Opportunist Bot"
+    assert state["bot_profile"]["name"] == "Bot Oportunista"
 
 
 def test_balance_lab_reports_profiles_cards_and_abilities():
