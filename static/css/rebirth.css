@@ -1556,6 +1556,24 @@ button {
     box-shadow: none;
 }
 
+/* v54: quando o jogador está em dead-end (sem ação útil na fase principal),
+   destacamos o botão "Encerrar turno" pra deixar claro que a saída é por ali.
+   Aplicado via .is-cta-pulse pelo renderer. */
+@keyframes rb-cta-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(244, 173, 38, 0.55);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 18px 6px rgba(244, 173, 38, 0.35);
+        transform: scale(1.03);
+    }
+}
+
+.is-cta-pulse:not(:disabled) {
+    animation: rb-cta-pulse 1.4s ease-in-out infinite;
+}
+
 .rb-result-panel {
     left: 24px;
     top: 1438px;

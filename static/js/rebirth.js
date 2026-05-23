@@ -1653,6 +1653,42 @@
                     }
                 }
             }
+            // Detect dead-end: player can't summon (field full or no mana for any
+            // hand card) AND has no ready attacker on field. In this case the
+            // ONLY sensible action is to end the turn, so we make the next-turn
+            // button pulse and tell the player explicitly. Catches the "all 5
+            // ATK clash forever" loop where the player just sits there.
+            const fieldCards = RebirthStore.fieldCards("player");
+            const playerEnergy = Number((state.player && state.player.energy) || 0);
+            const handHasPlayable = (state.player && state.player.hand || []).some((card) => {
+                const cardCost = RebirthMarkup.cardCost(card);
+                if (cardCost > playerEnergy) return false;
+                if (RebirthMarkup.isMonster(card)) {
+                    return RebirthStore.firstOpenFieldSlot("player") >= 0;
+                }
+                return true;  // spells/traps don't need slots
+            });
+            const readyAttacker = fieldCards.find((card) => card && !card.exhausted && !card.has_attacked);
+            const evolutionAvailable = Boolean(evolution);
+            const deadEnd = canChoose
+                && !handHasPlayable
+                && !readyAttacker
+                && !evolutionAvailable
+                && !selected
+                && !selectedAttacker;
+            if (RebirthStore.elements["next-turn-button"]) {
+                RebirthStore.elements["next-turn-button"].classList.toggle("is-cta-pulse", deadEnd);
+                if (deadEnd) {
+                    RebirthStore.elements["next-turn-button"].title = "Sem ações disponíveis — encerre o turno.";
+                }
+            }
+            if (state.phase === "choose" && deadEnd && !state.is_finished) {
+                // Don't spam — only set if there isn't a more-specific error already showing.
+                const errEl = document.getElementById("rebirth-error");
+                if (errEl && !errEl.textContent.trim()) {
+                    RebirthErrors.show("Sem ações disponíveis neste turno. Encerre para o bot jogar.");
+                }
+            }
             if (RebirthStore.elements["next-turn-button"]) {
                 if (state.phase === "result") {
                     RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Próximo turno';

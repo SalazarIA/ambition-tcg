@@ -900,13 +900,29 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
             "message": f"{bot_card['name']} derrotou {player_card['name']}. {'Atacante perde' if persistent_field else 'Você sofre'} {damage} de dano.",
         }
     else:
-        match["player"]["wounded"] = False
-        match["bot"]["wounded"] = False
+        # Empate de combate: em modo persistent_field (combate com criaturas
+        # no campo), ambos os monstros sofrem o ataque do oponente — é o
+        # "trade" clássico de TCG e impede que um campo cheio com stats
+        # iguais vire stasis eterna (já reproduzido: 3 vs 3 todos com 5 ATK,
+        # 3 clashes seguidos, nenhuma carta removida, jogo travado em loop).
+        # Em modo "duel rápido" (sem field), comportamento original mantém-se:
+        # ambos saem feridos mas sem dano direto ao HP.
+        match["player"]["wounded"] = True
+        match["bot"]["wounded"] = True
+        clash_message = f"{player_card['name']} e {bot_card['name']} travam lâminas."
+        if persistent_field:
+            player_attack_dmg = max(1, clash["bot_attack"])
+            bot_attack_dmg = max(1, clash["player_attack"])
+            player_card["current_guard"] = int(player_card.get("current_guard", player_card.get("guard", 0)) or 0) - player_attack_dmg
+            bot_card["current_guard"] = int(bot_card.get("current_guard", bot_card.get("guard", 0)) or 0) - bot_attack_dmg
+            clash_message += f" Ambos sofrem o golpe (você -{player_attack_dmg} guarda, bot -{bot_attack_dmg} guarda)."
+        else:
+            clash_message += " Nenhum dano é causado."
         result = {
             "outcome": "Clash",
             "winner": None,
             "damage": {"player": 0, "bot": 0},
-            "message": f"{player_card['name']} e {bot_card['name']} travam lâminas. Nenhum dano é causado.",
+            "message": clash_message,
         }
 
     status_stack = effect_stack_for(match)
