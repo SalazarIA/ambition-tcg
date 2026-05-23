@@ -6424,3 +6424,412 @@ button {
         animation: none;
     }
 }
+
+/* =========================================================================
+   v55 FASE 4 — SIGNATURE IDENTITY
+   Animações de assinatura: evolução cinemática em 4 fases, dano direto
+   nos orbes do herói, telas de VITÓRIA e DERROTA premium. Todas
+   orquestradas pelo JS com timeline awaitable antes do applyState.
+   ========================================================================= */
+
+/* --- 1. EVOLUÇÃO CINEMATOGRÁFICA --------------------------------------
+   Container .vfx-evolution-stage cobre toda a área de jogo (position:
+   absolute na main). O JS clona os 2 cards a serem fundidos pra dentro
+   dele e dispara a sequência: dark overlay → convergência → runa → flash.
+   ------------------------------------------------------------------------ */
+
+.vfx-evolution-stage {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    display: none;
+    isolation: isolate;
+}
+
+.vfx-evolution-stage.is-active {
+    display: block;
+}
+
+/* Fase 1: overlay escuro cobre o tabuleiro. NÃO uso CSS filter (perf-
+   budget bane) — em vez disso uma camada preta com opacidade controlada
+   sobre um gradiente radial dá a sensação de profundidade escurecida. */
+.vfx-evolution-stage .vfx-evolution-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.92) 80%);
+    opacity: 0;
+    transition: opacity 360ms ease;
+}
+
+.vfx-evolution-stage.is-active .vfx-evolution-overlay {
+    opacity: 0.85;
+}
+
+/* Fase 2: clones convergem para o centro. .vfx-evolution-clone é um
+   wrapper posicionado pelo JS (top/left fixos do card original); a
+   classe .is-converging dispara a animação rumo ao centro do stage. */
+.vfx-evolution-clone {
+    position: absolute;
+    transform-origin: center center;
+    transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1), opacity 520ms ease;
+    z-index: 2;
+    will-change: transform, opacity;
+}
+
+.vfx-evolution-clone.is-converging {
+    /* CSS custom property --target-x/--target-y populada pelo JS pra
+       cada clone andar até o centro do stage. */
+    transform:
+        translate3d(var(--target-x, 0), var(--target-y, 0), 0)
+        scale(1.18)
+        rotate(var(--converge-rot, 0deg));
+    opacity: 1;
+}
+
+.vfx-evolution-clone.is-vanishing {
+    opacity: 0;
+    transform:
+        translate3d(var(--target-x, 0), var(--target-y, 0), 0)
+        scale(2.4)
+        rotate(0deg);
+    transition: transform 320ms cubic-bezier(0.4, 0, 0.6, 1), opacity 320ms ease;
+}
+
+/* Fase 3: a runa gigante surge no centro */
+.vfx-evolution-stage .vfx-evolution-rune {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 320px;
+    height: 320px;
+    margin: -160px 0 0 -160px;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle, transparent 30%, rgba(255, 215, 110, 0.85) 38%, rgba(220, 150, 50, 0.55) 50%, transparent 72%),
+        conic-gradient(from 0deg,
+            rgba(255, 230, 140, 0.85) 0deg, transparent 14deg,
+            rgba(255, 230, 140, 0.85) 60deg, transparent 74deg,
+            rgba(255, 230, 140, 0.85) 120deg, transparent 134deg,
+            rgba(255, 230, 140, 0.85) 180deg, transparent 194deg,
+            rgba(255, 230, 140, 0.85) 240deg, transparent 254deg,
+            rgba(255, 230, 140, 0.85) 300deg, transparent 314deg,
+            rgba(255, 230, 140, 0.85) 360deg);
+    opacity: 0;
+    transform: translateZ(0) scale(0.2) rotate(0deg);
+    z-index: 3;
+    box-shadow:
+        0 0 60px rgba(255, 200, 90, 0.55),
+        inset 0 0 40px rgba(255, 220, 130, 0.4);
+}
+
+.vfx-evolution-stage.is-rune-active .vfx-evolution-rune {
+    animation: rb-vfx-rune-summon 880ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes rb-vfx-rune-summon {
+    0% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+    35% { opacity: 1; transform: scale(1.08) rotate(120deg); }
+    75% { opacity: 0.92; transform: scale(1) rotate(220deg); }
+    100% { opacity: 0; transform: scale(1.4) rotate(360deg); }
+}
+
+/* Fase 4: explosão de luz no centro quando o evolved aparece */
+.vfx-evolution-stage .vfx-evolution-burst {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 460px;
+    height: 460px;
+    margin: -230px 0 0 -230px;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle, rgba(255, 250, 220, 1) 0%, rgba(255, 200, 90, 0.7) 22%, rgba(220, 130, 40, 0.3) 50%, transparent 80%);
+    opacity: 0;
+    transform: scale(0.1);
+    z-index: 4;
+}
+
+.vfx-evolution-stage.is-burst-active .vfx-evolution-burst {
+    animation: rb-vfx-evolution-burst 560ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes rb-vfx-evolution-burst {
+    0% { opacity: 0; transform: scale(0.1); }
+    25% { opacity: 1; transform: scale(0.8); }
+    55% { opacity: 0.9; transform: scale(1.3); }
+    100% { opacity: 0; transform: scale(2.2); }
+}
+
+/* --- 2. DANO DIRETO NO HERÓI ----------------------------------------- */
+
+/* Os orbes de HP são .rb-hp-meter; o JS injeta .vfx-hero-damage no
+   .rb-hud-player ou .rb-hud-bot afetado quando o HP do payload caiu. */
+.vfx-hero-damage {
+    animation: rb-vfx-hero-pulse 460ms cubic-bezier(0.36, 0, 0.2, 1) both;
+    position: relative;
+}
+
+@keyframes rb-vfx-hero-pulse {
+    0%, 100% { transform: scale(1); }
+    20% { transform: scale(0.92) translateX(-4px); }
+    35% { transform: scale(1.06) translateX(5px); }
+    55% { transform: scale(0.96) translateX(-3px); }
+    78% { transform: scale(1.02) translateX(2px); }
+}
+
+.vfx-hero-damage::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(255, 50, 40, 0.55) 0%, rgba(180, 20, 10, 0.3) 35%, transparent 70%);
+    border-radius: inherit;
+    mix-blend-mode: screen;
+    opacity: 0;
+    animation: rb-vfx-hero-flash 460ms ease-out forwards;
+    z-index: 1;
+}
+
+@keyframes rb-vfx-hero-flash {
+    0% { opacity: 0; transform: scale(0.6); }
+    18% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* Faíscas de sangue arcano — 4 partículas projetadas pelos cantos */
+.vfx-hero-damage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 15% 30%, rgba(255, 80, 60, 0.85) 0 3px, transparent 4px),
+        radial-gradient(circle at 85% 28%, rgba(180, 0, 30, 0.85) 0 2px, transparent 3px),
+        radial-gradient(circle at 20% 78%, rgba(200, 40, 60, 0.85) 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 82% 80%, rgba(140, 0, 20, 0.85) 0 2px, transparent 3px);
+    opacity: 0;
+    animation: rb-vfx-hero-spark 460ms ease-out forwards;
+    z-index: 2;
+}
+
+@keyframes rb-vfx-hero-spark {
+    0% { opacity: 0; transform: scale(0.5); }
+    25% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1.8); }
+}
+
+/* --- 3. FINALIZAÇÃO TRIUNFAL ----------------------------------------- */
+
+.vfx-finale-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    isolation: isolate;
+}
+
+.vfx-finale-overlay.is-active {
+    display: flex;
+    pointer-events: auto;
+}
+
+.vfx-finale-overlay .vfx-finale-curtain {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 580ms ease;
+}
+
+.vfx-finale-overlay.is-active .vfx-finale-curtain {
+    opacity: 1;
+}
+
+.vfx-finale-overlay .vfx-finale-text {
+    position: relative;
+    z-index: 4;
+    font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+    font-weight: 900;
+    letter-spacing: 0.32em;
+    font-size: 96px;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: scale(0.6) translateY(20px);
+    transition: opacity 720ms ease, transform 720ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.vfx-finale-overlay.is-active .vfx-finale-text {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+/* VITÓRIA — névoa dourada + runas flutuantes */
+.vfx-finale-overlay.is-victory .vfx-finale-curtain {
+    background:
+        radial-gradient(ellipse at 50% 30%, rgba(255, 210, 130, 0.42) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 80%, rgba(255, 170, 80, 0.32) 0%, transparent 60%),
+        radial-gradient(circle at 50% 50%, rgba(80, 50, 20, 0.7) 0%, rgba(30, 15, 5, 0.92) 90%);
+}
+
+.vfx-finale-overlay.is-victory .vfx-finale-text {
+    color: #f8e9b5;
+    text-shadow:
+        0 2px 0 rgba(140, 90, 30, 1),
+        0 4px 0 rgba(80, 50, 15, 1),
+        0 8px 24px rgba(255, 200, 90, 0.6),
+        0 0 60px rgba(255, 180, 70, 0.55);
+    background:
+        linear-gradient(180deg, #fff2c4 0%, #f5c466 40%, #a06618 80%, #4a2810 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rb-vfx-victory-shimmer 3.2s ease-in-out infinite;
+}
+
+@keyframes rb-vfx-victory-shimmer {
+    0%, 100% { background-position: 0% 0%; }
+    50% { background-position: 0% 100%; }
+}
+
+/* Runas flutuantes da vitória — 6 pontos brilhantes que sobem */
+.vfx-finale-overlay.is-victory::before,
+.vfx-finale-overlay.is-victory::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 18% 90%, rgba(255, 230, 140, 0.85) 0 4px, transparent 5px),
+        radial-gradient(circle at 30% 95%, rgba(255, 200, 90, 0.8) 0 3px, transparent 4px),
+        radial-gradient(circle at 50% 92%, rgba(255, 240, 160, 0.9) 0 4px, transparent 5px),
+        radial-gradient(circle at 68% 96%, rgba(255, 200, 80, 0.8) 0 3px, transparent 4px),
+        radial-gradient(circle at 82% 90%, rgba(255, 230, 140, 0.85) 0 4px, transparent 5px);
+    opacity: 0;
+    animation: rb-vfx-victory-runes 4.5s ease-out infinite;
+    z-index: 2;
+}
+
+.vfx-finale-overlay.is-victory::after {
+    animation-delay: 1.5s;
+}
+
+@keyframes rb-vfx-victory-runes {
+    0% { opacity: 0; transform: translateY(0) scale(0.7); }
+    18% { opacity: 0.9; transform: translateY(-80px) scale(1); }
+    100% { opacity: 0; transform: translateY(-360px) scale(0.5); }
+}
+
+/* DERROTA — vinheta cinzenta + texto sombrio */
+.vfx-finale-overlay.is-defeat .vfx-finale-curtain {
+    background:
+        radial-gradient(ellipse at 50% 50%, transparent 18%, rgba(20, 5, 25, 0.65) 60%, rgba(5, 5, 12, 0.95) 100%);
+}
+
+.vfx-finale-overlay.is-defeat .vfx-finale-text {
+    color: #b8a8c8;
+    text-shadow:
+        0 1px 0 rgba(40, 20, 50, 1),
+        0 2px 0 rgba(25, 10, 35, 1),
+        0 6px 18px rgba(80, 40, 110, 0.6),
+        0 0 40px rgba(100, 50, 130, 0.45);
+    letter-spacing: 0.38em;
+    /* sem shimmer animado — o peso da derrota é estático */
+}
+
+/* Energia espectral roxa subindo do canto inferior (orbe quebrado) */
+.vfx-finale-overlay.is-defeat::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 50% 100%, rgba(130, 70, 180, 0.45) 0%, rgba(80, 30, 130, 0.25) 18%, transparent 45%);
+    opacity: 0;
+    animation: rb-vfx-defeat-mist 2.4s ease-out forwards;
+    z-index: 2;
+}
+
+@keyframes rb-vfx-defeat-mist {
+    0% { opacity: 0; transform: translateY(40px) scale(0.9); }
+    35% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0.55; transform: translateY(-30px) scale(1.1); }
+}
+
+/* O orbe do player ganha .vfx-orb-crack na derrota */
+.rb-hud-player.vfx-orb-crack .rb-hp-meter,
+.rb-hud-player.vfx-orb-crack [id="player-hp"] {
+    animation: rb-vfx-orb-crack-shake 720ms cubic-bezier(0.36, 0, 0.2, 1) both;
+}
+
+.rb-hud-player.vfx-orb-crack .rb-hp-meter::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 30% 40%, rgba(140, 60, 180, 0.65) 0 1.5px, transparent 2px),
+        linear-gradient(115deg, transparent 30%, rgba(180, 100, 220, 0.55) 32%, transparent 34%),
+        linear-gradient(75deg, transparent 50%, rgba(180, 100, 220, 0.45) 52%, transparent 54%);
+    opacity: 0;
+    animation: rb-vfx-orb-crack-flash 720ms ease-out forwards;
+}
+
+@keyframes rb-vfx-orb-crack-shake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-4px, 2px); }
+    40% { transform: translate(4px, -2px); }
+    60% { transform: translate(-3px, 3px); }
+    80% { transform: translate(2px, -1px); }
+}
+
+@keyframes rb-vfx-orb-crack-flash {
+    0% { opacity: 0; }
+    30% { opacity: 0.95; }
+    100% { opacity: 0; }
+}
+
+/* Tabuleiro se despedaça na vitória — leve tilt + glow dourado */
+.rb-game-board.vfx-board-shatter {
+    animation: rb-vfx-board-shatter 1.4s ease-out both;
+}
+
+@keyframes rb-vfx-board-shatter {
+    0% { transform: none; box-shadow: none; }
+    35% {
+        transform: translate(2px, -2px) rotate(0.4deg);
+        box-shadow: 0 0 80px rgba(255, 200, 90, 0.35);
+    }
+    72% {
+        transform: translate(-2px, 1px) rotate(-0.2deg);
+        box-shadow: 0 0 120px rgba(255, 180, 60, 0.25);
+    }
+    100% { transform: none; box-shadow: none; }
+}
+
+/* --- Reduced motion overrides para Fase 4 --------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .vfx-evolution-stage .vfx-evolution-rune,
+    .vfx-evolution-stage .vfx-evolution-burst,
+    .vfx-finale-overlay.is-victory .vfx-finale-text,
+    .vfx-finale-overlay.is-victory::before,
+    .vfx-finale-overlay.is-victory::after,
+    .vfx-finale-overlay.is-defeat::before,
+    .vfx-hero-damage,
+    .vfx-hero-damage::before,
+    .vfx-hero-damage::after,
+    .rb-hud-player.vfx-orb-crack .rb-hp-meter,
+    .rb-hud-player.vfx-orb-crack .rb-hp-meter::after,
+    .rb-game-board.vfx-board-shatter {
+        animation: none !important;
+    }
+    .vfx-evolution-clone {
+        transition: opacity 80ms ease;
+    }
+}

@@ -1260,6 +1260,213 @@
         }
     };
 
+    /* v55 Fase 4 — Signature Identity: assinaturas visuais de evolução,
+       dano direto no herói e telas de VITÓRIA/DERROTA. Cada módulo
+       expõe play()/show()/animate() que retorna Promise — o flow
+       awaita antes de chamar applyState pra a animação acontecer
+       em cima do DOM antigo (que ainda casa visualmente com a ação). */
+
+    const RebirthEvolutionMotion = {
+        phase1Ms: 360,   // overlay aparece
+        phase2Ms: 520,   // convergência
+        phase3Ms: 380,   // runa visível antes do flash
+        phase4Ms: 560,   // explosão + restauração
+
+        snapshotSources(cardId) {
+            // Acha as DOM nodes dos 2 cards na mão que vão fundir. O JS
+            // gera data-card-instance no formato "player-NN-card_XXX".
+            // Filtramos via suffix.
+            const hand = RebirthStore.elements["player-hand"];
+            if (!hand) return [];
+            const candidates = Array.from(hand.querySelectorAll(
+                `[data-card-instance$="-${cardId}"]`
+            ));
+            return candidates.slice(0, 2).map((node) => {
+                const rect = node.getBoundingClientRect();
+                return {
+                    node,
+                    rect,
+                    html: node.outerHTML,
+                };
+            });
+        },
+
+        async play(sources, evolvedCard) {
+            const stage = document.getElementById("rebirth-evolution-stage");
+            if (!stage || RebirthFeel.reducedMotion() || !sources.length) {
+                // sem stage ou reduced motion: pula a cinemática
+                await wait(60);
+                return;
+            }
+            const stageRect = stage.getBoundingClientRect();
+            const cx = stageRect.left + stageRect.width / 2;
+            const cy = stageRect.top + stageRect.height / 2;
+
+            // Limpa qualquer execução anterior
+            stage.innerHTML = "";
+            stage.classList.remove("is-active", "is-rune-active", "is-burst-active");
+
+            // Monta o stage: overlay + 2 clones convergentes + runa + burst
+            const overlay = document.createElement("div");
+            overlay.className = "vfx-evolution-overlay";
+            stage.appendChild(overlay);
+
+            const clones = sources.map((source, index) => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "vfx-evolution-clone";
+                // Posiciona o clone exatamente onde está o card original
+                wrapper.style.left = `${source.rect.left - stageRect.left}px`;
+                wrapper.style.top = `${source.rect.top - stageRect.top}px`;
+                wrapper.style.width = `${source.rect.width}px`;
+                wrapper.style.height = `${source.rect.height}px`;
+                wrapper.innerHTML = source.html;
+                // Vetor para o centro do stage
+                const cardCx = source.rect.left + source.rect.width / 2;
+                const cardCy = source.rect.top + source.rect.height / 2;
+                wrapper.style.setProperty("--target-x", `${(cx - cardCx).toFixed(1)}px`);
+                wrapper.style.setProperty("--target-y", `${(cy - cardCy).toFixed(1)}px`);
+                wrapper.style.setProperty("--converge-rot", `${index === 0 ? -8 : 8}deg`);
+                stage.appendChild(wrapper);
+                return wrapper;
+            });
+
+            const rune = document.createElement("div");
+            rune.className = "vfx-evolution-rune";
+            stage.appendChild(rune);
+
+            const burst = document.createElement("div");
+            burst.className = "vfx-evolution-burst";
+            stage.appendChild(burst);
+
+            // FASE 1: ativa overlay
+            stage.classList.add("is-active");
+            stage.setAttribute("aria-hidden", "false");
+            await wait(this.phase1Ms);
+
+            // FASE 2: clones convergem para o centro
+            clones.forEach((clone) => clone.classList.add("is-converging"));
+            await wait(this.phase2Ms);
+
+            // FASE 3: runa surge sobre os clones
+            stage.classList.add("is-rune-active");
+            await wait(this.phase3Ms);
+
+            // FASE 4: clones somem num clarão + burst gigante
+            clones.forEach((clone) => {
+                clone.classList.remove("is-converging");
+                clone.classList.add("is-vanishing");
+            });
+            stage.classList.add("is-burst-active");
+            // shake do board pra entregar o impacto
+            triggerScreenShake("heavy");
+            await wait(this.phase4Ms);
+
+            // Restaura iluminação: tira a classe de ativo, depois limpa DOM
+            stage.classList.remove("is-active", "is-rune-active", "is-burst-active");
+            stage.setAttribute("aria-hidden", "true");
+            // Aguarda overlay fade-out (transition 360ms) antes de purgar
+            await wait(360);
+            stage.innerHTML = "";
+        },
+    };
+
+    const RebirthHeroDamage = {
+        durationMs: 460,
+
+        // Compara HP de cada lado pré vs pós e dispara VFX no orbe
+        // afetado. Chamado pelo attackTarget e por qualquer mutação de HP.
+        evaluate(previousState, nextState) {
+            if (!previousState || !nextState) return;
+            if (RebirthFeel.reducedMotion()) return;
+            const sides = [
+                { name: "player", hudSelector: ".rb-hud-player" },
+                { name: "bot", hudSelector: ".rb-hud-bot" },
+            ];
+            sides.forEach(({ name, hudSelector }) => {
+                const prevHp = Number(((previousState[name] || {}).hp) || 0);
+                const nextHp = Number(((nextState[name] || {}).hp) || 0);
+                if (nextHp >= prevHp) return;  // não perdeu HP
+                const hud = document.querySelector(hudSelector);
+                if (!hud) return;
+                hud.classList.remove("vfx-hero-damage");
+                void hud.offsetWidth;
+                hud.classList.add("vfx-hero-damage");
+                window.setTimeout(() => {
+                    hud.classList.remove("vfx-hero-damage");
+                }, this.durationMs + 40);
+            });
+        },
+    };
+
+    const RebirthFinaleOverlay = {
+        // Detecta transição não-finished → finished e dispara overlay.
+        // Idempotente: só dispara uma vez por match_id+winner pra não
+        // re-spawnar a animação a cada render.
+        lastFiredKey: null,
+
+        evaluate(previousState, nextState) {
+            if (!nextState || !nextState.is_finished) return;
+            const wasFinished = Boolean(previousState && previousState.is_finished);
+            const key = `${nextState.match_id || ""}:${nextState.winner || ""}`;
+            if (wasFinished && this.lastFiredKey === key) return;
+            this.lastFiredKey = key;
+            this.show(nextState.winner);
+        },
+
+        reset() {
+            this.lastFiredKey = null;
+            const overlay = document.getElementById("rebirth-finale-overlay");
+            if (overlay) {
+                overlay.classList.remove("is-active", "is-victory", "is-defeat");
+                overlay.innerHTML = "";
+                overlay.setAttribute("aria-hidden", "true");
+            }
+            document.querySelectorAll(".vfx-orb-crack").forEach((el) => el.classList.remove("vfx-orb-crack"));
+            const board = RebirthStore.elements["rebirth-board"];
+            if (board) board.classList.remove("vfx-board-shatter");
+        },
+
+        show(winner) {
+            const overlay = document.getElementById("rebirth-finale-overlay");
+            if (!overlay) return;
+            const isVictory = winner === "player";
+            const isDefeat = winner === "bot";
+            if (!isVictory && !isDefeat) return;  // clash mútuo não merece premium screen
+
+            overlay.classList.remove("is-victory", "is-defeat");
+            const variant = isVictory ? "is-victory" : "is-defeat";
+            overlay.classList.add(variant);
+            overlay.innerHTML = `
+                <div class="vfx-finale-curtain"></div>
+                <div class="vfx-finale-text">${isVictory ? "Vitória" : "Derrota"}</div>
+            `;
+            // force reflow pra animação de entrada disparar
+            void overlay.offsetWidth;
+            overlay.classList.add("is-active");
+            overlay.setAttribute("aria-hidden", "false");
+
+            // efeitos colaterais por variante
+            const board = RebirthStore.elements["rebirth-board"];
+            if (isVictory && board) {
+                board.classList.add("vfx-board-shatter");
+                window.setTimeout(() => board.classList.remove("vfx-board-shatter"), 1500);
+            }
+            if (isDefeat) {
+                const playerHud = document.querySelector(".rb-hud-player");
+                if (playerHud) {
+                    playerHud.classList.add("vfx-orb-crack");
+                    window.setTimeout(() => playerHud.classList.remove("vfx-orb-crack"), 800);
+                }
+            }
+
+            // fade-out automático após 5s (player pode iniciar nova partida)
+            window.setTimeout(() => {
+                overlay.classList.remove("is-active");
+                overlay.setAttribute("aria-hidden", "true");
+            }, 5000);
+        },
+    };
+
     const RebirthCoach = {
         progression() {
             return (RebirthConfig.player && RebirthConfig.player.progression) || {};
@@ -1925,11 +2132,26 @@
         },
 
         applyState(state) {
+            // v55 Fase 4 — captura estado anterior ANTES do setState pra
+            // os módulos de assinatura compararem HP/finished. Roda em
+            // microtask depois pra não bloquear o render.
+            const previousState = RebirthStore.state;
             RebirthStore.setState(state);
             RebirthRenderer.render();
+            try {
+                RebirthHeroDamage.evaluate(previousState, state);
+                RebirthFinaleOverlay.evaluate(previousState, state);
+            } catch (err) {
+                /* nunca deixa VFX falhar derrubar a UI */
+                if (window.console) console.warn("[rebirth] signature VFX failed", err);
+            }
         },
 
         async startMatch() {
+            // v55 Fase 4 — limpa overlay de finale residual antes de
+            // iniciar nova partida. Evita "Vitória" antigo aparecer por
+            // um frame quando o usuário pede Nova Partida após vencer.
+            RebirthFinaleOverlay.reset();
             await this.request(async () => {
                 RebirthStore.guidedFirstMatch = RebirthCoach.shouldGuideFirstMatch();
                 RebirthStore.tutorialCompletionSent = false;
@@ -1946,11 +2168,19 @@
             const evolution = RebirthStore.firstEvolution();
             if (!evolution || !RebirthStore.state) return;
             await this.request(async () => {
+                // v55 Fase 4: snapshot dos DOM nodes ANTES do payload chegar.
+                // O applyState vai destruir a mão atual; precisamos das
+                // referências enquanto ainda existem.
+                const sourceCards = RebirthEvolutionMotion.snapshotSources(evolution.card_id);
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.evolve, {
                     match_id: RebirthStore.state.match_id,
                     card_id: evolution.card_id
                 });
                 RebirthStore.selectedInstanceId = payload.evolved ? payload.evolved.instance_id : null;
+                // Roda a sequência cinematográfica (overlay → convergência
+                // → runa → flash) antes do applyState, assim a UI antiga
+                // sustenta o pano de fundo da animação.
+                await RebirthEvolutionMotion.play(sourceCards, payload.evolved);
                 this.applyState(payload.state);
             });
         },
