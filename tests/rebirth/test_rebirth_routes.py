@@ -24,16 +24,15 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
     assert "js/rebirth.js" in body
 
     for text in (
-        "Summon one",
-        "Strike fast",
-        "Break guard",
-        "Combine duplicates",
-        "Evolve monsters",
-        "Win the duel",
-        "Play Rebirth",
-        "New Match",
-        "Summon",
-        "Battle Zone",
+        "Invocar",
+        "Encerrar turno",
+        "Selecione um monstro",
+        "Duplicata encontrada",
+        "Evoluir",
+        "Nova partida",
+        "Zona do Bot",
+        "Sua Zona",
+        "Combine duplicatas para evoluir",
     ):
         assert text in body
 

@@ -53,13 +53,12 @@ def test_rebirth_template_matches_premium_clash_contract():
         'id="guide-combine-title"',
         'id="bot-profile-label"',
         'id="turn-log"',
-        "Summon one.",
-        "Strike fast.",
-        "Break guard.",
-        "Combine duplicates.",
-        "Evolve monsters.",
-        "Win the duel.",
-        "Play Rebirth",
+        "Invocar",
+        "Encerrar turno",
+        "Carregando",
+        "Zona do Bot",
+        "Sua Zona",
+        "Nova partida",
         "REBIRTH_ASSETS",
     ]:
         assert token in template
@@ -193,9 +192,9 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "card.art",
         "attack",
         "guard",
-        "Summon",
-        "Duel Busy",
-        "Next Turn",
+        "Invocar",
+        "Duelo ocupado",
+        "Próximo turno",
         "scrollRestoration",
     ]:
         assert token in js

@@ -356,13 +356,13 @@
     function renderTurnPhase(phase) {
         const phaseValue = String(phase || "MAIN_PHASE").toUpperCase();
         const phases = {
-            DRAW_PHASE: { label: "Draw", tone: "draw", title: "Draw Phase" },
-            MAIN_PHASE: { label: "Main", tone: "main", title: "Main Phase" },
-            COMBAT_PHASE: { label: "Combat", tone: "combat", title: "Combat Phase" },
-            END_PHASE: { label: "End", tone: "end", title: "End Phase" },
-            CHOOSE: { label: "Main", tone: "main", title: "Main Phase" },
-            RESULT: { label: "End", tone: "end", title: "End Phase" },
-            FINISHED: { label: "Done", tone: "finished", title: "Match Finished" }
+            DRAW_PHASE: { label: "Compra", tone: "draw", title: "Fase de Compra" },
+            MAIN_PHASE: { label: "Principal", tone: "main", title: "Fase Principal" },
+            COMBAT_PHASE: { label: "Combate", tone: "combat", title: "Fase de Combate" },
+            END_PHASE: { label: "Fim", tone: "end", title: "Fase Final" },
+            CHOOSE: { label: "Principal", tone: "main", title: "Fase Principal" },
+            RESULT: { label: "Fim", tone: "end", title: "Fase Final" },
+            FINISHED: { label: "Concluído", tone: "finished", title: "Partida encerrada" }
         };
         const meta = phases[phaseValue] || phases.MAIN_PHASE;
         const element = RebirthStore.elements["phase-label"];
@@ -636,18 +636,18 @@
 
     const RebirthMarkup = {
         cardTierName(card) {
-            return Number(card && card.tier || 1) > 1 ? "Apex" : "Base";
+            return Number(card && card.tier || 1) > 1 ? "Ápice" : "Base";
         },
 
         cardRole(card) {
             const attack = Number(card && (card.attack || card.power) || 0);
             const guard = Number(card && card.guard || 0);
             const ability = String(card && card.ability_key || "");
-            if (Number(card && card.tier || 1) > 1) return "Finisher";
-            if (ability.includes("guard") || ability === "brace" || ability === "bulwark" || guard >= attack + 2) return "Sentinel";
-            if (attack >= 7 || ability.includes("bite") || ability.includes("rend")) return "Striker";
+            if (Number(card && card.tier || 1) > 1) return "Finalizador";
+            if (ability.includes("guard") || ability === "brace" || ability === "bulwark" || guard >= attack + 2) return "Sentinela";
+            if (attack >= 7 || ability.includes("bite") || ability.includes("rend")) return "Atacante";
             if (ability.includes("fade") || ability.includes("pursuit") || ability.includes("mark")) return "Tempo";
-            return "Duelist";
+            return "Duelista";
         },
 
         card(card, statuses) {
@@ -664,11 +664,11 @@
                 </div>
                 ${RebirthStatus.badges(statuses)}
                 <div class="rb-card-rule">
-                    <strong>${RebirthText.escape(card.ability_name || "Clash")}</strong>
+                    <strong>${RebirthText.escape(card.ability_name || "Combate")}</strong>
                     <p>${RebirthText.escape(card.ability_text || card.flavor)}</p>
                     <div class="rb-card-tags">
                         <span>${RebirthText.escape(this.cardTierName(card))}</span>
-                        <span>${RebirthText.escape(card.element || "Void")}</span>
+                        <span>${RebirthText.escape(card.element || "Vazio")}</span>
                         <span>${RebirthText.escape(this.cardRole(card))}</span>
                     </div>
                 </div>
@@ -724,8 +724,8 @@
 
         abilitySummary(card) {
             return {
-                name: card && (card.ability_name || this.cardRole(card) || "Clash"),
-                copy: card && (card.ability_text || card.flavor || "Declare attacks, break Guard, and pressure HP.")
+                name: card && (card.ability_name || this.cardRole(card) || "Combate"),
+                copy: card && (card.ability_text || card.flavor || "Declare ataques, quebre a Guarda e pressione o HP.")
             };
         },
 
@@ -832,38 +832,38 @@
         botIntent(profile) {
             const id = profile && profile.id;
             if (id === "aggressive") {
-                return { label: "Pressure", copy: "Likely to race attack and force quick HP trades.", tone: "danger" };
+                return { label: "Pressão", copy: "Tende a correr no ataque e forçar trocas rápidas de HP.", tone: "danger" };
             }
             if (id === "opportunist") {
-                return { label: "Trap Window", copy: "Likely to chase ability value when the line opens.", tone: "warning" };
+                return { label: "Janela de armadilha", copy: "Tende a buscar valor de habilidade quando abrir brecha.", tone: "warning" };
             }
-            return { label: "Guard Line", copy: "Likely to absorb first and punish low attack.", tone: "guard" };
+            return { label: "Linha defensiva", copy: "Tende a absorver primeiro e punir ataques fracos.", tone: "guard" };
         },
 
         selectedRead(card) {
             if (!card) {
-                return { label: "No Card", copy: "Select a monster to see tempo, role and risk." };
+                return { label: "Sem carta", copy: "Selecione um monstro para ver tempo, papel e risco." };
             }
             const attack = Number(card.attack || card.power || 0);
             const guard = Number(card.guard || 0);
             const tempo = attack * 2 + guard + Number(card.tier || 1) * 3;
             const role = RebirthMarkup.cardRole(card);
-            const label = tempo >= 25 ? "Power Line" : tempo >= 18 ? "Stable Line" : "Setup Line";
+            const label = tempo >= 25 ? "Linha de poder" : tempo >= 18 ? "Linha estável" : "Linha de setup";
             return {
                 label,
-                copy: `${role}: ${attack} attack / ${guard} guard. Tempo ${tempo}.`
+                copy: `${role}: ${attack} ataque / ${guard} guarda. Tempo ${tempo}.`
             };
         },
 
         advantage(state) {
-            if (!state) return { label: "Even", copy: "Match not loaded." };
+            if (!state) return { label: "Equilíbrio", copy: "Partida não carregada." };
             const hpDelta = Number(state.player.hp || 0) - Number(state.bot.hp || 0);
             const handDelta = Number((state.player.hand || []).length) - Number(state.bot.hand_count || 0);
             const deckDelta = Number(state.player.deck_count || 0) - Number(state.bot.deck_count || 0);
             const score = hpDelta + handDelta * 2 + deckDelta;
-            if (score >= 6) return { label: "Advantage", copy: `You lead by ${score} tempo.` };
-            if (score <= -6) return { label: "Under Fire", copy: `Bot leads by ${Math.abs(score)} tempo.` };
-            return { label: "Even Board", copy: "HP, hand and deck pressure are close." };
+            if (score >= 6) return { label: "Vantagem", copy: `Você lidera por ${score} de tempo.` };
+            if (score <= -6) return { label: "Sob pressão", copy: `O bot lidera por ${Math.abs(score)} de tempo.` };
+            return { label: "Campo equilibrado", copy: "HP, mão e baralho estão próximos." };
         }
     };
 
@@ -1128,75 +1128,75 @@
         insight() {
             const state = RebirthStore.state;
             if (!state) {
-                return { badge: "Coach", title: "Loading arena.", copy: "Preparing your first hand." };
+                return { badge: "Coach", title: "Carregando arena.", copy: "Preparando sua primeira mão." };
             }
             if (!this.account().authenticated) {
                 return {
                     badge: "Visitante",
-                    title: "A mesa esta liberada.",
-                    copy: "Use Login / Registro no topo quando quiser guardar colecao e recompensas."
+                    title: "A mesa está liberada.",
+                    copy: "Use Entrar / Cadastrar no topo quando quiser salvar coleção e recompensas."
                 };
             }
             if (state.is_finished) {
                 const won = state.winner === "player";
                 return {
-                    badge: won ? "Victory" : "Next",
-                    title: won ? "Lock in the reward." : "Review the reward, then rebuild.",
-                    copy: "Open Rewards for XP progress, or Cards to tune your loadout before the next match."
+                    badge: won ? "Vitória" : "Próxima",
+                    title: won ? "Reivindique a recompensa." : "Revise a recompensa e reconstrua.",
+                    copy: "Abra Recompensas para acompanhar XP ou Coleção para ajustar o baralho antes da próxima partida."
                 };
             }
             if (state.phase === "result") {
                 const reward = RebirthStore.reward;
                 if (reward && reward.daily && reward.daily.ready) {
-                    return { badge: "Reward", title: "Daily reward is ready.", copy: "After this match, claim the daily XP on Rewards." };
+                    return { badge: "Recompensa", title: "Recompensa diária pronta.", copy: "Depois desta partida, resgate o XP diário em Recompensas." };
                 }
-                return { badge: "Read", title: "Read the result before moving.", copy: "The log explains damage, ability triggers and why combat resolved that way." };
+                return { badge: "Leia", title: "Leia o resultado antes de continuar.", copy: "O histórico explica dano, habilidades acionadas e por que o combate resolveu assim." };
             }
             const evolution = RebirthStore.firstEvolution();
             const selected = RebirthStore.selectedCard();
             const recommended = this.recommendedCard();
             if (evolution && (!selected || selected.id === evolution.card_id)) {
                 return {
-                    badge: "Evolve",
-                    title: "Evolve now for a stronger line.",
-                    copy: `${evolution.name} x${evolution.count} can merge before you commit. That usually adds attack, guard and pressure.`
+                    badge: "Evoluir",
+                    title: "Evolua agora para uma linha mais forte.",
+                    copy: `${evolution.name} x${evolution.count} pode se fundir antes de jogar. Costuma somar ataque, guarda e pressão.`
                 };
             }
             if (!selected) {
-                return { badge: "Choose", title: "Pick a card or attacker.", copy: "Summon from hand, or select a ready monster on the field to declare an attack." };
+                return { badge: "Escolher", title: "Escolha uma carta ou atacante.", copy: "Invoque da mão ou selecione um monstro pronto no campo para declarar ataque." };
             }
             if (recommended && selected.instance_id === recommended.instance_id) {
                 return {
-                    badge: "Good",
-                    title: `${selected.name} is the clean read.`,
-                    copy: `Best pressure in hand: ${selected.attack} attack, ${selected.guard} guard. Commit it unless you want to bait with defense.`
+                    badge: "Ótimo",
+                    title: `${selected.name} é a leitura limpa.`,
+                    copy: `Melhor pressão da mão: ${selected.attack} de ataque, ${selected.guard} de guarda. Jogue, a menos que queira blefar com defesa.`
                 };
             }
             if (RebirthStore.selectedAttackerId) {
                 return {
-                    badge: "Attack",
-                    title: `${selected.name} is ready.`,
-                    copy: "Click Attack or the enemy side to resolve the duel immediately."
+                    badge: "Atacar",
+                    title: `${selected.name} está pronto.`,
+                    copy: "Clique em Atacar ou no lado inimigo para resolver o duelo na hora."
                 };
             }
             if (Number(selected.guard || 0) <= 2) {
                 return {
-                    badge: "Risky",
-                    title: `${selected.name} can get punished.`,
-                    copy: "Low guard hits fast, but it can fold if the bot answers with a bigger attack."
+                    badge: "Risco",
+                    title: `${selected.name} pode ser punido.`,
+                    copy: "Pouca guarda ataca rápido, mas tomba se o bot responder com mais ataque."
                 };
             }
             if (Number(selected.attack || 0) <= 3) {
                 return {
-                    badge: "Risky",
-                    title: `${selected.name} may stall into high guard.`,
-                    copy: "Defensive cards reduce damage, but they usually need an ability trigger or wounded target to swing the turn."
+                    badge: "Risco",
+                    title: `${selected.name} pode travar em guarda alta.`,
+                    copy: "Cartas defensivas reduzem dano, mas geralmente precisam de habilidade ou alvo ferido para virar o turno."
                 };
             }
             return {
-                badge: "Plan",
-                title: `${selected.name} is playable.`,
-                copy: recommended ? `${recommended.name} has a stronger projected line, but this card can still set up pressure.` : "Commit when the attack and guard fit your plan."
+                badge: "Plano",
+                title: `${selected.name} é jogável.`,
+                copy: recommended ? `${recommended.name} tem linha projetada mais forte, mas essa carta ainda monta pressão.` : "Jogue quando ataque e guarda se encaixarem no plano."
             };
         }
     };
@@ -1220,12 +1220,12 @@
             RebirthDom.setText("player-max-energy", state.player.max_energy);
             RebirthDom.setText("bot-energy", state.bot.energy);
             RebirthDom.setText("bot-max-energy", state.bot.max_energy);
-            RebirthDom.setText("player-deck-count", `Deck ${state.player.deck_count || 0}`);
-            RebirthDom.setText("player-discard-count", `Void ${state.player.discard_count || 0}`);
-            RebirthDom.setText("bot-deck-count", `Deck ${state.bot.deck_count || 0}`);
-            RebirthDom.setText("bot-discard-count", `Void ${state.bot.discard_count || 0}`);
+            RebirthDom.setText("player-deck-count", `Baralho ${state.player.deck_count || 0}`);
+            RebirthDom.setText("player-discard-count", `Descarte ${state.player.discard_count || 0}`);
+            RebirthDom.setText("bot-deck-count", `Baralho ${state.bot.deck_count || 0}`);
+            RebirthDom.setText("bot-discard-count", `Descarte ${state.bot.discard_count || 0}`);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
-            RebirthDom.setText("bot-profile-label", (state.bot_profile && state.bot_profile.name) || "Bot Profile");
+            RebirthDom.setText("bot-profile-label", (state.bot_profile && state.bot_profile.name) || "Perfil do bot");
             this.hpBars();
             this.battlefield();
             this.focusCard();
@@ -1274,12 +1274,12 @@
             const selectedCost = RebirthMarkup.cardCost(selectedHandCard);
             const selectedEnergy = Number((state.player && state.player.energy) || 0);
             const summonLockCopy = !selectedHandCard
-                ? "Select Card"
+                ? "Selecione uma carta"
                 : selectedEnergy < selectedCost
-                    ? "No Mana"
+                    ? "Mana insuficiente"
                     : state.phase !== "choose" || state.is_finished || RebirthStore.pending
-                        ? "Locked"
-                        : "Duel Busy";
+                        ? "Bloqueado"
+                        : "Duelo ocupado";
             const canSummonSelected = selectedHandCard
                 && RebirthMarkup.isMonster(selectedHandCard)
                 && state.phase === "choose"
@@ -1290,7 +1290,7 @@
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses);
                 }
-                return RebirthMarkup.emptyFieldSlot(canSummonSelected ? "Summon" : summonLockCopy, {
+                return RebirthMarkup.emptyFieldSlot(canSummonSelected ? "Invocar" : summonLockCopy, {
                     summonTarget: Boolean(canSummonSelected),
                     locked: !canSummonSelected
                 });
@@ -1301,7 +1301,7 @@
                         targetable: choosingAttack
                     });
                 }
-                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Guard Line" : "Direct HP", {
+                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Linha de guarda" : "Dano direto", {
                     direct: !botCards.length,
                     selected: choosingAttack && !botCards.length
                 });
@@ -1364,7 +1364,7 @@
             button.dataset.cardId = canUse ? evolution.card_id : "";
 
             if (!canUse) {
-                RebirthDom.setText("evolution-status", RebirthStore.state.phase === "choose" ? "No Duplicate" : "Locked");
+                RebirthDom.setText("evolution-status", RebirthStore.state.phase === "choose" ? "Sem duplicata" : "Bloqueado");
                 RebirthDom.setText("evolution-name", "No duplicate");
                 if (thumb) {
                     thumb.style.backgroundImage = "";
@@ -1389,7 +1389,7 @@
             const state = RebirthStore.state;
             const hand = RebirthStore.state.player.hand || [];
             const recommended = RebirthCoach.recommendedCard();
-            RebirthDom.setText("hand-count", `${hand.length} cards`);
+            RebirthDom.setText("hand-count", `${hand.length} ${hand.length === 1 ? "carta" : "cartas"}`);
             const canChoose = state.phase === "choose" && !state.is_finished && !RebirthStore.pending;
             const energy = Number((state.player && state.player.energy) || 0);
             const hasOpenSlot = RebirthStore.firstOpenFieldSlot("player") >= 0;
@@ -1414,8 +1414,8 @@
             const insight = RebirthCoach.insight();
             panel.dataset.coachTone = String(insight.badge || "Coach").toLowerCase();
             RebirthDom.setText("coach-badge", insight.badge || "Coach");
-            RebirthDom.setText("coach-title", insight.title || "Build your field.");
-            RebirthDom.setText("coach-copy", insight.copy || "I will call out the safest line before you commit.");
+            RebirthDom.setText("coach-title", insight.title || "Monte seu campo.");
+            RebirthDom.setText("coach-copy", insight.copy || "Vou apontar a linha mais segura antes de você confirmar.");
         },
 
         result() {
@@ -1483,33 +1483,35 @@
             if (!state) return;
 
             if (state.is_finished) {
-                const title = state.winner === "player" ? "Duel secured" : state.winner === "bot" ? "Bot secured it" : "Final clash";
-                RebirthDom.setText("guide-rule-label", "Match");
+                const title = state.winner === "player" ? "Duelo vencido" : state.winner === "bot" ? "Bot venceu" : "Clash final";
+                RebirthDom.setText("guide-rule-label", "Partida");
                 RebirthDom.setText("guide-rule-title", title);
-                RebirthDom.setText("guide-rule-copy", result && result.message ? result.message : "Start a new match when ready.");
-                RebirthDom.setText("guide-combine-label", "Next");
-                RebirthDom.setText("guide-combine-title", "New match");
-                RebirthDom.setText("guide-combine-copy", "The current duel is locked. Start fresh to test another line.");
+                RebirthDom.setText("guide-rule-copy", result && result.message ? result.message : "Inicie uma nova partida quando quiser.");
+                RebirthDom.setText("guide-combine-label", "Próxima");
+                RebirthDom.setText("guide-combine-title", "Nova partida");
+                RebirthDom.setText("guide-combine-copy", "Este duelo terminou. Comece outra para testar uma linha nova.");
                 return;
             }
 
             if (result) {
                 const events = result.ability_events || [];
-                RebirthDom.setText("guide-rule-label", "Result");
-                RebirthDom.setText("guide-rule-title", result.outcome === "Clash" ? "No damage" : result.outcome);
-                RebirthDom.setText("guide-rule-copy", result.message || "Advance to the next turn.");
-                RebirthDom.setText("guide-combine-label", events.length ? "Ability" : "Next");
-                RebirthDom.setText("guide-combine-title", events.length ? "Triggered" : "Next turn");
-                RebirthDom.setText("guide-combine-copy", events.length ? events[0] : "Advance to refill hands and continue the duel.");
+                const outcomeLabels = { Victory: "Vitória", Defeat: "Derrota", Clash: "Sem dano", Summon: "Invocação", Spell: "Magia" };
+                const outcomeTitle = outcomeLabels[result.outcome] || result.outcome;
+                RebirthDom.setText("guide-rule-label", "Resultado");
+                RebirthDom.setText("guide-rule-title", outcomeTitle);
+                RebirthDom.setText("guide-rule-copy", result.message || "Avance para o próximo turno.");
+                RebirthDom.setText("guide-combine-label", events.length ? "Habilidade" : "Próxima");
+                RebirthDom.setText("guide-combine-title", events.length ? "Acionada" : "Próximo turno");
+                RebirthDom.setText("guide-combine-copy", events.length ? events[0] : "Avance para recompor as mãos e continuar o duelo.");
                 return;
             }
 
-            RebirthDom.setText("guide-rule-label", "Rule");
-            RebirthDom.setText("guide-rule-title", "Summon and attack");
-            RebirthDom.setText("guide-rule-copy", "Monsters stay on the field until their Guard reaches zero.");
-            RebirthDom.setText("guide-combine-label", evolution ? "Combine Ready" : "Combine");
-            RebirthDom.setText("guide-combine-title", evolution ? `${evolution.name} x${evolution.count}` : "Duplicates evolve");
-            RebirthDom.setText("guide-combine-copy", evolution ? "Merge the pair now, or keep both bodies for later pressure." : "Two matching monsters merge into their Rebirth form.");
+            RebirthDom.setText("guide-rule-label", "Regra");
+            RebirthDom.setText("guide-rule-title", "Invoque e ataque");
+            RebirthDom.setText("guide-rule-copy", "Monstros ficam no campo até a Guarda chegar a zero.");
+            RebirthDom.setText("guide-combine-label", evolution ? "Combinar pronto" : "Combinar");
+            RebirthDom.setText("guide-combine-title", evolution ? `${evolution.name} x${evolution.count}` : "Duplicatas evoluem");
+            RebirthDom.setText("guide-combine-copy", evolution ? "Funda a dupla agora ou guarde os dois corpos para pressão depois." : "Dois monstros iguais se fundem em sua forma Rebirth.");
         },
 
         resultImpact() {
@@ -1606,28 +1608,28 @@
             const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked;
             if (RebirthStore.elements["play-button"]) {
                 if (selectedAttacker) {
-                    RebirthStore.elements["play-button"].innerHTML = '<i class="rb-action-sword"></i>Attack';
+                    RebirthStore.elements["play-button"].innerHTML = '<i class="rb-action-sword"></i>Atacar';
                     RebirthStore.elements["play-button"].disabled = !canChoose || !attackerReady;
                 } else {
                     const emptySlot = RebirthStore.firstOpenFieldSlot("player");
                     const isMonster = selected && RebirthMarkup.isMonster(selected);
-                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Summon" : "Play"}${selected ? ` ${cost}` : ""}`;
+                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Invocar" : "Jogar"}${selected ? ` ${cost}` : ""}`;
                     RebirthStore.elements["play-button"].disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || (isMonster && emptySlot < 0);
                 }
             }
             if (RebirthStore.elements["next-turn-button"]) {
                 if (state.phase === "result") {
-                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Next Turn';
+                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Próximo turno';
                     RebirthStore.elements["next-turn-button"].disabled = !canNext;
-                    RebirthDom.setText("secondary-action-copy", "Ready your battlefield");
+                    RebirthDom.setText("secondary-action-copy", "Prepare seu campo");
                 } else if (state.is_finished) {
-                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Finished';
+                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Encerrado';
                     RebirthStore.elements["next-turn-button"].disabled = true;
-                    RebirthDom.setText("secondary-action-copy", "Start a new match");
+                    RebirthDom.setText("secondary-action-copy", "Inicie uma nova partida");
                 } else {
-                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>End Turn';
+                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Encerrar turno';
                     RebirthStore.elements["next-turn-button"].disabled = !canNext;
-                    RebirthDom.setText("secondary-action-copy", evolution ? "You can still evolve before ending" : "Pass to refill energy next turn");
+                    RebirthDom.setText("secondary-action-copy", evolution ? "Você ainda pode evoluir antes de encerrar" : "Passe a vez para recarregar mana");
                 }
             }
             if (RebirthStore.elements["evolve-button"]) {

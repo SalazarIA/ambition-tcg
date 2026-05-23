@@ -1,13 +1,13 @@
 {% set rb_nav = rebirth_navbar %}
 {% set auth_redirect = request.path if request.path.startswith('/rebirth') else url_for('rebirth') %}
-<header class="rb-global-nav" data-rebirth-global-nav data-rebirth-wallet aria-label="Navegacao global Ambitionz Rebirth">
-    <a class="rb-brand rb-global-brand" href="/" aria-label="Ambitionz Rebirth home">
+<header class="rb-global-nav" data-rebirth-global-nav data-rebirth-wallet aria-label="Navegação global Ambitionz Rebirth">
+    <a class="rb-brand rb-global-brand" href="/" aria-label="Ambitionz Rebirth início">
         <span>A</span>
         <strong>Ambitionz Rebirth</strong>
     </a>
     <nav class="rb-global-tabs" aria-label="Produtos Rebirth">
         <a href="/rebirth" class="{{ 'is-active' if request.path == '/rebirth' else '' }}">Arena</a>
-        <a href="/rebirth/collection" class="{{ 'is-active' if request.path == '/rebirth/collection' else '' }}">Colecao</a>
+        <a href="/rebirth/collection" class="{{ 'is-active' if request.path == '/rebirth/collection' else '' }}">Coleção</a>
         <a href="/rebirth/shop" class="{{ 'is-active' if request.path == '/rebirth/shop' else '' }}">Loja</a>
         <a href="/rebirth/progression" class="{{ 'is-active' if request.path == '/rebirth/progression' else '' }}">Recompensas</a>
         <a href="/rebirth/profile" class="{{ 'is-active' if request.path == '/rebirth/profile' else '' }}">Perfil</a>
@@ -17,19 +17,19 @@
             <span>{{ rb_nav.player_label }}</span>
             <strong>{{ rb_nav.player_name }}</strong>
         </div>
-        <div class="rb-global-xp" aria-label="Nivel e XP">
-            <span>Nivel {{ rb_nav.level }}</span>
+        <div class="rb-global-xp" aria-label="Nível e XP">
+            <span>Nível {{ rb_nav.level }}</span>
             <strong>{{ rb_nav.xp }}/{{ rb_nav.next_level_xp }} XP</strong>
             <i aria-hidden="true"><b style="width: {{ rb_nav.xp_percent }}%"></b></i>
         </div>
         <div class="rb-global-wallet" aria-label="Carteira">
-            <span>GOLD <strong data-rebirth-wallet-value="GOLD">{{ rb_nav.gold }}</strong></span>
-            <span class="rb-coinz">Coinz <strong data-rebirth-wallet-value="COINZ">{{ rb_nav.coinz }}</strong></span>
+            <span>Ouro <strong data-rebirth-wallet-value="GOLD">{{ rb_nav.gold }}</strong></span>
+            <span class="rb-coinz">Gemas <strong data-rebirth-wallet-value="COINZ">{{ rb_nav.coinz }}</strong></span>
         </div>
         {% if rb_nav.authenticated %}
-            <button class="rb-nav-auth rb-nav-logout" type="button" data-rebirth-logout>Logout</button>
+            <button class="rb-nav-auth rb-nav-logout" type="button" data-rebirth-logout>Sair</button>
         {% else %}
-            <button class="rb-nav-auth" type="button" data-rebirth-auth-open>Login / Registro</button>
+            <button class="rb-nav-auth" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
         {% endif %}
     </section>
 </header>
@@ -40,18 +40,18 @@
         <button class="rb-auth-close" type="button" data-rebirth-auth-close aria-label="Fechar">x</button>
         <div class="rb-auth-dialog-copy">
             <span>Ambitionz Rebirth</span>
-            <h2 id="rebirth-auth-title">Login / Registro</h2>
-            <p>Entre para guardar sua colecao, nivel, Gold e Coinz entre duelos.</p>
+            <h2 id="rebirth-auth-title">Entrar / Cadastrar</h2>
+            <p>Entre para guardar sua coleção, nível, Ouro e Gemas entre duelos.</p>
         </div>
         <div class="rb-auth-modal-grid">
             <form class="rb-auth-form rb-auth-modal-form" data-rebirth-login data-auth-redirect="{{ auth_redirect }}">
-                <span>Login</span>
+                <span>Entrar</span>
                 <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
                 <label>Senha<input name="password" type="password" autocomplete="current-password" required></label>
                 <button class="rb-button-secondary rb-secondary" type="submit">Entrar</button>
             </form>
             <form class="rb-auth-form rb-auth-modal-form" data-rebirth-register data-auth-redirect="{{ url_for('rebirth') }}?firstRun=1">
-                <span>Registro</span>
+                <span>Cadastrar</span>
                 <label>Jogador<input name="username" autocomplete="username" required minlength="3"></label>
                 <label>Email<input name="email" type="text" inputmode="email" autocomplete="email" required></label>
                 <label>Senha<input name="password" type="password" autocomplete="new-password" required minlength="8"></label>
