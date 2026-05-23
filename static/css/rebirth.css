@@ -5720,6 +5720,164 @@ button {
     }
 }
 
+/* =========================================================================
+   v55 FASE 2 — Combat Juice: hit pause, screen shake contextual, shield
+   shatter, death dissolve em brasa. O JS injeta as classes/elementos no
+   pipeline RebirthCombatMotion.play(); o CSS define a aparência.
+   ========================================================================= */
+
+/* --- SCREEN SHAKE contextual (.vfx-screen-shake / .vfx-screen-shake-heavy)
+   Aplicado no .rb-game-viewport pelo triggerScreenShake().
+   • normal (3px só horizontal): para dano leve em HP
+   • heavy (6px X+Y): para trade mútuo (clash) e dano pesado
+   Removido do DOM após 200-220ms.
+   ------------------------------------------------------------------------ */
+
+@keyframes rb-vfx-shake-normal {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    18% { transform: translate3d(-3px, 0, 0); }
+    36% { transform: translate3d(3px, 0, 0); }
+    54% { transform: translate3d(-2px, 0, 0); }
+    72% { transform: translate3d(2px, 0, 0); }
+    88% { transform: translate3d(-1px, 0, 0); }
+}
+
+@keyframes rb-vfx-shake-heavy {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    12% { transform: translate3d(-6px, 4px, 0); }
+    24% { transform: translate3d(6px, -4px, 0); }
+    36% { transform: translate3d(-5px, -3px, 0); }
+    48% { transform: translate3d(5px, 3px, 0); }
+    60% { transform: translate3d(-3px, 5px, 0); }
+    72% { transform: translate3d(3px, -2px, 0); }
+    86% { transform: translate3d(-2px, 1px, 0); }
+}
+
+.vfx-screen-shake {
+    animation: rb-vfx-shake-normal 200ms ease-in-out both;
+    will-change: transform;
+}
+
+.vfx-screen-shake.vfx-screen-shake-heavy {
+    animation: rb-vfx-shake-heavy 220ms cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+
+/* --- SHIELD SHATTER (.vfx-shield-shatter)
+   Container spawned pelo JS dentro do node do alvo quando perde guard
+   mas sobrevive. 6 fragmentos geométricos (b.vfx-shield-shatter__shard)
+   explodem do centro pra fora em ângulos uniformes, com fade-out.
+   ------------------------------------------------------------------------ */
+
+.vfx-shield-shatter {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 7;
+    /* container só pra alinhar; toda animação fica nos shards */
+}
+
+.vfx-shield-shatter__shard {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 22px;
+    margin: -11px 0 0 -7px;
+    background:
+        linear-gradient(140deg, rgba(180, 220, 255, 0.92) 0%, rgba(80, 140, 200, 0.65) 55%, rgba(30, 70, 130, 0.4) 100%);
+    box-shadow:
+        0 0 6px rgba(140, 200, 255, 0.65),
+        inset 0 0 4px rgba(255, 255, 255, 0.4);
+    clip-path: polygon(50% 0, 100% 38%, 78% 100%, 22% 100%, 0 38%);
+    opacity: 0;
+    transform-origin: 50% 100%;
+    animation: rb-vfx-shard-fly 380ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+    --shard-angle: 0deg;
+}
+
+@keyframes rb-vfx-shard-fly {
+    0% {
+        opacity: 0;
+        transform: rotate(var(--shard-angle, 0deg)) translateY(0) scale(0.4);
+    }
+    18% {
+        opacity: 1;
+        transform: rotate(var(--shard-angle, 0deg)) translateY(-12px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(var(--shard-angle, 0deg)) translateY(-72px) scale(0.6);
+    }
+}
+
+/* --- DEATH DISSOLVE (.is-dead-dissolve)
+   Aplicado pelo JS no card que será removido na próxima render.
+   Borda incandescente (brasa) + clip-path que queima de baixo pra cima.
+   Toda a card encolhe e some em ~720ms; depois o applyState() limpa o
+   HTML residual.
+   ------------------------------------------------------------------------ */
+
+.is-dead-dissolve {
+    animation: rb-vfx-dissolve-card 720ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+    position: relative;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.is-dead-dissolve::after {
+    /* halo de brasa por trás do card enquanto queima */
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% 78%, rgba(255, 200, 90, 0.7) 0%, rgba(255, 110, 30, 0.45) 28%, rgba(80, 30, 10, 0.18) 55%, transparent 80%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    animation: rb-vfx-ember-glow 720ms ease-out forwards;
+    z-index: -1;
+}
+
+@keyframes rb-vfx-dissolve-card {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+        /* clip-path completo: card inteira visível */
+        clip-path: inset(0 0 0 0);
+        box-shadow: 0 0 0 0 rgba(255, 180, 60, 0);
+    }
+    18% {
+        /* borda incandescente ativa, ainda visível inteira */
+        clip-path: inset(0 0 0 0);
+        box-shadow:
+            0 0 18px 2px rgba(255, 180, 60, 0.75),
+            inset 0 0 20px rgba(255, 220, 130, 0.45);
+        transform: scale(1.02);
+    }
+    60% {
+        /* queimando de baixo pra cima — top do card "vivo", base virou cinzas */
+        clip-path: inset(0 0 45% 0);
+        box-shadow:
+            0 0 14px 2px rgba(255, 130, 40, 0.6),
+            inset 0 0 16px rgba(255, 180, 60, 0.35);
+        transform: scale(0.94);
+        opacity: 0.85;
+    }
+    100% {
+        clip-path: inset(0 0 100% 0);  /* virou cinza inteiro */
+        box-shadow: 0 0 6px 0 rgba(120, 60, 20, 0.2);
+        transform: scale(0.82) translateY(6px);
+        opacity: 0;
+    }
+}
+
+@keyframes rb-vfx-ember-glow {
+    0% { opacity: 0; transform: scale(0.7); }
+    18% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1.4); }
+}
+
 /* --- Reduced motion: respeita preferência do SO ----------------------- */
 @media (prefers-reduced-motion: reduce) {
     #next-turn-button.is-cta-pulse:not(:disabled),
@@ -5728,12 +5886,21 @@ button {
     .rb-field-slots .rb-field-slot-empty[data-direct-attack="true"]::before,
     .rb-field-card.is-attack-lunging::after,
     .rb-field-card.is-taking-hit::before,
-    .rb-bot-card.is-taking-hit::before {
+    .rb-bot-card.is-taking-hit::before,
+    .vfx-screen-shake,
+    .vfx-screen-shake.vfx-screen-shake-heavy,
+    .vfx-shield-shatter__shard,
+    .is-dead-dissolve,
+    .is-dead-dissolve::after {
         animation: none;
     }
     .rb-hand .rb-mini-card.rb-tcg-card,
     #next-turn-button.rb-button-secondary,
     #play-button.rb-button-primary {
         transition-duration: 80ms;
+    }
+    .is-dead-dissolve {
+        opacity: 0;
+        transform: scale(0.9);
     }
 }

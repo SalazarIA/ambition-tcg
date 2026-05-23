@@ -447,23 +447,46 @@
         }
     };
 
-    function triggerScreenShake(intensity) {
+    function triggerScreenShake(profileOrIntensity) {
         const viewport = document.querySelector(".rb-game-viewport");
         const board = RebirthStore.elements["rebirth-board"];
         const target = viewport || board;
         const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (!target || reducedMotion) return;
-        const shake = Math.max(1, Number(intensity || 1));
-        target.style.setProperty("--shake-intensity", `${shake}px`);
-        target.style.setProperty("--shake-intensity-negative", `${shake * -1}px`);
-        target.style.setProperty("--shake-intensity-soft", `${shake * 0.55}px`);
-        target.style.setProperty("--shake-intensity-soft-negative", `${shake * -0.55}px`);
-        target.classList.remove("is-screen-shaking");
+
+        // v55 Combat Juice: aceita "subtle" | "normal" | "heavy" ou um número
+        // (legado). Mapa: subtle=2px só X, normal=3px só X, heavy=6px X+Y.
+        // Heavy dispara em trade mútuo (clash) e dano alto.
+        let profile = "normal";
+        let intensity = 3;
+        if (typeof profileOrIntensity === "string") {
+            profile = profileOrIntensity;
+            intensity = profile === "heavy" ? 6 : profile === "subtle" ? 2 : 3;
+        } else {
+            const n = Math.max(1, Number(profileOrIntensity || 3));
+            intensity = n;
+            profile = n >= 6 ? "heavy" : n <= 2 ? "subtle" : "normal";
+        }
+
+        // Compat: mantém custom properties legadas usadas pelo CSS antigo.
+        target.style.setProperty("--shake-intensity", `${intensity}px`);
+        target.style.setProperty("--shake-intensity-negative", `${intensity * -1}px`);
+        target.style.setProperty("--shake-intensity-soft", `${intensity * 0.55}px`);
+        target.style.setProperty("--shake-intensity-soft-negative", `${intensity * -0.55}px`);
+
+        // Limpa classes anteriores antes de aplicar (force restart da animação).
+        target.classList.remove("is-screen-shaking", "vfx-screen-shake", "vfx-screen-shake-heavy");
         void target.offsetWidth;
-        target.classList.add("is-screen-shaking");
+        target.classList.add("is-screen-shaking");  // legado
+        target.classList.add("vfx-screen-shake");   // novo
+        if (profile === "heavy") {
+            target.classList.add("vfx-screen-shake-heavy");
+        }
+
+        const duration = profile === "heavy" ? 220 : 200;
         window.setTimeout(() => {
-            target.classList.remove("is-screen-shaking");
-        }, 420);
+            target.classList.remove("is-screen-shaking", "vfx-screen-shake", "vfx-screen-shake-heavy");
+        }, duration);
     }
 
     const RebirthAssets = {
@@ -991,23 +1014,31 @@
             const playerDamage = Number(damage.player || 0);
             const botDamage = Number(damage.bot || 0);
             const totalDamage = Math.max(0, playerDamage) + Math.max(0, botDamage);
-            // v55: clashes agora trocam guard (não HP) — totalDamage seria 0,
-            // mas o impacto físico aconteceu mesmo assim. Dispara shake leve
-            // pra qualquer outcome que envolveu um clash de criaturas, não
-            // só dano em HP. Victory/Defeat continuam escalando com o dano.
             const outcome = String(result.outcome || "").toLowerCase();
-            if (totalDamage > 0) {
-                triggerScreenShake(Math.min(10, 2 + totalDamage));
+            // v55 Combat Juice profiles:
+            //   • heavy: clash mútuo (ambas criaturas trocam guard) ou dano
+            //     direto pesado (≥5 HP) — tremor vertical+horizontal 6px
+            //   • normal: dano normal (1-4 HP em HP) — horizontal 3px
+            //   • nada: outcome irrelevante (sem dano e sem clash)
+            if (outcome === "clash") {
+                triggerScreenShake("heavy");
                 return;
             }
-            if (outcome === "clash") {
-                triggerScreenShake(3);
+            if (totalDamage >= 5) {
+                triggerScreenShake("heavy");
+                return;
+            }
+            if (totalDamage > 0) {
+                triggerScreenShake("normal");
             }
         }
     };
 
     const RebirthCombatMotion = {
         impactMs: 180,
+        hitPauseMs: 60,     // v55 Combat Juice: micro-congelamento no impacto
+        shatterMs: 380,     // duração do .vfx-shield-shatter
+        dissolveMs: 720,    // duração do .is-dead-dissolve
         returnHoldMs: 180,
         settleMs: 200,
 
@@ -1062,6 +1093,90 @@
             RebirthFeel.screenShake(result);
         },
 
+        // v55 Combat Juice — encontra criaturas que sobreviveram mas perderam
+        // current_guard no choque (comparando RebirthStore.state PRÉ-resolve
+        // com resolvedState PÓS-resolve) e dispara o estilhaço.
+        triggerShieldShatter(resolvedState) {
+            const previous = RebirthStore.state;
+            if (!previous || !resolvedState || RebirthFeel.reducedMotion()) return;
+            const destroyedIds = new Set(
+                ((resolvedState.events || [])
+                    .filter((e) => e && e.type === "MONSTER_DESTROYED")
+                    .map((e) => (e.payload || {}).instance_id))
+                    .filter(Boolean)
+            );
+
+            const sides = [
+                { name: "player", host: RebirthStore.elements["player-battlefield"], attr: "data-attacker-instance" },
+                { name: "bot", host: RebirthStore.elements["bot-battlefield"], attr: "data-target-instance" },
+            ];
+            sides.forEach(({ name, host, attr }) => {
+                if (!host) return;
+                const prevField = ((previous[name] || {}).battlefield || []);
+                const nextField = ((resolvedState[name] || {}).battlefield || []);
+                const nextByInst = new Map(nextField.map((c) => [c.instance_id, c]));
+                prevField.forEach((prevCard) => {
+                    if (!prevCard || !prevCard.instance_id) return;
+                    if (destroyedIds.has(prevCard.instance_id)) return;  // morreu, não estilhaça (vira dissolve)
+                    const nextCard = nextByInst.get(prevCard.instance_id);
+                    if (!nextCard) return;
+                    const prevGuard = Number(prevCard.current_guard != null ? prevCard.current_guard : prevCard.guard || 0);
+                    const newGuard = Number(nextCard.current_guard != null ? nextCard.current_guard : nextCard.guard || 0);
+                    if (newGuard >= prevGuard) return;  // guarda não caiu
+                    const node = host.querySelector(`[${attr}="${escapeSelectorValue(prevCard.instance_id)}"]`);
+                    if (!node) return;
+                    this.spawnShatter(node);
+                });
+            });
+        },
+
+        spawnShatter(node) {
+            // Injeta um elemento dedicado de estilhaço — separa CSS do card
+            // pra não conflitar com o hit-flash::before já aplicado em paralelo.
+            const fx = document.createElement("span");
+            fx.className = "vfx-shield-shatter";
+            fx.setAttribute("aria-hidden", "true");
+            // 6 shards distribuídos em ângulo via custom property
+            for (let i = 0; i < 6; i += 1) {
+                const shard = document.createElement("b");
+                shard.className = "vfx-shield-shatter__shard";
+                shard.style.setProperty("--shard-angle", `${i * 60}deg`);
+                fx.appendChild(shard);
+            }
+            node.appendChild(fx);
+            window.setTimeout(() => {
+                if (fx.parentNode) fx.parentNode.removeChild(fx);
+            }, this.shatterMs);
+        },
+
+        // v55 Combat Juice — varre eventos MONSTER_DESTROYED e marca os DOM
+        // nodes com .is-dead-dissolve. Como play() é awaited antes do
+        // applyState, a animação roda inteira antes do replace do HTML.
+        triggerDeathDissolve(resolvedState) {
+            if (!resolvedState || RebirthFeel.reducedMotion()) return [];
+            const destroyedIds = (resolvedState.events || [])
+                .filter((e) => e && e.type === "MONSTER_DESTROYED")
+                .map((e) => (e.payload || {}).instance_id)
+                .filter(Boolean);
+            if (!destroyedIds.length) return [];
+
+            const hosts = [
+                { host: RebirthStore.elements["player-battlefield"], attr: "data-attacker-instance" },
+                { host: RebirthStore.elements["bot-battlefield"], attr: "data-target-instance" },
+            ];
+            const marked = [];
+            destroyedIds.forEach((instanceId) => {
+                hosts.forEach(({ host, attr }) => {
+                    if (!host) return;
+                    const node = host.querySelector(`[${attr}="${escapeSelectorValue(instanceId)}"]`);
+                    if (!node) return;
+                    node.classList.add("is-dead-dissolve");
+                    marked.push(node);
+                });
+            });
+            return marked;
+        },
+
         cleanup(attacker, target) {
             const board = RebirthStore.elements["rebirth-board"];
             if (board) {
@@ -1096,11 +1211,40 @@
 
             attacker.classList.add("is-attack-lunging");
             await wait(this.impactMs);
+
+            // v55 Combat Juice — HIT PAUSE
+            // Micro-congelamento de 60ms no exato frame de impacto, antes
+            // dos efeitos visuais de dano dispararem. Dá sensação de massa:
+            // o atacante "trava" contra o alvo por um respiro antes de o
+            // dano, o shake e o flash explodirem juntos. Tecnicamente é só
+            // adiar markImpact em 60ms — o backend já resolveu, só atrasa
+            // o feedback visual.
+            await wait(this.hitPauseMs);
+
             this.markImpact(target, resolvedState);
+
+            // v55 Combat Juice — SHIELD SHATTER + DEATH DISSOLVE
+            // Disparados DEPOIS do markImpact pra coexistirem com o hit
+            // flash e o screen shake. Shatter em sobreviventes que perderam
+            // guard; dissolve em quem morreu. Ambos rodam em paralelo com
+            // o resto da animação, e só esperam o tempo extra de dissolve
+            // se houve morte (pra que applyState não substitua o HTML
+            // antes da brasa terminar).
+            this.triggerShieldShatter(resolvedState);
+            const dyingNodes = this.triggerDeathDissolve(resolvedState);
+
             await wait(this.returnHoldMs);
             attacker.classList.remove("is-attack-lunging");
             await wait(this.settleMs);
             this.cleanup(attacker, target);
+
+            if (dyingNodes.length) {
+                // Já passamos impactMs + hitPauseMs + returnHoldMs + settleMs
+                // (~620ms). O dissolve dura ~720ms, então precisamos do delta.
+                const elapsed = this.returnHoldMs + this.settleMs;
+                const remaining = Math.max(0, this.dissolveMs - elapsed);
+                await wait(remaining);
+            }
         }
     };
 
