@@ -217,7 +217,7 @@ def test_bot_evolves_duplicate_before_answering():
     assert evolved["id"] == "card_011"
     assert match["bot"]["hand"][0]["id"] == "card_011"
     assert len([card for card in match["bot"]["discard"] if card["id"] == "card_001"]) == 2
-    assert "Bot evolved" in match["log"][-1]
+    assert "Bot evoluiu" in match["log"][-1]
 
 
 def test_spell_resolves_immediately_through_effect_stack_and_discards():

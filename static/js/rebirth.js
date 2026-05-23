@@ -819,11 +819,11 @@
                     <b class="rb-card-rank">?</b>
                 </div>
                 <div class="rb-card-art rb-asset-fallback">
-                    <span>Choose</span>
+                    <span>Escolha</span>
                 </div>
                 <div class="rb-card-rule">
-                    <strong>Living Battle Zone</strong>
-                    <p>Summoned monsters stay until their Guard is broken.</p>
+                    <strong>Zona de Batalha</strong>
+                    <p>Monstros invocados permanecem até a Guarda ser quebrada.</p>
                 </div>
                 <div class="rb-card-stats">
                     <span><i class="rb-stat-sword"></i><b>0</b></span>
@@ -1407,9 +1407,9 @@
                 lockedReason: !canChoose
                     ? "Action unavailable outside your main phase"
                     : energy < RebirthMarkup.cardCost(card)
-                        ? `Not enough mana: needs ${RebirthMarkup.cardCost(card)}`
+                        ? `Sem mana suficiente: precisa de ${RebirthMarkup.cardCost(card)}`
                         : RebirthMarkup.isMonster(card) && !hasOpenSlot
-                            ? "No empty monster slot"
+                            ? "Sem slot livre"
                             : ""
             })).join("");
         },
@@ -1459,9 +1459,9 @@
             }
             RebirthStore.lastResultSignature = null;
             RebirthStore.lastResultTextSignature = null;
-            RebirthDom.setText("result-label", "Waiting");
-            RebirthDom.setText("result-title", "Build your field.");
-            RebirthDom.setText("result-copy", "Summon monsters, then select a ready ally and choose its target.");
+            RebirthDom.setText("result-label", "Aguardando");
+            RebirthDom.setText("result-title", "Monte seu campo.");
+            RebirthDom.setText("result-copy", "Invoque monstros, selecione um aliado pronto e escolha o alvo.");
         },
 
         tactics() {
@@ -1613,14 +1613,27 @@
             const canPay = !selected || energy >= cost;
             const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked;
             if (RebirthStore.elements["play-button"]) {
+                const btn = RebirthStore.elements["play-button"];
                 if (selectedAttacker) {
-                    RebirthStore.elements["play-button"].innerHTML = '<i class="rb-action-sword"></i>Atacar';
-                    RebirthStore.elements["play-button"].disabled = !canChoose || !attackerReady;
+                    btn.innerHTML = '<i class="rb-action-sword"></i>Atacar';
+                    btn.disabled = !canChoose || !attackerReady;
+                    btn.title = attackerReady
+                        ? "Ataca o monstro inimigo (ou direto, se o campo do oponente estiver vazio)."
+                        : "Esse monstro já atacou neste turno.";
                 } else {
                     const emptySlot = RebirthStore.firstOpenFieldSlot("player");
                     const isMonster = selected && RebirthMarkup.isMonster(selected);
-                    RebirthStore.elements["play-button"].innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Invocar" : "Jogar"}${selected ? ` ${cost}` : ""}`;
-                    RebirthStore.elements["play-button"].disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || (isMonster && emptySlot < 0);
+                    btn.innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Invocar" : "Jogar"}${selected ? ` ${cost}` : ""}`;
+                    btn.disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || (isMonster && emptySlot < 0);
+                    if (!RebirthStore.selectedInstanceId) {
+                        btn.title = "Escolha uma carta da mão primeiro.";
+                    } else if (isMonster && emptySlot < 0) {
+                        btn.title = "Sem slot livre no seu campo.";
+                    } else if (!canPay) {
+                        btn.title = `Sem mana suficiente — precisa de ${cost}.`;
+                    } else {
+                        btn.title = isMonster ? "Invoca a carta selecionada." : "Joga a carta selecionada.";
+                    }
                 }
             }
             if (RebirthStore.elements["next-turn-button"]) {
@@ -1756,7 +1769,7 @@
         async attackTarget(targetInstanceId) {
             if (!RebirthStore.selectedAttackerId || !RebirthStore.state || !RebirthStore.fieldCard(RebirthStore.selectedAttackerId)) {
                 RebirthStore.selectedAttackerId = null;
-                RebirthErrors.show("Select one ready monster on your battlefield first.");
+                RebirthErrors.show("Selecione um monstro pronto no seu campo primeiro.");
                 RebirthRenderer.render();
                 return;
             }
@@ -1801,7 +1814,7 @@
         async clashSelectedAttacker() {
             const attacker = RebirthStore.fieldCard(RebirthStore.selectedAttackerId);
             if (!RebirthStore.selectedAttackerId || !RebirthStore.state || !attacker) {
-                RebirthErrors.show("Select one ready monster on your battlefield first.");
+                RebirthErrors.show("Selecione um monstro pronto no seu campo primeiro.");
                 RebirthRenderer.buttons();
                 return;
             }

@@ -76,7 +76,7 @@ class EffectStack:
             if "shield" not in statuses:
                 return None
             statuses.pop("shield", None)
-            return f"{side['name']}'s shield is destroyed."
+            return f"O escudo de {side['name']} foi destruído."
 
         if effect_type == "status":
             status_name = str(effect.get("status") or "").strip().lower()
@@ -95,7 +95,7 @@ class EffectStack:
                 return None
             side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
             side["wounded"] = True
-            return f"{side['name']} takes {amount} stack damage."
+            return f"{side['name']} sofre {amount} de dano da pilha."
 
         if effect_type == "heal":
             amount = max(0, int(effect.get("amount", 0) or 0))
@@ -660,13 +660,14 @@ def _summon_monster_card(match, side_name, card, field_slot=None):
         "outcome": "Summon",
         "winner": None,
         "damage": {"player": 0, "bot": 0},
-        "message": f"{summoned['name']} enters the battlefield.",
+        "message": f"{summoned['name']} entra em campo.",
         "ability_events": [],
         "effective_attack": {"player": 0, "bot": 0},
     }
-    turn_label = f"Turn {match['turn']:02d}"
-    actor_label = "Bot" if side_name == "bot" else "You"
-    match["log"].append(f"{turn_label}   {actor_label} summoned {summoned['name']}.")
+    turn_label = f"Turno {match['turn']:02d}"
+    actor_label = "Bot" if side_name == "bot" else "Você"
+    verb = "invocou" if actor_label == "Você" else "invocou"
+    match["log"].append(f"{turn_label}   {actor_label} {verb} {summoned['name']}.")
     append_event(
         match,
         "CARD_PLAYED",
@@ -823,7 +824,7 @@ def _resolve_unanswered_attack(match, player_card):
         "outcome": "Victory",
         "winner": "player",
         "damage": {"player": 0, "bot": damage},
-        "message": f"{player_card['name']} attacks directly. Bot takes {damage} damage.",
+        "message": f"{player_card['name']} ataca diretamente. Bot sofre {damage} de dano.",
         "ability_events": [],
         "effective_attack": {"player": card_attack(player_card), "bot": 0},
     }
@@ -871,7 +872,7 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
             "outcome": "Victory",
             "winner": "player",
             "damage": {"player": 0, "bot": damage},
-            "message": f"{player_card['name']} overpowers {bot_card['name']}. {'Target loses' if persistent_field else 'Bot takes'} {damage} damage.",
+            "message": f"{player_card['name']} venceu {bot_card['name']}. {'Alvo perde' if persistent_field else 'Bot sofre'} {damage} de dano.",
         }
     elif winner == "bot":
         damage_payload = damage_details(bot_card, player_card, match["player"].get("wounded", False))
@@ -885,7 +886,7 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
             "outcome": "Defeat",
             "winner": "bot",
             "damage": {"player": damage, "bot": 0},
-            "message": f"{bot_card['name']} beats {player_card['name']}. {'Attacker loses' if persistent_field else 'You take'} {damage} damage.",
+            "message": f"{bot_card['name']} derrotou {player_card['name']}. {'Atacante perde' if persistent_field else 'Você sofre'} {damage} de dano.",
         }
     else:
         match["player"]["wounded"] = False
@@ -963,7 +964,7 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
     defeated_bot = _remove_defeated_battlefield_cards(match["bot"]) if persistent_field else []
     defeated_events = []
     for defeated in defeated_player + defeated_bot:
-        message = f"{defeated['name']} is destroyed."
+        message = f"{defeated['name']} foi destruído."
         ability_events.append(message)
         defeated_events.append(message)
         match["log"].append(f"Turn {match['turn']:02d}   {message}")
@@ -1047,7 +1048,7 @@ def _evolve_side_duplicate(match, side_name, card_id):
     side["hand"].insert(0, evolved)
     actor = "Bot" if side_name == "bot" else card["name"]
     if side_name == "bot":
-        match["log"].append(f"Turn {match['turn']:02d}   Bot evolved {card['name']} x2 into {evolved['name']}.")
+        match["log"].append(f"Turno {match['turn']:02d}   Bot evoluiu {card['name']} x2 em {evolved['name']}.")
     else:
         match["log"].append(f"Turn {match['turn']:02d}   {actor} x2 evolved into {evolved['name']}.")
     append_event(
@@ -1234,7 +1235,7 @@ def next_turn(match):
     match["last_clash"] = None
     match["phase"] = PHASE_CHOOSE
     set_turn_phase(match, TurnPhase.MAIN_PHASE)
-    match["log"].append(f"Turn {match['turn']:02d}   Choose a card.")
+    match["log"].append(f"Turno {match['turn']:02d}   Escolha uma carta.")
     append_event(
         match,
         "TURN_STARTED",
