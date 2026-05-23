@@ -5,6 +5,7 @@ import pytest
 from services.rebirth_engine import (
     RebirthError,
     _bot_auto_summon,
+    compare_clash,
     compare_power,
     declare_attack,
     evolve_duplicate,
@@ -114,7 +115,7 @@ def test_first_turn_direct_damage_is_blocked_until_bot_responds():
     assert match["last_clash"] is None
 
 
-def test_equal_power_clash_causes_no_damage():
+def test_equal_power_field_clash_trades_guard_without_wounding_sides():
     match = start_match(seed="tie")
     player_card = next(card for card in match["player"]["hand"] if card["id"] == "card_002")
 
@@ -147,15 +148,47 @@ def test_equal_power_clash_causes_no_damage():
     # so the attack has a defender. Tests that exercise combat (this one and
     # the trap / defeated-monster tests below) all need this nudge.
     _bot_auto_summon(match)
+    result = declare_attack(
+        match,
+        attacker_instance_id=match["player"]["battlefield"][0]["instance_id"],
+        target_instance_id=match["bot"]["battlefield"][0]["instance_id"],
+    )
+
+    assert result["outcome"] == "Clash"
+    assert result["damage"] == {"player": 5, "bot": 5}
+    assert match["player"]["hp"] == 30
+    assert match["bot"]["hp"] == 30
+    assert match["player"]["wounded"] is False
+    assert match["bot"]["wounded"] is False
+    assert match["player"]["battlefield"] == []
+    assert match["bot"]["battlefield"] == []
+    assert any(
+        event["type"] == "DAMAGE_DEALT"
+        and event["payload"]["player"] == 5
+        and event["payload"]["bot"] == 5
+        for event in match["events"]
+    )
+
+
+def test_guard_trade_does_not_unlock_wounded_tiebreak_for_later_clash():
+    match = start_match(seed="guard-trade-does-not-wound")
+    player_card = next(card for card in match["player"]["hand"] if card["id"] == "card_002")
+    match["bot"]["hand"] = [create_card_instance("card_022", "bot", 1)]
+
+    play_card(match, card_instance_id=player_card["instance_id"])
+    _bot_auto_summon(match)
     declare_attack(
         match,
         attacker_instance_id=match["player"]["battlefield"][0]["instance_id"],
         target_instance_id=match["bot"]["battlefield"][0]["instance_id"],
     )
 
-    assert match["result"]["outcome"] == "Clash"
-    assert match["player"]["hp"] == 30
-    assert match["bot"]["hp"] == 30
+    later_player = create_card_instance("card_004", "player", 2)
+    later_bot = create_card_instance("card_005", "bot", 2)
+    winner, clash = compare_clash(match, later_player, later_bot)
+
+    assert winner == "clash"
+    assert not any("alvo ferido" in event for event in clash["events"])
 
 
 def test_evolution_by_duplicate_creates_stronger_card():

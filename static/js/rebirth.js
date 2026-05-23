@@ -1459,13 +1459,16 @@
                 return;
             }
             if (result) {
+                const damage = result.damage || {};
+                const guardTrade = result.outcome === "Clash"
+                    && (Number(damage.player || 0) > 0 || Number(damage.bot || 0) > 0);
                 if (panel) {
                     panel.classList.add(`is-${String(result.outcome || "clash").toLowerCase()}`);
                 }
                 const outcomeLabels = { Victory: "Vitória", Defeat: "Derrota", Clash: "Clash", Summon: "Invocação", Spell: "Magia", "Trap Armed": "Armadilha armada" };
                 const outcome = outcomeLabels[result.outcome] || result.outcome;
                 RebirthDom.setText("result-label", outcome);
-                RebirthDom.setText("result-title", result.outcome === "Clash" ? "Nenhum dano." : outcome);
+                RebirthDom.setText("result-title", result.outcome === "Clash" ? (guardTrade ? "Troca de Guarda." : "Nenhum dano.") : outcome);
                 RebirthDom.setText("result-copy", result.message);
                 this.resultReadability(`${state.turn}:${result.outcome}:${result.message}`);
                 this.resultImpact();
@@ -1515,7 +1518,10 @@
 
             if (result) {
                 const events = result.ability_events || [];
-                const outcomeLabels = { Victory: "Vitória", Defeat: "Derrota", Clash: "Sem dano", Summon: "Invocação", Spell: "Magia" };
+                const damage = result.damage || {};
+                const guardTrade = result.outcome === "Clash"
+                    && (Number(damage.player || 0) > 0 || Number(damage.bot || 0) > 0);
+                const outcomeLabels = { Victory: "Vitória", Defeat: "Derrota", Clash: guardTrade ? "Troca de Guarda" : "Sem dano", Summon: "Invocação", Spell: "Magia" };
                 const outcomeTitle = outcomeLabels[result.outcome] || result.outcome;
                 RebirthDom.setText("guide-rule-label", "Resultado");
                 RebirthDom.setText("guide-rule-title", outcomeTitle);
@@ -1676,11 +1682,9 @@
                 && !evolutionAvailable
                 && !selected
                 && !selectedAttacker;
-            if (RebirthStore.elements["next-turn-button"]) {
-                RebirthStore.elements["next-turn-button"].classList.toggle("is-cta-pulse", deadEnd);
-                if (deadEnd) {
-                    RebirthStore.elements["next-turn-button"].title = "Sem ações disponíveis — encerre o turno.";
-                }
+            const nextButton = RebirthStore.elements["next-turn-button"];
+            if (nextButton) {
+                nextButton.classList.toggle("is-cta-pulse", deadEnd);
             }
             if (state.phase === "choose" && deadEnd && !state.is_finished) {
                 // Don't spam — only set if there isn't a more-specific error already showing.
@@ -1689,18 +1693,23 @@
                     RebirthErrors.show("Sem ações disponíveis neste turno. Encerre para o bot jogar.");
                 }
             }
-            if (RebirthStore.elements["next-turn-button"]) {
+            if (nextButton) {
                 if (state.phase === "result") {
-                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Próximo turno';
-                    RebirthStore.elements["next-turn-button"].disabled = !canNext;
+                    nextButton.innerHTML = '<i class="rb-action-loop"></i>Próximo turno';
+                    nextButton.disabled = !canNext;
+                    nextButton.title = "Avance para preparar o próximo turno.";
                     RebirthDom.setText("secondary-action-copy", "Prepare seu campo");
                 } else if (state.is_finished) {
-                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Encerrado';
-                    RebirthStore.elements["next-turn-button"].disabled = true;
+                    nextButton.innerHTML = '<i class="rb-action-loop"></i>Encerrado';
+                    nextButton.disabled = true;
+                    nextButton.title = "A partida foi encerrada.";
                     RebirthDom.setText("secondary-action-copy", "Inicie uma nova partida");
                 } else {
-                    RebirthStore.elements["next-turn-button"].innerHTML = '<i class="rb-action-loop"></i>Encerrar turno';
-                    RebirthStore.elements["next-turn-button"].disabled = !canNext;
+                    nextButton.innerHTML = '<i class="rb-action-loop"></i>Encerrar turno';
+                    nextButton.disabled = !canNext;
+                    nextButton.title = deadEnd
+                        ? "Sem ações disponíveis — encerre o turno."
+                        : "Encerre o turno para o bot agir e recarregar sua mana.";
                     RebirthDom.setText("secondary-action-copy", evolution ? "Você ainda pode evoluir antes de encerrar" : "Passe a vez para recarregar mana");
                 }
             }

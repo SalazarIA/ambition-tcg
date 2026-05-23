@@ -112,6 +112,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         ".rb-field-card.is-attack-lunging",
         ".rb-field-card.is-taking-hit",
         ".rb-result-panel.is-result-reading",
+        ".is-cta-pulse:not(:disabled)",
         "rb-target-line-pulse",
         "rb-result-copy-fade",
         ".rb-hand .rb-mini-card.is-locked",
@@ -124,12 +125,13 @@ def test_rebirth_css_locks_reference_classes_and_assets():
     assert "filter:" not in css
     assert "backdrop-filter" not in css
     assert "drop-shadow" not in css
+    assert ".is-cta-pulse:not(:disabled)," in css
 
 
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v55" in service_worker
+    assert "ambitionz-rebirth-season0-v56" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -195,6 +197,8 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "Invocar",
         "Duelo ocupado",
         "Próximo turno",
+        "Troca de Guarda.",
+        "Encerre o turno para o bot agir e recarregar sua mana.",
         "scrollRestoration",
     ]:
         assert token in js
@@ -236,7 +240,8 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-055" in combined
+    assert "v=rebirth-056" in combined
+    assert "v=rebirth-055" not in combined
     assert "v=rebirth-054" not in combined
     assert "v=rebirth-053" not in combined
     assert "v=rebirth-051" not in combined
