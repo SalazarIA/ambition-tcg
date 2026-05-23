@@ -777,8 +777,20 @@
         },
 
         elementClass(card) {
-            const element = String((card && (card.element || card.family)) || "Shadow").trim().toLowerCase();
-            const safeElement = element.replace(/[^a-z0-9-]/g, "-") || "shadow";
+            // v55 Fase 3: prefere card.family (chave estável EN: "FIRE",
+            // "WATER", "EARTH", "SHADOW") sobre card.element (que veio
+            // traduzido pro pt-BR em commits recentes — "Fogo", "Agua").
+            // Fallback pra element só se family ausente, mantendo compat
+            // com payloads antigos.
+            const raw = String((card && (card.family || card.element)) || "shadow").trim().toLowerCase();
+            // Mapeia variações pt-BR caso ainda venham (defesa em
+            // profundidade): "fogo"→"fire", "agua"/"água"→"water" etc.
+            const ptToEn = {
+                "fogo": "fire", "agua": "water", "água": "water",
+                "terra": "earth", "sombra": "shadow",
+            };
+            const normalized = ptToEn[raw] || raw;
+            const safeElement = normalized.replace(/[^a-z0-9-]/g, "-") || "shadow";
             return ` is-element-${safeElement}`;
         },
 
@@ -2162,6 +2174,12 @@
                 evolveButton.addEventListener("click", () => RebirthFlow.evolveFirstDuplicate());
             }
 
+            // v55 Foundation Visual + Fase 3 compartilham a checagem de
+            // prefers-reduced-motion. Declarado aqui (acima do bloco de
+            // parallax) porque era usado antes da declaração — TDZ error.
+            const prefersReducedMotion = window.matchMedia
+                && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
             // v55 Fase 3 Living World: parallax mousemove no tabuleiro.
             // Cada camada (.battlefield-layer) tem data-parallax-depth no HTML;
             // multiplicamos a posição normalizada do mouse pelo depth/10 para
@@ -2199,9 +2217,7 @@
             // v55 Foundation Visual: tilt 3D no medalhão de ferro/dourado.
             // Cursor próximo da borda → mais inclinação. Reseta no mouseleave
             // para evitar que o botão fique "torto" depois que o ponteiro sai.
-            // Respeita prefers-reduced-motion: se o usuário pediu, não tracka.
-            const prefersReducedMotion = window.matchMedia
-                && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            // Respeita prefers-reduced-motion (declarado acima do parallax).
             const tiltButtons = [playButton, nextButton].filter(Boolean);
             if (!prefersReducedMotion) {
                 tiltButtons.forEach((medallion) => {

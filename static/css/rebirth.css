@@ -6206,3 +6206,221 @@ button {
         transform: scale(0.9);
     }
 }
+
+/* =========================================================================
+   v55 FASE 3 — GRIMÓRIO + BAZAAR
+   Coleção vira livro antigo aberto, Loja vira bancada de contrabandista
+   com vinheta cinematográfica e pergaminhos lacrados.
+   ========================================================================= */
+
+/* --- GRIMÓRIO: a aba de coleção --------------------------------------- */
+
+.rb-product-shell .rb-loadout-builder {
+    position: relative;
+    background:
+        /* lombada central (sombra interna marcando o vinco do livro) */
+        linear-gradient(90deg, transparent 47%, rgba(40, 24, 12, 0.55) 49%, rgba(20, 10, 4, 0.7) 50%, rgba(40, 24, 12, 0.55) 51%, transparent 53%),
+        /* textura de pergaminho envelhecido — pontos manchados */
+        radial-gradient(circle at 18% 22%, rgba(120, 80, 30, 0.16) 0 5px, transparent 6px),
+        radial-gradient(circle at 78% 14%, rgba(120, 80, 30, 0.12) 0 4px, transparent 5px),
+        radial-gradient(circle at 30% 84%, rgba(120, 80, 30, 0.18) 0 6px, transparent 7px),
+        radial-gradient(circle at 86% 78%, rgba(120, 80, 30, 0.14) 0 5px, transparent 6px),
+        /* fundo bege envelhecido com vinheta */
+        radial-gradient(ellipse at 50% 50%, rgba(180, 140, 80, 0.18) 0%, rgba(50, 32, 16, 0.55) 80%),
+        linear-gradient(135deg, #3a2a18 0%, #2a1c0e 50%, #1a1108 100%);
+    border: 2px solid;
+    border-image: linear-gradient(140deg, #6a4a22 0%, #3a2410 50%, #1a0f06 100%) 1;
+    box-shadow:
+        inset 0 0 60px rgba(60, 30, 10, 0.55),
+        inset 0 0 0 1px rgba(180, 130, 60, 0.18),
+        0 18px 38px rgba(0, 0, 0, 0.6),
+        0 4px 8px rgba(0, 0, 0, 0.5);
+    transform-style: preserve-3d;
+    perspective: 1400px;
+    /* divide as linhas em duas colunas pra simular páginas espelhadas */
+}
+
+.rb-product-shell .rb-loadout-builder::before {
+    /* faísca de luz no canto superior esquerdo, como vela próxima ao livro */
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 160px;
+    height: 80px;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 12% 18%, rgba(255, 200, 110, 0.28) 0%, transparent 60%);
+    z-index: 1;
+    border-radius: inherit;
+}
+
+.rb-product-shell .rb-loadout-row {
+    /* cada linha vira uma entrada de pergaminho mais sólida */
+    background:
+        linear-gradient(140deg, rgba(80, 56, 28, 0.4) 0%, rgba(40, 26, 12, 0.55) 100%);
+    border: 1px solid rgba(160, 120, 60, 0.32);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 160, 0.08),
+        0 2px 4px rgba(0, 0, 0, 0.45);
+    position: relative;
+    z-index: 2;  /* acima do background do livro */
+}
+
+/* Flip 3D pronto pra ser disparado por JS quando paginação real entrar.
+   Por enquanto a classe .is-flipping não é injetada — o efeito existe
+   como infra latente. */
+.rb-loadout-builder.is-flipping {
+    animation: rb-grimoire-flip 720ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    transform-origin: 50% 50%;
+}
+
+@keyframes rb-grimoire-flip {
+    0% { transform: rotateY(0deg); }
+    50% { transform: rotateY(90deg); opacity: 0.5; }
+    100% { transform: rotateY(0deg); }
+}
+
+/* Sumário do loadout (Selected/Attack/Guard/Pairs) ganha tratamento de
+   "cristais cravados no topo do livro". */
+.rb-product-shell .rb-loadout-summary article {
+    background:
+        radial-gradient(circle at 30% 25%, rgba(140, 200, 240, 0.32), transparent 55%),
+        linear-gradient(140deg, #3a4858 0%, #1f2a36 60%, #0f1820 100%);
+    border: 1px solid rgba(140, 180, 220, 0.45);
+    box-shadow:
+        inset 0 1px 0 rgba(220, 240, 255, 0.22),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.55),
+        0 4px 8px rgba(0, 0, 0, 0.5),
+        0 0 12px rgba(80, 140, 200, 0.22);
+    clip-path: polygon(8% 0, 92% 0, 100% 32%, 100% 68%, 92% 100%, 8% 100%, 0 68%, 0 32%);
+}
+
+.rb-product-shell .rb-loadout-summary article strong {
+    color: #f6efd4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* --- BAZAAR: a aba de loja -------------------------------------------- */
+
+/* Vinheta cinematográfica nas bordas — radial-gradient escuro
+   transparente no centro. Aplicada via ::after fixed na shell de produto
+   só quando estamos na loja. */
+.rb-product-shell[data-page-key="shop"]::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.45) 75%, rgba(0, 0, 0, 0.78) 100%);
+    z-index: 5;
+}
+
+/* O pacote de cartas vira pergaminho enrolado + selo de cera no topo. */
+.rb-product-shell .rb-shop-pack {
+    position: relative;
+    background:
+        radial-gradient(ellipse at 50% -20%, rgba(180, 140, 60, 0.12) 0%, transparent 55%),
+        linear-gradient(180deg, #2a1d10 0%, #1c1308 60%, #0c0904 100%);
+    border: 1.5px solid rgba(140, 95, 40, 0.55);
+    box-shadow:
+        inset 0 1px 0 rgba(220, 170, 90, 0.18),
+        inset 0 0 28px rgba(80, 50, 20, 0.5),
+        0 18px 28px rgba(0, 0, 0, 0.55),
+        0 3px 6px rgba(0, 0, 0, 0.4);
+    padding-top: 38px;  /* abre espaço pro selo de cera */
+}
+
+/* Selo de cera vermelha — disco com brasão no centro, ::before */
+.rb-product-shell .rb-shop-pack::before {
+    content: '';
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    width: 56px;
+    height: 56px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 32% 28%, rgba(255, 220, 200, 0.42), transparent 50%),
+        radial-gradient(circle at 65% 70%, rgba(60, 0, 0, 0.55), transparent 55%),
+        linear-gradient(140deg, #8b1a1a 0%, #5a0f0f 55%, #2c0606 100%);
+    box-shadow:
+        inset 0 2px 2px rgba(255, 200, 180, 0.4),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.7),
+        inset 0 0 0 2px rgba(120, 30, 30, 0.85),
+        0 6px 14px rgba(0, 0, 0, 0.55);
+    z-index: 3;
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 280ms ease;
+}
+
+/* Coroa de runas em volta do selo, ::after */
+.rb-product-shell .rb-shop-pack::after {
+    content: 'A';
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    width: 56px;
+    height: 56px;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: 900;
+    color: rgba(255, 220, 180, 0.85);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 140, 80, 0.4);
+    z-index: 4;
+    pointer-events: none;
+    transition: opacity 280ms ease;
+}
+
+/* Quando o JS injeta .is-seal-broken (no clique do comprar), o selo se
+   parte em dois fragmentos que rotam pra fora e desaparecem. */
+.rb-product-shell .rb-shop-pack.is-seal-broken::before {
+    animation: rb-seal-shatter-left 420ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+    clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+}
+
+.rb-product-shell .rb-shop-pack.is-seal-broken::after {
+    opacity: 0;
+}
+
+/* Pra dar a sensação de "dois pedaços", duplicamos o selo via uma camada
+   adicional usando outline. Como CSS não permite duas pseudo do mesmo,
+   vamos com um único shatter pro brief — o efeito visual de uma metade
+   girando pra esquerda + texto sumindo é suficiente pra leitura de
+   "quebrou". */
+
+@keyframes rb-seal-shatter-left {
+    0% {
+        transform: translateX(-50%) rotate(0deg) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(-50% - 32px)) rotate(-46deg) scale(0.75);
+        opacity: 0;
+    }
+}
+
+.rb-product-shell .rb-shop-pack [data-rebirth-booster] {
+    /* botão "Comprar Booster" mais teatral, estilo medalhão pequeno */
+    margin-top: 12px;
+    letter-spacing: 0.08em;
+}
+
+/* Mercado de jogadores também ganha vibe de feira */
+.rb-product-shell[data-page-key="shop"] [data-rebirth-market-offers] {
+    background:
+        radial-gradient(ellipse at 50% -10%, rgba(180, 130, 60, 0.1) 0%, transparent 60%),
+        linear-gradient(180deg, rgba(20, 14, 6, 0.55) 0%, rgba(8, 5, 2, 0.65) 100%);
+    border: 1px solid rgba(120, 85, 40, 0.35);
+    border-radius: 6px;
+    padding: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rb-loadout-builder.is-flipping,
+    .rb-product-shell .rb-shop-pack.is-seal-broken::before {
+        animation: none;
+    }
+}
