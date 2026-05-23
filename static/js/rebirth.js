@@ -2162,6 +2162,40 @@
                 evolveButton.addEventListener("click", () => RebirthFlow.evolveFirstDuplicate());
             }
 
+            // v55 Fase 3 Living World: parallax mousemove no tabuleiro.
+            // Cada camada (.battlefield-layer) tem data-parallax-depth no HTML;
+            // multiplicamos a posição normalizada do mouse pelo depth/10 para
+            // achar quanto cada camada se move. Skybox (depth=-8) move pouco e
+            // pra direção contrária, foreground (depth=4) move mais e a favor.
+            const livingBoard = document.querySelector("[data-battlefield-living]");
+            if (livingBoard && !prefersReducedMotion) {
+                const layers = Array.from(livingBoard.querySelectorAll(".battlefield-layer[data-parallax-depth]"));
+                let parallaxRaf = null;
+                const applyParallax = (event) => {
+                    if (parallaxRaf) return;
+                    parallaxRaf = window.requestAnimationFrame(() => {
+                        parallaxRaf = null;
+                        const rect = livingBoard.getBoundingClientRect();
+                        // -1..1 normalizado, centro do tabuleiro = 0
+                        const nx = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+                        const ny = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+                        layers.forEach((layer) => {
+                            const depth = Number(layer.getAttribute("data-parallax-depth") || 0);
+                            const x = (nx * depth).toFixed(2);
+                            const y = (ny * depth).toFixed(2);
+                            layer.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                        });
+                    });
+                };
+                const resetParallax = () => {
+                    layers.forEach((layer) => {
+                        layer.style.transform = "translate3d(0, 0, 0)";
+                    });
+                };
+                livingBoard.addEventListener("mousemove", applyParallax);
+                livingBoard.addEventListener("mouseleave", resetParallax);
+            }
+
             // v55 Foundation Visual: tilt 3D no medalhão de ferro/dourado.
             // Cursor próximo da borda → mais inclinação. Reseta no mouseleave
             // para evitar que o botão fique "torto" depois que o ponteiro sai.

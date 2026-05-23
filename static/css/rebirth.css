@@ -5878,6 +5878,299 @@ button {
     100% { opacity: 0; transform: scale(1.4); }
 }
 
+/* =========================================================================
+   v55 FASE 3 — Living World & Ecosystem
+   Camadas parallax do tabuleiro, brasas suspensas e auras elementares
+   nas criaturas em campo. JS escuta mousemove e popula --rb-parallax-x/y
+   no .battlefield-living; cada .battlefield-layer multiplica por seu
+   data-parallax-depth para o efeito de profundidade volumétrica.
+   ========================================================================= */
+
+.battlefield-living {
+    position: relative;
+    isolation: isolate;
+    --rb-parallax-x: 0px;
+    --rb-parallax-y: 0px;
+}
+
+.battlefield-layer {
+    position: absolute;
+    inset: -18px;
+    pointer-events: none;
+    transform: translate3d(
+        calc(var(--rb-parallax-x) * var(--rb-parallax-mult, 1)),
+        calc(var(--rb-parallax-y) * var(--rb-parallax-mult, 1)),
+        0
+    );
+    transition: transform 220ms cubic-bezier(0.18, 0.7, 0.22, 1);
+    will-change: transform;
+}
+
+/* Skybox: névoa quente e nebulosa no topo, escurecida em baixo.
+   --rb-parallax-mult = 1 (default) e o data-parallax-depth do HTML é -8,
+   mas como o JS multiplica diretamente o offset pelo depth/10, a multiplicação
+   acontece no JS. Aqui só aplicamos translate3d com os valores recebidos. */
+.battlefield-layer-skybox {
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(180, 100, 40, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 30% 80%, rgba(80, 30, 60, 0.22) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 90%, rgba(60, 70, 110, 0.18) 0%, transparent 55%),
+        linear-gradient(180deg, #0a0707 0%, #050405 100%);
+}
+
+.battlefield-layer-board {
+    z-index: 1;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(180, 150, 80, 0.08) 0%, transparent 65%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 18px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 18px);
+    box-shadow:
+        inset 0 0 80px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 1px rgba(80, 60, 40, 0.18);
+}
+
+.battlefield-layer-foreground {
+    z-index: 2;
+    background:
+        radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.55) 0%, transparent 70%),
+        radial-gradient(ellipse at 50% 0%, rgba(0, 0, 0, 0.4) 0%, transparent 60%);
+}
+
+/* O conteúdo do tabuleiro (.rb-field-row, .rb-bot-card-zone, .rb-field-vs)
+   precisa ficar ACIMA das 3 camadas, no z-index 3. */
+.battlefield-living > .rb-field-row,
+.battlefield-living > .rb-bot-card-zone,
+.battlefield-living > .rb-field-vs {
+    position: relative;
+    z-index: 3;
+}
+
+/* Brasas suspensas: pontos luminosos que sobem lentamente. CSS puro,
+   transform/opacity (compositing-friendly). 6 brasas no skybox. */
+.battlefield-embers {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.battlefield-ember {
+    position: absolute;
+    bottom: -10%;
+    left: var(--ember-x, 50%);
+    width: var(--ember-size, 4px);
+    height: var(--ember-size, 4px);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(255, 220, 130, 0.95) 0%, rgba(255, 140, 50, 0.6) 45%, transparent 80%);
+    box-shadow: 0 0 6px rgba(255, 180, 80, 0.6);
+    opacity: 0;
+    animation: rb-ember-rise 12s linear var(--ember-delay, 0s) infinite;
+    will-change: transform, opacity;
+}
+
+@keyframes rb-ember-rise {
+    0% {
+        transform: translate3d(0, 0, 0) scale(0.6);
+        opacity: 0;
+    }
+    8% {
+        opacity: 0.9;
+    }
+    50% {
+        transform: translate3d(-12px, -380px, 0) scale(1);
+        opacity: 0.7;
+    }
+    92% {
+        opacity: 0.35;
+    }
+    100% {
+        transform: translate3d(6px, -760px, 0) scale(0.5);
+        opacity: 0;
+    }
+}
+
+/* --- AURAS ELEMENTARES nas criaturas no campo ---------------------------
+   O JS já injeta .is-element-{fire,water,earth,shadow} em todos os cards.
+   Aqui scopamos só para .rb-field-card (criatura no tabuleiro), porque
+   na mão o efeito seria visualmente pesado demais. Cada elemento ganha:
+     • glow interno via box-shadow (cor diferente)
+     • pseudo-element ::before com animação característica
+   Tudo via transform/opacity/box-shadow — sem CSS filter (perf-budget).
+   ------------------------------------------------------------------------ */
+
+.rb-field-card.is-element-fire {
+    box-shadow:
+        0 0 0 1px rgba(255, 120, 50, 0.4),
+        0 0 18px rgba(255, 100, 30, 0.32),
+        0 18px 34px rgba(0, 0, 0, 0.56),
+        inset 0 0 22px rgba(255, 80, 20, 0.18);
+}
+
+.rb-field-card.is-element-fire::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -4px;
+    height: 18px;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 30% 100%, rgba(255, 180, 80, 0.45), transparent 60%),
+        radial-gradient(ellipse at 70% 100%, rgba(255, 90, 30, 0.45), transparent 60%);
+    border-radius: inherit;
+    opacity: 0.85;
+    animation: rb-element-fire-heat 2.4s ease-in-out infinite;
+    z-index: 5;
+    transform-origin: 50% 100%;
+}
+
+@keyframes rb-element-fire-heat {
+    0%, 100% {
+        transform: translateY(0) scaleX(1) skewX(0deg);
+        opacity: 0.65;
+    }
+    25% {
+        transform: translateY(-2px) scaleX(1.04) skewX(2deg);
+        opacity: 0.95;
+    }
+    50% {
+        transform: translateY(-3px) scaleX(0.98) skewX(-1.5deg);
+        opacity: 0.8;
+    }
+    75% {
+        transform: translateY(-2px) scaleX(1.02) skewX(1deg);
+        opacity: 0.9;
+    }
+}
+
+.rb-field-card.is-element-water {
+    box-shadow:
+        0 0 0 1px rgba(80, 160, 220, 0.4),
+        0 0 18px rgba(50, 120, 200, 0.32),
+        0 18px 34px rgba(0, 0, 0, 0.56),
+        inset 0 0 22px rgba(40, 100, 180, 0.18);
+}
+
+.rb-field-card.is-element-water::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+        linear-gradient(
+            115deg,
+            transparent 35%,
+            rgba(140, 200, 240, 0.22) 48%,
+            rgba(180, 220, 255, 0.32) 52%,
+            transparent 65%
+        );
+    background-size: 240% 240%;
+    background-position: 100% 0%;
+    opacity: 0.7;
+    animation: rb-element-water-flow 4.2s ease-in-out infinite;
+    z-index: 5;
+    mix-blend-mode: screen;
+}
+
+@keyframes rb-element-water-flow {
+    0% { background-position: 100% 0%; }
+    100% { background-position: -40% 100%; }
+}
+
+.rb-field-card.is-element-earth {
+    box-shadow:
+        0 0 0 1px rgba(150, 110, 60, 0.55),
+        0 0 14px rgba(110, 75, 30, 0.28),
+        0 18px 34px rgba(0, 0, 0, 0.56),
+        inset 0 0 22px rgba(80, 50, 20, 0.22);
+    /* Borda áspera: duas camadas de gradiente repetido simulam textura */
+    border-image-source: repeating-linear-gradient(
+        45deg,
+        rgba(120, 85, 40, 0.85) 0 3px,
+        rgba(60, 40, 18, 0.85) 3px 5px
+    );
+    border-image-slice: 2;
+    border-image-width: 2px;
+}
+
+.rb-field-card.is-element-earth::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+        radial-gradient(circle at 18% 22%, rgba(140, 95, 50, 0.5) 0 2px, transparent 3px),
+        radial-gradient(circle at 78% 14%, rgba(140, 95, 50, 0.4) 0 1.5px, transparent 2.5px),
+        radial-gradient(circle at 30% 84%, rgba(140, 95, 50, 0.45) 0 2px, transparent 3px),
+        radial-gradient(circle at 86% 78%, rgba(140, 95, 50, 0.4) 0 1.5px, transparent 2.5px);
+    opacity: 0;
+    transition: opacity 280ms ease, transform 280ms ease;
+    z-index: 5;
+}
+
+.rb-field-card.is-element-earth:hover::before,
+.rb-field-card.is-element-earth.is-selected::before {
+    opacity: 1;
+    animation: rb-element-earth-dust 2s ease-in-out infinite;
+}
+
+@keyframes rb-element-earth-dust {
+    0%, 100% {
+        transform: translate(0, 0);
+        opacity: 0.7;
+    }
+    50% {
+        transform: translate(2px, -3px);
+        opacity: 1;
+    }
+}
+
+/* SHADOW: névoa volumétrica simulada com camadas radiais (sem CSS filter
+   blur — perf-budget bane). Aplicada na base da carta, escurecendo o
+   contorno inferior pra dar peso fantasmagórico. */
+.rb-field-card.is-element-shadow {
+    box-shadow:
+        0 0 0 1px rgba(155, 90, 220, 0.4),
+        0 0 22px rgba(100, 40, 160, 0.32),
+        0 18px 34px rgba(0, 0, 0, 0.65),
+        inset 0 -18px 30px rgba(40, 10, 60, 0.45);
+}
+
+.rb-field-card.is-element-shadow::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    right: -8px;
+    bottom: -10px;
+    height: 56px;
+    pointer-events: none;
+    /* Cinco gradientes radiais empilhados em opacities decrescentes
+       simulam um halo difuso sem precisar de CSS filter. */
+    background:
+        radial-gradient(ellipse at 30% 80%, rgba(50, 10, 70, 0.65) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 60%, rgba(80, 20, 110, 0.55) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(20, 5, 40, 0.78) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0.85;
+    animation: rb-element-shadow-fog 5s ease-in-out infinite;
+    z-index: 5;
+}
+
+@keyframes rb-element-shadow-fog {
+    0%, 100% {
+        transform: translateY(0) scaleX(1);
+        opacity: 0.7;
+    }
+    50% {
+        transform: translateY(2px) scaleX(1.08);
+        opacity: 0.95;
+    }
+}
+
 /* --- Reduced motion: respeita preferência do SO ----------------------- */
 @media (prefers-reduced-motion: reduce) {
     #next-turn-button.is-cta-pulse:not(:disabled),
@@ -5891,8 +6184,17 @@ button {
     .vfx-screen-shake.vfx-screen-shake-heavy,
     .vfx-shield-shatter__shard,
     .is-dead-dissolve,
-    .is-dead-dissolve::after {
+    .is-dead-dissolve::after,
+    .battlefield-ember,
+    .rb-field-card.is-element-fire::before,
+    .rb-field-card.is-element-water::before,
+    .rb-field-card.is-element-earth::before,
+    .rb-field-card.is-element-shadow::before {
         animation: none;
+    }
+    .battlefield-layer {
+        transition-duration: 0ms;
+        transform: none !important;
     }
     .rb-hand .rb-mini-card.rb-tcg-card,
     #next-turn-button.rb-button-secondary,

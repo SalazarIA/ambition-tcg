@@ -84,7 +84,24 @@
                 </div>
             </section>
 
-            <section class="rb-battle-zone" aria-label="Zona de batalha">
+            <section class="rb-battle-zone battlefield-living" data-battlefield-living aria-label="Zona de batalha">
+                <!-- v55 Fase 3: parallax de 3 camadas. JS aplica translate3d
+                     em cada camada baseado na posição do mouse pra ilusão
+                     de profundidade volumétrica. Foreground reage mais forte
+                     (4px), board moderado (-3px), skybox sutil (-8px na
+                     direção contrária pra sensação de distância). -->
+                <div class="battlefield-layer battlefield-layer-skybox" data-parallax-depth="-8" aria-hidden="true">
+                    <div class="battlefield-embers" aria-hidden="true">
+                        <i class="battlefield-ember" style="--ember-x: 12%; --ember-delay: 0s; --ember-size: 4px"></i>
+                        <i class="battlefield-ember" style="--ember-x: 28%; --ember-delay: -3s; --ember-size: 3px"></i>
+                        <i class="battlefield-ember" style="--ember-x: 44%; --ember-delay: -7s; --ember-size: 5px"></i>
+                        <i class="battlefield-ember" style="--ember-x: 62%; --ember-delay: -1s; --ember-size: 3px"></i>
+                        <i class="battlefield-ember" style="--ember-x: 78%; --ember-delay: -5s; --ember-size: 4px"></i>
+                        <i class="battlefield-ember" style="--ember-x: 90%; --ember-delay: -2s; --ember-size: 3px"></i>
+                    </div>
+                </div>
+                <div class="battlefield-layer battlefield-layer-board" data-parallax-depth="-3" aria-hidden="true"></div>
+                <div class="battlefield-layer battlefield-layer-foreground" data-parallax-depth="4" aria-hidden="true"></div>
                 <div class="rb-field-row rb-field-row-bot">
                     <span>Zona do Bot</span>
                     <div id="bot-battlefield" class="rb-field-slots" aria-label="Monstros invocados pelo bot"></div>
