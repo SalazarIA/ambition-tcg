@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import hmac
 import json
@@ -31,6 +32,8 @@ DEFAULT_LOADOUT = list(PLAYER_DECK)
 
 HASH_ITERATIONS = 180000
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,24}$")
+MARKET_SERIALIZATION_MAX_ATTEMPTS = 6
+MARKET_SERIALIZATION_RETRY_DELAY_SECONDS = 0.01
 
 
 class Base(DeclarativeBase):
@@ -563,6 +566,29 @@ async def _set_serializable_if_postgres(session):
         await session.execute(text("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"))
 
 
+def _is_serialization_failure(error):
+    """Return true only for PostgreSQL serialization aborts (SQLSTATE 40001)."""
+    pending = [error]
+    seen = set()
+    while pending:
+        current = pending.pop()
+        if current is None or id(current) in seen:
+            continue
+        seen.add(id(current))
+        if str(getattr(current, "sqlstate", "") or getattr(current, "pgcode", "")) == "40001":
+            return True
+        pending.extend(
+            nested
+            for nested in (
+                getattr(current, "orig", None),
+                getattr(current, "__cause__", None),
+                getattr(current, "__context__", None),
+            )
+            if nested is not None
+        )
+    return False
+
+
 def _market_offer_payload(offer, *, seller_name=None):
     card = get_card(offer.card_id)
     return {
@@ -584,41 +610,45 @@ async def create_market_offer(user_id: int, card_id: str, price: int, currency_t
     currency_type = normalize_market_currency(currency_type)
     await ensure_async_schema_once()
     session_maker = async_session_factory()
-    try:
-        async with session_maker() as session:
-            async with session.begin():
-                await _set_serializable_if_postgres(session)
-                await _ensure_async_user_account(session, user_id, username=username)
-                rows = (
-                    await session.execute(
-                        select(UserCollection)
-                        .where(UserCollection.user_id == int(user_id), UserCollection.card_id == card["id"])
-                        .with_for_update()
+    for attempt in range(MARKET_SERIALIZATION_MAX_ATTEMPTS):
+        try:
+            async with session_maker() as session:
+                async with session.begin():
+                    await _set_serializable_if_postgres(session)
+                    await _ensure_async_user_account(session, user_id, username=username)
+                    rows = (
+                        await session.execute(
+                            select(UserCollection)
+                            .where(UserCollection.user_id == int(user_id), UserCollection.card_id == card["id"])
+                            .with_for_update()
+                        )
+                    ).scalars().all()
+                    available = sum(max(0, int(row.quantity or 0) - int(row.locked_quantity or 0)) for row in rows)
+                    if available <= 0:
+                        raise RebirthPersistenceError("Card is not available for market listing.", "card_not_available", status=409)
+                    for row in rows:
+                        if int(row.quantity or 0) - int(row.locked_quantity or 0) > 0:
+                            row.locked_quantity = int(row.locked_quantity or 0) + 1
+                            break
+                    offer = MarketOffer(
+                        id=str(uuid.uuid4()),
+                        seller_id=int(user_id),
+                        card_id=card["id"],
+                        price=price,
+                        currency_type=currency_type,
+                        status="ACTIVE",
+                        created_at=utc_datetime(),
                     )
-                ).scalars().all()
-                available = sum(max(0, int(row.quantity or 0) - int(row.locked_quantity or 0)) for row in rows)
-                if available <= 0:
-                    raise RebirthPersistenceError("Card is not available for market listing.", "card_not_available", status=409)
-                for row in rows:
-                    if int(row.quantity or 0) - int(row.locked_quantity or 0) > 0:
-                        row.locked_quantity = int(row.locked_quantity or 0) + 1
-                        break
-                offer = MarketOffer(
-                    id=str(uuid.uuid4()),
-                    seller_id=int(user_id),
-                    card_id=card["id"],
-                    price=price,
-                    currency_type=currency_type,
-                    status="ACTIVE",
-                    created_at=utc_datetime(),
-                )
-                session.add(offer)
-                await session.flush()
-                return _market_offer_payload(offer, seller_name=username)
-    except RebirthPersistenceError:
-        raise
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Failed to list card on market.", "database_write_failed", status=500) from exc
+                    session.add(offer)
+                    await session.flush()
+                    return _market_offer_payload(offer, seller_name=username)
+        except RebirthPersistenceError:
+            raise
+        except SQLAlchemyError as exc:
+            retryable = _is_serialization_failure(exc) and attempt + 1 < MARKET_SERIALIZATION_MAX_ATTEMPTS
+            if not retryable:
+                raise RebirthPersistenceError("Failed to list card on market.", "database_write_failed", status=500) from exc
+            await asyncio.sleep(MARKET_SERIALIZATION_RETRY_DELAY_SECONDS * (2**attempt))
 
 
 async def active_market_offers(exclude_user_id: Optional[int] = None, limit: int = 40) -> list[dict]:

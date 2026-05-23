@@ -8,6 +8,7 @@ from services.rebirth_bot import bot_decision_payload, choose_response, choose_r
 from services.rebirth_persistence import (
     Base,
     RebirthPersistenceError,
+    _is_serialization_failure,
     active_market_offers,
     buy_market_offer,
     configure_async_database,
@@ -74,6 +75,21 @@ def test_async_postgres_persistence_contract_is_declared(monkeypatch):
         asyncio.run(save_match_state("rebirth-test", {"turn": 1, "phase": "choose"}))
 
     assert error.value.code == "database_not_configured"
+
+
+def test_market_serialization_detector_only_retries_postgres_write_conflicts():
+    class DatabaseFailure(Exception):
+        def __init__(self, sqlstate):
+            super().__init__(sqlstate)
+            self.sqlstate = sqlstate
+
+    class WrappedFailure(Exception):
+        def __init__(self, original):
+            super().__init__("wrapped database error")
+            self.orig = original
+
+    assert _is_serialization_failure(WrappedFailure(DatabaseFailure("40001")))
+    assert not _is_serialization_failure(WrappedFailure(DatabaseFailure("23505")))
 
 
 def test_bot_decision_is_available_as_isolated_async_payload():

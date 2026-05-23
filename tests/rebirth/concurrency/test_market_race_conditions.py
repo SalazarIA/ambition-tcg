@@ -209,8 +209,8 @@ async def test_distinct_offers_for_distinct_card_copies_all_succeed(
 ):
     """Sanity check: if the seller has 5 copies, 5 parallel listings all succeed.
 
-    Ensures the lock isn't *too* aggressive — we want it to block double-spends
-    of a single copy, not legitimate listings of separate copies.
+    Ensures the lock and serialization retry allow legitimate listings of
+    separate copies instead of surfacing transient 40001 conflicts to players.
     """
     await seed_user(SELLER_ID, "race-seller-multi")
     await grant_card(SELLER_ID, CARD_ID, quantity=5)
