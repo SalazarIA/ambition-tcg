@@ -1730,7 +1730,7 @@
         async playSelectedCard() {
             if (!RebirthStore.selectedInstanceId || !RebirthStore.state) return;
             if (RebirthStore.state.is_finished || RebirthStore.state.phase !== "choose") {
-                RebirthErrors.show("Cards can only be played during your main phase.");
+                RebirthErrors.show("Cartas só podem ser jogadas na sua fase principal.");
                 RebirthRenderer.buttons();
                 return;
             }
@@ -1739,14 +1739,17 @@
             const energy = Number((RebirthStore.state.player && RebirthStore.state.player.energy) || 0);
             const cost = RebirthMarkup.cardCost(selectedCard);
             if (energy < cost) {
-                RebirthErrors.show(`Not enough energy to summon ${selectedCard.name}.`);
+                RebirthErrors.show(`Mana insuficiente para invocar ${selectedCard.name}.`);
                 RebirthRenderer.buttons();
                 return;
             }
             const isMonster = RebirthMarkup.isMonster(selectedCard);
-            const slot = 0;
-            if (isMonster && !RebirthStore.fieldSlotOpen("player", slot)) {
-                RebirthErrors.show("Your duel slot is occupied. Attack, survive, or start the next turn.");
+            // v54: 3-slot duel. Let the backend pick the first empty slot.
+            // The pre-check below only guards against ALL slots being full;
+            // previously it pinned slot=0 and incorrectly blocked summons
+            // even when slots 1 or 2 were free.
+            if (isMonster && RebirthStore.firstOpenFieldSlot("player") < 0) {
+                RebirthErrors.show("Todos os seus slots de monstro estão ocupados. Ataque ou encerre o turno.");
                 RebirthRenderer.render();
                 return;
             }
@@ -1774,20 +1777,20 @@
                 return;
             }
             if (RebirthStore.state.is_finished || !["choose", "result"].includes(RebirthStore.state.phase)) {
-                RebirthErrors.show("Attacks are not available in this phase.");
+                RebirthErrors.show("Ataques não disponíveis nesta fase.");
                 RebirthRenderer.buttons();
                 return;
             }
             const attacker = RebirthStore.fieldCard(RebirthStore.selectedAttackerId);
             if (attacker && (attacker.exhausted || attacker.has_attacked)) {
-                RebirthErrors.show("That monster has already attacked this turn.");
+                RebirthErrors.show("Esse monstro já atacou neste turno.");
                 RebirthRenderer.buttons();
                 return;
             }
             const botField = RebirthStore.fieldCards("bot");
             const visualTargetId = targetInstanceId || (botField[0] && botField[0].instance_id) || null;
             if (targetInstanceId && !botField.some((card) => card.instance_id === targetInstanceId)) {
-                RebirthErrors.show("That defender is no longer on the field.");
+                RebirthErrors.show("Esse defensor não está mais em campo.");
                 RebirthRenderer.render();
                 return;
             }
@@ -1819,7 +1822,7 @@
                 return;
             }
             if (attacker.exhausted || attacker.has_attacked) {
-                RebirthErrors.show("That monster has already attacked this turn.");
+                RebirthErrors.show("Esse monstro já atacou neste turno.");
                 RebirthRenderer.buttons();
                 return;
             }
