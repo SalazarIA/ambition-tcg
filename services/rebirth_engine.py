@@ -477,15 +477,23 @@ def _find_battlefield_card(side, instance_id):
 def _remove_defeated_battlefield_cards(side):
     defeated = []
     slots = field_slots(side)
+    defeated_keys = set()
     for index, card in enumerate(slots):
         if not card:
             continue
         if int(card.get("current_guard", card.get("guard", 0)) or 0) <= 0:
             defeated.append(card)
+            defeated_keys.add(card.get("instance_id") or id(card))
             slots[index] = None
         else:
             card["field_slot"] = index
             card["slot"] = index + 1
+    # Clear the underlying battlefield list so field_slots() doesn't resurrect
+    # the defeated card the next time it rebuilds from side["battlefield"].
+    side["battlefield"] = [
+        card for card in side.get("battlefield", [])
+        if (card.get("instance_id") or id(card)) not in defeated_keys
+    ]
     compact_battlefield(side)
     for card in defeated:
         defeated_card = deepcopy(card)

@@ -251,6 +251,34 @@ def test_trap_arms_face_down_and_triggers_in_combat():
     assert any("negates" in event for event in match["result"]["ability_events"])
 
 
+def test_defeated_monster_leaves_battlefield_and_goes_to_discard():
+    """Regression: destroyed monsters used to stay on the field forever because
+    field_slots() rebuilt from side["battlefield"], which was never cleared.
+    """
+    match = start_match(seed="defeat-removes-card")
+    attacker = next(card for card in match["player"]["hand"] if card["id"] == "card_002")
+    weak_defender = create_card_instance("card_041", "bot", 1)
+    weak_defender["guard"] = 1
+    weak_defender["current_guard"] = 1
+    defender_instance_id = weak_defender["instance_id"]
+    match["bot"]["hand"] = [weak_defender]
+
+    play_card(match, card_instance_id=attacker["instance_id"])
+    declare_attack(
+        match,
+        attacker_instance_id=match["player"]["battlefield"][0]["instance_id"],
+        target_instance_id=match["bot"]["battlefield"][0]["instance_id"],
+    )
+
+    assert match["bot"]["battlefield"] == []
+    assert match["bot"]["field"] == [None]
+    assert any(card["instance_id"] == defender_instance_id for card in match["bot"]["discard"])
+
+    next_turn(match)
+    surviving_ids = {card.get("instance_id") for card in match["bot"]["battlefield"]}
+    assert defender_instance_id not in surviving_ids, "defeated monster must not resurrect after next_turn"
+
+
 def test_next_turn_resets_result_and_refills_hand():
     match = start_match(seed="next")
     original_card = deepcopy(match["player"]["hand"][0])
