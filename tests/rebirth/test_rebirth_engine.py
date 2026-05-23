@@ -4,6 +4,7 @@ import pytest
 
 from services.rebirth_engine import (
     RebirthError,
+    _bot_auto_summon,
     compare_power,
     declare_attack,
     evolve_duplicate,
@@ -61,7 +62,10 @@ def test_play_card_summons_monster_to_persistent_battlefield():
     assert match["player"]["played_card"]["id"] == "card_002"
     assert match["player"]["battlefield"][0]["instance_id"] == card["instance_id"]
     assert match["player"]["battlefield"][0]["current_guard"] == card["guard"]
-    assert match["bot"]["battlefield"][0]["id"] == "card_041"
+    # Bot no longer auto-summons in response to the player's play. Its hand
+    # card stays put until next_turn moves the action to the bot phase.
+    assert match["bot"]["battlefield"] == []
+    assert match["bot"]["hand"][0]["id"] == "card_041"
 
 
 def test_play_card_fills_slots_in_order_and_blocks_when_battlefield_full():
@@ -123,6 +127,10 @@ def test_equal_power_clash_causes_no_damage():
     ]
 
     play_card(match, card_instance_id=player_card["instance_id"])
+    # Bot no longer auto-summons during play_card; trigger it explicitly here
+    # so the attack has a defender. Tests that exercise combat (this one and
+    # the trap / defeated-monster tests below) all need this nudge.
+    _bot_auto_summon(match)
     declare_attack(
         match,
         attacker_instance_id=match["player"]["battlefield"][0]["instance_id"],
@@ -247,6 +255,7 @@ def test_trap_arms_face_down_and_triggers_in_combat():
     match["player"]["energy"] = 1
     match["bot"]["energy"] = 1
     play_card(match, card_instance_id=match["player"]["hand"][0]["instance_id"])
+    _bot_auto_summon(match)
     declare_attack(
         match,
         attacker_instance_id=match["player"]["battlefield"][0]["instance_id"],
@@ -272,6 +281,7 @@ def test_defeated_monster_leaves_battlefield_and_goes_to_discard():
     match["bot"]["hand"] = [weak_defender]
 
     play_card(match, card_instance_id=attacker["instance_id"])
+    _bot_auto_summon(match)
     declare_attack(
         match,
         attacker_instance_id=match["player"]["battlefield"][0]["instance_id"],

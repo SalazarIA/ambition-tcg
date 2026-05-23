@@ -131,24 +131,33 @@ def test_rebirth_fullstack_audit_register_booster_bot_arena_and_ledger(client, f
 
     assert summoned.status_code == 200
     assert after_summon["player"]["battlefield"][0]["id"] == "card_009"
-    assert after_summon["bot"]["battlefield"][0]["id"] == bot_decisions[0]["decision_card_id"]
+    # Bot no longer auto-summons in player's turn; its field stays empty here.
+    assert after_summon["bot"]["battlefield"] == []
+    assert summon_payload["match_reward"]["persisted"] is False
+
+    # End the player's turn so the bot phase actually runs and the bot picks
+    # a card via choose_response — that's where the BOT_DECISION events come
+    # from now.
+    bot_turn = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]})
+    after_bot_turn = bot_turn.get_json()["state"]
+    assert bot_turn.status_code == 200
+    assert after_bot_turn["bot"]["battlefield"][0]["id"] == bot_decisions[0]["decision_card_id"]
     assert bot_decisions == [
         {
             "profile_id": "aggressive",
             "player_card_id": "card_009",
-            "decision_card_id": after_summon["bot"]["battlefield"][0]["id"],
+            "decision_card_id": after_bot_turn["bot"]["battlefield"][0]["id"],
             "match_id": state["match_id"],
         }
     ]
-    assert any(event["type"] == "BOT_DECISION" for event in after_summon["events"])
-    assert summon_payload["match_reward"]["persisted"] is False
+    assert any(event["type"] == "BOT_DECISION" for event in after_bot_turn["events"])
 
     attacked = client.post(
         "/api/rebirth/attack",
         json={
             "match_id": state["match_id"],
-            "attacker_instance_id": after_summon["player"]["battlefield"][0]["instance_id"],
-            "target_instance_id": after_summon["bot"]["battlefield"][0]["instance_id"],
+            "attacker_instance_id": after_bot_turn["player"]["battlefield"][0]["instance_id"],
+            "target_instance_id": after_bot_turn["bot"]["battlefield"][0]["instance_id"],
         },
     )
     attack_payload = attacked.get_json()

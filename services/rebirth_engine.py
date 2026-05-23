@@ -1125,14 +1125,11 @@ def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
     if not is_monster(player_card):
         raise RebirthError("Only monster, spell and trap cards can be played.", "invalid_card")
 
-    evolve_bot_if_ready(match)
-    summoned = _summon_monster_card(match, "player", player_card, field_slot=field_slot)
-    player_result = deepcopy(match.get("result") or {})
-    bot_summoned = _bot_auto_summon(match)
-    if bot_summoned:
-        match["result"] = player_result
-        match["result"]["message"] = f"{summoned['name']} enters the battlefield. Bot answers by summoning {bot_summoned['name']}."
-        match["result"]["ability_events"] = [f"Bot summoned {bot_summoned['name']}."]
+    _summon_monster_card(match, "player", player_card, field_slot=field_slot)
+    # Bot evolve/summon happens at the start of bot turn (see next_turn), not
+    # in reaction to the player's summon. Keeping them turn-scoped means the
+    # log no longer reads "You summoned X. Bot summoned Y." on the same turn,
+    # and the player gets a real action loop instead of a same-turn answer.
     if not match["is_finished"]:
         finish_if_exhausted(match)
     return match
@@ -1231,6 +1228,7 @@ def next_turn(match):
     _ready_battlefield(match["player"])
     _ready_battlefield(match["bot"])
     _refresh_energy_for_turn(match)
+    evolve_bot_if_ready(match)
     _bot_auto_summon(match)
     match["result"] = None
     match["last_clash"] = None
