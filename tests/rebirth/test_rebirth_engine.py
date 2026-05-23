@@ -28,8 +28,8 @@ def test_start_match_creates_valid_state_with_hands():
     assert match["player"]["hp"] == 30
     assert match["bot"]["hp"] == 30
     assert match["player"]["max_hp"] == 30
-    assert match["player"]["energy"] == 1
-    assert match["player"]["max_energy"] == 1
+    assert match["player"]["energy"] == 2
+    assert match["player"]["max_energy"] == 2
     assert match["player"]["battlefield"] == []
     assert match["bot"]["battlefield"] == []
     assert match["player"]["hand"][0]["id"] == "card_001"
@@ -59,7 +59,8 @@ def test_play_card_summons_monster_to_persistent_battlefield():
     assert match["result"]["outcome"] == "Summon"
     assert match["player"]["hp"] == 30
     assert match["bot"]["hp"] == 30
-    assert match["player"]["energy"] == 0
+    # T1 começa com 2 mana (v55); card_002 custa 1 → resta 1.
+    assert match["player"]["energy"] == 1
     assert match["player"]["played_card"]["id"] == "card_002"
     assert match["player"]["battlefield"][0]["instance_id"] == card["instance_id"]
     assert match["player"]["battlefield"][0]["current_guard"] == card["guard"]

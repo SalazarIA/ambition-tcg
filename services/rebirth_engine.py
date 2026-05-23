@@ -456,7 +456,10 @@ def _spend_card_cost(match, side_name, card):
 
 
 def _refresh_energy_for_turn(match):
-    energy = min(10, max(1, int(match.get("turn", 1) or 1)))
+    # v55 balance: piso de mana é 2, não 1 — T1 ficava sem ar (1 invocação
+    # custo-1 e fim). T1=2, T2=2 (idêntico ao T1, mas garante uma magia + um
+    # monstro), T3=3, ..., T10+=10 (mesma capa final).
+    energy = min(10, max(2, int(match.get("turn", 1) or 1)))
     for side_name in ("player", "bot"):
         side = match[side_name]
         side["max_energy"] = energy
