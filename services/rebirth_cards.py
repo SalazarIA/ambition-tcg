@@ -206,6 +206,27 @@ def _art_payload(card_id, family, palette):
     }
 
 
+def _monster_cost(attack, guard, is_evolved):
+    """Mana cost scales with the card's stat total so the energy ramp is meaningful.
+
+    Energy ramps from 1 to 10 (one per turn), and stat totals fall in 7..15. The
+    bands below produce a Hearthstone-style curve where cheap cards swarm early
+    turns and the strongest bodies need the ramp.
+    """
+    total = int(attack) + int(guard)
+    if total <= 8:
+        cost = 1
+    elif total <= 11:
+        cost = 2
+    elif total <= 13:
+        cost = 3
+    else:
+        cost = 4
+    if is_evolved:
+        cost += 1
+    return cost
+
+
 def _monster_card(card_number, *, family, name, tier, slot):
     config = FAMILY_CONFIGS[family]
     card_id = f"card_{card_number:03d}"
@@ -226,7 +247,7 @@ def _monster_card(card_number, *, family, name, tier, slot):
         "role": config["role"],
         "tier": tier,
         "rarity": rarity,
-        "cost": 2 if is_evolved else 1,
+        "cost": _monster_cost(attack, guard, is_evolved),
         "attack": attack,
         "power": attack,
         "guard": guard,

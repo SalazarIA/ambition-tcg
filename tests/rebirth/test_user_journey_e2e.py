@@ -41,7 +41,11 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
     assert len(state["player"]["hand"]) == 5
     assert state["bot"]["hand_count"] == 5
 
-    playable = next(card for card in state["player"]["hand"] if card["type"] == "MONSTER")
+    energy = int(state["player"].get("energy", state["player"].get("max_energy", 1)) or 1)
+    playable = next(
+        card for card in state["player"]["hand"]
+        if card["type"] == "MONSTER" and int(card.get("cost", 1) or 1) <= energy
+    )
     played = client.post(
         "/api/rebirth/play-card",
         json={

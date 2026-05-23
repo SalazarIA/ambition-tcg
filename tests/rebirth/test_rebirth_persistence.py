@@ -10,7 +10,12 @@ def register(client, username="persist_user", email="persist@example.com"):
 
 
 def summon_and_attack(client, state, card=None):
-    card = card or state["player"]["hand"][0]
+    if card is None:
+        energy = int(state["player"].get("energy", state["player"].get("max_energy", 1)) or 1)
+        card = next(
+            (c for c in state["player"]["hand"] if int(c.get("cost", 1) or 1) <= energy),
+            state["player"]["hand"][0],
+        )
     summoned = client.post(
         "/api/rebirth/play-card",
         json={"match_id": state["match_id"], "card_instance_id": card["instance_id"]},

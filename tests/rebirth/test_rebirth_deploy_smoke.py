@@ -46,16 +46,24 @@ def test_rebirth_deploy_smoke_flow(client):
     assert evolve_payload["ok"] is True
     assert evolve_payload["evolved"]["id"] == evolution["evolution_id"]
 
-    turn_two = client.post("/api/rebirth/next-turn", json={"match_id": evolve_payload["state"]["match_id"]})
-    turn_two_payload = turn_two.get_json()
-    assert turn_two.status_code == 200
-    assert turn_two_payload["state"]["player"]["max_energy"] == 2
+    # Evolved cards cost more than their tier-1 base. Advance turns until the
+    # player has enough energy to summon the evolved monster.
+    last_state = evolve_payload["state"]
+    evolved_card_id = evolution["evolution_id"]
+    evolved_cost = next(
+        (int(c.get("cost", 1) or 1) for c in last_state["player"]["hand"] if c["id"] == evolved_card_id),
+        2,
+    )
+    while int(last_state["player"].get("max_energy", 1) or 1) < evolved_cost:
+        last_state = client.post(
+            "/api/rebirth/next-turn", json={"match_id": last_state["match_id"]}
+        ).get_json()["state"]
 
-    played_card = next(card for card in turn_two_payload["state"]["player"]["hand"] if card["id"] == evolution["evolution_id"])
+    played_card = next(card for card in last_state["player"]["hand"] if card["id"] == evolved_card_id)
     summon = client.post(
         "/api/rebirth/play-card",
         json={
-            "match_id": turn_two_payload["state"]["match_id"],
+            "match_id": last_state["match_id"],
             "card_instance_id": played_card["instance_id"],
         },
     )

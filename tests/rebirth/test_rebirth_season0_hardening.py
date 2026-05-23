@@ -18,11 +18,20 @@ def test_match_command_event_history_and_ledger_are_persisted(client):
         "/api/rebirth/evolve",
         json={"match_id": start["match_id"], "card_id": evolution["card_id"]},
     ).get_json()["state"]
-    turn_two = client.post("/api/rebirth/next-turn", json={"match_id": evolved["match_id"]}).get_json()["state"]
-    played_card = next(card for card in turn_two["player"]["hand"] if card["id"] == evolution["evolution_id"])
+    evolved_card_id = evolution["evolution_id"]
+    evolved_cost = next(
+        (int(c.get("cost", 1) or 1) for c in evolved["player"]["hand"] if c["id"] == evolved_card_id),
+        2,
+    )
+    current = evolved
+    while int(current["player"].get("max_energy", 1) or 1) < evolved_cost:
+        current = client.post(
+            "/api/rebirth/next-turn", json={"match_id": current["match_id"]}
+        ).get_json()["state"]
+    played_card = next(card for card in current["player"]["hand"] if card["id"] == evolved_card_id)
     summoned = client.post(
         "/api/rebirth/play-card",
-        json={"match_id": turn_two["match_id"], "card_instance_id": played_card["instance_id"]},
+        json={"match_id": current["match_id"], "card_instance_id": played_card["instance_id"]},
     ).get_json()
     attack_json = {
         "match_id": summoned["state"]["match_id"],

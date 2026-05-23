@@ -93,11 +93,11 @@ def test_rebirth_fullstack_audit_register_booster_bot_arena_and_ledger(client, f
         create_card_instance("card_021", "bot", 3),
     ]
     match["player"]["hand"] = [player_card]
-    match["player"]["energy"] = 1
-    match["player"]["max_energy"] = 1
+    match["player"]["energy"] = max(1, int(player_card.get("cost", 1) or 1))
+    match["player"]["max_energy"] = match["player"]["energy"]
     match["bot"]["hand"] = bot_cards
-    match["bot"]["energy"] = 1
-    match["bot"]["max_energy"] = 1
+    match["bot"]["energy"] = max(1, max(int(c.get("cost", 1) or 1) for c in bot_cards))
+    match["bot"]["max_energy"] = match["bot"]["energy"]
     match["bot_profile"] = {
         "id": "aggressive",
         "name": "Aggressive Bot",

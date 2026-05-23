@@ -817,7 +817,13 @@ def deterministic_starter_deck(seed_source):
     trap_count = remaining - spell_count
 
     ranked_monsters = _ranked_ids(seed, monster_pool, "monster")
-    duplicate_anchor = ranked_monsters[0]
+    # Anchor on the cheapest monster so opening hands always contain a turn-1
+    # playable card, while preserving deterministic per-seed ordering.
+    cheap_anchors = [
+        card_id for card_id in ranked_monsters
+        if int((get_card(card_id) or {}).get("cost", 1) or 1) <= 1
+    ]
+    duplicate_anchor = (cheap_anchors or ranked_monsters)[0]
     monsters = [duplicate_anchor, duplicate_anchor]
     monsters.extend([card_id for card_id in ranked_monsters[1:] if card_id != duplicate_anchor][: monster_count - 2])
     spells = _ranked_ids(seed, spell_pool, "spell")[:spell_count]
