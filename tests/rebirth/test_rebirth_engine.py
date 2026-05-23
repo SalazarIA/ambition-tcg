@@ -64,26 +64,34 @@ def test_play_card_summons_monster_to_persistent_battlefield():
     assert match["bot"]["battlefield"][0]["id"] == "card_041"
 
 
-def test_play_card_uses_single_duel_slot_and_preserves_hand_when_occupied():
+def test_play_card_fills_slots_in_order_and_blocks_when_battlefield_full():
+    """v54 restored 3 slots per side. Summoning fills 0,1,2; the 4th attempt
+    raises battlefield_full and the hand keeps the card."""
     match = start_match(seed="summon-slot")
-    card = next(card for card in match["player"]["hand"] if card["id"] == "card_002")
     match["bot"]["hand"] = []
 
-    play_card(match, card_instance_id=card["instance_id"], field_slot=2)
+    # First 3 monster cards from the starting hand — the seed yields
+    # [card_001, card_001, card_002, card_021, card_041]; we take the first 3.
+    cards = [card for card in match["player"]["hand"] if card.get("type") == "MONSTER"][:3]
+    assert len(cards) == 3, "starting hand must have at least 3 monsters for this test"
+    match["player"]["energy"] = 9
 
-    assert len(match["player"]["field"]) == 1
-    assert match["player"]["field"][0]["instance_id"] == card["instance_id"]
-    assert match["player"]["battlefield"][0]["field_slot"] == 0
+    for index, card in enumerate(cards):
+        play_card(match, card_instance_id=card["instance_id"])
+        assert match["player"]["battlefield"][index]["field_slot"] == index
 
-    second = create_card_instance("card_003", "player", 99)
-    match["player"]["hand"] = [second]
+    assert len(match["player"]["field"]) == 3
+    assert [c["instance_id"] for c in match["player"]["field"]] == [c["instance_id"] for c in cards]
+
+    fourth = create_card_instance("card_004", "player", 99)
+    match["player"]["hand"] = [fourth]
     match["player"]["energy"] = 2
 
     with pytest.raises(RebirthError) as error:
-        play_card(match, card_instance_id=second["instance_id"], field_slot=2)
+        play_card(match, card_instance_id=fourth["instance_id"])
 
     assert error.value.code == "battlefield_full"
-    assert match["player"]["hand"][0]["instance_id"] == second["instance_id"]
+    assert match["player"]["hand"][0]["instance_id"] == fourth["instance_id"]
 
 
 def test_equal_power_clash_causes_no_damage():
@@ -271,7 +279,7 @@ def test_defeated_monster_leaves_battlefield_and_goes_to_discard():
     )
 
     assert match["bot"]["battlefield"] == []
-    assert match["bot"]["field"] == [None]
+    assert match["bot"]["field"] == [None, None, None]
     assert any(card["instance_id"] == defender_instance_id for card in match["bot"]["discard"])
 
     next_turn(match)
@@ -317,8 +325,8 @@ def test_public_state_exposes_player_hand_and_hides_bot_hand():
     assert state["player"]["max_hp"] == 30
     assert state["player"]["battlefield"] == []
     assert state["bot"]["battlefield"] == []
-    assert state["player_field"] == [None]
-    assert state["bot_field"] == [None]
+    assert state["player_field"] == [None, None, None]
+    assert state["bot_field"] == [None, None, None]
     assert state["available_evolutions"][0]["card_id"] == "card_001"
 
     for field in [

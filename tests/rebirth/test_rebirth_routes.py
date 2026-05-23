@@ -196,8 +196,11 @@ def test_play_card_api_accepts_explicit_monster_slot(client):
 
     assert response.status_code == 200
     assert payload["ok"] is True
-    assert payload["state"]["player_field"][0]["instance_id"] == card["instance_id"]
-    assert payload["state"]["player"]["battlefield"][0]["field_slot"] == 0
+    # field_slot=1 → card lands in slot 1, slots 0 and 2 stay empty.
+    assert payload["state"]["player_field"][0] is None
+    assert payload["state"]["player_field"][1]["instance_id"] == card["instance_id"]
+    assert payload["state"]["player_field"][2] is None
+    assert payload["state"]["player"]["battlefield"][0]["field_slot"] == 1
 
 
 def test_evolve_api_combines_duplicate(client):

@@ -4210,7 +4210,8 @@ button {
     object-position: center 58%;
 }
 
-/* Rebirth v53: single-duel full-art cards, physical clash motion and synced auth refresh. */
+/* Rebirth v54: 3-slot duel restored so T2 isn't a soft-lock. Cards keep the
+   physical clash motion from v53; only the grid template grows. */
 .rb-battle-zone {
     perspective: 1200px;
     perspective-origin: 50% 52%;
@@ -4224,8 +4225,9 @@ button {
 }
 
 .rb-field-slots {
-    grid-template-columns: minmax(142px, 220px);
+    grid-template-columns: repeat(3, minmax(120px, 200px));
     justify-content: center;
+    gap: 12px;
 }
 
 #player-battlefield,

@@ -11,7 +11,7 @@ from services.rebirth_events import append_event, append_snapshot, ensure_event_
 
 STARTING_HP = 30
 HAND_SIZE = 5
-FIELD_SLOT_COUNT = 1
+FIELD_SLOT_COUNT = 3
 
 
 class TurnPhase(Enum):
@@ -67,10 +67,19 @@ def field_slots(side):
             compact.append(card)
 
     slots = [None for _ in range(FIELD_SLOT_COUNT)]
+    # Respect each card's saved field_slot when valid and free; otherwise place
+    # in the first empty slot. Falling back to "first empty" handles legacy state
+    # that didn't carry field_slot and keeps survivors stable across redraws.
     for card in compact[:FIELD_SLOT_COUNT]:
-        slots[0] = card
-        card["field_slot"] = 0
-        card["slot"] = 1
+        raw = card.get("field_slot")
+        index = int(raw) if isinstance(raw, int) or (isinstance(raw, str) and raw.isdigit()) else None
+        if index is None or not (0 <= index < FIELD_SLOT_COUNT) or slots[index] is not None:
+            index = next((i for i, slot in enumerate(slots) if slot is None), None)
+        if index is None:
+            break
+        slots[index] = card
+        card["field_slot"] = index
+        card["slot"] = index + 1
     side["field"] = slots
     return slots
 

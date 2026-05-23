@@ -82,8 +82,8 @@ def test_rebirth_fullstack_audit_register_booster_bot_arena_and_ledger(client, f
     state = start_payload["state"]
     assert state["phase"] == "choose"
     assert state["player"]["name"] == "audit_rebirth"
-    assert len(state["player_field"]) == 1
-    assert len(state["bot_field"]) == 1
+    assert len(state["player_field"]) == 3
+    assert len(state["bot_field"]) == 3
 
     match = ambition_app.MATCH_STORE.get(state["match_id"])
     player_card = create_card_instance("card_009", "player", 1)
@@ -166,7 +166,7 @@ def test_rebirth_fullstack_audit_register_booster_bot_arena_and_ledger(client, f
     live_match["bot"]["hand"] = []
     live_match["bot"]["deck"] = []
     live_match["bot"]["battlefield"] = []
-    live_match["bot"]["field"] = [None]
+    live_match["bot"]["field"] = [None, None, None]
     attacker = live_match["player"]["battlefield"][0]
     attacker["exhausted"] = False
     attacker["has_attacked"] = False

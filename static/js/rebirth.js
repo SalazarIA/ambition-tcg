@@ -82,20 +82,26 @@
                 : Array.isArray(side.field)
                     ? side.field
                     : null;
-            const slots = [null];
+            // Slot count is authoritative on the backend (FIELD_SLOT_COUNT in
+            // services/rebirth_state.py). The server-sent `field` array is
+            // already correctly sized; we only fall back to this constant when
+            // reconstructing from a stale `battlefield` array.
+            const SLOT_COUNT = (Array.isArray(source) && source.length) || 3;
+            const slots = new Array(SLOT_COUNT).fill(null);
             if (source) {
-                source.slice(0, 1).forEach((card, index) => {
+                source.slice(0, SLOT_COUNT).forEach((card, index) => {
                     slots[index] = card || null;
                 });
                 return slots;
             }
             (side.battlefield || []).forEach((card, index) => {
                 const slot = Number.isInteger(Number(card && card.field_slot)) ? Number(card.field_slot) : index;
-                if (slot >= 0 && slot < 1 && !slots[slot]) {
+                if (slot >= 0 && slot < SLOT_COUNT && !slots[slot]) {
                     slots[slot] = card;
-                } else if (!slots[0]) {
-                    slots[0] = card;
+                    return;
                 }
+                const empty = slots.findIndex((s) => !s);
+                if (empty >= 0) slots[empty] = card;
             });
             return slots;
         },
