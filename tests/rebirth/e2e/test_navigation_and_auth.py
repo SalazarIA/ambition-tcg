@@ -13,6 +13,8 @@ What's covered:
     - An authenticated first-turn summon cannot damage the bot directly:
       both the visible target state and the API reject the attempt until
       the bot receives its turn.
+    - Signature overlays remain dismissible through normal game actions,
+      honor reduced-motion settings, and failed booster opens keep their seal.
 """
 from __future__ import annotations
 
@@ -120,6 +122,59 @@ def test_no_console_errors_on_arena_load(page, live_server):
     page.wait_for_timeout(750)
 
     assert not errors, f"console errors on /rebirth load:\n  - " + "\n  - ".join(errors)
+
+
+# --- signature / shop regression guards -----------------------------------
+
+
+def test_finale_overlay_does_not_block_new_match_action(page, live_server):
+    """The fullscreen finale may decorate the result, but not trap the player."""
+    page.goto(f"{live_server}/rebirth")
+    page.locator("#rebirth-finale-overlay").wait_for(state="attached", timeout=10_000)
+    page.evaluate(
+        """() => {
+            const overlay = document.getElementById("rebirth-finale-overlay");
+            overlay.innerHTML = '<div class="vfx-finale-curtain"></div><div class="vfx-finale-text">Vitoria</div>';
+            overlay.classList.add("is-active", "is-victory");
+            overlay.setAttribute("aria-hidden", "false");
+        }"""
+    )
+
+    with page.expect_response(lambda response: "/api/rebirth/start" in response.url):
+        page.locator("[data-new-match]").first.click(timeout=5_000)
+
+    assert page.locator("#rebirth-finale-overlay").get_attribute("aria-hidden") == "true"
+
+
+def test_finale_reduced_motion_removes_entry_transitions(page, live_server):
+    page.emulate_media(reduced_motion="reduce")
+    page.goto(f"{live_server}/rebirth")
+    styles = page.evaluate(
+        """() => {
+            const overlay = document.getElementById("rebirth-finale-overlay");
+            overlay.innerHTML = '<div class="vfx-finale-curtain"></div><div class="vfx-finale-text">Vitoria</div>';
+            overlay.classList.add("is-active", "is-victory");
+            return {
+                curtain: getComputedStyle(overlay.querySelector(".vfx-finale-curtain")).transitionDuration,
+                text: getComputedStyle(overlay.querySelector(".vfx-finale-text")).transitionDuration,
+            };
+        }"""
+    )
+
+    assert styles == {"curtain": "0s", "text": "0s"}
+
+
+def test_failed_guest_booster_open_keeps_seal_intact(page, live_server):
+    page.goto(f"{live_server}/rebirth/shop")
+    page.wait_for_load_state("networkidle")
+    button = page.locator("[data-rebirth-booster]").first
+    pack = button.locator("xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' rb-shop-pack ')][1]")
+
+    with page.expect_response(lambda response: "/api/rebirth/booster/open" in response.url) as response_info:
+        button.click()
+
+    assert response_info.value.status in {401, 403}
+    assert "is-seal-broken" not in (pack.get_attribute("class") or "")
 
 
 # --- authenticated combat rule ---------------------------------------------

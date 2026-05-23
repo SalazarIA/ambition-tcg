@@ -126,12 +126,14 @@ def test_rebirth_css_locks_reference_classes_and_assets():
     assert "backdrop-filter" not in css
     assert "drop-shadow" not in css
     assert ".is-cta-pulse:not(:disabled)," in css
+    assert ".vfx-finale-overlay.is-active {\n    display: flex;\n    pointer-events: none;" in css
+    assert ".vfx-finale-overlay .vfx-finale-curtain,\n    .vfx-finale-overlay .vfx-finale-text {" in css
 
 
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v56" in service_worker
+    assert "ambitionz-rebirth-season0-v57" in service_worker
     assert "/rebirth/collection" in service_worker
     assert "/rebirth/profile" in service_worker
     assert "/rebirth/lab" in service_worker
@@ -219,6 +221,9 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert "data-rebirth-ledger-list" in product_js
     assert "is-currency-" in product_js
     assert "applyWallet(payload.wallet)" in product_js
+    assert 'pack.classList.remove("is-seal-broken")' in product_js
+    assert 'pack.classList.add("is-seal-broken")' in product_js
+    assert "window.clearTimeout(sealTimer)" in product_js
     assert "verifyReceipt" in read("templates/rebirth_product.html")
     assert 'progression: "{{ url_for(' in read("templates/rebirth_product.html")
     assert "data-rebirth-progression-dashboard" in read("templates/rebirth_product.html")
@@ -240,7 +245,8 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-056" in combined
+    assert "v=rebirth-057" in combined
+    assert "v=rebirth-056" not in combined
     assert "v=rebirth-055" not in combined
     assert "v=rebirth-054" not in combined
     assert "v=rebirth-053" not in combined

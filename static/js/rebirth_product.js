@@ -255,20 +255,30 @@
         }
 
         Array.from(buttons).forEach(function (button) {
+            let sealTimer = null;
             button.addEventListener("click", function () {
                 button.disabled = true;
-                // v55 Fase 3 — quebra teatral do selo de cera ANTES da
-                // requisição. A classe é removida após 600ms (cobre a
-                // animação rb-seal-shatter-left de 420ms + folga). Se o
-                // request falha, o botão volta a clicável mas o selo
-                // permanece quebrado visualmente (é o feedback de "abriu").
                 const pack = button.closest(".rb-shop-pack");
-                if (pack && !pack.classList.contains("is-seal-broken")) {
-                    pack.classList.add("is-seal-broken");
+                if (sealTimer) {
+                    window.clearTimeout(sealTimer);
+                    sealTimer = null;
+                }
+                if (pack) {
+                    pack.classList.remove("is-seal-broken");
                 }
                 result.textContent = "Abrindo booster...";
                 postJson(endpoints.booster, { seed: "booster-" + Date.now() })
                     .then(function (payload) {
+                        // O selo só quebra após uma abertura confirmada e é
+                        // rearmado para que cada booster tenha feedback próprio.
+                        if (pack) {
+                            void pack.offsetWidth;
+                            pack.classList.add("is-seal-broken");
+                            sealTimer = window.setTimeout(function () {
+                                pack.classList.remove("is-seal-broken");
+                                sealTimer = null;
+                            }, 520);
+                        }
                         const booster = payload.booster;
                         const cards = booster.cards.map(cardMarkup).join("");
                         const raritySlots = booster.summary.rarity_slots || [];

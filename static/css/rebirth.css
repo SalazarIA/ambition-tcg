@@ -6638,7 +6638,7 @@ button {
 
 .vfx-finale-overlay.is-active {
     display: flex;
-    pointer-events: auto;
+    pointer-events: none;
 }
 
 .vfx-finale-overlay .vfx-finale-curtain {
@@ -6831,5 +6831,10 @@ button {
     }
     .vfx-evolution-clone {
         transition: opacity 80ms ease;
+    }
+    .vfx-evolution-stage .vfx-evolution-overlay,
+    .vfx-finale-overlay .vfx-finale-curtain,
+    .vfx-finale-overlay .vfx-finale-text {
+        transition: none !important;
     }
 }
