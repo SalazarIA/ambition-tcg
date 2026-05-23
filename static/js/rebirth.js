@@ -991,8 +991,18 @@
             const playerDamage = Number(damage.player || 0);
             const botDamage = Number(damage.bot || 0);
             const totalDamage = Math.max(0, playerDamage) + Math.max(0, botDamage);
-            if (!totalDamage) return;
-            triggerScreenShake(Math.min(10, 2 + totalDamage));
+            // v55: clashes agora trocam guard (não HP) — totalDamage seria 0,
+            // mas o impacto físico aconteceu mesmo assim. Dispara shake leve
+            // pra qualquer outcome que envolveu um clash de criaturas, não
+            // só dano em HP. Victory/Defeat continuam escalando com o dano.
+            const outcome = String(result.outcome || "").toLowerCase();
+            if (totalDamage > 0) {
+                triggerScreenShake(Math.min(10, 2 + totalDamage));
+                return;
+            }
+            if (outcome === "clash") {
+                triggerScreenShake(3);
+            }
         }
     };
 
