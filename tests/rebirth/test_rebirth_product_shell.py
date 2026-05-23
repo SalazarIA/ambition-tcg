@@ -11,10 +11,10 @@ def read(path):
 def test_rebirth_product_pages_render_active_shell(client):
     expected = {
         "/rebirth/account": "Login / Registro",
-        "/rebirth/collection": "Minha Colecao",
+        "/rebirth/collection": "Minha Coleção",
         "/rebirth/shop": "Loja &amp; Mercado",
-        "/rebirth/progression": "Rewards",
-        "/rebirth/profile": "Player Profile",
+        "/rebirth/progression": "Recompensas",
+        "/rebirth/profile": "Perfil do Jogador",
         "/rebirth/lab": "Rebirth Lab",
         "/rebirth/history": "Match History + Economy Ledger",
         "/rebirth/desktop": "Desktop Arena Polish",
@@ -66,7 +66,7 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert progression.status_code == 200
     assert progression.get_json()["progression"]["profile"]["level"] == 1
     assert profile.status_code == 200
-    assert profile.get_json()["profile"]["stats"][0]["label"] == "Level"
+    assert profile.get_json()["profile"]["stats"][0]["label"] == "Nível"
     assert history_locked.status_code == 401
     assert history_locked.get_json()["error"]["code"] == "auth_required"
     assert ledger_locked.status_code == 401

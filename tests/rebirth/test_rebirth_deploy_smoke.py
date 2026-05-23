@@ -22,7 +22,7 @@ def test_rebirth_deploy_smoke_flow(client):
     collection = client.get("/rebirth/collection")
     booster = client.post("/api/rebirth/booster/open", json={"seed": "deploy-smoke-booster"})
     assert collection.status_code == 200
-    assert "Minha Colecao" in collection.get_data(as_text=True)
+    assert "Minha Coleção" in collection.get_data(as_text=True)
     assert booster.status_code == 200
     assert booster.get_json()["booster"]["summary"]["count"] == 5
 

@@ -451,16 +451,18 @@
             writeHidden(ids);
             if (summary) {
                 summary.innerHTML = [
-                    "<article><span>Selected</span><strong>" + escapeHtml(total) + "/" + escapeHtml(maxSize) + "</strong></article>",
-                    "<article><span>Attack</span><strong>" + escapeHtml(attack) + "</strong></article>",
-                    "<article><span>Guard</span><strong>" + escapeHtml(guard) + "</strong></article>",
-                    "<article><span>Pairs</span><strong>" + escapeHtml(duplicatePairs(ids)) + "</strong></article>"
+                    "<article><span>Selecionadas</span><strong>" + escapeHtml(total) + "/" + escapeHtml(maxSize) + "</strong></article>",
+                    "<article><span>Ataque</span><strong>" + escapeHtml(attack) + "</strong></article>",
+                    "<article><span>Guarda</span><strong>" + escapeHtml(guard) + "</strong></article>",
+                    "<article><span>Pares</span><strong>" + escapeHtml(duplicatePairs(ids)) + "</strong></article>"
                 ].join("");
                 summary.classList.toggle("is-invalid", total !== maxSize);
             }
             button.disabled = total !== maxSize;
             if (!updateOptions.preserveResult) {
-                result.textContent = total === maxSize ? "Loadout ready to save." : "Select exactly " + maxSize + " cards to save.";
+                result.textContent = total === maxSize
+                    ? "Baralho pronto para salvar."
+                    : "Selecione exatamente " + maxSize + " cartas para salvar (atual: " + total + ").";
             }
         }
 
@@ -471,16 +473,16 @@
                 return;
             }
             button.disabled = true;
-            result.textContent = "Saving loadout...";
+            result.textContent = "Salvando baralho...";
             postJson(endpoints.loadout, { card_ids: cardIds })
                 .then(function (payload) {
                     const saved = payload.loadout.summary;
                     result.innerHTML = [
-                        "<strong>Loadout saved.</strong> ",
-                        escapeHtml(saved.size) + " cards, ",
-                        escapeHtml(saved.attack_total) + " total attack, ",
-                        escapeHtml(saved.guard_total) + " total guard, ",
-                        escapeHtml(saved.duplicate_pairs) + " duplicate pair."
+                        "<strong>Baralho salvo.</strong> ",
+                        escapeHtml(saved.size) + " cartas, ",
+                        escapeHtml(saved.attack_total) + " de ataque, ",
+                        escapeHtml(saved.guard_total) + " de guarda, ",
+                        escapeHtml(saved.duplicate_pairs) + " par(es) duplicado(s)."
                     ].join("");
                 })
                 .catch(function (error) {

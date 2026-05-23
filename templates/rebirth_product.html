@@ -122,18 +122,18 @@
             {% if page.account.authenticated %}
                 <section class="rb-auth-grid" aria-label="Account controls">
                     <form class="rb-product-panel rb-auth-form" data-rebirth-change-password>
-                        <span>Security</span>
-                        <h2>Password</h2>
-                        <label>Current<input name="current_password" type="password" autocomplete="current-password" required minlength="8"></label>
-                        <label>New<input name="new_password" type="password" autocomplete="new-password" required minlength="8"></label>
-                        <button class="rb-button-secondary rb-secondary" type="submit">Change Password</button>
-                        <div class="rb-product-result" data-rebirth-password-result aria-live="polite">Password controls ready.</div>
+                        <span>Segurança</span>
+                        <h2>Senha</h2>
+                        <label>Atual<input name="current_password" type="password" autocomplete="current-password" required minlength="8"></label>
+                        <label>Nova<input name="new_password" type="password" autocomplete="new-password" required minlength="8"></label>
+                        <button class="rb-button-secondary rb-secondary" type="submit">Alterar Senha</button>
+                        <div class="rb-product-result" data-rebirth-password-result aria-live="polite">Controles de senha prontos.</div>
                     </form>
                     <article class="rb-product-panel">
-                        <span>Collection</span>
-                        <h2>{{ page.profile.collection.unique_owned }} Unique</h2>
-                        <p>{{ page.profile.collection.owned_cards }} total owned cards and {{ page.profile.collection.loadout_size }} cards in the active loadout.</p>
-                        <a class="rb-secondary" href="{{ url_for('rebirth_collection') }}">Open Collection</a>
+                        <span>Coleção</span>
+                        <h2>{{ page.profile.collection.unique_owned }} Únicas</h2>
+                        <p>{{ page.profile.collection.owned_cards }} cartas no total e {{ page.profile.collection.loadout_size }} no baralho ativo.</p>
+                        <a class="rb-secondary" href="{{ url_for('rebirth_collection') }}">Abrir Coleção</a>
                     </article>
                 </section>
             {% endif %}
@@ -197,9 +197,9 @@
                         </article>
                     {% else %}
                         <article>
-                            <span>Empty</span>
-                            <strong>No ledger movements yet.</strong>
-                            <p>Rewards, boosters and starter ownership will appear here.</p>
+                            <span>Vazio</span>
+                            <strong>Sem movimentações no extrato ainda.</strong>
+                            <p>Recompensas, boosters e cartas iniciais aparecerão aqui.</p>
                         </article>
                     {% endfor %}
                 </div>
@@ -259,16 +259,16 @@
             <section class="rb-product-panel rb-product-wide" aria-label="Loadout preview">
                 <div class="rb-product-panel-head">
                     <div>
-                        <span>Eight-card editor</span>
-                        <h2>Loadout</h2>
+                        <span>Editor de 30 cartas</span>
+                        <h2>Baralho</h2>
                     </div>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-loadout-submit>Save Loadout</button>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-loadout-submit>Salvar Baralho</button>
                 </div>
                 <div class="rb-loadout-summary" data-rebirth-loadout-summary aria-live="polite">
-                    <article><span>Selected</span><strong>0/8</strong></article>
-                    <article><span>Attack</span><strong>0</strong></article>
-                    <article><span>Guard</span><strong>0</strong></article>
-                    <article><span>Pairs</span><strong>0</strong></article>
+                    <article><span>Selecionadas</span><strong>0/30</strong></article>
+                    <article><span>Ataque</span><strong>0</strong></article>
+                    <article><span>Guarda</span><strong>0</strong></article>
+                    <article><span>Pares</span><strong>0</strong></article>
                 </div>
                 <form class="rb-product-loadout rb-loadout-builder" data-rebirth-loadout-form data-loadout-size="30">
                     <div data-rebirth-loadout-hidden></div>
@@ -282,21 +282,21 @@
                             data-attack="{{ card.attack }}"
                             data-guard="{{ card.guard }}"
                         >
-                            <img src="{{ card.art }}" alt="{{ card.name }} art">
+                            <img src="{{ card.art }}" alt="Arte de {{ card.name }}">
                             <div>
-                                <span>Owned x{{ card.owned_count }}</span>
+                                <span>Você tem x{{ card.owned_count }}</span>
                                 <strong>{{ card.name }}</strong>
                                 <small>{{ card.attack }} ATK / {{ card.guard }} GRD - {{ card.ability_name }}</small>
                             </div>
-                            <div class="rb-loadout-stepper" aria-label="{{ card.name }} loadout copies">
-                                <button type="button" data-loadout-decrement aria-label="Remove {{ card.name }}">-</button>
+                            <div class="rb-loadout-stepper" aria-label="Cópias de {{ card.name }} no baralho">
+                                <button type="button" data-loadout-decrement aria-label="Remover {{ card.name }}">-</button>
                                 <strong data-loadout-count>{{ card.in_loadout_count }}</strong>
-                                <button type="button" data-loadout-increment aria-label="Add {{ card.name }}">+</button>
+                                <button type="button" data-loadout-increment aria-label="Adicionar {{ card.name }}">+</button>
                             </div>
                         </article>
                     {% endfor %}
                 </form>
-                <div class="rb-product-result" data-rebirth-loadout-result aria-live="polite">Loadout ready for validation.</div>
+                <div class="rb-product-result" data-rebirth-loadout-result aria-live="polite">Baralho pronto para validação.</div>
             </section>
 
             <section class="rb-product-card-grid" aria-label="Rebirth collection">
@@ -455,16 +455,16 @@
             <section class="rb-product-panel rb-product-wide" aria-label="Daily reward">
                 <span>{{ page.daily.state }}</span>
                 <h2>{{ page.daily.name }}</h2>
-                <p>{{ page.daily.progress }}/{{ page.daily.goal }} complete - {{ page.daily.reward }}</p>
+                <p>{{ page.daily.progress }}/{{ page.daily.goal }} concluído - {{ page.daily.reward }}</p>
                 <button
                     class="rb-button-secondary rb-secondary"
                     type="button"
                     data-rebirth-claim-daily
                     data-daily-state="{{ page.daily.state }}"
                     {{ 'disabled' if page.daily.state != 'ready' else '' }}
-                >{{ 'Claimed' if page.daily.state == 'claimed' else 'Claim Daily' if page.daily.state == 'ready' else 'Play A Clash' }}</button>
+                >{{ 'Resgatado' if page.daily.state == 'claimed' else 'Resgatar diário' if page.daily.state == 'ready' else 'Jogue uma partida' }}</button>
                 <div class="rb-product-result" data-rebirth-progression-result aria-live="polite">
-                    {{ 'Daily reward claimed.' if page.daily.state == 'claimed' else 'Daily reward ready.' if page.daily.state == 'ready' else 'Play one clash to unlock this daily reward.' }}
+                    {{ 'Recompensa diária resgatada.' if page.daily.state == 'claimed' else 'Recompensa diária pronta.' if page.daily.state == 'ready' else 'Jogue uma partida para desbloquear a recompensa diária.' }}
                 </div>
             </section>
         {% elif page.key == "lab" %}

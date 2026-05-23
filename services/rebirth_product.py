@@ -16,7 +16,7 @@ from services.rebirth_cards import (
 
 PRODUCT_NAV = [
     {"key": "play", "label": "Arena", "href": "/rebirth"},
-    {"key": "collection", "label": "Colecao", "href": "/rebirth/collection"},
+    {"key": "collection", "label": "Coleção", "href": "/rebirth/collection"},
     {"key": "shop", "label": "Loja", "href": "/rebirth/shop"},
     {"key": "progression", "label": "Recompensas", "href": "/rebirth/progression"},
     {"key": "profile", "label": "Perfil", "href": "/rebirth/profile"},
@@ -167,8 +167,8 @@ def product_shell_payload(account=None):
                     "href": "/rebirth",
                 },
                 {
-                    "title": "Minha Colecao",
-                    "copy": "Monte um deck de 30 cartas com monstros, magias, armadilhas e evolucoes.",
+                    "title": "Minha Coleção",
+                    "copy": "Monte um deck de 30 cartas com monstros, magias, armadilhas e evoluções.",
                     "href": "/rebirth/collection",
                 },
                 {
@@ -240,8 +240,8 @@ def collection_payload(account=None, collection_counts=None, loadout_card_ids=No
     base_owned = [card for card in cards if card["owned_count"]]
     payload = page_payload(
         "collection",
-        "Minha Colecao",
-        "Ajuste seu deck de 30 cartas entre monstros, magias, armadilhas e pares de evolucao.",
+        "Minha Coleção",
+        "Ajuste seu deck de 30 cartas entre monstros, magias, armadilhas e pares de evolução.",
         primary_label="Entrar na Arena",
         primary_href="/rebirth",
     )
@@ -365,9 +365,9 @@ def progression_payload(account=None, progression=None):
     }
     payload = page_payload(
         "progression",
-        "Rewards",
-        "Earn XP, claim daily progress and chase the Season 0 reward track.",
-        primary_label="Play For XP",
+        "Recompensas",
+        "Ganhe XP, colete o progresso diário e persiga a trilha de recompensas da Temporada 0.",
+        primary_label="Jogar por XP",
         primary_href="/rebirth",
     )
     daily_claimed = bool(profile.get("daily_claimed", False))
@@ -447,9 +447,9 @@ def profile_payload(account=None, profile=None):
     collection = profile.get("collection") or guest_profile()["collection"]
     payload = page_payload(
         "profile",
-        "Player Profile",
-        "Persisted identity, achievements and account controls for the active Rebirth player.",
-        primary_label="Open Collection",
+        "Perfil do Jogador",
+        "Identidade persistida, conquistas e controles da conta do jogador ativo.",
+        primary_label="Abrir Coleção",
         primary_href="/rebirth/collection",
     )
     payload.update(
@@ -457,12 +457,12 @@ def profile_payload(account=None, profile=None):
             "account": account,
             "profile": profile,
             "stats": [
-                {"label": "Level", "value": progress.get("level", 1)},
+                {"label": "Nível", "value": progress.get("level", 1)},
                 {"label": "XP", "value": f"{progress.get('xp', 0)}/{progress.get('next_level_xp', 500)}"},
-                {"label": "Gold", "value": progress.get("gold", 0)},
-                {"label": "Coinz", "value": progress.get("coinz", progress.get("premium", 0))},
-                {"label": "Owned", "value": collection.get("owned_cards", 0)},
-                {"label": "Badges", "value": profile.get("unlocked_achievements", 0)},
+                {"label": "Ouro", "value": progress.get("gold", 0)},
+                {"label": "Gemas", "value": progress.get("coinz", progress.get("premium", 0))},
+                {"label": "Cartas", "value": collection.get("owned_cards", 0)},
+                {"label": "Selos", "value": profile.get("unlocked_achievements", 0)},
             ],
         }
     )
