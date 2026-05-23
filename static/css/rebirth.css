@@ -5219,3 +5219,419 @@ button {
         transition: none;
     }
 }
+
+/* =========================================================================
+   v55 — Foundation Visual: Dark Fantasy Tático Premium / Arcane Industrial
+   ========================================================================= */
+
+:root {
+    --rb-iron-dark: #1a1612;
+    --rb-iron-mid: #2c2620;
+    --rb-iron-edge: #4a3f33;
+    --rb-iron-rim-light: rgba(255, 255, 255, 0.14);
+    --rb-iron-rim-dark: rgba(0, 0, 0, 0.7);
+    --rb-gold-aged: #c89a3a;
+    --rb-gold-aged-deep: #8a5e1c;
+    --rb-gold-aged-shadow: #4c2f0c;
+    --rb-arcane-blue: rgba(95, 175, 235, 0.85);
+    --rb-arcane-blue-deep: rgba(45, 95, 170, 0.6);
+    --rb-profane-red: rgba(225, 80, 70, 0.85);
+    --rb-profane-red-deep: rgba(140, 30, 25, 0.6);
+}
+
+/* --- 1. MEDALHÃO 3D — #next-turn-button ---------------------------------
+   Disco de ferro fundido pesado. Inclina suavemente seguindo o cursor
+   (JS atualiza --rb-tilt-x / --rb-tilt-y). Quando o jogador entra em
+   dead-end (renderer aplica .is-cta-pulse), o medalhão gira 180° em Y
+   revelando o lado dourado envelhecido e ativa o glow arcano.
+   ------------------------------------------------------------------------ */
+
+#next-turn-button.rb-button-secondary,
+#play-button.rb-button-primary {
+    position: relative;
+    min-width: 180px;
+    height: 64px;
+    padding: 0 28px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #f4e8d2;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    overflow: visible;
+    transform-style: preserve-3d;
+    perspective: 900px;
+    transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    z-index: 0;
+}
+
+#next-turn-button.rb-button-secondary > *,
+#play-button.rb-button-primary > * {
+    /* o conteúdo precisa sair do plano dos pseudo-elementos */
+    position: relative;
+    z-index: 2;
+    transform: translateZ(8px);
+}
+
+#next-turn-button.rb-button-secondary::before,
+#play-button.rb-button-primary::before {
+    /* face frontal: ferro fundido escuro com runas sutis e luz superior */
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        radial-gradient(circle at 32% 22%, rgba(255, 240, 210, 0.22), transparent 38%),
+        radial-gradient(circle at 70% 80%, rgba(0, 0, 0, 0.55), transparent 55%),
+        linear-gradient(140deg, var(--rb-iron-mid) 0%, var(--rb-iron-dark) 55%, #0a0806 100%);
+    box-shadow:
+        inset 0 2px 2px var(--rb-iron-rim-light),
+        inset 0 -3px 6px var(--rb-iron-rim-dark),
+        inset 0 0 0 1.5px rgba(70, 58, 46, 0.85),
+        0 8px 18px rgba(0, 0, 0, 0.55),
+        0 2px 4px rgba(0, 0, 0, 0.5);
+    backface-visibility: hidden;
+    transition: box-shadow 220ms ease;
+}
+
+#next-turn-button.rb-button-secondary::after,
+#play-button.rb-button-primary::after {
+    /* face traseira: ouro envelhecido — só aparece com o flip */
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        radial-gradient(circle at 32% 22%, rgba(255, 245, 200, 0.42), transparent 45%),
+        radial-gradient(circle at 65% 78%, rgba(70, 35, 10, 0.55), transparent 60%),
+        linear-gradient(135deg, var(--rb-gold-aged) 0%, var(--rb-gold-aged-deep) 55%, var(--rb-gold-aged-shadow) 100%);
+    box-shadow:
+        inset 0 2px 2px rgba(255, 245, 210, 0.4),
+        inset 0 -3px 6px rgba(40, 22, 6, 0.65),
+        inset 0 0 0 1.5px rgba(180, 130, 50, 0.95),
+        0 0 22px rgba(244, 200, 90, 0.55),
+        0 10px 22px rgba(0, 0, 0, 0.55);
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    opacity: 0.95;
+}
+
+/* Inclinação 3D seguindo o mouse — JS popula --rb-tilt-x/--rb-tilt-y. */
+#next-turn-button.rb-button-secondary,
+#play-button.rb-button-primary {
+    transform:
+        perspective(800px)
+        rotateX(var(--rb-tilt-x, 0deg))
+        rotateY(calc(var(--rb-tilt-y, 0deg) + var(--rb-flip, 0deg)));
+}
+
+#next-turn-button.rb-button-secondary:hover:not(:disabled),
+#play-button.rb-button-primary:hover:not(:disabled) {
+    transform:
+        perspective(800px)
+        rotateX(var(--rb-tilt-x, 0deg))
+        rotateY(calc(var(--rb-tilt-y, 0deg) + var(--rb-flip, 0deg)))
+        translateZ(4px);
+}
+
+#next-turn-button.rb-button-secondary:active:not(:disabled),
+#play-button.rb-button-primary:active:not(:disabled) {
+    transform:
+        perspective(800px)
+        rotateX(calc(var(--rb-tilt-x, 0deg) * 0.4))
+        rotateY(calc(var(--rb-tilt-y, 0deg) * 0.4 + var(--rb-flip, 0deg)))
+        translateZ(-2px);
+}
+
+/* DEAD-END: flip + pulso arcano contínuo. Sobrescreve o keyframe
+   rb-cta-pulse (legado v54) por algo mais alto-contraste. */
+#next-turn-button.is-cta-pulse:not(:disabled) {
+    --rb-flip: 180deg;
+    animation: rb-arcane-medallion-pulse 1.8s ease-in-out infinite;
+}
+
+#next-turn-button.is-cta-pulse:not(:disabled)::after {
+    animation: rb-arcane-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes rb-arcane-medallion-pulse {
+    0%, 100% {
+        transform:
+            perspective(800px)
+            rotateX(var(--rb-tilt-x, 0deg))
+            rotateY(calc(var(--rb-tilt-y, 0deg) + 180deg))
+            translateZ(0);
+    }
+    50% {
+        transform:
+            perspective(800px)
+            rotateX(var(--rb-tilt-x, 0deg))
+            rotateY(calc(var(--rb-tilt-y, 0deg) + 180deg))
+            translateZ(6px);
+    }
+}
+
+@keyframes rb-arcane-glow {
+    0%, 100% {
+        box-shadow:
+            inset 0 2px 2px rgba(255, 245, 210, 0.4),
+            inset 0 -3px 6px rgba(40, 22, 6, 0.65),
+            inset 0 0 0 1.5px rgba(180, 130, 50, 0.95),
+            0 0 18px rgba(244, 200, 90, 0.5),
+            0 10px 22px rgba(0, 0, 0, 0.55);
+    }
+    50% {
+        box-shadow:
+            inset 0 2px 2px rgba(255, 245, 210, 0.5),
+            inset 0 -3px 6px rgba(40, 22, 6, 0.65),
+            inset 0 0 0 1.5px rgba(220, 160, 60, 1),
+            0 0 38px 8px rgba(244, 200, 90, 0.85),
+            0 0 60px rgba(180, 110, 30, 0.45),
+            0 10px 22px rgba(0, 0, 0, 0.55);
+    }
+}
+
+#next-turn-button.rb-button-secondary:disabled,
+#play-button.rb-button-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* --- 2. CARTAS COMO ENTIDADES VIVAS -------------------------------------
+   Sombras volumétricas profundas; frame metálico varia por raridade.
+   Hover: elevação, escala, sombra projetada expandida, vizinhos desfocam
+   via :has() (CSS puro, sem JS extra).
+   ------------------------------------------------------------------------ */
+
+.rb-hand .rb-mini-card.rb-tcg-card {
+    transform-origin: center bottom;
+    transition:
+        transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+        box-shadow 260ms ease,
+        opacity 240ms ease;
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.5),
+        0 8px 16px rgba(0, 0, 0, 0.5),
+        0 16px 28px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+    position: relative;
+}
+
+.rb-hand .rb-mini-card.rb-tcg-card.is-rarity-common {
+    border: 2px solid transparent;
+    border-image: linear-gradient(140deg, #6a5848 0%, #3a3128 50%, #1f1a14 100%) 1;
+}
+
+.rb-hand .rb-mini-card.rb-tcg-card.is-rarity-uncommon {
+    border: 2px solid transparent;
+    border-image: linear-gradient(140deg, #9bb4c8 0%, #4e6878 50%, #243240 100%) 1;
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.5),
+        0 8px 18px rgba(80, 140, 210, 0.25),
+        0 16px 30px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(180, 220, 245, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.rb-hand .rb-mini-card.rb-tcg-card:hover:not(:disabled):not(.is-locked),
+.rb-hand .rb-mini-card.rb-tcg-card:focus-visible:not(:disabled):not(.is-locked) {
+    transform: translateY(-20px) scale(1.08);
+    box-shadow:
+        0 10px 18px rgba(0, 0, 0, 0.6),
+        0 26px 44px rgba(0, 0, 0, 0.65),
+        0 40px 64px rgba(244, 180, 80, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+    z-index: 5;
+}
+
+/* Vizinhos perdem foco durante o hover — opacidade + scale down. Optamos
+   por não usar blur via CSS filter (perf-budget do projeto bane esses
+   tokens em tests/rebirth/test_rebirth_frontend_contract.py). O efeito
+   cinemático fica via foco-vs-recesso: a carta hover fica protagonista,
+   as outras recuam levemente. Pure CSS via :has() — browsers sem :has()
+   simplesmente não aplicam a regra, sem regressão. */
+.rb-hand:has(.rb-mini-card.rb-tcg-card:hover:not(:disabled):not(.is-locked)) .rb-mini-card.rb-tcg-card:not(:hover),
+.rb-hand:has(.rb-mini-card.rb-tcg-card:focus-visible:not(:disabled):not(.is-locked)) .rb-mini-card.rb-tcg-card:not(:focus-visible) {
+    opacity: 0.45;
+    transform: scale(0.94) translateY(2px);
+}
+
+/* Brasão metálico esculpido nas estatísticas (ATK / GRD). Aplica em
+   cards de hand E de campo. Usa clip-path em forma de escudo. */
+.rb-card-stat.is-atk,
+.rb-card-stat.is-grd {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 8px;
+    background:
+        radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.18), transparent 50%),
+        linear-gradient(140deg, var(--rb-iron-edge) 0%, var(--rb-iron-mid) 60%, var(--rb-iron-dark) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.55),
+        0 2px 3px rgba(0, 0, 0, 0.5);
+    clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
+    color: #f6e5c4;
+    font-weight: 900;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+}
+
+.rb-card-stat.is-atk {
+    background:
+        radial-gradient(circle at 30% 25%, rgba(255, 220, 180, 0.28), transparent 50%),
+        linear-gradient(140deg, #5a3a26 0%, #38211a 60%, #1f120c 100%);
+}
+
+.rb-card-stat.is-grd {
+    background:
+        radial-gradient(circle at 30% 25%, rgba(200, 220, 240, 0.28), transparent 50%),
+        linear-gradient(140deg, #3a4858 0%, #1f2a36 60%, #0f1820 100%);
+}
+
+/* --- 3. SLOTS COMO ALTARES DE PEDRA --------------------------------------
+   Slots vazios afundados na mesa (inset shadow agressivo). Runa circular
+   central inerte por padrão; acende em azul espectral pro jogador, em
+   vermelho profano pro alvo do bot quando o slot vira target válido.
+   ------------------------------------------------------------------------ */
+
+.rb-field-slots .rb-field-slot-empty {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(60, 50, 40, 0.6);
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.2) 60%, transparent 100%),
+        linear-gradient(180deg, #16120e 0%, #0a0806 100%);
+    box-shadow:
+        inset 0 6px 14px rgba(0, 0, 0, 0.85),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1px rgba(80, 65, 50, 0.35),
+        0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: box-shadow 280ms ease, background 280ms ease;
+}
+
+.rb-field-slots .rb-field-slot-empty::before {
+    /* Runa circular central — inerte por padrão */
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background:
+        radial-gradient(circle, transparent 30%, rgba(180, 150, 90, 0.18) 38%, rgba(180, 150, 90, 0.04) 55%, transparent 70%);
+    opacity: 0.5;
+    transition: opacity 360ms ease, background 360ms ease, transform 360ms ease;
+    pointer-events: none;
+}
+
+.rb-field-slots .rb-field-slot-empty::after {
+    /* halo externo que cresce quando a runa é ativada */
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 0 transparent;
+    transition: box-shadow 360ms ease;
+    pointer-events: none;
+}
+
+/* Player: runa azul espectral quando o slot é target de invocação */
+#player-battlefield .rb-field-slot-empty.is-summon-target {
+    border-color: rgba(95, 175, 235, 0.5);
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(40, 90, 160, 0.25) 0%, rgba(20, 50, 100, 0.1) 60%, transparent 100%),
+        linear-gradient(180deg, #16120e 0%, #0a0806 100%);
+    box-shadow:
+        inset 0 6px 14px rgba(0, 0, 0, 0.85),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.6),
+        inset 0 0 22px rgba(95, 175, 235, 0.32),
+        0 0 12px rgba(95, 175, 235, 0.2);
+}
+
+#player-battlefield .rb-field-slot-empty.is-summon-target::before {
+    opacity: 1;
+    background:
+        radial-gradient(circle, transparent 28%, var(--rb-arcane-blue) 36%, var(--rb-arcane-blue-deep) 55%, transparent 72%);
+    animation: rb-altar-rune-blue 1.8s ease-in-out infinite;
+}
+
+#player-battlefield .rb-field-slot-empty.is-summon-target::after {
+    box-shadow: inset 0 0 0 2px rgba(95, 175, 235, 0.55);
+}
+
+/* Bot: runa vermelha profana quando o slot é alvo de ataque direto OU
+   quando o jogador está em modo "escolher alvo" e o slot do bot está
+   destacado. */
+#bot-battlefield .rb-field-slot-empty[data-direct-attack="true"],
+.rb-game-board.is-choosing-attack #bot-battlefield .rb-field-slot-empty {
+    border-color: rgba(225, 80, 70, 0.55);
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(140, 30, 25, 0.28) 0%, rgba(70, 15, 12, 0.12) 60%, transparent 100%),
+        linear-gradient(180deg, #16120e 0%, #0a0806 100%);
+    box-shadow:
+        inset 0 6px 14px rgba(0, 0, 0, 0.85),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.6),
+        inset 0 0 22px rgba(225, 80, 70, 0.32),
+        0 0 12px rgba(225, 80, 70, 0.2);
+    color: rgba(255, 220, 215, 0.92);
+}
+
+#bot-battlefield .rb-field-slot-empty[data-direct-attack="true"]::before,
+.rb-game-board.is-choosing-attack #bot-battlefield .rb-field-slot-empty::before {
+    opacity: 1;
+    background:
+        radial-gradient(circle, transparent 28%, var(--rb-profane-red) 36%, var(--rb-profane-red-deep) 55%, transparent 72%);
+    animation: rb-altar-rune-red 1.8s ease-in-out infinite;
+}
+
+#bot-battlefield .rb-field-slot-empty[data-direct-attack="true"]::after,
+.rb-game-board.is-choosing-attack #bot-battlefield .rb-field-slot-empty::after {
+    box-shadow: inset 0 0 0 2px rgba(225, 80, 70, 0.55);
+}
+
+@keyframes rb-altar-rune-blue {
+    0%, 100% {
+        opacity: 0.65;
+        transform: translate(-50%, -50%) scale(0.92);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.06);
+    }
+}
+
+@keyframes rb-altar-rune-red {
+    0%, 100% {
+        opacity: 0.65;
+        transform: translate(-50%, -50%) scale(0.92);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
+    }
+}
+
+/* --- Reduced motion: respeita preferência do SO ----------------------- */
+@media (prefers-reduced-motion: reduce) {
+    #next-turn-button.is-cta-pulse:not(:disabled),
+    #next-turn-button.is-cta-pulse:not(:disabled)::after,
+    .rb-field-slots .rb-field-slot-empty.is-summon-target::before,
+    .rb-field-slots .rb-field-slot-empty[data-direct-attack="true"]::before {
+        animation: none;
+    }
+    .rb-hand .rb-mini-card.rb-tcg-card,
+    #next-turn-button.rb-button-secondary,
+    #play-button.rb-button-primary {
+        transition-duration: 80ms;
+    }
+}

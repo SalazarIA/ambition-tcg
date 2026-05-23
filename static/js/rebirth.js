@@ -2008,6 +2008,35 @@
                 evolveButton.addEventListener("click", () => RebirthFlow.evolveFirstDuplicate());
             }
 
+            // v55 Foundation Visual: tilt 3D no medalhão de ferro/dourado.
+            // Cursor próximo da borda → mais inclinação. Reseta no mouseleave
+            // para evitar que o botão fique "torto" depois que o ponteiro sai.
+            // Respeita prefers-reduced-motion: se o usuário pediu, não tracka.
+            const prefersReducedMotion = window.matchMedia
+                && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            const tiltButtons = [playButton, nextButton].filter(Boolean);
+            if (!prefersReducedMotion) {
+                tiltButtons.forEach((medallion) => {
+                    medallion.addEventListener("mousemove", (event) => {
+                        const rect = medallion.getBoundingClientRect();
+                        const cx = rect.left + rect.width / 2;
+                        const cy = rect.top + rect.height / 2;
+                        // -1..1 normalized cursor offset
+                        const dx = (event.clientX - cx) / (rect.width / 2);
+                        const dy = (event.clientY - cy) / (rect.height / 2);
+                        // tilt range: ±12° em Y (horizontal), ±9° em X (vertical, invertido)
+                        const tiltY = Math.max(-12, Math.min(12, dx * 12));
+                        const tiltX = Math.max(-9, Math.min(9, -dy * 9));
+                        medallion.style.setProperty("--rb-tilt-y", `${tiltY.toFixed(2)}deg`);
+                        medallion.style.setProperty("--rb-tilt-x", `${tiltX.toFixed(2)}deg`);
+                    });
+                    medallion.addEventListener("mouseleave", () => {
+                        medallion.style.removeProperty("--rb-tilt-x");
+                        medallion.style.removeProperty("--rb-tilt-y");
+                    });
+                });
+            }
+
             const hand = RebirthStore.elements["player-hand"];
             if (hand) {
                 hand.addEventListener("click", (event) => {
