@@ -8,8 +8,8 @@
     <meta name="description" content="{{ page.subtitle }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-057">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-058">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     {% include "_rebirth_global_nav.html" %}
@@ -232,7 +232,7 @@
                 <article class="rb-product-panel">
                     <span>Reiniciar</span>
                     <h2>Estado Inicial</h2>
-                    <p>Reinicie coleção, baralho, recompensas, histórico e extrato para o estado inicial Rebirth.</p>
+                    <p>Reinicie coleção e baralho; seu extrato auditável permanece preservado com lançamentos compensatórios.</p>
                     <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-reset>Reiniciar Conta</button>
                 </article>
             </section>
@@ -364,7 +364,7 @@
                 <div class="rb-product-card-grid rb-product-card-grid-result" data-rebirth-market-offers>
                     {% for offer in page.market.offers %}
                         {% set offer_currency = 'Gemas' if offer.currency_type == 'COINZ' else 'Ouro' %}
-                        {% set offer_art = offer.card.art if offer.card.art_status != 'default_png_path' else 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80' %}
+                        {% set offer_art = '/' ~ offer.card.art if offer.card.art else 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80' %}
                         <article class="rb-product-card rb-market-offer is-currency-{{ offer.currency_type|lower }}" data-market-offer-id="{{ offer.id }}">
                             <div class="rb-market-art">
                                 <img src="{{ offer_art }}" data-rebirth-unsplash-fallback="https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80" alt="Arte de {{ offer.card.name }}">
@@ -622,8 +622,8 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-057"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-057"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-057"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-058"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-058"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-058"></script>
 </body>
 </html>

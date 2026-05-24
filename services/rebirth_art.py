@@ -2,14 +2,14 @@ from copy import deepcopy
 import re
 
 
-REBIRTH_ART_VERSION = "rebirth-021"
+REBIRTH_ART_VERSION = "rebirth-058"
 ART_BASE_PATH = "/static/assets/rebirth/cards"
 
 
 CARD_ART_PROFILES = {
     "dreadclaw": {
         "art_key": "rebirth.monster.dreadclaw.reference.v1",
-        "path": f"{ART_BASE_PATH}/dreadclaw-art.png",
+        "path": f"{ART_BASE_PATH}/dreadclaw-art.webp",
         "status": "approved_reference_crop",
         "silhouette": "volcanic quadruped beast with obsidian plates",
         "finish": "cinematic raster crop",
@@ -22,7 +22,7 @@ CARD_ART_PROFILES = {
     },
     "dreadmaw": {
         "art_key": "rebirth.monster.dreadmaw.apex.v1",
-        "path": f"{ART_BASE_PATH}/dreadmaw-art.png",
+        "path": f"{ART_BASE_PATH}/dreadmaw-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "larger apex volcanic beast with crown-like back spikes",
         "finish": "procedural cinematic raster",
@@ -35,7 +35,7 @@ CARD_ART_PROFILES = {
     },
     "stoneshell": {
         "art_key": "rebirth.monster.stoneshell.guardian.v1",
-        "path": f"{ART_BASE_PATH}/stoneshell-art.png",
+        "path": f"{ART_BASE_PATH}/stoneshell-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "low armored stone guardian with shell plates",
         "finish": "procedural cinematic raster",
@@ -48,7 +48,7 @@ CARD_ART_PROFILES = {
     },
     "stonewarden": {
         "art_key": "rebirth.monster.stonewarden.evolved.v1",
-        "path": f"{ART_BASE_PATH}/stonewarden-art.png",
+        "path": f"{ART_BASE_PATH}/stonewarden-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "upright stone sentinel shield body",
         "finish": "procedural cinematic raster",
@@ -61,7 +61,7 @@ CARD_ART_PROFILES = {
     },
     "shadewisp": {
         "art_key": "rebirth.monster.shadewisp.assassin.v1",
-        "path": f"{ART_BASE_PATH}/shadewisp-art.png",
+        "path": f"{ART_BASE_PATH}/shadewisp-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "knife-shaped shadow assassin",
         "finish": "procedural cinematic raster",
@@ -74,7 +74,7 @@ CARD_ART_PROFILES = {
     },
     "skywarden": {
         "art_key": "rebirth.monster.skywarden.avian.v1",
-        "path": f"{ART_BASE_PATH}/skywarden-art.png",
+        "path": f"{ART_BASE_PATH}/skywarden-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "armored avian sentinel with wide wings",
         "finish": "procedural cinematic raster",
@@ -87,7 +87,7 @@ CARD_ART_PROFILES = {
     },
     "stormwarden": {
         "art_key": "rebirth.monster.stormwarden.evolved.v1",
-        "path": f"{ART_BASE_PATH}/stormwarden-art.png",
+        "path": f"{ART_BASE_PATH}/stormwarden-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "storm avian diving through lightning",
         "finish": "procedural cinematic raster",
@@ -100,7 +100,7 @@ CARD_ART_PROFILES = {
     },
     "ironbastion": {
         "art_key": "rebirth.monster.ironbastion.guardian.v1",
-        "path": f"{ART_BASE_PATH}/ironbastion-art.png",
+        "path": f"{ART_BASE_PATH}/ironbastion-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "heavy iron guardian knight",
         "finish": "procedural cinematic raster",
@@ -113,7 +113,7 @@ CARD_ART_PROFILES = {
     },
     "ironbulwark": {
         "art_key": "rebirth.monster.ironbulwark.evolved.v1",
-        "path": f"{ART_BASE_PATH}/ironbulwark-art.png",
+        "path": f"{ART_BASE_PATH}/ironbulwark-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "fortress-like iron titan shield form",
         "finish": "procedural cinematic raster",
@@ -126,7 +126,7 @@ CARD_ART_PROFILES = {
     },
     "embermaw": {
         "art_key": "rebirth.monster.embermaw.wyrm.v1",
-        "path": f"{ART_BASE_PATH}/embermaw-art.png",
+        "path": f"{ART_BASE_PATH}/embermaw-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "serpentine fire wyrm with ember jaws",
         "finish": "procedural cinematic raster",
@@ -139,7 +139,7 @@ CARD_ART_PROFILES = {
     },
     "embermaw_alpha": {
         "art_key": "rebirth.monster.embermaw-alpha.evolved.v1",
-        "path": f"{ART_BASE_PATH}/embermaw-alpha-art.png",
+        "path": f"{ART_BASE_PATH}/embermaw-alpha-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "alpha fire wyrm with crown horns and furnace chest",
         "finish": "procedural cinematic raster",
@@ -152,7 +152,7 @@ CARD_ART_PROFILES = {
     },
     "voidstalker": {
         "art_key": "rebirth.monster.voidstalker.hunter.v1",
-        "path": f"{ART_BASE_PATH}/voidstalker-art.png",
+        "path": f"{ART_BASE_PATH}/voidstalker-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "void hunter with long predatory frame",
         "finish": "procedural cinematic raster",
@@ -165,7 +165,7 @@ CARD_ART_PROFILES = {
     },
     "nightfang": {
         "art_key": "rebirth.monster.nightfang.beast.v1",
-        "path": f"{ART_BASE_PATH}/nightfang-art.png",
+        "path": f"{ART_BASE_PATH}/nightfang-art.webp",
         "status": "deterministic_premium_png",
         "silhouette": "lean dark beast mid-lunge",
         "finish": "procedural cinematic raster",
@@ -200,8 +200,8 @@ def art_profile(card_id):
     if re.fullmatch(r"card_\d{3}", str(card_id or "")):
         return {
             "art_key": f"rebirth.card.{card_id}.v1",
-            "path": f"static/img/cards/{card_id}.png",
-            "status": "default_png_path",
+            "path": f"static/img/cards/baralho/{int(str(card_id).split('_')[-1])}.webp",
+            "status": "optimized_webp_path",
             "silhouette": "tcg catalog sigil",
             "finish": "tcg card frame",
             "palette": _generic_palette(card_id),

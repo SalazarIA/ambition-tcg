@@ -1,5 +1,5 @@
 from services.rebirth_balance import simulate_balance
-from services.rebirth_bot import BOT_PERSONALITIES, choose_response, personality_payload
+from services.rebirth_bot import BOT_PERSONALITIES, choose_bot_attack, choose_response, personality_payload, tactical_utility_matrix
 from services.rebirth_engine import start_match
 from services.rebirth_state import public_state
 
@@ -44,3 +44,68 @@ def test_balance_lab_reports_profiles_cards_and_abilities():
     assert payload["card_stats"]
     assert payload["ability_stats"]
     assert payload["samples"][0]["bot_profile"]["id"] in BOT_PERSONALITIES
+
+
+def test_bot_refuses_high_tier_symmetric_suicide_without_lethal_window():
+    bot_card = {
+        "id": "bot_tier_high",
+        "instance_id": "bot-high",
+        "name": "Bot High",
+        "attack": 8,
+        "guard": 8,
+        "current_guard": 8,
+        "tier": 2,
+        "ability_key": "brace",
+    }
+    player_card = {
+        "id": "player_equal",
+        "instance_id": "player-equal",
+        "name": "Player Equal",
+        "attack": 8,
+        "guard": 8,
+        "current_guard": 8,
+        "tier": 1,
+    }
+
+    matrix = tactical_utility_matrix([bot_card], [player_card], player_hp=30)
+    decision = choose_bot_attack([bot_card], [player_card], player_hp=30)
+
+    assert matrix[0]["allowed"] is False
+    assert matrix[0]["reason"] == "refuse_high_tier_suicide"
+    assert decision is None
+
+
+def test_bot_accepts_high_tier_trade_when_remaining_board_has_lethal():
+    bot_card = {
+        "id": "bot_tier_high",
+        "instance_id": "bot-high",
+        "name": "Bot High",
+        "attack": 8,
+        "guard": 8,
+        "current_guard": 8,
+        "tier": 2,
+    }
+    finisher = {
+        "id": "bot_finisher",
+        "instance_id": "bot-finisher",
+        "name": "Bot Finisher",
+        "attack": 9,
+        "guard": 4,
+        "current_guard": 4,
+        "tier": 1,
+    }
+    player_card = {
+        "id": "player_equal",
+        "instance_id": "player-equal",
+        "name": "Player Equal",
+        "attack": 8,
+        "guard": 8,
+        "current_guard": 8,
+        "tier": 1,
+    }
+
+    decision = choose_bot_attack([bot_card, finisher], [player_card], player_hp=9)
+
+    assert decision["allowed"] is True
+    assert decision["reason"] == "lethal_window"
+    assert decision["remaining_damage"]["total"] == 9

@@ -91,10 +91,7 @@ def test_guest_wallet_api_returns_zero_balance_without_console_error(client):
     assert payload["wallet"]["guest"] is True
 
 
-def test_start_api_survives_async_live_state_write_failure(client, monkeypatch):
-    async def broken_save_match_state(*_args, **_kwargs):
-        raise RebirthPersistenceError("write failed", "database_write_failed", status=500)
-
+def test_authenticated_match_state_uses_single_repository(client):
     register = client.post(
         "/api/rebirth/auth/register",
         json={
@@ -105,23 +102,28 @@ def test_start_api_survives_async_live_state_write_failure(client, monkeypatch):
     )
     assert register.status_code == 200
 
-    monkeypatch.setattr(ambition_app, "async_database_url", lambda: "postgresql+asyncpg://render/rebirth")
-    monkeypatch.setattr(ambition_app, "save_match_state", broken_save_match_state)
+    started = client.post("/api/rebirth/start", json={"seed": "routes-single-source"})
+    state = started.get_json()["state"]
+    persisted = client.get(f"/api/rebirth/match-state/{state['match_id']}")
 
-    response = client.post("/api/rebirth/start", json={"seed": "routes-persist-degrade"})
-    payload = response.get_json()
+    assert started.status_code == 200
+    assert persisted.status_code == 200
+    assert persisted.get_json()["state"]["match_id"] == state["match_id"]
 
-    assert response.status_code == 200
-    assert payload["ok"] is True
-    assert payload["state"]["match_id"].startswith("rebirth-")
+    ambition_app.MATCH_STORE.clear()
+    resumed = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]})
+    resumed_state = resumed.get_json()["state"]
+
+    assert resumed.status_code == 200
+    assert resumed_state["match_id"] == state["match_id"]
+    assert resumed_state["turn"] == 2
 
 
-def test_shop_survives_async_market_read_failure(client, monkeypatch):
-    async def broken_market_read(*_args, **_kwargs):
+def test_shop_survives_market_read_failure(client, monkeypatch):
+    def broken_market_read(*_args, **_kwargs):
         raise RebirthPersistenceError("market failed", "database_read_failed", status=500)
 
-    monkeypatch.setattr(ambition_app, "async_database_url", lambda: "postgresql+asyncpg://render/rebirth")
-    monkeypatch.setattr(ambition_app, "async_active_market_offers", broken_market_read)
+    monkeypatch.setattr("services.rebirth_persistence.RebirthRepository.market_offers", broken_market_read)
 
     page = client.get("/rebirth/shop")
     api = client.get("/api/rebirth/shop")

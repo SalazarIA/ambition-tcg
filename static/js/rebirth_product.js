@@ -59,33 +59,9 @@
     }
 
     function initiateMobilePurchase(productId) {
-        const capacitor = window.Capacitor || null;
-        const nativePlatform = capacitor && typeof capacitor.getPlatform === "function"
-            ? capacitor.getPlatform()
-            : "web";
-        const platform = nativePlatform === "ios" ? "ios" : "google_play";
-        const receipt = [
-            "simulated",
-            nativePlatform,
-            String(productId || "coins_100"),
-            Date.now(),
-            Math.random().toString(16).slice(2)
-        ].join("-");
-
-        if (capacitor && capacitor.Plugins && capacitor.Plugins.Haptics && typeof capacitor.Plugins.Haptics.impact === "function") {
-            capacitor.Plugins.Haptics.impact({ style: "medium" }).catch(function () {});
-        }
-
-        return postJson(endpoints.verifyReceipt || "/api/rebirth/shop/verify-receipt", {
-            platform: platform,
-            product_id: productId || "coins_100",
-            receipt: receipt
-        }).then(function (payload) {
-            if (payload.wallet && window.RebirthGlobalAuth && typeof window.RebirthGlobalAuth.applyWallet === "function") {
-                window.RebirthGlobalAuth.applyWallet(payload.wallet);
-            }
-            return payload;
-        });
+        const error = new Error("Compras de Gemas permanecem desativadas ate a integracao oficial das lojas.");
+        error.code = "monetization_disabled";
+        return Promise.reject(error);
     }
 
     function getJson(url) {
@@ -133,10 +109,7 @@
     }
 
     function cardArtSource(card) {
-        if (!card || card.art_status === "default_png_path") {
-            return fallbackArt(card);
-        }
-        if (!card.art) {
+        if (!card || !card.art) {
             return fallbackArt(card);
         }
         return String(card.art).charAt(0) === "/" ? card.art : "/" + card.art;

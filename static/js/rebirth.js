@@ -279,8 +279,15 @@
                 window.visualViewport.addEventListener("resize", () => this.scale(), { passive: true });
                 window.visualViewport.addEventListener("scroll", () => this.scale(), { passive: true });
             }
-            window.addEventListener("wheel", (event) => event.preventDefault(), { passive: false });
+            window.addEventListener("wheel", (event) => {
+                if (!this.isNativeMobile()) {
+                    event.preventDefault();
+                }
+            }, { passive: false });
             window.addEventListener("touchmove", (event) => {
+                if (this.isNativeMobile()) {
+                    return;
+                }
                 const target = event.target;
                 if (target && target.closest && target.closest(".rb-hand, .rb-log ol")) {
                     return;
@@ -295,6 +302,17 @@
             const height = Math.max(1, viewport.height || window.innerHeight || RebirthConfig.boardHeight);
             const safe = this.safeInsets();
             const navHeight = this.globalNavHeight();
+            const nativeMobile = width <= 760;
+            document.body.classList.toggle("rb-mobile-native", nativeMobile);
+            document.documentElement.style.setProperty("--rb-mobile-nav-height", `${navHeight}px`);
+            if (nativeMobile) {
+                document.documentElement.style.setProperty("--rb-board-width", "100%");
+                document.documentElement.style.setProperty("--rb-board-height", "auto");
+                document.documentElement.style.setProperty("--rb-safe-offset-x", "0px");
+                document.documentElement.style.setProperty("--rb-safe-offset-y", "0px");
+                document.documentElement.style.setProperty("--rb-scale", "1");
+                return;
+            }
             const safeWidth = Math.max(1, width - safe.left - safe.right);
             const safeHeight = Math.max(1, height - safe.top - safe.bottom - navHeight);
             const desktop = width >= 1180 && height >= 680;
@@ -307,6 +325,10 @@
             const scale = Math.min(safeWidth / baseWidth, safeHeight / baseHeight);
             document.documentElement.style.setProperty("--rb-scale", String(scale));
             window.scrollTo(0, 0);
+        },
+
+        isNativeMobile() {
+            return window.matchMedia("(max-width: 760px)").matches;
         },
 
         globalNavHeight() {
@@ -532,7 +554,6 @@
                     .then((response) => response.ok ? response.json() : null)
                     .then((manifest) => {
                         this.manifest = manifest || null;
-                        Object.values((manifest && manifest.cards) || {}).forEach((src) => this.preloadUrl(src));
                     })
                     .catch(() => {});
             }
@@ -609,7 +630,7 @@
             }
             const digits = parseInt(String(card.id || "").replace(/\D/g, ""), 10);
             if (digits > 0) {
-                return `/static/img/cards/baralho/${digits}.png`;
+                return `/static/img/cards/baralho/${digits}.webp`;
             }
             return card.art || RebirthConfig.assets.fallbackCardArt || "";
         },
@@ -647,7 +668,7 @@
             const source = this.cardImageUrl(card);
             if (!source) return "";
             const fallback = this.temporaryArtUrl(card) || RebirthConfig.assets.fallbackCardArt || "";
-            return `<img data-rebirth-art data-art-key="${RebirthText.escape(card && card.art_key ? card.art_key : "fallback")}" data-fallback-src="${RebirthText.escape(fallback)}" src="${RebirthText.escape(source)}" alt="" loading="eager">`;
+            return `<img data-rebirth-art data-art-key="${RebirthText.escape(card && card.art_key ? card.art_key : "fallback")}" data-fallback-src="${RebirthText.escape(fallback)}" src="${RebirthText.escape(source)}" alt="" loading="lazy" decoding="async">`;
         },
 
         bindFallbacks(root) {
@@ -2343,30 +2364,9 @@
     };
 
     async function initiateMobilePurchase(productId) {
-        const capacitor = window.Capacitor || null;
-        const nativePlatform = capacitor && typeof capacitor.getPlatform === "function"
-            ? capacitor.getPlatform()
-            : "web";
-        const platform = nativePlatform === "ios" ? "ios" : "google_play";
-        const receipt = [
-            "simulated",
-            nativePlatform,
-            String(productId || "coins_100"),
-            Date.now(),
-            Math.random().toString(16).slice(2)
-        ].join("-");
-        const payload = {
-            platform,
-            product_id: productId || "coins_100",
-            receipt
-        };
-        const endpoint = RebirthConfig.endpoints.verifyReceipt || "/api/rebirth/shop/verify-receipt";
-
-        if (capacitor && capacitor.Plugins && capacitor.Plugins.Haptics && typeof capacitor.Plugins.Haptics.impact === "function") {
-            capacitor.Plugins.Haptics.impact({ style: "medium" }).catch(() => {});
-        }
-
-        return RebirthApi.post(endpoint, payload);
+        const error = new Error("Compras de Gemas permanecem desativadas ate a integracao oficial das lojas.");
+        error.code = "monetization_disabled";
+        throw error;
     }
 
     const RebirthInput = {

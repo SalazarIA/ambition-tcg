@@ -1,8 +1,8 @@
 # Ambitionz Rebirth
 
 Ambitionz Rebirth is the active Ambitionz MVP: a fast, single-screen monster
-duel where the player chooses one card, the bot answers with one card, and the
-clash resolves through the Rebirth rules engine.
+duel where each side builds a three-slot battlefield and resolves direct,
+tactile clashes through the Rebirth rules engine.
 
 The previous Arena, Ascension, BE2, economy, progression, shop, collection and
 deck-builder product surfaces are retired from the active runtime. They remain
@@ -13,21 +13,22 @@ product path.
 
 - Python
 - Flask
-- SQLite persistence through Python stdlib
+- PostgreSQL persistence through synchronous SQLAlchemy + psycopg
 - Vanilla HTML/CSS/JavaScript
 - PWA manifest and service worker
-- In-memory Rebirth match store with TTL and max-entry cleanup
+- PostgreSQL-authoritative authenticated match state with an in-process hot cache
 - Command/event log on Rebirth match state with state hashes
 - Match history and economy ledger persisted for signed-in accounts
-- 13-card Rebirth starter set with PNG art, stable ability keys and engine-backed effects
+- 100-card Common/Uncommon catalog with WebP art, stable ability keys and engine-backed effects
 - Defensive, aggressive and opportunist bot profiles
 - Count-based loadout editor, match reward moments and deterministic Season 0 Balance Lab
 - Self-service support export/reset and token-protected admin grants
 - Gunicorn for deployment
 
-The current runtime does not initialize SocketIO, SQLAlchemy, legacy database
-models, legacy economy systems or the old multiplayer arena. Rebirth persistence
-uses its own SQLite file at `instance/rebirth.db` by default.
+The production runtime does not initialize SocketIO, async database loops,
+legacy economy systems or the old multiplayer arena. PostgreSQL is the sole
+production source of truth. SQLite is accepted only when `TESTING` is active
+or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 
 ## Active Routes
 
@@ -81,9 +82,10 @@ uses its own SQLite file at `instance/rebirth.db` by default.
 - `POST /api/rebirth/support/reset`
 - `POST /api/rebirth/admin/grant`
 
-The Rebirth collection, shop and progression endpoints now persist to Rebirth
-accounts. Booster opening mutates signed-in ownership, but there is still no
-payment processor and no legacy economy.
+The Rebirth collection, shop and progression endpoints persist to Rebirth
+accounts. Booster opening mutates signed-in ownership. Real-money Coinz/Gemas
+purchase is disabled and its legacy verification endpoint returns
+`410 monetization_disabled`.
 
 `/api/rebirth/admin/grant` is disabled unless `REBIRTH_ADMIN_TOKEN` is configured
 and the request sends the matching `X-Rebirth-Admin-Token` header.
@@ -94,18 +96,18 @@ password from the Rebirth profile page.
 
 ## Starter Card Set
 
-Rebirth 021 finishes the first active card set before expanding product scope.
+Rebirth Foundation v58 establishes the optimized browser card pipeline.
 Every active card now has:
 
-- a unique `*-art.png` asset wired through `static/assets/rebirth/manifest.json`;
+- a WebP card image served on demand rather than preloading the full catalog;
 - `ability_key`, `ability_name` and `ability_text` fields in the public card contract;
 - a Rebirth engine effect covered by `tests/rebirth/test_rebirth_card_set.py`;
 - a consistent evolution contract where evolved cards are tier 2 and are not in
   the default starter decks.
 
-Active base monsters: Dreadclaw, Stoneshell, Shadewisp, Skywarden,
-Ironbastion, Embermaw and Voidstalker. Active evolutions: Dreadmaw,
-Stonewarden, Nightfang, Stormwarden, Ironbulwark and Embermaw Alpha.
+The card catalog is constrained to `COMMON` and `UNCOMMON` rarity for the
+foundation economy. Signature premium portraits remain in the manifest as
+lightweight WebP references.
 
 Retired browser routes such as `/arena`, `/training`, `/collection`,
 `/deck-builder`, `/shop`, `/missions`, `/progression`, `/campaign`,
@@ -134,6 +136,8 @@ profiles and reports per-card/per-ability impact.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export REBIRTH_DATABASE_URL='postgresql://user:password@localhost:5432/ambitionz'
+python -m services.rebirth_schema upgrade
 python app.py
 ```
 
@@ -150,6 +154,8 @@ http://127.0.0.1:8080/rebirth
 pip install -r requirements-dev.txt
 python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py
 python3 -m pytest -q
+python3 -m pytest tests/rebirth -m requires_postgres -q  # Docker/Postgres real
+python3 -m pytest tests/rebirth -m e2e -q                # Chromium instalado
 python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md
 node --check static/js/rebirth.js
 node --check static/js/service-worker.js
@@ -167,6 +173,11 @@ Runtime dependencies stay intentionally small in `requirements.txt`. Development
 and local tooling dependencies live in `requirements-dev.txt`; this includes
 pytest, Pillow for the local card-art pipeline and Playwright for optional QA
 scripts.
+
+The production deploy runs `python -m services.rebirth_schema upgrade` before
+Gunicorn starts; `/health` rejects traffic with `503` when the migrated
+PostgreSQL schema is missing or unhealthy. See
+`docs/AAA_FOUNDATION_V58.md` for rollout and rollback gates.
 
 ## Historical Docs
 

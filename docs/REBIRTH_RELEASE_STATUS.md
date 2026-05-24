@@ -1,11 +1,14 @@
 # Rebirth Release Status
 
+> Updated by **AAA Foundation v58** on 2026-05-23. Operational persistence,
+> asset and mobile guidance is defined in `docs/AAA_FOUNDATION_V58.md`.
+
 ## Official Product State
 
 Ambitionz Rebirth is the only active Ambitionz runtime product.
 
 The active product is a Flask-served, vanilla-frontend, single-screen monster
-duel with Rebirth-native auth, SQLite persistence, account collection, account
+duel with Rebirth-native auth, PostgreSQL persistence, account collection, account
 loadout, no-payment booster ownership, progression, onboarding, balance
 simulation, player profile/achievements, match history, economy ledger,
 support/admin tooling, auth hardening and release hygiene pages.
@@ -34,7 +37,7 @@ the release gate.
 - `services/rebirth_product.py`
 - `services/rebirth_persistence.py`
 - `services/rebirth_balance.py`
-- `services/rebirth_monetization.py`
+- `services/rebirth_schema.py`
 - `templates/index.html`
 - `templates/rebirth.html`
 - `templates/rebirth_product.html`
@@ -47,7 +50,7 @@ the release gate.
 - `static/js/service-worker.js`
 - `static/manifest.webmanifest`
 - `static/assets/rebirth/manifest.json`
-- `static/assets/rebirth/cards/*-art.png`
+- `static/assets/rebirth/cards/*-art.webp`
 - `static/assets/rebirth/ui/*`
 
 The active runtime language is **pt-BR**. UI strings, nav, modal and JS-rendered
@@ -209,19 +212,22 @@ The Flask app applies minimum headers to all responses:
 
 ## Match Store
 
-Rebirth matches remain in memory with TTL expiry (default 3600s), max-entry cap
-(default 512) and basic locking for threaded Gunicorn. Environment overrides:
+Authenticated Rebirth matches are persisted with public and authoritative
+runtime state in PostgreSQL. An in-process hot cache retains TTL expiry
+(default 3600s), max-entry cap (default 512) and basic locking for threaded
+Gunicorn; a cache miss rehydrates from PostgreSQL. Environment overrides:
 
 - `REBIRTH_MATCH_TTL_SECONDS`
 - `REBIRTH_MAX_MATCHES`
 
-Rebirth account, collection, loadout, progression and booster ownership use
-SQLite through Python stdlib. Match state itself remains in memory; live
-in-progress matches are lost on process restart.
+Rebirth account, collection, loadout, progression, booster ownership, ledgers
+and authenticated match state use synchronous PostgreSQL persistence.
 
 ## Persistence
 
-Default database path: `instance/rebirth.db`. Override via `REBIRTH_DB_PATH`.
+Production requires `REBIRTH_DATABASE_URL` (or `DATABASE_URL`) and applies
+`python -m services.rebirth_schema upgrade` before process startup. SQLite is
+available only to explicitly isolated automated tests.
 
 Persisted tables:
 

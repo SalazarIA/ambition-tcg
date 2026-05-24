@@ -2,14 +2,14 @@
 
 ## Decision
 
-Rebirth auth must be a new Rebirth-native layer. The retired SocketIO,
-SQLAlchemy and legacy account/economy runtime is not active and should not be
-restored as a shortcut.
+Rebirth auth is a Rebirth-native layer on the PostgreSQL foundation. The
+retired SocketIO and legacy account/economy runtimes are not active and must
+not be restored as shortcuts.
 
 ## MVP Shape
 
 - Email/password account creation with normalized email and unique username.
-- Flask signed session cookie.
+- Flask signed session cookie backed by a revocable server-side session token.
 - Secure cookie flags in production.
 - CSRF protection for state-changing Rebirth JSON routes.
 - Small in-memory rate limit for auth endpoints.
@@ -19,11 +19,12 @@ restored as a shortcut.
 
 ## Current Implementation
 
-Rebirth 011-020 implemented the first real Rebirth auth/persistence layer and
-production-oriented MVP hardening.
-Passwords are accepted through JSON endpoints, hashed with PBKDF2 and stored in
-the Rebirth SQLite database. Account collection, loadout, booster history,
-progression, achievements and tutorial state now persist per user.
+Foundation v58 moves the active auth/persistence layer to PostgreSQL using
+synchronous SQLAlchemy and `psycopg`. Passwords are accepted through JSON
+endpoints and hashed with PBKDF2. Sessions are stored as SHA-256 token hashes
+with expiry/revocation timestamps. Collection, loadout, booster history,
+progression, achievements, tutorial claims, wallet/ledger and match recovery
+persist per user in the same schema.
 
 State-changing `/api/rebirth/*` routes require a session CSRF token by default.
 Register/login rotate the Rebirth session, logout clears it, and auth endpoints
@@ -46,30 +47,34 @@ The active APIs are:
 
 ## Persistence Store
 
-Default path:
+Required production environment:
 
 ```text
-instance/rebirth.db
+REBIRTH_DATABASE_URL=postgresql://...
 ```
 
-Override:
-
-- `REBIRTH_DB_PATH`
+`REBIRTH_DB_PATH` is allowed only in isolated automated tests where
+`TESTING=True` or `REBIRTH_ALLOW_SQLITE_TESTING=true`.
 
 Tables:
 
 - `users`
+- `user_sessions`
 - `user_collection`
 - `user_loadout`
 - `user_progress`
 - `reward_claims`
 - `booster_history`
 - `user_achievements`
+- `wallet_ledger`
+- `economy_transactions`
+- `economy_ledger`
+- `match_history`
 
 ## Non-Goals
 
 - No legacy login restoration.
 - No old economy restoration.
 - No hidden account mutation from anonymous booster or loadout endpoints.
-- No SQLAlchemy/database dependency.
-- No payment processor.
+- No async loop/pool split inside Flask requests.
+- No real-money payment processor or simulated receipt credit.

@@ -104,3 +104,6 @@ def test_support_export_reset_and_admin_grant(client, flask_app):
     assert export["progression"]["xp"] == 0
     assert export["matches"] == []
     assert export["ledger"]
+    assert any(entry["reason"] == "account_reset_compensation" for entry in export["ledger"])
+    retained_ledger = client.get("/api/rebirth/economy-ledger?limit=100").get_json()["ledger"]
+    assert any(entry["reason"] == "qa_grant" for entry in retained_ledger)

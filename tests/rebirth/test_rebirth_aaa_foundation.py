@@ -1,23 +1,16 @@
 import asyncio
-import inspect
+from pathlib import Path
 
 import pytest
 
+import app as ambition_app
 from services.rebirth_engine import EffectStack, RebirthError, play_card, start_match
 from services.rebirth_bot import bot_decision_payload, choose_response, choose_response_async, resolve_bot_decision_payload
 from services.rebirth_persistence import (
-    Base,
     RebirthPersistenceError,
     _is_serialization_failure,
-    active_market_offers,
-    buy_market_offer,
-    configure_async_database,
-    create_market_offer,
-    get_user_balance,
-    load_match_state,
-    log_transaction,
-    save_match_state,
 )
+from services.rebirth_schema import REQUIRED_TABLES, SCHEMA_VERSION
 from services.rebirth_state import TurnPhase, set_turn_phase
 
 
@@ -54,27 +47,22 @@ def test_turn_phase_blocks_card_play_outside_main_phase():
     assert error.value.code == "invalid_phase"
 
 
-def test_async_postgres_persistence_contract_is_declared(monkeypatch):
-    monkeypatch.delenv("REBIRTH_DATABASE_URL", raising=False)
-    monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.delenv("POSTGRES_URL", raising=False)
-    configure_async_database("")
+def test_postgres_single_source_contract_is_declared(flask_app):
+    assert {"users", "user_sessions", "user_collection", "economy_transactions", "market_offers", "wallet_ledger"}.issubset(REQUIRED_TABLES)
+    assert SCHEMA_VERSION >= 2
+    assert not hasattr(ambition_app, "run_async")
+    assert not hasattr(ambition_app, "async_database_url")
+    persistence_source = (Path(__file__).resolve().parents[2] / "services/rebirth_persistence.py").read_text(encoding="utf-8")
+    assert "create_async_engine" not in persistence_source
+    assert "AsyncSession" not in persistence_source
+    assert "async def " not in persistence_source
 
-    assert {"user_accounts", "user_collections", "game_sessions", "economy_transactions", "market_offers", "wallet_ledger"}.issubset(
-        set(Base.metadata.tables)
-    )
-    assert inspect.iscoroutinefunction(save_match_state)
-    assert inspect.iscoroutinefunction(load_match_state)
-    assert inspect.iscoroutinefunction(log_transaction)
-    assert inspect.iscoroutinefunction(create_market_offer)
-    assert inspect.iscoroutinefunction(buy_market_offer)
-    assert inspect.iscoroutinefunction(active_market_offers)
-    assert inspect.iscoroutinefunction(get_user_balance)
-
+    flask_app.config.update(TESTING=False, REBIRTH_ALLOW_SQLITE_TESTING=False, REBIRTH_DATABASE_URL=None)
     with pytest.raises(RebirthPersistenceError) as error:
-        asyncio.run(save_match_state("rebirth-test", {"turn": 1, "phase": "choose"}))
-
+        ambition_app.rebirth_repo()
     assert error.value.code == "database_not_configured"
+
+    flask_app.config.update(TESTING=True)
 
 
 def test_market_serialization_detector_only_retries_postgres_write_conflicts():

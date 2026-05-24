@@ -113,6 +113,9 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         ".rb-field-card.is-taking-hit",
         ".rb-result-panel.is-result-reading",
         ".is-cta-pulse:not(:disabled)",
+        ".rb-mobile-native .rb-game-board",
+        "touch-action: pan-y",
+        "min-height: 52px",
         "rb-target-line-pulse",
         "rb-result-copy-fade",
         ".rb-hand .rb-mini-card.is-locked",
@@ -133,17 +136,21 @@ def test_rebirth_css_locks_reference_classes_and_assets():
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-season0-v57" in service_worker
-    assert "/rebirth/collection" in service_worker
-    assert "/rebirth/profile" in service_worker
-    assert "/rebirth/lab" in service_worker
+    assert "ambitionz-rebirth-foundation-v58" in service_worker
+    assert "/rebirth/collection" not in service_worker
+    assert "/rebirth/profile" not in service_worker
+    assert "/rebirth/lab" not in service_worker
     assert "/rebirth/history" not in service_worker
     assert "/rebirth/support" not in service_worker
     assert "/rebirth/onboarding" not in service_worker
     assert "/rebirth/release" not in service_worker
     assert "/static/js/rebirth_product.js" in service_worker
     assert "/static/js/rebirth_global.js" in service_worker
-    assert "dreadclaw-art.png" in service_worker
+    assert "PLAYER_STATE_API_DENY_RE" in service_worker
+    assert "(?:wallet|profile|market)" in service_worker
+    assert "isCacheableAppShellRequest" in service_worker
+    assert "dreadclaw-art.webp" in service_worker
+    assert "dreadmaw-art" not in service_worker
     assert "bot-card-back.png" in service_worker
     assert "bot-emblem.png" in service_worker
     assert "dreadclaw.svg" not in service_worker
@@ -206,6 +213,9 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         assert token in js
     assert "const cardImage = this.cardImageUrl(card);" in js
     assert 'const temporary = cardImage ? "" : this.temporaryArtUrl(card);' in js
+    assert 'loading="lazy" decoding="async"' in js
+    assert "Object.values((manifest && manifest.cards) || {}).forEach" not in js
+    assert "simulated" not in js
 
     product_js = read("static/js/rebirth_product.js")
     global_js = read("static/js/rebirth_global.js")
@@ -217,6 +227,8 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert "history.pushState" not in product_js
     assert 'fetch(url, { credentials: "same-origin" })' in product_js
     assert "initiateMobilePurchase" in product_js
+    assert "monetization_disabled" in product_js
+    assert "simulated" not in product_js
     assert "bindProgressionDashboard" in product_js
     assert "data-rebirth-ledger-list" in product_js
     assert "is-currency-" in product_js
@@ -245,7 +257,8 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-057" in combined
+    assert "v=rebirth-058" in combined
+    assert "v=rebirth-057" not in combined
     assert "v=rebirth-056" not in combined
     assert "v=rebirth-055" not in combined
     assert "v=rebirth-054" not in combined

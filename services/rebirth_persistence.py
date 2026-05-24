@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import hmac
 import json
@@ -9,12 +8,9 @@ import sqlite3
 import uuid
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Optional
-
-from sqlalchemy import DateTime, Integer, JSON, String, case, func, select, text
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from functools import lru_cache
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from services.rebirth_cards import (
     CARD_CATALOG,
@@ -26,99 +22,13 @@ from services.rebirth_cards import (
     is_trap,
     validate_deck_distribution,
 )
+from services.rebirth_schema import SCHEMA_VERSION, normalize_database_url, validate_schema
 
 
 DEFAULT_LOADOUT = list(PLAYER_DECK)
 
 HASH_ITERATIONS = 180000
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,24}$")
-MARKET_SERIALIZATION_MAX_ATTEMPTS = 6
-MARKET_SERIALIZATION_RETRY_DELAY_SECONDS = 0.01
-
-
-class Base(DeclarativeBase):
-    pass
-
-
-class UserAccount(Base):
-    __tablename__ = "user_accounts"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    xp: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-
-
-class UserCollection(Base):
-    __tablename__ = "user_collections"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    card_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    locked_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    evolved_tier: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-
-
-class GameSession(Base):
-    __tablename__ = "game_sessions"
-
-    match_id: Mapped[str] = mapped_column(String(96), primary_key=True)
-    player_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
-    bot_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    status: Mapped[str] = mapped_column(String(24), nullable=False, default="ACTIVE")
-    current_turn: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    turn_phase: Mapped[str] = mapped_column(String(32), nullable=False, default="MAIN_PHASE")
-    live_match_state: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    state_hash: Mapped[str] = mapped_column(String(96), nullable=False, default="")
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-
-
-class EconomyTransaction(Base):
-    __tablename__ = "economy_transactions"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    transaction_type: Mapped[str] = mapped_column(String(40), nullable=False)
-    amount: Mapped[int] = mapped_column(Integer, nullable=False)
-    currency: Mapped[str] = mapped_column(String(24), nullable=False)
-    reference_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-
-
-class WalletLedger(Base):
-    __tablename__ = "wallet_ledger"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    currency: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
-    entry_type: Mapped[str] = mapped_column(String(8), nullable=False)
-    amount: Mapped[int] = mapped_column(Integer, nullable=False)
-    source: Mapped[str] = mapped_column(String(40), nullable=False)
-    reference_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-
-
-class MarketOffer(Base):
-    __tablename__ = "market_offers"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    seller_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    card_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
-    price: Mapped[int] = mapped_column(Integer, nullable=False)
-    currency_type: Mapped[str] = mapped_column(String(16), nullable=False)
-    status: Mapped[str] = mapped_column(String(16), nullable=False, default="ACTIVE", index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-
-
-ASYNC_DATABASE_ENV_NAMES = ("REBIRTH_DATABASE_URL", "DATABASE_URL", "POSTGRES_URL")
-_async_engine: Optional[AsyncEngine] = None
-_async_sessionmaker: Optional[async_sessionmaker[AsyncSession]] = None
-_async_schema_initialized = False
-
 ACHIEVEMENTS = [
     {
         "key": "founder",
@@ -164,305 +74,6 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def utc_datetime():
-    return datetime.now(timezone.utc)
-
-
-def _normalize_async_database_url(database_url):
-    database_url = str(database_url or "").strip()
-    if not database_url:
-        return ""
-    if database_url.startswith("postgres://"):
-        return database_url.replace("postgres://", "postgresql+asyncpg://", 1)
-    if database_url.startswith("postgresql://") and "+asyncpg" not in database_url.split("://", 1)[0]:
-        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    return database_url
-
-
-def async_database_url():
-    for env_name in ASYNC_DATABASE_ENV_NAMES:
-        value = os.environ.get(env_name)
-        if value:
-            return _normalize_async_database_url(value)
-    return ""
-
-
-def configure_async_database(database_url=None, *, engine=None, session_factory=None):
-    global _async_engine, _async_sessionmaker, _async_schema_initialized
-    _async_schema_initialized = False
-    if session_factory is not None:
-        _async_sessionmaker = session_factory
-        _async_engine = engine
-        return _async_sessionmaker
-    if engine is not None:
-        _async_engine = engine
-        _async_sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
-        return _async_sessionmaker
-    database_url = _normalize_async_database_url(database_url) or async_database_url()
-    if not database_url:
-        _async_engine = None
-        _async_sessionmaker = None
-        return None
-    _async_engine = create_async_engine(database_url, pool_pre_ping=True)
-    _async_sessionmaker = async_sessionmaker(_async_engine, expire_on_commit=False)
-    return _async_sessionmaker
-
-
-def async_session_factory():
-    global _async_sessionmaker
-    if _async_sessionmaker is None:
-        configure_async_database()
-    if _async_sessionmaker is None:
-        raise RebirthPersistenceError(
-            "REBIRTH_DATABASE_URL é obrigatória para persistência assíncrona PostgreSQL.",
-            "database_not_configured",
-            status=503,
-        )
-    return _async_sessionmaker
-
-
-async def ensure_async_schema():
-    global _async_engine
-    if _async_engine is None:
-        configure_async_database()
-    if _async_engine is None:
-        raise RebirthPersistenceError(
-            "REBIRTH_DATABASE_URL é obrigatória para criar o esquema assíncrono PostgreSQL.",
-            "database_not_configured",
-            status=503,
-        )
-    async with _async_engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
-
-
-async def ensure_async_schema_once():
-    global _async_schema_initialized
-    if _async_schema_initialized:
-        return
-    await ensure_async_schema()
-    _async_schema_initialized = True
-
-
-def _stable_state_hash(state_dict):
-    return hashlib.sha256(json.dumps(state_dict or {}, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:32]
-
-
-async def _ensure_async_user_account(session, user_id, *, username=None, password_hash="external-account"):
-    user_id = int(user_id or 0)
-    if user_id <= 0:
-        raise RebirthPersistenceError("Informe um user_id válido.", "invalid_user", status=400)
-    account = await session.get(UserAccount, user_id)
-    if account:
-        await _ensure_async_starter_wallet(session, account)
-        return account
-    account = UserAccount(
-        id=user_id,
-        username=normalize_username(username) or f"rebirth_user_{user_id}",
-        password_hash=str(password_hash or "external-account"),
-        xp=0,
-        level=1,
-        created_at=utc_datetime(),
-    )
-    session.add(account)
-    await session.flush()
-    await _seed_async_user_collection(session, account, f"{account.id}:{account.username}")
-    _add_async_wallet_entry(
-        session,
-        int(account.id),
-        "GOLD",
-        "CREDIT",
-        1000,
-        "MATCH_REWARD",
-        f"starter:{account.id}",
-    )
-    return account
-
-
-async def _ensure_async_starter_wallet(session, account):
-    result = await session.execute(
-        select(func.count(WalletLedger.id)).where(
-            WalletLedger.user_id == int(account.id),
-            WalletLedger.currency == "GOLD",
-        )
-    )
-    if int(result.scalar_one() or 0) > 0:
-        return
-    _add_async_wallet_entry(
-        session,
-        int(account.id),
-        "GOLD",
-        "CREDIT",
-        1000,
-        "MATCH_REWARD",
-        f"starter:{account.id}",
-    )
-
-
-async def _seed_async_user_collection(session, account, seed_source):
-    deck = deterministic_starter_deck(seed_source)
-    for card_id, copies in Counter(deck).items():
-        card = get_card(card_id)
-        session.add(
-            UserCollection(
-                user_id=int(account.id),
-                card_id=card_id,
-                quantity=int(copies),
-                locked_quantity=0,
-                evolved_tier=int(card.get("tier", 1) or 1),
-            )
-        )
-
-
-async def save_match_state(match_id: str, state_dict: dict) -> bool:
-    if not match_id:
-        raise RebirthPersistenceError("Informe match_id.", "missing_match", status=400)
-    if not isinstance(state_dict, dict):
-        raise RebirthPersistenceError("state_dict deve ser um dicionário.", "malformed_request", status=400)
-
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    now = utc_datetime()
-    player_id = state_dict.get("owner_user_id") or state_dict.get("player_id") or state_dict.get("user_id")
-    bot_id = state_dict.get("bot_id")
-    status = "FINISHED" if state_dict.get("is_finished") or state_dict.get("winner") else "ACTIVE"
-    turn_phase = str(state_dict.get("turn_phase") or state_dict.get("phase") or "MAIN_PHASE")
-    state_hash = str(state_dict.get("state_hash") or _stable_state_hash(state_dict))
-
-    try:
-        async with session_maker() as session:
-            async with session.begin():
-                existing = await session.get(GameSession, match_id)
-                if existing:
-                    existing.player_id = int(player_id) if player_id else existing.player_id
-                    existing.bot_id = int(bot_id) if bot_id else existing.bot_id
-                    existing.status = status
-                    existing.current_turn = int(state_dict.get("turn", existing.current_turn) or existing.current_turn)
-                    existing.turn_phase = turn_phase
-                    existing.live_match_state = state_dict
-                    existing.version = int(existing.version or 0) + 1
-                    existing.state_hash = state_hash
-                    existing.updated_at = now
-                else:
-                    session.add(
-                        GameSession(
-                            match_id=str(match_id),
-                            player_id=int(player_id) if player_id else None,
-                            bot_id=int(bot_id) if bot_id else None,
-                            status=status,
-                            current_turn=int(state_dict.get("turn", 1) or 1),
-                            turn_phase=turn_phase,
-                            live_match_state=state_dict,
-                            version=int(state_dict.get("version", 1) or 1),
-                            state_hash=state_hash,
-                            updated_at=now,
-                        )
-                    )
-        return True
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Falha ao salvar o estado ao vivo da partida.", "database_write_failed", status=500) from exc
-
-
-async def load_match_state(match_id: str) -> dict:
-    if not match_id:
-        raise RebirthPersistenceError("Informe match_id.", "missing_match", status=400)
-
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    try:
-        async with session_maker() as session:
-            game_session = await session.get(GameSession, match_id)
-            return dict(game_session.live_match_state or {}) if game_session else {}
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Falha ao carregar o estado ao vivo da partida.", "database_read_failed", status=500) from exc
-
-
-async def log_transaction(user_id: int, t_type: str, amount: int, currency: str) -> None:
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    try:
-        async with session_maker() as session:
-            async with session.begin():
-                await _ensure_async_user_account(session, user_id)
-                session.add(
-                    EconomyTransaction(
-                        user_id=int(user_id),
-                        transaction_type=str(t_type or "").strip() or "UNKNOWN",
-                        amount=int(amount or 0),
-                        currency=str(currency or "").strip() or "coins",
-                        reference_id=None,
-                        timestamp=utc_datetime(),
-                    )
-                )
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Falha ao registrar a transação econômica.", "database_write_failed", status=500) from exc
-
-
-async def credit_verified_purchase(
-    user_id: int,
-    *,
-    amount: int,
-    currency: str,
-    reference_id: str,
-    username: Optional[str] = None,
-    transaction_type: str = "IN_APP_PURCHASE",
-) -> dict:
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    try:
-        async with session_maker() as session:
-            async with session.begin():
-                await _set_serializable_if_postgres(session)
-                await _ensure_async_user_account(session, user_id, username=username)
-                account = (
-                    await session.execute(
-                        select(UserAccount).where(UserAccount.id == int(user_id)).with_for_update()
-                    )
-                ).scalar_one()
-                amount = int(amount or 0)
-                currency = normalize_wallet_currency(currency)
-                if amount <= 0:
-                    raise RebirthPersistenceError("O valor da compra deve ser positivo.", "invalid_purchase", status=400)
-                _add_async_wallet_entry(
-                    session,
-                    int(user_id),
-                    currency,
-                    "CREDIT",
-                    amount=amount,
-                    source="SHOP_PURCHASE",
-                    reference_id=str(reference_id or ""),
-                )
-                session.add(
-                    EconomyTransaction(
-                        user_id=int(user_id),
-                        transaction_type=str(transaction_type or "IN_APP_PURCHASE"),
-                        amount=amount,
-                        currency=currency,
-                        reference_id=str(reference_id or ""),
-                        timestamp=utc_datetime(),
-                    )
-                )
-                await session.flush()
-                wallet = {
-                    "GOLD": await get_user_balance(int(user_id), "GOLD", session=session),
-                    "COINZ": await get_user_balance(int(user_id), "COINZ", session=session),
-                    "ledger_source": "wallet_ledger",
-                }
-                return {
-                    "user_id": account.id,
-                    "balance_gold": wallet["GOLD"],
-                    "balance_coinz": wallet["COINZ"],
-                    "wallet": wallet,
-                    "xp": int(account.xp or 0),
-                    "level": int(account.level or 1),
-                    "amount": amount,
-                    "currency": currency,
-                    "reference_id": str(reference_id or ""),
-                }
-    except RebirthPersistenceError:
-        raise
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Falha ao creditar a compra verificada.", "database_write_failed", status=500) from exc
-
 
 WALLET_CURRENCY_ALIASES = {
     "GOLD": "GOLD",
@@ -484,10 +95,14 @@ def normalize_wallet_currency(currency):
 
 
 def normalize_market_currency(currency_type):
-    try:
-        return normalize_wallet_currency(currency_type or "GOLD")
-    except RebirthPersistenceError as exc:
-        raise RebirthPersistenceError("currency_type deve ser GOLD ou COINZ.", "invalid_market_currency", status=400) from exc
+    currency = normalize_wallet_currency(currency_type or "GOLD")
+    if currency != "GOLD":
+        raise RebirthPersistenceError(
+            "O mercado opera apenas com GOLD enquanto monetizacao estiver desativada.",
+            "premium_market_disabled",
+            status=409,
+        )
+    return currency
 
 
 def _normalize_market_price(price):
@@ -514,56 +129,18 @@ def _normalize_wallet_entry(entry_type, amount):
     return entry_type, amount
 
 
-def _wallet_balance_expression():
-    return func.coalesce(
-        func.sum(case((WalletLedger.entry_type == "CREDIT", WalletLedger.amount), else_=-WalletLedger.amount)),
-        0,
+def economy_idempotency_key(scope, *parts):
+    payload = json.dumps(
+        {
+            "scope": str(scope or "economy").strip().lower(),
+            "parts": [str(part or "") for part in parts],
+        },
+        sort_keys=True,
+        separators=(",", ":"),
     )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return f"{str(scope or 'economy').strip().lower()}:{digest[:48]}"
 
-
-async def _wallet_balance_in_session(session, user_id: int, currency: str) -> int:
-    currency = normalize_wallet_currency(currency)
-    result = await session.execute(
-        select(_wallet_balance_expression()).where(
-            WalletLedger.user_id == int(user_id),
-            WalletLedger.currency == currency,
-        )
-    )
-    return int(result.scalar_one() or 0)
-
-
-async def get_user_balance(user_id: int, currency: str, *, session: Optional[AsyncSession] = None) -> int:
-    if session is not None:
-        return await _wallet_balance_in_session(session, user_id, currency)
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    try:
-        async with session_maker() as owned_session:
-            return await _wallet_balance_in_session(owned_session, user_id, currency)
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Falha ao calcular o saldo da carteira.", "database_read_failed", status=500) from exc
-
-
-def _add_async_wallet_entry(session, user_id, currency, entry_type, amount, source, reference_id):
-    entry_type, amount = _normalize_wallet_entry(entry_type, amount)
-    session.add(
-        WalletLedger(
-            id=str(uuid.uuid4()),
-            user_id=int(user_id),
-            currency=normalize_wallet_currency(currency),
-            entry_type=entry_type,
-            amount=amount,
-            source=str(source or "MATCH_REWARD").strip().upper(),
-            reference_id=str(reference_id or ""),
-            timestamp=utc_datetime(),
-        )
-    )
-
-
-async def _set_serializable_if_postgres(session):
-    bind = session.get_bind()
-    if bind is not None and getattr(bind.dialect, "name", "") == "postgresql":
-        await session.execute(text("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"))
 
 
 def _is_serialization_failure(error):
@@ -588,210 +165,6 @@ def _is_serialization_failure(error):
         )
     return False
 
-
-def _market_offer_payload(offer, *, seller_name=None):
-    card = get_card(offer.card_id)
-    return {
-        "id": str(offer.id),
-        "seller_id": int(offer.seller_id),
-        "seller_name": seller_name,
-        "card_id": offer.card_id,
-        "card": card,
-        "price": int(offer.price),
-        "currency_type": normalize_market_currency(offer.currency_type),
-        "status": str(offer.status),
-        "created_at": offer.created_at.isoformat() if hasattr(offer.created_at, "isoformat") else str(offer.created_at),
-    }
-
-
-async def create_market_offer(user_id: int, card_id: str, price: int, currency_type: str, *, username: Optional[str] = None) -> dict:
-    card = get_card(card_id)
-    price = _normalize_market_price(price)
-    currency_type = normalize_market_currency(currency_type)
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    for attempt in range(MARKET_SERIALIZATION_MAX_ATTEMPTS):
-        try:
-            async with session_maker() as session:
-                async with session.begin():
-                    await _set_serializable_if_postgres(session)
-                    await _ensure_async_user_account(session, user_id, username=username)
-                    rows = (
-                        await session.execute(
-                            select(UserCollection)
-                            .where(UserCollection.user_id == int(user_id), UserCollection.card_id == card["id"])
-                            .with_for_update()
-                        )
-                    ).scalars().all()
-                    available = sum(max(0, int(row.quantity or 0) - int(row.locked_quantity or 0)) for row in rows)
-                    if available <= 0:
-                        raise RebirthPersistenceError("A carta não está disponível para anúncio no mercado.", "card_not_available", status=409)
-                    for row in rows:
-                        if int(row.quantity or 0) - int(row.locked_quantity or 0) > 0:
-                            row.locked_quantity = int(row.locked_quantity or 0) + 1
-                            break
-                    offer = MarketOffer(
-                        id=str(uuid.uuid4()),
-                        seller_id=int(user_id),
-                        card_id=card["id"],
-                        price=price,
-                        currency_type=currency_type,
-                        status="ACTIVE",
-                        created_at=utc_datetime(),
-                    )
-                    session.add(offer)
-                    await session.flush()
-                    return _market_offer_payload(offer, seller_name=username)
-        except RebirthPersistenceError:
-            raise
-        except SQLAlchemyError as exc:
-            retryable = _is_serialization_failure(exc) and attempt + 1 < MARKET_SERIALIZATION_MAX_ATTEMPTS
-            if not retryable:
-                raise RebirthPersistenceError("Falha ao anunciar a carta no mercado.", "database_write_failed", status=500) from exc
-            await asyncio.sleep(MARKET_SERIALIZATION_RETRY_DELAY_SECONDS * (2**attempt))
-
-
-async def active_market_offers(exclude_user_id: Optional[int] = None, limit: int = 40) -> list[dict]:
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    limit = max(1, min(int(limit or 40), 100))
-    try:
-        async with session_maker() as session:
-            statement = select(MarketOffer).where(MarketOffer.status == "ACTIVE").order_by(MarketOffer.created_at.desc()).limit(limit)
-            if exclude_user_id:
-                statement = statement.where(MarketOffer.seller_id != int(exclude_user_id))
-            rows = (await session.execute(statement)).scalars().all()
-            return [_market_offer_payload(row) for row in rows]
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Falha ao carregar ofertas do mercado.", "database_read_failed", status=500) from exc
-
-
-async def buy_market_offer(user_id: int, offer_id: str, *, username: Optional[str] = None) -> dict:
-    if not offer_id:
-        raise RebirthPersistenceError("Informe offer_id.", "missing_market_offer", status=400)
-    await ensure_async_schema_once()
-    session_maker = async_session_factory()
-    try:
-        async with session_maker() as session:
-            async with session.begin():
-                await _set_serializable_if_postgres(session)
-                await _ensure_async_user_account(session, user_id, username=username)
-                buyer = (
-                    await session.execute(
-                        select(UserAccount).where(UserAccount.id == int(user_id)).with_for_update()
-                    )
-                ).scalar_one()
-                offer = (
-                    await session.execute(
-                        select(MarketOffer).where(MarketOffer.id == str(offer_id)).with_for_update()
-                    )
-                ).scalar_one_or_none()
-                if not offer or offer.status != "ACTIVE":
-                    raise RebirthPersistenceError("A oferta do mercado não está mais ativa.", "market_offer_unavailable", status=409)
-                if int(offer.seller_id) == int(user_id):
-                    raise RebirthPersistenceError("Jogadores não podem comprar a própria oferta.", "market_self_buy", status=409)
-                seller = (
-                    await session.execute(
-                        select(UserAccount).where(UserAccount.id == int(offer.seller_id)).with_for_update()
-                    )
-                ).scalar_one_or_none()
-                if not seller:
-                    raise RebirthPersistenceError("A conta do vendedor não foi encontrada.", "market_seller_missing", status=409)
-
-                currency_type = normalize_market_currency(offer.currency_type)
-                price = int(offer.price)
-                buyer_balance = await get_user_balance(int(user_id), currency_type, session=session)
-                if buyer_balance < price:
-                    raise RebirthPersistenceError("Saldo insuficiente para a compra no mercado.", "insufficient_balance", status=409)
-                fee = _market_fee(price)
-                seller_net = price - fee
-
-                collection_rows = (
-                    await session.execute(
-                        select(UserCollection)
-                        .where(
-                            UserCollection.user_id == int(offer.seller_id),
-                            UserCollection.card_id == offer.card_id,
-                            UserCollection.locked_quantity > 0,
-                        )
-                        .with_for_update()
-                    )
-                ).scalars().all()
-                locked_row = next((row for row in collection_rows if int(row.locked_quantity or 0) > 0), None)
-                if not locked_row:
-                    raise RebirthPersistenceError("O item reservado no mercado não foi encontrado.", "market_item_lock_missing", status=409)
-                locked_row.quantity = max(0, int(locked_row.quantity or 0) - 1)
-                locked_row.locked_quantity = max(0, int(locked_row.locked_quantity or 0) - 1)
-                session.add(
-                    UserCollection(
-                        user_id=int(user_id),
-                        card_id=offer.card_id,
-                        quantity=1,
-                        locked_quantity=0,
-                        evolved_tier=int(get_card(offer.card_id).get("tier", 1) or 1),
-                    )
-                )
-                offer.status = "SOLD"
-                reference_id = str(offer.id)
-                _add_async_wallet_entry(session, int(user_id), currency_type, "DEBIT", price, "MARKET_SALE", reference_id)
-                _add_async_wallet_entry(session, int(offer.seller_id), currency_type, "CREDIT", price, "MARKET_SALE", reference_id)
-                _add_async_wallet_entry(session, int(offer.seller_id), currency_type, "DEBIT", fee, "MARKET_SALE", reference_id)
-                session.add_all(
-                    [
-                        EconomyTransaction(
-                            user_id=int(user_id),
-                            transaction_type="MARKET_BUY",
-                            amount=-price,
-                            currency=currency_type,
-                            reference_id=reference_id,
-                            timestamp=utc_datetime(),
-                        ),
-                        EconomyTransaction(
-                            user_id=int(offer.seller_id),
-                            transaction_type="MARKET_SALE",
-                            amount=seller_net,
-                            currency=currency_type,
-                            reference_id=reference_id,
-                            timestamp=utc_datetime(),
-                        ),
-                        EconomyTransaction(
-                            user_id=int(offer.seller_id),
-                            transaction_type="MARKET_FEE",
-                            amount=-fee,
-                            currency=currency_type,
-                            reference_id=reference_id,
-                            timestamp=utc_datetime(),
-                        ),
-                    ]
-                )
-                await session.flush()
-                buyer_wallet = {
-                    "GOLD": await get_user_balance(int(user_id), "GOLD", session=session),
-                    "COINZ": await get_user_balance(int(user_id), "COINZ", session=session),
-                    "ledger_source": "wallet_ledger",
-                }
-                seller_wallet = {
-                    "GOLD": await get_user_balance(int(offer.seller_id), "GOLD", session=session),
-                    "COINZ": await get_user_balance(int(offer.seller_id), "COINZ", session=session),
-                    "ledger_source": "wallet_ledger",
-                }
-                return {
-                    "offer": _market_offer_payload(offer),
-                    "buyer_id": int(user_id),
-                    "seller_id": int(offer.seller_id),
-                    "price": price,
-                    "fee": fee,
-                    "seller_net": seller_net,
-                    "currency_type": currency_type,
-                    "buyer_balance": buyer_wallet[currency_type],
-                    "seller_balance": seller_wallet[currency_type],
-                    "buyer_wallet": buyer_wallet,
-                    "seller_wallet": seller_wallet,
-                }
-    except RebirthPersistenceError:
-        raise
-    except SQLAlchemyError as exc:
-        raise RebirthPersistenceError("Falha ao comprar a oferta do mercado.", "database_write_failed", status=500) from exc
 
 
 def normalize_email(email):
@@ -867,11 +240,123 @@ def starter_collection_counts(seed_source=None):
     return Counter(deterministic_starter_deck(seed_source or "rebirth-starter"))
 
 
+@lru_cache(maxsize=4)
+def _sync_postgres_engine(database_url):
+    return create_engine(
+        normalize_database_url(database_url),
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+        future=True,
+    )
+
+
+class _MappingResult:
+    def __init__(self, result):
+        self.result = result
+
+    @property
+    def rowcount(self):
+        return int(getattr(self.result, "rowcount", -1) or 0)
+
+    @property
+    def lastrowid(self):
+        return getattr(self.result, "lastrowid", None)
+
+    def fetchone(self):
+        return self.result.mappings().first()
+
+    def fetchall(self):
+        return self.result.mappings().all()
+
+
+class _PostgresConnection:
+    """Transactional synchronous PostgreSQL executor for repository commands."""
+
+    def __init__(self, engine):
+        self.engine = engine
+        self._scope = None
+        self.connection = None
+
+    def __enter__(self):
+        self._scope = self.engine.begin()
+        self.connection = self._scope.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        try:
+            return self._scope.__exit__(exc_type, exc, traceback)
+        except SQLAlchemyError as error:
+            raise RebirthPersistenceError(
+                "A transacao PostgreSQL nao pode ser concluida.",
+                "database_write_failed",
+                status=409,
+            ) from error
+
+    def execute(self, statement, params=()):
+        sql = str(statement).strip()
+        if sql.upper() == "BEGIN IMMEDIATE":
+            return _MappingResult(self.connection.execute(text("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")))
+        sql = self._postgres_sql(sql)
+        named_sql, named_params = self._bind(sql, params)
+        try:
+            return _MappingResult(self.connection.execute(text(named_sql), named_params))
+        except IntegrityError:
+            raise
+        except SQLAlchemyError as error:
+            raise RebirthPersistenceError(
+                "A operacao PostgreSQL nao pode ser concluida.",
+                "database_write_failed",
+                status=409,
+            ) from error
+
+    def _postgres_sql(self, sql):
+        if "INSERT OR IGNORE INTO" in sql:
+            sql = sql.replace("INSERT OR IGNORE INTO", "INSERT INTO")
+            sql = f"{sql} ON CONFLICT DO NOTHING"
+        sql = sql.replace("MAX(copies - 1, 0)", "GREATEST(copies - 1, 0)")
+        sql = sql.replace("MAX(locked_copies - 1, 0)", "GREATEST(locked_copies - 1, 0)")
+        sql = sql.replace("MAX(tutorial_step, ?)", "GREATEST(tutorial_step, ?)")
+        normalized = " ".join(sql.split())
+        if normalized.startswith("SELECT copies, locked_copies FROM user_collection WHERE user_id = ? AND card_id = ?"):
+            sql = f"{sql} FOR UPDATE"
+        if "FROM market_offers" in normalized and "market_offers.id = ? AND market_offers.status = 'ACTIVE'" in normalized:
+            sql = f"{sql} FOR UPDATE OF market_offers"
+        return sql
+
+    def _bind(self, sql, params):
+        if isinstance(params, dict):
+            return sql, params
+        values = list(params or ())
+        fragments = sql.split("?")
+        if len(fragments) == 1:
+            return sql, {}
+        bound = []
+        names = {}
+        for index, fragment in enumerate(fragments[:-1]):
+            key = f"p{index}"
+            bound.extend((fragment, f":{key}"))
+            names[key] = values[index]
+        bound.append(fragments[-1])
+        return "".join(bound), names
+
+
 class RebirthRepository:
-    def __init__(self, db_path):
+    def __init__(self, db_path=None, *, database_url=None):
+        self.database_url = normalize_database_url(database_url or "")
         self.db_path = db_path
+        self.backend = "postgresql" if self.database_url else "sqlite_test"
+        self.engine = _sync_postgres_engine(self.database_url) if self.database_url else None
+        if not self.database_url and not self.db_path:
+            raise RebirthPersistenceError(
+                "PostgreSQL nao esta configurado para o runtime Rebirth.",
+                "database_not_configured",
+                status=503,
+            )
 
     def connect(self):
+        if self.backend == "postgresql":
+            return _PostgresConnection(self.engine)
         directory = os.path.dirname(self.db_path)
         if directory:
             os.makedirs(directory, exist_ok=True)
@@ -881,6 +366,15 @@ class RebirthRepository:
         return connection
 
     def ensure_schema(self):
+        if self.backend == "postgresql":
+            status = validate_schema(self.engine)
+            if not status.get("ok"):
+                raise RebirthPersistenceError(
+                    "O schema PostgreSQL do Rebirth nao esta migrado.",
+                    "database_schema_invalid",
+                    status=503,
+                )
+            return
         with self.connect() as db:
             db.executescript(
                 """
@@ -891,6 +385,17 @@ class RebirthRepository:
                     password_salt TEXT NOT NULL,
                     password_hash TEXT NOT NULL,
                     created_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS user_sessions (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    token_hash TEXT NOT NULL UNIQUE,
+                    created_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    revoked_at TEXT,
+                    expires_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
                 CREATE TABLE IF NOT EXISTS user_collection (
@@ -962,6 +467,7 @@ class RebirthRepository:
                     updated_at TEXT NOT NULL,
                     final_state_hash TEXT,
                     final_state_json TEXT NOT NULL,
+                    runtime_state_json TEXT NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
@@ -1018,6 +524,17 @@ class RebirthRepository:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS economy_idempotency_keys (
+                    user_id INTEGER NOT NULL,
+                    idempotency_key TEXT NOT NULL,
+                    scope TEXT NOT NULL,
+                    reference_id TEXT,
+                    settled_at TEXT NOT NULL,
+                    metadata_json TEXT NOT NULL,
+                    PRIMARY KEY (user_id, idempotency_key),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
                 CREATE TABLE IF NOT EXISTS wallet_ledger (
                     id TEXT PRIMARY KEY,
                     user_id INTEGER NOT NULL,
@@ -1059,6 +576,11 @@ class RebirthRepository:
                     ON wallet_ledger(user_id, currency, timestamp);
                 CREATE INDEX IF NOT EXISTS idx_wallet_ledger_reference
                     ON wallet_ledger(reference_id);
+                CREATE INDEX IF NOT EXISTS idx_user_sessions_active
+                    ON user_sessions(token_hash, revoked_at);
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_purchase_reference_once
+                    ON economy_transactions(user_id, transaction_type, reference_id)
+                    WHERE transaction_type = 'IN_APP_PURCHASE' AND reference_id IS NOT NULL AND reference_id <> '';
                 """
             )
             self._ensure_sqlite_column(db, "user_collection", "locked_copies", "INTEGER NOT NULL DEFAULT 0")
@@ -1126,6 +648,58 @@ class RebirthRepository:
             ),
         )
 
+    def _record_audit_event(self, db, *, actor="system", action, user_id=None, metadata=None, now=None):
+        db.execute(
+            """
+            INSERT INTO admin_audit_log (actor, action, user_id, metadata_json, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                str(actor or "system"),
+                str(action),
+                int(user_id) if user_id is not None else None,
+                json.dumps(metadata or {}, sort_keys=True),
+                now or utc_now(),
+            ),
+        )
+
+    def _claim_economy_idempotency(self, db, user_id, *, key, scope, reference_id=None, metadata=None, now=None):
+        now = now or utc_now()
+        metadata = dict(metadata or {})
+        key = str(key or "").strip()
+        if not key:
+            raise RebirthPersistenceError("A chave idempotente da transação é obrigatória.", "missing_idempotency_key", 400)
+        cursor = db.execute(
+            """
+            INSERT OR IGNORE INTO economy_idempotency_keys
+                (user_id, idempotency_key, scope, reference_id, settled_at, metadata_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(user_id),
+                key,
+                str(scope or "economy").strip().upper(),
+                str(reference_id or ""),
+                now,
+                json.dumps(metadata, sort_keys=True),
+            ),
+        )
+        if cursor.rowcount:
+            return True
+        self._record_audit_event(
+            db,
+            action="economy_replay_rejected",
+            user_id=user_id,
+            metadata={
+                "idempotency_key": key,
+                "scope": str(scope or "economy").strip().upper(),
+                "reference_id": str(reference_id or ""),
+                "metadata": metadata,
+            },
+            now=now,
+        )
+        return False
+
     def get_user_balance(self, user_id, currency):
         self.ensure_schema()
         currency = normalize_wallet_currency(currency)
@@ -1147,6 +721,16 @@ class RebirthRepository:
             "ledger_source": "wallet_ledger",
         }
 
+    def health_status(self):
+        self.ensure_schema()
+        with self.connect() as db:
+            row = db.execute("SELECT 1 AS available").fetchone()
+        return {
+            "backend": self.backend,
+            "available": bool(row and int(row["available"]) == 1),
+            "schema_version": SCHEMA_VERSION if self.backend == "postgresql" else "test-only",
+        }
+
     def create_user(self, username, email, password):
         self.ensure_schema()
         username = normalize_username(username)
@@ -1166,22 +750,72 @@ class RebirthRepository:
         now = utc_now()
         try:
             with self.connect() as db:
+                returning = " RETURNING id" if self.backend == "postgresql" else ""
                 cursor = db.execute(
-                    """
+                    f"""
                     INSERT INTO users (username, email, password_salt, password_hash, created_at)
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?){returning}
                     """,
                     (username, email, salt, digest, now),
                 )
-                user_id = int(cursor.lastrowid)
+                user_id = int(cursor.fetchone()["id"] if self.backend == "postgresql" else cursor.lastrowid)
                 self._seed_user_state(db, user_id, now, seed_source=f"{user_id}:{username}:{email}")
-        except sqlite3.IntegrityError as exc:
+        except (sqlite3.IntegrityError, IntegrityError) as exc:
             raise RebirthPersistenceError(
                 "Já existe uma conta Rebirth com este nome de jogador ou email.",
                 "auth_conflict",
                 status=409,
             ) from exc
         return self.get_user(user_id)
+
+    def create_session(self, user_id, token, *, expires_at):
+        self.ensure_schema()
+        now = utc_now()
+        token_hash = hashlib.sha256(str(token).encode("utf-8")).hexdigest()
+        with self.connect() as db:
+            db.execute(
+                """
+                INSERT INTO user_sessions (id, user_id, token_hash, created_at, last_seen_at, revoked_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, NULL, ?)
+                """,
+                (str(uuid.uuid4()), int(user_id), token_hash, now, now, expires_at),
+            )
+
+    def user_for_session(self, token):
+        if not token:
+            return None
+        self.ensure_schema()
+        token_hash = hashlib.sha256(str(token).encode("utf-8")).hexdigest()
+        now = utc_now()
+        with self.connect() as db:
+            row = db.execute(
+                """
+                SELECT users.id, users.username, users.email, users.created_at
+                FROM user_sessions
+                JOIN users ON users.id = user_sessions.user_id
+                WHERE user_sessions.token_hash = ?
+                  AND user_sessions.revoked_at IS NULL
+                  AND user_sessions.expires_at > ?
+                """,
+                (token_hash, now),
+            ).fetchone()
+            if row:
+                db.execute(
+                    "UPDATE user_sessions SET last_seen_at = ? WHERE token_hash = ?",
+                    (now, token_hash),
+                )
+        return dict(row) if row else None
+
+    def revoke_session(self, token):
+        if not token:
+            return
+        self.ensure_schema()
+        token_hash = hashlib.sha256(str(token).encode("utf-8")).hexdigest()
+        with self.connect() as db:
+            db.execute(
+                "UPDATE user_sessions SET revoked_at = ? WHERE token_hash = ? AND revoked_at IS NULL",
+                (utc_now(), token_hash),
+            )
 
     def authenticate(self, email, password):
         self.ensure_schema()
@@ -1436,7 +1070,7 @@ class RebirthRepository:
         user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
         if not user:
             raise RebirthPersistenceError("A carteira da conta não foi encontrada.", "missing_wallet", status=409)
-        currency_type = normalize_market_currency(currency_type)
+        currency_type = normalize_wallet_currency(currency_type)
         row = db.execute(
             """
             SELECT COALESCE(SUM(CASE WHEN entry_type = 'CREDIT' THEN amount ELSE -amount END), 0) AS balance
@@ -1764,73 +1398,93 @@ class RebirthRepository:
         self.ensure_schema()
         cards = booster.get("cards", [])
         now = utc_now()
+        booster_id = booster.get("booster_id", "starter_booster_demo")
+        seed_key = str(seed or "")
+        idempotency_key = economy_idempotency_key("xp", user_id, "booster_opened", booster_id, seed_key)
+        replayed = False
         with self.connect() as db:
-            for card in cards:
+            db.execute("BEGIN IMMEDIATE")
+            if not self._claim_economy_idempotency(
+                db,
+                user_id,
+                key=idempotency_key,
+                scope="XP",
+                reference_id=booster_id,
+                metadata={"transaction_type": "BOOSTER_OPENED", "seed": seed_key, "booster_id": booster_id},
+                now=now,
+            ):
+                replayed = True
+            if replayed:
+                pass
+            else:
+                for card in cards:
+                    db.execute(
+                        """
+                        INSERT INTO user_collection (user_id, card_id, copies, updated_at)
+                        VALUES (?, ?, 1, ?)
+                        ON CONFLICT(user_id, card_id) DO UPDATE SET
+                            copies = copies + 1,
+                            updated_at = excluded.updated_at
+                        """,
+                        (user_id, card["id"], now),
+                    )
+                    self._record_ledger_entry(
+                        db,
+                        user_id,
+                        resource=f"card:{card['id']}",
+                        delta=1,
+                        reason="booster_card",
+                        reference_type="booster",
+                        reference_id=booster_id,
+                        metadata={"card_id": card["id"], "name": card.get("name"), "seed": str(seed or "")},
+                        now=now,
+                    )
                 db.execute(
                     """
-                    INSERT INTO user_collection (user_id, card_id, copies, updated_at)
-                    VALUES (?, ?, 1, ?)
-                    ON CONFLICT(user_id, card_id) DO UPDATE SET
-                        copies = copies + 1,
-                        updated_at = excluded.updated_at
+                    INSERT INTO booster_history (user_id, booster_id, seed, cards_json, opened_at)
+                    VALUES (?, ?, ?, ?, ?)
                     """,
-                    (user_id, card["id"], now),
+                    (
+                        user_id,
+                        booster_id,
+                        str(seed or ""),
+                        json.dumps([card["id"] for card in cards]),
+                        now,
+                    ),
+                )
+                db.execute(
+                    """
+                    UPDATE user_progress
+                    SET boosters_opened = boosters_opened + 1,
+                        xp = xp + 40,
+                        updated_at = ?
+                    WHERE user_id = ?
+                    """,
+                    (now, user_id),
                 )
                 self._record_ledger_entry(
                     db,
                     user_id,
-                    resource=f"card:{card['id']}",
-                    delta=1,
-                    reason="booster_card",
+                    resource="xp",
+                    delta=40,
+                    reason="booster_opened",
                     reference_type="booster",
-                    reference_id=booster.get("booster_id", "starter_booster_demo"),
-                    metadata={"card_id": card["id"], "name": card.get("name"), "seed": str(seed or "")},
+                    reference_id=booster_id,
+                    metadata={"seed": str(seed or ""), "cards": [card["id"] for card in cards], "idempotency_key": idempotency_key},
                     now=now,
                 )
-            db.execute(
-                """
-                INSERT INTO booster_history (user_id, booster_id, seed, cards_json, opened_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
+                self._record_economy_transaction(
+                    db,
                     user_id,
-                    booster.get("booster_id", "starter_booster_demo"),
-                    str(seed or ""),
-                    json.dumps([card["id"] for card in cards]),
+                    "BOOSTER_OPENED",
+                    40,
+                    "XP",
+                    booster_id,
                     now,
-                ),
-            )
-            db.execute(
-                """
-                UPDATE user_progress
-                SET boosters_opened = boosters_opened + 1,
-                    xp = xp + 40,
-                    updated_at = ?
-                WHERE user_id = ?
-                """,
-                (now, user_id),
-            )
-            self._record_ledger_entry(
-                db,
-                user_id,
-                resource="xp",
-                delta=40,
-                reason="booster_opened",
-                reference_type="booster",
-                reference_id=booster.get("booster_id", "starter_booster_demo"),
-                metadata={"seed": str(seed or ""), "cards": [card["id"] for card in cards]},
-                now=now,
-            )
-            self._record_economy_transaction(
-                db,
-                user_id,
-                "BOOSTER_OPENED",
-                40,
-                "XP",
-                booster.get("booster_id", "starter_booster_demo"),
-                now,
-            )
-            self._unlock_achievements(db, user_id, ["first_booster"], now)
+                )
+                self._unlock_achievements(db, user_id, ["first_booster"], now)
+        if replayed:
+            raise RebirthPersistenceError("Esta transação de booster já foi liquidada.", "transaction_replayed", 409)
 
     def booster_history(self, user_id, limit=5):
         self.ensure_schema()
@@ -1909,41 +1563,92 @@ class RebirthRepository:
         win_delta = 1 if is_finished and winner == "player" else 0
         loss_delta = 1 if is_finished and winner == "bot" else 0
         xp_delta = 25 + (75 if win_delta else 0) + (25 if loss_delta else 0)
-        with self.connect() as db:
-            db.execute(
-                """
-                UPDATE user_progress
-                SET clashes = clashes + 1,
-                    wins = wins + ?,
-                    losses = losses + ?,
-                    xp = xp + ?,
-                    updated_at = ?
-                WHERE user_id = ?
-                """,
-                (win_delta, loss_delta, xp_delta, now, user_id),
+        outcome = (public_match_state.get("result") or {}).get("outcome")
+        claim_seed = ":".join(
+            str(value or "")
+            for value in (
+                public_match_state.get("match_id"),
+                public_match_state.get("state_hash"),
+                public_match_state.get("turn"),
+                outcome,
             )
-            self._record_ledger_entry(
+        )
+        claim_key = f"clash_{hashlib.sha256(claim_seed.encode('utf-8')).hexdigest()[:40]}"
+        applied = False
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            claimed = self._claim_economy_idempotency(
                 db,
                 user_id,
-                resource="xp",
-                delta=xp_delta,
-                reason="match_clash",
-                reference_type="match",
+                key=economy_idempotency_key("xp", user_id, "match_clash", claim_key),
+                scope="XP",
                 reference_id=public_match_state.get("match_id"),
                 metadata={
-                    "winner": winner,
-                    "is_finished": is_finished,
+                    "transaction_type": "MATCH_CLASH",
+                    "reward_key": claim_key,
+                    "state_hash": public_match_state.get("state_hash"),
                     "turn": public_match_state.get("turn"),
-                    "outcome": (public_match_state.get("result") or {}).get("outcome"),
+                    "outcome": outcome,
                 },
                 now=now,
             )
-            self._record_economy_transaction(db, user_id, "MATCH_CLASH", xp_delta, "XP", public_match_state.get("match_id"), now)
-            unlocked = ["first_clash"]
-            if win_delta:
-                unlocked.append("first_win")
-            self._unlock_achievements(db, user_id, unlocked, now)
-        return self.progression(user_id)
+            reward_claimed = False
+            if claimed:
+                cursor = db.execute(
+                    "INSERT OR IGNORE INTO reward_claims (user_id, reward_key, claimed_at) VALUES (?, ?, ?)",
+                    (user_id, claim_key, now),
+                )
+                reward_claimed = bool(cursor.rowcount)
+                if not reward_claimed:
+                    self._record_audit_event(
+                        db,
+                        action="reward_claim_replay_rejected",
+                        user_id=user_id,
+                        metadata={"reward_key": claim_key, "reference_id": public_match_state.get("match_id")},
+                        now=now,
+                    )
+            if claimed and reward_claimed:
+                applied = True
+                db.execute(
+                    """
+                    UPDATE user_progress
+                    SET clashes = clashes + 1,
+                        wins = wins + ?,
+                        losses = losses + ?,
+                        xp = xp + ?,
+                        updated_at = ?
+                    WHERE user_id = ?
+                    """,
+                    (win_delta, loss_delta, xp_delta, now, user_id),
+                )
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource="xp",
+                    delta=xp_delta,
+                    reason="match_clash",
+                    reference_type="match",
+                    reference_id=public_match_state.get("match_id"),
+                    metadata={
+                        "winner": winner,
+                        "is_finished": is_finished,
+                        "turn": public_match_state.get("turn"),
+                        "outcome": outcome,
+                        "claim_key": claim_key,
+                        "idempotency_key": economy_idempotency_key("xp", user_id, "match_clash", claim_key),
+                    },
+                    now=now,
+                )
+                self._record_economy_transaction(db, user_id, "MATCH_CLASH", xp_delta, "XP", public_match_state.get("match_id"), now)
+                unlocked = ["first_clash"]
+                if win_delta:
+                    unlocked.append("first_win")
+                self._unlock_achievements(db, user_id, unlocked, now)
+        progress = self.progression(user_id)
+        if progress is not None:
+            progress["last_reward_applied"] = applied
+            progress["last_reward_key"] = claim_key
+        return progress
 
     def claim_daily_reward(self, user_id):
         progress = self.progression(user_id)
@@ -1951,12 +1656,36 @@ class RebirthRepository:
             raise RebirthPersistenceError("Jogue pelo menos um clash antes de resgatar a recompensa diária.", "reward_locked", 409)
         reward_key = "daily_first_clash"
         now = utc_now()
-        try:
-            with self.connect() as db:
-                db.execute(
-                    "INSERT INTO reward_claims (user_id, reward_key, claimed_at) VALUES (?, ?, ?)",
+        already_claimed = False
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            claimed = self._claim_economy_idempotency(
+                db,
+                user_id,
+                key=economy_idempotency_key("xp", user_id, "daily_first_clash", reward_key),
+                scope="XP",
+                reference_id=reward_key,
+                metadata={"transaction_type": "DAILY_FIRST_CLASH", "reward_key": reward_key},
+                now=now,
+            )
+            reward_claimed = False
+            if claimed:
+                cursor = db.execute(
+                    "INSERT OR IGNORE INTO reward_claims (user_id, reward_key, claimed_at) VALUES (?, ?, ?)",
                     (user_id, reward_key, now),
                 )
+                reward_claimed = bool(cursor.rowcount)
+                if not reward_claimed:
+                    self._record_audit_event(
+                        db,
+                        action="reward_claim_replay_rejected",
+                        user_id=user_id,
+                        metadata={"reward_key": reward_key, "reference_id": reward_key},
+                        now=now,
+                    )
+            if not claimed or not reward_claimed:
+                already_claimed = True
+            else:
                 db.execute(
                     "UPDATE user_progress SET xp = xp + 25, updated_at = ? WHERE user_id = ?",
                     (now, user_id),
@@ -1969,47 +1698,107 @@ class RebirthRepository:
                     reason="daily_first_clash",
                     reference_type="reward",
                     reference_id=reward_key,
-                    metadata={"reward_key": reward_key},
+                    metadata={"reward_key": reward_key, "idempotency_key": economy_idempotency_key("xp", user_id, "daily_first_clash", reward_key)},
                     now=now,
                 )
                 self._unlock_achievements(db, user_id, ["daily_claimed"], now)
-        except sqlite3.IntegrityError as exc:
-            raise RebirthPersistenceError("A recompensa diária já foi resgatada.", "reward_already_claimed", 409) from exc
+        if already_claimed:
+            raise RebirthPersistenceError("A recompensa diária já foi resgatada.", "reward_already_claimed", 409)
         return {"reward_key": reward_key, "xp": 25, "progression": self.progression(user_id)}
 
     def complete_tutorial_step(self, user_id, step):
         step = max(1, min(4, int(step or 1)))
         now = utc_now()
-        current = self.progression(user_id)
-        if not current:
-            raise RebirthPersistenceError("O progresso da conta não foi encontrado.", "missing_progress", 404)
-        xp_delta = 60 if not current["tutorial_complete"] and step >= 4 else 10
+        reward_key = f"tutorial_step_{step}"
+        idempotency_key = economy_idempotency_key("xp", user_id, "tutorial_step", step)
+        xp_delta = 60 if step >= 4 else 10
+        applied = False
         with self.connect() as db:
-            db.execute(
-                """
-                UPDATE user_progress
-                SET tutorial_step = MAX(tutorial_step, ?),
-                    tutorial_complete = CASE WHEN ? >= 4 THEN 1 ELSE tutorial_complete END,
-                    xp = xp + ?,
-                    updated_at = ?
-                WHERE user_id = ?
-                """,
-                (step, step, xp_delta, now, user_id),
-            )
-            self._record_ledger_entry(
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute("SELECT * FROM user_progress WHERE user_id = ?", (user_id,)).fetchone()
+            if not current:
+                raise RebirthPersistenceError("O progresso da conta não foi encontrado.", "missing_progress", 404)
+            if bool(current["tutorial_complete"]) or int(current["tutorial_step"] or 0) >= step:
+                self._record_audit_event(
+                    db,
+                    action="tutorial_reward_replay_rejected",
+                    user_id=user_id,
+                    metadata={
+                        "reward_key": reward_key,
+                        "requested_step": step,
+                        "current_step": int(current["tutorial_step"] or 0),
+                        "tutorial_complete": bool(current["tutorial_complete"]),
+                    },
+                    now=now,
+                )
+            elif self._claim_economy_idempotency(
                 db,
                 user_id,
-                resource="xp",
-                delta=xp_delta,
-                reason="tutorial_step",
-                reference_type="tutorial",
-                reference_id=str(step),
-                metadata={"step": step},
+                key=idempotency_key,
+                scope="XP",
+                reference_id=reward_key,
+                metadata={"transaction_type": "TUTORIAL_REWARD", "reward_key": reward_key, "step": step},
                 now=now,
-            )
-            if step >= 4:
-                self._unlock_achievements(db, user_id, ["tutorial_complete"], now)
-        return {"step": step, "xp": xp_delta, "progression": self.progression(user_id)}
+            ):
+                reward_cursor = db.execute(
+                    "INSERT OR IGNORE INTO reward_claims (user_id, reward_key, claimed_at) VALUES (?, ?, ?)",
+                    (user_id, reward_key, now),
+                )
+                if not reward_cursor.rowcount:
+                    self._record_audit_event(
+                        db,
+                        action="reward_claim_replay_rejected",
+                        user_id=user_id,
+                        metadata={"reward_key": reward_key, "reference_id": reward_key},
+                        now=now,
+                    )
+                else:
+                    cursor = db.execute(
+                        """
+                        UPDATE user_progress
+                        SET tutorial_step = MAX(tutorial_step, ?),
+                            tutorial_complete = CASE WHEN ? >= 4 THEN 1 ELSE tutorial_complete END,
+                            xp = xp + ?,
+                            updated_at = ?
+                        WHERE user_id = ?
+                          AND tutorial_complete = 0
+                          AND tutorial_step < ?
+                        """,
+                        (step, step, xp_delta, now, user_id, step),
+                    )
+                    if cursor.rowcount:
+                        applied = True
+                        self._record_ledger_entry(
+                            db,
+                            user_id,
+                            resource="xp",
+                            delta=xp_delta,
+                            reason="tutorial_step",
+                            reference_type="tutorial",
+                            reference_id=str(step),
+                            metadata={"step": step, "idempotency_key": idempotency_key},
+                            now=now,
+                        )
+                        self._record_economy_transaction(
+                            db,
+                            user_id,
+                            "TUTORIAL_REWARD",
+                            xp_delta,
+                            "XP",
+                            reward_key,
+                            now,
+                        )
+                        if step >= 4:
+                            self._unlock_achievements(db, user_id, ["tutorial_complete"], now)
+                    else:
+                        self._record_audit_event(
+                            db,
+                            action="tutorial_reward_replay_rejected",
+                            user_id=user_id,
+                            metadata={"reward_key": reward_key, "requested_step": step, "lost_atomic_update": True},
+                            now=now,
+                        )
+        return {"step": step, "xp": xp_delta if applied else 0, "progression": self.progression(user_id), "already_claimed": not applied}
 
     def achievements(self, user_id):
         self.ensure_schema()
@@ -2075,14 +1864,15 @@ class RebirthRepository:
             db.execute(
                 """
                 INSERT INTO match_history
-                    (match_id, user_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (match_id, user_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json, runtime_state_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(match_id) DO UPDATE SET
                     status = excluded.status,
                     winner = excluded.winner,
                     updated_at = excluded.updated_at,
                     final_state_hash = excluded.final_state_hash,
-                    final_state_json = excluded.final_state_json
+                    final_state_json = excluded.final_state_json,
+                    runtime_state_json = excluded.runtime_state_json
                 """,
                 (
                     match["match_id"],
@@ -2095,6 +1885,7 @@ class RebirthRepository:
                     now,
                     state_hash(match),
                     json.dumps(public, sort_keys=True),
+                    json.dumps(match, sort_keys=True),
                 ),
             )
             for command in match.get("commands", []):
@@ -2196,6 +1987,28 @@ class RebirthRepository:
             ).fetchall()
         return [json.loads(row["event_json"]) for row in rows]
 
+    def match_state(self, user_id, match_id):
+        self.ensure_schema()
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT final_state_json FROM match_history WHERE user_id = ? AND match_id = ?",
+                (user_id, match_id),
+            ).fetchone()
+        if not row:
+            raise RebirthPersistenceError("Historico da partida nao encontrado.", "missing_match", status=404)
+        return json.loads(row["final_state_json"])
+
+    def runtime_match_state(self, user_id, match_id):
+        self.ensure_schema()
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT runtime_state_json FROM match_history WHERE user_id = ? AND match_id = ?",
+                (user_id, match_id),
+            ).fetchone()
+        if not row:
+            raise RebirthPersistenceError("Historico da partida nao encontrado.", "missing_match", status=404)
+        return json.loads(row["runtime_state_json"])
+
     def economy_ledger(self, user_id, limit=30):
         self.ensure_schema()
         limit = max(1, min(int(limit or 30), 100))
@@ -2241,66 +2054,140 @@ class RebirthRepository:
         self.ensure_schema()
         now = utc_now()
         with self.connect() as db:
+            progress = db.execute("SELECT xp FROM user_progress WHERE user_id = ?", (user_id,)).fetchone()
+            xp = int(progress["xp"] or 0) if progress else 0
+            if xp:
+                self._record_ledger_entry(
+                    db,
+                    user_id,
+                    resource="xp",
+                    delta=-xp,
+                    reason="account_reset_compensation",
+                    reference_type="account_reset",
+                    reference_id=str(user_id),
+                    metadata={"previous_balance": xp},
+                    now=now,
+                )
+                self._record_economy_transaction(db, user_id, "ACCOUNT_RESET", -xp, "XP", f"reset:{user_id}:{now}", now)
+            for currency in ("GOLD", "COINZ"):
+                balance = self._currency_balance(db, user_id, currency)
+                if balance > 0:
+                    self._record_wallet_entry(
+                        db,
+                        user_id,
+                        currency=currency,
+                        entry_type="DEBIT",
+                        amount=balance,
+                        source="ACCOUNT_RESET",
+                        reference_id=f"reset:{user_id}:{now}",
+                        now=now,
+                    )
+                    self._record_ledger_entry(
+                        db,
+                        user_id,
+                        resource=currency.lower(),
+                        delta=-balance,
+                        reason="account_reset_compensation",
+                        reference_type="account_reset",
+                        reference_id=str(user_id),
+                        metadata={"currency": currency, "previous_balance": balance},
+                        now=now,
+                    )
+                    self._record_economy_transaction(db, user_id, "ACCOUNT_RESET", -balance, currency, f"reset:{user_id}:{now}", now)
+            cards = db.execute("SELECT card_id, copies FROM user_collection WHERE user_id = ?", (user_id,)).fetchall()
+            for card in cards:
+                copies = int(card["copies"] or 0)
+                if copies:
+                    self._record_ledger_entry(
+                        db,
+                        user_id,
+                        resource=f"card:{card['card_id']}",
+                        delta=-copies,
+                        reason="account_reset_compensation",
+                        reference_type="account_reset",
+                        reference_id=str(user_id),
+                        metadata={"card_id": card["card_id"], "copies": copies},
+                        now=now,
+                    )
+            db.execute("UPDATE market_offers SET status = 'CANCELLED' WHERE seller_id = ? AND status = 'ACTIVE'", (user_id,))
             db.execute("DELETE FROM user_collection WHERE user_id = ?", (user_id,))
             db.execute("DELETE FROM user_loadout WHERE user_id = ?", (user_id,))
-            db.execute("DELETE FROM reward_claims WHERE user_id = ?", (user_id,))
-            db.execute("DELETE FROM booster_history WHERE user_id = ?", (user_id,))
-            db.execute("DELETE FROM user_achievements WHERE user_id = ?", (user_id,))
-            db.execute("DELETE FROM economy_ledger WHERE user_id = ?", (user_id,))
-            db.execute("DELETE FROM wallet_ledger WHERE user_id = ?", (user_id,))
-            db.execute("DELETE FROM match_history WHERE user_id = ?", (user_id,))
             db.execute("DELETE FROM user_progress WHERE user_id = ?", (user_id,))
             self._seed_user_state(db, user_id, now)
         return self.support_export(user_id)
 
-    def admin_grant(self, actor, user_id, *, resource, amount=1, card_id=None, reason="admin_grant"):
+    def admin_grant(self, actor, user_id, *, resource, amount=1, card_id=None, reason="admin_grant", idempotency_key=None):
         self.ensure_schema()
         now = utc_now()
         amount = int(amount or 1)
         resource = str(resource or "").strip()
+        supplied_idempotency_key = str(idempotency_key or "").strip()
+        admin_replay = False
         with self.connect() as db:
             user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
             if not user:
                 raise RebirthPersistenceError("O jogador Rebirth de destino não foi encontrado.", "missing_user", 404)
             if resource == "xp":
-                db.execute(
-                    "UPDATE user_progress SET xp = xp + ?, updated_at = ? WHERE user_id = ?",
-                    (amount, now, user_id),
-                )
-                self._record_ledger_entry(
+                if supplied_idempotency_key and not self._claim_economy_idempotency(
                     db,
                     user_id,
-                    resource="xp",
-                    delta=amount,
-                    reason=reason,
-                    reference_type="admin",
+                    key=economy_idempotency_key("xp", user_id, "admin_grant", supplied_idempotency_key),
+                    scope="XP",
                     reference_id=str(actor),
-                    metadata={"actor": actor},
+                    metadata={"actor": actor, "amount": amount, "reason": reason},
                     now=now,
-                )
+                ):
+                    admin_replay = True
+                else:
+                    db.execute(
+                        "UPDATE user_progress SET xp = xp + ?, updated_at = ? WHERE user_id = ?",
+                        (amount, now, user_id),
+                    )
+                    self._record_ledger_entry(
+                        db,
+                        user_id,
+                        resource="xp",
+                        delta=amount,
+                        reason=reason,
+                        reference_type="admin",
+                        reference_id=str(actor),
+                        metadata={"actor": actor, "idempotency_key": supplied_idempotency_key},
+                        now=now,
+                    )
             elif resource.upper() in {"GOLD", "COINZ", "COINS", "PREMIUM", "GEMS"}:
                 currency = normalize_wallet_currency(resource)
-                self._record_wallet_entry(
+                if currency == "COINZ" and supplied_idempotency_key and not self._claim_economy_idempotency(
                     db,
                     user_id,
-                    currency=currency,
-                    entry_type="CREDIT" if amount >= 0 else "DEBIT",
-                    amount=abs(amount),
-                    source="MATCH_REWARD",
+                    key=economy_idempotency_key("coinz", user_id, "admin_grant", supplied_idempotency_key),
+                    scope="COINZ",
                     reference_id=str(actor),
+                    metadata={"actor": actor, "amount": amount, "reason": reason, "currency": currency},
                     now=now,
-                )
-                self._record_ledger_entry(
-                    db,
-                    user_id,
-                    resource=currency.lower(),
-                    delta=amount,
-                    reason=reason,
-                    reference_type="admin",
-                    reference_id=str(actor),
-                    metadata={"actor": actor, "currency": currency},
-                    now=now,
-                )
+                ):
+                    admin_replay = True
+                else:
+                    self._record_wallet_entry(
+                        db,
+                        user_id,
+                        currency=currency,
+                        entry_type="CREDIT" if amount >= 0 else "DEBIT",
+                        amount=abs(amount),
+                        source="MATCH_REWARD",
+                        reference_id=str(actor),
+                        now=now,
+                    )
+                    self._record_ledger_entry(
+                        db,
+                        user_id,
+                        resource=currency.lower(),
+                        delta=amount,
+                        reason=reason,
+                        reference_type="admin",
+                        reference_id=str(actor),
+                        metadata={"actor": actor, "currency": currency, "idempotency_key": supplied_idempotency_key},
+                        now=now,
+                    )
             elif resource == "card":
                 card = get_card(card_id)
                 db.execute(
@@ -2326,20 +2213,29 @@ class RebirthRepository:
                 )
             else:
                 raise RebirthPersistenceError("A concessão administrativa aceita xp, card, GOLD ou COINZ.", "invalid_admin_grant", 400)
-            db.execute(
-                """
-                INSERT INTO admin_audit_log (actor, action, user_id, metadata_json, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    str(actor),
-                    "grant",
-                    user_id,
-                    json.dumps(
-                        {"resource": resource, "amount": amount, "card_id": card_id, "reason": reason},
-                        sort_keys=True,
+            if not admin_replay:
+                db.execute(
+                    """
+                    INSERT INTO admin_audit_log (actor, action, user_id, metadata_json, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(actor),
+                        "grant",
+                        user_id,
+                        json.dumps(
+                            {
+                                "resource": resource,
+                                "amount": amount,
+                                "card_id": card_id,
+                                "reason": reason,
+                                "idempotency_key": supplied_idempotency_key,
+                            },
+                            sort_keys=True,
+                        ),
+                        now,
                     ),
-                    now,
-                ),
-            )
+                )
+        if admin_replay:
+            raise RebirthPersistenceError("Esta transação administrativa já foi liquidada.", "transaction_replayed", 409)
         return self.support_export(user_id)

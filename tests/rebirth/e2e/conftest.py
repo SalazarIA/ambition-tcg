@@ -59,10 +59,13 @@ def live_server(tmp_path_factory) -> Iterator[str]:
     db_path = tmp_path_factory.mktemp("rebirth-e2e") / "rebirth-e2e.db"
 
     env = os.environ.copy()
+    env.pop("REBIRTH_DATABASE_URL", None)
+    env.pop("DATABASE_URL", None)
     env.update(
         {
             "PORT": str(port),
             "REBIRTH_DB_PATH": str(db_path),
+            "REBIRTH_ALLOW_SQLITE_TESTING": "true",
             "REBIRTH_REQUIRE_CSRF": "false",
             "SECRET_KEY": "rebirth-e2e-secret",
             # Avoid debug=True (auto-reloader fights pytest)

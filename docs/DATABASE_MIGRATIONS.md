@@ -1,73 +1,46 @@
-# Ambitionz Database Migrations
+# Ambitionz Rebirth Database Migrations
 
-Ambitionz now supports Flask-Migrate/Alembic.
+## Production Rule
 
-## Current Strategy
+PostgreSQL is the only production persistence backend. The active schema is
+owned by `services/rebirth_schema.py`; startup never creates or modifies
+production tables implicitly.
 
-The project still keeps the beta schema guards:
-
-- ensure_database_schema()
-- ensure_liveops_schema(app)
-- db.create_all()
-
-They are kept temporarily as safety fallback while the migration workflow is introduced.
-
-## Local setup
-
-Install dependencies:
+Render runs the additive migration gate before Gunicorn:
 
 ```bash
-pip install -r requirements.txt
+python -m services.rebirth_schema upgrade
 ```
 
-Initialize migrations if the folder does not exist:
+The application then rejects `/health` with HTTP `503` unless the connection is
+available and the current schema version is installed.
+
+## Current Versions
+
+| Version | Purpose |
+| --- | --- |
+| `1` | Single PostgreSQL source for accounts, sessions, cards, progression, wallet, immutable ledgers, market, telemetry and match history. |
+| `2` | Authoritative `runtime_state_json` for authenticated match recovery after a process restart. |
+
+## Local PostgreSQL Validation
 
 ```bash
-flask --app app db init
+export REBIRTH_DATABASE_URL='postgresql://user:password@localhost:5432/ambitionz'
+python -m services.rebirth_schema upgrade
+python -m services.rebirth_schema check
+pytest tests/rebirth -m requires_postgres -q
 ```
 
-Create an empty baseline revision for existing databases:
+SQLite may be used only by isolated local tests through `TESTING` or
+`REBIRTH_ALLOW_SQLITE_TESTING=true`; it is not a production fallback.
 
-```bash
-flask --app app db revision -m "baseline existing schema"
-```
+## Rollout And Rollback
 
-Mark the current database as latest without applying destructive changes:
-
-```bash
-flask --app app db stamp head
-```
-
-For future model changes:
-
-```bash
-flask --app app db migrate -m "describe change"
-flask --app app db upgrade
-```
-
-## Production rule
-
-Do not run destructive migrations on Render without a database backup.
-
-Render is configured with:
-
-```yaml
-preDeployCommand: flask --app app db upgrade
-```
-
-This keeps migrations separate from the Gunicorn start command. Treat every model/schema change as a deploy gate: create the Alembic revision locally, review it, commit it, then take a Render PostgreSQL backup before deploying the build that contains it.
-
-Recommended production order:
-
-1. Confirm the migration revision exists in `migrations/versions`.
-2. Review the generated migration for destructive operations.
-3. Run tests locally.
-4. Backup PostgreSQL in Render.
-5. Deploy the candidate build.
-6. Confirm the pre-deploy migration step passed.
-7. Confirm `/health`.
-8. Run login/register/training/arena smoke tests.
-
-## Important
-
-db.create_all() does not alter existing tables. Alembic should become the source of truth after baseline.
+1. Back up the Render PostgreSQL database.
+2. Run default pytest, E2E smoke tests and the PostgreSQL-marked tests in CI.
+3. Deploy the build; verify the pre-deploy migration succeeds.
+4. Verify `/health`, registration, authenticated match resume, booster open and
+   market-in-Ouro smoke paths.
+5. Roll back application code only after retaining the database backup. Current
+   migrations are additive, so old data is preserved; do not delete ledger
+   rows during rollback.

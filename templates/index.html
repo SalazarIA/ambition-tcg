@@ -8,8 +8,8 @@
     <meta name="description" content="Ambitionz Rebirth e uma plataforma TCG de fantasia sombria para duelar, colecionar e abrir boosters.">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-057">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-058">
 </head>
 <body class="rb-page rb-home-page rb-landing-page">
     {% include "_rebirth_global_nav.html" %}
@@ -48,7 +48,7 @@
                     </div>
                 </div>
                 <article class="rb-preview-card">
-                    <div class="rb-card-art" style="background-image: url('{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}')"></div>
+                    <div class="rb-card-art" style="background-image: url('{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}')"></div>
                     <div class="rb-card-body">
                         <span>Fera - Nível 1</span>
                         <strong>Dreadclaw</strong>
@@ -93,7 +93,7 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-057"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-057"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-058"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-058"></script>
 </body>
 </html>

@@ -1,14 +1,11 @@
-const CACHE_NAME = "ambitionz-rebirth-season0-v57";
+const CACHE_NAME = "ambitionz-rebirth-foundation-v58";
 
+// Keep authentication, wallet and profile HTML network-owned. Only immutable
+// presentation resources belong in the install cache.
+const PLAYER_STATE_API_DENY_RE = /^\/api\/(?:rebirth\/)?(?:wallet|profile|market)(?:\/|$)/;
+const DYNAMIC_REBIRTH_API_DENY_RE = /^\/api\/rebirth\/(?:session|progression|collection|match-history|economy-ledger|onboarding)(?:\/|$)/;
+const FALLBACK_WEBP_ART_RE = /^\/static\/assets\/rebirth\/cards\/dreadclaw-art\.webp$/;
 const CORE_ASSETS = [
-    "/",
-    "/rebirth",
-    "/rebirth/account",
-    "/rebirth/collection",
-    "/rebirth/shop",
-    "/rebirth/progression",
-    "/rebirth/profile",
-    "/rebirth/lab",
     "/manifest.webmanifest",
     "/static/manifest.webmanifest",
     "/static/css/rebirth.css",
@@ -17,32 +14,30 @@ const CORE_ASSETS = [
     "/static/js/rebirth_product.js",
     "/static/js/pwa.js",
     "/static/assets/rebirth/manifest.json",
-    "/static/assets/rebirth/cards/dreadclaw-art.png",
-    "/static/assets/rebirth/cards/dreadmaw-art.png",
-    "/static/assets/rebirth/cards/stoneshell-art.png",
-    "/static/assets/rebirth/cards/stonewarden-art.png",
-    "/static/assets/rebirth/cards/shadewisp-art.png",
-    "/static/assets/rebirth/cards/skywarden-art.png",
-    "/static/assets/rebirth/cards/stormwarden-art.png",
-    "/static/assets/rebirth/cards/ironbastion-art.png",
-    "/static/assets/rebirth/cards/ironbulwark-art.png",
-    "/static/assets/rebirth/cards/embermaw-art.png",
-    "/static/assets/rebirth/cards/embermaw-alpha-art.png",
-    "/static/assets/rebirth/cards/voidstalker-art.png",
-    "/static/assets/rebirth/cards/nightfang-art.png",
+    "/static/assets/rebirth/cards/dreadclaw-art.webp",
     "/static/assets/rebirth/ui/bot-card-back.png",
     "/static/assets/rebirth/ui/bot-emblem.png",
     "/static/icons/icon.svg",
     "/static/icons/icon-192.png",
     "/static/icons/icon-512.png"
 ];
+const CORE_ASSET_SET = new Set(CORE_ASSETS);
+
+function isPlayerStateRequest(url) {
+    return PLAYER_STATE_API_DENY_RE.test(url.pathname) || DYNAMIC_REBIRTH_API_DENY_RE.test(url.pathname);
+}
+
+function isCacheableAppShellRequest(url) {
+    if (url.origin !== self.location.origin) {
+        return false;
+    }
+    return CORE_ASSET_SET.has(url.pathname) || FALLBACK_WEBP_ART_RE.test(url.pathname);
+}
 
 self.addEventListener("install", function (event) {
     event.waitUntil(
         caches.open(CACHE_NAME).then(function (cache) {
-            return cache.addAll(CORE_ASSETS).catch(function () {
-                return Promise.resolve();
-            });
+            return cache.addAll(CORE_ASSETS);
         })
     );
     self.skipWaiting();
@@ -54,7 +49,7 @@ self.addEventListener("activate", function (event) {
             return Promise.all(
                 keys
                     .filter(function (key) {
-                        return key !== CACHE_NAME;
+                        return key.startsWith("ambitionz-rebirth-") && key !== CACHE_NAME;
                     })
                     .map(function (key) {
                         return caches.delete(key);
@@ -77,29 +72,25 @@ self.addEventListener("fetch", function (event) {
     }
 
     const url = new URL(event.request.url);
-    if (url.pathname.startsWith("/api/")) {
+    if (isPlayerStateRequest(url) || url.pathname.startsWith("/api/") || event.request.mode === "navigate") {
+        event.respondWith(fetch(event.request));
         return;
     }
 
-    if (event.request.mode === "navigate") {
-        event.respondWith(
-            fetch(event.request).catch(function () {
-                return caches.match("/rebirth");
-            })
-        );
+    if (!isCacheableAppShellRequest(url)) {
         return;
     }
 
     event.respondWith(
-        caches.match(event.request).then(function (cached) {
-            return cached || fetch(event.request).then(function (response) {
-                if (response && response.ok && url.origin === self.location.origin) {
-                    const copy = response.clone();
-                    caches.open(CACHE_NAME).then(function (cache) {
-                        cache.put(event.request, copy);
-                    });
-                }
-                return response;
+        caches.open(CACHE_NAME).then(function (cache) {
+            return cache.match(event.request).then(function (cached) {
+                const network = fetch(event.request).then(function (response) {
+                    if (response && response.ok) {
+                        cache.put(event.request, response.clone());
+                    }
+                    return response;
+                });
+                return cached || network;
             });
         })
     );

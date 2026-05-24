@@ -124,6 +124,41 @@ def test_no_console_errors_on_arena_load(page, live_server):
     assert not errors, f"console errors on /rebirth load:\n  - " + "\n  - ".join(errors)
 
 
+def test_mobile_arena_is_native_and_keeps_touch_targets_readable(page, live_server):
+    """The phone layout must not scale down desktop controls below touch size."""
+    if page.viewport_size["width"] > 760:
+        pytest.skip("mobile viewport assertion")
+
+    page.goto(f"{live_server}/rebirth")
+    page.locator("#player-battlefield .rb-field-slot-empty").first.wait_for(state="visible", timeout=10_000)
+    measurements = page.evaluate(
+        """() => {
+            const body = getComputedStyle(document.body);
+            const board = getComputedStyle(document.getElementById("rebirth-board"));
+            const play = document.getElementById("play-button").getBoundingClientRect();
+            const nextTurn = document.getElementById("next-turn-button").getBoundingClientRect();
+            const slot = document.querySelector("#player-battlefield .rb-field-slot-empty").getBoundingClientRect();
+            return {
+                mobile: document.body.classList.contains("rb-mobile-native"),
+                transform: board.transform,
+                overflowY: body.overflowY,
+                touchAction: body.touchAction,
+                playHeight: play.height,
+                nextHeight: nextTurn.height,
+                slotHeight: slot.height
+            };
+        }"""
+    )
+
+    assert measurements["mobile"] is True
+    assert measurements["transform"] == "none"
+    assert measurements["overflowY"] == "auto"
+    assert "pan-y" in measurements["touchAction"]
+    assert measurements["playHeight"] >= 48
+    assert measurements["nextHeight"] >= 48
+    assert measurements["slotHeight"] >= 112
+
+
 # --- signature / shop regression guards -----------------------------------
 
 

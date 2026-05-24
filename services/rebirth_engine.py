@@ -730,6 +730,9 @@ def _bot_auto_summon(match):
             player_wounded=match["player"].get("wounded", False),
             bot_wounded=match["bot"].get("wounded", False),
             match_id=match.get("match_id"),
+            bot_battlefield=compact_battlefield(match["bot"]),
+            player_battlefield=compact_battlefield(match["player"]),
+            player_hp=match["player"].get("hp", 30),
         )
         if decision:
             chosen = next((card for card in affordable if card.get("instance_id") == decision.get("instance_id")), None)

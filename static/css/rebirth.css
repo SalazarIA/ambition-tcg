@@ -3340,7 +3340,7 @@ button {
     border: 1px solid rgba(244, 173, 38, 0.58);
     background:
         linear-gradient(180deg, rgba(244, 173, 38, 0.18), transparent),
-        url("../assets/rebirth/cards/dreadclaw-art.png") center / cover no-repeat;
+        url("../assets/rebirth/cards/dreadclaw-art.webp") center / cover no-repeat;
     clip-path: var(--rb-cut);
 }
 
@@ -6836,5 +6836,329 @@ button {
     .vfx-finale-overlay .vfx-finale-curtain,
     .vfx-finale-overlay .vfx-finale-text {
         transition: none !important;
+    }
+}
+
+/* v58: native touch layout. Mobile no longer shrinks the desktop canvas. */
+@media (max-width: 760px) {
+    body.rb-game-page.rb-mobile-native {
+        --rb-touch-target-min: 44px;
+        --rb-touch-target-comfort: 48px;
+        position: relative;
+        inset: auto;
+        width: auto;
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+    }
+
+    .rb-mobile-native :where(button, a, [role="button"], .rb-field-card, .rb-field-slot-empty) {
+        min-width: var(--rb-touch-target-min);
+        min-height: var(--rb-touch-target-min);
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .rb-mobile-native .rb-global-tabs a,
+    .rb-mobile-native .rb-nav-auth {
+        min-height: var(--rb-touch-target-min);
+        padding-block: 11px;
+    }
+
+    .rb-mobile-native .rb-game-viewport {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        height: auto;
+        min-height: 100dvh;
+        display: block;
+        overflow: visible;
+        contain: layout paint;
+        transform: translateZ(0);
+        transform-origin: center center;
+        will-change: transform;
+        padding:
+            calc(var(--rb-mobile-nav-height, 152px) + var(--rb-safe-top) + 10px)
+            max(8px, var(--rb-safe-right))
+            calc(78px + var(--rb-safe-bottom))
+            max(8px, var(--rb-safe-left));
+    }
+
+    .rb-mobile-native .rb-game-viewport.vfx-screen-shake,
+    .rb-mobile-native .rb-game-viewport.is-screen-shaking {
+        contain: layout paint;
+        transform-origin: center center;
+    }
+
+    .rb-mobile-native .rb-game-board {
+        position: relative;
+        left: auto;
+        top: auto;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0;
+        overflow: visible;
+        transform: none;
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+        contain: layout paint;
+        display: grid;
+        grid-template-areas:
+            "hud"
+            "arena"
+            "evo"
+            "hand"
+            "actions"
+            "result"
+            "log";
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto;
+        gap: 12px;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .rb-mobile-native .rb-game-board.vfx-board-shatter,
+    .rb-mobile-native .vfx-evolution-clone,
+    .rb-mobile-native .vfx-evolution-rune,
+    .rb-mobile-native .vfx-evolution-burst {
+        transform-origin: center center;
+        will-change: transform, opacity;
+    }
+
+    .rb-mobile-native .rb-hud,
+    .rb-mobile-native .rb-battle-zone,
+    .rb-mobile-native .rb-player-hand,
+    .rb-mobile-native .rb-actions-row,
+    .rb-mobile-native .rb-result-panel,
+    .rb-mobile-native .rb-log,
+    .rb-mobile-native .rb-evolution-panel {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+    }
+
+    .rb-mobile-native .rb-hud {
+        grid-area: hud;
+        min-height: 90px;
+        grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
+    }
+
+    .rb-mobile-native .rb-hud-side {
+        min-height: 90px;
+        display: block;
+        padding: 10px 8px;
+    }
+
+    .rb-mobile-native .rb-hud-copy > span {
+        font-size: 10px;
+    }
+
+    .rb-mobile-native .rb-mark,
+    .rb-mobile-native .rb-bot-emblem {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-hud-health strong,
+    .rb-mobile-native .rb-turn-core strong {
+        font-size: 28px;
+    }
+
+    .rb-mobile-native .rb-hp-meter {
+        width: 100%;
+        height: 7px;
+    }
+
+    .rb-mobile-native .rb-zone-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 3px;
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-turn-core {
+        padding: 10px 3px;
+    }
+
+    .rb-mobile-native .rb-turn-core small {
+        font-size: 7px;
+    }
+
+    .rb-mobile-native .rb-battle-zone {
+        grid-area: arena;
+        min-height: 386px;
+        display: grid;
+        grid-template-rows: minmax(166px, 1fr) 30px minmax(166px, 1fr);
+        gap: 6px;
+        padding: 8px 6px;
+    }
+
+    .rb-mobile-native .rb-field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        align-content: center;
+    }
+
+    .rb-mobile-native .rb-field-row > span {
+        font-size: 10px;
+        padding-inline: 4px;
+    }
+
+    .rb-mobile-native .rb-field-slots {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .rb-mobile-native .rb-field-card,
+    .rb-mobile-native .rb-field-slot-empty {
+        height: clamp(112px, 31vw, 132px);
+        min-height: 112px;
+        transform-origin: center center;
+        backface-visibility: hidden;
+    }
+
+    .rb-mobile-native .rb-field-card {
+        --cost-size: 27px;
+        --medal-size: 29px;
+        --text-pad-x: 34px;
+    }
+
+    .rb-mobile-native .rb-field-card .rb-card-textbox p {
+        font-size: 7px;
+        line-height: 1.12;
+    }
+
+    .rb-mobile-native .rb-card-stage {
+        display: contents;
+    }
+
+    .rb-mobile-native .rb-monster-card-main {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-evolution-panel {
+        grid-area: evo;
+        display: grid;
+        grid-template-columns: auto 62px 1fr auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 72px;
+        padding: 8px;
+    }
+
+    .rb-mobile-native .rb-evolution-thumb {
+        width: 58px;
+        height: 58px;
+    }
+
+    .rb-mobile-native .rb-evolution-panel small {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-combine-button {
+        width: auto;
+        min-width: 78px;
+        min-height: 48px;
+        font-size: 13px;
+    }
+
+    .rb-mobile-native .rb-player-hand {
+        grid-area: hand;
+        min-height: 174px;
+        overflow: visible;
+    }
+
+    .rb-mobile-native .rb-hand {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: clamp(116px, 35vw, 142px);
+        grid-template-columns: none;
+        gap: 8px;
+        height: 164px;
+        overflow-x: auto;
+        overflow-y: visible;
+        padding: 8px 2px 4px;
+        scroll-snap-type: x proximity;
+        touch-action: pan-x;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card {
+        width: 100%;
+        height: 150px;
+        min-height: 150px;
+        scroll-snap-align: start;
+    }
+
+    .rb-mobile-native .rb-actions-row {
+        grid-area: actions;
+        position: sticky;
+        bottom: calc(8px + var(--rb-safe-bottom));
+        z-index: 60;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 8px;
+        background: rgba(5, 7, 10, 0.96);
+        border: 1px solid rgba(244, 173, 38, 0.22);
+    }
+
+    .rb-mobile-native .rb-actions-row > div {
+        gap: 4px;
+    }
+
+    .rb-mobile-native #next-turn-button.rb-button-secondary,
+    .rb-mobile-native #play-button.rb-button-primary,
+    .rb-mobile-native .rb-actions-row .rb-cta,
+    .rb-mobile-native .rb-actions-row .rb-secondary {
+        width: 100%;
+        min-width: 0;
+        min-height: 52px;
+        font-size: 14px;
+    }
+
+    .rb-mobile-native .rb-actions-row small {
+        font-size: 9px;
+    }
+
+    .rb-mobile-native .rb-result-panel {
+        grid-area: result;
+        padding: 12px;
+    }
+
+    .rb-mobile-native .rb-result-panel .rb-secondary {
+        min-height: 48px;
+    }
+
+    .rb-mobile-native .rb-log,
+    .rb-mobile-native .rb-log:not(.is-open),
+    .rb-mobile-native .rb-log.is-open {
+        grid-area: log;
+        width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-width: 760px) and (orientation: landscape) {
+    .rb-mobile-native .rb-game-viewport {
+        padding-top: calc(var(--rb-mobile-nav-height, 70px) + var(--rb-safe-top) + 8px);
+    }
+
+    .rb-mobile-native .rb-game-board {
+        grid-template-areas:
+            "hud hud"
+            "arena hand"
+            "arena evo"
+            "actions actions"
+            "result log";
+        grid-template-columns: minmax(330px, 1.15fr) minmax(250px, 0.85fr);
+    }
+
+    .rb-mobile-native .rb-battle-zone {
+        min-height: 352px;
     }
 }

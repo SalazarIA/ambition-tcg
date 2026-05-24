@@ -258,6 +258,58 @@ def test_profile_achievements_follow_rebirth_actions(client):
     assert profile["unlocked_achievements"] >= 5
 
 
+def test_tutorial_reward_is_idempotent_and_cannot_farm_xp(client):
+    register(client, username="tutorial_once", email="tutorial-once@example.com")
+
+    first = client.post("/api/rebirth/onboarding/complete", json={"step": 4}).get_json()["tutorial"]
+    repeated = client.post("/api/rebirth/onboarding/complete", json={"step": 4}).get_json()["tutorial"]
+
+    assert first["xp"] == 60
+    assert first["already_claimed"] is False
+    assert repeated["xp"] == 0
+    assert repeated["already_claimed"] is True
+    assert repeated["progression"]["xp"] == first["progression"]["xp"]
+
+
+def test_replayed_clash_state_cannot_duplicate_xp_or_transaction(client, flask_app):
+    registered = register(client, username="clash_once", email="clash-once@example.com").get_json()
+    user_id = registered["account"]["user"]["id"]
+    start = client.post("/api/rebirth/start", json={"seed": "clash-replay"}).get_json()["state"]
+    first = summon_and_attack(client, start).get_json()
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+
+    xp_after_first = first["progression"]["xp"]
+    replayed = repo.record_clash_result(user_id, first["state"])
+    with repo.connect() as db:
+        transactions = db.execute(
+            "SELECT COUNT(*) AS amount FROM economy_transactions WHERE user_id = ? AND transaction_type = 'MATCH_CLASH'",
+            (user_id,),
+        ).fetchone()["amount"]
+        replay_audit = db.execute(
+            "SELECT COUNT(*) AS amount FROM admin_audit_log WHERE user_id = ? AND action = 'economy_replay_rejected'",
+            (user_id,),
+        ).fetchone()["amount"]
+
+    assert replayed["xp"] == xp_after_first
+    assert replayed["clashes"] == 1
+    assert replayed["last_reward_applied"] is False
+    assert transactions == 1
+    assert replay_audit >= 1
+
+
+def test_coinz_receipt_credit_is_disabled_until_official_store_validation(client):
+    register(client, username="no_purchase", email="no-purchase@example.com")
+
+    response = client.post(
+        "/api/rebirth/shop/verify-receipt",
+        json={"platform": "google_play", "product_id": "coins_1200", "receipt": "simulated-forged"},
+    )
+
+    assert response.status_code == 410
+    assert response.get_json()["error"]["code"] == "monetization_disabled"
+    assert client.get("/api/rebirth/wallet").get_json()["wallet"]["COINZ"] == 0
+
+
 def test_balance_simulation_is_capped_and_deterministic(client):
     response = client.get("/api/rebirth/balance/simulate?matches=500")
     payload = response.get_json()["balance"]

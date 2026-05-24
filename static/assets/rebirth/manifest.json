@@ -1,26 +1,26 @@
 {
   "product": "Ambitionz Rebirth",
-  "version": "rebirth-021",
+  "version": "rebirth-058",
   "ui": {
     "bot_card_back": "/static/assets/rebirth/ui/bot-card-back.png",
     "bot_emblem": "/static/assets/rebirth/ui/bot-emblem.png"
   },
   "cards": {
-    "dreadclaw": "/static/assets/rebirth/cards/dreadclaw-art.png",
-    "dreadmaw": "/static/assets/rebirth/cards/dreadmaw-art.png",
-    "stoneshell": "/static/assets/rebirth/cards/stoneshell-art.png",
-    "stonewarden": "/static/assets/rebirth/cards/stonewarden-art.png",
-    "shadewisp": "/static/assets/rebirth/cards/shadewisp-art.png",
-    "skywarden": "/static/assets/rebirth/cards/skywarden-art.png",
-    "stormwarden": "/static/assets/rebirth/cards/stormwarden-art.png",
-    "ironbastion": "/static/assets/rebirth/cards/ironbastion-art.png",
-    "ironbulwark": "/static/assets/rebirth/cards/ironbulwark-art.png",
-    "embermaw": "/static/assets/rebirth/cards/embermaw-art.png",
-    "embermaw_alpha": "/static/assets/rebirth/cards/embermaw-alpha-art.png",
-    "voidstalker": "/static/assets/rebirth/cards/voidstalker-art.png",
-    "nightfang": "/static/assets/rebirth/cards/nightfang-art.png"
+    "dreadclaw": "/static/assets/rebirth/cards/dreadclaw-art.webp",
+    "dreadmaw": "/static/assets/rebirth/cards/dreadmaw-art.webp",
+    "stoneshell": "/static/assets/rebirth/cards/stoneshell-art.webp",
+    "stonewarden": "/static/assets/rebirth/cards/stonewarden-art.webp",
+    "shadewisp": "/static/assets/rebirth/cards/shadewisp-art.webp",
+    "skywarden": "/static/assets/rebirth/cards/skywarden-art.webp",
+    "stormwarden": "/static/assets/rebirth/cards/stormwarden-art.webp",
+    "ironbastion": "/static/assets/rebirth/cards/ironbastion-art.webp",
+    "ironbulwark": "/static/assets/rebirth/cards/ironbulwark-art.webp",
+    "embermaw": "/static/assets/rebirth/cards/embermaw-art.webp",
+    "embermaw_alpha": "/static/assets/rebirth/cards/embermaw-alpha-art.webp",
+    "voidstalker": "/static/assets/rebirth/cards/voidstalker-art.webp",
+    "nightfang": "/static/assets/rebirth/cards/nightfang-art.webp"
   },
   "fallbacks": {
-    "card_art": "/static/assets/rebirth/cards/dreadclaw-art.png"
+    "card_art": "/static/assets/rebirth/cards/dreadclaw-art.webp"
   }
 }

@@ -1,5 +1,8 @@
 # Ambitionz Rebirth Architecture
 
+> Foundation v58 (2026-05-23) supersedes earlier SQLite and scaled-mobile
+> notes in this document. See `docs/AAA_FOUNDATION_V58.md` for release gates.
+
 Ambitionz Rebirth is the active Ambitionz product surface. The current architecture is a Flask-served, JSON-driven, single-screen browser game with a pure Python rules engine and DOM-rendered HUD/game UI.
 
 ## Active Runtime Files
@@ -282,11 +285,9 @@ actions for signed-in players.
 `/rebirth` is a fixed cockpit, not a long page.
 
 - Base board: `852px x 1846px`.
-- Scale: `min(viewportWidth / 852, viewportHeight / 1846)`.
-- Board is centered in the viewport.
-- `html`, `body` and `.rb-game-viewport` do not document-scroll.
-- Mouse wheel is prevented from moving the page.
-- Touchmove outside approved micro-areas is prevented.
+- Desktop scales and centers the cinematic board where appropriate.
+- Mobile uses a native vertical battlefield with page scroll and 48px+ actions.
+- Landscape phones use a two-column battle/hand arrangement.
 
 Allowed internal overflow is limited to controlled UI areas such as the hand/log if future density requires it.
 
@@ -300,54 +301,51 @@ static/assets/rebirth/manifest.json
 
 Primary active assets:
 
-- `/static/assets/rebirth/cards/dreadclaw-art.png`
-- `/static/assets/rebirth/cards/dreadmaw-art.png`
-- `/static/assets/rebirth/cards/stoneshell-art.png`
-- `/static/assets/rebirth/cards/stonewarden-art.png`
-- `/static/assets/rebirth/cards/shadewisp-art.png`
-- `/static/assets/rebirth/cards/skywarden-art.png`
-- `/static/assets/rebirth/cards/stormwarden-art.png`
-- `/static/assets/rebirth/cards/ironbastion-art.png`
-- `/static/assets/rebirth/cards/ironbulwark-art.png`
-- `/static/assets/rebirth/cards/embermaw-art.png`
-- `/static/assets/rebirth/cards/embermaw-alpha-art.png`
-- `/static/assets/rebirth/cards/voidstalker-art.png`
-- `/static/assets/rebirth/cards/nightfang-art.png`
+- `/static/assets/rebirth/cards/dreadclaw-art.webp`
+- `/static/assets/rebirth/cards/dreadmaw-art.webp`
+- `/static/assets/rebirth/cards/stoneshell-art.webp`
+- `/static/assets/rebirth/cards/stonewarden-art.webp`
+- `/static/assets/rebirth/cards/shadewisp-art.webp`
+- `/static/assets/rebirth/cards/skywarden-art.webp`
+- `/static/assets/rebirth/cards/stormwarden-art.webp`
+- `/static/assets/rebirth/cards/ironbastion-art.webp`
+- `/static/assets/rebirth/cards/ironbulwark-art.webp`
+- `/static/assets/rebirth/cards/embermaw-art.webp`
+- `/static/assets/rebirth/cards/embermaw-alpha-art.webp`
+- `/static/assets/rebirth/cards/voidstalker-art.webp`
+- `/static/assets/rebirth/cards/nightfang-art.webp`
 - `/static/assets/rebirth/ui/bot-card-back.png`
 - `/static/assets/rebirth/ui/bot-emblem.png`
 
-The service worker cache is versioned as `ambitionz-rebirth-season0-v30` and
-lists only active Rebirth assets plus app shell essentials. `static/js/pwa.js`
+The service worker cache is versioned as `ambitionz-rebirth-foundation-v58` and
+lists only static shell essentials plus one fallback art. `static/js/pwa.js`
 shows a small update prompt when a waiting service worker is available.
 
 The active starter set is documented in `docs/REBIRTH_CARD_SET_STATUS.md`.
-Rebirth 021 requires every active card to have unique PNG art, a manifest
+Foundation v58 requires every active card to have optimized WebP art, a manifest
 entry, an art profile, a stable `ability_key` and a corresponding engine rule.
 
 ## Match Store
 
-`services/rebirth_match_store.py` is intentionally in-memory for the MVP. It now
-uses:
+`services/rebirth_match_store.py` is a hot cache for active interaction. For
+authenticated games, `match_history.runtime_state_json` in PostgreSQL remains
+authoritative and rehydrates a missing cache entry. The cache uses:
 
 - TTL expiry, default `3600` seconds;
 - max-entry trimming, default `512` matches;
 - defensive cleanup on save/get/len/raw;
 - basic locking around store operations for threaded Gunicorn.
 
-It does not persist live match state. Account data uses the Rebirth SQLite
-store below.
-
 ## Persistence Store
 
-Rebirth uses SQLite through Python stdlib. Default path:
+Rebirth uses synchronous SQLAlchemy + psycopg in production. Required setting:
 
 ```text
-instance/rebirth.db
+REBIRTH_DATABASE_URL=postgresql://...
 ```
 
-Override:
-
-- `REBIRTH_DB_PATH`
+SQLite via `REBIRTH_DB_PATH` is a test-only backend explicitly enabled by
+`TESTING` or `REBIRTH_ALLOW_SQLITE_TESTING=true`.
 
 Tables:
 

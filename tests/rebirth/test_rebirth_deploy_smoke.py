@@ -8,12 +8,11 @@ def test_rebirth_deploy_smoke_flow(client):
     assert rebirth.status_code == 200
     assert "data-rebirth-app" in rebirth.get_data(as_text=True)
     assert health.status_code == 200
-    assert health.get_json() == {
-        "ok": True,
-        "status": "healthy",
-        "product": "Ambitionz Rebirth",
-        "architecture": "Ambitionz Rebirth",
-    }
+    assert health.get_json()["ok"] is True
+    assert health.get_json()["status"] == "healthy"
+    assert health.get_json()["product"] == "Ambitionz Rebirth"
+    assert health.get_json()["architecture"] == "Ambitionz Rebirth PostgreSQL Foundation"
+    assert health.get_json()["persistence"]["backend"] == "sqlite_test"
 
     client.post(
         "/api/rebirth/auth/register",

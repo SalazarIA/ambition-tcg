@@ -46,7 +46,8 @@ def test_rebirth_catalog_has_100_cards_default_art_and_engine_abilities():
         assert card["ability_key"] in ENGINE_ABILITY_KEYS
         assert card["ability_name"]
         assert card["ability_text"]
-        assert card["art"] == f"static/img/cards/{card['id']}.png"
+        assert card["art"] == f"static/img/cards/baralho/{int(card['id'].split('_')[-1])}.webp"
+        assert card["art_status"] == "optimized_webp_path"
         assert card["type"] in {"MONSTER", "SPELL", "TRAP"}
         assert card["card_type"] == card["type"]
 

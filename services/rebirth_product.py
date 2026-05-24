@@ -82,7 +82,7 @@ TUTORIAL_STEPS = [
 RELEASE_CHECKS = [
     {"name": "Produto Ativo", "state": "passed", "copy": "Ambitionz Rebirth é a superfície ativa do produto."},
     {"name": "Legado Desativado", "state": "passed", "copy": "Rotas antigas redirecionam e APIs aposentadas retornam 410."},
-    {"name": "Persistência", "state": "passed", "copy": "Acesso, coleção, baralhos de 30 cartas, progressão e boosters persistem em SQLite/PostgreSQL."},
+    {"name": "Persistência", "state": "passed", "copy": "Acesso, coleção, baralhos, progressão e boosters persistem no PostgreSQL autoritativo."},
     {"name": "Segurança da Conta", "state": "passed", "copy": "CSRF, limitação de autenticação e troca de senha estão ativos no Rebirth."},
     {"name": "Interface", "state": "passed", "copy": "As páginas Rebirth usam apenas os recursos atuais da Arena."},
     {"name": "Sensação das Cartas", "state": "passed", "copy": "Resultados de clash exibem habilidades, impacto e recompensas persistidas."},
@@ -313,11 +313,11 @@ def shop_payload(account=None, booster_history=None, market_offers=None):
             "market": {
                 "offers": market_offers or [],
                 "fee_rate": "5%",
-                "currencies": ["GOLD", "COINZ"],
+                "currencies": ["GOLD"],
             },
             "account": account,
             "history": booster_history or [],
-            "disclaimer": "Boosters são grátis durante a beta Rebirth. O mercado bloqueia cartas listadas até a venda ou o cancelamento.",
+            "disclaimer": "Boosters são grátis durante a beta Rebirth. O mercado opera apenas em Ouro e bloqueia cartas listadas até a venda ou o cancelamento.",
         }
     )
     return payload

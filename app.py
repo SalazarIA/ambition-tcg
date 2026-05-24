@@ -1,8 +1,8 @@
 import os
-import asyncio
 import secrets
 import threading
 import time
+from datetime import datetime, timedelta, timezone
 
 from flask import Flask, jsonify, make_response, redirect, render_template, request, send_from_directory, session
 
@@ -16,17 +16,9 @@ from services.rebirth_engine import (
     start_match,
 )
 from services.rebirth_match_store import MATCH_STORE
-from services.rebirth_monetization import verify_mobile_receipt
 from services.rebirth_persistence import (
     RebirthPersistenceError,
     RebirthRepository,
-    active_market_offers as async_active_market_offers,
-    async_database_url,
-    buy_market_offer as async_buy_market_offer,
-    create_market_offer as async_create_market_offer,
-    credit_verified_purchase,
-    load_match_state,
-    save_match_state,
 )
 from services.rebirth_product import (
     account_payload,
@@ -56,6 +48,8 @@ app.config["REBIRTH_DB_PATH"] = os.environ.get(
     "REBIRTH_DB_PATH",
     os.path.join(app.instance_path, "rebirth.db"),
 )
+app.config["REBIRTH_DATABASE_URL"] = os.environ.get("REBIRTH_DATABASE_URL") or os.environ.get("DATABASE_URL")
+app.config["REBIRTH_ALLOW_SQLITE_TESTING"] = os.environ.get("REBIRTH_ALLOW_SQLITE_TESTING", "false") == "true"
 app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "true") == "true"
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
@@ -166,6 +160,12 @@ def match_reward_payload(before, after, state):
     }
 
 
+def clash_reward_payload_from_progress(before, progress, state):
+    if progress and progress.get("last_reward_applied") is False:
+        return match_reward_payload(progress, progress, state)
+    return match_reward_payload(before, progress, state)
+
+
 def csrf_token():
     token = session.get("rebirth_csrf_token")
     if not token:
@@ -177,12 +177,22 @@ def csrf_token():
 def establish_rebirth_session(user):
     session.clear()
     session["rebirth_user_id"] = user["id"]
+    session_token = secrets.token_urlsafe(48)
+    rebirth_repo().create_session(
+        user["id"],
+        session_token,
+        expires_at=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat(timespec="seconds"),
+    )
+    session["rebirth_session_token"] = session_token
     session["rebirth_csrf_token"] = secrets.token_urlsafe(32)
     session.permanent = True
     return session["rebirth_csrf_token"]
 
 
 def clear_rebirth_session():
+    token = session.get("rebirth_session_token")
+    if token:
+        rebirth_repo().revoke_session(token)
     session.clear()
     return csrf_token()
 
@@ -192,26 +202,16 @@ def csrf_payload():
 
 
 def rebirth_repo():
-    return RebirthRepository(app.config["REBIRTH_DB_PATH"])
-
-
-def run_async(coro):
-    return asyncio.run(coro)
-
-
-def persist_live_match_state_if_configured(match, user=None):
-    if not async_database_url() or not user:
-        return None
-    state = public_state(match)
-    state["owner_user_id"] = int(user["id"])
-    state["player_id"] = int(user["id"])
-    try:
-        return run_async(save_match_state(match["match_id"], state))
-    except RebirthPersistenceError as error:
-        match.setdefault("persistence_warnings", []).append(
-            {"code": error.code, "message": str(error)}
-        )
-        return None
+    database_url = app.config.get("REBIRTH_DATABASE_URL")
+    if database_url:
+        return RebirthRepository(database_url=database_url)
+    if app.config.get("TESTING") or app.config.get("REBIRTH_ALLOW_SQLITE_TESTING"):
+        return RebirthRepository(app.config["REBIRTH_DB_PATH"])
+    raise RebirthPersistenceError(
+        "REBIRTH_DATABASE_URL e obrigatoria fora do ambiente de testes.",
+        "database_not_configured",
+        status=503,
+    )
 
 
 def guest_wallet_payload():
@@ -231,22 +231,17 @@ def shop_data_for_user(user):
                 {"surface": "booster_history", "code": error.code, "message": str(error)}
             )
     try:
-        if async_database_url():
-            market = run_async(
-                async_active_market_offers(exclude_user_id=user["id"] if user else None)
-            )
-        else:
-            market = repo.market_offers(exclude_user_id=user["id"] if user else None)
+        market = repo.market_offers(exclude_user_id=user["id"] if user else None)
     except RebirthPersistenceError as error:
         warnings.append({"surface": "market", "code": error.code, "message": str(error)})
     return history, market, warnings
 
 
 def current_user():
-    user_id = session.get("rebirth_user_id")
-    if not user_id:
+    token = session.get("rebirth_session_token")
+    if not token:
         return None
-    return rebirth_repo().get_user(user_id)
+    return rebirth_repo().user_for_session(token)
 
 
 def current_account():
@@ -320,8 +315,14 @@ def enforce_auth_rate_limit(action, identifier="anonymous"):
         raise RebirthPersistenceError("Muitas tentativas de acesso. Tente novamente mais tarde.", "rate_limited", status=429)
 
 
-def get_match(match_id):
-    return MATCH_STORE.get(match_id)
+def get_match(match_id, user=None):
+    try:
+        return MATCH_STORE.get(match_id)
+    except RebirthError as error:
+        if error.code != "missing_match" or not user:
+            raise
+        restored = rebirth_repo().runtime_match_state(user["id"], match_id)
+        return MATCH_STORE.save(restored)
 
 
 def ensure_match_access(match, user=None):
@@ -522,14 +523,30 @@ def rebirth_lab():
 
 @app.get("/health")
 def health():
-    return jsonify(
-        {
-            "ok": True,
-            "status": "healthy",
-            "product": "Ambitionz Rebirth",
-            "architecture": "Ambitionz Rebirth",
-        }
-    )
+    try:
+        persistence = rebirth_repo().health_status()
+        return jsonify(
+            {
+                "ok": True,
+                "status": "healthy",
+                "product": "Ambitionz Rebirth",
+                "architecture": "Ambitionz Rebirth PostgreSQL Foundation",
+                "persistence": persistence,
+            }
+        )
+    except RebirthPersistenceError as error:
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "status": "unhealthy",
+                    "product": "Ambitionz Rebirth",
+                    "architecture": "Ambitionz Rebirth PostgreSQL Foundation",
+                    "error": {"code": error.code, "message": str(error)},
+                }
+            ),
+            503,
+        )
 
 
 @app.get("/service-worker.js")
@@ -553,7 +570,7 @@ def webmanifest():
 def api_rebirth_start():
     try:
         payload = request_json(required=False)
-        if not async_database_url() and not session.get("rebirth_user_id"):
+        if not session.get("rebirth_session_token"):
             return start_memory_rebirth_match(payload)
         user = current_user()
         repo = rebirth_repo()
@@ -587,7 +604,6 @@ def api_rebirth_start():
         if user:
             repo.upsert_match_history(user["id"], match)
         state = public_state(match)
-        persist_live_match_state_if_configured(match, user=user)
         return json_success(state, match.get("result"), match_id=match["match_id"])
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -599,8 +615,8 @@ def api_rebirth_start():
 def api_rebirth_play_card():
     try:
         payload = request_json(required=True)
-        match = get_match(payload.get("match_id"))
         user = current_user()
+        match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo()
         ensure_match_access(match, user=user)
         if payload.get("attacker_instance_id"):
@@ -623,9 +639,8 @@ def api_rebirth_play_card():
             if state.get("last_clash") and state.get("phase") in {"result", "finished"}:
                 before = repo.progression(user["id"])
                 progress = repo.record_clash_result(user["id"], state)
-                reward = match_reward_payload(before, progress, state)
+                reward = clash_reward_payload_from_progress(before, progress, state)
             repo.upsert_match_history(user["id"], match)
-        persist_live_match_state_if_configured(match, user=user)
         return json_success(state, match.get("result"), progression=progress, match_reward=reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -637,8 +652,8 @@ def api_rebirth_play_card():
 def api_rebirth_attack():
     try:
         payload = request_json(required=True)
-        match = get_match(payload.get("match_id"))
         user = current_user()
+        match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo()
         ensure_match_access(match, user=user)
         declare_attack(
@@ -653,9 +668,8 @@ def api_rebirth_attack():
             if state.get("last_clash") and state.get("phase") in {"result", "finished"}:
                 before = repo.progression(user["id"])
                 progress = repo.record_clash_result(user["id"], state)
-                reward = match_reward_payload(before, progress, state)
+                reward = clash_reward_payload_from_progress(before, progress, state)
             repo.upsert_match_history(user["id"], match)
-        persist_live_match_state_if_configured(match, user=user)
         return json_success(state, match.get("result"), progression=progress, match_reward=reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -667,12 +681,11 @@ def api_rebirth_attack():
 def api_rebirth_evolve():
     try:
         payload = request_json(required=True)
-        match = get_match(payload.get("match_id"))
         user = current_user()
+        match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
         evolved = evolve_duplicate(match, payload.get("card_id"))
         persist_match_if_owned(rebirth_repo(), user, match)
-        persist_live_match_state_if_configured(match, user=user)
         return json_success(public_state(match), match.get("result"), evolved=evolved)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -684,12 +697,11 @@ def api_rebirth_evolve():
 def api_rebirth_next_turn():
     try:
         payload = request_json(required=True)
-        match = get_match(payload.get("match_id"))
         user = current_user()
+        match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
         next_turn(match)
         persist_match_if_owned(rebirth_repo(), user, match)
-        persist_live_match_state_if_configured(match, user=user)
         return json_success(public_state(match), match.get("result"))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -827,11 +839,8 @@ def api_rebirth_shop():
 def api_rebirth_market_offers():
     try:
         user = current_user()
-        if async_database_url():
-            offers = run_async(async_active_market_offers(exclude_user_id=user["id"] if user else None))
-        else:
-            offers = rebirth_repo().market_offers(exclude_user_id=user["id"] if user else None)
-        return json_payload(market={"offers": offers, "fee_rate": "5%", "currencies": ["GOLD", "COINZ"]})
+        offers = rebirth_repo().market_offers(exclude_user_id=user["id"] if user else None)
+        return json_payload(market={"offers": offers, "fee_rate": "5%", "currencies": ["GOLD"]})
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
 
@@ -841,21 +850,9 @@ def api_rebirth_market_list():
     try:
         user = require_user()
         payload = request_json(required=True)
-        if async_database_url():
-            offer = run_async(
-                async_create_market_offer(
-                    int(user["id"]),
-                    payload.get("card_id"),
-                    payload.get("price"),
-                    payload.get("currency_type"),
-                    username=user["username"],
-                )
-            )
-            offers = run_async(async_active_market_offers(exclude_user_id=user["id"]))
-        else:
-            repo = rebirth_repo()
-            offer = repo.create_market_offer(user["id"], payload.get("card_id"), payload.get("price"), payload.get("currency_type"))
-            offers = repo.market_offers(exclude_user_id=user["id"])
+        repo = rebirth_repo()
+        offer = repo.create_market_offer(user["id"], payload.get("card_id"), payload.get("price"), payload.get("currency_type"))
+        offers = repo.market_offers(exclude_user_id=user["id"])
         return json_payload(market={"offer": offer, "offers": offers})
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -870,13 +867,9 @@ def api_rebirth_market_buy():
     try:
         user = require_user()
         payload = request_json(required=True)
-        if async_database_url():
-            purchase = run_async(async_buy_market_offer(int(user["id"]), payload.get("offer_id"), username=user["username"]))
-            offers = run_async(async_active_market_offers(exclude_user_id=user["id"]))
-        else:
-            repo = rebirth_repo()
-            purchase = repo.buy_market_offer(user["id"], payload.get("offer_id"))
-            offers = repo.market_offers(exclude_user_id=user["id"])
+        repo = rebirth_repo()
+        purchase = repo.buy_market_offer(user["id"], payload.get("offer_id"))
+        offers = repo.market_offers(exclude_user_id=user["id"])
         wallet = purchase.get("buyer_wallet") or rebirth_repo().wallet_payload(user["id"])
         return json_payload(market={"purchase": purchase, "offers": offers}, wallet=wallet)
     except RebirthPersistenceError as error:
@@ -911,25 +904,11 @@ def api_rebirth_booster_open():
 
 @app.post("/api/rebirth/shop/verify-receipt")
 def api_rebirth_shop_verify_receipt():
-    try:
-        user = require_user()
-        receipt_payload = request_json(required=True)
-        verified = run_async(verify_mobile_receipt(receipt_payload))
-        credit = run_async(
-            credit_verified_purchase(
-                int(user["id"]),
-                amount=verified["amount"],
-                currency=verified["currency"],
-                reference_id=verified["reference_id"],
-                username=user["username"],
-                transaction_type="IN_APP_PURCHASE",
-            )
-        )
-        return json_payload(purchase={"receipt": verified, "credit": credit}, wallet=credit.get("wallet"))
-    except RebirthPersistenceError as error:
-        return json_from_persistence_error(error)
-    except RebirthError as error:
-        return json_from_rebirth_error(error)
+    return json_error(
+        "Compras de Coinz permanecem desativadas ate a integracao oficial das lojas.",
+        "monetization_disabled",
+        status=410,
+    )
 
 
 @app.get("/api/rebirth/progression")
@@ -968,10 +947,7 @@ def api_rebirth_match_events(match_id):
 def api_rebirth_match_state(match_id):
     try:
         user = require_user()
-        state = run_async(load_match_state(match_id))
-        owner_id = state.get("owner_user_id") or state.get("player_id")
-        if owner_id and int(owner_id) != int(user["id"]):
-            raise RebirthPersistenceError("O estado da partida pertence a outra conta.", "match_forbidden", 403)
+        state = rebirth_repo().match_state(user["id"], match_id)
         return json_payload(state=state)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -1070,6 +1046,7 @@ def api_rebirth_admin_grant():
                 amount=payload.get("amount", 1),
                 card_id=payload.get("card_id"),
                 reason=payload.get("reason", "admin_grant"),
+                idempotency_key=payload.get("idempotency_key"),
             )
         )
     except RebirthPersistenceError as error:

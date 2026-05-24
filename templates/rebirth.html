@@ -8,14 +8,8 @@
     <meta name="description" content="Jogue Ambitionz Rebirth: invoque monstros, escolha alvos e quebre a guarda em uma arena TCG persistente.">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/stoneshell-art.png') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/shadewisp-art.png') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/skywarden-art.png') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/ironbastion-art.png') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-057">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-058">
 </head>
 <body class="rb-page rb-game-page">
     {% include "_rebirth_global_nav.html" %}
@@ -233,14 +227,14 @@
         };
         window.REBIRTH_PLAYER_CONTEXT = {{ {"account": account, "progression": progression} | tojson }};
         window.REBIRTH_ASSETS = {
-            fallbackCardArt: "{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.png') }}",
+            fallbackCardArt: "{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}",
             botCardBack: "{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}",
             botEmblem: "{{ url_for('static', filename='assets/rebirth/ui/bot-emblem.png') }}",
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-057"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-057"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-057"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-058"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-058"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=rebirth-058"></script>
 </body>
 </html>

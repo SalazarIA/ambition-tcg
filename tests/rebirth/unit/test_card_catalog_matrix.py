@@ -67,8 +67,9 @@ def test_card_payload_shape(card_id):
     assert isinstance(card["cost"], int)
     assert 1 <= card["cost"] <= 10
 
-    # Art path is deterministic from id
-    assert card["art"] == f"static/img/cards/{card_id}.png"
+    # Art path is deterministic and optimized for the browser.
+    assert card["art"] == f"static/img/cards/baralho/{int(card_id.split('_')[-1])}.webp"
+    assert card["art_status"] == "optimized_webp_path"
 
     # Ability metadata must be populated (engine reads ability_key, UI reads name/text)
     assert isinstance(card["ability_key"], str) and card["ability_key"], "ability_key must be non-empty"

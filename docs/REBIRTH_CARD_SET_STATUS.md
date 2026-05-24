@@ -1,5 +1,8 @@
 # Rebirth Card Set Status
 
+> Asset delivery was upgraded in AAA Foundation v58: the catalog is now
+> Common/Uncommon-only and browser art is delivered as WebP.
+
 ## Product Decision
 
 Rebirth 021 finishes the first active card set before adding more product
@@ -14,7 +17,7 @@ Every active Rebirth card must have:
 - unique `id`;
 - `ability_key`, `ability_name` and `ability_text`;
 - attack, guard, element, role, tier and family;
-- PNG art under `static/assets/rebirth/cards/*-art.png`;
+- WebP art under `static/assets/rebirth/cards/*-art.webp` and `static/img/cards/baralho/*.webp`;
 - matching art profile in `services/rebirth_art.py`;
 - matching manifest entry in `static/assets/rebirth/manifest.json`;
 - engine behavior covered by `tests/rebirth/test_rebirth_card_set.py`.
@@ -22,7 +25,7 @@ Every active Rebirth card must have:
 Current art version:
 
 ```text
-rebirth-021
+rebirth-058
 ```
 
 ## Base Monsters

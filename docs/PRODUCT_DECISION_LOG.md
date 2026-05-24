@@ -45,9 +45,25 @@ Why:
 - Rebirth is still an MVP, but these contracts prevent the next feature layer
   from becoming untraceable.
 
-Current remaining decisions:
+## 2026-05-23 - AAA Foundation PostgreSQL Cutover
 
-- Production persistence must choose Render persistent disk for SQLite or a
-  Rebirth-native PostgreSQL repository.
-- Durable live match reconnect still needs a dedicated design.
-- Screenshot baselines and production monitoring are still future release work.
+Decision:
+
+- Production Rebirth uses one synchronous PostgreSQL repository through
+  SQLAlchemy and `psycopg`; SQLite is restricted to isolated test processes.
+- Auth sessions, collection, progression, boosters, immutable ledger, wallet,
+  market, achievements and authoritative authenticated match state live in the
+  same versioned schema.
+- Real-money Coinz/Gemas acquisition is disabled until official store receipt
+  validation exists. The player market uses Ouro only.
+- Account reset emits compensating ledger movements and never erases economic
+  history. Tutorial and clash rewards use one-time persistence keys.
+
+Operational gates:
+
+- Render runs `python -m services.rebirth_schema upgrade` before application
+  startup and `/health` validates schema version and connectivity.
+- PostgreSQL contention and restart tests run under the
+  `requires_postgres` marker with a real Postgres container in CI.
+- Asset delivery uses WebP, limited precache and a native mobile arena with
+  explicit touch-size tests.

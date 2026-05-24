@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 
-CARD_IMAGE_TEMPLATE = "static/img/cards/{card_id}.png"
+CARD_IMAGE_TEMPLATE = "static/img/cards/baralho/{card_number}.webp"
 CARD_TYPES = {"MONSTER", "SPELL", "TRAP"}
 MONSTER_FAMILIES = ("FIRE", "WATER", "EARTH", "SHADOW")
 STARTER_DECK_SIZE = 30
@@ -191,7 +191,7 @@ TRAP_DEFINITIONS = [
 
 
 def _image_path(card_id):
-    return CARD_IMAGE_TEMPLATE.format(card_id=card_id)
+    return CARD_IMAGE_TEMPLATE.format(card_number=int(card_id.rsplit("_", 1)[-1]))
 
 
 def _art_payload(card_id, family, palette):
@@ -199,7 +199,7 @@ def _art_payload(card_id, family, palette):
         "art": _image_path(card_id),
         "art_key": f"rebirth.card.{card_id}.v1",
         "art_version": "v1",
-        "art_status": "default_png_path",
+        "art_status": "optimized_webp_path",
         "art_finish": "tcg_card_frame",
         "palette": list(palette),
         "silhouette": f"{family.lower()}_sigil",
