@@ -131,12 +131,15 @@ def test_rebirth_css_locks_reference_classes_and_assets():
     assert ".is-cta-pulse:not(:disabled)," in css
     assert ".vfx-finale-overlay.is-active {\n    display: flex;\n    pointer-events: none;" in css
     assert ".vfx-finale-overlay .vfx-finale-curtain,\n    .vfx-finale-overlay .vfx-finale-text {" in css
+    assert "#player-hand:has(" in css
+    assert ".rb-hand:has(" not in css
+    assert "overflow: hidden !important;" in css
 
 
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
 
-    assert "ambitionz-rebirth-foundation-v58" in service_worker
+    assert 'const CACHE_NAME = "v59_COMBAT_REWORK";' in service_worker
     assert "/rebirth/collection" not in service_worker
     assert "/rebirth/profile" not in service_worker
     assert "/rebirth/lab" not in service_worker
@@ -147,13 +150,18 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     assert "/static/js/rebirth_product.js" in service_worker
     assert "/static/js/rebirth_global.js" in service_worker
     assert "PLAYER_STATE_API_DENY_RE" in service_worker
-    assert "(?:wallet|profile|market)" in service_worker
+    # v59: expanded deny list — auth and loadout were sliding through the
+    # generic /api/ fallback. Pinning the wider regex keeps intent explicit.
+    assert "(?:wallet|profile|market|auth|loadout)" in service_worker
+    assert "tutorial" in service_worker  # tutorial endpoints are network-only too
     assert "isCacheableAppShellRequest" in service_worker
     assert "dreadclaw-art.webp" in service_worker
     assert "dreadmaw-art" not in service_worker
     assert "bot-card-back.png" in service_worker
     assert "bot-emblem.png" in service_worker
     assert "dreadclaw.svg" not in service_worker
+    assert 'self.addEventListener("activate"' in service_worker
+    assert "self.skipWaiting();" in service_worker
 
 
 def test_rebirth_js_uses_json_api_and_card_art_contract():
@@ -209,6 +217,11 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "Troca de Guarda.",
         "Encerre o turno para o bot agir e recarregar sua mana.",
         "scrollRestoration",
+        "switchActivePage",
+        "RebirthArenaLifecycle",
+        'removeEventListener("mousemove"',
+        "cancelAnimationFrame(parallaxRaf)",
+        'addEventListener("animationend", removeDestroyedCard',
     ]:
         assert token in js
     assert "const cardImage = this.cardImageUrl(card);" in js

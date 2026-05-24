@@ -470,6 +470,7 @@ def _ready_battlefield(side):
     for card in compact_battlefield(side):
         card["exhausted"] = False
         card["has_attacked"] = False
+        card["has_acted"] = False
 
 
 def _prepare_summoned_monster(card):
@@ -478,6 +479,7 @@ def _prepare_summoned_monster(card):
     summoned["max_guard"] = int(summoned.get("guard", 0) or 0)
     summoned["exhausted"] = False
     summoned["has_attacked"] = False
+    summoned["has_acted"] = False
     return summoned
 
 
@@ -1179,7 +1181,7 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
     _attacker_index, attacker = _find_battlefield_card(match["player"], attacker_instance_id)
     if attacker is None:
         raise RebirthError("O atacante não está no seu campo.", "invalid_attacker")
-    if attacker.get("exhausted") or attacker.get("has_attacked"):
+    if attacker.get("exhausted") or attacker.get("has_attacked") or attacker.get("has_acted"):
         raise RebirthError("Este monstro já atacou neste turno.", "attacker_exhausted")
 
     target = None
@@ -1208,6 +1210,7 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
     match["player"]["played_card"] = attacker
     attacker["exhausted"] = True
     attacker["has_attacked"] = True
+    attacker["has_acted"] = True
 
     if target_instance_id:
         match["bot"]["played_card"] = target

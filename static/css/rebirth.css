@@ -5454,8 +5454,8 @@ button {
    cinemático fica via foco-vs-recesso: a carta hover fica protagonista,
    as outras recuam levemente. Pure CSS via :has() — browsers sem :has()
    simplesmente não aplicam a regra, sem regressão. */
-.rb-hand:has(.rb-mini-card.rb-tcg-card:hover:not(:disabled):not(.is-locked)) .rb-mini-card.rb-tcg-card:not(:hover),
-.rb-hand:has(.rb-mini-card.rb-tcg-card:focus-visible:not(:disabled):not(.is-locked)) .rb-mini-card.rb-tcg-card:not(:focus-visible) {
+#player-hand:has(.rb-mini-card.rb-tcg-card:hover:not(:disabled):not(.is-locked)) .rb-mini-card.rb-tcg-card:not(:hover),
+#player-hand:has(.rb-mini-card.rb-tcg-card:focus-visible:not(:disabled):not(.is-locked)) .rb-mini-card.rb-tcg-card:not(:focus-visible) {
     opacity: 0.45;
     transform: scale(0.94) translateY(2px);
 }
@@ -6893,6 +6893,25 @@ button {
         transform-origin: center center;
     }
 
+    /* v59 — cascata defensiva contra v55 VFX. O seletor base de touch
+       targets usa :where() (especificidade 0), então qualquer classe
+       VFX que herde min-height/min-width zerados via cascade vence.
+       Reforçamos AQUI com especificidade dedicada por classe VFX:
+       mesmo durante .vfx-hero-damage, .is-dead-dissolve, .vfx-shield-shatter,
+       .is-cta-pulse e .vfx-orb-crack, o alvo de toque continua 44-48px e
+       o jogador não erra o toque por causa de uma animação rolando. */
+    .rb-mobile-native button.vfx-hero-damage,
+    .rb-mobile-native a.vfx-hero-damage,
+    .rb-mobile-native [role="button"].vfx-hero-damage,
+    .rb-mobile-native .rb-field-card.is-dead-dissolve,
+    .rb-mobile-native .rb-field-card.vfx-shield-shatter,
+    .rb-mobile-native button.is-cta-pulse,
+    .rb-mobile-native .rb-hud-player.vfx-orb-crack button,
+    .rb-mobile-native .rb-hud-player.vfx-orb-crack a {
+        min-width: var(--rb-touch-target-min);
+        min-height: var(--rb-touch-target-min);
+    }
+
     .rb-mobile-native .rb-game-board {
         position: relative;
         left: auto;
@@ -6900,7 +6919,7 @@ button {
         width: 100% !important;
         height: auto !important;
         min-height: 0;
-        overflow: visible;
+        overflow: hidden !important;
         transform: none;
         transform-style: preserve-3d;
         backface-visibility: hidden;

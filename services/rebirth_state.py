@@ -71,6 +71,11 @@ def field_slots(side):
     # in the first empty slot. Falling back to "first empty" handles legacy state
     # that didn't carry field_slot and keeps survivors stable across redraws.
     for card in compact[:FIELD_SLOT_COUNT]:
+        card["exhausted"] = bool(card.get("exhausted", False))
+        card["has_attacked"] = bool(card.get("has_attacked", False))
+        # Preserve the lock for legacy persisted attackers that predate
+        # has_acted instead of reopening an already spent action.
+        card["has_acted"] = bool(card.get("has_acted", card["has_attacked"]))
         raw = card.get("field_slot")
         index = int(raw) if isinstance(raw, int) or (isinstance(raw, str) and raw.isdigit()) else None
         if index is None or not (0 <= index < FIELD_SLOT_COUNT) or slots[index] is not None:

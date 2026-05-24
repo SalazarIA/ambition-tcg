@@ -669,36 +669,29 @@ class RebirthRepository:
         key = str(key or "").strip()
         if not key:
             raise RebirthPersistenceError("A chave idempotente da transação é obrigatória.", "missing_idempotency_key", 400)
-        cursor = db.execute(
-            """
-            INSERT OR IGNORE INTO economy_idempotency_keys
-                (user_id, idempotency_key, scope, reference_id, settled_at, metadata_json)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                int(user_id),
-                key,
-                str(scope or "economy").strip().upper(),
-                str(reference_id or ""),
-                now,
-                json.dumps(metadata, sort_keys=True),
-            ),
-        )
-        if cursor.rowcount:
-            return True
-        self._record_audit_event(
-            db,
-            action="economy_replay_rejected",
-            user_id=user_id,
-            metadata={
-                "idempotency_key": key,
-                "scope": str(scope or "economy").strip().upper(),
-                "reference_id": str(reference_id or ""),
-                "metadata": metadata,
-            },
-            now=now,
-        )
-        return False
+        try:
+            db.execute(
+                """
+                INSERT INTO economy_idempotency_keys
+                    (user_id, idempotency_key, scope, reference_id, settled_at, metadata_json)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    int(user_id),
+                    key,
+                    str(scope or "economy").strip().upper(),
+                    str(reference_id or ""),
+                    now,
+                    json.dumps(metadata, sort_keys=True),
+                ),
+            )
+        except (sqlite3.IntegrityError, IntegrityError) as exc:
+            raise RebirthPersistenceError(
+                "Esta transação econômica já foi liquidada.",
+                "transaction_replayed",
+                409,
+            ) from exc
+        return True
 
     def get_user_balance(self, user_id, currency):
         self.ensure_schema()

@@ -109,3 +109,27 @@ def test_bot_accepts_high_tier_trade_when_remaining_board_has_lethal():
     assert decision["allowed"] is True
     assert decision["reason"] == "lethal_window"
     assert decision["remaining_damage"]["total"] == 9
+
+
+def test_bot_direct_attack_matrix_skips_acted_cards_and_marks_open_board_lethal():
+    acted = {
+        "id": "spent",
+        "instance_id": "spent-1",
+        "name": "Spent",
+        "attack": 20,
+        "guard": 2,
+        "tier": 1,
+        "has_acted": True,
+    }
+    active_cards = [
+        {"id": "direct-a", "instance_id": "direct-a-1", "name": "A", "attack": 6, "guard": 2, "tier": 1},
+        {"id": "direct-b", "instance_id": "direct-b-1", "name": "B", "attack": 5, "guard": 2, "tier": 1},
+    ]
+
+    matrix = tactical_utility_matrix([acted, *active_cards], [], player_hp=11)
+    decision = choose_bot_attack([acted, *active_cards], [], player_hp=11)
+
+    assert {row["attacker_id"] for row in matrix} == {"direct-a", "direct-b"}
+    assert all(row["target_id"] is None and row["reason"] == "direct_lethal" for row in matrix)
+    assert all(row["utility"] >= 5000 for row in matrix)
+    assert decision["attacker_id"] in {"direct-a", "direct-b"}

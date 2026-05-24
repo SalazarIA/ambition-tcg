@@ -1203,7 +1203,13 @@
                     if (!host) return;
                     const node = host.querySelector(`[${attr}="${escapeSelectorValue(instanceId)}"]`);
                     if (!node) return;
+                    const removeDestroyedCard = (event) => {
+                        if (event && event.target !== node) return;
+                        node.remove();
+                    };
                     node.classList.add("is-dead-dissolve");
+                    node.addEventListener("animationend", removeDestroyedCard, { once: true });
+                    window.setTimeout(removeDestroyedCard, this.dissolveMs + 40);
                     marked.push(node);
                 });
             });
@@ -2369,6 +2375,125 @@
         throw error;
     }
 
+    let parallaxRaf = null;
+
+    const RebirthArenaLifecycle = {
+        livingBoard: null,
+        layers: [],
+        parallaxMove: null,
+        parallaxLeave: null,
+        medallionBindings: [],
+
+        reducedMotion() {
+            return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        },
+
+        activate(playButton, nextButton) {
+            this.teardown();
+            if (this.reducedMotion()) return;
+
+            this.livingBoard = document.querySelector("[data-battlefield-living]");
+            if (this.livingBoard) {
+                this.layers = Array.from(this.livingBoard.querySelectorAll(".battlefield-layer[data-parallax-depth]"));
+                this.parallaxMove = (event) => {
+                    if (parallaxRaf !== null) return;
+                    const clientX = event.clientX;
+                    const clientY = event.clientY;
+                    parallaxRaf = window.requestAnimationFrame(() => {
+                        parallaxRaf = null;
+                        if (!this.livingBoard) return;
+                        const rect = this.livingBoard.getBoundingClientRect();
+                        const nx = ((clientX - rect.left) / rect.width - 0.5) * 2;
+                        const ny = ((clientY - rect.top) / rect.height - 0.5) * 2;
+                        this.layers.forEach((layer) => {
+                            const depth = Number(layer.getAttribute("data-parallax-depth") || 0);
+                            layer.style.transform = `translate3d(${(nx * depth).toFixed(2)}px, ${(ny * depth).toFixed(2)}px, 0)`;
+                        });
+                    });
+                };
+                this.parallaxLeave = () => {
+                    this.layers.forEach((layer) => {
+                        layer.style.transform = "translate3d(0, 0, 0)";
+                    });
+                };
+                this.livingBoard.addEventListener("mousemove", this.parallaxMove);
+                this.livingBoard.addEventListener("mouseleave", this.parallaxLeave);
+            }
+
+            [playButton, nextButton].filter(Boolean).forEach((medallion) => {
+                const move = (event) => {
+                    const rect = medallion.getBoundingClientRect();
+                    const dx = (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+                    const dy = (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+                    medallion.style.setProperty("--rb-tilt-y", `${Math.max(-12, Math.min(12, dx * 12)).toFixed(2)}deg`);
+                    medallion.style.setProperty("--rb-tilt-x", `${Math.max(-9, Math.min(9, -dy * 9)).toFixed(2)}deg`);
+                };
+                const leave = () => {
+                    medallion.style.removeProperty("--rb-tilt-x");
+                    medallion.style.removeProperty("--rb-tilt-y");
+                };
+                medallion.addEventListener("mousemove", move);
+                medallion.addEventListener("mouseleave", leave);
+                this.medallionBindings.push({ medallion, move, leave });
+            });
+        },
+
+        teardown() {
+            if (this.livingBoard && this.parallaxMove) {
+                this.livingBoard.removeEventListener("mousemove", this.parallaxMove);
+                this.livingBoard.removeEventListener("mouseleave", this.parallaxLeave);
+            }
+            if (parallaxRaf !== null) {
+                window.cancelAnimationFrame(parallaxRaf);
+                parallaxRaf = null;
+            }
+            this.layers.forEach((layer) => {
+                layer.style.transform = "translate3d(0, 0, 0)";
+            });
+            this.medallionBindings.forEach(({ medallion, move, leave }) => {
+                medallion.removeEventListener("mousemove", move);
+                medallion.removeEventListener("mouseleave", leave);
+                medallion.style.removeProperty("--rb-tilt-x");
+                medallion.style.removeProperty("--rb-tilt-y");
+            });
+            this.livingBoard = null;
+            this.layers = [];
+            this.parallaxMove = null;
+            this.parallaxLeave = null;
+            this.medallionBindings = [];
+        }
+    };
+
+    function switchActivePage(pageKey) {
+        const activeKey = String(pageKey || "");
+        const containers = Array.from(document.querySelectorAll("[data-page-key], [data-view-key], [data-rebirth-view]"));
+        const arena = document.querySelector("[data-rebirth-app]");
+        if (arena && !containers.includes(arena)) {
+            arena.setAttribute("data-page-key", "arena");
+            containers.push(arena);
+        }
+        containers.forEach((container) => {
+            const key = container.getAttribute("data-page-key")
+                || container.getAttribute("data-view-key")
+                || container.getAttribute("data-rebirth-view");
+            const isActive = key === activeKey || (key === "arena" && activeKey === "rebirth");
+            container.hidden = !isActive;
+            container.classList.toggle("is-active", isActive);
+            container.setAttribute("aria-hidden", isActive ? "false" : "true");
+        });
+
+        const arenaActive = activeKey === "arena" || activeKey === "rebirth";
+        if (!arenaActive) {
+            RebirthArenaLifecycle.teardown();
+        } else if (arena) {
+            RebirthArenaLifecycle.activate(
+                RebirthStore.elements["play-button"],
+                RebirthStore.elements["next-turn-button"]
+            );
+        }
+        return activeKey;
+    }
+
     const RebirthInput = {
         bind() {
             this.bindLogToggle();
@@ -2404,72 +2529,7 @@
                 evolveButton.addEventListener("click", () => RebirthFlow.evolveFirstDuplicate());
             }
 
-            // v55 Foundation Visual + Fase 3 compartilham a checagem de
-            // prefers-reduced-motion. Declarado aqui (acima do bloco de
-            // parallax) porque era usado antes da declaração — TDZ error.
-            const prefersReducedMotion = window.matchMedia
-                && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-            // v55 Fase 3 Living World: parallax mousemove no tabuleiro.
-            // Cada camada (.battlefield-layer) tem data-parallax-depth no HTML;
-            // multiplicamos a posição normalizada do mouse pelo depth/10 para
-            // achar quanto cada camada se move. Skybox (depth=-8) move pouco e
-            // pra direção contrária, foreground (depth=4) move mais e a favor.
-            const livingBoard = document.querySelector("[data-battlefield-living]");
-            if (livingBoard && !prefersReducedMotion) {
-                const layers = Array.from(livingBoard.querySelectorAll(".battlefield-layer[data-parallax-depth]"));
-                let parallaxRaf = null;
-                const applyParallax = (event) => {
-                    if (parallaxRaf) return;
-                    parallaxRaf = window.requestAnimationFrame(() => {
-                        parallaxRaf = null;
-                        const rect = livingBoard.getBoundingClientRect();
-                        // -1..1 normalizado, centro do tabuleiro = 0
-                        const nx = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-                        const ny = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-                        layers.forEach((layer) => {
-                            const depth = Number(layer.getAttribute("data-parallax-depth") || 0);
-                            const x = (nx * depth).toFixed(2);
-                            const y = (ny * depth).toFixed(2);
-                            layer.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-                        });
-                    });
-                };
-                const resetParallax = () => {
-                    layers.forEach((layer) => {
-                        layer.style.transform = "translate3d(0, 0, 0)";
-                    });
-                };
-                livingBoard.addEventListener("mousemove", applyParallax);
-                livingBoard.addEventListener("mouseleave", resetParallax);
-            }
-
-            // v55 Foundation Visual: tilt 3D no medalhão de ferro/dourado.
-            // Cursor próximo da borda → mais inclinação. Reseta no mouseleave
-            // para evitar que o botão fique "torto" depois que o ponteiro sai.
-            // Respeita prefers-reduced-motion (declarado acima do parallax).
-            const tiltButtons = [playButton, nextButton].filter(Boolean);
-            if (!prefersReducedMotion) {
-                tiltButtons.forEach((medallion) => {
-                    medallion.addEventListener("mousemove", (event) => {
-                        const rect = medallion.getBoundingClientRect();
-                        const cx = rect.left + rect.width / 2;
-                        const cy = rect.top + rect.height / 2;
-                        // -1..1 normalized cursor offset
-                        const dx = (event.clientX - cx) / (rect.width / 2);
-                        const dy = (event.clientY - cy) / (rect.height / 2);
-                        // tilt range: ±12° em Y (horizontal), ±9° em X (vertical, invertido)
-                        const tiltY = Math.max(-12, Math.min(12, dx * 12));
-                        const tiltX = Math.max(-9, Math.min(9, -dy * 9));
-                        medallion.style.setProperty("--rb-tilt-y", `${tiltY.toFixed(2)}deg`);
-                        medallion.style.setProperty("--rb-tilt-x", `${tiltX.toFixed(2)}deg`);
-                    });
-                    medallion.addEventListener("mouseleave", () => {
-                        medallion.style.removeProperty("--rb-tilt-x");
-                        medallion.style.removeProperty("--rb-tilt-y");
-                    });
-                });
-            }
+            RebirthArenaLifecycle.activate(playButton, nextButton);
 
             const hand = RebirthStore.elements["player-hand"];
             if (hand) {
@@ -2563,6 +2623,7 @@
     window.initiateMobilePurchase = initiateMobilePurchase;
     window.renderTurnPhase = renderTurnPhase;
     window.triggerScreenShake = triggerScreenShake;
+    window.switchActivePage = switchActivePage;
     window.RebirthArena = {
         refreshAfterAuth(detail) {
             return RebirthFlow.refreshAfterAuth(detail);

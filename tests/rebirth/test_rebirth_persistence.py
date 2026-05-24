@@ -1,5 +1,7 @@
+import pytest
+
 from services.rebirth_cards import CARD_CATALOG, get_card
-from services.rebirth_persistence import RebirthRepository
+from services.rebirth_persistence import RebirthPersistenceError, RebirthRepository
 
 
 def register(client, username="persist_user", email="persist@example.com"):
@@ -279,22 +281,37 @@ def test_replayed_clash_state_cannot_duplicate_xp_or_transaction(client, flask_a
     repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
 
     xp_after_first = first["progression"]["xp"]
-    replayed = repo.record_clash_result(user_id, first["state"])
+    with pytest.raises(RebirthPersistenceError) as error:
+        repo.record_clash_result(user_id, first["state"])
     with repo.connect() as db:
         transactions = db.execute(
             "SELECT COUNT(*) AS amount FROM economy_transactions WHERE user_id = ? AND transaction_type = 'MATCH_CLASH'",
             (user_id,),
         ).fetchone()["amount"]
-        replay_audit = db.execute(
-            "SELECT COUNT(*) AS amount FROM admin_audit_log WHERE user_id = ? AND action = 'economy_replay_rejected'",
-            (user_id,),
-        ).fetchone()["amount"]
+    progression = repo.progression(user_id)
 
-    assert replayed["xp"] == xp_after_first
-    assert replayed["clashes"] == 1
-    assert replayed["last_reward_applied"] is False
+    assert error.value.code == "transaction_replayed"
+    assert progression["xp"] == xp_after_first
+    assert progression["clashes"] == 1
     assert transactions == 1
-    assert replay_audit >= 1
+
+
+def test_duplicate_economy_claim_rolls_back_the_transaction(client, flask_app):
+    user_id = register(client, username="atomic_once", email="atomic-once@example.com").get_json()["account"]["user"]["id"]
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+    key = "atomic-test-key"
+
+    with repo.connect() as db:
+        repo._claim_economy_idempotency(db, user_id, key=key, scope="XP", reference_id="first")
+    original_xp = repo.progression(user_id)["xp"]
+
+    with pytest.raises(RebirthPersistenceError) as error:
+        with repo.connect() as db:
+            db.execute("UPDATE user_progress SET xp = xp + 999 WHERE user_id = ?", (user_id,))
+            repo._claim_economy_idempotency(db, user_id, key=key, scope="XP", reference_id="duplicate")
+
+    assert error.value.code == "transaction_replayed"
+    assert repo.progression(user_id)["xp"] == original_xp
 
 
 def test_coinz_receipt_credit_is_disabled_until_official_store_validation(client):

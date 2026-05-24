@@ -106,6 +106,7 @@ def _ready_board_cards(cards, excluded=None):
         and _card_identity(card) != excluded_key
         and not card.get("exhausted")
         and not card.get("has_attacked")
+        and not card.get("has_acted")
     ]
 
 
@@ -148,12 +149,20 @@ def attack_utility_projection(
         return {"allowed": False, "utility": -100000, "reason": "missing_attacker"}
     if not target:
         direct_damage = card_attack(attacker)
+        remaining_damage = remaining_damage_vector(bot_battlefield or [], excluded_attacker=attacker)
+        lethal_window = direct_damage + remaining_damage["total"] >= int(player_hp or 0)
         return {
             "allowed": direct_damage > 0,
-            "utility": direct_damage * 12,
-            "reason": "direct_lethal" if direct_damage >= int(player_hp or 0) else "direct_pressure",
+            "utility": direct_damage * 12 + (5000 if lethal_window else 0),
+            "reason": "direct_lethal" if lethal_window else "direct_pressure",
             "outcome": "direct",
-            "remaining_damage": remaining_damage_vector(bot_battlefield or [], excluded_attacker=attacker),
+            "damage_dealt": direct_damage,
+            "damage_taken": 0,
+            "attacker_destroyed": False,
+            "target_destroyed": False,
+            "symmetric_suicide": False,
+            "lethal_window": lethal_window,
+            "remaining_damage": remaining_damage,
         }
 
     combat = _combat_context({"turn": turn, "player_wounded": player_wounded, "bot_wounded": bot_wounded})
@@ -220,11 +229,10 @@ def tactical_utility_matrix(
 ):
     rows = []
     for attacker in (bot_battlefield or [])[:5]:
-        if not attacker or attacker.get("exhausted") or attacker.get("has_attacked"):
+        if not attacker or attacker.get("exhausted") or attacker.get("has_attacked") or attacker.get("has_acted"):
             continue
-        for target in (player_battlefield or [])[:5]:
-            if not target:
-                continue
+        targets = (player_battlefield or [])[:5] or [None]
+        for target in targets:
             projection = attack_utility_projection(
                 attacker,
                 target,
@@ -239,8 +247,8 @@ def tactical_utility_matrix(
                 {
                     "attacker_id": attacker.get("id"),
                     "attacker_instance_id": attacker.get("instance_id"),
-                    "target_id": target.get("id"),
-                    "target_instance_id": target.get("instance_id"),
+                    "target_id": target.get("id") if target else None,
+                    "target_instance_id": target.get("instance_id") if target else None,
                     **projection,
                 }
             )

@@ -179,6 +179,7 @@ def test_rebirth_fullstack_audit_register_booster_bot_arena_and_ledger(client, f
     attacker = live_match["player"]["battlefield"][0]
     attacker["exhausted"] = False
     attacker["has_attacked"] = False
+    attacker["has_acted"] = False
     field_slots(live_match["player"])
     live_match["phase"] = "choose"
     set_turn_phase(live_match, TurnPhase.MAIN_PHASE)

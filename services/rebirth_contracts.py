@@ -6,6 +6,7 @@ VALID_PHASES = {PHASE_CHOOSE, PHASE_RESULT, PHASE_FINISHED}
 
 ERROR_HTTP_STATUS = {
     "malformed_request": 400,
+    "authoritative_state_violation": 400,
     "missing_card": 400,
     "invalid_card": 400,
     "duplicate_not_available": 400,

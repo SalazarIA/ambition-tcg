@@ -1,3 +1,5 @@
+import pytest
+
 import app as ambition_app
 from services.rebirth_persistence import RebirthPersistenceError
 
@@ -222,6 +224,17 @@ def test_play_card_api_accepts_explicit_monster_slot(client):
     assert payload["state"]["player_field"][1]["instance_id"] == card["instance_id"]
     assert payload["state"]["player_field"][2] is None
     assert payload["state"]["player"]["battlefield"][0]["field_slot"] == 1
+
+
+@pytest.mark.parametrize("path", ["/api/rebirth/play-card", "/api/rebirth/attack"])
+@pytest.mark.parametrize("field", ["exhausted", "has_attacked", "has_acted"])
+def test_combat_routes_reject_client_authored_status_fields(client, path, field):
+    state = client.post("/api/rebirth/start", json={"seed": f"status-{field}"}).get_json()["state"]
+
+    response = client.post(path, json={"match_id": state["match_id"], field: False})
+
+    assert response.status_code == 400
+    assert response.get_json()["error"]["code"] == "authoritative_state_violation"
 
 
 def test_evolve_api_combines_duplicate(client):

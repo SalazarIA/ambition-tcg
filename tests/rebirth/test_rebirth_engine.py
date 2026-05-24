@@ -64,6 +64,7 @@ def test_play_card_summons_monster_to_persistent_battlefield():
     assert match["player"]["played_card"]["id"] == "card_002"
     assert match["player"]["battlefield"][0]["instance_id"] == card["instance_id"]
     assert match["player"]["battlefield"][0]["current_guard"] == card["guard"]
+    assert match["player"]["battlefield"][0]["has_acted"] is False
     # Bot no longer auto-summons in response to the player's play. Its hand
     # card stays put until next_turn moves the action to the bot phase.
     assert match["bot"]["battlefield"] == []
@@ -113,6 +114,7 @@ def test_first_turn_direct_damage_is_blocked_until_bot_responds():
     assert error.value.code == "first_turn_direct_attack_blocked"
     assert match["bot"]["hp"] == 30
     assert match["player"]["battlefield"][0]["exhausted"] is False
+    assert match["player"]["battlefield"][0]["has_acted"] is False
     assert match["last_clash"] is None
 
 
@@ -235,6 +237,7 @@ def test_match_finishes_when_hp_reaches_zero():
     assert match["is_finished"] is True
     assert match["phase"] == "finished"
     assert match["winner"] == "player"
+    assert match["player"]["battlefield"][0]["has_acted"] is True
 
 
 def test_match_finishes_by_hp_when_future_cards_are_exhausted():
@@ -364,6 +367,7 @@ def test_next_turn_resets_result_and_refills_hand():
     assert len(match["player"]["hand"]) == 5
     assert original_card["id"] in {card["id"] for card in match["player"]["battlefield"]}
     assert original_card["id"] not in {card["id"] for card in match["player"]["discard"]}
+    assert match["player"]["battlefield"][0]["has_acted"] is False
 
 
 def test_next_turn_rejects_invalid_phase():

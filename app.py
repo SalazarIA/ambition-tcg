@@ -377,6 +377,25 @@ def request_json(required=False):
     return payload
 
 
+AUTHORITATIVE_COMBAT_FIELDS = {"exhausted", "has_attacked", "has_acted"}
+
+
+def reject_authoritative_combat_fields(payload):
+    pending = [payload]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            if AUTHORITATIVE_COMBAT_FIELDS.intersection(value):
+                raise RebirthError(
+                    "O estado de acao e controlado exclusivamente pelo servidor.",
+                    "authoritative_state_violation",
+                    status=400,
+                )
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+
+
 @app.context_processor
 def inject_rebirth_security():
     user = current_user()
@@ -615,6 +634,7 @@ def api_rebirth_start():
 def api_rebirth_play_card():
     try:
         payload = request_json(required=True)
+        reject_authoritative_combat_fields(payload)
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo()
@@ -652,6 +672,7 @@ def api_rebirth_play_card():
 def api_rebirth_attack():
     try:
         payload = request_json(required=True)
+        reject_authoritative_combat_fields(payload)
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo()
