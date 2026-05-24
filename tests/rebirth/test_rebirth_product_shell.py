@@ -36,6 +36,7 @@ def test_rebirth_product_pages_render_active_shell(client):
         if path in {"/rebirth/profile", "/rebirth/progression"}:
             assert "data-rebirth-progression-dashboard" in body
             assert "data-rebirth-ledger-list" in body
+            assert "authenticated: false" in body
         if path == "/rebirth/shop":
             assert "Mercado de Jogadores" in body
             assert "data-rebirth-market-offers" in body

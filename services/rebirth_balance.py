@@ -2,8 +2,8 @@ from collections import Counter, defaultdict
 
 from services.rebirth_bot import BOT_PERSONALITY_ORDER, BOT_PERSONALITIES
 from services.rebirth_cards import catalog_payload, is_monster
+from services.rebirth_contracts import FIELD_SLOT_COUNT
 from services.rebirth_engine import (
-    BATTLEFIELD_LIMIT,
     compare_clash,
     declare_attack,
     damage_details,
@@ -100,7 +100,7 @@ def choose_ready_attacker(match):
     ready = [
         card
         for card in match["player"].get("battlefield", [])
-        if not card.get("exhausted") and not card.get("has_attacked")
+        if not card.get("exhausted") and not card.get("has_attacked") and not card.get("has_acted")
     ]
     if not ready:
         return None
@@ -153,7 +153,7 @@ def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
     first_turn_wins = Counter()
     turns = 0
     while not match.get("is_finished") and turns < max_turns:
-        field_full = len(match["player"].get("battlefield", [])) >= BATTLEFIELD_LIMIT
+        field_full = len(match["player"].get("battlefield", [])) >= FIELD_SLOT_COUNT
         ready_attacker = choose_ready_attacker(match)
         if field_full and ready_attacker:
             declare_best_attack(match, ready_attacker)

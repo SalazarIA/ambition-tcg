@@ -23,7 +23,6 @@ from services.rebirth_state import (
 
 
 ENGINE_ABILITY_KEYS = set(CARD_ABILITY_KEYS.values())
-BATTLEFIELD_LIMIT = FIELD_SLOT_COUNT
 STATUS_LABELS = {
     "burn": "queimadura",
     "decay": "deterioração",
@@ -532,16 +531,14 @@ def _first_empty_battlefield_slot(side):
 def _resolve_battlefield_slot(side, field_slot=None):
     if _battlefield_slots_available(side) <= 0:
         raise RebirthError("Todos os slots de duelo estão ocupados.", "battlefield_full")
-    if BATTLEFIELD_LIMIT == 1:
-        slot = 0
-    elif field_slot is None or field_slot == "":
+    if field_slot is None or field_slot == "":
         slot = _first_empty_battlefield_slot(side)
     else:
         try:
             slot = int(field_slot)
         except (TypeError, ValueError) as exc:
             raise RebirthError("field_slot deve ser 0, 1 ou 2.", "invalid_slot") from exc
-    if slot is None or slot < 0 or slot >= BATTLEFIELD_LIMIT:
+    if slot is None or slot < 0 or slot >= FIELD_SLOT_COUNT:
         raise RebirthError("field_slot está fora da zona de duelo ativa.", "invalid_slot")
     if field_slots(side)[slot] is not None:
         raise RebirthError("O slot de duelo já está ocupado.", "slot_occupied")

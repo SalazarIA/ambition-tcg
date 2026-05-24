@@ -1,5 +1,6 @@
 from services.rebirth_balance import simulate_balance
 from services.rebirth_bot import BOT_PERSONALITIES, choose_bot_attack, choose_response, personality_payload, tactical_utility_matrix
+from services.rebirth_contracts import FIELD_SLOT_COUNT
 from services.rebirth_engine import start_match
 from services.rebirth_state import public_state
 
@@ -133,3 +134,15 @@ def test_bot_direct_attack_matrix_skips_acted_cards_and_marks_open_board_lethal(
     assert all(row["target_id"] is None and row["reason"] == "direct_lethal" for row in matrix)
     assert all(row["utility"] >= 5000 for row in matrix)
     assert decision["attacker_id"] in {"direct-a", "direct-b"}
+
+
+def test_tactical_matrix_clamps_stale_oversized_boards_to_three_slots():
+    stale_cards = [
+        {"id": f"bot-{index}", "instance_id": f"bot-{index}-1", "attack": 1, "guard": 1, "tier": 1}
+        for index in range(FIELD_SLOT_COUNT + 1)
+    ]
+
+    matrix = tactical_utility_matrix(stale_cards, [], player_hp=30)
+
+    assert FIELD_SLOT_COUNT == 3
+    assert {row["attacker_id"] for row in matrix} == {"bot-0", "bot-1", "bot-2"}

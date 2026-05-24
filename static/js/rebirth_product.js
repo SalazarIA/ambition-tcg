@@ -352,7 +352,7 @@
         const progressionPromise = getJson(endpoints.progression).then(function (payload) {
             return payload.progression && payload.progression.profile ? payload.progression.profile : null;
         });
-        const ledgerPromise = endpoints.ledger
+        const ledgerPromise = endpoints.ledger && endpoints.authenticated
             ? getJson(endpoints.ledger + "?limit=6").then(function (payload) {
                 return payload.ledger || [];
             }).catch(function (error) {

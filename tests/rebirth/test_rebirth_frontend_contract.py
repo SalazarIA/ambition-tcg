@@ -134,12 +134,34 @@ def test_rebirth_css_locks_reference_classes_and_assets():
     assert "#player-hand:has(" in css
     assert ".rb-hand:has(" not in css
     assert "overflow: hidden !important;" in css
+    assert "--rb-mobile-nav-height: 196px;" in css
+    assert "width: min(calc(100% - 20px), 1320px);" in css
+    assert ".rb-mobile-native .rb-global-tabs {" in css
+    assert "grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));" in css
+    assert ".rb-mobile-native .rb-global-player {" in css
+    assert "flex: 1 0 auto;" in css
+    assert ".is-parallaxing" not in css
+    assert "v59 performance hardening: waiting states stay visually rich but static." in css
+    assert ".battlefield-ember,\n.rb-field-card.is-element-fire::before" in css
 
 
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
+    asset_manifest = read("static/assets/rebirth/manifest.json")
+    art_contract = read("services/rebirth_art.py")
 
     assert 'const CACHE_NAME = "v59_COMBAT_REWORK";' in service_worker
+    assert '"version": "v59_COMBAT_REWORK"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v59_COMBAT_REWORK"' in art_contract
+    assert "REBIRTH_CACHE_RE" in service_worker
+    assert r"v\d+_COMBAT_REWORK" in service_worker
+    assert r"rebirth(?:[-_].*)?" in service_worker
+    assert "key !== CACHE_NAME && REBIRTH_CACHE_RE.test(key)" in service_worker
+    assert 'stableAsset("/static/css/rebirth.css")' in service_worker
+    assert 'stableAsset("/static/js/rebirth.js")' in service_worker
+    assert "CORE_ASSET_SET.has(`${url.pathname}${url.search}`)" in service_worker
+    assert "function pruneActiveCache()" in service_worker
+    assert "pruneActiveCache()" in service_worker
     assert "/rebirth/collection" not in service_worker
     assert "/rebirth/profile" not in service_worker
     assert "/rebirth/lab" not in service_worker
@@ -181,11 +203,9 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         "RebirthFeel",
         "RebirthCombatMotion",
         "RebirthTactics",
-        "RebirthParallax",
         "player_field",
         "bot_field",
         "data-summon-action",
-        "field_slot",
         "attackTarget",
         "is-locked",
         "rb-card-titlebar",
@@ -224,6 +244,14 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
         'addEventListener("animationend", removeDestroyedCard',
     ]:
         assert token in js
+    assert "RebirthParallax" not in js
+    assert "const FIELD_SLOT_COUNT = 3;" in js
+    assert 'switchActivePage("arena");' in js
+    assert "Array.isArray(side.field)" not in js
+    assert "(side.battlefield || [])" not in js
+    assert "(state.player && state.player.field)" not in js
+    assert "(state.bot && state.bot.field)" not in js
+    assert "card.has_attacked || card.has_acted" in js
     assert "const cardImage = this.cardImageUrl(card);" in js
     assert 'const temporary = cardImage ? "" : this.temporaryArtUrl(card);' in js
     assert 'loading="lazy" decoding="async"' in js
@@ -243,6 +271,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert "monetization_disabled" in product_js
     assert "simulated" not in product_js
     assert "bindProgressionDashboard" in product_js
+    assert "endpoints.ledger && endpoints.authenticated" in product_js
     assert "data-rebirth-ledger-list" in product_js
     assert "is-currency-" in product_js
     assert "applyWallet(payload.wallet)" in product_js
@@ -250,6 +279,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert 'pack.classList.add("is-seal-broken")' in product_js
     assert "window.clearTimeout(sealTimer)" in product_js
     assert "verifyReceipt" in read("templates/rebirth_product.html")
+    assert "authenticated: {{ (page.account.authenticated if page.account is defined else false) | tojson }}" in read("templates/rebirth_product.html")
     assert 'progression: "{{ url_for(' in read("templates/rebirth_product.html")
     assert "data-rebirth-progression-dashboard" in read("templates/rebirth_product.html")
     assert "data-rebirth-xp-fill" in read("templates/rebirth_product.html")
@@ -270,7 +300,8 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=rebirth-058" in combined
+    assert "v=v59_COMBAT_REWORK" in combined
+    assert "v=rebirth-058" not in combined
     assert "v=rebirth-057" not in combined
     assert "v=rebirth-056" not in combined
     assert "v=rebirth-055" not in combined

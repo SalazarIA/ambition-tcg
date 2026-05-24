@@ -1,4 +1,9 @@
 const CACHE_NAME = "v59_COMBAT_REWORK";
+const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_COMBAT_REWORK(?:$|-))/i;
+
+function stableAsset(path) {
+    return `${path}?v=${CACHE_NAME}`;
+}
 
 // Keep authentication, wallet, profile and loadout HTML network-owned. Only
 // immutable presentation resources belong in the install cache. v59: added
@@ -14,11 +19,11 @@ const FALLBACK_WEBP_ART_RE = /^\/static\/assets\/rebirth\/cards\/dreadclaw-art\.
 const CORE_ASSETS = [
     "/manifest.webmanifest",
     "/static/manifest.webmanifest",
-    "/static/css/rebirth.css",
-    "/static/js/rebirth.js",
-    "/static/js/rebirth_global.js",
-    "/static/js/rebirth_product.js",
-    "/static/js/pwa.js",
+    stableAsset("/static/css/rebirth.css"),
+    stableAsset("/static/js/rebirth.js"),
+    stableAsset("/static/js/rebirth_global.js"),
+    stableAsset("/static/js/rebirth_product.js"),
+    stableAsset("/static/js/pwa.js"),
     "/static/assets/rebirth/manifest.json",
     "/static/assets/rebirth/cards/dreadclaw-art.webp",
     "/static/assets/rebirth/ui/bot-card-back.png",
@@ -37,34 +42,55 @@ function isCacheableAppShellRequest(url) {
     if (url.origin !== self.location.origin) {
         return false;
     }
-    return CORE_ASSET_SET.has(url.pathname) || FALLBACK_WEBP_ART_RE.test(url.pathname);
+    return CORE_ASSET_SET.has(`${url.pathname}${url.search}`) || FALLBACK_WEBP_ART_RE.test(url.pathname);
+}
+
+function pruneActiveCache() {
+    return caches.open(CACHE_NAME).then(function (cache) {
+        return cache.keys().then(function (requests) {
+            return Promise.all(
+                requests
+                    .filter(function (request) {
+                        return !isCacheableAppShellRequest(new URL(request.url));
+                    })
+                    .map(function (request) {
+                        return cache.delete(request);
+                    })
+            );
+        });
+    });
 }
 
 self.addEventListener("install", function (event) {
     event.waitUntil(
         caches.open(CACHE_NAME).then(function (cache) {
             return cache.addAll(CORE_ASSETS);
+        }).then(function () {
+            return self.skipWaiting();
         })
     );
-    self.skipWaiting();
 });
 
 self.addEventListener("activate", function (event) {
-    self.skipWaiting();
     event.waitUntil(
-        caches.keys().then(function (keys) {
-            return Promise.all(
-                keys
-                    .filter(function (key) {
-                        return key.startsWith("ambitionz-rebirth-") && key !== CACHE_NAME;
-                    })
-                    .map(function (key) {
-                        return caches.delete(key);
-                    })
-            );
+        Promise.all([
+            self.skipWaiting(),
+            caches.keys().then(function (keys) {
+                return Promise.all(
+                    keys
+                        .filter(function (key) {
+                            return key !== CACHE_NAME && REBIRTH_CACHE_RE.test(key);
+                        })
+                        .map(function (key) {
+                            return caches.delete(key);
+                        })
+                );
+            }),
+            pruneActiveCache()
+        ]).then(function () {
+            return self.clients.claim();
         })
     );
-    self.clients.claim();
 });
 
 self.addEventListener("message", function (event) {

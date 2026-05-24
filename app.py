@@ -53,6 +53,8 @@ app.config["REBIRTH_ALLOW_SQLITE_TESTING"] = os.environ.get("REBIRTH_ALLOW_SQLIT
 app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "true") == "true"
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
+app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
+app.config["REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS"] = max(0.0, float(os.environ.get("REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS", "0.02")))
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE") == "true"
@@ -203,10 +205,14 @@ def csrf_payload():
 
 def rebirth_repo():
     database_url = app.config.get("REBIRTH_DATABASE_URL")
+    retry_options = {
+        "serialization_retry_attempts": app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"],
+        "serialization_retry_backoff_seconds": app.config["REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS"],
+    }
     if database_url:
-        return RebirthRepository(database_url=database_url)
+        return RebirthRepository(database_url=database_url, **retry_options)
     if app.config.get("TESTING") or app.config.get("REBIRTH_ALLOW_SQLITE_TESTING"):
-        return RebirthRepository(app.config["REBIRTH_DB_PATH"])
+        return RebirthRepository(app.config["REBIRTH_DB_PATH"], **retry_options)
     raise RebirthPersistenceError(
         "REBIRTH_DATABASE_URL e obrigatoria fora do ambiente de testes.",
         "database_not_configured",

@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=rebirth-058">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v59_COMBAT_REWORK">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     {% include "_rebirth_global_nav.html" %}
@@ -593,6 +593,7 @@
     <script>
         window.REBIRTH_CSRF = "{{ csrf_token() }}";
         window.REBIRTH_PRODUCT_ENDPOINTS = {
+            authenticated: {{ (page.account.authenticated if page.account is defined else false) | tojson }},
             loadout: "{{ url_for('api_rebirth_loadout') }}",
             booster: "{{ url_for('api_rebirth_booster_open') }}",
             register: "{{ url_for('api_rebirth_auth_register') }}",
@@ -622,8 +623,8 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=rebirth-058"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=rebirth-058"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=rebirth-058"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v59_COMBAT_REWORK"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v59_COMBAT_REWORK"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=v59_COMBAT_REWORK"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@
         boardWidth: 852,
         boardHeight: 1846
     };
+    const FIELD_SLOT_COUNT = 3;
 
     const RebirthStore = {
         state: null,
@@ -74,34 +75,12 @@
         },
 
         fieldSlots(sideName) {
-            if (!this.state) return [null];
-            const side = this.state[sideName] || {};
+            const slots = new Array(FIELD_SLOT_COUNT).fill(null);
+            if (!this.state) return slots;
             const rootField = sideName === "player" ? this.state.player_field : this.state.bot_field;
-            const source = Array.isArray(rootField)
-                ? rootField
-                : Array.isArray(side.field)
-                    ? side.field
-                    : null;
-            // Slot count is authoritative on the backend (FIELD_SLOT_COUNT in
-            // services/rebirth_state.py). The server-sent `field` array is
-            // already correctly sized; we only fall back to this constant when
-            // reconstructing from a stale `battlefield` array.
-            const SLOT_COUNT = (Array.isArray(source) && source.length) || 3;
-            const slots = new Array(SLOT_COUNT).fill(null);
-            if (source) {
-                source.slice(0, SLOT_COUNT).forEach((card, index) => {
-                    slots[index] = card || null;
-                });
-                return slots;
-            }
-            (side.battlefield || []).forEach((card, index) => {
-                const slot = Number.isInteger(Number(card && card.field_slot)) ? Number(card.field_slot) : index;
-                if (slot >= 0 && slot < SLOT_COUNT && !slots[slot]) {
-                    slots[slot] = card;
-                    return;
-                }
-                const empty = slots.findIndex((s) => !s);
-                if (empty >= 0) slots[empty] = card;
+            if (!Array.isArray(rootField)) return slots;
+            rootField.slice(0, FIELD_SLOT_COUNT).forEach((card, index) => {
+                slots[index] = card || null;
             });
             return slots;
         },
@@ -418,57 +397,6 @@
         return meta;
     }
 
-    const RebirthParallax = {
-        selector: ".rb-tcg-card, .rb-mini-card, .rb-main-card, .rb-bot-card, .rb-card-back, .rb-field-card",
-        bound: false,
-
-        init() {
-            const board = RebirthStore.elements["rebirth-board"];
-            if (!board || this.bound) return;
-            this.bound = true;
-            board.addEventListener("pointermove", (event) => this.move(event), { passive: true });
-            board.addEventListener("pointerleave", () => this.resetAll(), { passive: true });
-            board.addEventListener("pointercancel", () => this.resetAll(), { passive: true });
-            board.addEventListener("touchend", () => this.resetAll(), { passive: true });
-        },
-
-        move(event) {
-            const card = event.target && event.target.closest ? event.target.closest(this.selector) : null;
-            const board = RebirthStore.elements["rebirth-board"];
-            if (!card || !board || !board.contains(card)) return;
-            if (card.classList.contains("is-locked")) {
-                this.reset(card);
-                return;
-            }
-            const rect = card.getBoundingClientRect();
-            if (!rect.width || !rect.height) return;
-            const x = (event.clientX - rect.left) / rect.width;
-            const y = (event.clientY - rect.top) / rect.height;
-            const tiltY = (x - 0.5) * 12;
-            const tiltX = (0.5 - y) * 12;
-            card.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}deg`);
-            card.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}deg`);
-            card.style.setProperty("--glare-x", `${Math.round(x * 100)}%`);
-            card.style.setProperty("--glare-y", `${Math.round(y * 100)}%`);
-            card.classList.add("is-parallaxing");
-        },
-
-        reset(card) {
-            if (!card) return;
-            card.style.setProperty("--tilt-x", "0deg");
-            card.style.setProperty("--tilt-y", "0deg");
-            card.style.setProperty("--glare-x", "50%");
-            card.style.setProperty("--glare-y", "50%");
-            card.classList.remove("is-parallaxing");
-        },
-
-        resetAll() {
-            const board = RebirthStore.elements["rebirth-board"];
-            if (!board) return;
-            board.querySelectorAll(this.selector).forEach((card) => this.reset(card));
-        }
-    };
-
     function triggerScreenShake(profileOrIntensity) {
         const viewport = document.querySelector(".rb-game-viewport");
         const board = RebirthStore.elements["rebirth-board"];
@@ -578,8 +506,8 @@
         preloadState(state) {
             if (!state) return;
             ((state.player && state.player.hand) || []).forEach((card) => this.preloadCard(card));
-            (state.player_field || (state.player && state.player.field) || (state.player && state.player.battlefield) || []).filter(Boolean).forEach((card) => this.preloadCard(card));
-            (state.bot_field || (state.bot && state.bot.field) || (state.bot && state.bot.battlefield) || []).filter(Boolean).forEach((card) => this.preloadCard(card));
+            (state.player_field || []).slice(0, FIELD_SLOT_COUNT).filter(Boolean).forEach((card) => this.preloadCard(card));
+            (state.bot_field || []).slice(0, FIELD_SLOT_COUNT).filter(Boolean).forEach((card) => this.preloadCard(card));
             this.preloadCard(state.player && state.player.played_card);
             this.preloadCard(state.bot && state.bot.played_card);
         },
@@ -831,7 +759,7 @@
             const guard = Number(card.current_guard != null ? card.current_guard : card.guard || 0);
             const maxGuard = Number(card.max_guard || card.guard || 1);
             const guardScale = Math.max(0, Math.min(1, guard / maxGuard));
-            const exhausted = card.exhausted || card.has_attacked ? " is-exhausted" : "";
+            const exhausted = card.exhausted || card.has_attacked || card.has_acted ? " is-exhausted" : "";
             const selectedClass = selected ? " is-selected" : "";
             const attackingClass = side === "player" && selected ? " is-attacking" : "";
             const targetableClass = options && options.targetable ? " is-targetable" : "";
@@ -1145,9 +1073,9 @@
             ];
             sides.forEach(({ name, host, attr }) => {
                 if (!host) return;
-                const prevField = ((previous[name] || {}).battlefield || []);
-                const nextField = ((resolvedState[name] || {}).battlefield || []);
-                const nextByInst = new Map(nextField.map((c) => [c.instance_id, c]));
+                const prevField = (name === "player" ? previous.player_field : previous.bot_field) || [];
+                const nextField = (name === "player" ? resolvedState.player_field : resolvedState.bot_field) || [];
+                const nextByInst = new Map(nextField.filter(Boolean).map((card) => [card.instance_id, card]));
                 prevField.forEach((prevCard) => {
                     if (!prevCard || !prevCard.instance_id) return;
                     if (destroyedIds.has(prevCard.instance_id)) return;  // morreu, não estilhaça (vira dissolve)
@@ -1655,7 +1583,6 @@
             this.log();
             this.buttons();
             RebirthAssets.bindFallbacks(RebirthStore.elements["rebirth-board"]);
-            RebirthParallax.resetAll();
         },
 
         hpBars() {
@@ -2031,7 +1958,7 @@
             const energy = Number((state.player && state.player.energy) || 0);
             const cost = selected ? RebirthMarkup.cardCost(selected) : 0;
             const canPay = !selected || energy >= cost;
-            const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked;
+            const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked && !selectedAttacker.has_acted;
             const directLocked = Number(state.turn || 1) === 1 && RebirthStore.fieldCards("bot").length === 0;
             if (RebirthStore.elements["play-button"]) {
                 const btn = RebirthStore.elements["play-button"];
@@ -2059,11 +1986,7 @@
                     }
                 }
             }
-            // Detect dead-end: player can't summon (field full or no mana for any
-            // hand card) AND has no ready attacker on field. In this case the
-            // ONLY sensible action is to end the turn, so we make the next-turn
-            // button pulse and tell the player explicitly. Catches the "all 5
-            // ATK clash forever" loop where the player just sits there.
+            // Highlight turn advance when no card or ready attacker can act.
             const fieldCards = RebirthStore.fieldCards("player");
             const playerEnergy = Number((state.player && state.player.energy) || 0);
             const handHasPlayable = (state.player && state.player.hand || []).some((card) => {
@@ -2074,7 +1997,7 @@
                 }
                 return true;  // spells/traps don't need slots
             });
-            const readyAttacker = fieldCards.find((card) => card && !card.exhausted && !card.has_attacked);
+            const readyAttacker = fieldCards.find((card) => card && !card.exhausted && !card.has_attacked && !card.has_acted);
             const evolutionAvailable = Boolean(evolution);
             const deadEnd = canChoose
                 && !handHasPlayable
@@ -2267,7 +2190,7 @@
                 return;
             }
             const attacker = RebirthStore.fieldCard(RebirthStore.selectedAttackerId);
-            if (attacker && (attacker.exhausted || attacker.has_attacked)) {
+            if (attacker && (attacker.exhausted || attacker.has_attacked || attacker.has_acted)) {
                 RebirthErrors.show("Esse monstro já atacou neste turno.");
                 RebirthRenderer.buttons();
                 return;
@@ -2311,7 +2234,7 @@
                 RebirthRenderer.buttons();
                 return;
             }
-            if (attacker.exhausted || attacker.has_attacked) {
+            if (attacker.exhausted || attacker.has_attacked || attacker.has_acted) {
                 RebirthErrors.show("Esse monstro já atacou neste turno.");
                 RebirthRenderer.buttons();
                 return;
@@ -2497,7 +2420,6 @@
     const RebirthInput = {
         bind() {
             this.bindLogToggle();
-            RebirthParallax.init();
 
             document.querySelectorAll("[data-new-match]").forEach((button) => {
                 button.addEventListener("click", () => RebirthFlow.startMatch());
@@ -2529,7 +2451,7 @@
                 evolveButton.addEventListener("click", () => RebirthFlow.evolveFirstDuplicate());
             }
 
-            RebirthArenaLifecycle.activate(playButton, nextButton);
+            switchActivePage("arena");
 
             const hand = RebirthStore.elements["player-hand"];
             if (hand) {

@@ -561,7 +561,7 @@ button {
 
 .rb-field-slots {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     min-width: 0;
 }
@@ -779,13 +779,6 @@ button {
     will-change: transform;
 }
 
-.rb-main-card.is-parallaxing,
-.rb-bot-card.is-parallaxing,
-.rb-card-back.is-parallaxing,
-.rb-hand .rb-mini-card.is-parallaxing {
-    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.56), 0 0 22px color-mix(in srgb, var(--card-accent, var(--rb-gold)), transparent 74%);
-}
-
 .rb-bot-revealed {
     width: 164px;
     height: 202px;
@@ -904,9 +897,7 @@ button {
 }
 
 .rb-monster-card.is-evolved:hover .rb-card-art::before,
-.rb-monster-card.is-evolved.is-parallaxing .rb-card-art::before,
-.rb-hand .rb-mini-card.is-evolved:hover .rb-mini-art::after,
-.rb-hand .rb-mini-card.is-evolved.is-parallaxing .rb-mini-art::after {
+.rb-hand .rb-mini-card.is-evolved:hover .rb-mini-art::after {
     opacity: 0.56;
     animation: rb-foil-sweep 1.8s linear infinite;
 }
@@ -2041,7 +2032,7 @@ button {
     position: fixed;
     top: calc(8px + var(--rb-safe-top));
     left: 50%;
-    width: min(calc(100% - 20px), 1180px);
+    width: min(calc(100% - 20px), 1320px);
     margin: 0;
     transform: translateX(-50%);
 }
@@ -6844,6 +6835,7 @@ button {
     body.rb-game-page.rb-mobile-native {
         --rb-touch-target-min: 44px;
         --rb-touch-target-comfort: 48px;
+        --rb-mobile-nav-height: 196px;
         position: relative;
         inset: auto;
         width: auto;
@@ -6853,6 +6845,39 @@ button {
         overflow-y: auto;
         overscroll-behavior-y: contain;
         touch-action: pan-y;
+    }
+
+    .rb-mobile-native .rb-global-nav {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .rb-mobile-native .rb-global-tabs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+        gap: 6px;
+        overflow: visible;
+    }
+
+    .rb-mobile-native .rb-global-tabs a {
+        display: grid;
+        width: 100%;
+        min-width: 0;
+        place-items: center;
+        padding-inline: 4px;
+        line-height: 1.1;
+        overflow-wrap: anywhere;
+    }
+
+    .rb-mobile-native .rb-global-player {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+    }
+
+    .rb-mobile-native .rb-global-player > * {
+        flex: 1 0 auto;
     }
 
     .rb-mobile-native :where(button, a, [role="button"], .rb-field-card, .rb-field-slot-empty) {
@@ -7180,4 +7205,37 @@ button {
     .rb-mobile-native .rb-battle-zone {
         min-height: 352px;
     }
+}
+
+/* v59 performance hardening: waiting states stay visually rich but static.
+   Finite combat and transition effects remain available when actions occur. */
+.rb-game-viewport::before,
+.rb-game-viewport::after,
+.rb-game-board[data-bot-profile="aggressive"] .rb-hud-bot,
+.rb-game-board[data-bot-profile="aggressive"] .rb-bot-emblem,
+.rb-game-board[data-bot-profile="opportunist"] .rb-hud-bot,
+.rb-game-board[data-bot-profile="opportunist"] .rb-bot-emblem,
+.rb-monster-card.is-evolved:hover .rb-card-art::before,
+.rb-hand .rb-mini-card.is-evolved:hover .rb-mini-art::after,
+.rb-monster-card.is-burn,
+.rb-mini-card.is-burn,
+#next-turn-button.is-cta-pulse:not(:disabled),
+#next-turn-button.is-cta-pulse:not(:disabled)::after,
+.rb-field-card.is-attacking,
+.rb-game-board.is-choosing-attack .rb-battle-zone::after,
+.rb-field-card.is-targetable,
+.rb-field-slot-empty[data-direct-attack="true"].is-selected,
+#player-battlefield .rb-field-slot-empty.is-summon-target::before,
+#bot-battlefield .rb-field-slot-empty[data-direct-attack="true"]::before,
+.rb-game-board.is-choosing-attack #bot-battlefield .rb-field-slot-empty::before,
+.battlefield-ember,
+.rb-field-card.is-element-fire::before,
+.rb-field-card.is-element-water::before,
+.rb-field-card.is-element-earth:hover::before,
+.rb-field-card.is-element-earth.is-selected::before,
+.rb-field-card.is-element-shadow::before,
+.vfx-finale-overlay.is-victory .vfx-finale-text,
+.vfx-finale-overlay.is-victory::before,
+.vfx-finale-overlay.is-victory::after {
+    animation: none;
 }

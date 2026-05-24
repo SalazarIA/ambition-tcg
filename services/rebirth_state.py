@@ -3,7 +3,7 @@ from enum import Enum
 import hashlib
 import uuid
 
-from services.rebirth_contracts import PHASE_CHOOSE
+from services.rebirth_contracts import FIELD_SLOT_COUNT, PHASE_CHOOSE
 from services.rebirth_cards import build_deck, catalog_payload
 from services.rebirth_bot import choose_personality, personality_payload
 from services.rebirth_events import append_event, append_snapshot, ensure_event_contract
@@ -11,7 +11,6 @@ from services.rebirth_events import append_event, append_snapshot, ensure_event_
 
 STARTING_HP = 30
 HAND_SIZE = 5
-FIELD_SLOT_COUNT = 3
 
 
 class TurnPhase(Enum):
@@ -67,14 +66,13 @@ def field_slots(side):
             compact.append(card)
 
     slots = [None for _ in range(FIELD_SLOT_COUNT)]
-    # Respect each card's saved field_slot when valid and free; otherwise place
-    # in the first empty slot. Falling back to "first empty" handles legacy state
-    # that didn't carry field_slot and keeps survivors stable across redraws.
+    # Respect a valid occupied position; cards without placement metadata take
+    # the first open position within the authoritative three-slot field.
     for card in compact[:FIELD_SLOT_COUNT]:
         card["exhausted"] = bool(card.get("exhausted", False))
         card["has_attacked"] = bool(card.get("has_attacked", False))
-        # Preserve the lock for legacy persisted attackers that predate
-        # has_acted instead of reopening an already spent action.
+        # A recorded attack always consumes its action, even when the mirrored
+        # action-lock flag is absent from stored state.
         card["has_acted"] = bool(card.get("has_acted", card["has_attacked"]))
         raw = card.get("field_slot")
         index = int(raw) if isinstance(raw, int) or (isinstance(raw, str) and raw.isdigit()) else None

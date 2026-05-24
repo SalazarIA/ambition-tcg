@@ -2,6 +2,7 @@ from copy import deepcopy
 import hashlib
 
 from services.rebirth_cards import is_monster
+from services.rebirth_contracts import FIELD_SLOT_COUNT
 
 
 BOT_PERSONALITY_ORDER = ("defensive", "aggressive", "opportunist")
@@ -228,10 +229,10 @@ def tactical_utility_matrix(
     bot_wounded=False,
 ):
     rows = []
-    for attacker in (bot_battlefield or [])[:5]:
+    for attacker in (bot_battlefield or [])[:FIELD_SLOT_COUNT]:
         if not attacker or attacker.get("exhausted") or attacker.get("has_attacked") or attacker.get("has_acted"):
             continue
-        targets = (player_battlefield or [])[:5] or [None]
+        targets = (player_battlefield or [])[:FIELD_SLOT_COUNT] or [None]
         for target in targets:
             projection = attack_utility_projection(
                 attacker,

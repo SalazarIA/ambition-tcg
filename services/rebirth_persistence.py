@@ -5,10 +5,11 @@ import os
 import re
 import secrets
 import sqlite3
+import time
 import uuid
 from collections import Counter
 from datetime import datetime, timezone
-from functools import lru_cache
+from functools import lru_cache, wraps
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -29,6 +30,8 @@ DEFAULT_LOADOUT = list(PLAYER_DECK)
 
 HASH_ITERATIONS = 180000
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{3,24}$")
+POSTGRES_SERIALIZATION_MAX_ATTEMPTS = 3
+POSTGRES_SERIALIZATION_BACKOFF_SECONDS = 0.02
 ACHIEVEMENTS = [
     {
         "key": "founder",
@@ -164,6 +167,30 @@ def _is_serialization_failure(error):
             if nested is not None
         )
     return False
+
+
+def _retry_postgres_serialization_write(method):
+    """Retry an atomic PostgreSQL write after SQLSTATE 40001 aborts."""
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        attempts = self.serialization_retry_attempts if self.backend == "postgresql" else 1
+        for attempt in range(attempts):
+            try:
+                return method(self, *args, **kwargs)
+            except Exception as error:
+                retryable = self.backend == "postgresql" and _is_serialization_failure(error)
+                if not retryable:
+                    raise
+                if attempt + 1 >= attempts:
+                    raise RebirthPersistenceError(
+                        "A transacao PostgreSQL excedeu o limite de repeticoes por concorrencia.",
+                        "serialization_retry_exhausted",
+                        status=409,
+                    ) from error
+                time.sleep(self.serialization_retry_backoff_seconds * (2 ** attempt))
+        raise RuntimeError("unreachable serialization retry state")
+
+    return wrapped
 
 
 
@@ -342,11 +369,23 @@ class _PostgresConnection:
 
 
 class RebirthRepository:
-    def __init__(self, db_path=None, *, database_url=None):
+    def __init__(
+        self,
+        db_path=None,
+        *,
+        database_url=None,
+        serialization_retry_attempts=POSTGRES_SERIALIZATION_MAX_ATTEMPTS,
+        serialization_retry_backoff_seconds=POSTGRES_SERIALIZATION_BACKOFF_SECONDS,
+    ):
         self.database_url = normalize_database_url(database_url or "")
         self.db_path = db_path
         self.backend = "postgresql" if self.database_url else "sqlite_test"
         self.engine = _sync_postgres_engine(self.database_url) if self.database_url else None
+        self.serialization_retry_attempts = max(
+            1,
+            min(POSTGRES_SERIALIZATION_MAX_ATTEMPTS, int(serialization_retry_attempts or 1)),
+        )
+        self.serialization_retry_backoff_seconds = max(0.0, float(serialization_retry_backoff_seconds or 0.0))
         if not self.database_url and not self.db_path:
             raise RebirthPersistenceError(
                 "PostgreSQL nao esta configurado para o runtime Rebirth.",
@@ -724,6 +763,7 @@ class RebirthRepository:
             "schema_version": SCHEMA_VERSION if self.backend == "postgresql" else "test-only",
         }
 
+    @_retry_postgres_serialization_write
     def create_user(self, username, email, password):
         self.ensure_schema()
         username = normalize_username(username)
@@ -761,6 +801,7 @@ class RebirthRepository:
             ) from exc
         return self.get_user(user_id)
 
+    @_retry_postgres_serialization_write
     def create_session(self, user_id, token, *, expires_at):
         self.ensure_schema()
         now = utc_now()
@@ -774,6 +815,7 @@ class RebirthRepository:
                 (str(uuid.uuid4()), int(user_id), token_hash, now, now, expires_at),
             )
 
+    @_retry_postgres_serialization_write
     def user_for_session(self, token):
         if not token:
             return None
@@ -799,6 +841,7 @@ class RebirthRepository:
                 )
         return dict(row) if row else None
 
+    @_retry_postgres_serialization_write
     def revoke_session(self, token):
         if not token:
             return
@@ -819,6 +862,7 @@ class RebirthRepository:
             raise RebirthPersistenceError("Email ou senha inválidos.", "invalid_credentials", status=401)
         return self.get_user(row["id"])
 
+    @_retry_postgres_serialization_write
     def change_password(self, user_id, current_password, new_password):
         self.ensure_schema()
         new_password = str(new_password or "")
@@ -1025,6 +1069,7 @@ class RebirthRepository:
                 return list(DEFAULT_LOADOUT)
         return list(DEFAULT_LOADOUT)
 
+    @_retry_postgres_serialization_write
     def validate_and_save_loadout(self, user_id, card_ids):
         selected = self._validate_owned_cards(user_id, card_ids)
         now = utc_now()
@@ -1121,6 +1166,7 @@ class RebirthRepository:
             ).fetchall()
         return [self._sqlite_offer_payload(row) for row in rows]
 
+    @_retry_postgres_serialization_write
     def create_market_offer(self, user_id, card_id, price, currency_type):
         self.ensure_schema()
         card = get_card(card_id)
@@ -1174,6 +1220,7 @@ class RebirthRepository:
             ).fetchone()
         return self._sqlite_offer_payload(offer)
 
+    @_retry_postgres_serialization_write
     def buy_market_offer(self, buyer_id, offer_id):
         self.ensure_schema()
         if not offer_id:
@@ -1360,6 +1407,7 @@ class RebirthRepository:
             "seller_wallet": seller_wallet,
         }
 
+    @_retry_postgres_serialization_write
     def add_cards(self, user_id, cards):
         self.ensure_schema()
         now = utc_now()
@@ -1387,6 +1435,7 @@ class RebirthRepository:
                     now=now,
                 )
 
+    @_retry_postgres_serialization_write
     def record_booster(self, user_id, booster, seed):
         self.ensure_schema()
         cards = booster.get("cards", [])
@@ -1547,6 +1596,7 @@ class RebirthRepository:
             "wallet": wallet,
         }
 
+    @_retry_postgres_serialization_write
     def record_clash_result(self, user_id, public_match_state):
         if not user_id:
             return None
@@ -1643,6 +1693,7 @@ class RebirthRepository:
             progress["last_reward_key"] = claim_key
         return progress
 
+    @_retry_postgres_serialization_write
     def claim_daily_reward(self, user_id):
         progress = self.progression(user_id)
         if not progress or progress["clashes"] < 1:
@@ -1699,6 +1750,7 @@ class RebirthRepository:
             raise RebirthPersistenceError("A recompensa diária já foi resgatada.", "reward_already_claimed", 409)
         return {"reward_key": reward_key, "xp": 25, "progression": self.progression(user_id)}
 
+    @_retry_postgres_serialization_write
     def complete_tutorial_step(self, user_id, step):
         step = max(1, min(4, int(step or 1)))
         now = utc_now()
@@ -1793,6 +1845,7 @@ class RebirthRepository:
                         )
         return {"step": step, "xp": xp_delta if applied else 0, "progression": self.progression(user_id), "already_claimed": not applied}
 
+    @_retry_postgres_serialization_write
     def achievements(self, user_id):
         self.ensure_schema()
         with self.connect() as db:
@@ -1842,6 +1895,7 @@ class RebirthRepository:
             "recent_boosters": history,
         }
 
+    @_retry_postgres_serialization_write
     def upsert_match_history(self, user_id, match):
         if not user_id or not match:
             return None
@@ -2043,6 +2097,7 @@ class RebirthRepository:
             "ledger": self.economy_ledger(user_id, limit=50),
         }
 
+    @_retry_postgres_serialization_write
     def reset_account(self, user_id):
         self.ensure_schema()
         now = utc_now()
@@ -2109,6 +2164,7 @@ class RebirthRepository:
             self._seed_user_state(db, user_id, now)
         return self.support_export(user_id)
 
+    @_retry_postgres_serialization_write
     def admin_grant(self, actor, user_id, *, resource, amount=1, card_id=None, reason="admin_grant", idempotency_key=None):
         self.ensure_schema()
         now = utc_now()

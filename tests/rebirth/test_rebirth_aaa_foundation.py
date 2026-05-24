@@ -9,6 +9,7 @@ from services.rebirth_bot import bot_decision_payload, choose_response, choose_r
 from services.rebirth_persistence import (
     RebirthPersistenceError,
     _is_serialization_failure,
+    _retry_postgres_serialization_write,
 )
 from services.rebirth_schema import REQUIRED_TABLES, SCHEMA_VERSION
 from services.rebirth_state import TurnPhase, set_turn_phase
@@ -65,6 +66,16 @@ def test_postgres_single_source_contract_is_declared(flask_app):
     flask_app.config.update(TESTING=True)
 
 
+def test_engine_exposes_only_the_three_slot_field_contract():
+    engine_source = (Path(__file__).resolve().parents[2] / "services/rebirth_engine.py").read_text(encoding="utf-8")
+    balance_source = (Path(__file__).resolve().parents[2] / "services/rebirth_balance.py").read_text(encoding="utf-8")
+
+    assert "BATTLEFIELD_LIMIT" not in engine_source
+    assert "BATTLEFIELD_LIMIT" not in balance_source
+    assert "slot >= FIELD_SLOT_COUNT" in engine_source
+    assert ">= FIELD_SLOT_COUNT" in balance_source
+
+
 def test_market_serialization_detector_only_retries_postgres_write_conflicts():
     class DatabaseFailure(Exception):
         def __init__(self, sqlstate):
@@ -78,6 +89,67 @@ def test_market_serialization_detector_only_retries_postgres_write_conflicts():
 
     assert _is_serialization_failure(WrappedFailure(DatabaseFailure("40001")))
     assert not _is_serialization_failure(WrappedFailure(DatabaseFailure("23505")))
+
+
+def test_postgres_serialization_retry_commits_on_third_attempt_without_retrying_other_conflicts():
+    class DatabaseFailure(Exception):
+        def __init__(self, sqlstate):
+            super().__init__(sqlstate)
+            self.sqlstate = sqlstate
+
+    class FakeRepository:
+        backend = "postgresql"
+        serialization_retry_attempts = 3
+        serialization_retry_backoff_seconds = 0
+
+        def __init__(self):
+            self.calls = 0
+
+        @_retry_postgres_serialization_write
+        def serial_write(self):
+            self.calls += 1
+            if self.calls < 3:
+                raise DatabaseFailure("40001")
+            return "committed"
+
+        @_retry_postgres_serialization_write
+        def integrity_conflict(self):
+            self.calls += 1
+            raise DatabaseFailure("23505")
+
+    retried = FakeRepository()
+    assert retried.serial_write() == "committed"
+    assert retried.calls == 3
+
+    rejected = FakeRepository()
+    with pytest.raises(DatabaseFailure):
+        rejected.integrity_conflict()
+    assert rejected.calls == 1
+
+
+def test_postgres_serialization_retry_surfaces_exhaustion_after_three_attempts():
+    class DatabaseFailure(Exception):
+        sqlstate = "40001"
+
+    class FakeRepository:
+        backend = "postgresql"
+        serialization_retry_attempts = 3
+        serialization_retry_backoff_seconds = 0
+
+        def __init__(self):
+            self.calls = 0
+
+        @_retry_postgres_serialization_write
+        def serial_write(self):
+            self.calls += 1
+            raise DatabaseFailure()
+
+    repo = FakeRepository()
+    with pytest.raises(RebirthPersistenceError) as error:
+        repo.serial_write()
+
+    assert repo.calls == 3
+    assert error.value.code == "serialization_retry_exhausted"
 
 
 def test_bot_decision_is_available_as_isolated_async_payload():

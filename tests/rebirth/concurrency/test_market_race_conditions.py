@@ -48,7 +48,7 @@ def test_concurrent_buyers_exactly_one_wins(clean_db, seed_user, grant_card):
     assert len(successes) == 1
     assert len(failures) == 9
     assert all(isinstance(item, RebirthPersistenceError) for item in failures)
-    assert all(item.code in {"market_offer_unavailable", "database_write_failed"} for item in failures)
+    assert all(item.code in {"market_offer_unavailable", "database_write_failed", "serialization_retry_exhausted"} for item in failures)
     winner_id = successes[0]["buyer_id"]
     assert _available_copies(clean_db, seller["id"]) == 0
     assert _available_copies(clean_db, winner_id) == 1
