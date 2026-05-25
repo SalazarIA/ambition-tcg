@@ -187,14 +187,24 @@ def runtime_projection(match: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _reducer_trace(envelope: Dict[str, Any], events: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
+def _reducer_trace(
+    envelope: Dict[str, Any],
+    events: Iterable[Dict[str, Any]],
+    *,
+    record_intermediate_hashes: bool = False,
+) -> Dict[str, Any]:
     state = _initial_match_from_envelope(envelope)
     start_index = len(state.get("events", []) or [])
     trace = []
     for index, event in enumerate(list(events or [])[start_index:], start=start_index + 1):
-        before_hash = canonical_state_hash(state)
-        state = reduce_event(state, event)
-        after_hash = canonical_state_hash(state)
+        if record_intermediate_hashes:
+            before_hash = canonical_state_hash(state)
+            state = reduce_event(state, event)
+            after_hash = canonical_state_hash(state)
+        else:
+            state = reduce_event(state, event)
+            before_hash = None
+            after_hash = None
         trace.append(
             {
                 "frame": index,
@@ -297,8 +307,13 @@ class DeterministicParityRunner:
         fast_projection = canonical_json(runtime_projection(fast_match))
         reducer_projection = canonical_json(runtime_projection(reducer_match))
 
+        import hashlib
+
+        fast_canonical_hash = hashlib.sha256(fast_bytes.encode("utf-8")).hexdigest()
+        reducer_canonical_hash = hashlib.sha256(reducer_bytes.encode("utf-8")).hexdigest()
+
         checks = {
-            "canonical_state_hash": canonical_state_hash(fast_match) == canonical_state_hash(reducer_match),
+            "canonical_state_hash": fast_canonical_hash == reducer_canonical_hash,
             "reducer_state_hash": fast_reducer_trace["hash"] == reducer_reducer_trace["hash"],
             "byte_equivalent": fast_bytes == reducer_bytes,
             "runtime_projection": fast_projection == reducer_projection,
@@ -309,8 +324,8 @@ class DeterministicParityRunner:
         report = {
             "ok": ok,
             "checks": checks,
-            "fast_canonical_state_hash": canonical_state_hash(fast_match),
-            "reducer_canonical_state_hash": canonical_state_hash(reducer_match),
+            "fast_canonical_state_hash": fast_canonical_hash,
+            "reducer_canonical_state_hash": reducer_canonical_hash,
             "fast_reducer_state_hash": fast_reducer_trace["hash"],
             "reducer_reducer_state_hash": reducer_reducer_trace["hash"],
             "command_count": len(envelope.get("commands") or []),
@@ -326,7 +341,10 @@ class DeterministicParityRunner:
                 "reducer_version": envelope.get("reducer_version"),
             },
         }
-        if not ok and self.strict:
+        if not ok:
+            # Only pay the cost of intermediate-hash traces when a failure happens.
+            fast_reducer_trace = _reducer_trace(envelope, fast_match.get("events", []), record_intermediate_hashes=True)
+            reducer_reducer_trace = _reducer_trace(envelope, reducer_match.get("events", []), record_intermediate_hashes=True)
             dump = parity_failure_dump(
                 fast_match,
                 reducer_match,
@@ -335,16 +353,9 @@ class DeterministicParityRunner:
                 fast_reducer_trace=fast_reducer_trace,
                 reducer_reducer_trace=reducer_reducer_trace,
             )
-            raise ParityViolationError("Fast runtime diverged from reducer runtime.", dump)
-        if not ok:
-            report["failure_dump"] = parity_failure_dump(
-                fast_match,
-                reducer_match,
-                checks,
-                envelope=envelope,
-                fast_reducer_trace=fast_reducer_trace,
-                reducer_reducer_trace=reducer_reducer_trace,
-            )
+            if self.strict:
+                raise ParityViolationError("Fast runtime diverged from reducer runtime.", dump)
+            report["failure_dump"] = dump
         return report
 
     def verify_many(self, matches: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:

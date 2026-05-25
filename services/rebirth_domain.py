@@ -179,14 +179,16 @@ def serialize_canonical_state(match: Dict[str, Any]) -> str:
     return canonical_json(canonical_state(match))
 
 
-def compress_canonical_state(match: Dict[str, Any]) -> str:
+def compress_serialized_state(encoded: str) -> str:
     profiler = current_profiler()
     if profiler:
         with profiler.timer("serialization_cost", detail="gzip_base64_snapshot"):
-            raw = serialize_canonical_state(match).encode("utf-8")
-            return base64.b64encode(gzip.compress(raw)).decode("ascii")
-    raw = serialize_canonical_state(match).encode("utf-8")
-    return base64.b64encode(gzip.compress(raw)).decode("ascii")
+            return base64.b64encode(gzip.compress(encoded.encode("utf-8"))).decode("ascii")
+    return base64.b64encode(gzip.compress(encoded.encode("utf-8"))).decode("ascii")
+
+
+def compress_canonical_state(match: Dict[str, Any]) -> str:
+    return compress_serialized_state(serialize_canonical_state(match))
 
 
 def decompress_snapshot_state(encoded: str) -> Dict[str, Any]:
