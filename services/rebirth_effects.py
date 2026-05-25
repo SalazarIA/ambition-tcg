@@ -11,7 +11,13 @@ from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Optional
 
 from services.rebirth_contracts import RebirthError
-from services.rebirth_domain import MAX_EFFECT_CHAIN_DEPTH, canonical_json, canonical_state_hash
+from services.rebirth_domain import (
+    MAX_EFFECT_CHAIN_DEPTH,
+    MAX_INTERRUPT_DEPTH,
+    MAX_PHASE_ITERATIONS,
+    canonical_json,
+    canonical_state_hash,
+)
 from services.rebirth_events import append_event, new_effect_chain_id
 from services.rebirth_reducers import reduce_event
 from services.rebirth_state import field_slots
@@ -20,6 +26,33 @@ from services.rebirth_state import field_slots
 LEGENDARY_INFERNUS = "infernus_core"
 LEGENDARY_AEGIS = "aegis_sentinel"
 LEGENDARY_SHADOW = "shadow_reaper"
+
+PHASE_ORDER = (
+    "PRE_RESOLUTION",
+    "TRIGGER_COLLECTION",
+    "PRIORITY_SORT",
+    "REDUCER_PHASE",
+    "POST_RESOLUTION",
+    "CLEANUP_PHASE",
+)
+
+PRIORITY_REPLACEMENT = 1
+PRIORITY_INTERRUPT = 2
+PRIORITY_REACTIVE_SPELL = 3
+PRIORITY_ACTIVE_SPELL = 4
+PRIORITY_PASSIVE_TRIGGER = 5
+PRIORITY_DELAYED_EXPIRATION = 6
+
+PRIORITY_MODEL = {
+    "replacement": PRIORITY_REPLACEMENT,
+    "interrupt": PRIORITY_INTERRUPT,
+    "trap": PRIORITY_INTERRUPT,
+    "reactive_spell": PRIORITY_REACTIVE_SPELL,
+    "active_spell": PRIORITY_ACTIVE_SPELL,
+    "passive": PRIORITY_PASSIVE_TRIGGER,
+    "delayed": PRIORITY_DELAYED_EXPIRATION,
+    "expiration": PRIORITY_DELAYED_EXPIRATION,
+}
 
 
 def _frozen_payload(payload: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -91,6 +124,7 @@ class EffectBus:
         self.root_event_id = root_event_id
         self._queue: List[Dict[str, Any]] = []
         self._dispatch_keys = set(match.setdefault("_effect_dispatch_keys", {}).setdefault(self.effect_chain_id, []))
+        self._phase_iterations = 0
 
     def dispatch(
         self,
@@ -107,11 +141,24 @@ class EffectBus:
         root_event_id: Optional[int] = None,
         chain_from_previous: bool = False,
         apply_reducer: bool = True,
+        priority_level: int = PRIORITY_PASSIVE_TRIGGER,
+        trigger_timestamp: Optional[int] = None,
+        slot_index: int = 0,
+        stable_entity_id: Optional[str] = None,
+        resolution_phase: str = "REDUCER_PHASE",
     ) -> bool:
         depth = int(self.match.get("_event_dispatch_depth", 0) or 0)
         if depth >= MAX_EFFECT_CHAIN_DEPTH:
             raise RebirthError("Profundidade máxima da cadeia de efeitos excedida.", "effect_chain_depth_exceeded")
+        priority_level = int(priority_level)
+        if priority_level == PRIORITY_INTERRUPT:
+            interrupt_depth = int(self.match.get("_interrupt_depth", 0) or 0)
+            if interrupt_depth >= MAX_INTERRUPT_DEPTH:
+                raise RebirthError("Profundidade máxima de interrupt excedida.", "interrupt_depth_exceeded")
         payload = _frozen_payload(payload)
+        phase = str(resolution_phase or "REDUCER_PHASE")
+        if phase not in PHASE_ORDER:
+            raise RebirthError(f"Fase de resolução inválida: {phase}", "invalid_resolution_phase")
         dispatch_key = canonical_json(
             {
                 "event_type": str(event_type),
@@ -120,6 +167,8 @@ class EffectBus:
                 "owner_id": owner_id if owner_id is not None else actor,
                 "payload": payload,
                 "parent_event_id": parent_event_id if parent_event_id is not None else self.parent_event_id,
+                "priority_level": priority_level,
+                "resolution_phase": phase,
             }
         )
         if dispatch_key in self._dispatch_keys:
@@ -140,15 +189,26 @@ class EffectBus:
                 "root_event_id": root_event_id,
                 "chain_from_previous": bool(chain_from_previous),
                 "apply_reducer": bool(apply_reducer),
+                "priority_level": priority_level,
+                "trigger_timestamp": int(trigger_timestamp if trigger_timestamp is not None else order),
+                "slot_index": int(slot_index),
+                "stable_entity_id": str(stable_entity_id or target_id or source_card_id or ""),
+                "resolution_phase": phase,
             }
         )
         return True
 
     def flush(self) -> List[Dict[str, Any]]:
+        self._phase_iterations += 1
+        if self._phase_iterations > MAX_PHASE_ITERATIONS:
+            raise RebirthError("Limite de iterações de fase excedido.", "phase_iteration_limit_exceeded")
         ordered = sorted(
             self._queue,
             key=lambda item: (
-                item["order"],
+                int(item.get("priority_level", PRIORITY_PASSIVE_TRIGGER)),
+                int(item.get("trigger_timestamp", item["order"])),
+                int(item.get("slot_index", 0)),
+                str(item.get("stable_entity_id") or ""),
                 item["event_type"],
                 item.get("source_card_id") or "",
                 item.get("target_id") or "",
@@ -157,6 +217,9 @@ class EffectBus:
         )
         self._queue = []
         self.match["_event_dispatch_depth"] = int(self.match.get("_event_dispatch_depth", 0) or 0) + 1
+        has_interrupt = any(int(item.get("priority_level", 0) or 0) == PRIORITY_INTERRUPT for item in ordered)
+        if has_interrupt:
+            self.match["_interrupt_depth"] = int(self.match.get("_interrupt_depth", 0) or 0) + 1
         try:
             emitted = []
             previous_event_id = None
@@ -178,6 +241,8 @@ class EffectBus:
                     effect_chain_id=self.effect_chain_id,
                     parent_event_id=parent_event_id,
                     root_event_id=item.get("root_event_id") or self.root_event_id,
+                    resolution_phase=item.get("resolution_phase"),
+                    priority_level=item.get("priority_level"),
                 )
                 if item.get("apply_reducer"):
                     reduced = reduce_event(self.match, event)
@@ -189,10 +254,339 @@ class EffectBus:
             return emitted
         finally:
             self.match["_event_dispatch_depth"] = max(0, int(self.match.get("_event_dispatch_depth", 1) or 1) - 1)
+            if has_interrupt:
+                self.match["_interrupt_depth"] = max(0, int(self.match.get("_interrupt_depth", 1) or 1) - 1)
 
 
 def _message_list(events: Iterable[Dict[str, Any]]) -> List[str]:
     return [event["message"] for event in events if event.get("message")]
+
+
+def status_label(status_name: str) -> str:
+    labels = {
+        "burn": "queimadura",
+        "decay": "deterioração",
+        "shield": "escudo",
+        "weaken": "fraqueza",
+        "freeze": "congelamento",
+    }
+    return labels.get(str(status_name or ""), str(status_name or "efeito"))
+
+
+def _effect_side(owner_side: str, effect: Dict[str, Any]) -> str:
+    target = str(effect.get("target") or effect.get("side") or "self").strip().lower()
+    if target in {"self", "owner", "ally"}:
+        return owner_side
+    if target in {"opponent", "enemy", "attacker"}:
+        return _opponent(owner_side)
+    if target in {"player", "bot"}:
+        return target
+    return owner_side
+
+
+def _status_tick_message(side: Dict[str, Any], statuses: Dict[str, Any]) -> Optional[str]:
+    messages: List[str] = []
+    burn = statuses.get("burn")
+    if burn:
+        amount = max(1, int(burn.get("potency", 1) or 1))
+        messages.append(f"{side['name']} sofre {amount} de dano de queimadura.")
+    decay = statuses.get("decay")
+    if decay:
+        amount = max(1, int(decay.get("potency", 1) or 1))
+        messages.append(f"{side['name']} sofre {amount} de dano de deterioração.")
+    for status_name, status in sorted(statuses.items()):
+        turns = int(status.get("turns", 1) or 1) - 1
+        if turns <= 0:
+            messages.append(f"{status_label(status_name).capitalize()} de {side['name']} se dissipa.")
+    return " ".join(messages) if messages else None
+
+
+def _dispatch_effect(
+    match: Dict[str, Any],
+    bus: EffectBus,
+    owner_side: str,
+    effect: Dict[str, Any],
+    *,
+    order: int,
+    priority_level: int,
+    parent_event_id: Optional[int],
+    root_event_id: Optional[int],
+    source_card: Optional[Dict[str, Any]],
+) -> None:
+    effect_type = str(effect.get("type") or effect.get("effect_type") or "").strip().lower()
+    side_name = _effect_side(owner_side, effect)
+    side = match.get(side_name) if side_name in {"player", "bot"} else None
+    if side is None:
+        return
+    source_card_id = (source_card or {}).get("id")
+    stable_entity_id = (source_card or {}).get("instance_id") or side_name
+
+    if effect_type == "draw":
+        amount = max(1, int(effect.get("amount", 1) or 1))
+        cards = list((side.get("deck") or [])[:amount])
+        if not cards:
+            return
+        suffix = "carta" if len(cards) == 1 else "cartas"
+        bus.dispatch(
+            "CARDS_DRAWN",
+            actor=side_name,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "amount": len(cards), "card_ids": [card.get("id") for card in cards]},
+            message=f"{side['name']} compra {len(cards)} {suffix}.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
+    if effect_type == "cleanse":
+        statuses = side.get("statuses") or {}
+        if not statuses:
+            return
+        removed = sorted(statuses)
+        bus.dispatch(
+            "STATUS_CLEANSED",
+            actor=side_name,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "removed": removed},
+            message=f"{side['name']} remove {', '.join(status_label(item) for item in removed)}.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
+    if effect_type == "destroy_shield":
+        if "shield" not in (side.get("statuses") or {}):
+            return
+        bus.dispatch(
+            "SHIELD_BROKEN",
+            actor=side_name,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "status": "shield"},
+            message=f"O escudo de {side['name']} foi destruído.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
+    if effect_type == "status":
+        status_name = str(effect.get("status") or "").strip().lower()
+        if not status_name:
+            return
+        turns = max(1, int(effect.get("turns", 1) or 1))
+        potency = max(1, int(effect.get("potency", 1) or 1))
+        bus.dispatch(
+            "STATUS_APPLIED",
+            actor=side_name,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "status": status_name, "turns": turns, "potency": potency},
+            message=f"{side['name']} é afetado por {status_label(status_name)}.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
+    if effect_type == "damage":
+        amount = max(0, int(effect.get("amount", 0) or 0))
+        if amount <= 0:
+            return
+        bus.dispatch(
+            "DAMAGE_RESOLVED",
+            actor=owner_side,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=owner_side,
+            payload={"side": side_name, "amount": amount},
+            message=f"{side['name']} sofre {amount} de dano da pilha.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
+    if effect_type == "heal":
+        amount = max(0, int(effect.get("amount", 0) or 0))
+        if amount <= 0:
+            return
+        bus.dispatch(
+            "HEALTH_RECOVERED",
+            actor=side_name,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "amount": amount},
+            message=f"{side['name']} recupera {amount} PV.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
+    if effect_type == "shield":
+        amount = max(1, int(effect.get("amount", 1) or 1))
+        turns = max(1, int(effect.get("turns", 1) or 1))
+        bus.dispatch(
+            "SHIELD_APPLIED",
+            actor=side_name,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "amount": amount, "turns": turns},
+            message=f"{side['name']} recebe um escudo de {amount} pontos.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
+    if effect_type == "weaken":
+        amount = max(1, int(effect.get("amount", 1) or 1))
+        turns = max(1, int(effect.get("turns", 1) or 1))
+        bus.dispatch(
+            "STATUS_APPLIED",
+            actor=side_name,
+            source_card_id=source_card_id,
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "status": "weaken", "turns": turns, "potency": amount},
+            message=f"{side['name']} sofre fraqueza de {amount}.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=stable_entity_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+
+
+def resolve_effect_sequence(
+    match: Dict[str, Any],
+    owner_side: str,
+    effects: Iterable[Dict[str, Any]],
+    *,
+    effect_chain_id: Optional[str] = None,
+    parent_event_id: Optional[int] = None,
+    root_event_id: Optional[int] = None,
+    priority_level: int = PRIORITY_ACTIVE_SPELL,
+    source_card: Optional[Dict[str, Any]] = None,
+) -> List[str]:
+    bus = EffectBus(match, effect_chain_id=effect_chain_id, parent_event_id=parent_event_id, root_event_id=root_event_id)
+    for index, effect in enumerate(list(effects or [])):
+        _dispatch_effect(
+            match,
+            bus,
+            owner_side,
+            dict(effect or {}),
+            order=100 + index,
+            priority_level=priority_level,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+            source_card=source_card,
+        )
+    return _message_list(bus.flush())
+
+
+def resolve_status_ticks(
+    match: Dict[str, Any],
+    *,
+    effect_chain_id: Optional[str] = None,
+    parent_event_id: Optional[int] = None,
+    root_event_id: Optional[int] = None,
+) -> List[str]:
+    bus = EffectBus(match, effect_chain_id=effect_chain_id, parent_event_id=parent_event_id, root_event_id=root_event_id)
+    for index, side_name in enumerate(("player", "bot")):
+        side = match[side_name]
+        statuses = side.get("statuses") or {}
+        message = _status_tick_message(side, statuses)
+        if not message:
+            continue
+        expired = sorted(status_name for status_name, status in statuses.items() if int(status.get("turns", 1) or 1) <= 1)
+        bus.dispatch(
+            "TURN_STATUS_TICKED",
+            actor="system",
+            target_id=side_name,
+            owner_id=side_name,
+            payload={"side": side_name, "expired": expired, "statuses": sorted(statuses)},
+            message=message,
+            order=400 + index,
+            priority_level=PRIORITY_DELAYED_EXPIRATION,
+            trigger_timestamp=400 + index,
+            stable_entity_id=side_name,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+            resolution_phase="CLEANUP_PHASE",
+        )
+    return _message_list(bus.flush())
+
+
+def cleanup_defeated_units(
+    match: Dict[str, Any],
+    *,
+    effect_chain_id: Optional[str] = None,
+    parent_event_id: Optional[int] = None,
+    root_event_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    bus = EffectBus(match, effect_chain_id=effect_chain_id, parent_event_id=parent_event_id, root_event_id=root_event_id)
+    defeated: List[Dict[str, Any]] = []
+    order = 600
+    for side_name in ("player", "bot"):
+        for card in _field_cards(match, side_name):
+            if _current_guard(card) > 0:
+                continue
+            snapshot = deepcopy(card)
+            defeated.append(snapshot)
+            bus.dispatch(
+                "UNIT_DESTROYED",
+                actor="system",
+                source_card_id=card.get("id"),
+                target_id=card.get("instance_id"),
+                owner_id=side_name,
+                payload=_card_event_payload(card, side=side_name),
+                message=f"{card['name']} foi destruído.",
+                order=order,
+                priority_level=PRIORITY_DELAYED_EXPIRATION,
+                trigger_timestamp=order,
+                slot_index=int(card.get("field_slot", 0) or 0),
+                stable_entity_id=_card_key(card),
+                parent_event_id=parent_event_id,
+                root_event_id=root_event_id,
+                resolution_phase="CLEANUP_PHASE",
+            )
+            order += 1
+    bus.flush()
+    return defeated
 
 
 def _infernus_survived(match: Dict[str, Any], bus: EffectBus, context: Dict[str, Any]) -> None:
@@ -411,6 +805,8 @@ def _expire_aegis_shields(match: Dict[str, Any], bus: EffectBus) -> None:
                 payload=payload,
                 message=f"O escudo de {card['name']} se desfaz após o dano.",
                 order=order,
+                priority_level=PRIORITY_DELAYED_EXPIRATION,
+                resolution_phase="CLEANUP_PHASE",
             )
             bus.dispatch(
                 "STATUS_EXPIRED",
@@ -421,6 +817,8 @@ def _expire_aegis_shields(match: Dict[str, Any], bus: EffectBus) -> None:
                 payload=payload,
                 message=f"O status de escudo de {card['name']} expirou.",
                 order=order + 1,
+                priority_level=PRIORITY_DELAYED_EXPIRATION,
+                resolution_phase="CLEANUP_PHASE",
                 chain_from_previous=True,
                 apply_reducer=False,
             )
@@ -444,6 +842,8 @@ def _expire_shadow_exhausted(match: Dict[str, Any], bus: EffectBus) -> None:
                 payload=payload,
                 message=f"A exaustão de {card['name']} expirou.",
                 order=order,
+                priority_level=PRIORITY_DELAYED_EXPIRATION,
+                resolution_phase="CLEANUP_PHASE",
             )
             order += 10
 

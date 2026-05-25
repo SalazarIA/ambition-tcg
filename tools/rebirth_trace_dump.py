@@ -38,7 +38,8 @@ def dump(payload):
         after = reduce_event(before, event)
         print(
             f"{event.get('sequence_id')} {event.get('event_type', event.get('type'))} "
-            f"chain={event.get('effect_chain_id')} frame={event.get('replay_frame')}"
+            f"chain={event.get('effect_chain_id')} frame={event.get('replay_frame')} "
+            f"phase={event.get('resolution_phase', '-')} priority={event.get('priority_level', '-')}"
         )
         print(f"  before={canonical_state_hash(before) if before else 'empty'}")
         print(f"  after={canonical_state_hash(after) if after else 'empty'}")

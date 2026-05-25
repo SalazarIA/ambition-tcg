@@ -22,6 +22,8 @@ def _label(event):
     return (
         f"{event.get('event_type', event.get('type'))}"
         f" seq={event.get('sequence_id')} frame={event.get('replay_frame')}"
+        f" phase={event.get('resolution_phase', '-')}"
+        f" priority={event.get('priority_level', '-')}"
         f" chain={event.get('effect_chain_id')} reducer={event.get('reducer_version')}"
         f" hash={str(event.get('canonical_state_hash') or '')[:12]}"
     )

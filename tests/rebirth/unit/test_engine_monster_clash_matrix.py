@@ -72,8 +72,8 @@ def test_monster_clash_resolves_on_bot_side(card_id):
 
 
 @pytest.mark.parametrize("card_id", MONSTER_IDS)
-def test_monster_clash_does_not_corrupt_effect_stack(card_id):
-    """After resolution, the engine must leave a well-formed effect_stack.
+def test_monster_clash_leaves_no_legacy_effect_queue(card_id):
+    """After resolution, the engine must not resurrect the retired procedural queue.
 
     A bad ability handler could leave half-applied effects behind, which
     would then double-apply on the next turn.
@@ -84,9 +84,5 @@ def test_monster_clash_does_not_corrupt_effect_stack(card_id):
 
     resolve_turn(match, player_card, bot_card)
 
-    stack = match.get("effect_stack")
-    assert isinstance(stack, list), f"effect_stack must be a list, got {type(stack)}"
-    # Engine drains the stack each turn; any residual entries should at least
-    # be well-formed dicts so the next resolve doesn't crash.
-    for entry in stack:
-        assert isinstance(entry, dict), f"stale effect_stack entry is not a dict: {entry!r}"
+    assert "effect_stack" not in match
+    assert all(event.get("event_type") != "EFFECT_STACK_RESOLVED" for event in match.get("events", []))

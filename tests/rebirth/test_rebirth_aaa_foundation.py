@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 
 import app as ambition_app
-from services.rebirth_engine import EffectStack, RebirthError, play_card, start_match
+from services.rebirth_effects import resolve_effect_sequence, resolve_status_ticks
+from services.rebirth_engine import RebirthError, play_card, start_match
 from services.rebirth_bot import bot_decision_payload, choose_response, choose_response_async, resolve_bot_decision_payload
 from services.rebirth_persistence import (
     RebirthPersistenceError,
@@ -15,26 +16,27 @@ from services.rebirth_schema import REQUIRED_TABLES, SCHEMA_VERSION
 from services.rebirth_state import TurnPhase, set_turn_phase
 
 
-def test_effect_stack_applies_lifo_status_effects():
-    match = start_match(seed="effect-stack")
-    stack = EffectStack()
+def test_effect_bus_applies_reducer_backed_status_effects():
+    match = start_match(seed="effect-bus")
 
-    stack.push_effect({"type": "status", "side": "bot", "status": "burn", "potency": 2, "turns": 2})
-    stack.push_effect({"type": "shield", "side": "player", "amount": 3, "turns": 1})
-
-    events = stack.resolve_stack(match)
+    events = resolve_effect_sequence(
+        match,
+        "player",
+        [
+            {"type": "shield", "side": "player", "amount": 3, "turns": 1},
+            {"type": "status", "side": "bot", "status": "burn", "potency": 2, "turns": 2},
+        ],
+    )
 
     assert "escudo de 3 pontos" in events[0]
     assert "afetado por queimadura" in events[1]
     assert match["player"]["statuses"]["shield"]["potency"] == 3
     assert match["bot"]["statuses"]["burn"]["potency"] == 2
 
-    tick_stack = EffectStack()
-    tick_stack.push_effect({"type": "status_tick", "side": "bot"})
-    tick_events = tick_stack.resolve_stack(match)
+    tick_events = resolve_status_ticks(match)
 
     assert match["bot"]["hp"] == 28
-    assert "dano de queimadura" in tick_events[0]
+    assert any("dano de queimadura" in event for event in tick_events)
 
 
 def test_turn_phase_blocks_card_play_outside_main_phase():

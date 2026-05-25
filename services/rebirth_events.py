@@ -105,6 +105,8 @@ def append_event(
     sequence_id=None,
     parent_event_id=None,
     root_event_id=None,
+    resolution_phase=None,
+    priority_level=None,
 ):
     ensure_event_contract(match)
     version = _next_version(match)
@@ -147,6 +149,10 @@ def append_event(
         "reducer_version": match.get("reducer_version") or REDUCER_VERSION,
         "ruleset_version": match.get("ruleset_version") or RULESET_VERSION,
     }
+    if resolution_phase:
+        event["resolution_phase"] = str(resolution_phase)
+    if priority_level is not None:
+        event["priority_level"] = int(priority_level)
     if message:
         event["message"] = str(message)
     match["events"].append(event)

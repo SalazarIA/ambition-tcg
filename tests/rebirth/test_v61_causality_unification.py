@@ -54,7 +54,7 @@ def test_v61_command_model_names_the_single_pipeline():
     assert PIPELINE_STAGES == (
         "COMMAND",
         "VALIDATE",
-        "BUILD_EFFECT_STACK",
+        "BUILD_EVENT_STACK",
         "RESOLVE_EFFECTS",
         "REDUCER_PHASE",
         "EMIT_EVENTS",

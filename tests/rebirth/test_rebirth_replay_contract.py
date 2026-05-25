@@ -64,7 +64,7 @@ def test_replay_rebuilds_final_canonical_state_from_commands():
     assert verification["command_count"] == 3
 
 
-def test_effect_stack_emits_structured_effect_events():
+def test_effect_bus_emits_reducer_backed_spell_events():
     match = start_match(seed="effects-v62")
     spell = create_card_instance("card_084", "player", 99)
     match["player"]["hand"] = [spell]
@@ -72,8 +72,9 @@ def test_effect_stack_emits_structured_effect_events():
 
     play_card(match, card_instance_id=spell["instance_id"])
 
-    effect_events = [event for event in match["events"] if event["type"] == "EFFECT_RESOLVED"]
+    effect_events = [event for event in match["events"] if event["type"] == "DAMAGE_RESOLVED" and event.get("effect_chain_id", "").startswith("spell-")]
     assert effect_events
-    assert effect_events[-1]["payload"]["effect_type"] == "damage"
     assert effect_events[-1]["payload"]["side"] == "bot"
-    assert effect_events[-1]["payload"]["payload"]["amount"] == 3
+    assert effect_events[-1]["payload"]["amount"] == 3
+    assert effect_events[-1]["priority_level"] == 4
+    assert effect_events[-1]["resolution_phase"] == "REDUCER_PHASE"

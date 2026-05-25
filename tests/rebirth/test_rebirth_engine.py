@@ -274,7 +274,7 @@ def test_bot_evolves_duplicate_before_answering():
     assert "Bot evoluiu" in match["log"][-1]
 
 
-def test_spell_resolves_immediately_through_effect_stack_and_discards():
+def test_spell_resolves_immediately_through_effect_bus_and_discards():
     match = start_match(seed="spell")
     match["player"]["energy"] = 2
     match["player"]["max_energy"] = 2

@@ -4,7 +4,17 @@ import hashlib
 from services.rebirth_bot import ability_priority, choose_response
 from services.rebirth_cards import CARD_ABILITY_KEYS, create_card_instance, get_card, is_monster, is_spell, is_trap
 from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESULT, RebirthError
-from services.rebirth_effects import apply_legendary_passives, expire_statuses_for_trigger
+from services.rebirth_effects import (
+    EffectBus,
+    PRIORITY_ACTIVE_SPELL,
+    PRIORITY_INTERRUPT,
+    PRIORITY_PASSIVE_TRIGGER,
+    apply_legendary_passives,
+    cleanup_defeated_units,
+    expire_statuses_for_trigger,
+    resolve_effect_sequence,
+    resolve_status_ticks,
+)
 from services.rebirth_events import append_command, append_event, append_snapshot, new_effect_chain_id
 from services.rebirth_state import (
     FIELD_SLOT_COUNT,
@@ -24,203 +34,6 @@ from services.rebirth_state import (
 
 
 ENGINE_ABILITY_KEYS = set(CARD_ABILITY_KEYS.values())
-STATUS_LABELS = {
-    "burn": "queimadura",
-    "decay": "deterioração",
-    "shield": "escudo",
-    "weaken": "fraqueza",
-}
-
-
-def status_label(status_name):
-    return STATUS_LABELS.get(str(status_name or ""), str(status_name or "efeito"))
-
-
-class EffectStack:
-    def __init__(self, effects=None):
-        self.effects = list(effects or [])
-        self.structured_events = []
-
-    def push_effect(self, effect_data: dict):
-        if not isinstance(effect_data, dict):
-            raise RebirthError("Os dados do efeito devem ser um objeto.", "malformed_request")
-        self.effects.append(deepcopy(effect_data))
-        return effect_data
-
-    def resolve_stack(self, match_state: dict):
-        events = []
-        self.structured_events = []
-        while self.effects:
-            effect = self.effects.pop()
-            event = self._apply_effect(match_state, effect)
-            if event:
-                events.append(event)
-        match_state["effect_stack"] = list(self.effects)
-        if self.structured_events:
-            match_state.setdefault("_pending_effect_events", []).extend(deepcopy(self.structured_events))
-        return events
-
-    def _record_effect_event(self, effect_type, side_name, payload=None, message=None):
-        event = {
-            "effect_type": str(effect_type or ""),
-            "side": str(side_name or ""),
-            "payload": deepcopy(payload or {}),
-        }
-        if message:
-            event["message"] = str(message)
-        self.structured_events.append(event)
-        return message
-
-    def _apply_effect(self, match_state, effect):
-        effect_type = str(effect.get("type") or effect.get("effect_type") or "").strip().lower()
-        side_name = str(effect.get("side") or effect.get("target") or "").strip()
-        side = match_state.get(side_name) if side_name in {"player", "bot"} else None
-
-        if effect_type == "status_tick":
-            return self._tick_statuses(side_name, side)
-        if side is None:
-            return None
-
-        if effect_type == "draw":
-            amount = max(1, int(effect.get("amount", 1) or 1))
-            drawn = draw_to_hand_size(side, len(side.get("hand", [])) + amount)
-            if not drawn:
-                return None
-            suffix = "carta" if len(drawn) == 1 else "cartas"
-            message = f"{side['name']} compra {len(drawn)} {suffix}."
-            return self._record_effect_event(
-                effect_type,
-                side_name,
-                {"drawn": len(drawn), "card_ids": [card.get("id") for card in drawn]},
-                message,
-            )
-
-        if effect_type == "cleanse":
-            statuses = side.setdefault("statuses", {})
-            if not statuses:
-                return None
-            removed = sorted(statuses.keys())
-            statuses.clear()
-            message = f"{side['name']} remove {', '.join(status_label(item) for item in removed)}."
-            return self._record_effect_event(effect_type, side_name, {"removed": removed}, message)
-
-        if effect_type == "destroy_shield":
-            statuses = side.setdefault("statuses", {})
-            if "shield" not in statuses:
-                return None
-            statuses.pop("shield", None)
-            message = f"O escudo de {side['name']} foi destruído."
-            return self._record_effect_event(effect_type, side_name, {"status": "shield"}, message)
-
-        if effect_type == "status":
-            status_name = str(effect.get("status") or "").strip().lower()
-            if not status_name:
-                return None
-            statuses = side.setdefault("statuses", {})
-            current = statuses.get(status_name, {})
-            turns = max(int(current.get("turns", 0) or 0), int(effect.get("turns", 1) or 1))
-            potency = max(int(current.get("potency", 0) or 0), int(effect.get("potency", 1) or 1))
-            statuses[status_name] = {"turns": turns, "potency": potency}
-            message = f"{side['name']} é afetado por {status_label(status_name)}."
-            return self._record_effect_event(effect_type, side_name, {"status": status_name, "turns": turns, "potency": potency}, message)
-
-        if effect_type == "damage":
-            amount = max(0, int(effect.get("amount", 0) or 0))
-            if amount <= 0:
-                return None
-            side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
-            side["wounded"] = True
-            message = f"{side['name']} sofre {amount} de dano da pilha."
-            return self._record_effect_event(effect_type, side_name, {"amount": amount, "hp": side["hp"]}, message)
-
-        if effect_type == "heal":
-            amount = max(0, int(effect.get("amount", 0) or 0))
-            if amount <= 0:
-                return None
-            side["hp"] = min(int(side.get("max_hp", side.get("hp", 0)) or 0), int(side.get("hp", 0) or 0) + amount)
-            message = f"{side['name']} recupera {amount} PV."
-            return self._record_effect_event(effect_type, side_name, {"amount": amount, "hp": side["hp"]}, message)
-
-        if effect_type == "shield":
-            statuses = side.setdefault("statuses", {})
-            amount = max(1, int(effect.get("amount", 1) or 1))
-            turns = max(1, int(effect.get("turns", 1) or 1))
-            statuses["shield"] = {"turns": turns, "potency": amount}
-            message = f"{side['name']} recebe um escudo de {amount} pontos."
-            return self._record_effect_event(effect_type, side_name, {"amount": amount, "turns": turns}, message)
-
-        if effect_type == "weaken":
-            amount = max(1, int(effect.get("amount", 1) or 1))
-            statuses = side.setdefault("statuses", {})
-            turns = max(1, int(effect.get("turns", 1) or 1))
-            statuses["weaken"] = {"turns": turns, "potency": amount}
-            message = f"{side['name']} sofre fraqueza de {amount}."
-            return self._record_effect_event(effect_type, side_name, {"amount": amount, "turns": turns}, message)
-
-        return None
-
-    def _tick_statuses(self, side_name, side):
-        if side is None:
-            return None
-        statuses = side.setdefault("statuses", {})
-        if not statuses:
-            return None
-
-        messages = []
-        expired = []
-        burn = statuses.get("burn")
-        if burn:
-            amount = max(1, int(burn.get("potency", 1) or 1))
-            side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
-            side["wounded"] = True
-            messages.append(f"{side['name']} sofre {amount} de dano de queimadura.")
-        decay = statuses.get("decay")
-        if decay:
-            amount = max(1, int(decay.get("potency", 1) or 1))
-            side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
-            side["wounded"] = True
-            messages.append(f"{side['name']} sofre {amount} de dano de deterioração.")
-
-        for status_name, status in list(statuses.items()):
-            turns = int(status.get("turns", 1) or 1) - 1
-            if turns <= 0:
-                expired.append(status_name)
-            else:
-                status["turns"] = turns
-        for status_name in expired:
-            statuses.pop(status_name, None)
-            messages.append(f"{status_label(status_name).capitalize()} de {side['name']} se dissipa.")
-
-        if side_name and messages:
-            message = " ".join(messages)
-            return self._record_effect_event("status_tick", side_name, {"expired": expired, "statuses": sorted(statuses.keys())}, message)
-        return None
-
-
-def effect_stack_for(match):
-    return EffectStack(match.setdefault("effect_stack", []))
-
-
-def _persist_effect_stack(match, stack):
-    match["effect_stack"] = list(stack.effects)
-    return match["effect_stack"]
-
-
-def _drain_pending_effect_events(match):
-    return list(match.pop("_pending_effect_events", []) or [])
-
-
-def _append_effect_events(match, *, actor="system"):
-    structured = _drain_pending_effect_events(match)
-    for effect_event in structured:
-        append_event(
-            match,
-            "EFFECT_RESOLVED",
-            actor=actor,
-            payload=effect_event,
-            message=effect_event.get("message"),
-        )
-    return structured
 
 
 def start_match(seed=None, player_card_ids=None, player_name="Você", bot_profile_id=None):
@@ -538,34 +351,6 @@ def _find_battlefield_card(side, instance_id):
     return None, None
 
 
-def _remove_defeated_battlefield_cards(side):
-    defeated = []
-    slots = field_slots(side)
-    defeated_keys = set()
-    for index, card in enumerate(slots):
-        if not card:
-            continue
-        if int(card.get("current_guard", card.get("guard", 0)) or 0) <= 0:
-            defeated.append(card)
-            defeated_keys.add(card.get("instance_id") or id(card))
-            slots[index] = None
-        else:
-            card["field_slot"] = index
-            card["slot"] = index + 1
-    # Clear the underlying battlefield list so field_slots() doesn't resurrect
-    # the defeated card the next time it rebuilds from side["battlefield"].
-    side["battlefield"] = [
-        card for card in side.get("battlefield", [])
-        if (card.get("instance_id") or id(card)) not in defeated_keys
-    ]
-    compact_battlefield(side)
-    for card in defeated:
-        defeated_card = deepcopy(card)
-        defeated_card["defeated"] = True
-        side.setdefault("discard", []).append(defeated_card)
-    return defeated
-
-
 def _battlefield_slots_available(side):
     return sum(1 for card in field_slots(side) if card is None)
 
@@ -607,34 +392,45 @@ def _opponent_side(side_name):
     return "bot" if side_name == "player" else "player"
 
 
-def _resolve_effect_side(owner_side, effect):
-    target = str(effect.get("target") or effect.get("side") or "self").strip().lower()
-    if target in {"self", "owner", "ally"}:
-        return owner_side
-    if target in {"opponent", "enemy", "attacker"}:
-        return _opponent_side(owner_side)
-    if target in {"player", "bot"}:
-        return target
-    return owner_side
-
-
-def _push_card_effects(stack, owner_side, effects):
-    for effect in reversed(effects or []):
-        payload = deepcopy(effect)
-        payload["side"] = _resolve_effect_side(owner_side, payload)
-        payload.pop("target", None)
-        stack.push_effect(payload)
-
-
 def _resolve_spell_card(match, side_name, card):
     cost = _spend_card_cost(match, side_name, card)
-    side = match[side_name]
-    stack = effect_stack_for(match)
-    _push_card_effects(stack, side_name, card.get("stack_effects") or [])
-    effect_events = stack.resolve_stack(match)
-    _persist_effect_stack(match, stack)
-    structured_effects = _drain_pending_effect_events(match)
-    side["discard"].append(card)
+    effect_chain_id = new_effect_chain_id(match, "spell")
+    turn_label = f"Turno {match['turn']:02d}"
+    actor_label = "Bot" if side_name == "bot" else "Você"
+    match["log"].append(f"{turn_label}   {actor_label} lançou {card['name']}.")
+    played_event = append_event(
+        match,
+        "CARD_PLAYED",
+        actor=side_name,
+        payload={"card_id": card["id"], "instance_id": card["instance_id"], "type": "SPELL", "cost": cost},
+        message=match["log"][-1],
+        effect_chain_id=effect_chain_id,
+    )
+    effect_events = resolve_effect_sequence(
+        match,
+        side_name,
+        card.get("stack_effects") or [],
+        effect_chain_id=effect_chain_id,
+        parent_event_id=played_event["event_id"],
+        root_event_id=played_event["root_event_id"],
+        priority_level=PRIORITY_ACTIVE_SPELL,
+        source_card=card,
+    )
+    discard_bus = EffectBus(match, effect_chain_id=effect_chain_id)
+    discard_bus.dispatch(
+        "CARD_DISCARDED",
+        actor=side_name,
+        source_card_id=card.get("id"),
+        target_id=side_name,
+        owner_id=side_name,
+        payload={"side": side_name, "card": deepcopy(card), "reason": "spell_resolved"},
+        order=900,
+        priority_level=PRIORITY_ACTIVE_SPELL,
+        stable_entity_id=card.get("instance_id"),
+        parent_event_id=played_event["event_id"],
+        root_event_id=played_event["root_event_id"],
+    )
+    discard_bus.flush()
     match["last_clash"] = None
     match["result"] = {
         "outcome": "Spell",
@@ -646,31 +442,16 @@ def _resolve_spell_card(match, side_name, card):
     }
     if effect_events:
         match["result"]["message"] = f"{match['result']['message']} {' '.join(effect_events)}"
-    turn_label = f"Turno {match['turn']:02d}"
-    actor_label = "Bot" if side_name == "bot" else "Você"
-    match["log"].append(f"{turn_label}   {actor_label} lançou {card['name']}.")
-    played_event = append_event(
-        match,
-        "CARD_PLAYED",
-        actor=side_name,
-        payload={"card_id": card["id"], "instance_id": card["instance_id"], "type": "SPELL", "cost": cost},
-        message=match["log"][-1],
-    )
     append_event(
         match,
         "SPELL_RESOLVED",
         actor=side_name,
-        payload={"card_id": card["id"], "effects": deepcopy(card.get("stack_effects") or []), "structured_effects": structured_effects},
+        payload={"card_id": card["id"], "effects": deepcopy(card.get("stack_effects") or [])},
         message=match["result"]["message"],
+        effect_chain_id=effect_chain_id,
+        parent_event_id=played_event["event_id"],
+        root_event_id=played_event["root_event_id"],
     )
-    for effect_event in structured_effects:
-        append_event(
-            match,
-            "EFFECT_RESOLVED",
-            actor=side_name,
-            payload=effect_event,
-            message=effect_event.get("message"),
-        )
     for event in effect_events:
         append_event(match, "ABILITY_TRIGGERED", actor=side_name, payload={"message": event}, message=event)
     finish_if_needed(match)
@@ -839,45 +620,192 @@ def _bot_auto_summon(match):
 
 def _apply_trap_effect(match, owner_side, trap, owner_card, opponent_card):
     effect = str(trap.get("trap_effect") or "").strip().lower()
-    stack = effect_stack_for(match)
+    effect_chain_id = trap.get("effect_chain_id") or new_effect_chain_id(match, "interrupt")
+    bus = EffectBus(match, effect_chain_id=effect_chain_id)
     messages = [f"{trap['name']} foi revelada."]
+    opponent_side = _opponent_side(owner_side)
+    order = 100
+    opponent_instance_id = (opponent_card or {}).get("instance_id")
     if effect == "negate_attack":
-        opponent_card["attack_adjustment"] = opponent_card.get("attack_adjustment", 0) - card_attack(opponent_card)
+        bus.dispatch(
+            "STAT_MODIFIER_APPLIED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_instance_id,
+            owner_id=owner_side,
+            payload={"stat": "attack", "amount": -card_attack(opponent_card), "duration": "combat", "side": opponent_side},
+            message=f"{trap['name']} anula o ataque de {opponent_card['name']}.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_instance_id,
+        )
         messages.append(f"{trap['name']} anula o ataque de {opponent_card['name']}.")
     elif effect == "reflect_damage":
-        stack.push_effect({"type": "damage", "side": _opponent_side(owner_side), "amount": 3})
+        bus.dispatch(
+            "DAMAGE_RESOLVED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_side,
+            owner_id=owner_side,
+            payload={"side": opponent_side, "amount": 3},
+            message=f"{match[opponent_side]['name']} sofre 3 de dano da pilha.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_side,
+        )
         messages.append(f"{trap['name']} reflete 3 de dano.")
     elif effect == "burn_attacker":
-        stack.push_effect({"type": "status", "side": _opponent_side(owner_side), "status": "burn", "potency": 1, "turns": 2})
+        bus.dispatch(
+            "STATUS_APPLIED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_side,
+            owner_id=owner_side,
+            payload={"side": opponent_side, "status": "burn", "potency": 1, "turns": 2},
+            message=f"{match[opponent_side]['name']} é afetado por queimadura.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_side,
+        )
         messages.append(f"{trap['name']} marca o atacante com queimadura.")
     elif effect == "shield_owner":
-        stack.push_effect({"type": "shield", "side": owner_side, "amount": 3, "turns": 2})
+        bus.dispatch(
+            "SHIELD_APPLIED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=owner_side,
+            owner_id=owner_side,
+            payload={"side": owner_side, "amount": 3, "turns": 2},
+            message=f"{match[owner_side]['name']} recebe um escudo de 3 pontos.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=owner_side,
+        )
         messages.append(f"{trap['name']} ergue um escudo.")
     elif effect == "cleanse_owner":
-        stack.push_effect({"type": "cleanse", "side": owner_side})
+        bus.dispatch(
+            "STATUS_CLEANSED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=owner_side,
+            owner_id=owner_side,
+            payload={"side": owner_side, "removed": sorted((match[owner_side].get("statuses") or {}).keys())},
+            message=f"{match[owner_side]['name']} remove efeitos ativos.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=owner_side,
+        )
         messages.append(f"{trap['name']} purifica seu controlador.")
     elif effect == "freeze_attacker":
-        opponent_card["attack_adjustment"] = opponent_card.get("attack_adjustment", 0) - 2
-        stack.push_effect({"type": "status", "side": _opponent_side(owner_side), "status": "freeze", "potency": 1, "turns": 1})
+        bus.dispatch(
+            "STAT_MODIFIER_APPLIED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_instance_id,
+            owner_id=owner_side,
+            payload={"stat": "attack", "amount": -2, "duration": "combat", "side": opponent_side},
+            message=f"{trap['name']} reduz o ataque de {opponent_card['name']} em 2.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_instance_id,
+        )
+        bus.dispatch(
+            "STATUS_APPLIED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_side,
+            owner_id=owner_side,
+            payload={"side": opponent_side, "status": "freeze", "potency": 1, "turns": 1},
+            message=f"{match[opponent_side]['name']} é afetado por congelamento.",
+            order=order + 1,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_side,
+            chain_from_previous=True,
+        )
         messages.append(f"{trap['name']} congela o atacante para -2 de ataque.")
     elif effect == "drain_attacker":
-        stack.push_effect({"type": "heal", "side": owner_side, "amount": 2})
-        stack.push_effect({"type": "damage", "side": _opponent_side(owner_side), "amount": 2})
+        bus.dispatch(
+            "DAMAGE_RESOLVED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_side,
+            owner_id=owner_side,
+            payload={"side": opponent_side, "amount": 2},
+            message=f"{match[opponent_side]['name']} sofre 2 de dano da pilha.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_side,
+        )
+        bus.dispatch(
+            "HEALTH_RECOVERED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=owner_side,
+            owner_id=owner_side,
+            payload={"side": owner_side, "amount": 2},
+            message=f"{match[owner_side]['name']} recupera 2 PV.",
+            order=order + 1,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=owner_side,
+            chain_from_previous=True,
+        )
         messages.append(f"{trap['name']} drena 2 PV.")
     elif effect == "destroy_shield":
-        stack.push_effect({"type": "destroy_shield", "side": _opponent_side(owner_side)})
+        bus.dispatch(
+            "SHIELD_BROKEN",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_side,
+            owner_id=owner_side,
+            payload={"side": opponent_side, "status": "shield"},
+            message=f"O escudo de {match[opponent_side]['name']} foi destruído.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_side,
+        )
         messages.append(f"{trap['name']} quebra o escudo adversário.")
     elif effect == "heal_owner":
-        stack.push_effect({"type": "heal", "side": owner_side, "amount": 3})
+        bus.dispatch(
+            "HEALTH_RECOVERED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=owner_side,
+            owner_id=owner_side,
+            payload={"side": owner_side, "amount": 3},
+            message=f"{match[owner_side]['name']} recupera 3 PV.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=owner_side,
+        )
         messages.append(f"{trap['name']} recupera 3 PV.")
     elif effect == "weaken_attacker":
-        opponent_card["attack_adjustment"] = opponent_card.get("attack_adjustment", 0) - 2
-        stack.push_effect({"type": "weaken", "side": _opponent_side(owner_side), "amount": 2, "turns": 1})
+        bus.dispatch(
+            "STAT_MODIFIER_APPLIED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_instance_id,
+            owner_id=owner_side,
+            payload={"stat": "attack", "amount": -2, "duration": "combat", "side": opponent_side},
+            message=f"{trap['name']} reduz o ataque de {opponent_card['name']} em 2.",
+            order=order,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_instance_id,
+        )
+        bus.dispatch(
+            "STATUS_APPLIED",
+            actor=owner_side,
+            source_card_id=trap.get("id"),
+            target_id=opponent_side,
+            owner_id=owner_side,
+            payload={"side": opponent_side, "status": "weaken", "potency": 2, "turns": 1},
+            message=f"{match[opponent_side]['name']} sofre fraqueza de 2.",
+            order=order + 1,
+            priority_level=PRIORITY_INTERRUPT,
+            stable_entity_id=opponent_side,
+            chain_from_previous=True,
+        )
         messages.append(f"{trap['name']} enfraquece o atacante.")
-    stack_events = stack.resolve_stack(match)
-    _persist_effect_stack(match, stack)
-    _append_effect_events(match, actor=owner_side)
-    return messages + stack_events
+    return messages + [event.get("message") for event in bus.flush() if event.get("message")]
 
 
 def _resolve_combat_traps(match, player_card, bot_card):
@@ -886,6 +814,12 @@ def _resolve_combat_traps(match, player_card, bot_card):
         ("player", player_card, bot_card),
         ("bot", bot_card, player_card),
     ):
+        if owner_card:
+            _owner_index, refreshed_owner = _find_battlefield_card(match[owner_side], owner_card.get("instance_id"))
+            owner_card = refreshed_owner or owner_card
+        if opponent_card:
+            _opponent_index, refreshed_opponent = _find_battlefield_card(match[_opponent_side(owner_side)], opponent_card.get("instance_id"))
+            opponent_card = refreshed_opponent or opponent_card
         side = match[owner_side]
         remaining_traps = []
         for trap in side.get("traps", []):
@@ -897,7 +831,7 @@ def _resolve_combat_traps(match, player_card, bot_card):
             triggered["revealed"] = True
             triggered["face_down"] = False
             events.extend(_apply_trap_effect(match, owner_side, triggered, owner_card, opponent_card))
-            side.setdefault("discard", []).append(triggered)
+            match[owner_side].setdefault("discard", []).append(triggered)
             append_event(
                 match,
                 "TRAP_TRIGGERED",
@@ -905,7 +839,7 @@ def _resolve_combat_traps(match, player_card, bot_card):
                 payload={"card_id": trap["id"], "instance_id": trap.get("instance_id"), "effect": trap.get("trap_effect")},
                 message=events[-1] if events else f"{trap['name']} foi acionada.",
             )
-        side["traps"] = remaining_traps
+        match[owner_side]["traps"] = remaining_traps
     return events
 
 
@@ -971,14 +905,13 @@ def _resolve_unanswered_attack(match, player_card, *, effect_chain_id=None, pare
 
 def resolve_turn(match, player_card, bot_card, *, persistent_field=False, effect_chain_id=None, parent_event_id=None, root_event_id=None):
     effect_chain_id = effect_chain_id or new_effect_chain_id(match, "combat")
-    pre_stack = effect_stack_for(match)
-    pre_stack_events = pre_stack.resolve_stack(match)
-    _persist_effect_stack(match, pre_stack)
-    _append_effect_events(match, actor="system")
-
     trap_events = _resolve_combat_traps(match, player_card, bot_card)
+    _player_index, refreshed_player_card = _find_battlefield_card(match["player"], player_card.get("instance_id"))
+    _bot_index, refreshed_bot_card = _find_battlefield_card(match["bot"], bot_card.get("instance_id"))
+    player_card = refreshed_player_card or player_card
+    bot_card = refreshed_bot_card or bot_card
     winner, clash = compare_clash(match, player_card, bot_card)
-    ability_events = list(pre_stack_events) + list(trap_events) + list(clash["events"])
+    ability_events = list(trap_events) + list(clash["events"])
     if winner == "player":
         damage_payload = damage_details(player_card, bot_card, match["bot"].get("wounded", False))
         damage = damage_payload["amount"]
@@ -1030,38 +963,46 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False, effect
             "message": clash_message,
         }
 
-    status_stack = effect_stack_for(match)
+    status_effects = []
+    status_owner = result["winner"] if result.get("winner") in {"player", "bot"} else "system"
     if winner == "player":
         attacker_key = ability_key(player_card)
         if attacker_key in {"molten_bite", "inferno_bite", "fire_burn"}:
-            status_stack.push_effect({"type": "status", "side": "bot", "status": "burn", "potency": 1, "turns": 2})
+            status_effects.append({"type": "status", "side": "bot", "status": "burn", "potency": 1, "turns": 2})
         if attacker_key == "shadow_decay":
-            status_stack.push_effect({"type": "status", "side": "bot", "status": "decay", "potency": 1, "turns": 2})
+            status_effects.append({"type": "status", "side": "bot", "status": "decay", "potency": 1, "turns": 2})
         if attacker_key in {"shadow_lifesteal", "shadow_drain"}:
-            status_stack.push_effect({"type": "heal", "side": "player", "amount": 2})
+            status_effects.append({"type": "heal", "side": "player", "amount": 2})
         if ability_key(player_card) == "water_heal":
-            status_stack.push_effect({"type": "heal", "side": "player", "amount": 2})
+            status_effects.append({"type": "heal", "side": "player", "amount": 2})
         if ability_key(player_card) == "water_cleanse":
-            status_stack.push_effect({"type": "cleanse", "side": "player"})
+            status_effects.append({"type": "cleanse", "side": "player"})
         if ability_key(player_card) == "earth_shield":
-            status_stack.push_effect({"type": "shield", "side": "player", "amount": 2, "turns": 2})
+            status_effects.append({"type": "shield", "side": "player", "amount": 2, "turns": 2})
     elif winner == "bot":
         attacker_key = ability_key(bot_card)
         if attacker_key in {"molten_bite", "inferno_bite", "fire_burn"}:
-            status_stack.push_effect({"type": "status", "side": "player", "status": "burn", "potency": 1, "turns": 2})
+            status_effects.append({"type": "status", "side": "player", "status": "burn", "potency": 1, "turns": 2})
         if attacker_key == "shadow_decay":
-            status_stack.push_effect({"type": "status", "side": "player", "status": "decay", "potency": 1, "turns": 2})
+            status_effects.append({"type": "status", "side": "player", "status": "decay", "potency": 1, "turns": 2})
         if attacker_key in {"shadow_lifesteal", "shadow_drain"}:
-            status_stack.push_effect({"type": "heal", "side": "bot", "amount": 2})
+            status_effects.append({"type": "heal", "side": "bot", "amount": 2})
         if ability_key(bot_card) == "water_heal":
-            status_stack.push_effect({"type": "heal", "side": "bot", "amount": 2})
+            status_effects.append({"type": "heal", "side": "bot", "amount": 2})
         if ability_key(bot_card) == "water_cleanse":
-            status_stack.push_effect({"type": "cleanse", "side": "bot"})
+            status_effects.append({"type": "cleanse", "side": "bot"})
         if ability_key(bot_card) == "earth_shield":
-            status_stack.push_effect({"type": "shield", "side": "bot", "amount": 2, "turns": 2})
-    status_events = status_stack.resolve_stack(match)
-    _persist_effect_stack(match, status_stack)
-    _append_effect_events(match, actor=result["winner"] or "system")
+            status_effects.append({"type": "shield", "side": "bot", "amount": 2, "turns": 2})
+    status_events = resolve_effect_sequence(
+        match,
+        status_owner,
+        status_effects,
+        effect_chain_id=effect_chain_id,
+        parent_event_id=parent_event_id,
+        root_event_id=root_event_id,
+        priority_level=PRIORITY_PASSIVE_TRIGGER,
+        source_card=player_card if winner == "player" else bot_card if winner == "bot" else None,
+    )
     ability_events.extend(status_events)
 
     if ability_events:
@@ -1123,15 +1064,18 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False, effect
                 {"effect_chain_id": effect_chain_id, "parent_event_id": damage_event["event_id"], "root_event_id": damage_event["root_event_id"]},
             )
         )
-    defeated_player = _remove_defeated_battlefield_cards(match["player"]) if persistent_field else []
-    defeated_bot = _remove_defeated_battlefield_cards(match["bot"]) if persistent_field else []
+    defeated_units = cleanup_defeated_units(
+        match,
+        effect_chain_id=effect_chain_id,
+        parent_event_id=damage_event["event_id"] if damage_event else parent_event_id,
+        root_event_id=(damage_event or {}).get("root_event_id") or root_event_id,
+    ) if persistent_field else []
     defeated_events = []
-    for defeated in defeated_player + defeated_bot:
+    for defeated in defeated_units:
         message = f"{defeated['name']} foi destruído."
         ability_events.append(message)
         defeated_events.append(message)
         match["log"].append(f"Turno {match['turn']:02d}   {message}")
-        append_event(match, "MONSTER_DESTROYED", payload={"card_id": defeated["id"], "instance_id": defeated["instance_id"]}, message=message)
     result["ability_events"] = ability_events
     match["result"] = result
     if persistent_field and defeated_events:
@@ -1475,12 +1419,12 @@ def next_turn(match):
     clear_played_cards(match)
     match["turn"] += 1
     set_turn_phase(match, TurnPhase.DRAW_PHASE)
-    draw_stack = effect_stack_for(match)
-    draw_stack.push_effect({"type": "status_tick", "side": "player"})
-    draw_stack.push_effect({"type": "status_tick", "side": "bot"})
-    status_events = draw_stack.resolve_stack(match)
-    _persist_effect_stack(match, draw_stack)
-    _append_effect_events(match, actor="system")
+    status_events = resolve_status_ticks(
+        match,
+        effect_chain_id=effect_chain_id,
+        parent_event_id=turn_ended_event["event_id"],
+        root_event_id=turn_ended_event["root_event_id"],
+    )
     for status_event in status_events:
         match["log"].append(f"Turno {match['turn']:02d}   {status_event}")
         append_event(match, "ABILITY_TRIGGERED", payload={"message": status_event}, message=status_event)

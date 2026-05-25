@@ -22,8 +22,12 @@ def _payload(event: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _side_name(event: Dict[str, Any]) -> Optional[str]:
-    side = str(event.get("owner_id") or event.get("actor") or "")
-    return side if side in {"player", "bot"} else None
+    payload = _payload(event)
+    for value in (payload.get("side"), event.get("target_id"), event.get("owner_id"), event.get("actor")):
+        side = str(value or "")
+        if side in {"player", "bot"}:
+            return side
+    return None
 
 
 def _iter_card_containers(state: Dict[str, Any]) -> Iterable[List[Any]]:
@@ -54,6 +58,38 @@ def _statuses(card: Dict[str, Any]) -> Dict[str, Any]:
         statuses = {}
         card["statuses"] = statuses
     return statuses
+
+
+def _side_statuses(side: Dict[str, Any]) -> Dict[str, Any]:
+    statuses = side.get("statuses")
+    if not isinstance(statuses, dict):
+        statuses = {}
+        side["statuses"] = statuses
+    return statuses
+
+
+def _side_slots(side: Dict[str, Any]) -> List[Any]:
+    slots = side.get("field")
+    if not isinstance(slots, list):
+        slots = []
+    slots = list(slots[:3])
+    while len(slots) < 3:
+        slots.append(None)
+    return slots
+
+
+def _sync_side_field(side: Dict[str, Any]) -> None:
+    slots = _side_slots(side)
+    normalized = []
+    for index, card in enumerate(slots):
+        if not isinstance(card, dict):
+            slots[index] = None
+            continue
+        card["field_slot"] = index
+        card["slot"] = index + 1
+        normalized.append(card)
+    side["field"] = slots
+    side["battlefield"] = normalized
 
 
 def _copy_state(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -144,6 +180,9 @@ def reduce_shield_broken(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[s
     payload = _payload(event)
     card = _find_card(next_state, event.get("target_id") or payload.get("instance_id"))
     if not card:
+        side_name = _side_name(event)
+        if side_name:
+            _side_statuses(next_state[side_name]).pop(str(payload.get("status") or "shield"), None)
         return next_state
     status_name = str(payload.get("status") or "aegis_sentinel_shield")
     status = _statuses(card).pop(status_name, None) or {}
@@ -169,14 +208,199 @@ def reduce_status_expired(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[
     return next_state
 
 
+def reduce_cards_drawn(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    if not side_name:
+        return next_state
+    side = next_state[side_name]
+    amount = max(0, int(payload.get("amount", payload.get("drawn", 0)) or 0))
+    wanted_ids = [str(card_id) for card_id in payload.get("card_ids", []) if card_id]
+    drawn = []
+    deck = list(side.get("deck") or [])
+    remaining = []
+    for card in deck:
+        if amount <= len(drawn):
+            remaining.append(card)
+            continue
+        if wanted_ids and str(card.get("id")) not in wanted_ids:
+            remaining.append(card)
+            continue
+        drawn.append(card)
+    side["deck"] = remaining
+    side.setdefault("hand", []).extend(drawn)
+    return next_state
+
+
+def reduce_status_applied(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    status_name = str(payload.get("status") or "").strip().lower()
+    if not status_name:
+        return next_state
+    turns = max(1, int(payload.get("turns", payload.get("duration_turns", 1)) or 1))
+    potency = max(1, int(payload.get("potency", payload.get("amount", 1)) or 1))
+    target_card = _find_card(next_state, event.get("target_id") or payload.get("instance_id") or payload.get("target_instance_id"))
+    if target_card:
+        current = _statuses(target_card).get(status_name, {})
+        _statuses(target_card)[status_name] = {
+            **current,
+            "turns": max(turns, int(current.get("turns", 0) or 0)),
+            "potency": max(potency, int(current.get("potency", 0) or 0)),
+            "source_card_id": event.get("source_card_id"),
+        }
+        return next_state
+    side_name = _side_name(event)
+    if side_name:
+        current = _side_statuses(next_state[side_name]).get(status_name, {})
+        _side_statuses(next_state[side_name])[status_name] = {
+            **current,
+            "turns": max(turns, int(current.get("turns", 0) or 0)),
+            "potency": max(potency, int(current.get("potency", 0) or 0)),
+        }
+    return next_state
+
+
+def reduce_status_cleansed(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    target_card = _find_card(next_state, event.get("target_id") or _payload(event).get("instance_id"))
+    if target_card:
+        _statuses(target_card).clear()
+        return next_state
+    side_name = _side_name(event)
+    if side_name:
+        _side_statuses(next_state[side_name]).clear()
+    return next_state
+
+
+def reduce_damage_resolved(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    if not side_name or "amount" not in payload:
+        return next_state
+    side = next_state[side_name]
+    amount = max(0, int(payload.get("amount", 0) or 0))
+    shield = _side_statuses(side).get("shield")
+    if shield and amount:
+        absorbed = min(amount, max(0, int(shield.get("potency", shield.get("amount", 0)) or 0)))
+        amount -= absorbed
+        shield["potency"] = max(0, int(shield.get("potency", 0) or 0) - absorbed)
+        if shield["potency"] <= 0:
+            _side_statuses(side).pop("shield", None)
+    side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
+    side["wounded"] = amount > 0
+    return next_state
+
+
+def reduce_health_recovered(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    if not side_name:
+        return next_state
+    side = next_state[side_name]
+    amount = max(0, int(payload.get("amount", 0) or 0))
+    side["hp"] = min(int(side.get("max_hp", side.get("hp", 0)) or 0), int(side.get("hp", 0) or 0) + amount)
+    return next_state
+
+
+def reduce_shield_applied(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    if not side_name:
+        return next_state
+    amount = max(1, int(payload.get("amount", payload.get("potency", 1)) or 1))
+    turns = max(1, int(payload.get("turns", 1) or 1))
+    _side_statuses(next_state[side_name])["shield"] = {"turns": turns, "potency": amount}
+    return next_state
+
+
+def reduce_card_discarded(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    card = payload.get("card")
+    if not side_name or not isinstance(card, dict):
+        return next_state
+    next_state[side_name].setdefault("discard", []).append(deepcopy(card))
+    return next_state
+
+
+def reduce_unit_destroyed(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    target_id = event.get("target_id") or payload.get("instance_id")
+    if not side_name or not target_id:
+        return next_state
+    side = next_state[side_name]
+    defeated = None
+    slots = _side_slots(side)
+    for index, card in enumerate(slots):
+        if isinstance(card, dict) and (card.get("instance_id") == target_id or card.get("id") == target_id):
+            defeated = deepcopy(card)
+            slots[index] = None
+            break
+    side["field"] = slots
+    side["battlefield"] = [
+        card
+        for card in side.get("battlefield", [])
+        if not isinstance(card, dict) or (card.get("instance_id") != target_id and card.get("id") != target_id)
+    ]
+    _sync_side_field(side)
+    if defeated:
+        defeated["defeated"] = True
+        side.setdefault("discard", []).append(defeated)
+    return next_state
+
+
+def reduce_turn_status_ticked(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    side_name = _side_name(event)
+    if not side_name:
+        return next_state
+    side = next_state[side_name]
+    statuses = _side_statuses(side)
+    damage = 0
+    for status_name in ("burn", "decay"):
+        status = statuses.get(status_name)
+        if status:
+            damage += max(1, int(status.get("potency", 1) or 1))
+    if damage:
+        side["hp"] = max(0, int(side.get("hp", 0) or 0) - damage)
+        side["wounded"] = True
+    expired = []
+    for status_name, status in list(statuses.items()):
+        turns = int(status.get("turns", 1) or 1) - 1
+        if turns <= 0:
+            expired.append(status_name)
+        else:
+            status["turns"] = turns
+    for status_name in expired:
+        statuses.pop(status_name, None)
+    return next_state
+
+
 def reduce_noop(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
     return _copy_state(state)
 
 
 REDUCER_REGISTRY: Dict[str, Reducer] = {
+    "CARD_DISCARDED": reduce_card_discarded,
+    "CARDS_DRAWN": reduce_cards_drawn,
+    "DAMAGE_RESOLVED": reduce_damage_resolved,
+    "HEALTH_RECOVERED": reduce_health_recovered,
     "RESOURCE_CONSUMED": reduce_resource_consumed,
+    "SHIELD_APPLIED": reduce_shield_applied,
     "STAT_MODIFIER_APPLIED": reduce_stat_modifier_applied,
+    "STATUS_APPLIED": reduce_status_applied,
+    "STATUS_CLEANSED": reduce_status_cleansed,
     "SHIELD_GRANTED": reduce_shield_granted,
+    "TURN_STATUS_TICKED": reduce_turn_status_ticked,
+    "UNIT_DESTROYED": reduce_unit_destroyed,
     "UNIT_EXHAUSTED": reduce_unit_exhausted,
     "SHIELD_BROKEN": reduce_shield_broken,
     "STATUS_EXPIRED": reduce_status_expired,

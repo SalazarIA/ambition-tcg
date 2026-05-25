@@ -9,11 +9,29 @@ from typing import Any, Dict, Optional
 PIPELINE_STAGES = (
     "COMMAND",
     "VALIDATE",
-    "BUILD_EFFECT_STACK",
+    "BUILD_EVENT_STACK",
     "RESOLVE_EFFECTS",
     "REDUCER_PHASE",
     "EMIT_EVENTS",
     "PERSIST_SNAPSHOT",
+)
+
+PHASED_RESOLUTION_STAGES = (
+    "PRE_RESOLUTION",
+    "TRIGGER_COLLECTION",
+    "PRIORITY_SORT",
+    "REDUCER_PHASE",
+    "POST_RESOLUTION",
+    "CLEANUP_PHASE",
+)
+
+PRIORITY_MODEL = (
+    ("Replacement Effects", 1),
+    ("Interrupts / Traps", 2),
+    ("Reactive Spells", 3),
+    ("Active Spell Effects", 4),
+    ("Passive Triggered Effects", 5),
+    ("Delayed / Expiration Effects", 6),
 )
 
 

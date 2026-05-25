@@ -15,15 +15,17 @@ from copy import deepcopy
 from typing import Any, Dict
 
 
-ENGINE_VERSION = "rebirth_engine_v66"
+ENGINE_VERSION = "rebirth_engine_v62"
 CARD_SET_VERSION = "rebirth_card_set_v66"
 REPLAY_FORMAT_VERSION = "rebirth_replay_v2"
-REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v61"
+REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v62"
 SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v2"
-RULESET_VERSION = "rebirth_ruleset_v61"
-REDUCER_VERSION = "rebirth_reducer_v61"
+RULESET_VERSION = "rebirth_ruleset_v62"
+REDUCER_VERSION = "rebirth_reducer_v62"
 MAX_EFFECT_CHAIN_DEPTH = 8
 MAX_CAUSAL_CHAIN_DEPTH = 12
+MAX_INTERRUPT_DEPTH = 4
+MAX_PHASE_ITERATIONS = 24
 
 CANONICAL_CARD_FIELDS = (
     "id",
@@ -149,7 +151,6 @@ def canonical_state(match: Dict[str, Any]) -> Dict[str, Any]:
         "turn_phase": match.get("turn_phase"),
         "winner": match.get("winner"),
         "is_finished": bool(match.get("is_finished")),
-        "effect_stack": _stable_value(match.get("effect_stack") or []),
         "player": canonical_side(match.get("player") or {}),
         "bot": canonical_side(match.get("bot") or {}),
         "bot_profile_id": (match.get("bot_profile") or {}).get("id"),
