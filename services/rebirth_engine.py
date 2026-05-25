@@ -4,7 +4,8 @@ import hashlib
 from services.rebirth_bot import ability_priority, choose_response
 from services.rebirth_cards import CARD_ABILITY_KEYS, create_card_instance, get_card, is_monster, is_spell, is_trap
 from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESULT, RebirthError
-from services.rebirth_events import append_command, append_event, append_snapshot
+from services.rebirth_effects import apply_legendary_passives, expire_statuses_for_trigger
+from services.rebirth_events import append_command, append_event, append_snapshot, new_effect_chain_id
 from services.rebirth_state import (
     FIELD_SLOT_COUNT,
     RebirthStateError,
@@ -648,7 +649,7 @@ def _resolve_spell_card(match, side_name, card):
     turn_label = f"Turno {match['turn']:02d}"
     actor_label = "Bot" if side_name == "bot" else "Você"
     match["log"].append(f"{turn_label}   {actor_label} lançou {card['name']}.")
-    append_event(
+    played_event = append_event(
         match,
         "CARD_PLAYED",
         actor=side_name,
@@ -738,17 +739,20 @@ def _summon_monster_card(match, side_name, card, field_slot=None):
     actor_label = "Bot" if side_name == "bot" else "Você"
     verb = "invocou" if actor_label == "Você" else "invocou"
     match["log"].append(f"{turn_label}   {actor_label} {verb} {summoned['name']}.")
-    append_event(
+    played_event = append_event(
         match,
         "CARD_PLAYED",
         actor=side_name,
         payload={"card_id": summoned["id"], "instance_id": summoned["instance_id"], "type": "MONSTER", "cost": cost},
         message=match["log"][-1],
     )
-    append_event(
+    summoned_event = append_event(
         match,
         "MONSTER_SUMMONED",
         actor=side_name,
+        source_card_id=summoned["id"],
+        target_id=summoned["instance_id"],
+        owner_id=side_name,
         payload={
             "card_id": summoned["id"],
             "instance_id": summoned["instance_id"],
@@ -757,7 +761,23 @@ def _summon_monster_card(match, side_name, card, field_slot=None):
             "current_guard": summoned["current_guard"],
         },
         message=match["result"]["message"],
+        parent_event_id=played_event["event_id"],
+        root_event_id=played_event["root_event_id"],
     )
+    passive_events = apply_legendary_passives(
+        match,
+        "CARD_SUMMONED",
+        {
+            "source_card": summoned,
+            "owner_side": side_name,
+            "effect_chain_id": new_effect_chain_id(match, "summon"),
+            "parent_event_id": summoned_event["event_id"],
+            "root_event_id": summoned_event["root_event_id"],
+        },
+    )
+    if passive_events:
+        match["result"]["ability_events"] = passive_events
+        match["result"]["message"] = f"{match['result']['message']} {' '.join(passive_events)}"
     match["phase"] = PHASE_CHOOSE
     set_turn_phase(match, TurnPhase.MAIN_PHASE)
     append_snapshot(match, f"{side_name}_monster_summoned")
@@ -889,7 +909,8 @@ def _resolve_combat_traps(match, player_card, bot_card):
     return events
 
 
-def _resolve_unanswered_attack(match, player_card):
+def _resolve_unanswered_attack(match, player_card, *, effect_chain_id=None, parent_event_id=None, root_event_id=None):
+    effect_chain_id = effect_chain_id or new_effect_chain_id(match, "combat")
     set_turn_phase(match, TurnPhase.COMBAT_PHASE)
     match["player"]["played_card"] = player_card
     damage = max(1, card_attack(player_card))
@@ -917,6 +938,28 @@ def _resolve_unanswered_attack(match, player_card):
         actor="player",
         payload={"player_card_id": player_card["id"], "bot_card_id": None, "outcome": result["outcome"], "winner": "player"},
         message=result["message"],
+        effect_chain_id=effect_chain_id,
+        parent_event_id=parent_event_id,
+        root_event_id=root_event_id,
+    )
+    damage_event = append_event(
+        match,
+        "DAMAGE_RESOLVED",
+        actor="player",
+        source_card_id=player_card.get("id"),
+        target_id="bot",
+        owner_id="player",
+        effect_chain_id=effect_chain_id,
+        parent_event_id=parent_event_id,
+        root_event_id=root_event_id,
+        payload={"player": 0, "bot": damage, "player_hp": match["player"]["hp"], "bot_hp": match["bot"]["hp"], "direct": True},
+    )
+    result["ability_events"].extend(
+        expire_statuses_for_trigger(
+            match,
+            "DAMAGE_RESOLVED",
+            {"effect_chain_id": effect_chain_id, "parent_event_id": damage_event["event_id"], "root_event_id": damage_event["root_event_id"]},
+        )
     )
     finish_if_needed(match)
     if not match.get("is_finished"):
@@ -926,7 +969,8 @@ def _resolve_unanswered_attack(match, player_card):
     return result
 
 
-def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
+def resolve_turn(match, player_card, bot_card, *, persistent_field=False, effect_chain_id=None, parent_event_id=None, root_event_id=None):
+    effect_chain_id = effect_chain_id or new_effect_chain_id(match, "combat")
     pre_stack = effect_stack_for(match)
     pre_stack_events = pre_stack.resolve_stack(match)
     _persist_effect_stack(match, pre_stack)
@@ -1039,6 +1083,7 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
     append_event(
         match,
         "CLASH_RESOLVED",
+        effect_chain_id=effect_chain_id,
         payload={
             "player_card_id": player_card["id"],
             "bot_card_id": bot_card["id"],
@@ -1047,8 +1092,37 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
             "effective_attack": deepcopy(result["effective_attack"]),
         },
         message=result["message"],
+        parent_event_id=parent_event_id,
+        root_event_id=root_event_id,
     )
     damage = result.get("damage") or {}
+    damage_event = None
+    if int(damage.get("player", 0) or 0) or int(damage.get("bot", 0) or 0):
+        damage_event = append_event(
+            match,
+            "DAMAGE_RESOLVED",
+            actor=result["winner"] or "system",
+            source_card_id=(player_card if result["winner"] == "player" else bot_card).get("id") if result["winner"] else None,
+            target_id="player" if int(damage.get("player", 0) or 0) else "bot",
+            owner_id=result["winner"] or "system",
+            effect_chain_id=effect_chain_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+            payload={
+                "player": int(damage.get("player", 0) or 0),
+                "bot": int(damage.get("bot", 0) or 0),
+                "player_hp": match["player"]["hp"],
+                "bot_hp": match["bot"]["hp"],
+                "persistent_field": bool(persistent_field),
+            },
+        )
+        ability_events.extend(
+            expire_statuses_for_trigger(
+                match,
+                "DAMAGE_RESOLVED",
+                {"effect_chain_id": effect_chain_id, "parent_event_id": damage_event["event_id"], "root_event_id": damage_event["root_event_id"]},
+            )
+        )
     defeated_player = _remove_defeated_battlefield_cards(match["player"]) if persistent_field else []
     defeated_bot = _remove_defeated_battlefield_cards(match["bot"]) if persistent_field else []
     defeated_events = []
@@ -1062,10 +1136,42 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
     match["result"] = result
     if persistent_field and defeated_events:
         result["message"] = f"{result['message']} {' '.join(defeated_events)}"
+    attacker_survived = bool(player_card) and int(player_card.get("current_guard", player_card.get("guard", 1)) or 0) > 0
+    if attacker_survived:
+        survived_parent = damage_event["event_id"] if damage_event else parent_event_id
+        survived_event = append_event(
+            match,
+            "UNIT_SURVIVED_COMBAT",
+            actor="player",
+            source_card_id=player_card.get("id"),
+            target_id=player_card.get("instance_id"),
+            owner_id="player",
+            effect_chain_id=effect_chain_id,
+            parent_event_id=survived_parent,
+            root_event_id=root_event_id,
+            payload={"card_id": player_card.get("id"), "instance_id": player_card.get("instance_id"), "field_slot": player_card.get("field_slot")},
+        )
+        passive_events = apply_legendary_passives(
+            match,
+            "UNIT_SURVIVED_COMBAT",
+            {
+                "attacker_card": player_card,
+                "attacker_side": "player",
+                "effect_chain_id": effect_chain_id,
+                "parent_event_id": survived_event["event_id"],
+                "root_event_id": survived_event["root_event_id"],
+            },
+        )
+        ability_events.extend(passive_events)
+        if passive_events:
+            result["message"] = f"{result['message']} {' '.join(passive_events)}"
+        result["ability_events"] = ability_events
+        match["result"] = result
     if int(damage.get("player", 0) or 0) or int(damage.get("bot", 0) or 0):
         append_event(
             match,
             "DAMAGE_DEALT",
+            effect_chain_id=effect_chain_id,
             payload={
                 "player": int(damage.get("player", 0) or 0),
                 "bot": int(damage.get("bot", 0) or 0),
@@ -1263,11 +1369,26 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
             "first_turn_direct_attack_blocked",
         )
 
+    effect_chain_id = new_effect_chain_id(match, "attack")
     append_command(
         match,
         "DECLARE_ATTACK",
         actor="player",
         payload={"attacker_instance_id": attacker_instance_id, "target_instance_id": target_instance_id},
+    )
+    attack_event = append_event(
+        match,
+        "ATTACK_DECLARED",
+        actor="player",
+        source_card_id=attacker.get("id"),
+        target_id=target_instance_id,
+        owner_id="player",
+        effect_chain_id=effect_chain_id,
+        payload={
+            "attacker_card_id": attacker.get("id"),
+            "attacker_instance_id": attacker_instance_id,
+            "target_instance_id": target_instance_id,
+        },
     )
 
     set_turn_phase(match, TurnPhase.COMBAT_PHASE)
@@ -1278,9 +1399,23 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
 
     if target_instance_id:
         match["bot"]["played_card"] = target
-        result = resolve_turn(match, attacker, target, persistent_field=True)
+        result = resolve_turn(
+            match,
+            attacker,
+            target,
+            persistent_field=True,
+            effect_chain_id=effect_chain_id,
+            parent_event_id=attack_event["event_id"],
+            root_event_id=attack_event["root_event_id"],
+        )
     else:
-        result = _resolve_unanswered_attack(match, attacker)
+        result = _resolve_unanswered_attack(
+            match,
+            attacker,
+            effect_chain_id=effect_chain_id,
+            parent_event_id=attack_event["event_id"],
+            root_event_id=attack_event["root_event_id"],
+        )
 
     if not match["is_finished"]:
         finish_if_exhausted(match)
@@ -1320,8 +1455,23 @@ def next_turn(match):
     if match.get("phase") not in {PHASE_RESULT, PHASE_CHOOSE}:
         raise RebirthError("O próximo turno só está disponível na fase principal ou após o combate.", "invalid_phase")
 
+    effect_chain_id = new_effect_chain_id(match, "turn")
     append_command(match, "NEXT_TURN", actor="player", payload={"turn": match.get("turn")})
     set_turn_phase(match, TurnPhase.END_PHASE)
+    turn_ended_event = append_event(
+        match,
+        "TURN_ENDED",
+        actor="system",
+        effect_chain_id=effect_chain_id,
+        payload={"turn": match.get("turn")},
+    )
+    turn_end_events = apply_legendary_passives(
+        match,
+        "TURN_ENDED",
+        {"effect_chain_id": effect_chain_id, "parent_event_id": turn_ended_event["event_id"], "root_event_id": turn_ended_event["root_event_id"]},
+    )
+    for event in turn_end_events:
+        match["log"].append(f"Turno {match['turn']:02d}   {event}")
     clear_played_cards(match)
     match["turn"] += 1
     set_turn_phase(match, TurnPhase.DRAW_PHASE)
@@ -1340,6 +1490,9 @@ def next_turn(match):
     draw_to_hand_size(match["bot"])
     _ready_battlefield(match["player"])
     _ready_battlefield(match["bot"])
+    expired_events = expire_statuses_for_trigger(match, "TURN_STARTED", {"effect_chain_id": effect_chain_id})
+    for event in expired_events:
+        match["log"].append(f"Turno {match['turn']:02d}   {event}")
     _refresh_energy_for_turn(match)
     evolve_bot_if_ready(match)
     _bot_auto_summon(match)

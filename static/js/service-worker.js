@@ -1,5 +1,5 @@
-const CACHE_NAME = "v59_COMBAT_REWORK";
-const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_COMBAT_REWORK(?:$|-))/i;
+const CACHE_NAME = "v66_EVENT_AUDIO";
+const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO)(?:$|-))/i;
 
 function stableAsset(path) {
     return `${path}?v=${CACHE_NAME}`;
@@ -21,10 +21,15 @@ const CORE_ASSETS = [
     "/static/manifest.webmanifest",
     stableAsset("/static/css/rebirth.css"),
     stableAsset("/static/js/rebirth.js"),
+    stableAsset("/static/js/rebirth_audio.js"),
     stableAsset("/static/js/rebirth_global.js"),
     stableAsset("/static/js/rebirth_product.js"),
     stableAsset("/static/js/pwa.js"),
     "/static/assets/rebirth/manifest.json",
+    "/static/assets/rebirth/audio/impact_heavy.wav",
+    "/static/assets/rebirth/audio/shield_shatter.wav",
+    "/static/assets/rebirth/audio/evolution_burst.wav",
+    "/static/assets/rebirth/audio/click_metallic.wav",
     "/static/assets/rebirth/cards/dreadclaw-art.webp",
     "/static/assets/rebirth/ui/bot-card-back.png",
     "/static/assets/rebirth/ui/bot-emblem.png",

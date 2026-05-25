@@ -13,6 +13,7 @@ def test_rebirth_template_matches_premium_clash_contract():
 
     assert "filename='css/rebirth.css'" in template
     assert "filename='js/rebirth.js'" in template
+    assert "filename='js/rebirth_audio.js'" in template
     assert "rebirth_3d_adapter.js" not in template
     assert "Socket.IO" not in template
 
@@ -150,15 +151,20 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v59_COMBAT_REWORK";' in service_worker
-    assert '"version": "v59_COMBAT_REWORK"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v59_COMBAT_REWORK"' in art_contract
+    assert 'const CACHE_NAME = "v66_EVENT_AUDIO";' in service_worker
+    assert '"version": "v66_EVENT_AUDIO"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v66_EVENT_AUDIO"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
-    assert r"v\d+_COMBAT_REWORK" in service_worker
+    assert r"v\d+_(?:COMBAT_REWORK|EVENT_AUDIO)" in service_worker
     assert r"rebirth(?:[-_].*)?" in service_worker
     assert "key !== CACHE_NAME && REBIRTH_CACHE_RE.test(key)" in service_worker
     assert 'stableAsset("/static/css/rebirth.css")' in service_worker
     assert 'stableAsset("/static/js/rebirth.js")' in service_worker
+    assert 'stableAsset("/static/js/rebirth_audio.js")' in service_worker
+    assert "/static/assets/rebirth/audio/impact_heavy.wav" in service_worker
+    assert "/static/assets/rebirth/audio/shield_shatter.wav" in service_worker
+    assert "/static/assets/rebirth/audio/evolution_burst.wav" in service_worker
+    assert "/static/assets/rebirth/audio/click_metallic.wav" in service_worker
     assert "CORE_ASSET_SET.has(`${url.pathname}${url.search}`)" in service_worker
     assert "function pruneActiveCache()" in service_worker
     assert "pruneActiveCache()" in service_worker
@@ -268,6 +274,40 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert "history.pushState" not in product_js
     assert 'fetch(url, { credentials: "same-origin" })' in product_js
     assert "initiateMobilePurchase" in product_js
+
+
+def test_rebirth_audio_manager_observes_game_events_without_gameplay_side_effects():
+    audio = read("static/js/rebirth_audio.js")
+    rebirth_js = read("static/js/rebirth.js")
+
+    for token in [
+        "class RebirthAudioManager",
+        "window.RebirthAudioManager = new RebirthAudioManager()",
+        "AudioContext",
+        "AudioBuffer",
+        "decodeAudioData",
+        "gainNode",
+        'window.addEventListener("click", this.resumeOnGesture',
+        'window.removeEventListener("click", this.resumeOnGesture',
+        "impact_heavy.wav",
+        "shield_shatter.wav",
+        "evolution_burst.wav",
+        "click_metallic.wav",
+        "DAMAGE_RESOLVED",
+        "SHIELD_BROKEN",
+        "EVOLUTION_COMPLETED",
+        "UI_CLICK_CONFIRMED",
+        "replayAudioMutedMode",
+        "observeEvents",
+    ]:
+        assert token in audio
+    assert "<audio" not in audio.lower()
+    assert "createOscillator" not in audio
+    assert "createOscillator" not in rebirth_js
+    assert "new AudioContext" not in rebirth_js
+    assert "RebirthAudioManager.observeEvents(state.events || []" in rebirth_js
+
+    product_js = read("static/js/rebirth_product.js")
     assert "monetization_disabled" in product_js
     assert "simulated" not in product_js
     assert "bindProgressionDashboard" in product_js
@@ -300,7 +340,7 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=v59_COMBAT_REWORK" in combined
+    assert "v=v66_EVENT_AUDIO" in combined
     assert "v=rebirth-058" not in combined
     assert "v=rebirth-057" not in combined
     assert "v=rebirth-056" not in combined

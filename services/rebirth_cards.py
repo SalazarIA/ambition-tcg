@@ -190,6 +190,76 @@ TRAP_DEFINITIONS = [
 ]
 
 
+LEGENDARY_DEFINITIONS = [
+    {
+        "id": "legend_infernus_core",
+        "name": "Infernus Core",
+        "family": "FIRE",
+        "element": "Fogo",
+        "cost": 4,
+        "attack": 6,
+        "guard": 5,
+        "ability_key": "infernus_core",
+        "ability_name": "Núcleo Infernus",
+        "ability_text": "Ao sobreviver ao combate, consome 1 mana para receber +2 ATK permanente.",
+        "heuristic_vector": {
+            "scaling_potential": 9,
+            "survivability": 5,
+            "trigger_threat": 8,
+            "board_tempo": 8,
+            "value_persistence": 8,
+            "future_resource_swing": 4,
+        },
+        "art": "/static/assets/rebirth/cards/embermaw-alpha-art.webp",
+        "palette": ["#ff5b35", "#ffcf6b", "#2a0f0b"],
+    },
+    {
+        "id": "legend_aegis_sentinel",
+        "name": "Aegis Sentinel",
+        "family": "EARTH",
+        "element": "Terra",
+        "cost": 4,
+        "attack": 4,
+        "guard": 7,
+        "ability_key": "aegis_sentinel",
+        "ability_name": "Sentinela Aegis",
+        "ability_text": "No fim do turno, se não agiu, recebe +2 GRD temporário até o próximo dano resolvido.",
+        "heuristic_vector": {
+            "scaling_potential": 3,
+            "survivability": 9,
+            "trigger_threat": 7,
+            "board_tempo": 7,
+            "value_persistence": 8,
+            "future_resource_swing": 2,
+        },
+        "art": "/static/assets/rebirth/cards/ironbastion-art.webp",
+        "palette": ["#8bd05f", "#f0e2a0", "#17220d"],
+    },
+    {
+        "id": "legend_shadow_reaper",
+        "name": "Shadow Reaper",
+        "family": "SHADOW",
+        "element": "Sombra",
+        "cost": 4,
+        "attack": 5,
+        "guard": 5,
+        "ability_key": "shadow_reaper",
+        "ability_name": "Ceifador Sombrio",
+        "ability_text": "Ao ser invocado, exaure por 1 turno a criatura inimiga de maior ATK.",
+        "heuristic_vector": {
+            "scaling_potential": 2,
+            "survivability": 5,
+            "trigger_threat": 9,
+            "board_tempo": 8,
+            "value_persistence": 6,
+            "future_resource_swing": 7,
+        },
+        "art": "/static/assets/rebirth/cards/voidstalker-art.webp",
+        "palette": ["#9b5cff", "#221437", "#f2d9ff"],
+    },
+]
+
+
 def _image_path(card_id):
     return CARD_IMAGE_TEMPLATE.format(card_number=int(card_id.rsplit("_", 1)[-1]))
 
@@ -227,6 +297,17 @@ def _monster_cost(attack, guard, is_evolved):
     return cost
 
 
+def _heuristic_vector(*, attack, guard, tier=1, scaling=0, trigger=0, persistence=0, resource=0):
+    return {
+        "scaling_potential": max(0, min(10, int(scaling or 0))),
+        "survivability": max(0, min(10, int(guard or 0))),
+        "trigger_threat": max(0, min(10, int(trigger or 0))),
+        "board_tempo": max(0, min(10, int(attack or 0) + int(tier or 1))),
+        "value_persistence": max(0, min(10, int(persistence or 0) + int(tier or 1))),
+        "future_resource_swing": max(0, min(10, int(resource or 0))),
+    }
+
+
 def _monster_card(card_number, *, family, name, tier, slot):
     config = FAMILY_CONFIGS[family]
     card_id = f"card_{card_number:03d}"
@@ -258,6 +339,14 @@ def _monster_card(card_number, *, family, name, tier, slot):
         "ability_text": ability_text,
         "flavor": f"{name} conduz a linhagem de {config['element'].lower()} à arena viva.",
         "status_affinity": family.lower(),
+        "heuristic_vector": _heuristic_vector(
+            attack=attack,
+            guard=guard,
+            tier=tier,
+            scaling=2 if "Surto" in ability_name or "Crescente" in ability_name else 0,
+            trigger=2 + (2 if is_evolved else 0),
+            persistence=1 if family in {"EARTH", "SHADOW"} else 0,
+        ),
     }
     card.update(_art_payload(card_id, family, config["palette"]))
     return card
@@ -288,6 +377,7 @@ def _spell_card(offset, definition):
         "flavor": f"{name} bends the stack before the next clash.",
         "action": action,
         "stack_effects": deepcopy(stack_effects),
+        "heuristic_vector": _heuristic_vector(attack=0, guard=0, trigger=2, resource=1),
     }
     card.update(_art_payload(card_id, "spell", ["#f9e27d", "#2f245f", "#ffffff"]))
     return card
@@ -321,8 +411,43 @@ def _trap_card(offset, definition):
         "trigger_phase": "COMBAT_PHASE",
         "trigger": trigger,
         "trap_effect": trap_effect,
+        "heuristic_vector": _heuristic_vector(attack=0, guard=0, trigger=3, persistence=1),
     }
     card.update(_art_payload(card_id, "trap", ["#ff4f8b", "#181022", "#ffc6df"]))
+    return card
+
+
+def _legendary_card(definition):
+    card = {
+        "id": definition["id"],
+        "name": definition["name"],
+        "type": "MONSTER",
+        "card_type": "MONSTER",
+        "family": definition["family"],
+        "role": "Lendária determinística de gatilho passivo",
+        "tier": 3,
+        "rarity": "LEGENDARY",
+        "cost": definition["cost"],
+        "attack": definition["attack"],
+        "power": definition["attack"],
+        "guard": definition["guard"],
+        "element": definition["element"],
+        "evolution_id": None,
+        "ability_key": definition["ability_key"],
+        "ability_name": definition["ability_name"],
+        "ability_text": definition["ability_text"],
+        "flavor": f"{definition['name']} sela um contrato lendário no barramento de eventos.",
+        "status_affinity": definition["family"].lower(),
+        "legendary": True,
+        "heuristic_vector": deepcopy(definition["heuristic_vector"]),
+        "art": definition["art"],
+        "art_key": f"rebirth.card.{definition['id']}.v1",
+        "art_version": "v1",
+        "art_status": "rebirth_legendary_contract",
+        "art_finish": "tcg_card_frame",
+        "palette": list(definition["palette"]),
+        "silhouette": f"{definition['family'].lower()}_legendary_sigil",
+    }
     return card
 
 
@@ -345,6 +470,9 @@ def _build_catalog_dict():
     expected = [f"card_{index:03d}" for index in range(1, 101)]
     if list(cards.keys()) != expected:
         raise RuntimeError("Rebirth catalog generation must produce card_001 through card_100 in order.")
+    for definition in LEGENDARY_DEFINITIONS:
+        card = _legendary_card(definition)
+        cards[card["id"]] = card
     return cards
 
 
@@ -355,6 +483,7 @@ BASE_MONSTERS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card["
 EVOLVED_MONSTERS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card["type"] == "MONSTER" and int(card["tier"]) > 1]
 SPELL_CARDS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card["type"] == "SPELL"]
 TRAP_CARDS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card["type"] == "TRAP"]
+LEGENDARY_CARDS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card.get("rarity") == "LEGENDARY"]
 CARD_ABILITY_KEYS = {card_id: card["ability_key"] for card_id, card in CARD_CATALOG_DICT.items()}
 
 PLAYER_DECK = [

@@ -104,6 +104,7 @@ def public_state(match):
         "result": deepcopy(match.get("result")),
         "winner": match.get("winner"),
         "is_finished": bool(match.get("is_finished")),
+        "replay_audio_muted_mode": bool(match.get("replay_audio_muted_mode", False)),
         "events": deepcopy(match.get("events", [])[-12:]),
         "log": list(match.get("log", [])[-8:]),
     }

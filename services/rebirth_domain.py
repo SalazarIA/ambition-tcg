@@ -15,10 +15,15 @@ from copy import deepcopy
 from typing import Any, Dict
 
 
-ENGINE_VERSION = "rebirth_engine_v65"
-CARD_SET_VERSION = "rebirth_card_set_v60"
-REPLAY_FORMAT_VERSION = "rebirth_replay_v1"
-SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v1"
+ENGINE_VERSION = "rebirth_engine_v66"
+CARD_SET_VERSION = "rebirth_card_set_v66"
+REPLAY_FORMAT_VERSION = "rebirth_replay_v2"
+REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v61"
+SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v2"
+RULESET_VERSION = "rebirth_ruleset_v61"
+REDUCER_VERSION = "rebirth_reducer_v61"
+MAX_EFFECT_CHAIN_DEPTH = 8
+MAX_CAUSAL_CHAIN_DEPTH = 12
 
 CANONICAL_CARD_FIELDS = (
     "id",
@@ -37,6 +42,11 @@ CANONICAL_CARD_FIELDS = (
     "max_guard",
     "attack_adjustment",
     "guard_adjustment",
+    "base_attack",
+    "base_guard",
+    "permanent_attack_bonus",
+    "temporary_guard_bonus",
+    "shield_expires_on",
     "element",
     "ability_key",
     "evolution_id",
@@ -54,6 +64,7 @@ CANONICAL_CARD_FIELDS = (
     "trigger_phase",
     "trigger",
     "trap_effect",
+    "effect_chain_id",
 )
 
 
@@ -87,6 +98,8 @@ def canonical_card(card: Any) -> Any:
         payload["status_effects"] = _stable_value(card.get("status_effects") or [])
     if "stack_effects" in card:
         payload["stack_effects"] = _stable_value(card.get("stack_effects") or [])
+    if "heuristic_vector" in card:
+        payload["heuristic_vector"] = _stable_value(card.get("heuristic_vector") or {})
     return payload
 
 
@@ -128,6 +141,8 @@ def canonical_state(match: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "engine_version": match.get("engine_version") or ENGINE_VERSION,
         "card_set_version": match.get("card_set_version") or CARD_SET_VERSION,
+        "ruleset_version": match.get("ruleset_version") or RULESET_VERSION,
+        "reducer_version": match.get("reducer_version") or REDUCER_VERSION,
         "game_seed": str(match.get("game_seed", match.get("seed", "")) or ""),
         "turn": int(match.get("turn", 0) or 0),
         "phase": match.get("phase"),
@@ -144,12 +159,16 @@ def canonical_state(match: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def canonical_state_hash(match: Dict[str, Any]) -> str:
-    encoded = canonical_json(canonical_state(match))
+    encoded = serialize_canonical_state(match)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
+def serialize_canonical_state(match: Dict[str, Any]) -> str:
+    return canonical_json(canonical_state(match))
+
+
 def compress_canonical_state(match: Dict[str, Any]) -> str:
-    raw = canonical_json(canonical_state(match)).encode("utf-8")
+    raw = serialize_canonical_state(match).encode("utf-8")
     return base64.b64encode(gzip.compress(raw)).decode("ascii")
 
 

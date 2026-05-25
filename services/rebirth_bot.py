@@ -6,6 +6,11 @@ from services.rebirth_contracts import FIELD_SLOT_COUNT
 
 
 BOT_PERSONALITY_ORDER = ("defensive", "aggressive", "opportunist")
+MAX_SIMULATION_TIME_MS = 35
+MCTS_ROLLOUT_DEPTH_LIMIT = 4
+MCTS_BEAM_WIDTH = 6
+MCTS_SIMULATION_BUDGET = 48
+CI_SAFE_SIMULATION_CEILING = 24
 
 BOT_PERSONALITIES = {
     "defensive": {
@@ -86,11 +91,63 @@ def current_guard(card):
 
 
 def card_utility_value(card):
+    vector = heuristic_vector(card)
     return (
         card_attack(card) * 3
         + card_guard(card) * 2
         + card_tier(card) * 8
-        + ability_priority(card) * 2
+        + normalize_heuristic(vector["trigger_threat"]) * 2
+        + threat_score(card)
+        + passive_prediction(card)
+    )
+
+
+def normalize_heuristic(value, *, ceiling=10):
+    value = max(0, int(value or 0))
+    ceiling = max(1, int(ceiling or 1))
+    return min(ceiling, value)
+
+
+def heuristic_vector(card):
+    vector = card.get("heuristic_vector") if isinstance(card, dict) else None
+    vector = vector if isinstance(vector, dict) else {}
+    attack = card_attack(card)
+    guard = max(card_guard(card), current_guard(card))
+    return {
+        "scaling_potential": normalize_heuristic(vector.get("scaling_potential", int(card.get("permanent_attack_bonus", 0) or 0))),
+        "survivability": normalize_heuristic(vector.get("survivability", guard)),
+        "trigger_threat": normalize_heuristic(vector.get("trigger_threat", ability_priority(card))),
+        "board_tempo": normalize_heuristic(vector.get("board_tempo", attack + card_tier(card))),
+        "value_persistence": normalize_heuristic(vector.get("value_persistence", card_tier(card) + int(card.get("permanent_attack_bonus", 0) or 0))),
+        "future_resource_swing": normalize_heuristic(vector.get("future_resource_swing", 0)),
+    }
+
+
+GENERIC_THREAT_WEIGHTS = {
+    "scaling_potential": 4,
+    "survivability": 3,
+    "trigger_threat": 4,
+    "board_tempo": 3,
+    "value_persistence": 3,
+    "future_resource_swing": 2,
+}
+
+
+def threat_score(card):
+    vector = heuristic_vector(card)
+    return sum(vector[name] * weight for name, weight in GENERIC_THREAT_WEIGHTS.items())
+
+
+def passive_prediction(card):
+    vector = heuristic_vector(card)
+    exhausted_penalty = 4 if card.get("has_acted", card.get("has_attacked", False)) else 0
+    return max(
+        0,
+        vector["scaling_potential"] * 2
+        + vector["trigger_threat"]
+        + vector["future_resource_swing"]
+        + vector["value_persistence"]
+        - exhausted_penalty,
     )
 
 
@@ -183,7 +240,7 @@ def attack_utility_projection(
 
     attacker_destroyed = attacker_guard_after <= 0
     target_destroyed = target_guard_after <= 0
-    target_value = card_utility_value(target) if target_destroyed else max(1, bot_attack)
+    target_value = card_utility_value(target) if target_destroyed else max(1, bot_attack) + threat_score(target) // 3
     own_loss = card_utility_value(attacker) if attacker_destroyed else max(0, current_guard(attacker) - attacker_guard_after)
     remaining_player_cards = [
         card
@@ -200,15 +257,21 @@ def attack_utility_projection(
         + projection["damage_dealt"] * 5
         - own_loss
         - projection["damage_taken"] * 4
+        + passive_prediction(attacker)
+        + (threat_score(target) // 2 if target_destroyed else 0)
         + (5000 if lethal_window else 0)
     )
+    future_lethal_risk = bool(target and not target_destroyed and threat_score(target) >= 32 and attacker_destroyed)
+    if future_lethal_risk:
+        utility -= 12000
+        allowed = False
     if high_tier_suicide and not lethal_window:
         utility -= 100000
 
     return {
         "allowed": allowed,
         "utility": utility,
-        "reason": "lethal_window" if lethal_window else ("refuse_high_tier_suicide" if not allowed else "trade_value"),
+        "reason": "lethal_window" if lethal_window else ("avoid_future_lethal" if future_lethal_risk else ("refuse_high_tier_suicide" if not allowed else "trade_value")),
         "outcome": projection["outcome"],
         "damage_dealt": projection["damage_dealt"],
         "damage_taken": projection["damage_taken"],
@@ -229,10 +292,11 @@ def tactical_utility_matrix(
     bot_wounded=False,
 ):
     rows = []
-    for attacker in (bot_battlefield or [])[:FIELD_SLOT_COUNT]:
+    attackers = deterministic_move_order((bot_battlefield or [])[:FIELD_SLOT_COUNT])[:MCTS_BEAM_WIDTH]
+    for attacker in attackers:
         if not attacker or attacker.get("exhausted") or attacker.get("has_attacked") or attacker.get("has_acted"):
             continue
-        targets = (player_battlefield or [])[:FIELD_SLOT_COUNT] or [None]
+        targets = deterministic_move_order((player_battlefield or [])[:FIELD_SLOT_COUNT])[:MCTS_BEAM_WIDTH] or [None]
         for target in targets:
             projection = attack_utility_projection(
                 attacker,
@@ -256,21 +320,56 @@ def tactical_utility_matrix(
     return rows
 
 
-def choose_bot_attack(bot_battlefield, player_battlefield, **context):
-    matrix = tactical_utility_matrix(bot_battlefield, player_battlefield, **context)
-    allowed = [row for row in matrix if row["allowed"]]
-    if not allowed:
-        return None
+def deterministic_move_order(cards):
     return sorted(
-        allowed,
-        key=lambda row: (
-            row["utility"],
-            row["damage_dealt"],
-            -row["damage_taken"],
-            row["attacker_id"] or "",
-            row["target_id"] or "",
+        [card for card in cards or [] if card],
+        key=lambda card: (
+            -threat_score(card),
+            -card_attack(card),
+            -card_guard(card),
+            int(card.get("field_slot", card.get("slot", 0)) or 0),
+            str(card.get("instance_id") or card.get("id") or ""),
         ),
-    )[-1]
+    )
+
+
+def beam_prune_moves(rows, width=MCTS_BEAM_WIDTH):
+    return sorted(
+        rows or [],
+        key=lambda row: (
+            -int(row.get("utility", 0) or 0),
+            str(row.get("attacker_instance_id") or ""),
+            str(row.get("target_instance_id") or ""),
+        ),
+    )[: max(1, int(width or 1))]
+
+
+class MCTSAgent:
+    """Deterministic, CI-safe rollout facade for future full MCTS work."""
+
+    def __init__(self, *, budget=MCTS_SIMULATION_BUDGET, depth_limit=MCTS_ROLLOUT_DEPTH_LIMIT, beam_width=MCTS_BEAM_WIDTH):
+        self.budget = min(int(budget or 0), CI_SAFE_SIMULATION_CEILING)
+        self.depth_limit = max(1, min(int(depth_limit or 1), MCTS_ROLLOUT_DEPTH_LIMIT))
+        self.beam_width = max(1, min(int(beam_width or 1), MCTS_BEAM_WIDTH))
+        self.max_simulation_time_ms = MAX_SIMULATION_TIME_MS
+
+    def rank_attacks(self, bot_battlefield, player_battlefield, **context):
+        matrix = tactical_utility_matrix(bot_battlefield, player_battlefield, **context)
+        pruned = beam_prune_moves(matrix, width=self.beam_width)
+        return pruned[: self.budget]
+
+    def choose_attack(self, bot_battlefield, player_battlefield, **context):
+        ranked = self.rank_attacks(bot_battlefield, player_battlefield, **context)
+        if not ranked:
+            return None
+        allowed = [row for row in ranked if row.get("allowed")]
+        if not allowed:
+            return None
+        return allowed[0]
+
+
+def choose_bot_attack(bot_battlefield, player_battlefield, **context):
+    return MCTSAgent().choose_attack(bot_battlefield, player_battlefield, **context)
 
 
 def estimated_attack(card, opponent_card, turn=1):

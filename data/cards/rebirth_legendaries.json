@@ -1,0 +1,20 @@
+[
+  {
+    "id": "legend_infernus_core",
+    "event_trigger": "UNIT_SURVIVED_COMBAT",
+    "ability_key": "infernus_core",
+    "effect_contract": "consume 1 mana, then apply permanent +2 ATK through RESOURCE_CONSUMED, STAT_MODIFIER_APPLIED and EFFECT_RESOLVED events"
+  },
+  {
+    "id": "legend_aegis_sentinel",
+    "event_trigger": "TURN_ENDED",
+    "ability_key": "aegis_sentinel",
+    "effect_contract": "if has_acted is false, apply a +2 GRD temporary shield with explicit DAMAGE_RESOLVED lifecycle"
+  },
+  {
+    "id": "legend_shadow_reaper",
+    "event_trigger": "CARD_SUMMONED",
+    "ability_key": "shadow_reaper",
+    "effect_contract": "select highest-ATK enemy creature, tie-break by lowest slot_index, then apply EXHAUSTED for one turn"
+  }
+]

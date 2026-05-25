@@ -1,7 +1,8 @@
-"""Catalog coverage matrix — every card_001..card_100 individually verified.
+"""Catalog coverage matrix — every active Rebirth card individually verified.
 
 Why this file exists:
-    `test_rebirth_card_set.py` already asserts the *aggregate* shape (100 ids,
+    `test_rebirth_card_set.py` already asserts the aggregate shape (100 base ids
+    plus deterministic legendary contracts,
     family counts, deck distribution). What it does NOT guarantee is that each
     specific card produces a consistent payload, derives a valid cost, and
     exposes an ability_key that the engine can route. If a refactor of
@@ -37,8 +38,8 @@ SPELL_IDS = [card["id"] for card in CARD_CATALOG if card["type"] == "SPELL"]
 TRAP_IDS = [card["id"] for card in CARD_CATALOG if card["type"] == "TRAP"]
 
 # Guard: the matrix is meaningless if the catalog size changes silently.
-assert len(ALL_CARD_IDS) == 100, "Catalog must contain exactly 100 cards"
-assert len(MONSTER_IDS) == 80, "Catalog must contain exactly 80 monsters"
+assert len(ALL_CARD_IDS) == 103, "Catalog must contain exactly 103 cards"
+assert len(MONSTER_IDS) == 83, "Catalog must contain exactly 83 monsters"
 assert len(SPELL_IDS) == 10, "Catalog must contain exactly 10 spells"
 assert len(TRAP_IDS) == 10, "Catalog must contain exactly 10 traps"
 
@@ -53,23 +54,29 @@ def test_card_payload_shape(card_id):
 
     # Identity
     assert card["id"] == card_id
-    assert card_id.startswith("card_") and card_id[5:].isdigit()
-    assert 1 <= int(card_id[5:]) <= 100
+    is_base_id = card_id.startswith("card_") and card_id[5:].isdigit()
+    assert is_base_id or card_id.startswith("legend_")
+    if is_base_id:
+        assert 1 <= int(card_id[5:]) <= 100
 
     # Type classification
     assert card["type"] in {"MONSTER", "SPELL", "TRAP"}
     assert card["card_type"] == card["type"], "type and card_type must match"
 
     # Rarity is part of the gacha contract
-    assert card["rarity"] in {"COMMON", "UNCOMMON"}
+    assert card["rarity"] in {"COMMON", "UNCOMMON", "LEGENDARY"}
 
     # Cost must be a positive int the energy ramp can ever afford (max 10).
     assert isinstance(card["cost"], int)
     assert 1 <= card["cost"] <= 10
 
     # Art path is deterministic and optimized for the browser.
-    assert card["art"] == f"static/img/cards/baralho/{int(card_id.split('_')[-1])}.webp"
-    assert card["art_status"] == "optimized_webp_path"
+    if is_base_id:
+        assert card["art"] == f"static/img/cards/baralho/{int(card_id.split('_')[-1])}.webp"
+        assert card["art_status"] == "optimized_webp_path"
+    else:
+        assert card["art"].startswith("/static/assets/rebirth/cards/")
+        assert card["art_status"] == "rebirth_legendary_contract"
 
     # Ability metadata must be populated (engine reads ability_key, UI reads name/text)
     assert isinstance(card["ability_key"], str) and card["ability_key"], "ability_key must be non-empty"
@@ -100,6 +107,9 @@ def test_monster_cost_matches_curve(card_id):
     """
     card = CARD_BY_ID[card_id]
     assert card["attack"] == card["power"], "attack and power must be aliases"
+    if card["rarity"] == "LEGENDARY":
+        assert 1 <= card["cost"] <= 10
+        return
     expected = _monster_cost(card["attack"], card["guard"], int(card["tier"]) > 1)
     assert card["cost"] == expected, (
         f"{card_id}: catalog cost {card['cost']} differs from _monster_cost-derived {expected}"
@@ -145,7 +155,10 @@ def test_monster_has_family_and_element(card_id):
     card = CARD_BY_ID[card_id]
     assert card["family"] in {"FIRE", "WATER", "EARTH", "SHADOW"}
     assert card["element"], "monsters must carry an element label"
-    assert card["tier"] in (1, 2)
+    assert card["tier"] in (1, 2, 3)
+    if card["rarity"] == "LEGENDARY":
+        assert card["evolution_id"] is None
+        return
     # Tier-1 monsters point to their tier-2 evolution; tier-2 are terminal.
     if int(card["tier"]) == 1:
         assert card["evolution_id"], f"{card_id} tier-1 monster missing evolution_id"

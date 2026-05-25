@@ -5,6 +5,7 @@ from services.rebirth_cards import (
     BOT_DECK,
     CARD_BY_ID,
     CARD_CATALOG,
+    LEGENDARY_CARDS,
     PLAYER_DECK,
     SPELL_CARDS,
     TRAP_CARDS,
@@ -24,30 +25,36 @@ def match_with_cards(player_card_id, bot_card_id, *, turn=1, player_wounded=Fals
     return match, create_card_instance(player_card_id, "player", 1), create_card_instance(bot_card_id, "bot", 1)
 
 
-def test_rebirth_catalog_has_100_cards_default_art_and_engine_abilities():
+def test_rebirth_catalog_has_100_cards_plus_legendary_contracts_and_engine_abilities():
     card_ids = [card["id"] for card in CARD_CATALOG]
     art_paths = [card["art"] for card in CARD_CATALOG]
 
-    assert card_ids == [f"card_{index:03d}" for index in range(1, 101)]
-    assert len(art_paths) == len(set(art_paths)) == 100
+    assert card_ids[:100] == [f"card_{index:03d}" for index in range(1, 101)]
+    assert card_ids[-3:] == ["legend_infernus_core", "legend_aegis_sentinel", "legend_shadow_reaper"]
+    assert len(art_paths) == len(set(art_paths)) == 103
 
     families = Counter(card["family"] for card in CARD_CATALOG)
     assert {family: families[family] for family in ("FIRE", "WATER", "EARTH", "SHADOW")} == {
-        "FIRE": 20,
+        "FIRE": 21,
         "WATER": 20,
-        "EARTH": 20,
-        "SHADOW": 20,
+        "EARTH": 21,
+        "SHADOW": 21,
     }
     assert len(SPELL_CARDS) == 10
     assert len(TRAP_CARDS) == 10
-    assert {card["rarity"] for card in CARD_CATALOG} == {"COMMON", "UNCOMMON"}
+    assert len(LEGENDARY_CARDS) == 3
+    assert {card["rarity"] for card in CARD_CATALOG} == {"COMMON", "UNCOMMON", "LEGENDARY"}
 
     for card in CARD_CATALOG:
         assert card["ability_key"] in ENGINE_ABILITY_KEYS
         assert card["ability_name"]
         assert card["ability_text"]
-        assert card["art"] == f"static/img/cards/baralho/{int(card['id'].split('_')[-1])}.webp"
-        assert card["art_status"] == "optimized_webp_path"
+        if card.get("rarity") == "LEGENDARY":
+            assert card["art"].startswith("/static/assets/rebirth/cards/")
+            assert card["art_status"] == "rebirth_legendary_contract"
+        else:
+            assert card["art"] == f"static/img/cards/baralho/{int(card['id'].split('_')[-1])}.webp"
+            assert card["art_status"] == "optimized_webp_path"
         assert card["type"] in {"MONSTER", "SPELL", "TRAP"}
         assert card["card_type"] == card["type"]
 

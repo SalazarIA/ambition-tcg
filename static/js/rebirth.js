@@ -935,7 +935,7 @@
             }, 620);
 
             this.haptics(state.result);
-            this.tone(targets.card, state.result);
+            this.audioEvents(state);
             this.screenShake(state.result);
         },
 
@@ -948,25 +948,12 @@
             }
         },
 
-        tone(card, result) {
-            if (this.reducedMotion() || !window.AudioContext || !result) return;
-            try {
-                const context = new window.AudioContext();
-                const oscillator = context.createOscillator();
-                const gain = context.createGain();
-                const key = this.abilityKey(card);
-                const base = result.outcome === "Defeat" ? 154 : result.outcome === "Clash" ? 220 : 330;
-                oscillator.frequency.value = base + (key.length % 7) * 24;
-                oscillator.type = "triangle";
-                gain.gain.setValueAtTime(0.0001, context.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.035, context.currentTime + 0.018);
-                gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.16);
-                oscillator.connect(gain);
-                gain.connect(context.destination);
-                oscillator.start();
-                oscillator.stop(context.currentTime + 0.18);
-                oscillator.addEventListener("ended", () => context.close());
-            } catch (_error) {}
+        audioEvents(state) {
+            if (!window.RebirthAudioManager || !state) return;
+            window.RebirthAudioManager.observeEvents(state.events || [], {
+                hitPauseMs: RebirthCombatMotion.hitPauseMs || 0,
+                replayAudioMutedMode: Boolean(state.replay_audio_muted_mode)
+            });
         },
 
         screenShake(result) {
@@ -1048,9 +1035,8 @@
                 target.classList.add("is-taking-hit");
             }
             const result = state && state.result;
-            const card = RebirthFeel.impactCard(state);
             RebirthFeel.haptics(result);
-            RebirthFeel.tone(card, result);
+            RebirthFeel.audioEvents(state);
             RebirthFeel.screenShake(result);
         },
 
@@ -2422,12 +2408,16 @@
             this.bindLogToggle();
 
             document.querySelectorAll("[data-new-match]").forEach((button) => {
-                button.addEventListener("click", () => RebirthFlow.startMatch());
+                button.addEventListener("click", () => {
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                    RebirthFlow.startMatch();
+                });
             });
 
             const playButton = RebirthStore.elements["play-button"];
             if (playButton) {
                 playButton.addEventListener("click", () => {
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     if (RebirthStore.selectedAttackerId) {
                         RebirthFlow.clashSelectedAttacker();
                         return;
@@ -2441,6 +2431,7 @@
                 nextButton.addEventListener("click", () => {
                     if (!RebirthStore.state) return;
                     if (RebirthStore.state.phase === "choose" || RebirthStore.state.phase === "result") {
+                        if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                         RebirthFlow.nextTurn();
                     }
                 });
@@ -2448,7 +2439,10 @@
 
             const evolveButton = RebirthStore.elements["evolve-button"];
             if (evolveButton) {
-                evolveButton.addEventListener("click", () => RebirthFlow.evolveFirstDuplicate());
+                evolveButton.addEventListener("click", () => {
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                    RebirthFlow.evolveFirstDuplicate();
+                });
             }
 
             switchActivePage("arena");
@@ -2460,6 +2454,7 @@
                     if (!button || button.disabled || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
                     RebirthStore.selectedInstanceId = button.getAttribute("data-card-instance");
                     RebirthStore.selectedAttackerId = null;
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     RebirthErrors.clear();
                     RebirthRenderer.render();
                 });
@@ -2472,6 +2467,7 @@
                     if (summonAction && !summonAction.disabled && RebirthStore.state && !RebirthStore.state.is_finished) {
                         RebirthErrors.clear();
                         RebirthRenderer.render();
+                        if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                         RebirthFlow.playSelectedCard();
                         return;
                     }
@@ -2479,6 +2475,7 @@
                     if (!button || !RebirthStore.state || RebirthStore.state.is_finished) return;
                     RebirthStore.selectedInstanceId = null;
                     RebirthStore.selectedAttackerId = button.getAttribute("data-attacker-instance");
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     RebirthErrors.clear();
                     RebirthRenderer.render();
                 });
@@ -2491,6 +2488,7 @@
                     const target = event.target.closest("[data-target-instance]");
                     if (!direct && !target) return;
                     if (!RebirthStore.state || RebirthStore.state.is_finished) return;
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     RebirthFlow.attackTarget(target ? target.getAttribute("data-target-instance") : null);
                 });
             }

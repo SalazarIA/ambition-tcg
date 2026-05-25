@@ -18,7 +18,13 @@ ERROR_HTTP_STATUS = {
     "first_turn_direct_attack_blocked": 409,
     "replay_engine_mismatch": 409,
     "replay_card_set_mismatch": 409,
+    "replay_ruleset_mismatch": 409,
+    "replay_reducer_mismatch": 409,
+    "replay_schema_mismatch": 409,
     "replay_command_unsupported": 409,
+    "effect_chain_depth_exceeded": 409,
+    "causal_chain_depth_exceeded": 409,
+    "causal_cycle_detected": 409,
 }
 
 

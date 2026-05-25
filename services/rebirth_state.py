@@ -1,9 +1,8 @@
 from copy import deepcopy
 from enum import Enum
 import hashlib
-import uuid
 
-from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION
+from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION, REDUCER_VERSION, RULESET_VERSION
 from services.rebirth_contracts import FIELD_SLOT_COUNT, PHASE_CHOOSE
 from services.rebirth_cards import BOT_DECK, PLAYER_DECK, build_deck, catalog_payload
 from services.rebirth_bot import choose_personality, personality_payload
@@ -26,9 +25,8 @@ class RebirthStateError(ValueError):
 
 
 def _match_id(seed=None):
-    if seed is None:
-        return f"rebirth-{uuid.uuid4().hex[:12]}"
-    digest = hashlib.sha256(str(seed).encode("utf-8")).hexdigest()[:12]
+    source = "rebirth-default-seed" if seed is None else str(seed)
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()[:12]
     return f"rebirth-{digest}"
 
 
@@ -113,7 +111,7 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
 
 def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profile_id=None):
     match_id = _match_id(seed)
-    game_seed = str(seed if seed is not None else match_id)
+    game_seed = str(seed if seed is not None else "rebirth-default-seed")
     deck_ids = None
     if player_card_ids:
         deck_ids = list(player_card_ids)
@@ -128,6 +126,8 @@ def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profi
         "architecture": "Ambitionz Rebirth",
         "engine_version": ENGINE_VERSION,
         "card_set_version": CARD_SET_VERSION,
+        "ruleset_version": RULESET_VERSION,
+        "reducer_version": REDUCER_VERSION,
         "game_seed": game_seed,
         "seed": str(seed or ""),
         "initial": {
