@@ -3,8 +3,9 @@ from enum import Enum
 import hashlib
 import uuid
 
+from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION
 from services.rebirth_contracts import FIELD_SLOT_COUNT, PHASE_CHOOSE
-from services.rebirth_cards import build_deck, catalog_payload
+from services.rebirth_cards import BOT_DECK, PLAYER_DECK, build_deck, catalog_payload
 from services.rebirth_bot import choose_personality, personality_payload
 from services.rebirth_events import append_event, append_snapshot, ensure_event_contract
 
@@ -112,6 +113,7 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
 
 def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profile_id=None):
     match_id = _match_id(seed)
+    game_seed = str(seed if seed is not None else match_id)
     deck_ids = None
     if player_card_ids:
         deck_ids = list(player_card_ids)
@@ -119,12 +121,21 @@ def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profi
     bot = create_player("Bot", "bot")
     draw_to_hand_size(player)
     draw_to_hand_size(bot)
-    bot_profile = personality_payload(bot_profile_id or choose_personality(seed=seed, match_id=match_id))
+    bot_profile = personality_payload(bot_profile_id or choose_personality(seed=game_seed, match_id=match_id))
 
     match = {
         "match_id": match_id,
         "architecture": "Ambitionz Rebirth",
+        "engine_version": ENGINE_VERSION,
+        "card_set_version": CARD_SET_VERSION,
+        "game_seed": game_seed,
         "seed": str(seed or ""),
+        "initial": {
+            "player_card_ids": list(deck_ids or PLAYER_DECK),
+            "bot_card_ids": list(BOT_DECK),
+            "player_name": player_name,
+            "bot_profile_id": bot_profile["id"],
+        },
         "turn": 1,
         "phase": PHASE_CHOOSE,
         "turn_phase": TurnPhase.MAIN_PHASE.value,
@@ -147,6 +158,9 @@ def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profi
         "MATCH_STARTED",
         payload={
             "seed": str(seed or ""),
+            "game_seed": game_seed,
+            "engine_version": ENGINE_VERSION,
+            "card_set_version": CARD_SET_VERSION,
             "player_name": player_name,
             "bot_profile_id": bot_profile["id"],
             "player_deck_count": len(player["deck"]) + len(player["hand"]),

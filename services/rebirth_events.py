@@ -2,6 +2,14 @@ import hashlib
 import json
 from copy import deepcopy
 
+from services.rebirth_domain import (
+    CARD_SET_VERSION,
+    ENGINE_VERSION,
+    SNAPSHOT_FORMAT_VERSION,
+    canonical_state_hash,
+    compress_canonical_state,
+)
+
 
 def _safe_payload(payload=None):
     if payload is None:
@@ -28,6 +36,9 @@ def append_command(match, command_type, *, actor="player", payload=None):
     command = {
         "id": len(match["commands"]) + 1,
         "version": version,
+        "engine_version": match.get("engine_version") or ENGINE_VERSION,
+        "card_set_version": match.get("card_set_version") or CARD_SET_VERSION,
+        "correlation_id": f"{match.get('match_id', 'match')}:{version}",
         "turn": int(match.get("turn", 0) or 0),
         "type": str(command_type),
         "actor": str(actor),
@@ -43,6 +54,9 @@ def append_event(match, event_type, *, actor="system", payload=None, message=Non
     event = {
         "id": len(match["events"]) + 1,
         "version": version,
+        "engine_version": match.get("engine_version") or ENGINE_VERSION,
+        "card_set_version": match.get("card_set_version") or CARD_SET_VERSION,
+        "correlation_id": f"{match.get('match_id', 'match')}:{version}",
         "turn": int(match.get("turn", 0) or 0),
         "type": str(event_type),
         "actor": str(actor),
@@ -85,11 +99,15 @@ def state_hash(match):
 def append_snapshot(match, reason):
     ensure_event_contract(match)
     snapshot = {
+        "format_version": SNAPSHOT_FORMAT_VERSION,
         "version": int(match.get("version", 0) or 0),
         "turn": int(match.get("turn", 0) or 0),
         "phase": match.get("phase"),
         "reason": str(reason),
         "state_hash": state_hash(match),
+        "canonical_state_hash": canonical_state_hash(match),
+        "state_encoding": "gzip+base64+json",
+        "canonical_state": compress_canonical_state(match),
     }
     match["snapshots"].append(snapshot)
     match["snapshots"] = match["snapshots"][-20:]

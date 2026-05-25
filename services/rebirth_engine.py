@@ -38,6 +38,7 @@ def status_label(status_name):
 class EffectStack:
     def __init__(self, effects=None):
         self.effects = list(effects or [])
+        self.structured_events = []
 
     def push_effect(self, effect_data: dict):
         if not isinstance(effect_data, dict):
@@ -47,13 +48,27 @@ class EffectStack:
 
     def resolve_stack(self, match_state: dict):
         events = []
+        self.structured_events = []
         while self.effects:
             effect = self.effects.pop()
             event = self._apply_effect(match_state, effect)
             if event:
                 events.append(event)
         match_state["effect_stack"] = list(self.effects)
+        if self.structured_events:
+            match_state.setdefault("_pending_effect_events", []).extend(deepcopy(self.structured_events))
         return events
+
+    def _record_effect_event(self, effect_type, side_name, payload=None, message=None):
+        event = {
+            "effect_type": str(effect_type or ""),
+            "side": str(side_name or ""),
+            "payload": deepcopy(payload or {}),
+        }
+        if message:
+            event["message"] = str(message)
+        self.structured_events.append(event)
+        return message
 
     def _apply_effect(self, match_state, effect):
         effect_type = str(effect.get("type") or effect.get("effect_type") or "").strip().lower()
@@ -71,7 +86,13 @@ class EffectStack:
             if not drawn:
                 return None
             suffix = "carta" if len(drawn) == 1 else "cartas"
-            return f"{side['name']} compra {len(drawn)} {suffix}."
+            message = f"{side['name']} compra {len(drawn)} {suffix}."
+            return self._record_effect_event(
+                effect_type,
+                side_name,
+                {"drawn": len(drawn), "card_ids": [card.get("id") for card in drawn]},
+                message,
+            )
 
         if effect_type == "cleanse":
             statuses = side.setdefault("statuses", {})
@@ -79,14 +100,16 @@ class EffectStack:
                 return None
             removed = sorted(statuses.keys())
             statuses.clear()
-            return f"{side['name']} remove {', '.join(status_label(item) for item in removed)}."
+            message = f"{side['name']} remove {', '.join(status_label(item) for item in removed)}."
+            return self._record_effect_event(effect_type, side_name, {"removed": removed}, message)
 
         if effect_type == "destroy_shield":
             statuses = side.setdefault("statuses", {})
             if "shield" not in statuses:
                 return None
             statuses.pop("shield", None)
-            return f"O escudo de {side['name']} foi destruído."
+            message = f"O escudo de {side['name']} foi destruído."
+            return self._record_effect_event(effect_type, side_name, {"status": "shield"}, message)
 
         if effect_type == "status":
             status_name = str(effect.get("status") or "").strip().lower()
@@ -97,7 +120,8 @@ class EffectStack:
             turns = max(int(current.get("turns", 0) or 0), int(effect.get("turns", 1) or 1))
             potency = max(int(current.get("potency", 0) or 0), int(effect.get("potency", 1) or 1))
             statuses[status_name] = {"turns": turns, "potency": potency}
-            return f"{side['name']} é afetado por {status_label(status_name)}."
+            message = f"{side['name']} é afetado por {status_label(status_name)}."
+            return self._record_effect_event(effect_type, side_name, {"status": status_name, "turns": turns, "potency": potency}, message)
 
         if effect_type == "damage":
             amount = max(0, int(effect.get("amount", 0) or 0))
@@ -105,26 +129,32 @@ class EffectStack:
                 return None
             side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
             side["wounded"] = True
-            return f"{side['name']} sofre {amount} de dano da pilha."
+            message = f"{side['name']} sofre {amount} de dano da pilha."
+            return self._record_effect_event(effect_type, side_name, {"amount": amount, "hp": side["hp"]}, message)
 
         if effect_type == "heal":
             amount = max(0, int(effect.get("amount", 0) or 0))
             if amount <= 0:
                 return None
             side["hp"] = min(int(side.get("max_hp", side.get("hp", 0)) or 0), int(side.get("hp", 0) or 0) + amount)
-            return f"{side['name']} recupera {amount} PV."
+            message = f"{side['name']} recupera {amount} PV."
+            return self._record_effect_event(effect_type, side_name, {"amount": amount, "hp": side["hp"]}, message)
 
         if effect_type == "shield":
             statuses = side.setdefault("statuses", {})
             amount = max(1, int(effect.get("amount", 1) or 1))
-            statuses["shield"] = {"turns": max(1, int(effect.get("turns", 1) or 1)), "potency": amount}
-            return f"{side['name']} recebe um escudo de {amount} pontos."
+            turns = max(1, int(effect.get("turns", 1) or 1))
+            statuses["shield"] = {"turns": turns, "potency": amount}
+            message = f"{side['name']} recebe um escudo de {amount} pontos."
+            return self._record_effect_event(effect_type, side_name, {"amount": amount, "turns": turns}, message)
 
         if effect_type == "weaken":
             amount = max(1, int(effect.get("amount", 1) or 1))
             statuses = side.setdefault("statuses", {})
-            statuses["weaken"] = {"turns": max(1, int(effect.get("turns", 1) or 1)), "potency": amount}
-            return f"{side['name']} sofre fraqueza de {amount}."
+            turns = max(1, int(effect.get("turns", 1) or 1))
+            statuses["weaken"] = {"turns": turns, "potency": amount}
+            message = f"{side['name']} sofre fraqueza de {amount}."
+            return self._record_effect_event(effect_type, side_name, {"amount": amount, "turns": turns}, message)
 
         return None
 
@@ -161,7 +191,8 @@ class EffectStack:
             messages.append(f"{status_label(status_name).capitalize()} de {side['name']} se dissipa.")
 
         if side_name and messages:
-            return " ".join(messages)
+            message = " ".join(messages)
+            return self._record_effect_event("status_tick", side_name, {"expired": expired, "statuses": sorted(statuses.keys())}, message)
         return None
 
 
@@ -172,6 +203,23 @@ def effect_stack_for(match):
 def _persist_effect_stack(match, stack):
     match["effect_stack"] = list(stack.effects)
     return match["effect_stack"]
+
+
+def _drain_pending_effect_events(match):
+    return list(match.pop("_pending_effect_events", []) or [])
+
+
+def _append_effect_events(match, *, actor="system"):
+    structured = _drain_pending_effect_events(match)
+    for effect_event in structured:
+        append_event(
+            match,
+            "EFFECT_RESOLVED",
+            actor=actor,
+            payload=effect_event,
+            message=effect_event.get("message"),
+        )
+    return structured
 
 
 def start_match(seed=None, player_card_ids=None, player_name="Você", bot_profile_id=None):
@@ -584,6 +632,7 @@ def _resolve_spell_card(match, side_name, card):
     _push_card_effects(stack, side_name, card.get("stack_effects") or [])
     effect_events = stack.resolve_stack(match)
     _persist_effect_stack(match, stack)
+    structured_effects = _drain_pending_effect_events(match)
     side["discard"].append(card)
     match["last_clash"] = None
     match["result"] = {
@@ -610,9 +659,17 @@ def _resolve_spell_card(match, side_name, card):
         match,
         "SPELL_RESOLVED",
         actor=side_name,
-        payload={"card_id": card["id"], "effects": deepcopy(card.get("stack_effects") or [])},
+        payload={"card_id": card["id"], "effects": deepcopy(card.get("stack_effects") or []), "structured_effects": structured_effects},
         message=match["result"]["message"],
     )
+    for effect_event in structured_effects:
+        append_event(
+            match,
+            "EFFECT_RESOLVED",
+            actor=side_name,
+            payload=effect_event,
+            message=effect_event.get("message"),
+        )
     for event in effect_events:
         append_event(match, "ABILITY_TRIGGERED", actor=side_name, payload={"message": event}, message=event)
     finish_if_needed(match)
@@ -799,6 +856,7 @@ def _apply_trap_effect(match, owner_side, trap, owner_card, opponent_card):
         messages.append(f"{trap['name']} enfraquece o atacante.")
     stack_events = stack.resolve_stack(match)
     _persist_effect_stack(match, stack)
+    _append_effect_events(match, actor=owner_side)
     return messages + stack_events
 
 
@@ -872,6 +930,7 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
     pre_stack = effect_stack_for(match)
     pre_stack_events = pre_stack.resolve_stack(match)
     _persist_effect_stack(match, pre_stack)
+    _append_effect_events(match, actor="system")
 
     trap_events = _resolve_combat_traps(match, player_card, bot_card)
     winner, clash = compare_clash(match, player_card, bot_card)
@@ -958,6 +1017,7 @@ def resolve_turn(match, player_card, bot_card, *, persistent_field=False):
             status_stack.push_effect({"type": "shield", "side": "bot", "amount": 2, "turns": 2})
     status_events = status_stack.resolve_stack(match)
     _persist_effect_stack(match, status_stack)
+    _append_effect_events(match, actor=result["winner"] or "system")
     ability_events.extend(status_events)
 
     if ability_events:
@@ -1057,7 +1117,10 @@ def _evolution_choice(side, profile_id=None):
 
 def _evolve_side_duplicate(match, side_name, card_id):
     side = match[side_name]
-    card = get_card(card_id)
+    try:
+        card = get_card(card_id)
+    except ValueError as exc:
+        raise RebirthError(str(exc), "invalid_card") from exc
     evolution_id = card.get("evolution_id")
     if not evolution_id:
         raise RebirthError("Este monstro não possui evolução MVP.", "duplicate_not_available")
@@ -1120,12 +1183,6 @@ def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
         raise RebirthError(f"Cartas só podem ser jogadas na fase principal. Fase atual: {current_turn_phase(match)}.", "invalid_phase")
     if not card_instance_id and not card_id:
         raise RebirthError("Informe card_instance_id ou card_id.", "missing_card")
-    append_command(
-        match,
-        "PLAY_CARD",
-        actor="player",
-        payload={"card_instance_id": card_instance_id, "card_id": card_id, "field_slot": field_slot},
-    )
 
     try:
         preview_card = _hand_card(match["player"], card_instance_id=card_instance_id, card_id=card_id)
@@ -1134,10 +1191,20 @@ def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
 
     if is_monster(preview_card):
         _resolve_battlefield_slot(match["player"], field_slot)
-        cost = _card_cost(preview_card)
-        current_energy = int(match["player"].get("energy", match["player"].get("max_energy", 0)) or 0)
-        if current_energy < cost:
-            raise RebirthError(f"Mana insuficiente para jogar {preview_card['name']}.", "not_enough_energy")
+    elif not is_spell(preview_card) and not is_trap(preview_card):
+        raise RebirthError("Só é possível jogar cartas de monstro, magia e armadilha.", "invalid_card")
+
+    cost = _card_cost(preview_card)
+    current_energy = int(match["player"].get("energy", match["player"].get("max_energy", 0)) or 0)
+    if current_energy < cost:
+        raise RebirthError(f"Mana insuficiente para jogar {preview_card['name']}.", "not_enough_energy")
+
+    append_command(
+        match,
+        "PLAY_CARD",
+        actor="player",
+        payload={"card_instance_id": card_instance_id, "card_id": card_id, "field_slot": field_slot},
+    )
 
     try:
         player_card = remove_from_hand(
@@ -1229,9 +1296,17 @@ def evolve_duplicate(match, card_id):
         raise RebirthError(f"A evolução só está disponível na fase principal. Fase atual: {current_turn_phase(match)}.", "invalid_phase")
     if not card_id:
         raise RebirthError("Informe card_id.", "missing_card")
-    append_command(match, "EVOLVE_DUPLICATE", actor="player", payload={"card_id": card_id})
+    try:
+        card = get_card(card_id)
+    except ValueError as exc:
+        raise RebirthError(str(exc), "invalid_card") from exc
+    if not card.get("evolution_id"):
+        raise RebirthError("Este monstro não possui evolução MVP.", "duplicate_not_available")
+    if len([hand_card for hand_card in match["player"]["hand"] if hand_card["id"] == card_id]) < 2:
+        raise RebirthError("São necessários dois monstros iguais para evoluir.", "duplicate_not_available")
 
     try:
+        append_command(match, "EVOLVE_DUPLICATE", actor="player", payload={"card_id": card_id})
         return _evolve_side_duplicate(match, "player", card_id)
     except RebirthError:
         raise
@@ -1255,6 +1330,7 @@ def next_turn(match):
     draw_stack.push_effect({"type": "status_tick", "side": "bot"})
     status_events = draw_stack.resolve_stack(match)
     _persist_effect_stack(match, draw_stack)
+    _append_effect_events(match, actor="system")
     for status_event in status_events:
         match["log"].append(f"Turno {match['turn']:02d}   {status_event}")
         append_event(match, "ABILITY_TRIGGERED", payload={"message": status_event}, message=status_event)

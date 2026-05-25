@@ -1900,7 +1900,7 @@ class RebirthRepository:
         if not user_id or not match:
             return None
         self.ensure_schema()
-        from services.rebirth_events import state_hash
+        from services.rebirth_domain import canonical_state_hash
         from services.rebirth_serializers import public_state
 
         now = utc_now()
@@ -1930,7 +1930,7 @@ class RebirthRepository:
                     match.get("winner"),
                     now,
                     now,
-                    state_hash(match),
+                    canonical_state_hash(match),
                     json.dumps(public, sort_keys=True),
                     json.dumps(match, sort_keys=True),
                 ),

@@ -10,11 +10,15 @@ ERROR_HTTP_STATUS = {
     "authoritative_state_violation": 400,
     "missing_card": 400,
     "invalid_card": 400,
+    "not_enough_energy": 409,
     "duplicate_not_available": 400,
     "missing_match": 404,
     "invalid_phase": 409,
     "match_finished": 409,
     "first_turn_direct_attack_blocked": 409,
+    "replay_engine_mismatch": 409,
+    "replay_card_set_mismatch": 409,
+    "replay_command_unsupported": 409,
 }
 
 

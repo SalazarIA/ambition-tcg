@@ -18,6 +18,7 @@ product path.
 - PWA manifest and service worker
 - PostgreSQL-authoritative authenticated match state with an in-process hot cache
 - Command/event log on Rebirth match state with state hashes
+- Deterministic replay envelope, canonical state hash and compressed snapshots
 - Match history and economy ledger persisted for signed-in accounts
 - 100-card Common/Uncommon catalog with WebP art, stable ability keys and engine-backed effects
 - Defensive, aggressive and opportunist bot profiles
@@ -187,6 +188,7 @@ current Rebirth status document says otherwise. The current source of truth is:
 
 - `docs/REBIRTH_RELEASE_STATUS.md`
 - `docs/REBIRTH_ARCHITECTURE.md`
+- `docs/REBIRTH_V60_V65_ENGINE_CONTRACT.md`
 - `docs/REBIRTH_CARD_SET_STATUS.md`
 - `docs/LEGACY_REMOVAL_REPORT.md`
 - `docs/REBIRTH_REBUILD_REPORT.md`

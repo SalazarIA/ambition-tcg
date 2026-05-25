@@ -15,7 +15,9 @@ services/rebirth_cards.py
 services/rebirth_art.py
 services/rebirth_bot.py
 services/rebirth_state.py
+services/rebirth_domain.py
 services/rebirth_events.py
+services/rebirth_replay.py
 services/rebirth_serializers.py
 services/rebirth_match_store.py
 services/rebirth_engine.py
@@ -55,8 +57,10 @@ The older `services/rebirth/` package is not part of the active Flask route or `
 - `services/rebirth_bot.py` owns bot personality definitions and response
   selection for defensive, aggressive and opportunist profiles.
 - `services/rebirth_state.py` owns match creation, draw helpers, hand/discard mutation and phase-neutral state helpers.
+- `services/rebirth_domain.py` owns engine/card-set version constants, canonical state normalization, canonical hashes and compressed snapshot payloads.
 - `services/rebirth_events.py` owns command/event append helpers, match
   versioning, state hashing and compact snapshots.
+- `services/rebirth_replay.py` owns replay envelopes, command re-execution and canonical replay verification.
 - `services/rebirth_engine.py` owns pure game rules: play card, compare attack,
   apply engine-backed card abilities, calculate damage, evolve duplicate,
   finish match and next turn.
@@ -134,6 +138,12 @@ Each match has an internal command/event contract:
 - `version` increases as commands/events are appended;
 - `state_hash` gives support/debug tooling a stable fingerprint for the public
   match snapshot.
+- `canonical_state_hash` fingerprints the deterministic game state and ignores
+  transport ids and presentation text.
+- commands represent accepted intent; rejected input returns a stable error
+  before `append_command` mutates the match.
+- snapshots carry a compressed canonical state payload using
+  `gzip+base64+json`.
 
 Signed-in matches are copied into SQLite `match_history`, `match_commands` and
 `match_events`. The in-progress live match object still lives in memory for the

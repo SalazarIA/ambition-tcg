@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from services.rebirth_contracts import validate_phase
+from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION, canonical_state_hash
 from services.rebirth_events import state_hash
 from services.rebirth_state import STARTING_HP, available_evolutions, compact_battlefield, field_slots
 
@@ -85,8 +86,11 @@ def public_state(match):
     return {
         "match_id": match["match_id"],
         "architecture": match["architecture"],
+        "engine_version": match.get("engine_version") or ENGINE_VERSION,
+        "card_set_version": match.get("card_set_version") or CARD_SET_VERSION,
         "version": int(match.get("version", 0) or 0),
         "state_hash": state_hash(match),
+        "canonical_state_hash": canonical_state_hash(match),
         "turn": match["turn"],
         "phase": match["phase"],
         "turn_phase": match.get("turn_phase"),
