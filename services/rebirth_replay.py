@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, List
 
 from services.rebirth_domain import (
     CARD_SET_VERSION,
@@ -14,16 +14,19 @@ from services.rebirth_domain import (
     RULESET_VERSION,
     canonical_state_hash,
 )
-from services.rebirth_engine import declare_attack, evolve_duplicate, next_turn, play_card, start_match
+from services.rebirth_dispatcher import DeclareAttackCommand, EndTurnCommand, EvolveDuplicateCommand, SummonCardCommand, dispatch_command
+from services.rebirth_engine import start_match
 from services.rebirth_contracts import RebirthError
+from services.rebirth_profiler import current_profiler
 
 
 SUPPORTED_COMMANDS = {"PLAY_CARD", "DECLARE_ATTACK", "EVOLVE_DUPLICATE", "NEXT_TURN"}
 
 
-def build_replay_envelope(match: Dict[str, Any]) -> Dict[str, Any]:
+def build_replay_envelope(match: Dict[str, Any], *, include_stream: bool = True) -> Dict[str, Any]:
     initial = deepcopy(match.get("initial") or {})
-    return {
+    final_hash = canonical_state_hash(match)
+    envelope = {
         "format_version": REPLAY_FORMAT_VERSION,
         "replay_schema_version": REPLAY_SCHEMA_VERSION,
         "engine_version": match.get("engine_version") or ENGINE_VERSION,
@@ -40,11 +43,62 @@ def build_replay_envelope(match: Dict[str, Any]) -> Dict[str, Any]:
             "bot_profile_id": initial.get("bot_profile_id") or (match.get("bot_profile") or {}).get("id"),
         },
         "commands": deepcopy(match.get("commands") or []),
-        "snapshots": deepcopy(match.get("snapshots") or []),
-        "events": deepcopy(match.get("events") or []),
-        "expected_canonical_state_hash": canonical_state_hash(match),
-        "canonical_state_hash": canonical_state_hash(match),
+        "checkpoints": deepcopy(match.get("checkpoints") or []),
+        "expected_canonical_state_hash": final_hash,
+        "canonical_state_hash": final_hash,
         "replay_frame_count": len(match.get("events") or []),
+    }
+    if include_stream:
+        envelope["snapshots"] = deepcopy(match.get("snapshots") or [])
+        envelope["events"] = deepcopy(match.get("events") or [])
+    return envelope
+
+
+def replay_stream_frames(match: Dict[str, Any], *, after_frame: int = 0) -> List[Dict[str, Any]]:
+    """Return already-resolved frames for spectators without re-execution."""
+    threshold = max(0, int(after_frame or 0))
+    return [
+        deepcopy(event)
+        for event in match.get("events") or []
+        if int(event.get("replay_frame", event.get("sequence_id", 0)) or 0) > threshold
+    ]
+
+
+def build_sync_payload(
+    match: Dict[str, Any],
+    *,
+    after_command_id: int = 0,
+    after_frame: int = 0,
+) -> Dict[str, Any]:
+    """Build the minimal deterministic wire-ready payload, without transport."""
+    command_threshold = max(0, int(after_command_id or 0))
+    frame_threshold = max(0, int(after_frame or 0))
+    commands = [
+        deepcopy(command)
+        for command in match.get("commands") or []
+        if int(command.get("id", 0) or 0) > command_threshold
+    ]
+    frames = replay_stream_frames(match, after_frame=frame_threshold)
+    checkpoints = [
+        deepcopy(checkpoint)
+        for checkpoint in match.get("checkpoints") or []
+        if int(checkpoint.get("replay_frame", 0) or 0) > frame_threshold
+    ]
+    return {
+        "format_version": REPLAY_FORMAT_VERSION,
+        "replay_schema_version": REPLAY_SCHEMA_VERSION,
+        "engine_version": match.get("engine_version") or ENGINE_VERSION,
+        "card_set_version": match.get("card_set_version") or CARD_SET_VERSION,
+        "ruleset_version": match.get("ruleset_version") or RULESET_VERSION,
+        "reducer_version": match.get("reducer_version") or REDUCER_VERSION,
+        "match_id": match.get("match_id"),
+        "game_seed": str(match.get("game_seed", match.get("seed", "")) or ""),
+        "commands": commands,
+        "replay_frames": frames,
+        "checkpoints": checkpoints,
+        "latest_command_id": len(match.get("commands") or []),
+        "latest_replay_frame": int((match.get("events") or [{}])[-1].get("replay_frame", 0) or 0),
+        "canonical_state_hash": canonical_state_hash(match),
     }
 
 
@@ -69,39 +123,60 @@ def _assert_replay_versions(envelope: Dict[str, Any]) -> None:
 
 
 def replay_match(source: Dict[str, Any]) -> Dict[str, Any]:
-    envelope = build_replay_envelope(source) if source.get("match_id") and "format_version" not in source else deepcopy(source)
+    envelope = build_replay_envelope(source, include_stream=False) if source.get("match_id") and "format_version" not in source else deepcopy(source)
     _assert_replay_versions(envelope)
+    profiler = current_profiler()
     initial = envelope.get("initial") or {}
     match = start_match(
         seed=envelope.get("game_seed"),
         player_card_ids=initial.get("player_card_ids") or None,
         player_name=initial.get("player_name") or "Voc\u00ea",
         bot_profile_id=initial.get("bot_profile_id"),
+        runtime_mode="replay",
+        apply_reducers_inline=True,
     )
     match["seed"] = str(envelope.get("display_seed", "") or "")
 
-    for command in _commands_from(envelope):
-        command_type = str(command.get("type") or "")
-        payload = command.get("payload") or {}
-        if command_type not in SUPPORTED_COMMANDS:
-            raise RebirthError(f"Comando de replay nao suportado: {command_type}", "replay_command_unsupported", status=409)
-        if command_type == "PLAY_CARD":
-            play_card(
-                match,
-                card_instance_id=payload.get("card_instance_id"),
-                card_id=payload.get("card_id"),
-                field_slot=payload.get("field_slot"),
-            )
-        elif command_type == "DECLARE_ATTACK":
-            declare_attack(
-                match,
-                attacker_instance_id=payload.get("attacker_instance_id"),
-                target_instance_id=payload.get("target_instance_id"),
-            )
-        elif command_type == "EVOLVE_DUPLICATE":
-            evolve_duplicate(match, payload.get("card_id"))
-        elif command_type == "NEXT_TURN":
-            next_turn(match)
+    replay_timer = profiler.timer("replay_cost", detail="replay_match") if profiler else None
+    if replay_timer:
+        replay_timer.__enter__()
+    try:
+        for command in _commands_from(envelope):
+            command_type = str(command.get("type") or "")
+            payload = command.get("payload") or {}
+            if command_type not in SUPPORTED_COMMANDS:
+                raise RebirthError(f"Comando de replay nao suportado: {command_type}", "replay_command_unsupported", status=409)
+            frame_timer = profiler.timer("replay_cost", detail=command_type) if profiler else None
+            if frame_timer:
+                frame_timer.__enter__()
+            try:
+                if command_type == "PLAY_CARD":
+                    dispatch_command(
+                        match,
+                        SummonCardCommand(
+                            card_instance_id=payload.get("card_instance_id"),
+                            card_id=payload.get("card_id"),
+                            field_slot=payload.get("field_slot"),
+                        ),
+                    )
+                elif command_type == "DECLARE_ATTACK":
+                    dispatch_command(
+                        match,
+                        DeclareAttackCommand(
+                            attacker_instance_id=payload.get("attacker_instance_id"),
+                            target_instance_id=payload.get("target_instance_id"),
+                        ),
+                    )
+                elif command_type == "EVOLVE_DUPLICATE":
+                    dispatch_command(match, EvolveDuplicateCommand(card_id=payload.get("card_id")))
+                elif command_type == "NEXT_TURN":
+                    dispatch_command(match, EndTurnCommand(turn=payload.get("turn")))
+            finally:
+                if frame_timer:
+                    frame_timer.__exit__(None, None, None)
+    finally:
+        if replay_timer:
+            replay_timer.__exit__(None, None, None)
     return match
 
 

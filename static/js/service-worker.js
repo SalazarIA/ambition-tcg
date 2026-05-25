@@ -1,5 +1,5 @@
-const CACHE_NAME = "v66_EVENT_AUDIO";
-const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO)(?:$|-))/i;
+const CACHE_NAME = "v67_PRODUCT_FLOW-6";
+const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW)(?:$|-))/i;
 
 function stableAsset(path) {
     return `${path}?v=${CACHE_NAME}`;
@@ -38,6 +38,7 @@ const CORE_ASSETS = [
     "/static/icons/icon-512.png"
 ];
 const CORE_ASSET_SET = new Set(CORE_ASSETS);
+const MAX_RUNTIME_CACHE_ENTRIES = CORE_ASSETS.length;
 
 function isPlayerStateRequest(url) {
     return PLAYER_STATE_API_DENY_RE.test(url.pathname) || DYNAMIC_REBIRTH_API_DENY_RE.test(url.pathname);
@@ -63,6 +64,20 @@ function pruneActiveCache() {
                     })
             );
         });
+    });
+}
+
+function trimRuntimeCache(cache) {
+    return cache.keys().then(function (requests) {
+        const overflow = Math.max(0, requests.length - MAX_RUNTIME_CACHE_ENTRIES);
+        if (!overflow) {
+            return Promise.resolve();
+        }
+        return Promise.all(
+            requests.slice(0, overflow).map(function (request) {
+                return cache.delete(request);
+            })
+        );
     });
 }
 
@@ -124,7 +139,9 @@ self.addEventListener("fetch", function (event) {
             return cache.match(event.request).then(function (cached) {
                 const network = fetch(event.request).then(function (response) {
                     if (response && response.ok) {
-                        cache.put(event.request, response.clone());
+                        cache.put(event.request, response.clone()).then(function () {
+                            return trimRuntimeCache(cache);
+                        });
                     }
                     return response;
                 });

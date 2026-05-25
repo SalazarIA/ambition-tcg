@@ -139,7 +139,7 @@ def declare_best_attack(match, attacker):
     )
 
 
-def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
+def simulate_match(seed=None, max_turns=30, bot_profile_id=None):
     match = start_match(seed=seed, bot_profile_id=bot_profile_id)
     card_usage = Counter()
     card_wins = Counter()
@@ -152,7 +152,9 @@ def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
     first_turn_cards = Counter()
     first_turn_wins = Counter()
     turns = 0
+    dead_turns = 0
     while not match.get("is_finished") and turns < max_turns:
+        turn_event_start = len(match.get("events") or [])
         field_full = len(match["player"].get("battlefield", [])) >= FIELD_SLOT_COUNT
         ready_attacker = choose_ready_attacker(match)
         if field_full and ready_attacker:
@@ -167,6 +169,7 @@ def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
                 if ready_attacker:
                     declare_best_attack(match, ready_attacker)
                 elif match.get("phase") in {"choose", "result"}:
+                    dead_turns += 1
                     next_turn(match)
                     turns += 1
                     continue
@@ -212,10 +215,28 @@ def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
                     first_turn_wins[card_id] += 1
         for event in result.get("ability_events") or []:
             ability_events[str(event)] += 1
+        turn_event_types = {
+            event.get("event_type") or event.get("type")
+            for event in (match.get("events") or [])[turn_event_start:]
+        }
+        if not turn_event_types.intersection({"ATTACK_DECLARED", "DAMAGE_RESOLVED", "TRAP_TRIGGERED", "UNIT_DESTROYED"}):
+            dead_turns += 1
         turns += 1
         if not match.get("is_finished"):
             next_turn(match)
 
+    events = match.get("events") or []
+    chains = Counter(event.get("effect_chain_id") for event in events if event.get("effect_chain_id"))
+    destroyed_by_chain = Counter(
+        event.get("effect_chain_id")
+        for event in events
+        if (event.get("event_type") or event.get("type")) == "UNIT_DESTROYED"
+    )
+    trigger_events = sum(
+        1
+        for event in events
+        if (event.get("event_type") or event.get("type")) in {"ABILITY_TRIGGERED", "EFFECT_RESOLVED", "TRAP_TRIGGERED", "STATUS_APPLIED"}
+    )
     return {
         "winner": match.get("winner") or "unfinished",
         "turns": turns,
@@ -233,6 +254,13 @@ def simulate_match(seed=None, max_turns=12, bot_profile_id=None):
         "first_turn_cards": dict(first_turn_cards),
         "first_turn_wins": dict(first_turn_wins),
         "dead_cards": dict(Counter(card["id"] for card in match["player"]["hand"] + match["bot"]["hand"])),
+        "dead_turns": dead_turns,
+        "event_count": len(events),
+        "trigger_events": trigger_events,
+        "max_chain_events": max(chains.values()) if chains else 0,
+        "symmetric_destroy_chains": sum(1 for count in destroyed_by_chain.values() if count > 1),
+        "lethal": bool(match.get("is_finished")),
+        "stalemate": not bool(match.get("is_finished")),
     }
 
 
@@ -254,6 +282,12 @@ def simulate_balance(matches=40):
     profile_matches = Counter()
     ability_events = Counter()
     total_turns = 0
+    total_dead_turns = 0
+    total_events = 0
+    total_trigger_events = 0
+    total_symmetric_destroy_chains = 0
+    lethal_matches = 0
+    max_chain_events = 0
     samples = []
     for index in range(matches):
         profile_id = BOT_PERSONALITY_ORDER[index % len(BOT_PERSONALITY_ORDER)]
@@ -271,6 +305,12 @@ def simulate_balance(matches=40):
         dead_cards.update(result["dead_cards"])
         ability_events.update(result["ability_events"])
         total_turns += result["turns"]
+        total_dead_turns += result["dead_turns"]
+        total_events += result["event_count"]
+        total_trigger_events += result["trigger_events"]
+        total_symmetric_destroy_chains += result["symmetric_destroy_chains"]
+        lethal_matches += int(result["lethal"])
+        max_chain_events = max(max_chain_events, result["max_chain_events"])
         profile_winners[profile_id][result["winner"]] += 1
         profile_turns[profile_id] += result["turns"]
         profile_matches[profile_id] += 1
@@ -337,6 +377,13 @@ def simulate_balance(matches=40):
             "bot_win_rate": round(bot_wins / matches, 3),
             "unfinished_rate": round(winners.get("unfinished", 0) / matches, 3),
             "average_turns": round(total_turns / matches, 2),
+            "lethal_frequency": round(lethal_matches / matches, 3),
+            "dead_turn_rate": round(total_dead_turns / max(1, total_turns), 3),
+            "stalemate_frequency": round(winners.get("unfinished", 0) / matches, 3),
+            "events_per_turn": round(total_events / max(1, total_turns), 2),
+            "trigger_events_per_turn": round(total_trigger_events / max(1, total_turns), 2),
+            "symmetric_destroy_chains_per_match": round(total_symmetric_destroy_chains / matches, 2),
+            "max_chain_events": max_chain_events,
         },
         "winners": dict(winners),
         "most_used_cards": [{"card_id": card_id, "plays": plays} for card_id, plays in card_usage.most_common(8)],

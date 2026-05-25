@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v66_EVENT_AUDIO">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v67_PRODUCT_FLOW-6">
 </head>
 <body class="rb-page rb-game-page">
     {% include "_rebirth_global_nav.html" %}
@@ -57,7 +57,14 @@
                 <div class="rb-turn-core rb-hud-turn">
                     <span>Turno</span>
                     <strong id="turn-number">01</strong>
-                    <small id="bot-profile-label">Perfil do bot</small>
+                    <small id="phase-hud-label">Principal</small>
+                    <div id="phase-timeline" class="rb-phase-timeline" aria-label="Linha do turno">
+                        <i data-phase-step="draw" title="Compra"></i>
+                        <i data-phase-step="main" title="Principal"></i>
+                        <i data-phase-step="combat" title="Combate"></i>
+                        <i data-phase-step="end" title="Fim"></i>
+                    </div>
+                    <small id="bot-profile-label" class="rb-visually-hidden">Perfil do bot</small>
                 </div>
 
                 <div class="rb-hud-side rb-hud-bot">
@@ -165,6 +172,11 @@
                     <span id="result-label">Aguardando</span>
                     <strong id="result-title">Monte seu campo.</strong>
                     <p id="result-copy">Invoque monstros, depois escolha um atacante e um alvo.</p>
+                    <div class="rb-resolution-strip" id="resolution-strip" aria-label="Resolucao atual">
+                        <span id="priority-label">Prioridade: jogador</span>
+                        <span id="chain-label">Sem cadeia ativa</span>
+                        <span id="interrupt-label">Janela fechada</span>
+                    </div>
                     <div id="tactics-strip" class="rb-tactics-strip" aria-label="Leitura tática"></div>
                     <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
                     <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
@@ -233,9 +245,9 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v66_EVENT_AUDIO"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v66_EVENT_AUDIO"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v=v66_EVENT_AUDIO"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=v66_EVENT_AUDIO"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v67_PRODUCT_FLOW-6"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v67_PRODUCT_FLOW-6"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v=v67_PRODUCT_FLOW-6"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=v67_PRODUCT_FLOW-6"></script>
 </body>
 </html>

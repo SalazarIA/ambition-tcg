@@ -11,6 +11,7 @@ from services.rebirth_events import append_event, append_snapshot, ensure_event_
 
 STARTING_HP = 30
 HAND_SIZE = 5
+REDUCER_INLINE_RUNTIME_MODES = {"replay", "audit", "network_sync", "pvp_sync"}
 
 
 class TurnPhase(Enum):
@@ -109,9 +110,19 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
     return drawn
 
 
-def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profile_id=None):
+def create_match(
+    seed=None,
+    player_card_ids=None,
+    player_name="Você",
+    bot_profile_id=None,
+    runtime_mode="singleplayer",
+    apply_reducers_inline=None,
+):
     match_id = _match_id(seed)
     game_seed = str(seed if seed is not None else "rebirth-default-seed")
+    runtime_mode = str(runtime_mode or "singleplayer")
+    if apply_reducers_inline is None:
+        apply_reducers_inline = runtime_mode in REDUCER_INLINE_RUNTIME_MODES
     deck_ids = None
     if player_card_ids:
         deck_ids = list(player_card_ids)
@@ -128,6 +139,8 @@ def create_match(seed=None, player_card_ids=None, player_name="Você", bot_profi
         "card_set_version": CARD_SET_VERSION,
         "ruleset_version": RULESET_VERSION,
         "reducer_version": REDUCER_VERSION,
+        "_runtime_mode": runtime_mode,
+        "_apply_reducers_inline": bool(apply_reducers_inline),
         "game_seed": game_seed,
         "seed": str(seed or ""),
         "initial": {

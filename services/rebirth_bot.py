@@ -3,6 +3,7 @@ import hashlib
 
 from services.rebirth_cards import is_monster
 from services.rebirth_contracts import FIELD_SLOT_COUNT
+from services.rebirth_profiler import current_profiler
 
 
 BOT_PERSONALITY_ORDER = ("defensive", "aggressive", "opportunist")
@@ -359,7 +360,12 @@ class MCTSAgent:
         return pruned[: self.budget]
 
     def choose_attack(self, bot_battlefield, player_battlefield, **context):
-        ranked = self.rank_attacks(bot_battlefield, player_battlefield, **context)
+        profiler = current_profiler()
+        if profiler:
+            with profiler.timer("MCTS_simulation_cost", detail="choose_attack"):
+                ranked = self.rank_attacks(bot_battlefield, player_battlefield, **context)
+        else:
+            ranked = self.rank_attacks(bot_battlefield, player_battlefield, **context)
         if not ranked:
             return None
         allowed = [row for row in ranked if row.get("allowed")]
