@@ -133,6 +133,7 @@
                 "bot-discard-count",
                 "turn-number",
                 "bot-profile-label",
+                "phase-hud-label",
             "bot-card",
             "focus-card",
             "player-battlefield",
@@ -158,6 +159,10 @@
                 "turn-log-panel",
                 "turn-log-toggle",
                 "phase-label",
+                "phase-timeline",
+                "priority-label",
+                "chain-label",
+                "interrupt-label",
                 "guide-rule-label",
                 "guide-rule-title",
                 "guide-rule-copy",
@@ -289,18 +294,20 @@
                 document.documentElement.style.setProperty("--rb-board-height", "auto");
                 document.documentElement.style.setProperty("--rb-safe-offset-x", "0px");
                 document.documentElement.style.setProperty("--rb-safe-offset-y", "0px");
+                document.documentElement.style.setProperty("--rb-nav-clearance", "0px");
                 document.documentElement.style.setProperty("--rb-scale", "1");
                 return;
             }
             const safeWidth = Math.max(1, width - safe.left - safe.right);
-            const safeHeight = Math.max(1, height - safe.top - safe.bottom - navHeight);
+            const navClearance = navHeight + 8;
+            const safeHeight = Math.max(1, height - safe.top - safe.bottom - navClearance);
             const desktop = width >= 1180 && height >= 680;
             const baseWidth = desktop ? 1180 : RebirthConfig.boardWidth;
             const baseHeight = desktop ? 760 : RebirthConfig.boardHeight;
             document.documentElement.style.setProperty("--rb-board-width", `${baseWidth}px`);
             document.documentElement.style.setProperty("--rb-board-height", `${baseHeight}px`);
             document.documentElement.style.setProperty("--rb-safe-offset-x", `${(safe.left - safe.right) / 2}px`);
-            document.documentElement.style.setProperty("--rb-safe-offset-y", `${(safe.top + navHeight - safe.bottom) / 2}px`);
+            document.documentElement.style.setProperty("--rb-nav-clearance", `${navClearance}px`);
             const scale = Math.min(safeWidth / baseWidth, safeHeight / baseHeight);
             document.documentElement.style.setProperty("--rb-scale", String(scale));
             window.scrollTo(0, 0);
@@ -390,6 +397,16 @@
             element.dataset.turnPhase = meta.tone;
             element.setAttribute("title", meta.title);
             element.setAttribute("aria-label", meta.title);
+        }
+        RebirthDom.setText("phase-hud-label", meta.label);
+        const track = RebirthStore.elements["phase-timeline"];
+        if (track) {
+            const order = ["draw", "main", "combat", "end"];
+            const index = Math.max(0, order.indexOf(meta.tone === "finished" ? "end" : meta.tone));
+            track.querySelectorAll("[data-phase-step]").forEach((step, stepIndex) => {
+                step.classList.toggle("is-current", stepIndex === index);
+                step.classList.toggle("is-complete", stepIndex < index);
+            });
         }
         if (board) {
             board.dataset.turnPhase = meta.tone;
@@ -983,12 +1000,12 @@
     };
 
     const RebirthCombatMotion = {
-        impactMs: 180,
-        hitPauseMs: 60,     // v55 Combat Juice: micro-congelamento no impacto
-        shatterMs: 380,     // duração do .vfx-shield-shatter
-        dissolveMs: 720,    // duração do .is-dead-dissolve
-        returnHoldMs: 180,
-        settleMs: 200,
+        impactMs: 132,
+        hitPauseMs: 38,
+        shatterMs: 260,
+        dissolveMs: 420,
+        returnHoldMs: 92,
+        settleMs: 110,
 
         attacker(attackerId) {
             const host = RebirthStore.elements["player-battlefield"];
@@ -1048,7 +1065,7 @@
             if (!previous || !resolvedState || RebirthFeel.reducedMotion()) return;
             const destroyedIds = new Set(
                 ((resolvedState.events || [])
-                    .filter((e) => e && e.type === "MONSTER_DESTROYED")
+                    .filter((e) => e && ["UNIT_DESTROYED", "MONSTER_DESTROYED"].includes(e.type))
                     .map((e) => (e.payload || {}).instance_id))
                     .filter(Boolean)
             );
@@ -1102,7 +1119,7 @@
         triggerDeathDissolve(resolvedState) {
             if (!resolvedState || RebirthFeel.reducedMotion()) return [];
             const destroyedIds = (resolvedState.events || [])
-                .filter((e) => e && e.type === "MONSTER_DESTROYED")
+                .filter((e) => e && ["UNIT_DESTROYED", "MONSTER_DESTROYED"].includes(e.type))
                 .map((e) => (e.payload || {}).instance_id)
                 .filter(Boolean);
             if (!destroyedIds.length) return [];
@@ -1564,6 +1581,7 @@
             this.hand();
             this.coach();
             this.result();
+            this.resolution();
             this.tactics();
             this.guide();
             this.log();
@@ -1873,17 +1891,50 @@
             const host = RebirthStore.elements["ability-events"];
             if (!host) return;
             const events = (result && result.ability_events) || [];
+            const feedback = ((RebirthStore.state && RebirthStore.state.resolution_context && RebirthStore.state.resolution_context.feedback) || []);
             if (!result) {
-                host.innerHTML = "";
+                const labels = {
+                    DAMAGE_RESOLVED: "Dano resolvido",
+                    SHIELD_APPLIED: "Escudo",
+                    SHIELD_GRANTED: "Escudo",
+                    SHIELD_BROKEN: "Armadura quebrada",
+                    TRAP_TRIGGERED: "Trap acionada",
+                    UNIT_DESTROYED: "Unidade destruída",
+                    UNIT_EXHAUSTED: "Unidade exausta",
+                    STATUS_APPLIED: "Status aplicado"
+                };
+                host.innerHTML = feedback.slice(-3).map((event) => {
+                    const label = event.message || labels[event.event_type] || event.event_type;
+                    return '<span class="rb-ability-chip">' + RebirthText.escape(label) + "</span>";
+                }).join("");
                 return;
             }
             if (!events.length) {
                 host.innerHTML = '<span class="rb-ability-chip is-muted">Combate básico</span>';
                 return;
             }
-            host.innerHTML = events.slice(0, 2).map((event) => {
+            const visible = events.slice(0, 2).map((event) => {
                 return '<span class="rb-ability-chip">' + RebirthText.escape(event) + "</span>";
-            }).join("");
+            });
+            if (events.length > 2) {
+                visible.push('<span class="rb-ability-chip is-muted">+' + RebirthText.escape(events.length - 2) + " eventos</span>");
+            }
+            host.innerHTML = visible.join("");
+        },
+
+        resolution() {
+            const context = RebirthStore.state && RebirthStore.state.resolution_context;
+            if (!context) return;
+            RebirthDom.setText("priority-label", `Prioridade: ${context.priority_label || "Resolvida"}`);
+            RebirthDom.setText(
+                "chain-label",
+                context.chain_id ? `Cadeia ${context.chain_id} · ${context.chain_event_count || 0}` : "Sem cadeia ativa"
+            );
+            RebirthDom.setText("interrupt-label", context.interrupt_label || "Janela fechada");
+            const interrupt = RebirthStore.elements["interrupt-label"];
+            if (interrupt) {
+                interrupt.dataset.interrupt = String(context.interrupt_label || "").toLowerCase().includes("trap") ? "resolved" : "closed";
+            }
         },
 
         rewardPanel() {

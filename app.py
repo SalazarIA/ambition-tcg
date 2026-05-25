@@ -8,13 +8,14 @@ from flask import Flask, jsonify, make_response, redirect, render_template, requ
 
 from services.rebirth_contracts import RebirthError
 from services.rebirth_balance import simulate_balance
-from services.rebirth_engine import (
-    declare_attack,
-    evolve_duplicate,
-    next_turn,
-    play_card,
-    start_match,
+from services.rebirth_dispatcher import (
+    DeclareAttackCommand,
+    EndTurnCommand,
+    EvolveDuplicateCommand,
+    SummonCardCommand,
+    dispatch_command,
 )
+from services.rebirth_engine import start_match
 from services.rebirth_match_store import MATCH_STORE
 from services.rebirth_persistence import (
     RebirthPersistenceError,
@@ -356,6 +357,8 @@ def start_memory_rebirth_match(payload):
         player_card_ids=player_card_ids,
         player_name="Você",
         bot_profile_id=bot_profile_id,
+        runtime_mode="singleplayer",
+        apply_reducers_inline=False,
     )
     match = MATCH_STORE.save(match)
     state = public_state(match)
@@ -621,6 +624,8 @@ def api_rebirth_start():
             player_card_ids=player_card_ids,
             player_name=player_name,
             bot_profile_id=bot_profile_id,
+            runtime_mode="singleplayer",
+            apply_reducers_inline=False,
         )
         if user:
             match["owner_user_id"] = user["id"]
@@ -646,17 +651,21 @@ def api_rebirth_play_card():
         repo = rebirth_repo()
         ensure_match_access(match, user=user)
         if payload.get("attacker_instance_id"):
-            declare_attack(
+            dispatch_command(
                 match,
-                attacker_instance_id=payload.get("attacker_instance_id"),
-                target_instance_id=payload.get("target_instance_id"),
+                DeclareAttackCommand(
+                    attacker_instance_id=payload.get("attacker_instance_id"),
+                    target_instance_id=payload.get("target_instance_id"),
+                ),
             )
         else:
-            play_card(
+            dispatch_command(
                 match,
-                card_instance_id=payload.get("card_instance_id"),
-                card_id=payload.get("card_id"),
-                field_slot=payload.get("field_slot", payload.get("slot")),
+                SummonCardCommand(
+                    card_instance_id=payload.get("card_instance_id"),
+                    card_id=payload.get("card_id"),
+                    field_slot=payload.get("field_slot", payload.get("slot")),
+                ),
             )
         state = public_state(match)
         progress = None
@@ -683,10 +692,12 @@ def api_rebirth_attack():
         match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo()
         ensure_match_access(match, user=user)
-        declare_attack(
+        dispatch_command(
             match,
-            attacker_instance_id=payload.get("attacker_instance_id"),
-            target_instance_id=payload.get("target_instance_id"),
+            DeclareAttackCommand(
+                attacker_instance_id=payload.get("attacker_instance_id"),
+                target_instance_id=payload.get("target_instance_id"),
+            ),
         )
         state = public_state(match)
         progress = None
@@ -711,7 +722,7 @@ def api_rebirth_evolve():
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
-        evolved = evolve_duplicate(match, payload.get("card_id"))
+        evolved = dispatch_command(match, EvolveDuplicateCommand(card_id=payload.get("card_id")))
         persist_match_if_owned(rebirth_repo(), user, match)
         return json_success(public_state(match), match.get("result"), evolved=evolved)
     except RebirthPersistenceError as error:
@@ -727,7 +738,7 @@ def api_rebirth_next_turn():
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
-        next_turn(match)
+        dispatch_command(match, EndTurnCommand(turn=match.get("turn")))
         persist_match_if_owned(rebirth_repo(), user, match)
         return json_success(public_state(match), match.get("result"))
     except RebirthPersistenceError as error:

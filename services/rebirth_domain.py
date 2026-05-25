@@ -14,14 +14,16 @@ import json
 from copy import deepcopy
 from typing import Any, Dict
 
+from services.rebirth_profiler import current_profiler
 
-ENGINE_VERSION = "rebirth_engine_v62"
+
+ENGINE_VERSION = "rebirth_engine_v66"
 CARD_SET_VERSION = "rebirth_card_set_v66"
 REPLAY_FORMAT_VERSION = "rebirth_replay_v2"
-REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v62"
+REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v66"
 SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v2"
-RULESET_VERSION = "rebirth_ruleset_v62"
-REDUCER_VERSION = "rebirth_reducer_v62"
+RULESET_VERSION = "rebirth_ruleset_v66"
+REDUCER_VERSION = "rebirth_reducer_v66"
 MAX_EFFECT_CHAIN_DEPTH = 8
 MAX_CAUSAL_CHAIN_DEPTH = 12
 MAX_INTERRUPT_DEPTH = 4
@@ -160,15 +162,29 @@ def canonical_state(match: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def canonical_state_hash(match: Dict[str, Any]) -> str:
+    profiler = current_profiler()
+    if profiler:
+        with profiler.timer("hash_cost", detail="canonical_state_hash"):
+            encoded = serialize_canonical_state(match)
+            return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
     encoded = serialize_canonical_state(match)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def serialize_canonical_state(match: Dict[str, Any]) -> str:
+    profiler = current_profiler()
+    if profiler:
+        with profiler.timer("serialization_cost", detail="canonical_state"):
+            return canonical_json(canonical_state(match))
     return canonical_json(canonical_state(match))
 
 
 def compress_canonical_state(match: Dict[str, Any]) -> str:
+    profiler = current_profiler()
+    if profiler:
+        with profiler.timer("serialization_cost", detail="gzip_base64_snapshot"):
+            raw = serialize_canonical_state(match).encode("utf-8")
+            return base64.b64encode(gzip.compress(raw)).decode("ascii")
     raw = serialize_canonical_state(match).encode("utf-8")
     return base64.b64encode(gzip.compress(raw)).decode("ascii")
 

@@ -21,6 +21,7 @@
     --rb-safe-left: env(safe-area-inset-left, 0px);
     --rb-safe-offset-x: 0px;
     --rb-safe-offset-y: 0px;
+    --rb-nav-clearance: 0px;
     --rb-cut: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
     --rb-shadow: 0 26px 80px rgba(0, 0, 0, 0.68);
 }
@@ -76,6 +77,7 @@ button {
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
+    overflow: clip;
     display: grid;
     place-items: center;
     padding: var(--rb-safe-top) var(--rb-safe-right) var(--rb-safe-bottom) var(--rb-safe-left);
@@ -119,12 +121,12 @@ button {
     position: absolute;
     z-index: 1;
     left: 50%;
-    top: 50%;
+    top: calc(var(--rb-safe-top) + var(--rb-nav-clearance));
     width: var(--rb-board-width);
     height: var(--rb-board-height);
     overflow: hidden;
-    transform: translate(calc(-50% + var(--rb-safe-offset-x)), calc(-50% + var(--rb-safe-offset-y))) scale(var(--rb-scale));
-    transform-origin: center center;
+    transform: translateX(calc(-50% + var(--rb-safe-offset-x))) scale(var(--rb-scale));
+    transform-origin: top center;
     background:
         linear-gradient(90deg, rgba(244, 173, 38, 0.05), transparent 28%, transparent 72%, rgba(88, 214, 255, 0.045)),
         repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 82px),
@@ -430,6 +432,30 @@ button {
     border-color: rgba(120, 242, 170, 0.42);
     color: var(--rb-green);
     background: rgba(120, 242, 170, 0.09);
+}
+
+.rb-phase-timeline {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+.rb-phase-timeline i {
+    width: 14px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.16);
+    transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.rb-phase-timeline i.is-complete {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.rb-phase-timeline i.is-current {
+    background: var(--rb-gold);
+    box-shadow: 0 0 9px rgba(244, 173, 38, 0.6);
 }
 
 .rb-slogans {
@@ -1643,6 +1669,41 @@ button {
 .rb-tactics-strip b {
     margin-right: 5px;
     color: var(--rb-text);
+}
+
+.rb-resolution-strip {
+    display: flex !important;
+    flex-wrap: nowrap;
+    gap: 4px !important;
+    min-height: 20px;
+    overflow: hidden;
+}
+
+.rb-resolution-strip span {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    padding: 4px 7px;
+    border: 1px solid rgba(88, 214, 255, 0.22);
+    color: var(--rb-cyan);
+    background: rgba(88, 214, 255, 0.065);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.rb-resolution-strip span:first-child {
+    flex-grow: 1.15;
+    border-color: rgba(244, 173, 38, 0.32);
+    color: var(--rb-gold);
+}
+
+.rb-resolution-strip span:last-child[data-interrupt="resolved"] {
+    border-color: rgba(255, 115, 95, 0.38);
+    color: var(--rb-red);
 }
 
 .rb-result-panel .rb-secondary {
@@ -3496,6 +3557,16 @@ button {
         font-size: 10px;
     }
 
+    .rb-phase-timeline {
+        gap: 3px;
+        margin-top: 3px;
+    }
+
+    .rb-phase-timeline i {
+        width: 12px;
+        height: 3px;
+    }
+
     .rb-slogans {
         left: 24px;
         top: 122px;
@@ -3784,6 +3855,11 @@ button {
 
     .rb-tactics-strip span {
         padding: 4px 6px;
+        font-size: 9px;
+    }
+
+    .rb-resolution-strip span {
+        padding: 3px 5px;
         font-size: 9px;
     }
 
@@ -7031,6 +7107,16 @@ button {
 
     .rb-mobile-native .rb-turn-core small {
         font-size: 7px;
+    }
+
+    .rb-mobile-native .rb-phase-timeline {
+        gap: 2px;
+        margin-top: 4px;
+    }
+
+    .rb-mobile-native .rb-phase-timeline i {
+        width: 8px;
+        height: 3px;
     }
 
     .rb-mobile-native .rb-battle-zone {

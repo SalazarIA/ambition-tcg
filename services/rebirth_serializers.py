@@ -28,6 +28,25 @@ REQUIRED_CARD_FIELDS = {
     "silhouette",
 }
 
+RESOLUTION_PRIORITY_LABELS = {
+    1: "Replacement",
+    2: "Interrupt / Trap",
+    3: "Resposta",
+    4: "Efeito ativo",
+    5: "Trigger",
+    6: "Limpeza",
+}
+FEEDBACK_EVENT_TYPES = {
+    "DAMAGE_RESOLVED",
+    "SHIELD_APPLIED",
+    "SHIELD_GRANTED",
+    "SHIELD_BROKEN",
+    "TRAP_TRIGGERED",
+    "UNIT_DESTROYED",
+    "UNIT_EXHAUSTED",
+    "STATUS_APPLIED",
+}
+
 
 def validate_card_contract(card):
     missing = [field for field in REQUIRED_CARD_FIELDS if field not in card]
@@ -79,6 +98,35 @@ def side_payload(side, *, reveal_hand=True):
     return payload
 
 
+def resolution_context(match):
+    """Expose authoritative resolution signals for a presentation-only HUD."""
+    events = match.get("events") or []
+    latest = events[-1] if events else {}
+    chain_id = latest.get("effect_chain_id")
+    chain_events = [event for event in events if chain_id and event.get("effect_chain_id") == chain_id]
+    feedback = [
+        {
+            "event_type": event.get("event_type") or event.get("type"),
+            "target_id": event.get("target_id"),
+            "message": event.get("message"),
+        }
+        for event in chain_events
+        if (event.get("event_type") or event.get("type")) in FEEDBACK_EVENT_TYPES
+    ][-4:]
+    priority = latest.get("priority_level")
+    awaiting_player = match.get("phase") == "choose" and not match.get("is_finished")
+    has_interrupt = any(int(event.get("priority_level", 0) or 0) == 2 for event in chain_events)
+    return {
+        "current_phase": match.get("turn_phase"),
+        "priority_label": "Jogador" if awaiting_player else RESOLUTION_PRIORITY_LABELS.get(priority, "Resolvida"),
+        "chain_id": chain_id,
+        "chain_event_count": len(chain_events),
+        "chain_state": "aguardando acao" if awaiting_player and not chain_id else "resolvida",
+        "interrupt_label": "Trap resolvida" if has_interrupt else "Janela fechada",
+        "feedback": feedback,
+    }
+
+
 def public_state(match):
     validate_phase(match["phase"])
     player = side_payload(match["player"], reveal_hand=True)
@@ -105,6 +153,8 @@ def public_state(match):
         "winner": match.get("winner"),
         "is_finished": bool(match.get("is_finished")),
         "replay_audio_muted_mode": bool(match.get("replay_audio_muted_mode", False)),
+        "resolution_context": resolution_context(match),
+        "checkpoint": deepcopy((match.get("checkpoints") or [None])[-1]),
         "events": deepcopy(match.get("events", [])[-12:]),
         "log": list(match.get("log", [])[-8:]),
     }

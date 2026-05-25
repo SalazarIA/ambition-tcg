@@ -11,9 +11,10 @@ from services.rebirth_domain import (
     canonical_json,
     SNAPSHOT_FORMAT_VERSION,
     REPLAY_SCHEMA_VERSION,
-    canonical_state_hash,
     compress_canonical_state,
+    canonical_state_hash,
 )
+from services.rebirth_profiler import current_profiler
 
 
 def _safe_payload(payload=None):
@@ -32,8 +33,30 @@ def ensure_event_contract(match):
     match.setdefault("commands", [])
     match.setdefault("events", [])
     match.setdefault("snapshots", [])
+    match.setdefault("checkpoints", [])
     match.setdefault("_effect_chain_counter", 0)
     return match
+
+
+SNAPSHOT_LIFECYCLE_REASONS = {"match_started", "TURN_ENDED", "MATCH_FINISHED", "MATCH_EXHAUSTED"}
+SNAPSHOT_EXPLICIT_REASONS = {"debug", "debug_sync", "network_sync", "sync", "audit"}
+
+
+def should_persist_snapshot(match, reason, *, force=False):
+    if force or match.pop("_force_snapshot", False):
+        return True
+    reason = str(reason)
+    if reason in SNAPSHOT_LIFECYCLE_REASONS or reason.startswith("debug_") or reason.startswith("sync_"):
+        return True
+    if reason in SNAPSHOT_EXPLICIT_REASONS:
+        return True
+    command_count = len(match.get("commands", []) or [])
+    if command_count and command_count % 15 == 0:
+        last_checkpoint = int(match.get("_last_snapshot_command_count", 0) or 0)
+        if last_checkpoint != command_count:
+            match["_last_snapshot_command_count"] = command_count
+            return True
+    return False
 
 
 def _event_by_id(match, event_id):
@@ -110,7 +133,6 @@ def append_event(
 ):
     ensure_event_contract(match)
     version = _next_version(match)
-    canonical_hash = canonical_state_hash(match)
     payload = _safe_payload(payload)
     chain_id = effect_chain_id or match.get("current_effect_chain_id") or f"event-{version:06d}"
     sequence = int(sequence_id or version)
@@ -143,7 +165,7 @@ def append_event(
         "sequence_id": sequence,
         "effect_chain_id": chain_id,
         "replay_frame": int(replay_frame or sequence),
-        "canonical_state_hash": canonical_hash,
+        "canonical_state_hash": None,
         "parent_event_id": parent,
         "root_event_id": root,
         "reducer_version": match.get("reducer_version") or REDUCER_VERSION,
@@ -192,8 +214,7 @@ def state_hash(match):
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def append_snapshot(match, reason):
-    ensure_event_contract(match)
+def _snapshot_payload(match, reason):
     snapshot = {
         "format_version": SNAPSHOT_FORMAT_VERSION,
         "replay_schema_version": REPLAY_SCHEMA_VERSION,
@@ -208,6 +229,44 @@ def append_snapshot(match, reason):
         "state_encoding": "gzip+base64+json",
         "canonical_state": compress_canonical_state(match),
     }
+    return snapshot
+
+
+def append_checkpoint(match, reason, *, canonical_hash=None):
+    """Store a compact turn boundary for future peer/spectator validation."""
+    ensure_event_contract(match)
+    events = match.get("events") or []
+    last_event = events[-1] if events else {}
+    checkpoint = {
+        "turn": int(match.get("turn", 0) or 0),
+        "version": int(match.get("version", 0) or 0),
+        "reason": str(reason),
+        "command_count": len(match.get("commands") or []),
+        "replay_frame": int(last_event.get("replay_frame", last_event.get("sequence_id", 0)) or 0),
+        "canonical_state_hash": canonical_hash or canonical_state_hash(match),
+    }
+    existing = match["checkpoints"][-1] if match["checkpoints"] else None
+    signature = (checkpoint["reason"], checkpoint["turn"], checkpoint["replay_frame"])
+    if existing and signature == (existing.get("reason"), existing.get("turn"), existing.get("replay_frame")):
+        return existing
+    match["checkpoints"].append(checkpoint)
+    match["checkpoints"] = match["checkpoints"][-128:]
+    return checkpoint
+
+
+def append_snapshot(match, reason, *, force=False):
+    ensure_event_contract(match)
+    if not should_persist_snapshot(match, reason, force=force):
+        return None
+    profiler = current_profiler()
+    if profiler:
+        with profiler.timer("snapshot_cost", detail=str(reason)):
+            snapshot = _snapshot_payload(match, reason)
+        profiler.observe_snapshot_size(len(str(snapshot.get("canonical_state") or "")), reason=str(reason))
+    else:
+        snapshot = _snapshot_payload(match, reason)
     match["snapshots"].append(snapshot)
     match["snapshots"] = match["snapshots"][-20:]
+    if str(reason) in SNAPSHOT_LIFECYCLE_REASONS:
+        append_checkpoint(match, reason, canonical_hash=snapshot["canonical_state_hash"])
     return snapshot

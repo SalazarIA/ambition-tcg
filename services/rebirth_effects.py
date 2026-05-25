@@ -19,7 +19,8 @@ from services.rebirth_domain import (
     canonical_state_hash,
 )
 from services.rebirth_events import append_event, new_effect_chain_id
-from services.rebirth_reducers import reduce_event
+from services.rebirth_profiler import current_profiler
+from services.rebirth_reducers import apply_event_in_place, reduce_event
 from services.rebirth_state import field_slots
 
 
@@ -53,6 +54,62 @@ PRIORITY_MODEL = {
     "delayed": PRIORITY_DELAYED_EXPIRATION,
     "expiration": PRIORITY_DELAYED_EXPIRATION,
 }
+
+RUNTIME_CACHE_LIMIT = 16
+
+
+def apply_reducers_inline(match: Dict[str, Any]) -> bool:
+    return bool(match.get("_apply_reducers_inline", True))
+
+
+def _pending_hash_ids(match: Dict[str, Any]) -> set[int]:
+    return set(int(event_id) for event_id in match.setdefault("_pending_hash_event_ids", []))
+
+
+def mark_canonical_hash_dirty(match: Dict[str, Any], event_ids: Iterable[int]) -> None:
+    ids = _pending_hash_ids(match)
+    ids.update(int(event_id) for event_id in event_ids if event_id)
+    match["_pending_hash_event_ids"] = sorted(ids)
+    invalidate_canonical_state_hash(match, origin="event_flush")
+
+
+def invalidate_canonical_state_hash(match: Dict[str, Any], *, origin: Optional[str] = None) -> None:
+    match["_canonical_hash_dirty"] = True
+    match["_last_canonical_state_hash"] = None
+    if origin and (match.get("_debug_mutation_tracking") or match.get("_parity_tracking_enabled")):
+        match["_mutation_dirty"] = True
+        match.setdefault("_mutation_origins", []).append(str(origin))
+
+
+def finalize_canonical_state_hash(match: Dict[str, Any], event_ids: Optional[Iterable[int]] = None) -> Optional[str]:
+    ids = _pending_hash_ids(match)
+    if event_ids is not None:
+        ids.update(int(event_id) for event_id in event_ids if event_id)
+    if not ids and not match.get("_canonical_hash_dirty"):
+        return match.get("_last_canonical_state_hash")
+    final_hash = canonical_state_hash(match)
+    match["_last_canonical_state_hash"] = final_hash
+    for event in match.get("events", []):
+        if int(event.get("event_id", 0) or 0) in ids:
+            event["canonical_state_hash"] = final_hash
+    match["_pending_hash_event_ids"] = []
+    match["_canonical_hash_dirty"] = False
+    return final_hash
+
+
+def purge_effect_runtime_caches(match: Dict[str, Any], *, keep_last: int = RUNTIME_CACHE_LIMIT) -> Dict[str, Any]:
+    for cache_key in ("_effect_dispatch_keys", "_effect_activation_keys"):
+        cache = match.get(cache_key)
+        if not isinstance(cache, dict):
+            continue
+        if keep_last <= 0:
+            match[cache_key] = {}
+            continue
+        if len(cache) <= keep_last:
+            continue
+        keep = set(sorted(cache)[-keep_last:])
+        match[cache_key] = {key: cache[key] for key in sorted(cache) if key in keep}
+    return match
 
 
 def _frozen_payload(payload: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -202,6 +259,7 @@ class EffectBus:
         self._phase_iterations += 1
         if self._phase_iterations > MAX_PHASE_ITERATIONS:
             raise RebirthError("Limite de iterações de fase excedido.", "phase_iteration_limit_exceeded")
+        profiler = current_profiler()
         ordered = sorted(
             self._queue,
             key=lambda item: (
@@ -217,45 +275,74 @@ class EffectBus:
         )
         self._queue = []
         self.match["_event_dispatch_depth"] = int(self.match.get("_event_dispatch_depth", 0) or 0) + 1
+        if profiler:
+            profiler.observe_effect_chain_depth(int(self.match.get("_event_dispatch_depth", 0) or 0))
         has_interrupt = any(int(item.get("priority_level", 0) or 0) == PRIORITY_INTERRUPT for item in ordered)
         if has_interrupt:
             self.match["_interrupt_depth"] = int(self.match.get("_interrupt_depth", 0) or 0) + 1
         try:
             emitted = []
             previous_event_id = None
-            for item in ordered:
-                parent_event_id = item.get("parent_event_id")
-                if item.get("chain_from_previous") and previous_event_id is not None:
-                    parent_event_id = previous_event_id
-                if parent_event_id is None:
-                    parent_event_id = self.parent_event_id
-                event = append_event(
-                    self.match,
-                    item["event_type"],
-                    actor=item["actor"],
-                    payload=item["payload"],
-                    message=item.get("message"),
-                    source_card_id=item.get("source_card_id"),
-                    target_id=item.get("target_id"),
-                    owner_id=item.get("owner_id"),
-                    effect_chain_id=self.effect_chain_id,
-                    parent_event_id=parent_event_id,
-                    root_event_id=item.get("root_event_id") or self.root_event_id,
-                    resolution_phase=item.get("resolution_phase"),
-                    priority_level=item.get("priority_level"),
-                )
-                if item.get("apply_reducer"):
-                    reduced = reduce_event(self.match, event)
-                    self.match.clear()
-                    self.match.update(reduced)
-                    self.match["events"][-1]["canonical_state_hash"] = canonical_state_hash(self.match)
-                emitted.append(self.match["events"][-1])
-                previous_event_id = emitted[-1]["event_id"]
+            flush_timer = profiler.timer("phase_cost", detail="EffectBus.flush") if profiler else None
+            if flush_timer:
+                flush_timer.__enter__()
+            try:
+                for item in ordered:
+                    parent_event_id = item.get("parent_event_id")
+                    if item.get("chain_from_previous") and previous_event_id is not None:
+                        parent_event_id = previous_event_id
+                    if parent_event_id is None:
+                        parent_event_id = self.parent_event_id
+                    event = append_event(
+                        self.match,
+                        item["event_type"],
+                        actor=item["actor"],
+                        payload=item["payload"],
+                        message=item.get("message"),
+                        source_card_id=item.get("source_card_id"),
+                        target_id=item.get("target_id"),
+                        owner_id=item.get("owner_id"),
+                        effect_chain_id=self.effect_chain_id,
+                        parent_event_id=parent_event_id,
+                        root_event_id=item.get("root_event_id") or self.root_event_id,
+                        resolution_phase=item.get("resolution_phase"),
+                        priority_level=item.get("priority_level"),
+                    )
+                    if item.get("apply_reducer"):
+                        if profiler:
+                            with profiler.timer("phase_cost", detail=item.get("resolution_phase") or "REDUCER_PHASE"):
+                                with profiler.timer("reducer_cost", detail=item["event_type"]):
+                                    if apply_reducers_inline(self.match):
+                                        reduced = reduce_event(self.match, event)
+                                        self.match.clear()
+                                        self.match.update(reduced)
+                                    else:
+                                        invalidate_canonical_state_hash(self.match, origin=f"in_place:{item['event_type']}")
+                                        apply_event_in_place(self.match, event)
+                        elif apply_reducers_inline(self.match):
+                            reduced = reduce_event(self.match, event)
+                            self.match.clear()
+                            self.match.update(reduced)
+                        else:
+                            invalidate_canonical_state_hash(self.match, origin=f"in_place:{item['event_type']}")
+                            apply_event_in_place(self.match, event)
+                    emitted.append(self.match["events"][-1])
+                    previous_event_id = emitted[-1]["event_id"]
+            finally:
+                if flush_timer:
+                    flush_timer.__exit__(None, None, None)
+            emitted_ids = {int(event["event_id"]) for event in emitted}
+            if emitted_ids:
+                mark_canonical_hash_dirty(self.match, emitted_ids)
+                if int(self.match.get("_command_dispatch_depth", 0) or 0) <= 0:
+                    finalize_canonical_state_hash(self.match)
             return emitted
         finally:
             self.match["_event_dispatch_depth"] = max(0, int(self.match.get("_event_dispatch_depth", 1) or 1) - 1)
             if has_interrupt:
                 self.match["_interrupt_depth"] = max(0, int(self.match.get("_interrupt_depth", 1) or 1) - 1)
+            if int(self.match.get("_command_dispatch_depth", 0) or 0) <= 0:
+                purge_effect_runtime_caches(self.match)
 
 
 def _message_list(events: Iterable[Dict[str, Any]]) -> List[str]:
@@ -367,16 +454,41 @@ def _dispatch_effect(
         return
 
     if effect_type == "destroy_shield":
+        target_id = side_name
+        status_name = "shield"
+        message = f"O escudo de {side['name']} foi destruído."
+        payload = {"side": side_name, "status": status_name}
         if "shield" not in (side.get("statuses") or {}):
-            return
+            shielded_units = sorted(
+                (
+                    card
+                    for card in _field_cards(match, side_name)
+                    if "aegis_sentinel_shield" in _status_bucket(card)
+                ),
+                key=lambda card: (int(card.get("field_slot", 0) or 0), _card_key(card)),
+            )
+            if not shielded_units:
+                return
+            protected = shielded_units[0]
+            target_id = protected.get("instance_id")
+            status_name = "aegis_sentinel_shield"
+            status = _status_bucket(protected).get(status_name) or {}
+            payload = _card_event_payload(
+                protected,
+                side=side_name,
+                status=status_name,
+                guard_bonus=max(0, int(status.get("guard", 0) or 0)),
+                armor_break=True,
+            )
+            message = f"{protected['name']} perde sua armadura temporária."
         bus.dispatch(
             "SHIELD_BROKEN",
             actor=side_name,
             source_card_id=source_card_id,
-            target_id=side_name,
+            target_id=target_id,
             owner_id=side_name,
-            payload={"side": side_name, "status": "shield"},
-            message=f"O escudo de {side['name']} foi destruído.",
+            payload=payload,
+            message=message,
             order=order,
             priority_level=priority_level,
             trigger_timestamp=order,
