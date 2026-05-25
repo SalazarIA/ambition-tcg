@@ -12,7 +12,9 @@ from services.rebirth_domain import (
     SNAPSHOT_FORMAT_VERSION,
     REPLAY_SCHEMA_VERSION,
     compress_canonical_state,
+    compress_serialized_state,
     canonical_state_hash,
+    serialize_canonical_state,
 )
 from services.rebirth_profiler import current_profiler
 
@@ -215,6 +217,8 @@ def state_hash(match):
 
 
 def _snapshot_payload(match, reason):
+    encoded = serialize_canonical_state(match)
+    canonical_hash = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
     snapshot = {
         "format_version": SNAPSHOT_FORMAT_VERSION,
         "replay_schema_version": REPLAY_SCHEMA_VERSION,
@@ -225,10 +229,12 @@ def _snapshot_payload(match, reason):
         "phase": match.get("phase"),
         "reason": str(reason),
         "state_hash": state_hash(match),
-        "canonical_state_hash": canonical_state_hash(match),
+        "canonical_state_hash": canonical_hash,
         "state_encoding": "gzip+base64+json",
-        "canonical_state": compress_canonical_state(match),
+        "canonical_state": compress_serialized_state(encoded),
     }
+    match["_last_canonical_state_hash"] = canonical_hash
+    match["_canonical_hash_dirty"] = False
     return snapshot
 
 
