@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
     "users",
@@ -31,6 +31,37 @@ REQUIRED_TABLES = {
     "market_offers",
     "telemetry_events",
 }
+
+# Executado antes da foundation migration: tabelas Ascension com nomes
+# conflitantes precisam sair do caminho antes que novas FKs sejam declaradas.
+LEGACY_SCHEMA_PREFLIGHT = """
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'users')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'users' AND column_name = 'password_salt')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'users_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE users RENAME TO users_legacy_ascension';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'match_history')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'match_history' AND column_name = 'match_id')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'match_history_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE match_history RENAME TO match_history_legacy_ascension';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'booster_history')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'booster_history' AND column_name = 'booster_id')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'booster_history_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE booster_history RENAME TO booster_history_legacy_ascension';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'economy_ledger')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'economy_ledger' AND column_name = 'resource')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'economy_ledger_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE economy_ledger RENAME TO economy_ledger_legacy_ascension';
+    END IF;
+END $$;
+"""
 
 MIGRATION_001 = """
 CREATE TABLE IF NOT EXISTS rebirth_schema_migrations (
@@ -353,49 +384,68 @@ ON CONFLICT (version) DO NOTHING;
 """
 
 MIGRATION_005 = """
--- v70: reaponta FKs órfãs que seguiram o RENAME de users → users_legacy_ascension.
+-- v70: reaponta FKs órfãs que seguiram o RENAME de parents legacy.
 -- Quando ALTER TABLE users RENAME aconteceu (v69/v70 manual), Postgres atualizou
 -- automaticamente TODAS as FKs apontando pra users — incluindo user_collection,
 -- user_loadout, user_progress, match_commands, wallet_ledger etc. Logo o schema
 -- novo de users existe mas é orphan, e qualquer INSERT em tabela filha referencia
--- a tabela legacy. Aqui detectamos esse caso e migramos as constraints.
--- Idempotente: em ambientes onde FKs já apontam pra users, o loop é vazio.
+-- a tabela legacy. match_commands/match_events também podem seguir um rename de
+-- match_history. Mantemos linhas históricas legadas sem bloquearem novos writes
+-- usando NOT VALID; inserts novos já são validados contra o parent Rebirth.
 
 DO $$
 DECLARE
     fk RECORD;
-    src_table TEXT;
-    src_columns TEXT;
-    tgt_columns TEXT;
-    on_delete TEXT;
 BEGIN
-    -- Encontra FKs que apontam pra users_legacy_ascension e estão em tabelas
-    -- Rebirth (não-legacy). FKs em tabelas *_legacy_ascension continuam OK
-    -- apontando pra users_legacy_ascension (auditoria histórica preserved).
+    -- Impede colisão entre IDs novos e registros antigos que permanecem nas
+    -- tabelas compartilhadas até sua eventual arquivação.
+    IF to_regclass(current_schema() || '.users_legacy_ascension') IS NOT NULL THEN
+        PERFORM setval(
+            pg_get_serial_sequence('users', 'id'),
+            GREATEST(
+                COALESCE((SELECT MAX(id) FROM users), 0),
+                COALESCE((SELECT MAX(id) FROM users_legacy_ascension), 0)
+            ) + 1,
+            false
+        );
+    END IF;
+
     FOR fk IN
         SELECT
             con.conname AS constraint_name,
             cls_src.relname AS source_table,
-            pg_get_constraintdef(con.oid) AS constraint_def
+            cls_tgt.relname AS target_table,
+            pg_get_constraintdef(con.oid) AS constraint_def,
+            CASE cls_tgt.relname
+                WHEN 'users_legacy_ascension' THEN 'users'
+                WHEN 'match_history_legacy_ascension' THEN 'match_history'
+            END AS replacement_table
         FROM pg_constraint con
         JOIN pg_class cls_src ON con.conrelid = cls_src.oid
         JOIN pg_class cls_tgt ON con.confrelid = cls_tgt.oid
         WHERE con.contype = 'f'
-          AND cls_tgt.relname = 'users_legacy_ascension'
-          AND cls_src.relname NOT LIKE '%_legacy_ascension'
+          AND cls_tgt.relname IN ('users_legacy_ascension', 'match_history_legacy_ascension')
+          AND cls_src.relname NOT LIKE '%%_legacy_ascension'
+          AND cls_src.relname IN (
+              'user_sessions', 'user_collection', 'user_loadout', 'user_progress',
+              'reward_claims', 'booster_history', 'user_achievements', 'match_history',
+              'match_commands', 'match_events', 'economy_ledger', 'economy_transactions',
+              'economy_idempotency_keys', 'wallet_ledger', 'admin_audit_log',
+              'market_offers', 'telemetry_events'
+          )
     LOOP
         EXECUTE format(
-            'ALTER TABLE %I DROP CONSTRAINT %I',
+            'ALTER TABLE %%I DROP CONSTRAINT %%I',
             fk.source_table, fk.constraint_name
         );
         EXECUTE format(
-            'ALTER TABLE %I ADD CONSTRAINT %I %s',
+            'ALTER TABLE %%I ADD CONSTRAINT %%I %%s NOT VALID',
             fk.source_table,
             fk.constraint_name,
-            replace(fk.constraint_def, 'users_legacy_ascension', 'users')
+            replace(fk.constraint_def, fk.target_table, fk.replacement_table)
         );
-        RAISE NOTICE 'Reaponted FK % on % from users_legacy_ascension to users',
-            fk.constraint_name, fk.source_table;
+        RAISE NOTICE 'Reaponted FK %% on %% from %% to %% without validating legacy rows',
+            fk.constraint_name, fk.source_table, fk.target_table, fk.replacement_table;
     END LOOP;
 END $$;
 
@@ -404,7 +454,13 @@ VALUES (5, 'repoint_orphan_fks_after_users_rename')
 ON CONFLICT (version) DO NOTHING;
 """
 
-MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004, MIGRATION_005)
+MIGRATION_006 = """
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (6, 'legacy_parent_fk_recovery_and_identity_fence')
+ON CONFLICT (version) DO NOTHING;
+"""
+
+MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004, MIGRATION_005, MIGRATION_006)
 
 
 def normalize_database_url(database_url: str) -> str:
@@ -433,6 +489,7 @@ def upgrade_schema(database_url: str) -> None:
     engine = make_engine(database_url)
     try:
         with engine.begin() as connection:
+            connection.exec_driver_sql(LEGACY_SCHEMA_PREFLIGHT.strip())
             for migration in MIGRATIONS:
                 migration_text = migration.strip()
                 if not migration_text:

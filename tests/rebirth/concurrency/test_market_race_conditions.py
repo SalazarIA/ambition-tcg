@@ -20,7 +20,9 @@ pytestmark = [
     ),
 ]
 
-CARD_ID = "card_023"
+# This card is outside the deterministic starter loadouts used below, so each
+# test measures only the explicitly granted market copy.
+CARD_ID = "card_011"
 PRICE = 50
 
 
