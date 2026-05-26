@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 import os
 import re
 import secrets
@@ -12,6 +13,32 @@ from datetime import datetime, timezone
 from functools import lru_cache, wraps
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+
+
+_persistence_logger = logging.getLogger("rebirth.persistence")
+# Default ON: expor o erro original do Postgres na resposta. Isso revela
+# nomes de tabelas/colunas/constraints quando uma escrita falha — informação
+# de schema, NÃO credenciais. Trade-off aceitável para debug de produção
+# durante o estágio pre-beta. Setar REBIRTH_EXPOSE_DB_ERRORS=false para
+# voltar pra mensagem genérica quando o produto estabilizar.
+_EXPOSE_DB_ERRORS = os.environ.get("REBIRTH_EXPOSE_DB_ERRORS", "true").strip().lower() in {"1", "true", "yes"}
+
+
+def _db_error_message(default_msg, cause):
+    """Mensagem do erro Postgres, com detalhe original opcional via env var.
+
+    Sempre loga via stderr (capturado pelo Render). Em dev/staging, opt-in
+    REBIRTH_EXPOSE_DB_ERRORS=true também devolve o detalhe no payload de
+    resposta — útil pra debug remoto sem precisar SSH no DB.
+    """
+    cause_repr = ""
+    if cause is not None:
+        orig = getattr(cause, "orig", None)
+        cause_repr = f"{type(cause).__name__}: {orig if orig is not None else cause}"
+    _persistence_logger.exception("rebirth_persistence: %s | cause=%s", default_msg, cause_repr)
+    if _EXPOSE_DB_ERRORS and cause_repr:
+        return f"{default_msg} [{cause_repr}]"
+    return default_msg
 
 from services.rebirth_cards import (
     CARD_CATALOG,
@@ -315,7 +342,7 @@ class _PostgresConnection:
             return self._scope.__exit__(exc_type, exc, traceback)
         except SQLAlchemyError as error:
             raise RebirthPersistenceError(
-                "A transacao PostgreSQL nao pode ser concluida.",
+                _db_error_message("A transacao PostgreSQL nao pode ser concluida.", error),
                 "database_write_failed",
                 status=409,
             ) from error
@@ -332,7 +359,7 @@ class _PostgresConnection:
             raise
         except SQLAlchemyError as error:
             raise RebirthPersistenceError(
-                "A operacao PostgreSQL nao pode ser concluida.",
+                _db_error_message("A operacao PostgreSQL nao pode ser concluida.", error),
                 "database_write_failed",
                 status=409,
             ) from error
