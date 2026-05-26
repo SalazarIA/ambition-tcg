@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
     "users",
@@ -261,7 +261,98 @@ VALUES (3, 'economy_idempotency_replay_audit')
 ON CONFLICT (version) DO NOTHING;
 """
 
-MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003)
+MIGRATION_004 = """
+-- v70: auto-rename Ascension-legacy tables que estavam mascarando o schema
+-- Rebirth (users sem password_salt, match_history com player1_id/player2_id,
+-- booster_history sem booster_id, economy_ledger com currency/amount).
+-- CREATE TABLE IF NOT EXISTS é no-op contra tabelas pré-existentes com
+-- schema diferente, então signup quebrava em produção com IntegrityError
+-- mascarado. Este DO block detecta o schema antigo via information_schema
+-- e renomeia condicionalmente — idempotente em ambientes novos.
+
+DO $$
+BEGIN
+    -- users: sem password_salt é o sinal canônico de schema Ascension legacy.
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'users')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'users' AND column_name = 'password_salt')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'users_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE users RENAME TO users_legacy_ascension';
+    END IF;
+
+    -- match_history: sem match_id (VARCHAR PRIMARY KEY) é Ascension PvP.
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'match_history')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'match_history' AND column_name = 'match_id')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'match_history_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE match_history RENAME TO match_history_legacy_ascension';
+    END IF;
+
+    -- booster_history: sem booster_id é Ascension shop.
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'booster_history')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'booster_history' AND column_name = 'booster_id')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'booster_history_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE booster_history RENAME TO booster_history_legacy_ascension';
+    END IF;
+
+    -- economy_ledger: sem resource (mas com currency/amount) é Ascension wallet.
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'economy_ledger')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'economy_ledger' AND column_name = 'resource')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'economy_ledger_legacy_ascension') THEN
+        EXECUTE 'ALTER TABLE economy_ledger RENAME TO economy_ledger_legacy_ascension';
+    END IF;
+END $$;
+
+-- Recria as 4 tabelas com schema Rebirth (no-op se já existem corretas).
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(64) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_salt VARCHAR(64) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS match_history (
+    match_id VARCHAR(96) PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    seed VARCHAR(255),
+    bot_profile_id VARCHAR(64),
+    status VARCHAR(20) NOT NULL,
+    winner VARCHAR(20),
+    started_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    final_state_hash VARCHAR(128),
+    final_state_json TEXT NOT NULL,
+    runtime_state_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS booster_history (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    booster_id VARCHAR(100) NOT NULL,
+    seed VARCHAR(255) NOT NULL,
+    cards_json TEXT NOT NULL,
+    opened_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS economy_ledger (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    resource VARCHAR(120) NOT NULL,
+    delta INTEGER NOT NULL,
+    reason VARCHAR(80) NOT NULL,
+    reference_type VARCHAR(60),
+    reference_id VARCHAR(128),
+    balance_after INTEGER NOT NULL,
+    metadata_json TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL
+);
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (4, 'auto_rename_ascension_legacy_tables')
+ON CONFLICT (version) DO NOTHING;
+"""
+
+MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004)
 
 
 def normalize_database_url(database_url: str) -> str:
@@ -283,12 +374,18 @@ def make_engine(database_url: str):
 
 
 def upgrade_schema(database_url: str) -> None:
+    """Executa todas as migrations. Cada migration é um bloco multi-statement
+    enviado diretamente ao driver (psycopg), preservando DO $$..$$ blocks e
+    qualquer string literal com ';' interno — coisa que str.split(';') quebra.
+    """
     engine = make_engine(database_url)
     try:
         with engine.begin() as connection:
             for migration in MIGRATIONS:
-                for statement in [part.strip() for part in migration.split(";") if part.strip()]:
-                    connection.execute(text(statement))
+                migration_text = migration.strip()
+                if not migration_text:
+                    continue
+                connection.exec_driver_sql(migration_text)
     finally:
         engine.dispose()
 
