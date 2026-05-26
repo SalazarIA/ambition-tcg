@@ -110,46 +110,13 @@ class User(db.Model):
         return f"<User {self.username}>"
 
 
-class MatchHistory(db.Model):
-    __tablename__ = "match_history"
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    player1_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
-    player2_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
-    winner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
-
-    player1_name = db.Column(db.String(80), nullable=False)
-    player2_name = db.Column(db.String(80), nullable=False)
-    winner_name = db.Column(db.String(80), nullable=True)
-
-    result = db.Column(db.String(20), nullable=False, default="UNKNOWN")
-
-    player1_final_hp = db.Column(db.Integer, default=0, nullable=False)
-    player2_final_hp = db.Column(db.Integer, default=0, nullable=False)
-
-    total_rounds = db.Column(db.Integer, default=0, nullable=False)
-    mode = db.Column(db.String(40), default="training", nullable=False, index=True)
-    xp_gained = db.Column(db.Integer, default=0, nullable=False)
-    reward_summary = db.Column(db.Text, nullable=True)
-    campaign_chapter_id = db.Column(db.String(80), nullable=True, index=True)
-    campaign_result = db.Column(db.String(40), nullable=True)
-
-    battle_log_json = db.Column(db.Text, nullable=False, default="[]")
-
-    created_at = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-        index=True,
-    )
-
-    player1 = db.relationship("User", foreign_keys=[player1_id])
-    player2 = db.relationship("User", foreign_keys=[player2_id])
-    winner = db.relationship("User", foreign_keys=[winner_id])
-
-    def __repr__(self):
-        return f"<MatchHistory {self.player1_name} vs {self.player2_name}>"
+# NOTE: `class MatchHistory` (PvP/Ascension schema) foi removida no v70 cleanup.
+# A engine ativa Rebirth usa a tabela `match_history` com schema completamente
+# diferente, gerenciado por services/rebirth_schema.py + services/rebirth_persistence.py
+# (PostgreSQL puro, sem SQLAlchemy declarative). Os 79 rows do schema antigo
+# foram preservados em produção como `match_history_legacy_ascension` durante
+# a migração do v69. Não havia código vivo consumindo `models.MatchHistory` —
+# apenas `routes/` e `tools/` legacy não-registrados.
 
 
 class CardStat(db.Model):

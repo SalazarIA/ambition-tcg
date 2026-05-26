@@ -1,0 +1,43 @@
+# CI: roda a suite Rebirth fast path em cada PR e push pra main.
+# Cobre o escopo declarado em pytest.ini (addopts = -m "not e2e"), o mesmo
+# perfil que developers rodam local. E2E/Postgres-testcontainer ficam de
+# fora porque dependem de Playwright + Docker que CI grátis não tem.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pytest-rebirth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run Rebirth test suite
+        run: pytest tests/rebirth -q
+
+      - name: Audio dedup contract (Node)
+        run: node tests/js/test_rebirth_audio_chain_dedup.cjs
