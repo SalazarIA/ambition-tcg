@@ -821,11 +821,32 @@ class RebirthRepository:
                 user_id = int(cursor.fetchone()["id"] if self.backend == "postgresql" else cursor.lastrowid)
                 self._seed_user_state(db, user_id, now, seed_source=f"{user_id}:{username}:{email}")
         except (sqlite3.IntegrityError, IntegrityError) as exc:
-            raise RebirthPersistenceError(
-                "Já existe uma conta Rebirth com este nome de jogador ou email.",
-                "auth_conflict",
-                status=409,
-            ) from exc
+            # Detecta se o IntegrityError veio do INSERT INTO users (unique violation
+            # legítima) ou de uma seed table (constraint mismatch que estava sendo
+            # mascarado como "username/email duplicado"). Mensagem honesta + cause.
+            cause_text = ""
+            orig = getattr(exc, "orig", None)
+            if orig is not None:
+                cause_text = f"{type(orig).__name__}: {orig}"
+            else:
+                cause_text = str(exc)
+            _persistence_logger.exception("create_user IntegrityError: %s", cause_text)
+            # Postgres usa nomes de constraint (users_username_key, users_email_key, users_pkey).
+            # SQLite usa "users.username" / "users.email" no texto do erro.
+            user_unique_markers = (
+                "users_username_key", "users_email_key", "users_pkey",
+                "users.username", "users.email", "users.id",
+            )
+            is_user_unique = any(marker in cause_text for marker in user_unique_markers)
+            if is_user_unique:
+                raise RebirthPersistenceError(
+                    "Já existe uma conta Rebirth com este nome de jogador ou email.",
+                    "auth_conflict",
+                    status=409,
+                ) from exc
+            # Seed table failure — schema mismatch ou bug em _seed_user_state.
+            exposed = f"Falha ao provisionar conta. [{cause_text}]" if _EXPOSE_DB_ERRORS else "Falha ao provisionar conta."
+            raise RebirthPersistenceError(exposed, "user_seed_failed", status=500) from exc
         return self.get_user(user_id)
 
     @_retry_postgres_serialization_write
