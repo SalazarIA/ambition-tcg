@@ -99,21 +99,31 @@ def test_ability_key_resolves_in_engine(card_id):
 
 @pytest.mark.parametrize("card_id", MONSTER_IDS)
 def test_monster_cost_matches_curve(card_id):
-    """Monster cost must equal _monster_cost(attack, guard, is_evolved).
+    """Monster cost must equal _monster_cost(attack, guard, is_evolved),
+    salvo overrides explícitos de balance declarados em CARD_BALANCE_OVERRIDES.
 
     Catches drift between the catalog generator and the cost formula — e.g.
     if someone edits the curve in `_monster_card` but forgets to update
-    `_monster_cost`, or vice versa.
+    `_monster_cost`, or vice versa. Balance overrides são auditáveis pela
+    constante explícita.
     """
+    from services.rebirth_cards import CARD_BALANCE_OVERRIDES
+
     card = CARD_BY_ID[card_id]
     assert card["attack"] == card["power"], "attack and power must be aliases"
     if card["rarity"] == "LEGENDARY":
         assert 1 <= card["cost"] <= 10
         return
     expected = _monster_cost(card["attack"], card["guard"], int(card["tier"]) > 1)
-    assert card["cost"] == expected, (
-        f"{card_id}: catalog cost {card['cost']} differs from _monster_cost-derived {expected}"
-    )
+    override = CARD_BALANCE_OVERRIDES.get(card_id, {})
+    if "cost" in override:
+        assert card["cost"] == override["cost"], (
+            f"{card_id}: catalog cost {card['cost']} not matching declared override {override['cost']}"
+        )
+    else:
+        assert card["cost"] == expected, (
+            f"{card_id}: catalog cost {card['cost']} differs from _monster_cost-derived {expected}"
+        )
 
 
 @pytest.mark.parametrize("card_id", MONSTER_IDS)

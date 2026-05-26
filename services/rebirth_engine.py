@@ -178,8 +178,12 @@ def damage_details(attacker, defender, defender_wounded=False):
         amount += 2
         events.append(f"{attacker['name']} causou +2 de dano direto de fogo.")
     elif attacker_key == "fire_execute" and defender_wounded:
-        amount += 3
-        events.append(f"{attacker['name']} finalizou o alvo ferido para +3 de dano.")
+        # v69: nerf de +3 → +2. Coalheart Runner (custo 1) tinha 124 procs em
+        # 60 partidas trivializando finishes; reduzir o pico mantém a identidade
+        # de execute mas elimina o swing barato. tie_priority continua dando o
+        # desempate em alvos feridos, então o "papel" da carta permanece.
+        amount += 2
+        events.append(f"{attacker['name']} finalizou o alvo ferido para +2 de dano.")
     elif attacker_key == "shadow_decay":
         amount += 1
         events.append(f"{attacker['name']} abriu uma ferida de deterioração para +1 de dano.")

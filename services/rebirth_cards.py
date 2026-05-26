@@ -477,6 +477,25 @@ def _build_catalog_dict():
 
 
 CARD_CATALOG_DICT = _build_catalog_dict()
+
+
+# v69 balance overrides: ajustes cirúrgicos sobre o catálogo gerado, sem mexer
+# em _monster_cost (que é o contrato canônico da curva de mana). Cada entrada
+# documenta o porquê para auditoria. gameplay_health 60p antes: Bramblehorn
+# 100% WR, Mossback 100% WR (28 plays cada), Coalheart 80% WR (154 plays).
+CARD_BALANCE_OVERRIDES = {
+    # Bramblehorn Knight: ATK 7 + GUARD 3 por 2 mana é dominante midgame.
+    # +1 mana atrasa o snowball sem mexer no perfil ofensivo.
+    "card_046": {"cost": 3},
+    # Mossback Brute: 6/4 com earth_shield por 2 mana segura board demais.
+    # +1 mana alinha à curva real do stat-total (10 → cost 3 na fórmula).
+    "card_045": {"cost": 3},
+}
+
+for _card_id, _override in CARD_BALANCE_OVERRIDES.items():
+    if _card_id in CARD_CATALOG_DICT:
+        CARD_CATALOG_DICT[_card_id].update(_override)
+
 CARD_BY_ID = CARD_CATALOG_DICT
 CARD_CATALOG = [deepcopy(card) for card in CARD_CATALOG_DICT.values()]
 BASE_MONSTERS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card["type"] == "MONSTER" and int(card["tier"]) == 1]
