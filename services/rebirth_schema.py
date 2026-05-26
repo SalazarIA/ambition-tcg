@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
     "users",
@@ -352,7 +352,59 @@ VALUES (4, 'auto_rename_ascension_legacy_tables')
 ON CONFLICT (version) DO NOTHING;
 """
 
-MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004)
+MIGRATION_005 = """
+-- v70: reaponta FKs órfãs que seguiram o RENAME de users → users_legacy_ascension.
+-- Quando ALTER TABLE users RENAME aconteceu (v69/v70 manual), Postgres atualizou
+-- automaticamente TODAS as FKs apontando pra users — incluindo user_collection,
+-- user_loadout, user_progress, match_commands, wallet_ledger etc. Logo o schema
+-- novo de users existe mas é orphan, e qualquer INSERT em tabela filha referencia
+-- a tabela legacy. Aqui detectamos esse caso e migramos as constraints.
+-- Idempotente: em ambientes onde FKs já apontam pra users, o loop é vazio.
+
+DO $$
+DECLARE
+    fk RECORD;
+    src_table TEXT;
+    src_columns TEXT;
+    tgt_columns TEXT;
+    on_delete TEXT;
+BEGIN
+    -- Encontra FKs que apontam pra users_legacy_ascension e estão em tabelas
+    -- Rebirth (não-legacy). FKs em tabelas *_legacy_ascension continuam OK
+    -- apontando pra users_legacy_ascension (auditoria histórica preserved).
+    FOR fk IN
+        SELECT
+            con.conname AS constraint_name,
+            cls_src.relname AS source_table,
+            pg_get_constraintdef(con.oid) AS constraint_def
+        FROM pg_constraint con
+        JOIN pg_class cls_src ON con.conrelid = cls_src.oid
+        JOIN pg_class cls_tgt ON con.confrelid = cls_tgt.oid
+        WHERE con.contype = 'f'
+          AND cls_tgt.relname = 'users_legacy_ascension'
+          AND cls_src.relname NOT LIKE '%_legacy_ascension'
+    LOOP
+        EXECUTE format(
+            'ALTER TABLE %I DROP CONSTRAINT %I',
+            fk.source_table, fk.constraint_name
+        );
+        EXECUTE format(
+            'ALTER TABLE %I ADD CONSTRAINT %I %s',
+            fk.source_table,
+            fk.constraint_name,
+            replace(fk.constraint_def, 'users_legacy_ascension', 'users')
+        );
+        RAISE NOTICE 'Reaponted FK % on % from users_legacy_ascension to users',
+            fk.constraint_name, fk.source_table;
+    END LOOP;
+END $$;
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (5, 'repoint_orphan_fks_after_users_rename')
+ON CONFLICT (version) DO NOTHING;
+"""
+
+MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004, MIGRATION_005)
 
 
 def normalize_database_url(database_url: str) -> str:
