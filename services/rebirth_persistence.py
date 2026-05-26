@@ -16,12 +16,9 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 
 _persistence_logger = logging.getLogger("rebirth.persistence")
-# Default ON: expor o erro original do Postgres na resposta. Isso revela
-# nomes de tabelas/colunas/constraints quando uma escrita falha — informação
-# de schema, NÃO credenciais. Trade-off aceitável para debug de produção
-# durante o estágio pre-beta. Setar REBIRTH_EXPOSE_DB_ERRORS=false para
-# voltar pra mensagem genérica quando o produto estabilizar.
-_EXPOSE_DB_ERRORS = os.environ.get("REBIRTH_EXPOSE_DB_ERRORS", "true").strip().lower() in {"1", "true", "yes"}
+# Detalhes SQL ficam nos logs. A resposta pública só os expõe por opt-in
+# temporário em ambientes de diagnóstico.
+_EXPOSE_DB_ERRORS = os.environ.get("REBIRTH_EXPOSE_DB_ERRORS", "false").strip().lower() in {"1", "true", "yes"}
 
 
 def _db_error_message(default_msg, cause):
@@ -1378,7 +1375,7 @@ class RebirthRepository:
                 INSERT INTO user_collection (user_id, card_id, copies, locked_copies, updated_at)
                 VALUES (?, ?, 1, 0, ?)
                 ON CONFLICT(user_id, card_id) DO UPDATE SET
-                    copies = copies + 1,
+                    copies = user_collection.copies + 1,
                     updated_at = excluded.updated_at
                 """,
                 (buyer_id, offer["card_id"], now),
@@ -1486,7 +1483,7 @@ class RebirthRepository:
                     INSERT INTO user_collection (user_id, card_id, copies, updated_at)
                     VALUES (?, ?, 1, ?)
                     ON CONFLICT(user_id, card_id) DO UPDATE SET
-                        copies = copies + 1,
+                        copies = user_collection.copies + 1,
                         updated_at = excluded.updated_at
                     """,
                     (user_id, card["id"], now),
@@ -1533,7 +1530,7 @@ class RebirthRepository:
                         INSERT INTO user_collection (user_id, card_id, copies, updated_at)
                         VALUES (?, ?, 1, ?)
                         ON CONFLICT(user_id, card_id) DO UPDATE SET
-                            copies = copies + 1,
+                            copies = user_collection.copies + 1,
                             updated_at = excluded.updated_at
                         """,
                         (user_id, card["id"], now),
@@ -2312,7 +2309,7 @@ class RebirthRepository:
                     INSERT INTO user_collection (user_id, card_id, copies, updated_at)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT(user_id, card_id) DO UPDATE SET
-                        copies = copies + excluded.copies,
+                        copies = user_collection.copies + excluded.copies,
                         updated_at = excluded.updated_at
                     """,
                     (user_id, card["id"], amount, now),
