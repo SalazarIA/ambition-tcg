@@ -63,6 +63,67 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE") ==
 REBIRTH_MATCHES = MATCH_STORE
 AUTH_RATE_LIMITS = {}
 AUTH_RATE_LIMIT_LOCK = threading.Lock()
+_SCHEMA_BOOTSTRAP_LOCK = threading.Lock()
+_SCHEMA_BOOTSTRAP_DONE = False
+
+
+def _bootstrap_rebirth_schema():
+    """Roda upgrade_schema no boot do app se REBIRTH_DATABASE_URL aponta para
+    Postgres e o schema está atrasado.
+
+    Render starter plan ignora preDeployCommand — sem isso, novas tabelas e
+    correções de schema legacy nunca chegam em produção. Idempotente: detecta
+    versão antes de tentar upgrade, lock evita race entre threads gunicorn.
+    """
+    global _SCHEMA_BOOTSTRAP_DONE
+    if _SCHEMA_BOOTSTRAP_DONE:
+        return
+    database_url = app.config.get("REBIRTH_DATABASE_URL")
+    if not database_url:
+        _SCHEMA_BOOTSTRAP_DONE = True
+        return
+    with _SCHEMA_BOOTSTRAP_LOCK:
+        if _SCHEMA_BOOTSTRAP_DONE:
+            return
+        try:
+            from services.rebirth_schema import (
+                SCHEMA_VERSION,
+                make_engine,
+                normalize_database_url,
+                upgrade_schema,
+                validate_schema,
+            )
+
+            normalized = normalize_database_url(database_url)
+            if not normalized.startswith("postgresql+psycopg://"):
+                app.logger.info("rebirth.schema bootstrap skipped (non-postgres backend)")
+                _SCHEMA_BOOTSTRAP_DONE = True
+                return
+            engine = make_engine(normalized)
+            try:
+                status = validate_schema(engine)
+            finally:
+                engine.dispose()
+            current_version = int(status.get("version", 0) or 0)
+            if current_version >= SCHEMA_VERSION and not status.get("missing_tables"):
+                app.logger.info("rebirth.schema already at v%s", current_version)
+                _SCHEMA_BOOTSTRAP_DONE = True
+                return
+            app.logger.info(
+                "rebirth.schema bootstrap upgrading: v%s -> v%s (missing=%s)",
+                current_version,
+                SCHEMA_VERSION,
+                status.get("missing_tables"),
+            )
+            upgrade_schema(normalized)
+            app.logger.info("rebirth.schema bootstrap completed to v%s", SCHEMA_VERSION)
+        except Exception:
+            app.logger.exception("rebirth.schema bootstrap failed")
+        finally:
+            _SCHEMA_BOOTSTRAP_DONE = True
+
+
+_bootstrap_rebirth_schema()
 
 CONTENT_SECURITY_POLICY = "; ".join(
     [
