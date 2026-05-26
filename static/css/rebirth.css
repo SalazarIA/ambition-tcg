@@ -1636,7 +1636,6 @@ button {
 
 .rb-tactics-strip span {
     min-width: 0;
-    overflow: hidden;
     padding: 5px 7px;
     border: 1px solid rgba(255, 255, 255, 0.13);
     color: var(--rb-muted);
@@ -1644,9 +1643,9 @@ button {
     font-size: 10px;
     font-weight: 800;
     line-height: 1.12;
-    text-overflow: ellipsis;
     text-transform: uppercase;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
     clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
 }
 
@@ -1673,26 +1672,24 @@ button {
 
 .rb-resolution-strip {
     display: flex !important;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 4px !important;
     min-height: 20px;
-    overflow: hidden;
 }
 
 .rb-resolution-strip span {
-    flex: 1 1 0;
+    flex: 1 1 108px;
     min-width: 0;
-    overflow: hidden;
     padding: 4px 7px;
     border: 1px solid rgba(88, 214, 255, 0.22);
     color: var(--rb-cyan);
     background: rgba(88, 214, 255, 0.065);
     font-size: 10px;
     font-weight: 900;
-    line-height: 1;
-    text-overflow: ellipsis;
+    line-height: 1.15;
     text-transform: uppercase;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .rb-resolution-strip span:first-child {
@@ -1724,6 +1721,12 @@ button {
     border-color: rgba(88, 214, 255, 0.5);
 }
 
+.rb-result-panel.is-victory .rb-tactics-strip,
+.rb-result-panel.is-defeat .rb-tactics-strip,
+.rb-result-panel.is-clash .rb-tactics-strip {
+    display: none;
+}
+
 .rb-ability-events,
 .rb-reward-panel {
     display: flex;
@@ -1735,17 +1738,16 @@ button {
 .rb-ability-chip,
 .rb-reward-panel span {
     max-width: 340px;
-    overflow: hidden;
     padding: 4px 8px;
     border: 1px solid rgba(255, 255, 255, 0.16);
     color: var(--rb-text);
     background: rgba(255, 255, 255, 0.055);
     font-size: 13px;
     font-weight: 900;
-    line-height: 1;
-    text-overflow: ellipsis;
+    line-height: 1.2;
     text-transform: uppercase;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
     clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 
@@ -3835,8 +3837,9 @@ button {
         left: 808px;
         top: 122px;
         width: 348px;
-        height: 250px;
+        height: 264px;
         padding: 18px;
+        overflow-y: auto;
     }
 
     .rb-result-panel strong {
@@ -3845,7 +3848,7 @@ button {
 
     .rb-result-panel p {
         font-size: 15px;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 4;
     }
 
     .rb-tactics-strip {
@@ -3882,13 +3885,13 @@ button {
 
     .rb-log {
         left: 808px;
-        top: 390px;
+        top: 402px;
         width: 348px;
-        height: 182px;
+        height: 170px;
     }
 
     .rb-log ol {
-        max-height: 132px;
+        max-height: 120px;
     }
 
     .rb-log li {
@@ -3931,7 +3934,7 @@ button {
             "coach arena log"
             "hand hand actions";
         grid-template-columns: 270px minmax(0, 500px) 330px;
-        grid-template-rows: 82px 162px 146px 140px 150px;
+        grid-template-rows: 82px 258px 120px 80px 140px;
         gap: 12px 20px;
         padding: 16px;
     }
@@ -4030,6 +4033,44 @@ button {
     .rb-result-panel {
         grid-area: result;
         align-self: stretch;
+        display: block;
+        position: relative;
+        padding: 12px;
+        overflow: hidden;
+    }
+
+    .rb-result-panel > div {
+        align-content: start;
+        gap: 5px;
+    }
+
+    .rb-result-panel #result-label,
+    .rb-result-panel #result-title,
+    .rb-result-panel #result-copy {
+        padding-right: 78px;
+    }
+
+    .rb-result-panel > .rb-secondary {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 70px;
+        min-width: 70px;
+        min-height: 46px;
+        padding: 7px;
+        font-size: 11px;
+    }
+
+    .rb-result-panel .rb-resolution-strip {
+        flex-wrap: nowrap;
+    }
+
+    .rb-result-panel .rb-resolution-strip span {
+        flex: 1 1 0;
+    }
+
+    .rb-result-panel .rb-tactics-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .rb-coach-panel {
@@ -6880,6 +6921,144 @@ button {
     100% { transform: none; box-shadow: none; }
 }
 
+/* --- Primeira vitória / rematch CTA --------------------------- */
+.vfx-finale-overlay .vfx-finale-subtitle {
+    margin-top: 18px;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 235, 180, 0.92);
+    text-shadow: 0 0 18px rgba(255, 190, 90, 0.65);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s;
+    position: relative;
+    z-index: 4;
+}
+
+.vfx-finale-overlay.is-active .vfx-finale-subtitle {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.vfx-finale-overlay.is-first-duel .vfx-finale-text {
+    animation: rb-vfx-victory-shimmer 2.4s ease-in-out infinite, rb-vfx-first-duel-pop 0.8s ease-out;
+    font-size: 84px;
+    letter-spacing: 0.16em;
+}
+
+@keyframes rb-vfx-first-duel-pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    55% { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.rb-result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    justify-content: flex-end;
+    min-width: 200px;
+}
+
+.rb-result-actions.is-finished .rb-secondary {
+    opacity: 0.85;
+}
+
+.rb-rematch-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 14px 26px;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #f8c259 0%, #d6852e 60%, #8c4a16 100%);
+    color: #2a1606;
+    border: 1px solid rgba(255, 220, 150, 0.65);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.35) inset,
+        0 10px 28px rgba(220, 130, 40, 0.45),
+        0 0 24px rgba(255, 190, 90, 0.4);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.rb-rematch-cta:hover:not([disabled]) {
+    transform: translateY(-1px);
+    background: linear-gradient(180deg, #ffd373 0%, #e69335 60%, #9a5418 100%);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.35) inset,
+        0 12px 32px rgba(220, 130, 40, 0.55),
+        0 0 32px rgba(255, 200, 100, 0.55);
+}
+
+.rb-rematch-cta:active:not([disabled]) {
+    transform: translateY(1px);
+    background: linear-gradient(180deg, #e5b14a 0%, #c4762a 60%, #793e13 100%);
+}
+
+.rb-rematch-cta[disabled] {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.rb-rematch-cta.is-first-duel {
+    animation: rb-rematch-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes rb-rematch-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px rgba(0, 0, 0, 0.35) inset,
+            0 10px 28px rgba(220, 130, 40, 0.45),
+            0 0 24px rgba(255, 190, 90, 0.4);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px rgba(0, 0, 0, 0.35) inset,
+            0 12px 36px rgba(220, 130, 40, 0.6),
+            0 0 44px rgba(255, 210, 120, 0.75);
+    }
+}
+
+.rb-progression-tease {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(255, 200, 120, 0.08);
+    border: 1px solid rgba(255, 200, 120, 0.2);
+    color: rgba(245, 230, 200, 0.92);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.rb-progression-tease[hidden] {
+    display: none;
+}
+
+.rb-progression-tease .rb-tease-headline {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #f8c259;
+}
+
+.rb-result-panel.is-first-duel {
+    border-color: rgba(255, 190, 90, 0.55);
+    box-shadow: 0 0 32px rgba(255, 180, 70, 0.25);
+}
+
 /* --- Reduced motion overrides para Fase 4 --------------------------- */
 @media (prefers-reduced-motion: reduce) {
     .vfx-evolution-stage .vfx-evolution-rune,
@@ -6888,12 +7067,14 @@ button {
     .vfx-finale-overlay.is-victory::before,
     .vfx-finale-overlay.is-victory::after,
     .vfx-finale-overlay.is-defeat::before,
+    .vfx-finale-overlay.is-first-duel .vfx-finale-text,
     .vfx-hero-damage,
     .vfx-hero-damage::before,
     .vfx-hero-damage::after,
     .rb-hud-player.vfx-orb-crack .rb-hp-meter,
     .rb-hud-player.vfx-orb-crack .rb-hp-meter::after,
-    .rb-game-board.vfx-board-shatter {
+    .rb-game-board.vfx-board-shatter,
+    .rb-rematch-cta.is-first-duel {
         animation: none !important;
     }
     .vfx-evolution-clone {
@@ -7257,11 +7438,25 @@ button {
 
     .rb-mobile-native .rb-result-panel {
         grid-area: result;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 98px;
+        align-items: stretch;
+        gap: 8px;
         padding: 12px;
     }
 
+    .rb-mobile-native .rb-result-panel p {
+        display: block;
+        overflow: visible;
+        -webkit-line-clamp: unset;
+    }
+
     .rb-mobile-native .rb-result-panel .rb-secondary {
+        width: 100%;
+        min-width: 0;
         min-height: 48px;
+        padding: 8px 6px;
+        font-size: 15px;
     }
 
     .rb-mobile-native .rb-log,
@@ -7324,4 +7519,563 @@ button {
 .vfx-finale-overlay.is-victory::before,
 .vfx-finale-overlay.is-victory::after {
     animation: none;
+}
+
+/* =========================================================================
+   v70-v72 playability hotfix: mobile compression, decision clarity, impact
+   ========================================================================= */
+
+.rb-mobile-action-bar {
+    display: contents;
+}
+
+.rb-action-bar-meta {
+    display: none;
+}
+
+.rb-recommendation-badge,
+.rb-risk-badge {
+    position: absolute;
+    z-index: 6;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(255, 200, 82, 0.78);
+    background: linear-gradient(180deg, rgba(255, 200, 82, 0.96), rgba(176, 104, 19, 0.92));
+    color: #1a1003;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 0 18px rgba(244, 173, 38, 0.28);
+    pointer-events: none;
+}
+
+.rb-recommendation-badge {
+    top: 5px;
+    right: 5px;
+    min-height: 18px;
+    padding: 3px 5px;
+    font-size: 8px;
+    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+}
+
+.rb-hand .rb-mini-card.is-recommended {
+    border-color: rgba(255, 200, 82, 0.92);
+    box-shadow:
+        0 20px 44px rgba(0, 0, 0, 0.58),
+        0 0 0 1px rgba(255, 200, 82, 0.35),
+        0 0 24px rgba(244, 173, 38, 0.25);
+}
+
+.rb-hand .rb-mini-card.is-recommended.is-selected {
+    box-shadow:
+        0 24px 52px rgba(0, 0, 0, 0.68),
+        0 0 0 2px rgba(255, 200, 82, 0.68),
+        0 0 30px rgba(244, 173, 38, 0.38);
+}
+
+.rb-risk-badge {
+    top: 7px;
+    left: 7px;
+    right: 7px;
+    min-height: 20px;
+    padding: 3px 5px;
+    font-size: 7px;
+    line-height: 1.05;
+    background: rgba(7, 9, 12, 0.9);
+    color: var(--rb-text);
+}
+
+.rb-field-card.is-risk-favorable {
+    border-color: rgba(120, 242, 170, 0.84);
+    box-shadow: 0 0 0 1px rgba(120, 242, 170, 0.28), 0 0 20px rgba(120, 242, 170, 0.16);
+}
+
+.rb-field-card.is-risk-risky {
+    border-color: rgba(255, 200, 82, 0.86);
+    box-shadow: 0 0 0 1px rgba(255, 200, 82, 0.28), 0 0 20px rgba(244, 173, 38, 0.18);
+}
+
+.rb-field-card.is-risk-losing {
+    border-color: rgba(255, 115, 95, 0.9);
+    box-shadow: 0 0 0 1px rgba(255, 115, 95, 0.32), 0 0 22px rgba(255, 115, 95, 0.18);
+}
+
+.rb-field-card.is-risk-favorable .rb-risk-badge,
+.rb-risk-chip[data-risk-tone="favorable"] {
+    border-color: rgba(120, 242, 170, 0.78);
+    color: #dfffea;
+    background: rgba(34, 116, 70, 0.44);
+}
+
+.rb-field-card.is-risk-risky .rb-risk-badge,
+.rb-risk-chip[data-risk-tone="risky"] {
+    border-color: rgba(255, 200, 82, 0.82);
+    color: #fff2c5;
+    background: rgba(151, 96, 16, 0.44);
+}
+
+.rb-field-card.is-risk-losing .rb-risk-badge,
+.rb-risk-chip[data-risk-tone="losing"] {
+    border-color: rgba(255, 115, 95, 0.86);
+    color: #ffe0da;
+    background: rgba(126, 30, 25, 0.48);
+}
+
+.rb-game-board.is-hit-paused {
+    transform: translateX(calc(-50% + var(--rb-safe-offset-x))) scale(var(--rb-scale));
+}
+
+.rb-field-card.is-combat-winner,
+.rb-bot-card.is-combat-winner {
+    animation: rb-combat-winner-pop 680ms ease both;
+}
+
+.rb-field-card.is-combat-loser,
+.rb-bot-card.is-combat-loser {
+    animation: rb-combat-loser-hit 680ms ease both;
+}
+
+.rb-field-card.is-combat-trading,
+.rb-bot-card.is-combat-trading {
+    animation: rb-combat-trade-flash 620ms ease both;
+}
+
+.rb-damage-number {
+    position: absolute;
+    z-index: 12;
+    top: 12%;
+    right: 8%;
+    min-width: 34px;
+    padding: 4px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    background: rgba(7, 9, 12, 0.92);
+    color: #fff4d2;
+    font-size: 12px;
+    font-weight: 950;
+    text-align: center;
+    box-shadow: 0 0 18px rgba(255, 115, 95, 0.32);
+    animation: rb-damage-number-rise 720ms ease-out both;
+    pointer-events: none;
+}
+
+.rb-result-panel #result-title {
+    line-height: 0.98;
+}
+
+.rb-result-panel #result-copy {
+    font-weight: 800;
+}
+
+.rb-result-panel .rb-resolution-strip,
+.rb-result-panel .rb-tactics-strip,
+.rb-result-panel .rb-ability-events {
+    max-height: 72px;
+    overflow: auto;
+}
+
+@keyframes rb-combat-winner-pop {
+    0% { transform: translateY(var(--card-lift, 0)) scale(1); }
+    36% { transform: translateY(calc(var(--card-lift, 0) - 6px)) scale(1.035); }
+    100% { transform: translateY(var(--card-lift, 0)) scale(1); }
+}
+
+@keyframes rb-combat-loser-hit {
+    0% { transform: translateY(var(--card-lift, 0)) translateX(0); opacity: 1; }
+    18% { transform: translateY(var(--card-lift, 0)) translateX(-5px); opacity: 0.86; }
+    34% { transform: translateY(var(--card-lift, 0)) translateX(4px); opacity: 0.82; }
+    100% { transform: translateY(var(--card-lift, 0)) translateX(0); opacity: 1; }
+}
+
+@keyframes rb-combat-trade-flash {
+    0%, 100% { box-shadow: inherit; }
+    45% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.28), 0 0 28px rgba(255, 200, 82, 0.28); }
+}
+
+@keyframes rb-damage-number-rise {
+    0% { opacity: 0; transform: translateY(8px) scale(0.9); }
+    18% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-28px) scale(1.04); }
+}
+
+@media (max-width: 760px) {
+    body.rb-game-page.rb-mobile-native {
+        --rb-mobile-nav-height: 92px;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-x: none;
+    }
+
+    .rb-mobile-native .rb-global-nav {
+        position: fixed;
+        top: max(4px, var(--rb-safe-top));
+        left: max(4px, var(--rb-safe-left));
+        right: max(4px, var(--rb-safe-right));
+        width: auto;
+        margin: 0;
+        transform: none;
+        z-index: 120;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        grid-template-areas:
+            "brand tabs"
+            "brand player";
+        gap: 4px 6px;
+        min-height: 0;
+        padding: 6px;
+    }
+
+    .rb-mobile-native .rb-global-brand {
+        grid-area: brand;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    .rb-mobile-native .rb-global-brand strong {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-global-tabs {
+        grid-area: tabs;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 3px;
+    }
+
+    .rb-mobile-native .rb-global-tabs a {
+        min-height: 26px;
+        padding: 3px 2px;
+        font-size: 8px;
+        line-height: 1.05;
+    }
+
+    .rb-mobile-native .rb-global-player {
+        grid-area: player;
+        display: grid;
+        grid-template-columns: 0.72fr 0.84fr 0.78fr 1fr;
+        gap: 3px;
+        overflow: hidden;
+    }
+
+    .rb-mobile-native .rb-global-player > * {
+        min-width: 0;
+        min-height: 30px;
+        padding: 4px;
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-global-identity strong,
+    .rb-mobile-native .rb-global-xp strong,
+    .rb-mobile-native .rb-global-wallet strong {
+        font-size: 10px;
+    }
+
+    .rb-mobile-native .rb-global-wallet {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+    }
+
+    .rb-mobile-native .rb-nav-auth {
+        min-height: 30px;
+        padding: 3px;
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-game-viewport {
+        min-height: 100dvh;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+        padding:
+            calc(var(--rb-mobile-nav-height, 92px) + var(--rb-safe-top) + 4px)
+            max(5px, var(--rb-safe-right))
+            max(5px, var(--rb-safe-bottom))
+            max(5px, var(--rb-safe-left));
+    }
+
+    .rb-mobile-native .rb-game-board {
+        min-height: 0;
+        height: calc(100dvh - var(--rb-mobile-nav-height, 92px) - var(--rb-safe-top) - var(--rb-safe-bottom) - 12px) !important;
+        max-height: 748px;
+        width: min(100%, 380px);
+        max-width: calc(100vw - 10px);
+        margin-inline: auto;
+        display: grid;
+        grid-template-areas:
+            "hud"
+            "arena"
+            "actionbar"
+            "result";
+        grid-template-rows: 62px minmax(280px, 1fr) 190px minmax(86px, 104px);
+        gap: 6px;
+        padding: 6px;
+        overflow: hidden !important;
+    }
+
+    .rb-mobile-native .rb-hud {
+        min-height: 0;
+        height: 62px;
+        grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
+    }
+
+    .rb-mobile-native .rb-hud-side {
+        min-height: 0;
+        height: 62px;
+        padding: 5px 6px;
+    }
+
+    .rb-mobile-native .rb-hud-health {
+        gap: 5px;
+    }
+
+    .rb-mobile-native .rb-hud-health strong,
+    .rb-mobile-native .rb-turn-core strong {
+        font-size: 21px;
+    }
+
+    .rb-mobile-native .rb-hp-meter {
+        height: 5px;
+    }
+
+    .rb-mobile-native .rb-zone-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 2px;
+        font-size: 6px;
+    }
+
+    .rb-mobile-native .rb-turn-core {
+        min-height: 0;
+        padding: 5px 2px;
+    }
+
+    .rb-mobile-native .rb-battle-zone {
+        min-height: 280px;
+        height: 100%;
+        grid-template-rows: minmax(112px, 1fr) 20px minmax(112px, 1fr);
+        gap: 4px;
+        padding: 6px 5px;
+    }
+
+    .rb-mobile-native .rb-field-row {
+        gap: 4px;
+    }
+
+    .rb-mobile-native .rb-field-row > span {
+        font-size: 8px;
+        line-height: 1;
+    }
+
+    .rb-mobile-native .rb-field-slots {
+        gap: 4px;
+    }
+
+    .rb-mobile-native .rb-field-card,
+    .rb-mobile-native .rb-field-slot-empty {
+        height: clamp(112px, 27vw, 120px);
+        min-height: 112px;
+    }
+
+    .rb-mobile-native .rb-field-card .rb-card-titlebar {
+        padding: 4px 5px;
+    }
+
+    .rb-mobile-native .rb-field-card .rb-card-titlebar strong {
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-field-card .rb-card-textbox {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-field-vs {
+        font-size: 13px;
+    }
+
+    .rb-mobile-native .rb-evolution-panel {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-mobile-action-bar {
+        grid-area: actionbar;
+        position: sticky;
+        bottom: var(--rb-safe-bottom);
+        z-index: 80;
+        display: grid;
+        grid-template-rows: 108px 70px;
+        gap: 6px;
+        min-height: 0;
+        padding: 6px;
+        border: 1px solid rgba(244, 173, 38, 0.28);
+        background:
+            linear-gradient(180deg, rgba(10, 12, 16, 0.98), rgba(3, 4, 5, 0.98));
+        box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.46);
+    }
+
+    .rb-mobile-native .rb-mobile-action-bar > .rb-player-hand,
+    .rb-mobile-native .rb-mobile-action-bar > .rb-actions-row {
+        grid-area: auto;
+    }
+
+    .rb-mobile-native .rb-action-bar-meta {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 6px;
+        min-height: 18px;
+        color: var(--rb-muted);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .rb-mobile-native .rb-action-bar-meta strong {
+        color: var(--rb-gold-2);
+        font-size: 9px;
+    }
+
+    .rb-mobile-native .rb-player-hand {
+        min-height: 0;
+        height: 108px;
+        overflow: hidden;
+    }
+
+    .rb-mobile-native .rb-hand {
+        grid-auto-columns: clamp(82px, 24vw, 96px);
+        gap: 6px;
+        height: 84px;
+        padding: 3px 1px 2px;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card {
+        height: 80px;
+        min-height: 80px;
+        grid-template-rows: 38px 1fr;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card .rb-card-textbox,
+    .rb-mobile-native .rb-hand .rb-mini-card .rb-card-statline {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card .rb-card-titlebar {
+        padding: 4px 5px;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card .rb-card-titlebar strong {
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-hand-count {
+        right: 4px;
+        bottom: 0;
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-actions-row {
+        position: relative;
+        bottom: auto;
+        min-height: 0;
+        height: 64px;
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+        gap: 6px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .rb-mobile-native #next-turn-button.rb-button-secondary,
+    .rb-mobile-native #play-button.rb-button-primary,
+    .rb-mobile-native .rb-actions-row .rb-cta,
+    .rb-mobile-native .rb-actions-row .rb-secondary {
+        min-height: 48px;
+        height: 48px;
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    .rb-mobile-native .rb-actions-row small {
+        min-height: 14px;
+        font-size: 8px;
+        line-height: 1.15;
+    }
+
+    .rb-mobile-native .rb-result-panel {
+        min-height: 0;
+        max-height: 104px;
+        grid-template-columns: minmax(0, 1fr) 64px;
+        gap: 6px;
+        padding: 7px;
+        overflow: hidden;
+    }
+
+    .rb-mobile-native .rb-result-panel > div {
+        max-height: 90px;
+        overflow-y: auto;
+        gap: 3px;
+    }
+
+    .rb-mobile-native .rb-result-panel span {
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-result-panel strong {
+        font-size: 15px;
+    }
+
+    .rb-mobile-native .rb-result-panel p {
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+    .rb-mobile-native .rb-resolution-strip,
+    .rb-mobile-native .rb-tactics-strip,
+    .rb-mobile-native .rb-ability-events {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-result-panel .rb-secondary {
+        min-height: 40px;
+        font-size: 10px;
+    }
+
+    .rb-mobile-native .rb-log,
+    .rb-mobile-native .rb-log:not(.is-open),
+    .rb-mobile-native .rb-log.is-open {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-damage-number {
+        top: 6%;
+        right: 2%;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 380px) {
+    .rb-mobile-native .rb-game-board {
+        grid-template-rows: 58px minmax(256px, 1fr) 178px minmax(78px, 96px);
+    }
+
+    .rb-mobile-native .rb-battle-zone {
+        min-height: 256px;
+    }
+
+    .rb-mobile-native .rb-mobile-action-bar {
+        grid-template-rows: 100px 66px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rb-field-card.is-combat-winner,
+    .rb-bot-card.is-combat-winner,
+    .rb-field-card.is-combat-loser,
+    .rb-bot-card.is-combat-loser,
+    .rb-field-card.is-combat-trading,
+    .rb-bot-card.is-combat-trading,
+    .rb-damage-number {
+        animation: none !important;
+    }
 }

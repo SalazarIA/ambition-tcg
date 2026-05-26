@@ -10,6 +10,10 @@ from services.rebirth_events import append_event, append_snapshot, ensure_event_
 
 
 STARTING_HP = 30
+# Bot HP no primeiro duelo: encurta a partida em ~40% sem alterar regras de
+# mana/curva, mantendo a noção de "partida real" mas com janela de vitória
+# muito mais visível para o jogador novo.
+FIRST_DUEL_BOT_HP = 18
 HAND_SIZE = 5
 REDUCER_INLINE_RUNTIME_MODES = {"replay", "audit", "network_sync", "pvp_sync"}
 
@@ -117,6 +121,7 @@ def create_match(
     bot_profile_id=None,
     runtime_mode="singleplayer",
     apply_reducers_inline=None,
+    first_duel=False,
 ):
     match_id = _match_id(seed)
     game_seed = str(seed if seed is not None else "rebirth-default-seed")
@@ -130,6 +135,11 @@ def create_match(
     bot = create_player("Bot", "bot")
     draw_to_hand_size(player)
     draw_to_hand_size(bot)
+    if first_duel:
+        # Reduz HP do bot apenas — o jogador continua com a barra cheia para a
+        # sensação de "ainda no controle".
+        bot["hp"] = FIRST_DUEL_BOT_HP
+        bot["max_hp"] = FIRST_DUEL_BOT_HP
     bot_profile = personality_payload(bot_profile_id or choose_personality(seed=game_seed, match_id=match_id))
 
     match = {
@@ -143,11 +153,13 @@ def create_match(
         "_apply_reducers_inline": bool(apply_reducers_inline),
         "game_seed": game_seed,
         "seed": str(seed or ""),
+        "first_duel": bool(first_duel),
         "initial": {
             "player_card_ids": list(deck_ids or PLAYER_DECK),
             "bot_card_ids": list(BOT_DECK),
             "player_name": player_name,
             "bot_profile_id": bot_profile["id"],
+            "first_duel": bool(first_duel),
         },
         "turn": 1,
         "phase": PHASE_CHOOSE,

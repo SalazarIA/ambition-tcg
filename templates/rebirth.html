@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v67_PRODUCT_FLOW-6">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v72_FIRST_DUEL-1">
 </head>
 <body class="rb-page rb-game-page">
     {% include "_rebirth_global_nav.html" %}
@@ -151,20 +151,26 @@
                 </aside>
             </section>
 
-            <section class="rb-player-hand rb-hand-wrap" aria-label="Mão do jogador">
-                <div id="player-hand" class="rb-hand"></div>
-                <span id="hand-count" class="rb-hand-count">0 cartas</span>
-            </section>
+            <section id="rebirth-action-bar" class="rb-mobile-action-bar" aria-label="Mão e ações principais">
+                <section class="rb-player-hand rb-hand-wrap" aria-label="Mão do jogador">
+                    <div class="rb-action-bar-meta" aria-live="polite">
+                        <span id="action-selected-card">Escolha uma carta</span>
+                        <strong id="action-mana-label">Mana 0/0</strong>
+                    </div>
+                    <div id="player-hand" class="rb-hand"></div>
+                    <span id="hand-count" class="rb-hand-count">0 cartas</span>
+                </section>
 
-            <section class="rb-actions rb-actions-row" aria-label="Ações principais">
-                <div>
-                    <button class="rb-button-primary rb-cta" type="button" id="play-button"><i class="rb-action-sword"></i>Invocar</button>
-                    <small>Gaste mana para jogar</small>
-                </div>
-                <div>
-                    <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>Encerrar turno</button>
-                    <small id="secondary-action-copy">Passe a vez para recarregar mana</small>
-                </div>
+                <section class="rb-actions rb-actions-row" aria-label="Ações principais">
+                    <div>
+                        <button class="rb-button-primary rb-cta" type="button" id="play-button"><i class="rb-action-sword"></i>Invocar</button>
+                        <small id="primary-action-copy">Gaste mana para jogar</small>
+                    </div>
+                    <div>
+                        <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>Encerrar turno</button>
+                        <small id="secondary-action-copy">Passe a vez para recarregar mana</small>
+                    </div>
+                </section>
             </section>
 
             <section class="rb-result rb-result-panel" id="result-panel" aria-live="polite">
@@ -180,8 +186,14 @@
                     <div id="tactics-strip" class="rb-tactics-strip" aria-label="Leitura tática"></div>
                     <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
                     <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
+                    <div id="progression-tease" class="rb-progression-tease" aria-live="polite" hidden></div>
                 </div>
-                <button class="rb-button-secondary rb-secondary" type="button" data-new-match>Nova partida</button>
+                <div class="rb-result-actions" id="result-actions">
+                    <button class="rb-button-primary rb-cta rb-rematch-cta" type="button" id="rematch-button" data-new-match hidden>
+                        <i class="rb-action-loop" aria-hidden="true"></i>Jogar de novo
+                    </button>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-new-match>Nova partida</button>
+                </div>
             </section>
 
             <section class="rb-turn-log rb-log" aria-label="Histórico do turno">
@@ -229,7 +241,8 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}",
             register: "{{ url_for('api_rebirth_auth_register') }}",
             login: "{{ url_for('api_rebirth_auth_login') }}",
-            logout: "{{ url_for('api_rebirth_auth_logout') }}"
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            telemetry: "{{ url_for('api_rebirth_telemetry') }}"
         };
         window.REBIRTH_AUTH_ENDPOINTS = {
             register: "{{ url_for('api_rebirth_auth_register') }}",
@@ -245,9 +258,11 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v67_PRODUCT_FLOW-6"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v67_PRODUCT_FLOW-6"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v=v67_PRODUCT_FLOW-6"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=v67_PRODUCT_FLOW-6"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v72_FIRST_DUEL-1"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v72_FIRST_DUEL-1"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v=v72_FIRST_DUEL-1"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v=v72_FIRST_DUEL-1"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v=v72_FIRST_DUEL-1"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=v72_FIRST_DUEL-1"></script>
 </body>
 </html>

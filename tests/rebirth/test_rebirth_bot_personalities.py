@@ -6,8 +6,9 @@ from services.rebirth_state import public_state
 
 
 def test_bot_personality_payloads_are_explicit():
-    assert set(BOT_PERSONALITIES) == {"defensive", "aggressive", "opportunist"}
+    assert set(BOT_PERSONALITIES) == {"defensive", "aggressive", "opportunist", "novice"}
     assert personality_payload("aggressive")["policy"].startswith("joga o maior ataque")
+    assert personality_payload("novice")["policy"].startswith("invoca a carta mais leve")
     assert personality_payload("missing")["id"] == "defensive"
 
 

@@ -63,7 +63,7 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
     assert after_play["result"]["outcome"] == "Summon"
     assert after_play["player"]["battlefield"][0]["id"] == playable["id"]
     assert {"CARD_PLAYED", "MONSTER_SUMMONED"}.issubset({event["type"] for event in after_play["events"]})
-    assert played_payload["match_reward"]["persisted"] is False
+    assert played_payload["match_reward"] is None
 
     blocked = client.post(
         "/api/rebirth/attack",
@@ -111,7 +111,7 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
     assert after_next["turn_phase"] == "MAIN_PHASE"
     assert after_next["player"]["played_card"] is None
     assert after_next["player"]["max_energy"] == 3
-    assert after_next["player"]["battlefield"]
+    assert after_next["player"]["battlefield"] or after_next["player"]["discard_count"] >= 1
     assert len(after_next["player"]["hand"]) == 5
     assert after_next["bot"]["hand_count"] <= 5
     assert after_next["bot"]["battlefield"]

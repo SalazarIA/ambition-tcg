@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Validate HTML and API contracts consumed by the active arena client."""
+
 import os
 import sys
 import tempfile
@@ -9,57 +11,54 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-os.environ.setdefault("DATABASE_URL", f"sqlite:///{Path(tempfile.gettempdir()) / 'ambition_rebirth_browser_contract.db'}")
+DB_PATH = Path(tempfile.gettempdir()) / f"ambition_rebirth_browser_contract_{os.getpid()}.db"
+DB_PATH.unlink(missing_ok=True)
+os.environ.pop("DATABASE_URL", None)
+os.environ["REBIRTH_ALLOW_SQLITE_TESTING"] = "true"
+os.environ["REBIRTH_DB_PATH"] = str(DB_PATH)
+os.environ["REBIRTH_REQUIRE_CSRF"] = "false"
 os.environ.setdefault("SECRET_KEY", "qa-secret-key")
-os.environ.setdefault("WTF_CSRF_ENABLED", "false")
-os.environ.setdefault("ENVIRONMENT", "testing")
 
 from app import app  # noqa: E402
 
 
 def main():
-    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+    app.config.update(TESTING=True, REBIRTH_DB_PATH=str(DB_PATH), REBIRTH_REQUIRE_CSRF=False)
     client = app.test_client()
+    try:
+        page = client.get("/rebirth")
+        body = page.get_data(as_text=True)
+        assert page.status_code == 200
+        for token in (
+            'data-rebirth-app',
+            'id="phase-timeline"',
+            'id="priority-label"',
+            'id="interrupt-label"',
+            "static/css/rebirth.css",
+            "static/js/rebirth.js",
+            "v71_PRODUCT_READINESS-6",
+            "telemetry:",
+        ):
+            assert token in body, f"Missing /rebirth browser contract token: {token}"
 
-    page = client.get("/rebirth")
-    body = page.get_data(as_text=True)
-    assert page.status_code == 200
-    for token in [
-        'id="rebirth-3d-stage"',
-        "static/css/rebirth.css",
-        "static/js/rebirth.js",
-        "static/js/rebirth_3d_adapter.js",
-        "Ambitionz Rebirth",
-        "rb-deck-selector",
-        "Quick Duel",
-        "STRIKE",
-        "GUARD",
-        "FOCUS",
-        'id="rb-hand"',
-        'id="rb-combat-log-list"',
-    ]:
-        assert token in body, f"Missing /rebirth browser contract token: {token}"
-
-    start = client.get("/api/rebirth/new?seed=browser-contract")
-    assert start.status_code == 200 and start.is_json
-    payload = start.get_json()
-    assert payload["ok"] is True
-    state = payload["state"]
-    for key in [
-        "match_id",
-        "phase",
-        "round",
-        "player",
-        "opponent",
-        "available_actions",
-        "selected_deck_id",
-        "difficulty",
-        "opponent_profile",
-        "is_finished",
-    ]:
-        assert key in state, f"Missing Rebirth state key: {key}"
-
-    print("REBIRTH_BROWSER_CONTRACT_OK")
+        response = client.post("/api/rebirth/start", json={"seed": "browser-contract"})
+        assert response.status_code == 200 and response.is_json
+        state = response.get_json()["state"]
+        for key in (
+            "match_id",
+            "phase",
+            "turn",
+            "turn_phase",
+            "player",
+            "bot",
+            "resolution_context",
+            "available_evolutions",
+            "is_finished",
+        ):
+            assert key in state, f"Missing Rebirth state key: {key}"
+        print("PASS qa_rebirth_browser_contract arena_html authoritative_state")
+    finally:
+        DB_PATH.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

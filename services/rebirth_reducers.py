@@ -140,7 +140,7 @@ def _fast_clone(value: Any) -> Any:
     return pickle.loads(pickle.dumps(value, protocol=_PICKLE_PROTOCOL))
 
 
-def _copy_state(state: Dict[str, Any]) -> Dict[str, Any]:
+def _copy_state(state: Dict[str, Any], *, side_names=("player", "bot")) -> Dict[str, Any]:
     """Copy canonical gameplay state without cloning append-only history.
 
     Event, command and snapshot streams become particularly large during
@@ -152,14 +152,14 @@ def _copy_state(state: Dict[str, Any]) -> Dict[str, Any]:
     if profiler:
         with profiler.timer("clone_cost", detail="gameplay_entities"):
             copied = dict(state)
-            copied["player"] = _fast_clone(state.get("player") or {})
-            copied["bot"] = _fast_clone(state.get("bot") or {})
+            for side_name in side_names:
+                copied[side_name] = _fast_clone(state.get(side_name) or {})
             copied["result"] = _fast_clone(state.get("result"))
             copied["last_clash"] = _fast_clone(state.get("last_clash"))
     else:
         copied = dict(state)
-        copied["player"] = _fast_clone(state.get("player") or {})
-        copied["bot"] = _fast_clone(state.get("bot") or {})
+        for side_name in side_names:
+            copied[side_name] = _fast_clone(state.get(side_name) or {})
         copied["result"] = _fast_clone(state.get("result"))
         copied["last_clash"] = _fast_clone(state.get("last_clash"))
     copied["reducer_version"] = copied.get("reducer_version") or REDUCER_VERSION
@@ -421,10 +421,10 @@ def reduce_card_discarded(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[
 
 
 def reduce_unit_destroyed(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
-    next_state = _copy_state(state)
     payload = _payload(event)
     side_name = _side_name(event)
     target_id = event.get("target_id") or payload.get("instance_id")
+    next_state = _copy_state(state, side_names=(side_name,) if side_name else ())
     if not side_name or not target_id:
         return next_state
     side = next_state[side_name]

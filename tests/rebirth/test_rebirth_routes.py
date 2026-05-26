@@ -1,7 +1,9 @@
+import json
+
 import pytest
 
 import app as ambition_app
-from services.rebirth_persistence import RebirthPersistenceError
+from services.rebirth_persistence import RebirthPersistenceError, RebirthRepository
 
 
 def test_home_rebirth_and_health_routes_return_200(client):
@@ -167,7 +169,7 @@ def test_play_card_api_blocks_first_turn_direct_damage_until_bot_responds(client
     assert payload["state"]["result"]["outcome"] == "Summon"
     assert payload["state"]["player"]["battlefield"][0]["id"] == "card_001"
     assert payload["state"]["last_clash"] is None
-    assert payload["match_reward"]["persisted"] is False
+    assert payload["match_reward"] is None
 
     # O bot ainda não respondeu no turno inicial; dano direto não pode furar
     # essa janela sem defesa.
@@ -204,6 +206,34 @@ def test_play_card_api_blocks_first_turn_direct_damage_until_bot_responds(client
     assert clash_payload["ok"] is True
     assert clash_payload["state"]["last_clash"]["player_card"]["id"] == "card_001"
     assert clash_payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
+    if not clash_payload["state"]["is_finished"]:
+        assert clash_payload["match_reward"] is None
+
+
+def test_guest_match_actions_record_product_telemetry_without_false_reward(client, flask_app):
+    state = client.post("/api/rebirth/start", json={"seed": "telemetry-guest"}).get_json()["state"]
+    card = next(card for card in state["player"]["hand"] if int(card.get("cost", 0)) <= state["player"]["energy"])
+    played = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": state["match_id"], "card_instance_id": card["instance_id"]},
+    ).get_json()
+    abandoned = client.post(
+        "/api/rebirth/telemetry",
+        json={"match_id": state["match_id"], "event_type": "match_abandoned", "reason": "qa"},
+    )
+
+    assert played["match_reward"] is None
+    assert abandoned.status_code == 200
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+    with repo.connect() as db:
+        rows = db.execute(
+            "SELECT event_type, event_json FROM telemetry_events ORDER BY id"
+        ).fetchall()
+    event_types = [row["event_type"] for row in rows]
+    assert event_types == ["match_started", "card_played", "match_abandoned"]
+    telemetry = json.loads(rows[-1]["event_json"])
+    assert telemetry["match_id"] == state["match_id"]
+    assert "decision_elapsed_ms" in telemetry
 
 
 def test_play_card_api_accepts_explicit_monster_slot(client):

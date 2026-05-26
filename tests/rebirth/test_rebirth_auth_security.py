@@ -33,6 +33,17 @@ def test_rebirth_auth_rate_limit_returns_stable_error(client, flask_app):
     assert second.get_json()["error"]["code"] == "rate_limited"
 
 
+def test_rebirth_auth_rate_limit_cannot_be_bypassed_by_rotating_identity(client, flask_app):
+    flask_app.config["REBIRTH_AUTH_RATE_LIMIT"] = 1
+
+    first = client.post("/api/rebirth/auth/login", json={"email": "first@example.com", "password": "password123"})
+    rotated = client.post("/api/rebirth/auth/login", json={"email": "second@example.com", "password": "password123"})
+
+    assert first.status_code == 401
+    assert rotated.status_code == 429
+    assert rotated.get_json()["error"]["code"] == "rate_limited"
+
+
 def test_rebirth_password_change_updates_credentials(client):
     created = client.post("/api/rebirth/auth/register", json=register_payload())
     assert created.status_code == 200

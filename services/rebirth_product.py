@@ -25,7 +25,6 @@ PRODUCT_NAV = [
 LAB_LINKS = [
     {"key": "history", "label": "Diário de Partidas", "href": "/rebirth/history"},
     {"key": "tutorial", "label": "Status do Tutorial", "href": "/rebirth/onboarding"},
-    {"key": "balance", "label": "Laboratório de Balanceamento", "href": "/rebirth/balance"},
     {"key": "support", "label": "Ferramentas de Suporte", "href": "/rebirth/support"},
     {"key": "desktop", "label": "Notas de Desktop", "href": "/rebirth/desktop"},
     {"key": "release", "label": "Controle de Lançamento", "href": "/rebirth/release"},

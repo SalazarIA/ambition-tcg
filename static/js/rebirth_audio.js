@@ -11,6 +11,8 @@
     const EVENT_AUDIO = {
         DAMAGE_RESOLVED: "heavy",
         SHIELD_BROKEN: "shield",
+        UNIT_DESTROYED: "heavy",
+        MONSTER_DESTROYED: "heavy",
         EVOLUTION_COMPLETED: "evolution",
         UI_CLICK_CONFIRMED: "click"
     };
@@ -122,6 +124,26 @@
             return true;
         }
 
+        eventVolume(event, soundKey) {
+            if (soundKey === "click") return 0.22;
+            if (soundKey === "evolution") return 0.46;
+            if (soundKey === "shield") return 0.38;
+            const payload = event && event.payload ? event.payload : {};
+            const heroDamage = payload.hero_damage || {};
+            const damage = Math.max(
+                Number(payload.amount || 0),
+                Number(heroDamage.player || 0),
+                Number(heroDamage.bot || 0),
+                Number(payload.damage || 0)
+            );
+            if (soundKey === "heavy") {
+                if (damage >= 5) return 0.48;
+                if (damage >= 2) return 0.4;
+                return 0.32;
+            }
+            return 0.34;
+        }
+
         observeEvents(events, options) {
             const list = Array.isArray(events) ? events.slice() : [];
             this.setReplayMutedMode(Boolean(options && options.replayAudioMutedMode));
@@ -135,7 +157,7 @@
                 const eventType = String(event.event_type || event.type || "");
                 const soundKey = EVENT_AUDIO[eventType];
                 if (!soundKey || !this.shouldPlay(event, soundKey)) return;
-                this.play(soundKey, { delayMs }).catch(() => false);
+                this.play(soundKey, { delayMs, volume: this.eventVolume(event, soundKey) }).catch(() => false);
             });
         }
 

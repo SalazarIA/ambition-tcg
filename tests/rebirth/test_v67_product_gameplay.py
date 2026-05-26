@@ -8,7 +8,7 @@ from services.rebirth_effects import apply_legendary_passives, resolve_effect_se
 from services.rebirth_engine import next_turn, resolve_turn, start_match
 from services.rebirth_parity import compare_checkpoint_hashes
 from services.rebirth_profiler import debug_profile
-from services.rebirth_reducers import reduce_event
+from services.rebirth_reducers import reduce_event, reduce_unit_destroyed
 from services.rebirth_replay import build_replay_envelope, build_sync_payload, replay_match
 from services.rebirth_serializers import public_state
 from services.rebirth_state import compact_battlefield
@@ -101,6 +101,22 @@ def test_v67_reducer_clone_shares_transport_history_but_not_gameplay_entities():
     assert "gameplay_entities" in profiler.summary()["metrics"]["clone_cost"]["details"]
 
 
+def test_v71_destroy_reducer_copies_only_the_mutated_side():
+    state = start_match(seed="v71-destroy-hotpath", runtime_mode="replay", apply_reducers_inline=True)
+    defeated = _place(state, "player", "card_001")
+    _place(state, "bot", "card_041")
+
+    reduced = reduce_unit_destroyed(
+        state,
+        {"type": "UNIT_DESTROYED", "target_id": defeated["instance_id"], "payload": {"side": "player"}},
+    )
+
+    assert reduced["player"] is not state["player"]
+    assert reduced["bot"] is state["bot"]
+    assert state["player"]["battlefield"][0]["instance_id"] == defeated["instance_id"]
+    assert reduced["player"]["battlefield"] == []
+
+
 def test_v67_turn_checkpoints_sync_payload_and_early_desync_detection():
     match = start_match(seed="v67-sync")
     dispatch_command(match, EndTurnCommand(turn=match["turn"]))
@@ -156,6 +172,16 @@ def test_v67_gameplay_health_exposes_pacing_and_retention_signals():
         assert metric in summary
 
 
+def test_v71_gameplay_health_avoids_one_sided_dominance_and_stalls():
+    summary = simulate_balance(matches=30)["summary"]
+
+    assert 0.4 <= summary["player_win_rate"] <= 0.7
+    assert summary["bot_win_rate"] >= 0.2
+    assert summary["unfinished_rate"] <= 0.1
+    assert summary["average_turns"] <= 25
+    assert summary["max_chain_events"] <= 16
+
+
 def test_v67_turn_flow_and_impact_feedback_ui_contract_is_present():
     template = (ROOT / "templates" / "rebirth.html").read_text(encoding="utf-8")
     script = (ROOT / "static" / "js" / "rebirth.js").read_text(encoding="utf-8")
@@ -167,5 +193,9 @@ def test_v67_turn_flow_and_impact_feedback_ui_contract_is_present():
     assert 'id="interrupt-label"' in template
     assert "resolution_context" in script
     assert '"UNIT_DESTROYED"' in script
+    assert "feedbackHighlight()" in script
+    assert "novelEvents" in script
     assert ".rb-phase-timeline" in stylesheet
     assert ".rb-resolution-strip" in stylesheet
+    assert ".rb-mobile-native .rb-result-panel p" in stylesheet
+    assert "-webkit-line-clamp: unset;" in stylesheet

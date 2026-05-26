@@ -539,8 +539,10 @@ PLAYER_DECK = [
 ]
 
 BOT_DECK = [
-    "card_041",
-    "card_041",
+    # Two distinct guard/counter bodies reduce low-consequence opening trades
+    # without creating a stall-heavy or burst-dominant bot curve.
+    "card_044",
+    "card_043",
     "card_042",
     "card_061",
     "card_021",

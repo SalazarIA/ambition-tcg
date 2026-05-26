@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Defensive production smoke check for Ambitionz public beta Arena V6."""
+"""Defensive production smoke check for the active Ambitionz Rebirth arena."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_BASE_URL = "https://ambition-tcg.onrender.com"
-DEFAULT_EXPECTED_SW = "ambitionz-web-app-v190"
+DEFAULT_EXPECTED_SW = "v71_PRODUCT_READINESS-6"
 USER_AGENT = "Ambitionz-Production-Smoke/1.0"
 
 
@@ -110,10 +110,10 @@ def run(base_url: str, timeout: int, retries: int, expected_sw: str) -> int:
 
     paths = [
         "/health",
-        "/training",
+        "/rebirth",
         "/service-worker.js",
-        "/static/css/arena_clean_v48.css",
-        "/static/js/arena_clean_v48.js",
+        "/static/css/rebirth.css?v=v71_PRODUCT_READINESS-6",
+        "/static/js/rebirth.js?v=v71_PRODUCT_READINESS-6",
         "/static/js/service-worker.js",
     ]
 
@@ -131,22 +131,16 @@ def run(base_url: str, timeout: int, retries: int, expected_sw: str) -> int:
     elif "ok" not in health.body.lower() and "status" not in health.body.lower():
         failures.append("/health responded but does not look healthy")
 
-    training = results["/training"]
-    if not training.ok:
-        failures.append(f"/training unreachable: status={training.status} error={training.error}")
-    elif training.final_url.rstrip("/") != training.url.rstrip("/"):
-        warnings.append(f"/training redirected to {training.final_url}; protected flow is acceptable for guest smoke")
-
-    training_body = training.body or ""
-    if "az48-arena-v6" in training_body or "az48-game-shell" in training_body:
-        assert_contains(
-            training_body,
-            ["arena_clean_v48.css", "arena_clean_v48.js", "az48-compact-hud", "az48-hand-action-shell"],
-            warnings,
-            "/training HTML",
-        )
+    arena = results["/rebirth"]
+    if not arena.ok:
+        failures.append(f"/rebirth unreachable: status={arena.status} error={arena.error}")
     else:
-        warnings.append("/training HTML did not expose Arena V6 markers; route may be protected or not yet deployed")
+        assert_contains(
+            arena.body,
+            ["data-rebirth-app", "phase-timeline", "priority-label", "v71_PRODUCT_READINESS-6"],
+            warnings,
+            "/rebirth HTML",
+        )
 
     service_worker = results["/service-worker.js"]
     if not service_worker.ok:
@@ -157,21 +151,21 @@ def run(base_url: str, timeout: int, retries: int, expected_sw: str) -> int:
         if expected_sw and expected_sw not in service_worker.body:
             warnings.append(f"service worker does not yet contain {expected_sw}; production may not have this local RC deployed")
 
-    css = results["/static/css/arena_clean_v48.css"]
-    js = results["/static/js/arena_clean_v48.js"]
+    css = results["/static/css/rebirth.css?v=v71_PRODUCT_READINESS-6"]
+    js = results["/static/js/rebirth.js?v=v71_PRODUCT_READINESS-6"]
     if not css.ok:
-        failures.append(f"arena CSS unreachable: status={css.status} error={css.error}")
+        failures.append(f"Rebirth CSS unreachable: status={css.status} error={css.error}")
     else:
-        assert_contains(css.body, ["az48-game-shell", "az48-info-tabs", "az48-hand-action-shell"], warnings, "arena CSS")
+        assert_contains(css.body, [".rb-result-panel", ".rb-resolution-strip", ".rb-phase-timeline"], warnings, "Rebirth CSS")
 
     if not js.ok:
-        failures.append(f"arena JS unreachable: status={js.status} error={js.error}")
+        failures.append(f"Rebirth JS unreachable: status={js.status} error={js.error}")
     else:
         assert_contains(
             js.body,
-            ["arena_command_v1", "az48_play_card", "playCard", "targetContractFor", "renderTrapZone"],
+            ["RebirthFlow", "match_abandoned", "Confronto vencido", "resolution_context"],
             warnings,
-            "arena JS",
+            "Rebirth JS",
         )
 
     static_sw = results["/static/js/service-worker.js"]

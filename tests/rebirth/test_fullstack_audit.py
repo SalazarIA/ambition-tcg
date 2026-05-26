@@ -133,7 +133,7 @@ def test_rebirth_fullstack_audit_register_booster_bot_arena_and_ledger(client, f
     assert after_summon["player"]["battlefield"][0]["id"] == "card_009"
     # Bot no longer auto-summons in player's turn; its field stays empty here.
     assert after_summon["bot"]["battlefield"] == []
-    assert summon_payload["match_reward"]["persisted"] is False
+    assert summon_payload["match_reward"] is None
 
     # End the player's turn so the bot phase actually runs and the bot picks
     # a card via choose_response — that's where the BOT_DECISION events come

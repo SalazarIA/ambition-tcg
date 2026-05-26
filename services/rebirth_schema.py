@@ -9,7 +9,8 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
+SCHEMA_MIGRATION_LOCK_KEY = 735194302771
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
     "users",
@@ -460,7 +461,16 @@ VALUES (6, 'legacy_parent_fk_recovery_and_identity_fence')
 ON CONFLICT (version) DO NOTHING;
 """
 
-MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004, MIGRATION_005, MIGRATION_006)
+MIGRATION_007 = """
+CREATE INDEX IF NOT EXISTS idx_telemetry_type_created
+    ON telemetry_events(event_type, created_at DESC);
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (7, 'product_telemetry_query_index')
+ON CONFLICT (version) DO NOTHING;
+"""
+
+MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004, MIGRATION_005, MIGRATION_006, MIGRATION_007)
 
 
 def normalize_database_url(database_url: str) -> str:
@@ -489,6 +499,7 @@ def upgrade_schema(database_url: str) -> None:
     engine = make_engine(database_url)
     try:
         with engine.begin() as connection:
+            connection.execute(text("SELECT pg_advisory_xact_lock(:lock_key)"), {"lock_key": SCHEMA_MIGRATION_LOCK_KEY})
             connection.exec_driver_sql(LEGACY_SCHEMA_PREFLIGHT.strip())
             for migration in MIGRATIONS:
                 migration_text = migration.strip()

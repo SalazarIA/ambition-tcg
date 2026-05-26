@@ -53,6 +53,7 @@ def start_match(
     bot_profile_id=None,
     runtime_mode="singleplayer",
     apply_reducers_inline=None,
+    first_duel=False,
 ):
     return create_match(
         seed=seed,
@@ -61,6 +62,7 @@ def start_match(
         bot_profile_id=bot_profile_id,
         runtime_mode=runtime_mode,
         apply_reducers_inline=apply_reducers_inline,
+        first_duel=first_duel,
     )
 
 

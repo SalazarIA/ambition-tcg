@@ -131,10 +131,13 @@ def canonical_side(side: Dict[str, Any]) -> Dict[str, Any]:
 def _canonical_result(value: Any) -> Any:
     if not isinstance(value, dict):
         return _stable_value(value)
-    payload = deepcopy(value)
-    # Human text can change without changing game semantics.
-    payload.pop("message", None)
-    payload.pop("ability_events", None)
+    # Human text can change without changing game semantics. Avoid cloning
+    # excluded display-only payloads on the canonical hashing hot path.
+    payload = {
+        key: item
+        for key, item in value.items()
+        if key not in {"message", "ability_events"}
+    }
     if "player_card" in payload:
         payload["player_card"] = canonical_card(payload.get("player_card"))
     if "bot_card" in payload:

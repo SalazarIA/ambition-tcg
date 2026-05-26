@@ -1,5 +1,5 @@
-const CACHE_NAME = "v67_PRODUCT_FLOW-6";
-const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW)(?:$|-))/i;
+const CACHE_NAME = "v72_FIRST_DUEL-1";
+const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL)(?:$|-))/i;
 
 function stableAsset(path) {
     return `${path}?v=${CACHE_NAME}`;
@@ -22,6 +22,8 @@ const CORE_ASSETS = [
     stableAsset("/static/css/rebirth.css"),
     stableAsset("/static/js/rebirth.js"),
     stableAsset("/static/js/rebirth_audio.js"),
+    stableAsset("/static/js/rebirth_ui.js"),
+    stableAsset("/static/js/rebirth_fx.js"),
     stableAsset("/static/js/rebirth_global.js"),
     stableAsset("/static/js/rebirth_product.js"),
     stableAsset("/static/js/pwa.js"),

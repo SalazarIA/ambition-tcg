@@ -6,6 +6,10 @@ from services import rebirth_schema
 class _FakeConnection:
     def __init__(self):
         self.statements = []
+        self.locks = []
+
+    def execute(self, statement, params=None):
+        self.locks.append((str(statement), params))
 
     def exec_driver_sql(self, statement):
         self.statements.append(statement)
@@ -41,17 +45,19 @@ def test_legacy_collision_preflight_runs_before_foundation_migration(monkeypatch
     rebirth_schema.upgrade_schema("postgresql://test")
 
     statements = engine.connection.statements
+    assert "pg_advisory_xact_lock" in engine.connection.locks[0][0]
     assert "ALTER TABLE users RENAME TO users_legacy_ascension" in statements[0]
     assert statements[1] == rebirth_schema.MIGRATION_001.strip()
     assert engine.disposed is True
 
 
 def test_fk_recovery_accepts_historical_rows_and_fences_new_user_ids():
-    assert rebirth_schema.SCHEMA_VERSION == 6
+    assert rebirth_schema.SCHEMA_VERSION == 7
     assert "pg_get_serial_sequence('users', 'id')" in rebirth_schema.MIGRATION_005
     assert "match_history_legacy_ascension" in rebirth_schema.MIGRATION_005
     assert "NOT LIKE '%%_legacy_ascension'" in rebirth_schema.MIGRATION_005
     assert "ADD CONSTRAINT %%I %%s NOT VALID" in rebirth_schema.MIGRATION_005
+    assert "idx_telemetry_type_created" in rebirth_schema.MIGRATION_007
 
 
 def test_database_error_details_are_not_public_by_default():

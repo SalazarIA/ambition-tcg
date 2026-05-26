@@ -651,6 +651,15 @@ class RebirthRepository:
                     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS telemetry_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    event_type TEXT NOT NULL,
+                    event_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_market_offers_status_created
                     ON market_offers(status, created_at);
                 CREATE INDEX IF NOT EXISTS idx_market_offers_seller_status
@@ -661,6 +670,8 @@ class RebirthRepository:
                     ON wallet_ledger(reference_id);
                 CREATE INDEX IF NOT EXISTS idx_user_sessions_active
                     ON user_sessions(token_hash, revoked_at);
+                CREATE INDEX IF NOT EXISTS idx_telemetry_type_created
+                    ON telemetry_events(event_type, created_at);
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_purchase_reference_once
                     ON economy_transactions(user_id, transaction_type, reference_id)
                     WHERE transaction_type = 'IN_APP_PURCHASE' AND reference_id IS NOT NULL AND reference_id <> '';
@@ -745,6 +756,26 @@ class RebirthRepository:
                 now or utc_now(),
             ),
         )
+
+    def record_telemetry_event(self, event_type, payload=None, *, user_id=None):
+        self.ensure_schema()
+        event_type = str(event_type or "").strip().lower()
+        if not event_type or len(event_type) > 80:
+            raise RebirthPersistenceError("O tipo do evento de telemetria é inválido.", "invalid_telemetry_event", 400)
+        with self.connect() as db:
+            db.execute(
+                """
+                INSERT INTO telemetry_events (user_id, event_type, event_json, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    int(user_id) if user_id is not None else None,
+                    event_type,
+                    json.dumps(payload or {}, sort_keys=True, separators=(",", ":"), ensure_ascii=False),
+                    utc_now(),
+                ),
+            )
+        return {"event_type": event_type, "recorded": True}
 
     def _claim_economy_idempotency(self, db, user_id, *, key, scope, reference_id=None, metadata=None, now=None):
         now = now or utc_now()

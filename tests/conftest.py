@@ -20,13 +20,17 @@ def flask_app(tmp_path):
         REBIRTH_REQUIRE_CSRF=False,
         REBIRTH_AUTH_RATE_LIMIT=20,
         REBIRTH_AUTH_RATE_LIMIT_SECONDS=300,
+        REBIRTH_ENABLE_INTERNAL_LAB=True,
+        REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT=24,
         SECRET_KEY="rebirth-test-secret",
     )
     ambition_app.REBIRTH_MATCHES.clear()
     ambition_app.AUTH_RATE_LIMITS.clear()
+    ambition_app.MATCH_TELEMETRY_CLOCKS.clear()
     yield ambition_app.app
     ambition_app.REBIRTH_MATCHES.clear()
     ambition_app.AUTH_RATE_LIMITS.clear()
+    ambition_app.MATCH_TELEMETRY_CLOCKS.clear()
 
 
 @pytest.fixture()

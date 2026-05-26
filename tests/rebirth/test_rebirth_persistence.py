@@ -332,9 +332,18 @@ def test_balance_simulation_is_capped_and_deterministic(client):
     payload = response.get_json()["balance"]
 
     assert response.status_code == 200
-    assert payload["matches"] == 200
+    assert payload["matches"] == 24
     assert payload["summary"]["average_turns"] > 0
     assert payload["bot_tuning"]["policy"].startswith("alterna perfis defensivo")
     assert {item["profile_id"] for item in payload["profile_results"]} == {"defensive", "aggressive", "opportunist"}
     assert payload["card_stats"][0]["ability_key"]
     assert payload["ability_stats"][0]["plays"] > 0
+
+
+def test_balance_simulation_requires_internal_access_in_production_mode(client, flask_app):
+    flask_app.config.update(TESTING=False, REBIRTH_ENABLE_INTERNAL_LAB=False, REBIRTH_ADMIN_TOKEN=None)
+
+    response = client.get("/api/rebirth/balance/simulate?matches=8")
+
+    assert response.status_code == 403
+    assert response.get_json()["error"]["code"] == "admin_disabled"

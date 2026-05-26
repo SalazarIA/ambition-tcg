@@ -39,8 +39,42 @@
                 this.selectedAttackerId = null;
             }
             if (!this.selectedInstanceId && !this.selectedAttackerId && state && state.phase === "choose" && state.player && state.player.hand.length) {
-                this.selectedInstanceId = state.player.hand[0].instance_id;
+                const preferred = this.defaultHandCard(state);
+                this.selectedInstanceId = preferred ? preferred.instance_id : state.player.hand[0].instance_id;
             }
+        },
+
+        defaultHandCard(state) {
+            const hand = (state && state.player && state.player.hand) || [];
+            if (!hand.length) return null;
+            const evolution = ((state && state.available_evolutions) || [])[0] || null;
+            if (evolution) {
+                const fusionSource = hand.find((card) => card.id === evolution.card_id);
+                if (fusionSource) return fusionSource;
+            }
+            return hand.slice().sort((a, b) => {
+                return this.cardScore(b) - this.cardScore(a) || String(a.name).localeCompare(String(b.name));
+            })[0];
+        },
+
+        cardScore(card) {
+            if (!card) return -1;
+            const ability = {
+                inferno_bite: 8,
+                apex_rend: 7,
+                molten_bite: 6,
+                rending_strike: 5,
+                silent_pursuit: 5,
+                storm_dive: 5,
+                high_guard: 4,
+                bleed_mark: 4,
+                fade_cut: 3,
+                fortress_hit: 3,
+                immovable: 2,
+                bulwark: 2,
+                brace: 1
+            }[card.ability_key] || 0;
+            return Number(card.attack || card.power || 0) * 3 + Number(card.guard || 0) + Number(card.tier || 1) * 4 + ability;
         },
 
         handContains(instanceId) {
@@ -143,9 +177,13 @@
                 "evolution-name",
                 "evolution-card-thumbnail",
                 "evolve-button",
+                "rebirth-action-bar",
                 "player-hand",
                 "hand-count",
                 "play-button",
+                "primary-action-copy",
+                "action-selected-card",
+                "action-mana-label",
                 "next-turn-button",
                 "secondary-action-copy",
                 "result-label",
@@ -172,7 +210,10 @@
                 "coach-panel",
                 "coach-badge",
                 "coach-title",
-                "coach-copy"
+                "coach-copy",
+                "rematch-button",
+                "result-actions",
+                "progression-tease"
             ].forEach((id) => {
                 RebirthStore.elements[id] = this.byId(id);
             });
@@ -698,6 +739,7 @@
                 <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
+                    ${options && options.recommended ? '<span class="rb-recommendation-badge">BEST PLAY</span>' : ""}
                     ${RebirthStatus.miniBadge(statuses)}
                     <span class="rb-card-image-layer rb-mini-art">
                         ${RebirthAssets.imageMarkup(card)}
@@ -781,14 +823,20 @@
             const attackingClass = side === "player" && selected ? " is-attacking" : "";
             const targetableClass = options && options.targetable ? " is-targetable" : "";
             const statusClass = RebirthStatus.className(statuses);
+            const risk = options && options.risk ? options.risk : null;
+            const riskClass = risk ? ` is-risk-${RebirthText.escape(risk.tone || "neutral")}` : "";
+            const riskAttrs = risk
+                ? ` data-risk-tone="${RebirthText.escape(risk.tone || "neutral")}" data-risk-label="${RebirthText.escape(risk.label || "")}" title="${RebirthText.escape((risk.label || "") + (risk.copy ? " - " + risk.copy : ""))}"`
+                : "";
             const ability = this.abilitySummary(card);
             const targetAttr = side === "bot"
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${exhausted}${statusClass}" type="button" ${targetAttr} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} no campo ${side === "player" ? "do jogador" : "do bot"}">
+                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${riskClass}${exhausted}${statusClass}" type="button" ${targetAttr}${riskAttrs} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} no campo ${side === "player" ? "do jogador" : "do bot"}">
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
+                    ${risk ? `<span class="rb-risk-badge" data-risk-tone="${RebirthText.escape(risk.tone || "neutral")}">${RebirthText.escape(risk.label || "Risk")}</span>` : ""}
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     <span class="rb-card-image-layer rb-field-art">
                         ${RebirthAssets.imageMarkup(card)}
@@ -817,7 +865,8 @@
             const locked = options && options.locked ? " is-locked" : "";
             const disabled = locked && !direct ? "disabled aria-disabled=\"true\"" : "";
             const summonAttr = summonTarget ? 'data-summon-action="true"' : "";
-            return `<button class="rb-field-slot-empty${summonTarget}${selected}${locked}" type="button" ${direct ? "data-direct-attack=\"true\"" : ""} ${summonAttr} ${disabled}><span>${RebirthText.escape(copy)}</span></button>`;
+            const reason = options && options.reason ? String(options.reason) : String(copy || "");
+            return `<button class="rb-field-slot-empty${summonTarget}${selected}${locked}" type="button" ${direct ? "data-direct-attack=\"true\"" : ""} ${summonAttr} ${disabled} title="${RebirthText.escape(reason)}" aria-label="${RebirthText.escape(reason)}"><span>${RebirthText.escape(copy)}</span></button>`;
         },
 
         emptyFocus() {
@@ -870,6 +919,38 @@
                 label,
                 copy: `${role}: ${attack} ataque / ${guard} guarda. Tempo ${tempo}.`
             };
+        },
+
+        clashRisk(attacker, defender) {
+            if (window.RebirthHotfixUI && typeof window.RebirthHotfixUI.clashRisk === "function") {
+                return window.RebirthHotfixUI.clashRisk(attacker, defender);
+            }
+            if (!attacker) return { tone: "neutral", label: "Sem atacante", copy: "Selecione um monstro pronto.", score: 0 };
+            if (!defender) return { tone: "favorable", label: "Vantagem forte", copy: "Linha aberta para dano direto.", score: 4 };
+            const attack = Number(attacker.attack || attacker.power || 0);
+            const guard = Number(attacker.current_guard != null ? attacker.current_guard : attacker.guard || 0);
+            const defense = Number(defender.current_guard != null ? defender.current_guard : defender.guard || 0);
+            const counter = Number(defender.attack || defender.power || 0);
+            if (attack >= defense + 2 && guard >= counter) {
+                return { tone: "favorable", label: "Strong advantage", copy: "Seu monstro deve vencer a troca.", score: 3 };
+            }
+            if (attack >= defense || guard >= counter - 1) {
+                return { tone: "risky", label: "Trade likely", copy: "Troca possivel, mas com perda de Guarda.", score: 1 };
+            }
+            return { tone: "losing", label: "High chance to lose unit", copy: "O defensor parece favorito.", score: -2 };
+        },
+
+        selectedAttackRisk(state) {
+            if (!state || !RebirthStore.selectedAttackerId) return null;
+            const attacker = RebirthStore.fieldCard(RebirthStore.selectedAttackerId);
+            if (!attacker) return null;
+            const defenders = RebirthStore.fieldCards("bot");
+            if (!defenders.length) {
+                return this.clashRisk(attacker, null);
+            }
+            return defenders
+                .map((defender) => this.clashRisk(attacker, defender))
+                .sort((a, b) => Number(a.score || 0) - Number(b.score || 0))[0] || null;
         },
 
         advantage(state) {
@@ -1001,7 +1082,7 @@
 
     const RebirthCombatMotion = {
         impactMs: 132,
-        hitPauseMs: 38,
+        hitPauseMs: 72,
         shatterMs: 260,
         dissolveMs: 420,
         returnHoldMs: 92,
@@ -1182,16 +1263,17 @@
             attacker.classList.add("is-attack-lunging");
             await wait(this.impactMs);
 
-            // v55 Combat Juice — HIT PAUSE
-            // Micro-congelamento de 60ms no exato frame de impacto, antes
-            // dos efeitos visuais de dano dispararem. Dá sensação de massa:
-            // o atacante "trava" contra o alvo por um respiro antes de o
-            // dano, o shake e o flash explodirem juntos. Tecnicamente é só
-            // adiar markImpact em 60ms — o backend já resolveu, só atrasa
-            // o feedback visual.
-            await wait(this.hitPauseMs);
+            // v72 Combat Juice: 60-90ms hit-stop on the impact frame.
+            if (window.RebirthHotfixFX && typeof window.RebirthHotfixFX.hitStop === "function") {
+                await window.RebirthHotfixFX.hitStop(board || attacker, this.hitPauseMs);
+            } else {
+                await wait(this.hitPauseMs);
+            }
 
             this.markImpact(target, resolvedState);
+            if (window.RebirthHotfixFX && typeof window.RebirthHotfixFX.clashImpact === "function") {
+                window.RebirthHotfixFX.clashImpact({ attacker, target, resolvedState });
+            }
 
             // v55 Combat Juice — SHIELD SHATTER + DEATH DISSOLVE
             // Disparados DEPOIS do markImpact pra coexistirem com o hit
@@ -1368,14 +1450,14 @@
             const key = `${nextState.match_id || ""}:${nextState.winner || ""}`;
             if (wasFinished && this.lastFiredKey === key) return;
             this.lastFiredKey = key;
-            this.show(nextState.winner);
+            this.show(nextState.winner, { firstDuel: Boolean(nextState.first_duel) });
         },
 
         reset() {
             this.lastFiredKey = null;
             const overlay = document.getElementById("rebirth-finale-overlay");
             if (overlay) {
-                overlay.classList.remove("is-active", "is-victory", "is-defeat");
+                overlay.classList.remove("is-active", "is-victory", "is-defeat", "is-first-duel");
                 overlay.innerHTML = "";
                 overlay.setAttribute("aria-hidden", "true");
             }
@@ -1384,19 +1466,30 @@
             if (board) board.classList.remove("vfx-board-shatter");
         },
 
-        show(winner) {
+        show(winner, options) {
             const overlay = document.getElementById("rebirth-finale-overlay");
             if (!overlay) return;
             const isVictory = winner === "player";
             const isDefeat = winner === "bot";
             if (!isVictory && !isDefeat) return;  // clash mútuo não merece premium screen
 
-            overlay.classList.remove("is-victory", "is-defeat");
+            const firstDuel = Boolean(options && options.firstDuel);
+            overlay.classList.remove("is-victory", "is-defeat", "is-first-duel");
             const variant = isVictory ? "is-victory" : "is-defeat";
             overlay.classList.add(variant);
+            if (firstDuel && isVictory) {
+                overlay.classList.add("is-first-duel");
+            }
+            const headline = firstDuel && isVictory
+                ? "Primeira Vitória"
+                : isVictory ? "Vitória" : "Derrota";
+            const sublineCopy = firstDuel && isVictory
+                ? '<div class="vfx-finale-subtitle">Você dominou seu primeiro duelo</div>'
+                : "";
             overlay.innerHTML = `
                 <div class="vfx-finale-curtain"></div>
-                <div class="vfx-finale-text">${isVictory ? "Vitória" : "Derrota"}</div>
+                <div class="vfx-finale-text">${headline}</div>
+                ${sublineCopy}
             `;
             // force reflow pra animação de entrada disparar
             void overlay.offsetWidth;
@@ -1417,11 +1510,13 @@
                 }
             }
 
-            // fade-out automático após 5s (player pode iniciar nova partida)
+            // primeira vitória ganha um fade mais longo (8s) — dá tempo de ler
+            // a recompensa antes da camada sumir
+            const fadeMs = firstDuel && isVictory ? 8000 : 5000;
             window.setTimeout(() => {
                 overlay.classList.remove("is-active");
                 overlay.setAttribute("aria-hidden", "true");
-            }, 5000);
+            }, fadeMs);
         },
     };
 
@@ -1445,31 +1540,11 @@
         },
 
         score(card) {
-            if (!card) return -1;
-            const ability = {
-                inferno_bite: 8,
-                apex_rend: 7,
-                molten_bite: 6,
-                rending_strike: 5,
-                silent_pursuit: 5,
-                storm_dive: 5,
-                high_guard: 4,
-                bleed_mark: 4,
-                fade_cut: 3,
-                fortress_hit: 3,
-                immovable: 2,
-                bulwark: 2,
-                brace: 1
-            }[card.ability_key] || 0;
-            return Number(card.attack || card.power || 0) * 3 + Number(card.guard || 0) + Number(card.tier || 1) * 4 + ability;
+            return RebirthStore.cardScore(card);
         },
 
         recommendedCard() {
-            const hand = (RebirthStore.state && RebirthStore.state.player && RebirthStore.state.player.hand) || [];
-            if (!hand.length) return null;
-            return hand.slice().sort((a, b) => {
-                return this.score(b) - this.score(a) || String(a.name).localeCompare(String(b.name));
-            })[0];
+            return RebirthStore.defaultHandCard(RebirthStore.state);
         },
 
         insight() {
@@ -1557,6 +1632,8 @@
                 board.dataset.phase = state.phase;
                 board.dataset.winner = state.winner || "";
                 board.dataset.botProfile = (state.bot_profile && state.bot_profile.id) || "defensive";
+                const risk = RebirthTactics.selectedAttackRisk(state);
+                board.dataset.riskTone = risk ? risk.tone : "none";
                 board.classList.toggle("is-choosing-attack", Boolean(RebirthStore.selectedAttackerId) && !state.is_finished && !RebirthStore.pending);
             }
             renderTurnPhase(state.turn_phase || state.phase);
@@ -1616,6 +1693,7 @@
                 && state.phase === "choose"
                 && !state.is_finished
                 && !RebirthStore.pending;
+            const selectedAttacker = choosingAttack ? RebirthStore.fieldCard(RebirthStore.selectedAttackerId) : null;
             const playerStatuses = (state.player && state.player.statuses) || {};
             const botStatuses = (state.bot && state.bot.statuses) || {};
             const selectedHandCard = RebirthStore.handCard(RebirthStore.selectedInstanceId);
@@ -1640,19 +1718,26 @@
                 }
                 return RebirthMarkup.emptyFieldSlot(canSummonSelected ? "Invocar" : summonLockCopy, {
                     summonTarget: Boolean(canSummonSelected),
-                    locked: !canSummonSelected
+                    locked: !canSummonSelected,
+                    reason: canSummonSelected ? `Invocar ${selectedHandCard.name}` : summonLockCopy
                 });
             }).join("");
             botHost.innerHTML = botSlots.map((card) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "bot", choosingAttack, botStatuses, {
-                        targetable: choosingAttack
+                        targetable: choosingAttack,
+                        risk: choosingAttack ? RebirthTactics.clashRisk(selectedAttacker, card) : null
                     });
                 }
                 return RebirthMarkup.emptyFieldSlot(botCards.length ? "Linha de guarda" : firstTurnDirectLocked ? "Protegido no turno 1" : "Dano direto", {
                     direct: !botCards.length && !firstTurnDirectLocked,
                     selected: choosingAttack && !botCards.length && !firstTurnDirectLocked,
-                    locked: firstTurnDirectLocked
+                    locked: firstTurnDirectLocked,
+                    reason: firstTurnDirectLocked
+                        ? "Dano direto bloqueado no primeiro turno"
+                        : botCards.length
+                            ? "Slot vazio do bot"
+                            : "Ataque direto"
                 });
             }).join("");
         },
@@ -1767,24 +1852,50 @@
             RebirthDom.setText("coach-copy", insight.copy || "Vou apontar a linha mais segura antes de você confirmar.");
         },
 
+        feedbackHighlight() {
+            const feedback = ((RebirthStore.state && RebirthStore.state.resolution_context && RebirthStore.state.resolution_context.feedback) || []);
+            const readable = {
+                DAMAGE_RESOLVED: { label: "Dano resolvido", title: "Impacto confirmado." },
+                SHIELD_APPLIED: { label: "Escudo", title: "Dano prevenido." },
+                SHIELD_GRANTED: { label: "Escudo", title: "Proteção aplicada." },
+                SHIELD_BROKEN: { label: "Armadura quebrada", title: "Proteção rompida." },
+                TRAP_TRIGGERED: { label: "Armadilha", title: "Resposta acionada." },
+                UNIT_DESTROYED: { label: "Unidade destruída", title: "Combate resolvido." },
+                UNIT_EXHAUSTED: { label: "Exausto", title: "Ação consumida." }
+            };
+            const highlighted = feedback.slice().reverse().find((event) => readable[event.event_type]);
+            if (!highlighted) return null;
+            return Object.assign({}, readable[highlighted.event_type], highlighted);
+        },
+
         result() {
             const state = RebirthStore.state;
             const result = state.result;
             const panel = RebirthStore.elements["result-panel"];
             if (panel) {
-                panel.classList.remove("is-victory", "is-defeat", "is-clash");
+                panel.classList.remove("is-victory", "is-defeat", "is-clash", "is-first-duel");
             }
             this.abilityEvents(result);
             this.rewardPanel();
+            this.rematchCta(state);
             if (state.is_finished) {
                 const won = state.winner === "player";
                 const tied = state.winner === "clash";
+                const firstDuel = Boolean(state.first_duel);
+                const concise = window.RebirthHotfixUI && typeof window.RebirthHotfixUI.resultLine === "function"
+                    ? window.RebirthHotfixUI.resultLine(state)
+                    : "";
                 if (panel) {
                     panel.classList.add(tied ? "is-clash" : won ? "is-victory" : "is-defeat");
+                    if (firstDuel && won) panel.classList.add("is-first-duel");
                 }
-                RebirthDom.setText("result-label", tied ? "Clash" : won ? "Vitória" : "Derrota");
-                RebirthDom.setText("result-title", tied ? "Os dois lados caíram." : won ? "Você venceu o duelo." : "O bot venceu o duelo.");
-                RebirthDom.setText("result-copy", result && result.message ? result.message : "Inicie uma nova partida quando quiser.");
+                const headlineLabel = firstDuel && won ? "Primeira vitória" : tied ? "Clash" : won ? "Vitória" : "Derrota";
+                const headlineTitle = firstDuel && won
+                    ? "Você dominou seu primeiro duelo."
+                    : tied ? "Os dois lados caíram." : won ? "Você venceu o duelo." : "O bot venceu o duelo.";
+                RebirthDom.setText("result-label", headlineLabel);
+                RebirthDom.setText("result-title", headlineTitle);
+                RebirthDom.setText("result-copy", concise || (result && result.message ? result.message : "Inicie uma nova partida quando quiser."));
                 this.resultReadability(`finished:${state.turn}:${state.winner}:${result && result.message}`);
                 this.resultImpact();
                 return;
@@ -1796,12 +1907,35 @@
                 if (panel) {
                     panel.classList.add(`is-${String(result.outcome || "clash").toLowerCase()}`);
                 }
-                const outcomeLabels = { Victory: "Vitória", Defeat: "Derrota", Clash: "Clash", Summon: "Invocação", Spell: "Magia", "Trap Armed": "Armadilha armada" };
+                const outcomeLabels = { Victory: "Confronto vencido", Defeat: "Unidade perdida", Clash: "Troca", Summon: "Invocação", Spell: "Magia", "Trap Armed": "Armadilha armada" };
+                const outcomeTitles = {
+                    Victory: "Pressão aplicada.",
+                    Defeat: "Seu ataque foi contido.",
+                    Clash: guardTrade ? "Troca de Guarda." : "Nenhum dano.",
+                    Summon: "Unidade em campo.",
+                    Spell: "Efeito resolvido.",
+                    "Trap Armed": "Resposta preparada."
+                };
                 const outcome = outcomeLabels[result.outcome] || result.outcome;
+                const concise = window.RebirthHotfixUI && typeof window.RebirthHotfixUI.resultLine === "function"
+                    ? window.RebirthHotfixUI.resultLine(state)
+                    : "";
                 RebirthDom.setText("result-label", outcome);
-                RebirthDom.setText("result-title", result.outcome === "Clash" ? (guardTrade ? "Troca de Guarda." : "Nenhum dano.") : outcome);
-                RebirthDom.setText("result-copy", result.message);
+                RebirthDom.setText("result-title", outcomeTitles[result.outcome] || outcome);
+                RebirthDom.setText("result-copy", concise || result.message);
                 this.resultReadability(`${state.turn}:${result.outcome}:${result.message}`);
+                this.resultImpact();
+                return;
+            }
+            const highlight = this.feedbackHighlight();
+            if (highlight) {
+                if (panel) {
+                    panel.classList.add("is-clash");
+                }
+                RebirthDom.setText("result-label", highlight.label);
+                RebirthDom.setText("result-title", highlight.title);
+                RebirthDom.setText("result-copy", highlight.message || "A resolução foi concluída.");
+                this.resultReadability(`feedback:${state.turn}:${highlight.event_type}:${highlight.message || ""}`);
                 this.resultImpact();
                 return;
             }
@@ -1820,14 +1954,21 @@
             const intent = RebirthTactics.botIntent(state.bot_profile || {});
             const read = RebirthTactics.selectedRead(selected);
             const advantage = RebirthTactics.advantage(state);
+            const risk = RebirthTactics.selectedAttackRisk(state);
             const botHand = state.bot.hand_count == null ? "?" : state.bot.hand_count;
             host.dataset.intentTone = intent.tone;
-            host.innerHTML = [
+            host.dataset.riskTone = risk ? risk.tone : "none";
+            const rows = [];
+            if (risk) {
+                rows.push(`<span class="rb-risk-chip" data-risk-tone="${RebirthText.escape(risk.tone)}"><b>${RebirthText.escape(risk.label)}</b>${RebirthText.escape(risk.copy)}</span>`);
+            }
+            rows.push(
                 `<span><b>${RebirthText.escape(intent.label)}</b>${RebirthText.escape(intent.copy)}</span>`,
                 `<span><b>${RebirthText.escape(read.label)}</b>${RebirthText.escape(read.copy)}</span>`,
                 `<span><b>${RebirthText.escape(advantage.label)}</b>${RebirthText.escape(advantage.copy)}</span>`,
                 `<span><b>Mão inimiga</b>${RebirthText.escape(botHand)} cartas ocultas</span>`
-            ].join("");
+            );
+            host.innerHTML = rows.join("");
         },
 
         guide() {
@@ -1852,7 +1993,7 @@
                 const damage = result.damage || {};
                 const guardTrade = result.outcome === "Clash"
                     && (Number(damage.player || 0) > 0 || Number(damage.bot || 0) > 0);
-                const outcomeLabels = { Victory: "Vitória", Defeat: "Derrota", Clash: guardTrade ? "Troca de Guarda" : "Sem dano", Summon: "Invocação", Spell: "Magia" };
+                const outcomeLabels = { Victory: "Confronto vencido", Defeat: "Unidade perdida", Clash: guardTrade ? "Troca de Guarda" : "Sem dano", Summon: "Invocação", Spell: "Magia" };
                 const outcomeTitle = outcomeLabels[result.outcome] || result.outcome;
                 RebirthDom.setText("guide-rule-label", "Resultado");
                 RebirthDom.setText("guide-rule-title", outcomeTitle);
@@ -1913,11 +2054,17 @@
                 host.innerHTML = '<span class="rb-ability-chip is-muted">Combate básico</span>';
                 return;
             }
-            const visible = events.slice(0, 2).map((event) => {
+            const narrated = String(result.message || "").toLowerCase();
+            const novelEvents = events.filter((event) => !narrated.includes(String(event).toLowerCase()));
+            if (!novelEvents.length) {
+                host.innerHTML = "";
+                return;
+            }
+            const visible = novelEvents.slice(0, 2).map((event) => {
                 return '<span class="rb-ability-chip">' + RebirthText.escape(event) + "</span>";
             });
-            if (events.length > 2) {
-                visible.push('<span class="rb-ability-chip is-muted">+' + RebirthText.escape(events.length - 2) + " eventos</span>");
+            if (novelEvents.length > 2) {
+                visible.push('<span class="rb-ability-chip is-muted">+' + RebirthText.escape(novelEvents.length - 2) + " eventos</span>");
             }
             host.innerHTML = visible.join("");
         },
@@ -1970,6 +2117,54 @@
             ].join("");
         },
 
+        rematchCta(state) {
+            const rematch = RebirthStore.elements["rematch-button"];
+            const tease = RebirthStore.elements["progression-tease"];
+            const actions = RebirthStore.elements["result-actions"];
+            const isFinished = Boolean(state && state.is_finished);
+            const won = state && state.winner === "player";
+            const firstDuel = Boolean(state && state.first_duel);
+
+            if (rematch) {
+                rematch.hidden = !isFinished;
+                rematch.disabled = RebirthStore.pending;
+                const label = firstDuel && won
+                    ? "Jogar de novo"
+                    : isFinished
+                        ? (won ? "Jogar de novo" : "Revanche")
+                        : "Jogar de novo";
+                rematch.innerHTML = `<i class="rb-action-loop" aria-hidden="true"></i>${RebirthText.escape(label)}`;
+                rematch.classList.toggle("is-first-duel", firstDuel && won);
+            }
+
+            if (actions) {
+                actions.classList.toggle("is-finished", isFinished);
+            }
+
+            if (!tease) return;
+            if (!isFinished) {
+                tease.hidden = true;
+                tease.innerHTML = "";
+                return;
+            }
+
+            // Tease pós-partida — destaca o ganho de XP, ofertas de evolução e
+            // o próximo objetivo. Em primeiro duelo + vitória promovemos um
+            // hook explícito de "próximo desbloqueio".
+            const reward = RebirthStore.reward || {};
+            const xp = reward.xp != null ? `+${RebirthText.escape(reward.xp)} XP garantidos` : "Recompensa pronta para resgate";
+            const nextGoal = reward.next_goal
+                ? RebirthText.escape(reward.next_goal)
+                : firstDuel && won
+                    ? "Próxima partida desbloqueia a curva real do bot"
+                    : "Continue duelando pra subir de nível";
+            const teaser = firstDuel && won
+                ? `<strong class="rb-tease-headline">Estreia vencida</strong><span>${xp}</span><span>${nextGoal}</span>`
+                : `<span>${xp}</span><span>${nextGoal}</span>`;
+            tease.hidden = false;
+            tease.innerHTML = teaser;
+        },
+
         log() {
             const host = RebirthStore.elements["turn-log"];
             if (!host) return;
@@ -1997,24 +2192,49 @@
             const canPay = !selected || energy >= cost;
             const attackerReady = selectedAttacker && !selectedAttacker.exhausted && !selectedAttacker.has_attacked && !selectedAttacker.has_acted;
             const directLocked = Number(state.turn || 1) === 1 && RebirthStore.fieldCards("bot").length === 0;
+            const attackRisk = selectedAttacker ? RebirthTactics.selectedAttackRisk(state) : null;
+            const emptySlot = RebirthStore.firstOpenFieldSlot("player");
+            const isMonster = selected && RebirthMarkup.isMonster(selected);
+            const noOpenSlot = Boolean(isMonster && emptySlot < 0);
+            let actionState = "choose";
             if (RebirthStore.elements["play-button"]) {
                 const btn = RebirthStore.elements["play-button"];
-                if (selectedAttacker) {
+                if (state.is_finished) {
+                    actionState = "finished";
+                    btn.innerHTML = '<i class="rb-action-sword"></i>Encerrado';
+                    btn.disabled = true;
+                    btn.title = "A partida foi encerrada.";
+                } else if (state.phase === "result") {
+                    actionState = "resolved";
+                    btn.innerHTML = '<i class="rb-action-sword"></i>Resolvido';
+                    btn.disabled = true;
+                    btn.title = "Combate resolvido. Avance para o próximo turno.";
+                } else if (selectedAttacker) {
+                    actionState = attackRisk && attackRisk.tone ? `attack-${attackRisk.tone}` : "attack";
                     btn.innerHTML = '<i class="rb-action-sword"></i>Atacar';
                     btn.disabled = !canChoose || !attackerReady || directLocked;
                     btn.title = directLocked
                         ? "Dano direto bloqueado no primeiro turno. Encerre o turno para o bot responder."
+                        : attackRisk && attackRisk.tone === "losing"
+                            ? "Ataque arriscado: alta chance de perder a unidade."
+                            : attackRisk && attackRisk.tone === "risky"
+                                ? "Ataque equilibrado: troca provável."
                         : attackerReady
                         ? "Ataca o monstro inimigo ou diretamente se o campo adversário estiver vazio."
                         : "Esse monstro já atacou neste turno.";
                 } else {
-                    const emptySlot = RebirthStore.firstOpenFieldSlot("player");
-                    const isMonster = selected && RebirthMarkup.isMonster(selected);
+                    actionState = selected
+                        ? !canPay
+                            ? "no-mana"
+                            : noOpenSlot
+                                ? "no-slot"
+                                : "play-card"
+                        : "choose-card";
                     btn.innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Invocar" : "Jogar"}${selected ? ` ${cost}` : ""}`;
-                    btn.disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || (isMonster && emptySlot < 0);
+                    btn.disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || noOpenSlot;
                     if (!RebirthStore.selectedInstanceId) {
                         btn.title = "Escolha uma carta da mão primeiro.";
-                    } else if (isMonster && emptySlot < 0) {
+                    } else if (noOpenSlot) {
                         btn.title = "Sem slot livre no seu campo.";
                     } else if (!canPay) {
                         btn.title = `Sem mana suficiente — precisa de ${cost}.`;
@@ -2022,6 +2242,33 @@
                         btn.title = isMonster ? "Invoca a carta selecionada." : "Joga a carta selecionada.";
                     }
                 }
+            }
+            const actionCopy = window.RebirthHotfixUI && typeof window.RebirthHotfixUI.actionCopy === "function"
+                ? window.RebirthHotfixUI.actionCopy({
+                    state,
+                    selected,
+                    selectedAttacker,
+                    risk: attackRisk,
+                    cost,
+                    energy,
+                    canPay,
+                    noOpenSlot,
+                    pending: RebirthStore.pending,
+                    directLocked,
+                    attackerReady
+                })
+                : selectedAttacker
+                    ? "Attack enemy unit."
+                    : selected
+                        ? `Play ${selected.name}.`
+                        : "Choose a card first.";
+            RebirthDom.setText("primary-action-copy", actionCopy);
+            RebirthDom.setText("action-selected-card", selectedAttacker ? selectedAttacker.name : selected ? selected.name : "Choose a card");
+            RebirthDom.setText("action-mana-label", `Mana ${energy}/${Number((state.player && state.player.max_energy) || energy)}`);
+            const actionBar = RebirthStore.elements["rebirth-action-bar"];
+            if (actionBar) {
+                actionBar.dataset.actionState = actionState;
+                actionBar.dataset.riskTone = attackRisk ? attackRisk.tone : "none";
             }
             // Highlight turn advance when no card or ready attacker can act.
             const fieldCards = RebirthStore.fieldCards("player");
@@ -2145,6 +2392,7 @@
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.start, {
                     tutorial: RebirthStore.guidedFirstMatch
                 });
+                RebirthStore.abandonmentSentForMatch = null;
                 RebirthStore.selectedInstanceId = null;
                 RebirthStore.reward = null;
                 this.applyState(payload.state);
@@ -2457,6 +2705,28 @@
     const RebirthInput = {
         bind() {
             this.bindLogToggle();
+            window.addEventListener("pagehide", () => {
+                const state = RebirthStore.state;
+                const endpoint = RebirthConfig.endpoints.telemetry;
+                if (!endpoint || !state || state.is_finished || RebirthStore.abandonmentSentForMatch === state.match_id) {
+                    return;
+                }
+                RebirthStore.abandonmentSentForMatch = state.match_id;
+                window.fetch(endpoint, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    keepalive: true,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Rebirth-CSRF": window.REBIRTH_CSRF || ""
+                    },
+                    body: JSON.stringify({
+                        event_type: "match_abandoned",
+                        match_id: state.match_id,
+                        reason: "pagehide"
+                    })
+                }).catch(() => {});
+            });
 
             document.querySelectorAll("[data-new-match]").forEach((button) => {
                 button.addEventListener("click", () => {

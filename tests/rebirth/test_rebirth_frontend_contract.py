@@ -151,11 +151,11 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v67_PRODUCT_FLOW-6";' in service_worker
-    assert '"version": "v67_PRODUCT_FLOW-6"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v67_PRODUCT_FLOW-6"' in art_contract
+    assert 'const CACHE_NAME = "v72_FIRST_DUEL-1";' in service_worker
+    assert '"version": "v72_FIRST_DUEL-1"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v72_FIRST_DUEL-1"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
-    assert r"v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW)" in service_worker
+    assert r"v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL)" in service_worker
     assert r"rebirth(?:[-_].*)?" in service_worker
     assert "key !== CACHE_NAME && REBIRTH_CACHE_RE.test(key)" in service_worker
     assert 'stableAsset("/static/css/rebirth.css")' in service_worker
@@ -340,7 +340,7 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=v67_PRODUCT_FLOW-6" in combined
+    assert "v=v71_PRODUCT_READINESS-6" in combined
     assert "v=rebirth-058" not in combined
     assert "v=rebirth-057" not in combined
     assert "v=rebirth-056" not in combined

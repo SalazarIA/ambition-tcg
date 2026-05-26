@@ -152,6 +152,7 @@ def public_state(match):
         "result": deepcopy(match.get("result")),
         "winner": match.get("winner"),
         "is_finished": bool(match.get("is_finished")),
+        "first_duel": bool(match.get("first_duel", False)),
         "replay_audio_muted_mode": bool(match.get("replay_audio_muted_mode", False)),
         "resolution_context": resolution_context(match),
         "checkpoint": deepcopy((match.get("checkpoints") or [None])[-1]),

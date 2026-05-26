@@ -32,6 +32,15 @@ BOT_PERSONALITIES = {
         "copy": "Busca viradas por habilidades, finalizações e janelas de pressão.",
         "policy": "prefere cartas de virada por habilidade e depois a menor vitória limpa",
     },
+    # Primeiro duelo: bot intencionalmente comete erro tático invocando a carta
+    # mais fraca da mão e nunca aciona counter_window. Garante que o jogador
+    # novo tenha uma "leitura óbvia" para vencer.
+    "novice": {
+        "id": "novice",
+        "name": "Bot Iniciante",
+        "copy": "Recém-treinado. Comete erros de leitura e abre janelas claras de contra-ataque.",
+        "policy": "invoca a carta mais leve da mão e ignora janelas de counter",
+    },
 }
 
 ABILITY_PRIORITIES = {
@@ -629,6 +638,25 @@ def choose_opportunist(bot_hand, player_card, **context):
     return sorted(bot_hand, key=key)[-1]
 
 
+def choose_novice(bot_hand, player_card, **context):
+    """Picks the weakest viable card in hand — by design.
+
+    Goal is a scripted-feeling "enemy mistake" on the very first duel. We sort
+    ascending by attack, so the bot summons a low-pressure body that the
+    player's stacked opener can usually trade up against."""
+
+    def key(card):
+        return (
+            card_attack(card),
+            ability_priority(card),
+            card_guard(card),
+            card["name"],
+        )
+
+    # asc sort → first card is the weakest
+    return sorted(bot_hand, key=key)[0]
+
+
 def choose_projected_counter(bot_hand, player_card, **context):
     def key(card):
         combat_context = _combat_context(context)
@@ -666,6 +694,9 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
         "defensive": 0.45,
         "aggressive": 0.45,
         "opportunist": 0.85,
+        # Novice nunca abre janela de counter — primeira partida não pode
+        # punir o jogador com leituras avançadas.
+        "novice": 0.0,
     }
     source = "|".join(
         [
@@ -727,7 +758,10 @@ def resolve_bot_decision_payload(payload):
         "player_hp": int(context.get("player_hp", 30) or 0),
     }
     match_id = context.get("match_id")
-    if counter_window(profile_id, bot_hand, player_card, turn=decision_context["turn"], match_id=match_id):
+    if profile_id == "novice":
+        # novice ignora counter window e simplesmente joga sua menor carta
+        choice = choose_novice(bot_hand, player_card, **decision_context)
+    elif counter_window(profile_id, bot_hand, player_card, turn=decision_context["turn"], match_id=match_id):
         choice = choose_projected_counter(bot_hand, player_card, **decision_context)
     elif profile_id == "aggressive":
         choice = choose_aggressive(bot_hand, player_card, **decision_context)
