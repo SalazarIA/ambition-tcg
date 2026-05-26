@@ -435,11 +435,31 @@ class RebirthRepository:
         if self.backend == "postgresql":
             status = validate_schema(self.engine)
             if not status.get("ok"):
-                raise RebirthPersistenceError(
-                    "O schema PostgreSQL do Rebirth nao esta migrado.",
-                    "database_schema_invalid",
-                    status=503,
-                )
+                # Self-heal: tenta upgrade automático ANTES de falhar a request.
+                # Resolve casos onde Render starter ignora preDeployCommand e o
+                # auto-bootstrap do app.py falhou silenciosamente.
+                try:
+                    from services.rebirth_schema import upgrade_schema
+
+                    _persistence_logger.warning(
+                        "ensure_schema detectou schema atrasado (version=%s, missing=%s) — disparando upgrade",
+                        status.get("version"),
+                        status.get("missing_tables"),
+                    )
+                    upgrade_schema(self.database_url)
+                    status = validate_schema(self.engine)
+                    _persistence_logger.warning(
+                        "ensure_schema self-heal concluído (version=%s)",
+                        status.get("version"),
+                    )
+                except Exception:
+                    _persistence_logger.exception("ensure_schema self-heal falhou")
+                if not status.get("ok"):
+                    raise RebirthPersistenceError(
+                        "O schema PostgreSQL do Rebirth nao esta migrado.",
+                        "database_schema_invalid",
+                        status=503,
+                    )
             return
         with self.connect() as db:
             db.executescript(
