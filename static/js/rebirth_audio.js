@@ -83,21 +83,19 @@
         }
 
         eventKey(event, soundKey) {
-            return [
-                soundKey,
-                event.event_id || event.id || "",
-                event.effect_chain_id || "",
-                event.replay_frame || "",
-                event.sequence_id || ""
-            ].join(":");
+            // Dedup por chain de efeito: chains longas (até 15 eventos) reproduzem
+            // um único impacto por janela do debounce. Sem effect_chain_id, cai
+            // para soundKey puro como fallback estável.
+            const chain = event.effect_chain_id || "";
+            return chain ? `${soundKey}:${chain}` : soundKey;
         }
 
         shouldPlay(event, soundKey) {
             if (this.replayAudioMutedMode) return false;
             const key = this.eventKey(event, soundKey);
             const now = window.performance && window.performance.now ? window.performance.now() : Date.now();
-            const previous = this.lastPlayed.get(key) || 0;
-            if (now - previous < this.debounceMs) return false;
+            const previous = this.lastPlayed.get(key);
+            if (previous !== undefined && now - previous < this.debounceMs) return false;
             this.lastPlayed.set(key, now);
             if (this.lastPlayed.size > 80) {
                 const trim = Array.from(this.lastPlayed.keys()).slice(0, 24);

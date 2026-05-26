@@ -193,6 +193,50 @@ def remaining_damage_vector(bot_battlefield, *, excluded_attacker=None):
     }
 
 
+# v69: Breakthrough threat awareness. O engine concede até +2 de dano direto
+# ao herói quando o attack supera a guard do defender (services/rebirth_engine.py:1109).
+# A heurística ignorava esse vazamento, então defensive/aggressive deixavam Bramblehorn
+# Knight encadear pressão hero. Esta função estima a pressão por ataque
+# adversário sobre uma pool de guard agregada, capada no mesmo teto do engine.
+BREAKTHROUGH_CAP = 2
+
+
+def breakthrough_potential(opponent_card, defender_guard_pool):
+    """Estima hero damage que opponent_card causaria se atacasse contra a pool agregada de guards."""
+    if not opponent_card:
+        return 0
+    atk = card_attack(opponent_card)
+    if atk <= 0:
+        return 0
+    pool = max(0, int(defender_guard_pool or 0))
+    excess = atk - pool
+    return max(0, min(BREAKTHROUGH_CAP, excess))
+
+
+def opponent_breakthrough_pressure(opponent_battlefield, defender_battlefield, *, excluded_defender=None):
+    """Pressão total de Breakthrough do board oponente contra a pool de defenders.
+
+    Pareia cada attacker oponente com o maior blocker disponível; sobrando attackers,
+    cada um contribui com o teto de breakthrough contra guard zero.
+    """
+    excluded_key = _card_identity(excluded_defender) if excluded_defender else None
+    defender_pool = sorted(
+        (
+            current_guard(card)
+            for card in defender_battlefield or []
+            if card and _card_identity(card) != excluded_key and current_guard(card) > 0
+        ),
+        reverse=True,
+    )
+    pressure = 0
+    for opponent in opponent_battlefield or []:
+        if not opponent:
+            continue
+        blocker = defender_pool.pop(0) if defender_pool else 0
+        pressure += breakthrough_potential(opponent, blocker)
+    return pressure
+
+
 def attack_utility_projection(
     attacker,
     target,
@@ -269,10 +313,36 @@ def attack_utility_projection(
     if high_tier_suicide and not lethal_window:
         utility -= 100000
 
+    # v69: bônus/penalidade por Breakthrough threat. defender_guard_pool é a pool de
+    # blockers do bot disponível APÓS este ataque (descontando o próprio attacker, que
+    # fica exhausto). Se target sobreviver, vamos pagar essa pressão no próximo turno
+    # do player; se cair, o board fica mais limpo pra absorver os demais.
+    defender_guard_pool = sum(
+        current_guard(card)
+        for card in (bot_battlefield or [])
+        if card and _card_identity(card) != _card_identity(attacker) and current_guard(card) > 0
+    )
+    target_breakthrough = breakthrough_potential(target, defender_guard_pool)
+    breakthrough_reason = None
+    if target_breakthrough > 0:
+        if target_destroyed:
+            utility += target_breakthrough * 40
+            breakthrough_reason = "neutralize_breakthrough"
+        else:
+            utility -= target_breakthrough * 15
+            breakthrough_reason = "leaves_breakthrough_alive"
+
+    reason = (
+        "lethal_window" if lethal_window
+        else "avoid_future_lethal" if future_lethal_risk
+        else "refuse_high_tier_suicide" if not allowed
+        else breakthrough_reason or "trade_value"
+    )
+
     return {
         "allowed": allowed,
         "utility": utility,
-        "reason": "lethal_window" if lethal_window else ("avoid_future_lethal" if future_lethal_risk else ("refuse_high_tier_suicide" if not allowed else "trade_value")),
+        "reason": reason,
         "outcome": projection["outcome"],
         "damage_dealt": projection["damage_dealt"],
         "damage_taken": projection["damage_taken"],
@@ -280,6 +350,7 @@ def attack_utility_projection(
         "target_destroyed": target_destroyed,
         "symmetric_suicide": symmetric_suicide,
         "remaining_damage": remaining_damage,
+        "breakthrough_pressure": target_breakthrough,
     }
 
 
