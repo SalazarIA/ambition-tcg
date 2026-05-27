@@ -2325,10 +2325,21 @@
             const context = RebirthStore.state && RebirthStore.state.resolution_context;
             if (!context) return;
             RebirthDom.setText("priority-label", `Prioridade: ${context.priority_label || "Resolvida"}`);
+            const chainEventCount = Number(context.chain_event_count || 0) || 0;
             RebirthDom.setText(
                 "chain-label",
-                context.chain_id ? `Cadeia ${context.chain_id} · ${context.chain_event_count || 0}` : "Sem cadeia ativa"
+                context.chain_id ? `Cadeia ${context.chain_id} · ${chainEventCount}` : "Sem cadeia ativa"
             );
+            const chainLabel = RebirthStore.elements["chain-label"];
+            if (chainLabel) {
+                let intensity = "idle";
+                if (context.chain_id && chainEventCount >= 8) {
+                    intensity = "heavy";
+                } else if (context.chain_id && chainEventCount >= 4) {
+                    intensity = "rising";
+                }
+                chainLabel.dataset.intensity = intensity;
+            }
             RebirthDom.setText("interrupt-label", context.interrupt_label || "Janela fechada");
             const interrupt = RebirthStore.elements["interrupt-label"];
             if (interrupt) {

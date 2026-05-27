@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "rebirth",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/Users/lucassilverio/Desktop/Ambition/.venv/bin/python",
       "runtimeArgs": ["app.py"],
       "port": 8080,
       "cwd": "/Users/lucassilverio/Desktop/Ambition"

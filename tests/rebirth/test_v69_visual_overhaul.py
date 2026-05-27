@@ -78,6 +78,22 @@ def test_combat_impact_class_toggling_stays_short_and_transform_only():
     assert "eventPriority(event, soundKey)" in audio
 
 
+def test_v73_chain_label_intensity_signals_long_resolutions():
+    css = read("static/css/rebirth.css")
+    js = read("static/js/rebirth.js")
+
+    for token in [
+        '#chain-label[data-intensity="rising"]',
+        '#chain-label[data-intensity="heavy"]',
+        "rb-chain-heavy-pulse",
+    ]:
+        assert token in css, f"missing CSS token: {token}"
+    assert "prefers-reduced-motion" in css
+    assert "chainLabel.dataset.intensity = intensity" in js
+    assert "chainEventCount >= 8" in js
+    assert "chainEventCount >= 4" in js
+
+
 def test_visual_pass_does_not_touch_authoritative_replay_or_heavy_css():
     combined_frontend = "\n".join(
         [
