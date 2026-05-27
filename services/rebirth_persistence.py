@@ -830,6 +830,44 @@ class RebirthRepository:
             )
         return {"event_type": event_type, "recorded": True}
 
+    def query_telemetry_events(self, event_types=None, *, limit=None, since=None):
+        self.ensure_schema()
+        clauses = []
+        params = []
+        if event_types:
+            placeholders = ",".join("?" for _ in event_types)
+            clauses.append(f"event_type IN ({placeholders})")
+            params.extend(str(name).strip().lower() for name in event_types)
+        if since:
+            clauses.append("created_at >= ?")
+            params.append(since)
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        suffix = "ORDER BY id DESC"
+        if limit is not None:
+            suffix += " LIMIT ?"
+            params.append(int(limit))
+        with self.connect() as db:
+            rows = db.execute(
+                f"SELECT id, user_id, event_type, event_json, created_at FROM telemetry_events {where} {suffix}",
+                params,
+            ).fetchall()
+        events = []
+        for row in rows:
+            try:
+                payload = json.loads(row["event_json"]) if row["event_json"] else {}
+            except (TypeError, ValueError):
+                payload = {}
+            events.append(
+                {
+                    "id": int(row["id"]),
+                    "user_id": row["user_id"],
+                    "event_type": row["event_type"],
+                    "payload": payload,
+                    "created_at": row["created_at"],
+                }
+            )
+        return events
+
     def _claim_economy_idempotency(self, db, user_id, *, key, scope, reference_id=None, metadata=None, now=None):
         now = now or utc_now()
         metadata = dict(metadata or {})

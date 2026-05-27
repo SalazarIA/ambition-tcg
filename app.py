@@ -479,6 +479,13 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
         for event in events
         if event.get("effect_chain_id")
     }
+    chain_lengths = {}
+    for event in events:
+        chain_id = event.get("effect_chain_id")
+        if chain_id:
+            chain_lengths[chain_id] = chain_lengths.get(chain_id, 0) + 1
+    max_chain_length = max(chain_lengths.values()) if chain_lengths else 0
+    bot_profile_id = (match.get("bot_profile") or {}).get("id") or match.get("bot_profile_id")
     payload = {
         "match_id": match_id,
         "turn": int(match.get("turn", 0) or 0),
@@ -490,6 +497,9 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
         "bot_hp": int((match.get("bot") or {}).get("hp", 0) or 0),
         "event_count": len(events),
         "chain_count": len(chain_ids),
+        "max_chain_length": max_chain_length,
+        "bot_profile_id": bot_profile_id,
+        "first_duel": bool(match.get("first_duel")),
         "decision_elapsed_ms": elapsed_ms,
         "campaign_version": match.get("campaign_version"),
         "campaign_node": match.get("campaign_node"),
