@@ -31,6 +31,15 @@ def _initial_match_from_envelope(envelope: Dict[str, Any]) -> Dict[str, Any]:
         bot_profile_id=initial.get("bot_profile_id"),
         runtime_mode=DETERMINISTIC_RUNTIME_MODE,
         apply_reducers_inline=True,
+        bot_card_ids=initial.get("bot_card_ids") or None,
+        player_hp=initial.get("player_hp"),
+        bot_hp=initial.get("bot_hp"),
+        campaign_version=initial.get("campaign_version"),
+        campaign_node=initial.get("campaign_node"),
+        campaign_attempt=initial.get("campaign_attempt"),
+        campaign_modifiers=initial.get("campaign_modifiers"),
+        campaign_presentation=initial.get("campaign_presentation"),
+        campaign_advice=initial.get("campaign_advice"),
     )
     match["seed"] = str(envelope.get("display_seed", "") or "")
     return match

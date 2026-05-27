@@ -123,6 +123,24 @@ class EvolveDuplicateCommand(RebirthCommand):
         return {"card_id": self.card_id}
 
 
+@dataclass(frozen=True)
+class FuseFieldPairCommand(RebirthCommand):
+    player_id: Optional[str] = None
+    source_instance_a: Optional[str] = None
+    source_instance_b: Optional[str] = None
+
+    @property
+    def command_type(self) -> str:
+        return "FUSE_FIELD_PAIR"
+
+    def as_payload(self) -> Dict[str, Any]:
+        return {
+            "player_id": self.player_id,
+            "source_instance_a": self.source_instance_a,
+            "source_instance_b": self.source_instance_b,
+        }
+
+
 class CommandDispatcher:
     """Single operational entrypoint for authoritative Rebirth commands."""
 
@@ -154,6 +172,13 @@ class CommandDispatcher:
                     return rebirth_engine.next_turn(match)
                 if isinstance(command, EvolveDuplicateCommand):
                     return rebirth_engine.evolve_duplicate(match, command.card_id)
+                if isinstance(command, FuseFieldPairCommand):
+                    return rebirth_engine.resolve_labs_fusion(
+                        match,
+                        player_id=command.player_id,
+                        source_instance_a=command.source_instance_a,
+                        source_instance_b=command.source_instance_b,
+                    )
                 raise RebirthError(f"Comando não suportado: {command.command_type}", "unsupported_command")
 
             profiler = current_profiler()

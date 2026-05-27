@@ -4,23 +4,22 @@ Ambitionz Rebirth is the active Ambitionz MVP: a fast, single-screen monster
 duel where each side builds a three-slot battlefield and resolves direct,
 tactile clashes through the Rebirth rules engine.
 
-The previous Arena, Ascension, BE2, economy, progression, shop, collection and
-deck-builder product surfaces are retired from the active runtime. They remain
-in the repository only as historical context while Rebirth becomes the official
-product path.
+The previous Arena, Ascension and BE2 product surfaces are retired from the
+active runtime. Rebirth-native campaign, economy, progression, shop,
+collection and deck-building surfaces are part of the official product path.
 
 ## Active Stack
 
 - Python
 - Flask
-- PostgreSQL persistence through synchronous SQLAlchemy + psycopg
+- PostgreSQL persistence through the synchronous Rebirth repository
 - Vanilla HTML/CSS/JavaScript
 - PWA manifest and service worker
 - PostgreSQL-authoritative authenticated match state with an in-process hot cache
 - Command/event log on Rebirth match state with state hashes
 - Deterministic replay envelope, canonical state hash and compressed snapshots
 - Match history and economy ledger persisted for signed-in accounts
-- 100-card Common/Uncommon catalog with WebP art, stable ability keys and engine-backed effects
+- 103-card catalog, including three Legendary cards, with WebP art, stable ability keys and engine-backed effects
 - Defensive, aggressive and opportunist bot profiles
 - Count-based loadout editor, match reward moments and deterministic Season 0 Balance Lab
 - Self-service support export/reset and token-protected admin grants
@@ -35,6 +34,7 @@ or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 
 - `GET /` - Rebirth home
 - `GET /rebirth` - playable Rebirth MVP
+- `GET /rebirth/campaign` - ten-encounter PvE campaign
 - `GET /rebirth/account` - Rebirth-native login/auth plan
 - `GET /rebirth/collection` - collection and loadout preview
 - `GET /rebirth/shop` - no-payment booster demo
@@ -45,6 +45,7 @@ or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 - `GET /rebirth/onboarding` - onboarding/tutorial
 - `GET /rebirth/balance` - balance and bot simulation
 - `GET /rebirth/support` - account export/reset and admin safety notes
+- `GET /rebirth/lab` - Rebirth Lab feature surface
 - `GET /rebirth/release` - release candidate hygiene
 - `GET /health` - deploy health JSON
 - `GET /manifest.webmanifest`
@@ -53,8 +54,12 @@ or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 ## Active APIs
 
 - `POST /api/rebirth/start`
+- `GET /api/rebirth/campaign`
+- `POST /api/rebirth/campaign/start`
 - `POST /api/rebirth/play-card`
+- `POST /api/rebirth/attack`
 - `POST /api/rebirth/evolve`
+- `POST /api/labs/fusion`
 - `POST /api/rebirth/next-turn`
 - `GET /api/rebirth/shell`
 - `GET /api/rebirth/session`
@@ -67,6 +72,9 @@ or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 - `GET /api/rebirth/collection`
 - `POST /api/rebirth/loadout`
 - `GET /api/rebirth/shop`
+- `GET /api/rebirth/market/offers`
+- `POST /api/rebirth/market/list`
+- `POST /api/rebirth/market/buy`
 - `POST /api/rebirth/booster/open`
 - `GET /api/rebirth/progression`
 - `GET /api/rebirth/profile`
@@ -97,7 +105,8 @@ password from the Rebirth profile page.
 
 ## Starter Card Set
 
-Rebirth Foundation v58 establishes the optimized browser card pipeline.
+Rebirth establishes an optimized browser card pipeline across the 103-card
+current catalog.
 Every active card now has:
 
 - a WebP card image served on demand rather than preloading the full catalog;
@@ -106,12 +115,11 @@ Every active card now has:
 - a consistent evolution contract where evolved cards are tier 2 and are not in
   the default starter decks.
 
-The card catalog is constrained to `COMMON` and `UNCOMMON` rarity for the
-foundation economy. Signature premium portraits remain in the manifest as
-lightweight WebP references.
+The foundation pool is `COMMON` and `UNCOMMON`; three `LEGENDARY` contracts
+now provide signature chase cards with premium WebP references.
 
 Retired browser routes such as `/arena`, `/training`, `/collection`,
-`/deck-builder`, `/shop`, `/missions`, `/progression`, `/campaign`,
+`/deck-builder`, `/shop`, `/missions`, `/progression`,
 `/tutorial`, `/profile`, `/inventory`, `/economy` and `/match-history` redirect to
 `/rebirth`.
 

@@ -9,11 +9,17 @@
         return new Promise((resolve) => window.setTimeout(resolve, Math.max(0, Number(ms || 0))));
     }
 
+    function nextFrame(callback) {
+        const frame = window.requestAnimationFrame || ((fn) => window.setTimeout(fn, 16));
+        frame(callback);
+    }
+
     function addRestartedClass(node, className, duration) {
         if (!node || reducedMotion()) return;
         node.classList.remove(className);
-        void node.offsetWidth;
-        node.classList.add(className);
+        nextFrame(() => {
+            if (node.isConnected !== false) node.classList.add(className);
+        });
         window.setTimeout(() => {
             node.classList.remove(className);
         }, Math.max(80, Number(duration || 420)));

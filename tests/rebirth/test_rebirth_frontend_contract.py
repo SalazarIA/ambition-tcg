@@ -192,6 +192,30 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     assert "self.skipWaiting();" in service_worker
 
 
+def test_rebirth_combat_guidance_stays_in_pt_br():
+    ui = read("static/js/rebirth_ui.js")
+    arena = read("static/js/rebirth.js")
+    combined = ui + arena
+
+    for expected in (
+        "Vantagem forte",
+        "Troca provável",
+        "Ataque direto bloqueado até o bot responder.",
+        "Jogue ",
+    ):
+        assert expected in combined
+
+    for forbidden in (
+        "Strong advantage",
+        "Trade likely",
+        "High chance to lose unit",
+        "Direct attack locked until bot responds.",
+        "Choose a card first.",
+        "Attack enemy unit.",
+    ):
+        assert forbidden not in combined
+
+
 def test_rebirth_js_uses_json_api_and_card_art_contract():
     js = read("static/js/rebirth.js")
 

@@ -38,16 +38,16 @@
         if (!attacker) {
             return {
                 tone: "neutral",
-                label: "Select attacker",
-                copy: "Choose a ready unit first.",
+                label: "Selecione o atacante",
+                copy: "Escolha primeiro uma unidade pronta.",
                 score: 0
             };
         }
         if (!defender) {
             return {
                 tone: "favorable",
-                label: "Strong advantage",
-                copy: "Open lane. Direct pressure is available.",
+                label: "Vantagem forte",
+                copy: "Linha aberta. Pressão direta disponível.",
                 score: 4
             };
         }
@@ -63,23 +63,23 @@
         if (breakMargin >= 2 && survivalMargin >= 0) {
             return {
                 tone: "favorable",
-                label: "Strong advantage",
-                copy: cardName(attacker, "Your unit") + " is favored into " + cardName(defender, "the enemy") + ".",
+                label: "Vantagem forte",
+                copy: cardName(attacker, "Sua unidade") + " tem vantagem contra " + cardName(defender, "o inimigo") + ".",
                 score
             };
         }
         if (breakMargin >= 0 && survivalMargin >= -2) {
             return {
                 tone: "risky",
-                label: "Trade likely",
-                copy: cardName(attacker, "Your unit") + " can trade, but may lose guard.",
+                label: "Troca provável",
+                copy: cardName(attacker, "Sua unidade") + " pode trocar, mas deve perder Guarda.",
                 score
             };
         }
         return {
             tone: "losing",
-            label: "High chance to lose unit",
-            copy: cardName(defender, "Enemy unit") + " has the better clash profile.",
+            label: "Alto risco de perder",
+            copy: cardName(defender, "A unidade inimiga") + " leva vantagem no confronto.",
             score
         };
     }
@@ -92,20 +92,20 @@
         const cost = number(context.cost, 0);
         const energy = number(context.energy, 0);
 
-        if (state.is_finished) return "Match ended. Start another duel.";
-        if (state.phase === "result") return "Resolved - advance the turn.";
-        if (context.pending) return "Resolving action...";
+        if (state.is_finished) return "Partida encerrada. Inicie outro duelo.";
+        if (state.phase === "result") return "Resolvido - avance o turno.";
+        if (context.pending) return "Resolvendo ação...";
         if (selectedAttacker) {
-            if (context.directLocked) return "Direct attack locked until bot responds.";
-            if (!context.attackerReady) return "This unit already acted.";
-            if (risk && risk.tone === "losing") return "Risky attack detected.";
-            if (risk && risk.tone === "risky") return "Trade likely.";
-            return "Attack enemy unit.";
+            if (context.directLocked) return "Ataque direto bloqueado até o bot responder.";
+            if (!context.attackerReady) return "Esta unidade já agiu.";
+            if (risk && risk.tone === "losing") return "Ataque arriscado detectado.";
+            if (risk && risk.tone === "risky") return "Troca provável.";
+            return "Ataque a unidade inimiga.";
         }
-        if (!selected) return "Choose the best card first.";
-        if (!context.canPay) return "Not enough mana.";
-        if (context.noOpenSlot) return "No monster slot open.";
-        return "Play " + cardName(selected).toUpperCase() + (cost ? " (" + cost + " mana)." : ".");
+        if (!selected) return "Escolha a melhor carta primeiro.";
+        if (!context.canPay) return "Mana insuficiente.";
+        if (context.noOpenSlot) return "Não há slot aberto para monstro.";
+        return "Jogue " + cardName(selected).toUpperCase() + (cost ? " (" + cost + " mana)." : ".");
     }
 
     function resultLine(state) {
@@ -116,13 +116,13 @@
         const outcome = String(result.outcome || "");
 
         if (outcome === "Victory") {
-            return cardName(player, "Your unit") + " broke " + cardName(bot, "enemy unit") + ".";
+            return cardName(player, "Sua unidade") + " destruiu " + cardName(bot, "a unidade inimiga") + ".";
         }
         if (outcome === "Defeat") {
-            return cardName(bot, "Enemy unit") + " destroyed " + cardName(player, "your unit") + ".";
+            return cardName(bot, "A unidade inimiga") + " destruiu " + cardName(player, "sua unidade") + ".";
         }
         if (outcome === "Clash") {
-            return cardName(player, "Your unit") + " traded with " + cardName(bot, "enemy unit") + ".";
+            return cardName(player, "Sua unidade") + " trocou com " + cardName(bot, "a unidade inimiga") + ".";
         }
         return result.message || "";
     }

@@ -1,26 +1,27 @@
 # Rebirth Release Status
 
-> Updated by **AAA Foundation v58** on 2026-05-23. Operational persistence,
-> asset and mobile guidance is defined in `docs/AAA_FOUNDATION_V58.md`.
+> Updated for the campaign-era roadmap pass on 2026-05-27. Operational
+> persistence, asset and mobile guidance is also defined in
+> `docs/AAA_FOUNDATION_V58.md`.
 
 ## Official Product State
 
 Ambitionz Rebirth is the only active Ambitionz runtime product.
 
-The active product is a Flask-served, vanilla-frontend, single-screen monster
-duel with Rebirth-native auth, PostgreSQL persistence, account collection, account
+The active product is a Flask-served, vanilla-frontend, three-slot monster
+duel with a ten-node PvE campaign, Rebirth-native auth, PostgreSQL persistence, account collection, account
 loadout, no-payment booster ownership, progression, onboarding, balance
 simulation, player profile/achievements, match history, economy ledger,
 support/admin tooling, auth hardening and release hygiene pages.
 
-The active catalog now spans 100 cards (80 monsters across Fire/Water/Earth/
-Shadow, 10 spells and 10 traps) with stable `ability_key` values, engine-backed
-effects, server-authored clash feedback and balance telemetry.
+The active catalog spans 103 cards (83 monsters, 10 spells and 10 traps),
+including three Legendary contracts, with stable `ability_key` values,
+engine-backed effects, server-authored clash feedback and balance telemetry.
 
-The retired Arena, Ascension, BE2, SocketIO, economy, progression, shop,
-collection and deck builder systems are not part of the runtime. Historical
-tests live under `tests/legacy_disabled` and are intentionally excluded from
-the release gate.
+The retired Arena, Ascension, BE2 and SocketIO systems are not part of the
+runtime. Rebirth-native economy, progression, shop, collection and deck
+builder surfaces are active. Historical tests live under
+`tests/legacy_disabled` and are intentionally excluded from the release gate.
 
 ## Active Runtime
 
@@ -38,12 +39,17 @@ the release gate.
 - `services/rebirth_persistence.py`
 - `services/rebirth_balance.py`
 - `services/rebirth_schema.py`
+- `services/rebirth_campaign.py`
 - `templates/index.html`
 - `templates/rebirth.html`
+- `templates/rebirth_campaign.html`
 - `templates/rebirth_product.html`
 - `templates/_rebirth_global_nav.html`
 - `static/css/rebirth.css`
 - `static/js/rebirth.js`
+- `static/js/rebirth_ui.js`
+- `static/js/rebirth_campaign.js`
+- `static/js/rebirth_boss_fx.js`
 - `static/js/rebirth_product.js`
 - `static/js/rebirth_global.js`
 - `static/js/pwa.js`
@@ -61,6 +67,7 @@ so test fixtures and persistence remain stable.
 
 - `GET /`
 - `GET /rebirth`
+- `GET /rebirth/campaign`
 - `GET /rebirth/account`
 - `GET /rebirth/collection`
 - `GET /rebirth/shop`
@@ -71,6 +78,7 @@ so test fixtures and persistence remain stable.
 - `GET /rebirth/onboarding`
 - `GET /rebirth/balance`
 - `GET /rebirth/support`
+- `GET /rebirth/lab`
 - `GET /rebirth/release`
 - `GET /health`
 - `GET /manifest.webmanifest`
@@ -78,16 +86,19 @@ so test fixtures and persistence remain stable.
 
 Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 `/training`, `/training-legacy`, `/collection`, `/deck-builder`, `/shop`,
-`/ranking`, `/leaderboard`, `/missions`, `/progression`, `/campaign`,
+`/ranking`, `/leaderboard`, `/missions`, `/progression`,
 `/tutorial`, `/profile`, `/how-to-play`, `/inventory`, `/economy` and
 `/match-history`.
 
 ## Active APIs
 
 - `POST /api/rebirth/start`
+- `GET /api/rebirth/campaign`
+- `POST /api/rebirth/campaign/start`
 - `POST /api/rebirth/play-card`
 - `POST /api/rebirth/attack`
 - `POST /api/rebirth/evolve`
+- `POST /api/labs/fusion`
 - `POST /api/rebirth/next-turn`
 - `GET /api/rebirth/shell`
 - `GET /api/rebirth/session`
@@ -100,6 +111,9 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `GET /api/rebirth/collection`
 - `POST /api/rebirth/loadout`
 - `GET /api/rebirth/shop`
+- `GET /api/rebirth/market/offers`
+- `POST /api/rebirth/market/list`
+- `POST /api/rebirth/market/buy`
 - `POST /api/rebirth/booster/open`
 - `GET /api/rebirth/progression`
 - `GET /api/rebirth/profile`
@@ -115,6 +129,7 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `GET /api/rebirth/support/export`
 - `POST /api/rebirth/support/reset`
 - `POST /api/rebirth/admin/grant`
+- `POST /api/rebirth/telemetry`
 
 State-changing Rebirth APIs require `X-Rebirth-CSRF` by default. Auth endpoints
 have a small in-memory rate limit. Password changes are available for signed-in
@@ -128,12 +143,13 @@ Retired API groups return JSON `410 legacy_disabled`:
 
 ## Gameplay Loop
 
-Each match is a head-to-head duel with one persistent battlefield slot per side.
+Each match is a head-to-head duel with three persistent battlefield slots per side.
 The contract is:
 
 1. **MAIN_PHASE / phase=choose** — Player may evolve duplicates, summon a
-   monster from hand (paying its mana cost), play a spell or arm a trap. Each
-   action is a separate API call.
+   monster from hand (paying its mana cost), play a spell, arm a trap, evolve
+   duplicates from hand or fuse adjacent matching field monsters. Each action
+   is an authoritative command and a separate API call.
 2. **COMBAT_PHASE** — After summoning, the player declares an attack with their
    battlefield monster. Combat resolves through the rules engine, comparing
    `effective_attack` (base + abilities). If the defender's `current_guard`
@@ -142,10 +158,11 @@ The contract is:
 3. **END_PHASE / phase=result** — Server records `last_clash`, ability events,
    damage and the `match_reward` payload (XP, level-up state, achievements,
    daily readiness). Player calls `next-turn` to advance.
-4. **Next turn** — Both players refill their energy to `min(10, turn)`, draw to
-   hand size and any surviving monsters become ready again.
+4. **Next turn** — Both players refill their energy to
+   `min(10, max(2, turn))`, draw to hand size and any surviving monsters become
+   ready again.
 
-Monsters are persistent on the field until destroyed. The "destroyed monsters
+Monsters are persistent on the field until destroyed or consumed by fusion. The "destroyed monsters
 linger on the field" bug from earlier releases is fixed by clearing
 `side["battlefield"]` of defeated cards before re-syncing the slot view.
 
@@ -194,8 +211,11 @@ Current Rebirth coverage includes:
 - support export/reset and admin token safety
 - defeated-monster cleanup regression (engine destruction bug)
 - mana curve playability (cheapest monster anchored in starter deck)
+- campaign unlock/reward/idempotency and boss presentation contracts
+- Labs field-fusion persistence and deterministic replay coverage
 
-Current local result: `82 passed`.
+Current verification is reported per roadmap pass; use `python3 -m pytest -q
+tests/rebirth` and explicitly run `-m e2e` before release.
 
 ## Security Headers
 
@@ -261,22 +281,23 @@ There is no payment processor and no retired economy runtime.
 - No real multiplayer.
 - No payment processor.
 - Admin grant support is MVP-only and requires `REBIRTH_ADMIN_TOKEN`.
-- No database persistence for live in-progress match state.
-- In-memory matches are lost on process restart or deploy.
+- Authenticated live in-progress match snapshots are recoverable from persisted
+  runtime state; guest in-progress matches remain memory-only.
 - One starter collection per account.
-- The active art manifest still covers only 13 of the 100 catalog cards
-  with bespoke PNG art; remaining cards fall back to procedurally generated
-  silhouettes.
+- The current asset directory exposes premium bespoke art for selected cards;
+  remaining catalog entries use optimized WebP deck art paths.
 - Browser screenshots are not committed as visual baselines yet.
-- The 2019-line `static/js/rebirth.js` is still a single IIFE and would benefit
+- The 3197-line `static/js/rebirth.js` is still a single IIFE and would benefit
   from a future modularization pass.
+- Current deterministic health checks still flag long matches, chain
+  readability and a large bot-profile difficulty spread.
 
 ## Next Steps
 
 - Expand bespoke card art beyond the original 13 silhouettes.
 - Modularize `static/js/rebirth.js` into testable units.
 - Add screenshot-based visual QA baselines for desktop/mobile `/rebirth`.
-- Tune defensive/opportunist bots and low-impact cards against
+- Tune the aggressive difficulty spike, long-match pacing and low-impact cards against
   `docs/REBIRTH_BALANCE_REPORT.md` plus real play sessions.
 - Add real payment/economy only if a future product decision asks for it.
 - Keep retired APIs and routes retired unless a future product decision says

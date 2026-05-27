@@ -86,3 +86,15 @@ def test_api_start_without_flag_keeps_standard_duel(client):
     assert state["bot"]["hp"] == STARTING_HP
     # Novice should NOT appear unless explicitly requested.
     assert state["bot_profile"]["id"] in {"defensive", "aggressive", "opportunist"}
+
+
+def test_new_account_followup_duels_use_defensive_learning_curve(client):
+    client.post(
+        "/api/rebirth/auth/register",
+        json={"username": "curve_user", "email": "curve-user@example.com", "password": "password123"},
+    )
+
+    state = client.post("/api/rebirth/start", json={"seed": "post-guide-curve"}).get_json()["state"]
+
+    assert state["first_duel"] is False
+    assert state["bot_profile"]["id"] == "defensive"

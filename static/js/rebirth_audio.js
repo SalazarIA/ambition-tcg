@@ -13,6 +13,7 @@
         SHIELD_BROKEN: "shield",
         UNIT_DESTROYED: "heavy",
         MONSTER_DESTROYED: "heavy",
+        MONSTERS_FUSED: "evolution",
         EVOLUTION_COMPLETED: "evolution",
         UI_CLICK_CONFIRMED: "click"
     };
@@ -26,6 +27,8 @@
             this.buffers = new Map();
             this.preloadPromise = null;
             this.lastPlayed = new Map();
+            this.fusionExplosionKeys = new Set();
+            this.fusionExplosionLockUntil = 0;
             this.debounceMs = 90;
             this.replayAudioMutedMode = false;
             this.resumeOnGesture = this.resumeOnGesture.bind(this);
@@ -92,8 +95,36 @@
             return chain ? `${soundKey}:${chain}` : soundKey;
         }
 
+        fusionEventKey(event) {
+            const payload = event && event.payload ? event.payload : {};
+            return [
+                "fusion",
+                event && (event.event_id || event.id || event.sequence_id || event.replay_frame) || "",
+                payload.resulting_instance_id || "",
+                event && event.effect_chain_id || ""
+            ].join(":");
+        }
+
+        shouldPlayFusion(event) {
+            if (this.replayAudioMutedMode) return false;
+            const now = window.performance && window.performance.now ? window.performance.now() : Date.now();
+            const key = this.fusionEventKey(event);
+            if (this.fusionExplosionKeys.has(key)) return false;
+            if (now < this.fusionExplosionLockUntil) return false;
+            this.fusionExplosionKeys.add(key);
+            if (this.fusionExplosionKeys.size > 40) {
+                this.fusionExplosionKeys = new Set(Array.from(this.fusionExplosionKeys).slice(-24));
+            }
+            this.fusionExplosionLockUntil = now + 420;
+            return true;
+        }
+
         shouldPlay(event, soundKey) {
             if (this.replayAudioMutedMode) return false;
+            const eventType = String(event && (event.event_type || event.type) || "");
+            if (eventType === "MONSTERS_FUSED" && soundKey === "evolution") {
+                return this.shouldPlayFusion(event);
+            }
             const key = this.eventKey(event, soundKey);
             const now = window.performance && window.performance.now ? window.performance.now() : Date.now();
             const previous = this.lastPlayed.get(key);
@@ -126,7 +157,7 @@
 
         eventVolume(event, soundKey) {
             if (soundKey === "click") return 0.22;
-            if (soundKey === "evolution") return 0.46;
+            if (soundKey === "evolution") return 0.62;
             if (soundKey === "shield") return 0.38;
             const payload = event && event.payload ? event.payload : {};
             const heroDamage = payload.hero_damage || {};
@@ -139,9 +170,23 @@
             if (soundKey === "heavy") {
                 if (damage >= 5) return 0.48;
                 if (damage >= 2) return 0.4;
-                return 0.32;
+                return 0.38;
             }
             return 0.34;
+        }
+
+        eventPriority(event, soundKey) {
+            const eventType = String(event && (event.event_type || event.type) || "");
+            if (eventType === "MONSTERS_FUSED") return 0;
+            if (soundKey === "heavy") return 1;
+            if (soundKey === "shield") return 2;
+            if (soundKey === "evolution") return 3;
+            return 4;
+        }
+
+        eventDelayMs(eventType, soundKey, fallbackDelayMs) {
+            if (eventType === "MONSTERS_FUSED" || soundKey === "heavy") return 0;
+            return fallbackDelayMs;
         }
 
         observeEvents(events, options) {
@@ -149,15 +194,25 @@
             this.setReplayMutedMode(Boolean(options && options.replayAudioMutedMode));
             if (!list.length || this.replayAudioMutedMode) return;
             const delayMs = Math.max(0, Number(options && options.hitPauseMs || 0));
+            const fusionChains = new Set(
+                list
+                    .filter((event) => String(event.event_type || event.type || "") === "MONSTERS_FUSED")
+                    .map((event) => event.effect_chain_id)
+                    .filter(Boolean)
+            );
             list.sort((a, b) => {
                 const frameDelta = Number(a.replay_frame || a.sequence_id || a.id || 0) - Number(b.replay_frame || b.sequence_id || b.id || 0);
                 if (frameDelta) return frameDelta;
+                const priorityDelta = this.eventPriority(a, EVENT_AUDIO[String(a.event_type || a.type || "")])
+                    - this.eventPriority(b, EVENT_AUDIO[String(b.event_type || b.type || "")]);
+                if (priorityDelta) return priorityDelta;
                 return String(a.event_type || a.type || "").localeCompare(String(b.event_type || b.type || ""));
             }).forEach((event) => {
                 const eventType = String(event.event_type || event.type || "");
                 const soundKey = EVENT_AUDIO[eventType];
                 if (!soundKey || !this.shouldPlay(event, soundKey)) return;
-                this.play(soundKey, { delayMs, volume: this.eventVolume(event, soundKey) }).catch(() => false);
+                if (eventType !== "MONSTERS_FUSED" && fusionChains.has(event.effect_chain_id)) return;
+                this.play(soundKey, { delayMs: this.eventDelayMs(eventType, soundKey, delayMs), volume: this.eventVolume(event, soundKey) }).catch(() => false);
             });
         }
 

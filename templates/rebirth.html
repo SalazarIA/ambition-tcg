@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v72_FIRST_DUEL-1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v74_COMBAT_REWORK-4">
 </head>
 <body class="rb-page rb-game-page">
     {% include "_rebirth_global_nav.html" %}
@@ -41,11 +41,18 @@
                     <a class="rb-mark" href="{{ url_for('index') }}" aria-label="Início Ambitionz">A</a>
                     <div class="rb-hud-copy">
                         <span>Você</span>
-                        <div class="rb-hud-health">
-                            <i aria-hidden="true"></i>
-                            <strong id="player-hp">30</strong>
+                        <div class="rb-hud-health" data-health-side="player">
+                            <div class="rb-hp-meter rb-life-orb" data-health-state="stable" aria-hidden="true">
+                                <b id="player-hp-fill"></b>
+                                <span class="rb-life-orb__glass"></span>
+                                <span class="rb-life-orb__runes"></span>
+                            </div>
+                            <div class="rb-life-orb-readout">
+                                <i aria-hidden="true"></i>
+                                <strong id="player-hp">30</strong>
+                                <small>HP</small>
+                            </div>
                         </div>
-                        <div class="rb-hp-meter" aria-hidden="true"><b id="player-hp-fill"></b></div>
                         <div class="rb-zone-row" aria-label="Zonas do jogador">
                             <span>Mana <b id="player-energy">1</b>/<b id="player-max-energy">1</b></span>
                             <span id="player-deck-count">Baralho 0</span>
@@ -70,11 +77,18 @@
                 <div class="rb-hud-side rb-hud-bot">
                     <div class="rb-hud-copy">
                         <span>Bot</span>
-                        <div class="rb-hud-health">
-                            <i aria-hidden="true"></i>
-                            <strong id="bot-hp">30</strong>
+                        <div class="rb-hud-health" data-health-side="bot">
+                            <div class="rb-hp-meter rb-life-orb" data-health-state="stable" aria-hidden="true">
+                                <b id="bot-hp-fill"></b>
+                                <span class="rb-life-orb__glass"></span>
+                                <span class="rb-life-orb__runes"></span>
+                            </div>
+                            <div class="rb-life-orb-readout">
+                                <i aria-hidden="true"></i>
+                                <strong id="bot-hp">30</strong>
+                                <small>HP</small>
+                            </div>
                         </div>
-                        <div class="rb-hp-meter" aria-hidden="true"><b id="bot-hp-fill"></b></div>
                         <div class="rb-zone-row" aria-label="Zonas do bot">
                             <span>Mana <b id="bot-energy">1</b>/<b id="bot-max-energy">1</b></span>
                             <span id="bot-deck-count">Baralho 0</span>
@@ -187,6 +201,7 @@
                     <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
                     <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
                     <div id="progression-tease" class="rb-progression-tease" aria-live="polite" hidden></div>
+                    <div id="campaign-defeat-advice" class="rb-campaign-defeat-advice" aria-live="polite" hidden></div>
                 </div>
                 <div class="rb-result-actions" id="result-actions">
                     <button class="rb-button-primary rb-cta rb-rematch-cta" type="button" id="rematch-button" data-new-match hidden>
@@ -211,6 +226,7 @@
                  ocultos por padrão; o JS injeta conteúdo + classes ativas. -->
             <div class="vfx-evolution-stage" id="rebirth-evolution-stage" aria-hidden="true"></div>
             <div class="vfx-finale-overlay" id="rebirth-finale-overlay" role="status" aria-live="polite" aria-hidden="true"></div>
+            <div class="rb-boss-intro-overlay" id="rebirth-boss-intro" role="status" aria-live="polite" aria-hidden="true"></div>
         </main>
 
         <aside class="rb-desktop-rail rb-desktop-rail-right" aria-label="Guia da partida">
@@ -232,9 +248,11 @@
         window.REBIRTH_CSRF = "{{ csrf_token() }}";
         window.REBIRTH_ENDPOINTS = {
             start: "{{ url_for('api_rebirth_start') }}",
+            campaignStart: "{{ url_for('api_rebirth_campaign_start') }}",
             playCard: "{{ url_for('api_rebirth_play_card') }}",
             attack: "{{ url_for('api_rebirth_attack') }}",
             evolve: "{{ url_for('api_rebirth_evolve') }}",
+            labsFusion: "{{ url_for('api_labs_fusion') }}",
             nextTurn: "{{ url_for('api_rebirth_next_turn') }}",
             completeTutorial: "{{ url_for('api_rebirth_onboarding_complete') }}",
             verifyReceipt: "{{ url_for('api_rebirth_shop_verify_receipt') }}",
@@ -258,11 +276,12 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v72_FIRST_DUEL-1"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v72_FIRST_DUEL-1"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v=v72_FIRST_DUEL-1"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v=v72_FIRST_DUEL-1"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v=v72_FIRST_DUEL-1"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=v72_FIRST_DUEL-1"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v74_COMBAT_REWORK-4"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v74_COMBAT_REWORK-4"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v=v74_COMBAT_REWORK-4"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v=v74_COMBAT_REWORK-4"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v=v74_COMBAT_REWORK-4"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_boss_fx.js') }}?v=v75_CAMPAIGN_ERA-1"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=v74_COMBAT_REWORK-4"></script>
 </body>
 </html>

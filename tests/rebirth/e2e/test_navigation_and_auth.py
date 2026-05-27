@@ -22,6 +22,8 @@ from uuid import uuid4
 
 import pytest
 
+from services.rebirth_state import FIRST_DUEL_BOT_HP
+
 pytestmark = pytest.mark.e2e
 
 
@@ -176,7 +178,7 @@ def test_finale_overlay_does_not_block_new_match_action(page, live_server):
     )
 
     with page.expect_response(lambda response: "/api/rebirth/start" in response.url):
-        page.locator("[data-new-match]").first.click(timeout=5_000)
+        page.locator("[data-new-match]:visible").first.click(timeout=5_000)
 
     assert page.locator("#rebirth-finale-overlay").get_attribute("aria-hidden") == "true"
 
@@ -274,6 +276,6 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
         page.locator("#next-turn-button").click()
     after_bot = turn_info.value.json()["state"]
     assert after_bot["turn"] == 2
-    assert after_bot["bot"]["hp"] == 30
+    assert after_bot["bot"]["hp"] == FIRST_DUEL_BOT_HP
     assert after_bot["bot"]["battlefield"]
     page.locator("#bot-battlefield [data-target-instance]").first.wait_for(state="visible", timeout=10_000)

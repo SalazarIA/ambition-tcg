@@ -282,7 +282,7 @@
                             data-attack="{{ card.attack }}"
                             data-guard="{{ card.guard }}"
                         >
-                            <img src="{{ card.art }}" alt="Arte de {{ card.name }}">
+                            <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
                             <div>
                                 <span>Você tem x{{ card.owned_count }}</span>
                                 <strong>{{ card.name }}</strong>
@@ -302,7 +302,7 @@
             <section class="rb-product-card-grid" aria-label="Rebirth collection">
                 {% for card in page.cards %}
                     <article class="rb-product-card">
-                        <img src="{{ card.art }}" alt="Arte de {{ card.name }}">
+                        <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
                         <div>
                             <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
                             <h2>{{ card.name }}</h2>

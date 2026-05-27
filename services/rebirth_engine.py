@@ -11,6 +11,7 @@ from services.rebirth_effects import (
     PRIORITY_PASSIVE_TRIGGER,
     apply_legendary_passives,
     cleanup_defeated_units,
+    emit_monsters_fused,
     expire_statuses_for_trigger,
     resolve_effect_sequence,
     resolve_status_ticks,
@@ -54,6 +55,15 @@ def start_match(
     runtime_mode="singleplayer",
     apply_reducers_inline=None,
     first_duel=False,
+    bot_card_ids=None,
+    player_hp=None,
+    bot_hp=None,
+    campaign_version=None,
+    campaign_node=None,
+    campaign_attempt=None,
+    campaign_modifiers=None,
+    campaign_presentation=None,
+    campaign_advice=None,
 ):
     return create_match(
         seed=seed,
@@ -63,6 +73,15 @@ def start_match(
         runtime_mode=runtime_mode,
         apply_reducers_inline=apply_reducers_inline,
         first_duel=first_duel,
+        bot_card_ids=bot_card_ids,
+        player_hp=player_hp,
+        bot_hp=bot_hp,
+        campaign_version=campaign_version,
+        campaign_node=campaign_node,
+        campaign_attempt=campaign_attempt,
+        campaign_modifiers=campaign_modifiers,
+        campaign_presentation=campaign_presentation,
+        campaign_advice=campaign_advice,
     )
 
 
@@ -374,6 +393,14 @@ def _find_battlefield_card(side, instance_id):
         if card and card.get("instance_id") == instance_id:
             return index, card
     return None, None
+
+
+def _catalog_id(card):
+    return str(card.get("catalog_id") or card.get("id") or "")
+
+
+def _unit_hp(card):
+    return max(0, int(card.get("current_guard", card.get("hp", card.get("guard", 0))) or 0))
 
 
 def _battlefield_slots_available(side):
@@ -1367,6 +1394,121 @@ def _side_sequence(side):
         + (1 if side.get("played_card") else 0)
         + 1
     )
+
+
+def _labs_side_name(match, player_id):
+    raw = str(player_id or "").strip()
+    if raw in {"player", "bot"}:
+        return raw
+    owner_id = match.get("owner_user_id")
+    if owner_id is not None and raw == str(owner_id):
+        return "player"
+    raise RebirthError("player_id nao corresponde a um participante valido do laboratorio.", "invalid_labs_player")
+
+
+def _fusion_resulting_slot(slot_a, slot_b):
+    left = min(int(slot_a), int(slot_b))
+    right = max(int(slot_a), int(slot_b))
+    if right - left != 1:
+        raise RebirthError("As unidades precisam estar adjacentes para fundir.", "fusion_not_adjacent")
+    return 1 if left <= 1 <= right else left
+
+
+def _fusion_stats(material_a, material_b, resulting_card):
+    combined_attack = card_attack(material_a) + card_attack(material_b)
+    inherited_hp = max(_unit_hp(material_a), _unit_hp(material_b))
+    resulting_card["attack"] = combined_attack
+    resulting_card["power"] = combined_attack
+    resulting_card["base_attack"] = combined_attack
+    resulting_card["guard"] = inherited_hp
+    resulting_card["current_guard"] = inherited_hp
+    resulting_card["max_guard"] = inherited_hp
+    resulting_card["breakthrough"] = True
+    resulting_card["labs_fusion"] = True
+    resulting_card["passives"] = sorted(set(list(resulting_card.get("passives") or []) + ["BREAKTHROUGH"]))
+    resulting_card["ability_key"] = "breakthrough"
+    resulting_card["ability_name"] = "BREAKTHROUGH"
+    resulting_card["ability_text"] = "Dano excedente atravessa a Guarda no prototipo Rebirth Labs."
+    resulting_card["exhausted"] = False
+    resulting_card["has_attacked"] = False
+    resulting_card["has_acted"] = False
+    return {
+        "attack": combined_attack,
+        "power": combined_attack,
+        "hp": inherited_hp,
+        "guard": inherited_hp,
+        "current_guard": inherited_hp,
+        "max_guard": inherited_hp,
+        "passives": list(resulting_card["passives"]),
+    }
+
+
+def resolve_labs_fusion(match, *, player_id=None, source_instance_a=None, source_instance_b=None):
+    _require_command_dispatch(match)
+    if match.get("is_finished"):
+        raise RebirthError("A partida ja terminou.", "match_finished")
+    if not source_instance_a or not source_instance_b:
+        raise RebirthError("Informe source_instance_a e source_instance_b.", "missing_fusion_material")
+    if str(source_instance_a) == str(source_instance_b):
+        raise RebirthError("A fusao precisa de duas unidades diferentes.", "invalid_fusion_material")
+
+    side_name = _labs_side_name(match, player_id)
+    side = match[side_name]
+    slot_a, material_a = _find_battlefield_card(side, source_instance_a)
+    slot_b, material_b = _find_battlefield_card(side, source_instance_b)
+    if material_a is None or material_b is None:
+        raise RebirthError("As duas unidades precisam pertencer ao mesmo jogador e estar no campo.", "invalid_fusion_material")
+    if _unit_hp(material_a) <= 0 or _unit_hp(material_b) <= 0:
+        raise RebirthError("As duas unidades precisam estar vivas para fundir.", "fusion_material_defeated")
+    if _catalog_id(material_a) != _catalog_id(material_b):
+        raise RebirthError("A fusao exige duas criaturas identicas.", "fusion_catalog_mismatch")
+
+    resulting_slot = _fusion_resulting_slot(slot_a, slot_b)
+    source_catalog_id = _catalog_id(material_a)
+    try:
+        source_card = get_card(source_catalog_id)
+    except ValueError as exc:
+        raise RebirthError(str(exc), "invalid_card") from exc
+    resulting_catalog_id = source_card.get("evolution_id")
+    if not resulting_catalog_id:
+        raise RebirthError("Nao existe forma evoluida para esta fusao.", "fusion_target_missing")
+    try:
+        get_card(resulting_catalog_id)
+    except ValueError as exc:
+        raise RebirthError(str(exc), "fusion_target_missing") from exc
+
+    append_command(
+        match,
+        "FUSE_FIELD_PAIR",
+        actor=side_name,
+        payload={
+            "player_id": side_name,
+            "source_instance_a": source_instance_a,
+            "source_instance_b": source_instance_b,
+        },
+    )
+    resulting_card = create_card_instance(resulting_catalog_id, side_name, _side_sequence(side))
+    resulting_card["field_slot"] = resulting_slot
+    resulting_card["slot"] = resulting_slot + 1
+    resulting_card["fused_from"] = [material_a["instance_id"], material_b["instance_id"]]
+    resulting_card["fusion_material_catalog_ids"] = [source_catalog_id, _catalog_id(material_b)]
+    resulting_stats = _fusion_stats(material_a, material_b, resulting_card)
+    match["log"].append(
+        f"Turno {match['turn']:02d}   {material_a['name']} x2 explode em {resulting_card['name']}."
+    )
+    event = emit_monsters_fused(
+        match,
+        side_name=side_name,
+        material_cards=[material_a, material_b],
+        resulting_card=resulting_card,
+        resulting_slot=resulting_slot,
+        resulting_stats=resulting_stats,
+    )
+    return {
+        "event": deepcopy(event),
+        "resulting_card": deepcopy(resulting_card),
+        "resulting_stats": deepcopy(resulting_stats),
+    }
 
 
 def _evolution_choice(side, profile_id=None):

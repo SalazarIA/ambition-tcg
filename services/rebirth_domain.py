@@ -146,7 +146,7 @@ def _canonical_result(value: Any) -> Any:
 
 
 def canonical_state(match: Dict[str, Any]) -> Dict[str, Any]:
-    return {
+    state = {
         "engine_version": match.get("engine_version") or ENGINE_VERSION,
         "card_set_version": match.get("card_set_version") or CARD_SET_VERSION,
         "ruleset_version": match.get("ruleset_version") or RULESET_VERSION,
@@ -163,6 +163,14 @@ def canonical_state(match: Dict[str, Any]) -> Dict[str, Any]:
         "result": _canonical_result(match.get("result")),
         "last_clash": _canonical_result(match.get("last_clash")),
     }
+    if match.get("campaign_node"):
+        state["campaign"] = {
+            "version": match.get("campaign_version"),
+            "node_id": match.get("campaign_node"),
+            "attempt": int(match.get("campaign_attempt", 1) or 1),
+            "modifiers": _stable_value(match.get("campaign_modifiers") or []),
+        }
+    return state
 
 
 def canonical_state_hash(match: Dict[str, Any]) -> str:

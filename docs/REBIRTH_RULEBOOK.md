@@ -1,122 +1,82 @@
 # Ambitionz Rebirth Rulebook
 
-Ambitionz Rebirth is the active Ambitionz MVP architecture. It replaces the old Arena, BE2, Ascension, collection, deck builder, shop, missions, ranking, progression and economy loops in the running product.
+Ambitionz Rebirth is the active Ambitionz TCG runtime: a server-authoritative
+duel played on two three-slot battlefields, with a PvE campaign and persistent
+collection loop.
 
 ## Core Loop
 
-One card. One decision. One clash.
-
-1. Both sides begin with 30 HP.
-2. Both sides draw a hand of 5 monsters.
-3. Each turn, the player chooses exactly 1 monster from hand.
-4. The bot responds with exactly 1 monster from hand.
-5. Higher attack wins the clash.
-6. The winner deals damage to the loser.
-7. Damage is based on attacker attack minus half of defender guard, with a minimum of 1.
-8. A tie is a Clash: no damage is dealt.
-9. First side to 0 HP loses the match.
-10. After a resolved turn, both sides draw back up to 5 cards when possible.
+1. Standard arena duels begin with 30 HP on each side and a five-card hand.
+2. The guided first duel keeps the player at 30 HP and sets the novice bot to
+   18 HP; early follow-up duels use the defensive bot learning curve.
+3. Each side owns three persistent battlefield slots. Monsters remain on the
+   field until destroyed or consumed by fusion.
+4. During `choose`, the player can summon a monster, play a spell, arm a trap,
+   evolve duplicate cards from hand, fuse eligible field units or attack with
+   a ready monster.
+5. Monsters spend mana when summoned. Energy refills each turn on a ramp from
+   2 through 10.
+6. A targeted attack damages the defender's Guarda. Damage exceeding remaining
+   Guarda can cross into HP as Breakthrough pressure.
+7. An attack against an empty enemy field damages the opposing hero directly,
+   except that direct damage is blocked during turn 1 before the bot responds.
+8. After an action resolves, the player advances the turn; the bot summons and
+   attacks under its active personality.
+9. A side that reaches 0 HP loses. If both decks and hands are exhausted, the
+   side with more HP wins.
 
 ## Match Phases
 
-- `choose`: the player can select one monster or combine an available duplicate.
-- `result`: the clash has resolved and the next turn can be requested.
-- `finished`: the match has a winner and only a new match should be started.
+- `choose`: main phase; summon, cast, arm, evolve, fuse or declare an attack.
+- `result`: a combat has resolved and the player may advance the turn.
+- `finished`: a winner has been recorded; only replay/history or a new duel is
+  available.
 
-## Card Model
+## Cards And Field
 
-Each monster has:
+The catalog has 103 cards: 83 monsters, 10 spells and 10 traps. It includes
+40 Common, 60 Uncommon and 3 Legendary cards.
 
-- `id`
-- `name`
-- `family`
-- `role`
-- `tier`
-- `attack`
-- `guard`
-- `power` as attack-compatible UI shorthand
-- `element`
-- `evolution_id`
-- `ability_name`
-- `ability_text`
-- `flavor`
-- `art`
+Each public card includes identity, type, rarity, family, tier, cost, combat
+stats, ability metadata and art. Monsters expose `attack`, `guard`,
+`current_guard`, optional `evolution_id` and runtime field state.
 
-## Evolution
+## Evolution And Fusion
 
-Evolution is available before playing a card.
+- **Evolution from hand:** two matching base monsters in hand can become their
+  evolved form through `POST /api/rebirth/evolve`.
+- **Field fusion:** two adjacent, living, matching monsters with an evolution
+  target can merge on the battlefield through `POST /api/labs/fusion`. The
+  materials are discarded and the resulting evolved creature enters the
+  center-compatible slot with Breakthrough.
 
-If the player has 2 matching base monsters in hand and that monster has an `evolution_id`, the two copies can combine into the evolved monster. The consumed copies go to discard and the evolved monster enters the hand immediately.
+Both actions are authoritative commands, persist in signed-in match history
+and are replayable from their command/event stream.
 
-Initial direct evolutions:
+## Campaign And Progression
 
-- Dreadclaw + Dreadclaw = Dreadmaw
-- Stoneshell + Stoneshell = Stonewarden
-- Skywarden + Skywarden = Stormwarden
-- Ironbastion + Ironbastion = Ironbulwark
-- Embermaw + Embermaw = Embermaw Alpha
+Campaign mode contains ten sequential encounters, from **Acolito da Brasa** to
+**Rei Cinzento**. Boss nodes can alter HP, opening shields, draw and mana, and
+award XP once a victory is persisted. Collection, deck editing, free-beta
+boosters, market offers, wallet ledger, achievements and reward progression are
+Rebirth-native product surfaces.
 
-## MVP Catalog
+## Active Gameplay APIs
 
-Base monsters:
-
-- Dreadclaw, Fire, Beast, tier 1, attack 6, guard 6
-- Stoneshell, Earth, Guardian, tier 1, attack 2, guard 5
-- Shadewisp, Shadow, Assassin, tier 1, attack 3, guard 2
-- Skywarden, Air, Avian, tier 1, attack 4, guard 3
-- Ironbastion, Metal, Guardian, tier 1, attack 3, guard 6
-- Embermaw, Fire, Wyrm, tier 1, attack 7, guard 6
-- Voidstalker, Void, Hunter, tier 1, attack 5, guard 2
-- Nightfang, Shadow, Beast, tier 1, attack 4, guard 2
-
-Evolved monsters:
-
-- Dreadmaw, Fire, Apex Beast, tier 2, attack 9, guard 7
-- Stonewarden, Earth, Guardian, tier 2, attack 4, guard 8
-- Stormwarden, Air, Avian, tier 2, attack 7, guard 5
-- Ironbulwark, Metal, Guardian, tier 2, attack 5, guard 9
-- Embermaw Alpha, Fire, Wyrm, tier 2, attack 10, guard 7
-
-## API Contract
-
-- `GET /health`
-- `GET /`
-- `GET /rebirth`
 - `POST /api/rebirth/start`
+- `GET /api/rebirth/campaign`
+- `POST /api/rebirth/campaign/start`
 - `POST /api/rebirth/play-card`
+- `POST /api/rebirth/attack`
 - `POST /api/rebirth/evolve`
+- `POST /api/labs/fusion`
 - `POST /api/rebirth/next-turn`
 
-The MVP uses JSON APIs only. Socket.io is not part of Ambitionz Rebirth MVP.
+Successful responses use `{ "ok": true, "state": {}, "result": null }`.
+Expected request failures use `{ "ok": false, "error": { "code": "...",
+"message": "..." } }`.
 
-Successful responses use:
-
-```json
-{
-  "ok": true,
-  "state": {},
-  "result": null
-}
-```
-
-Expected player/request errors use:
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "stable_string_code",
-    "message": "Human-readable message."
-  }
-}
-```
-
-Stable expected error codes:
-
-- `missing_match`
-- `invalid_phase`
-- `missing_card`
-- `invalid_card`
-- `duplicate_not_available`
-- `match_finished`
-- `malformed_request`
+Stable gameplay errors include `missing_match`, `invalid_phase`,
+`missing_card`, `invalid_card`, `duplicate_not_available`,
+`first_turn_direct_attack_blocked`, `invalid_fusion_material`,
+`fusion_not_adjacent`, `match_finished` and `malformed_request`.

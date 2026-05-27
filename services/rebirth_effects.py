@@ -164,6 +164,45 @@ def _card_event_payload(card: Dict[str, Any], **extra: Any) -> Dict[str, Any]:
     return payload
 
 
+def emit_monsters_fused(
+    match: Dict[str, Any],
+    *,
+    side_name: str,
+    material_cards: List[Dict[str, Any]],
+    resulting_card: Dict[str, Any],
+    resulting_slot: int,
+    resulting_stats: Dict[str, Any],
+) -> Dict[str, Any]:
+    chain_id = new_effect_chain_id(match, "fusion")
+    material_instance_ids = [card.get("instance_id") for card in material_cards]
+    material_catalog_ids = [card.get("catalog_id") or card.get("id") for card in material_cards]
+    bus = EffectBus(match, effect_chain_id=chain_id)
+    bus.dispatch(
+        "MONSTERS_FUSED",
+        actor=side_name,
+        source_card_id=material_catalog_ids[0] if material_catalog_ids else None,
+        target_id=resulting_card.get("instance_id"),
+        owner_id=side_name,
+        payload={
+            "side": side_name,
+            "material_instance_ids": material_instance_ids,
+            "material_catalog_ids": material_catalog_ids,
+            "material_cards": deepcopy(material_cards),
+            "resulting_instance_id": resulting_card.get("instance_id"),
+            "resulting_catalog_id": resulting_card.get("catalog_id") or resulting_card.get("id"),
+            "resulting_slot": int(resulting_slot),
+            "resulting_stats": deepcopy(resulting_stats),
+            "resulting_card": deepcopy(resulting_card),
+        },
+        message=f"{material_cards[0].get('name', 'Monstros')} x2 se fundem em {resulting_card.get('name', 'forma evoluida')}.",
+        order=0,
+        priority_level=PRIORITY_ACTIVE_SPELL,
+        stable_entity_id=resulting_card.get("instance_id"),
+    )
+    emitted = bus.flush()
+    return emitted[-1] if emitted else {}
+
+
 class EffectBus:
     """Queues GameEvents, applies pure reducers, then stores causal traces."""
 

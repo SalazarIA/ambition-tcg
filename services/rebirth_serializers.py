@@ -44,6 +44,7 @@ FEEDBACK_EVENT_TYPES = {
     "TRAP_TRIGGERED",
     "UNIT_DESTROYED",
     "UNIT_EXHAUSTED",
+    "MONSTERS_FUSED",
     "STATUS_APPLIED",
 }
 
@@ -116,7 +117,7 @@ def resolution_context(match):
     priority = latest.get("priority_level")
     awaiting_player = match.get("phase") == "choose" and not match.get("is_finished")
     has_interrupt = any(int(event.get("priority_level", 0) or 0) == 2 for event in chain_events)
-    return {
+    payload = {
         "current_phase": match.get("turn_phase"),
         "priority_label": "Jogador" if awaiting_player else RESOLUTION_PRIORITY_LABELS.get(priority, "Resolvida"),
         "chain_id": chain_id,
@@ -125,13 +126,14 @@ def resolution_context(match):
         "interrupt_label": "Trap resolvida" if has_interrupt else "Janela fechada",
         "feedback": feedback,
     }
+    return payload
 
 
 def public_state(match):
     validate_phase(match["phase"])
     player = side_payload(match["player"], reveal_hand=True)
     bot = side_payload(match["bot"], reveal_hand=False)
-    return {
+    payload = {
         "match_id": match["match_id"],
         "architecture": match["architecture"],
         "engine_version": match.get("engine_version") or ENGINE_VERSION,
@@ -159,3 +161,14 @@ def public_state(match):
         "events": deepcopy(match.get("events", [])[-12:]),
         "log": list(match.get("log", [])[-8:]),
     }
+    if match.get("campaign_node"):
+        payload["campaign"] = {
+            "version": match.get("campaign_version"),
+            "node_id": match.get("campaign_node"),
+            "attempt": int(match.get("campaign_attempt", 1) or 1),
+            "modifiers": deepcopy(match.get("campaign_modifiers") or []),
+            "presentation": deepcopy(match.get("campaign_presentation") or {}),
+        }
+        if match.get("is_finished") and match.get("winner") == "bot":
+            payload["campaign"]["defeat_advice"] = deepcopy(match.get("campaign_advice") or {})
+    return payload

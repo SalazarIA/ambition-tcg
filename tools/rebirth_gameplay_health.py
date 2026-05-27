@@ -41,10 +41,18 @@ def health_report(matches: int = 60):
         risks.append("trigger_density_high")
     if summary["max_chain_events"] > 14:
         risks.append("chain_readability_risk")
+    profile_rates = [float(item.get("player_win_rate", 0) or 0) for item in simulation["profile_results"]]
+    if profile_rates and max(profile_rates) - min(profile_rates) > 0.35:
+        risks.append("bot_profile_difficulty_spread_high")
     if not risks:
         risks.append("no_critical_pacing_flag")
     return {
         "matches": simulation["matches"],
+        "targets": {
+            "average_turns_max": 18,
+            "profile_win_rate_spread_max": 0.35,
+            "max_chain_events": 14,
+        },
         "match_quality_metrics": summary,
         "problem_cards": problem_cards[:12],
         "top_ability_events": simulation["top_ability_events"],

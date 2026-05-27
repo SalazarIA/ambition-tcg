@@ -15,6 +15,7 @@
         selectedInstanceId: null,
         selectedAttackerId: null,
         reward: null,
+        campaignReward: null,
         lastResultSignature: null,
         lastResultTextSignature: null,
         guidedFirstMatch: false,
@@ -141,6 +142,31 @@
 
         firstEvolution() {
             return ((this.state && this.state.available_evolutions) || [])[0] || null;
+        },
+
+        firstFieldFusion() {
+            if (!this.state || !this.state.player || this.state.is_finished || this.state.phase !== "choose") return null;
+            const slots = this.fieldSlots("player");
+            for (let index = 0; index < FIELD_SLOT_COUNT - 1; index += 1) {
+                const left = slots[index];
+                const right = slots[index + 1];
+                if (!left || !right) continue;
+                const leftCatalog = left.catalog_id || left.id;
+                const rightCatalog = right.catalog_id || right.id;
+                const leftHp = Number(left.current_guard != null ? left.current_guard : left.guard || 0);
+                const rightHp = Number(right.current_guard != null ? right.current_guard : right.guard || 0);
+                if (!leftCatalog || leftCatalog !== rightCatalog || leftHp <= 0 || rightHp <= 0 || !left.evolution_id) continue;
+                return {
+                    side: "player",
+                    sourceName: left.name,
+                    resultingCatalogId: left.evolution_id,
+                    resultingSlot: 1,
+                    materialIds: [left.instance_id, right.instance_id],
+                    materialCatalogIds: [leftCatalog, rightCatalog],
+                    sourceCards: [left, right]
+                };
+            }
+            return null;
         }
     };
 
@@ -282,6 +308,21 @@
 
     function wait(ms) {
         return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function nextFrame() {
+        return new Promise((resolve) => {
+            const frame = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 16));
+            frame(() => resolve());
+        });
+    }
+
+    function restartClass(node, className) {
+        if (!node) return;
+        node.classList.remove(className);
+        nextFrame().then(() => {
+            if (node.isConnected !== false) node.classList.add(className);
+        });
     }
 
     function escapeSelectorValue(value) {
@@ -455,6 +496,8 @@
         return meta;
     }
 
+    let screenShakeTimer = null;
+
     function triggerScreenShake(profileOrIntensity) {
         const viewport = document.querySelector(".rb-game-viewport");
         const board = RebirthStore.elements["rebirth-board"];
@@ -462,38 +505,36 @@
         const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (!target || reducedMotion) return;
 
-        // v55 Combat Juice: aceita "subtle" | "normal" | "heavy" ou um número
-        // (legado). Mapa: subtle=2px só X, normal=3px só X, heavy=6px X+Y.
-        // Heavy dispara em trade mútuo (clash) e dano alto.
         let profile = "normal";
         let intensity = 3;
         if (typeof profileOrIntensity === "string") {
             profile = profileOrIntensity;
-            intensity = profile === "heavy" ? 6 : profile === "subtle" ? 2 : 3;
+            intensity = profile === "heavy" ? 5 : profile === "subtle" ? 2 : 3;
         } else {
-            const n = Math.max(1, Number(profileOrIntensity || 3));
+            const n = Math.min(5, Math.max(1, Number(profileOrIntensity || 3)));
             intensity = n;
-            profile = n >= 6 ? "heavy" : n <= 2 ? "subtle" : "normal";
+            profile = n >= 5 ? "heavy" : n <= 2 ? "subtle" : "normal";
         }
 
-        // Compat: mantém custom properties legadas usadas pelo CSS antigo.
         target.style.setProperty("--shake-intensity", `${intensity}px`);
         target.style.setProperty("--shake-intensity-negative", `${intensity * -1}px`);
         target.style.setProperty("--shake-intensity-soft", `${intensity * 0.55}px`);
         target.style.setProperty("--shake-intensity-soft-negative", `${intensity * -0.55}px`);
 
-        // Limpa classes anteriores antes de aplicar (force restart da animação).
         target.classList.remove("is-screen-shaking", "vfx-screen-shake", "vfx-screen-shake-heavy");
-        void target.offsetWidth;
-        target.classList.add("is-screen-shaking");  // legado
-        target.classList.add("vfx-screen-shake");   // novo
-        if (profile === "heavy") {
-            target.classList.add("vfx-screen-shake-heavy");
-        }
+        if (screenShakeTimer) window.clearTimeout(screenShakeTimer);
+        const frame = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 16));
+        frame(() => {
+            target.classList.add("is-screen-shaking", "vfx-screen-shake");
+            if (profile === "heavy") {
+                target.classList.add("vfx-screen-shake-heavy");
+            }
+        });
 
-        const duration = profile === "heavy" ? 220 : 200;
-        window.setTimeout(() => {
+        const duration = profile === "heavy" ? 180 : 160;
+        screenShakeTimer = window.setTimeout(() => {
             target.classList.remove("is-screen-shaking", "vfx-screen-shake", "vfx-screen-shake-heavy");
+            screenShakeTimer = null;
         }, duration);
     }
 
@@ -825,6 +866,7 @@
             const statusClass = RebirthStatus.className(statuses);
             const risk = options && options.risk ? options.risk : null;
             const riskClass = risk ? ` is-risk-${RebirthText.escape(risk.tone || "neutral")}` : "";
+            const fusionClass = options && options.fusionSource ? " is-fusion-source" : "";
             const riskAttrs = risk
                 ? ` data-risk-tone="${RebirthText.escape(risk.tone || "neutral")}" data-risk-label="${RebirthText.escape(risk.label || "")}" title="${RebirthText.escape((risk.label || "") + (risk.copy ? " - " + risk.copy : ""))}"`
                 : "";
@@ -833,7 +875,7 @@
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${riskClass}${exhausted}${statusClass}" type="button" ${targetAttr}${riskAttrs} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} no campo ${side === "player" ? "do jogador" : "do bot"}">
+                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${riskClass}${fusionClass}${exhausted}${statusClass}" type="button" ${targetAttr}${riskAttrs} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} no campo ${side === "player" ? "do jogador" : "do bot"}">
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
                     ${risk ? `<span class="rb-risk-badge" data-risk-tone="${RebirthText.escape(risk.tone || "neutral")}">${RebirthText.escape(risk.label || "Risk")}</span>` : ""}
@@ -932,12 +974,12 @@
             const defense = Number(defender.current_guard != null ? defender.current_guard : defender.guard || 0);
             const counter = Number(defender.attack || defender.power || 0);
             if (attack >= defense + 2 && guard >= counter) {
-                return { tone: "favorable", label: "Strong advantage", copy: "Seu monstro deve vencer a troca.", score: 3 };
+                return { tone: "favorable", label: "Vantagem forte", copy: "Seu monstro deve vencer a troca.", score: 3 };
             }
             if (attack >= defense || guard >= counter - 1) {
-                return { tone: "risky", label: "Trade likely", copy: "Troca possivel, mas com perda de Guarda.", score: 1 };
+                return { tone: "risky", label: "Troca provável", copy: "Troca possível, mas com perda de Guarda.", score: 1 };
             }
-            return { tone: "losing", label: "High chance to lose unit", copy: "O defensor parece favorito.", score: -2 };
+            return { tone: "losing", label: "Alto risco de perder", copy: "O defensor parece favorito.", score: -2 };
         },
 
         selectedAttackRisk(state) {
@@ -1055,38 +1097,39 @@
         },
 
         screenShake(result) {
-            if (!result || this.reducedMotion()) return;
+            if (!result || this.reducedMotion()) return false;
             const damage = result.damage || {};
             const playerDamage = Number(damage.player || 0);
             const botDamage = Number(damage.bot || 0);
             const totalDamage = Math.max(0, playerDamage) + Math.max(0, botDamage);
             const outcome = String(result.outcome || "").toLowerCase();
-            // v55 Combat Juice profiles:
-            //   • heavy: clash mútuo (ambas criaturas trocam guard) ou dano
-            //     direto pesado (≥5 HP) — tremor vertical+horizontal 6px
-            //   • normal: dano normal (1-4 HP em HP) — horizontal 3px
-            //   • nada: outcome irrelevante (sem dano e sem clash)
             if (outcome === "clash") {
                 triggerScreenShake("heavy");
-                return;
+                return true;
             }
             if (totalDamage >= 5) {
                 triggerScreenShake("heavy");
-                return;
+                return true;
             }
             if (totalDamage > 0) {
                 triggerScreenShake("normal");
+                return true;
             }
+            if (outcome === "victory" || outcome === "defeat") {
+                triggerScreenShake("normal");
+                return true;
+            }
+            return false;
         }
     };
 
     const RebirthCombatMotion = {
-        impactMs: 132,
-        hitPauseMs: 72,
-        shatterMs: 260,
-        dissolveMs: 420,
-        returnHoldMs: 92,
-        settleMs: 110,
+        impactMs: 108,
+        hitPauseMs: 52,
+        shatterMs: 210,
+        dissolveMs: 320,
+        returnHoldMs: 64,
+        settleMs: 76,
 
         attacker(attackerId) {
             const host = RebirthStore.elements["player-battlefield"];
@@ -1128,14 +1171,14 @@
 
         markImpact(target, state) {
             if (target) {
-                target.classList.remove("is-taking-hit");
-                void target.offsetWidth;
-                target.classList.add("is-taking-hit");
+                restartClass(target, "is-taking-hit");
             }
             const result = state && state.result;
             RebirthFeel.haptics(result);
             RebirthFeel.audioEvents(state);
-            RebirthFeel.screenShake(result);
+            if (!RebirthFeel.screenShake(result)) {
+                triggerScreenShake("normal");
+            }
         },
 
         // v55 Combat Juice — encontra criaturas que sobreviveram mas perderam
@@ -1258,21 +1301,20 @@
             attacker.classList.add("is-attack-primed");
             if (target) target.classList.add("is-target-locked");
             if (board) board.classList.add("is-resolving-attack");
-            void attacker.offsetWidth;
+            await nextFrame();
 
             attacker.classList.add("is-attack-lunging");
             await wait(this.impactMs);
 
-            // v72 Combat Juice: 60-90ms hit-stop on the impact frame.
+            this.markImpact(target, resolvedState);
+            if (window.RebirthHotfixFX && typeof window.RebirthHotfixFX.clashImpact === "function") {
+                window.RebirthHotfixFX.clashImpact({ attacker, target, resolvedState });
+            }
+
             if (window.RebirthHotfixFX && typeof window.RebirthHotfixFX.hitStop === "function") {
                 await window.RebirthHotfixFX.hitStop(board || attacker, this.hitPauseMs);
             } else {
                 await wait(this.hitPauseMs);
-            }
-
-            this.markImpact(target, resolvedState);
-            if (window.RebirthHotfixFX && typeof window.RebirthHotfixFX.clashImpact === "function") {
-                window.RebirthHotfixFX.clashImpact({ attacker, target, resolvedState });
             }
 
             // v55 Combat Juice — SHIELD SHATTER + DEATH DISSOLVE
@@ -1410,6 +1452,185 @@
         },
     };
 
+    const RebirthFusionMotion = {
+        convergeMs: 240,
+        flashMs: 180,
+        spawnMs: 460,
+        handledKeys: new Set(),
+
+        eventKey(event) {
+            const payload = event && event.payload ? event.payload : {};
+            return [
+                event && (event.event_id || event.id || event.sequence_id || event.replay_frame) || "",
+                payload.resulting_instance_id || "",
+                event && event.effect_chain_id || ""
+            ].join(":");
+        },
+
+        markHandled(event) {
+            const key = this.eventKey(event);
+            if (!key.trim()) return false;
+            if (this.handledKeys.has(key)) return false;
+            this.handledKeys.add(key);
+            if (this.handledKeys.size > 30) {
+                this.handledKeys = new Set(Array.from(this.handledKeys).slice(-18));
+            }
+            return true;
+        },
+
+        latestEvent(state) {
+            return ((state && state.events) || [])
+                .slice()
+                .reverse()
+                .find((event) => String(event.event_type || event.type || "") === "MONSTERS_FUSED") || null;
+        },
+
+        snapshotSources(instanceIds) {
+            const wanted = new Set((instanceIds || []).filter(Boolean));
+            if (!wanted.size) return [];
+            const hosts = [
+                { host: RebirthStore.elements["player-battlefield"], attr: "data-attacker-instance" },
+                { host: RebirthStore.elements["bot-battlefield"], attr: "data-target-instance" },
+            ];
+            const sources = [];
+            wanted.forEach((instanceId) => {
+                hosts.forEach(({ host, attr }) => {
+                    if (!host || sources.some((item) => item.instanceId === instanceId)) return;
+                    const node = host.querySelector(`[${attr}="${escapeSelectorValue(instanceId)}"]`);
+                    if (!node) return;
+                    sources.push({
+                        instanceId,
+                        node,
+                        rect: node.getBoundingClientRect(),
+                        html: node.outerHTML
+                    });
+                });
+            });
+            return sources;
+        },
+
+        resultSlotRect(payload) {
+            const host = RebirthStore.elements["player-battlefield"];
+            const slot = Math.max(0, Math.min(2, Number(payload && payload.resulting_slot != null ? payload.resulting_slot : 1)));
+            const node = host && host.children ? host.children[slot] : null;
+            return node ? node.getBoundingClientRect() : null;
+        },
+
+        resultNode(event) {
+            const payload = event && event.payload ? event.payload : {};
+            const instanceId = payload.resulting_instance_id;
+            if (!instanceId) return null;
+            const hosts = [
+                { host: RebirthStore.elements["player-battlefield"], attr: "data-attacker-instance" },
+                { host: RebirthStore.elements["bot-battlefield"], attr: "data-target-instance" },
+            ];
+            for (const { host, attr } of hosts) {
+                if (!host) continue;
+                const node = host.querySelector(`[${attr}="${escapeSelectorValue(instanceId)}"]`);
+                if (node) return node;
+            }
+            return null;
+        },
+
+        playAudio(event) {
+            if (!window.RebirthAudioManager || !event) return;
+            window.RebirthAudioManager.observeEvents([event], { hitPauseMs: 0, replayAudioMutedMode: false });
+        },
+
+        burstResult(event) {
+            const node = this.resultNode(event);
+            if (!node || RebirthFeel.reducedMotion()) return;
+            restartClass(node, "is-fusion-born");
+            window.setTimeout(() => {
+                node.classList.remove("is-fusion-born");
+            }, this.spawnMs + 80);
+        },
+
+        async play(sources, event, applyNextState) {
+            if (!event || !this.markHandled(event)) {
+                if (applyNextState) applyNextState();
+                return;
+            }
+            this.playAudio(event);
+            const stage = document.getElementById("rebirth-evolution-stage");
+            const payload = event.payload || {};
+            if (!stage || RebirthFeel.reducedMotion() || !sources.length) {
+                if (applyNextState) applyNextState();
+                this.burstResult(event);
+                return;
+            }
+
+            const stageRect = stage.getBoundingClientRect();
+            const targetRect = this.resultSlotRect(payload);
+            const targetX = targetRect ? targetRect.left + targetRect.width / 2 : stageRect.left + stageRect.width / 2;
+            const targetY = targetRect ? targetRect.top + targetRect.height / 2 : stageRect.top + stageRect.height / 2;
+
+            stage.innerHTML = "";
+            stage.classList.remove("is-active", "is-rune-active", "is-burst-active", "is-fusion-active", "is-fusion-flash");
+            const overlay = document.createElement("div");
+            overlay.className = "vfx-fusion-overlay";
+            stage.appendChild(overlay);
+
+            sources.forEach((source, index) => {
+                if (source.node) source.node.classList.add("is-fusion-material-live");
+                const wrapper = document.createElement("div");
+                wrapper.className = "vfx-fusion-clone";
+                wrapper.style.left = `${source.rect.left - stageRect.left}px`;
+                wrapper.style.top = `${source.rect.top - stageRect.top}px`;
+                wrapper.style.width = `${source.rect.width}px`;
+                wrapper.style.height = `${source.rect.height}px`;
+                wrapper.innerHTML = source.html;
+                const sourceX = source.rect.left + source.rect.width / 2;
+                const sourceY = source.rect.top + source.rect.height / 2;
+                wrapper.style.setProperty("--target-x", `${(targetX - sourceX).toFixed(1)}px`);
+                wrapper.style.setProperty("--target-y", `${(targetY - sourceY).toFixed(1)}px`);
+                wrapper.style.setProperty("--fusion-rot", `${index === 0 ? -12 : 12}deg`);
+                stage.appendChild(wrapper);
+            });
+
+            const flash = document.createElement("div");
+            flash.className = "vfx-fusion-slot-flash";
+            flash.style.left = `${(targetX - stageRect.left).toFixed(1)}px`;
+            flash.style.top = `${(targetY - stageRect.top).toFixed(1)}px`;
+            stage.appendChild(flash);
+
+            const burst = document.createElement("div");
+            burst.className = "vfx-fusion-burst";
+            burst.style.left = `${(targetX - stageRect.left).toFixed(1)}px`;
+            burst.style.top = `${(targetY - stageRect.top).toFixed(1)}px`;
+            stage.appendChild(burst);
+
+            stage.classList.add("is-active", "is-fusion-active");
+            stage.setAttribute("aria-hidden", "false");
+            await wait(40);
+            stage.querySelectorAll(".vfx-fusion-clone").forEach((clone) => clone.classList.add("is-converging"));
+            await wait(this.convergeMs);
+            triggerScreenShake("heavy");
+            stage.classList.add("is-fusion-flash");
+            await wait(this.flashMs);
+
+            if (applyNextState) applyNextState();
+            this.burstResult(event);
+            await wait(this.spawnMs);
+            sources.forEach((source) => {
+                if (source.node) source.node.classList.remove("is-fusion-material-live");
+            });
+            stage.classList.remove("is-active", "is-fusion-active", "is-fusion-flash");
+            stage.setAttribute("aria-hidden", "true");
+            await wait(120);
+            stage.innerHTML = "";
+        },
+
+        observeStateEvents(previousState, nextState) {
+            if (!nextState || previousState === nextState) return;
+            const event = this.latestEvent(nextState);
+            if (!event || this.handledKeys.has(this.eventKey(event))) return;
+            this.markHandled(event);
+            this.playAudio(event);
+            this.burstResult(event);
+        }
+    };
+
     const RebirthHeroDamage = {
         durationMs: 460,
 
@@ -1428,9 +1649,7 @@
                 if (nextHp >= prevHp) return;  // não perdeu HP
                 const hud = document.querySelector(hudSelector);
                 if (!hud) return;
-                hud.classList.remove("vfx-hero-damage");
-                void hud.offsetWidth;
-                hud.classList.add("vfx-hero-damage");
+                restartClass(hud, "vfx-hero-damage");
                 window.setTimeout(() => {
                     hud.classList.remove("vfx-hero-damage");
                 }, this.durationMs + 40);
@@ -1491,9 +1710,9 @@
                 <div class="vfx-finale-text">${headline}</div>
                 ${sublineCopy}
             `;
-            // force reflow pra animação de entrada disparar
-            void overlay.offsetWidth;
-            overlay.classList.add("is-active");
+            nextFrame().then(() => {
+                if (overlay.isConnected !== false) overlay.classList.add("is-active");
+            });
             overlay.setAttribute("aria-hidden", "false");
 
             // efeitos colaterais por variante
@@ -1510,9 +1729,8 @@
                 }
             }
 
-            // primeira vitória ganha um fade mais longo (8s) — dá tempo de ler
-            // a recompensa antes da camada sumir
-            const fadeMs = firstDuel && isVictory ? 8000 : 5000;
+            // A mensagem permanece legivel sem cobrir a proxima decisao.
+            const fadeMs = firstDuel && isVictory ? 4300 : 2800;
             window.setTimeout(() => {
                 overlay.classList.remove("is-active");
                 overlay.setAttribute("aria-hidden", "true");
@@ -1649,7 +1867,8 @@
             RebirthDom.setText("bot-deck-count", `Baralho ${state.bot.deck_count || 0}`);
             RebirthDom.setText("bot-discard-count", `Descarte ${state.bot.discard_count || 0}`);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
-            RebirthDom.setText("bot-profile-label", (state.bot_profile && state.bot_profile.name) || "Perfil do bot");
+            const bossName = state.campaign && state.campaign.presentation && state.campaign.presentation.name;
+            RebirthDom.setText("bot-profile-label", bossName || (state.bot_profile && state.bot_profile.name) || "Perfil do bot");
             this.hpBars();
             this.battlefield();
             this.focusCard();
@@ -1672,11 +1891,29 @@
             const botMax = Number(state.bot.max_hp || 30);
             const playerScale = Math.max(0, Math.min(1, Number(state.player.hp || 0) / playerMax));
             const botScale = Math.max(0, Math.min(1, Number(state.bot.hp || 0) / botMax));
-            if (RebirthStore.elements["player-hp-fill"]) {
-                RebirthStore.elements["player-hp-fill"].style.transform = `scaleX(${playerScale})`;
+            this.lifeOrb("player", Number(state.player.hp || 0), playerMax, playerScale);
+            this.lifeOrb("bot", Number(state.bot.hp || 0), botMax, botScale);
+        },
+
+        lifeOrb(sideName, hp, maxHp, ratio) {
+            const fill = RebirthStore.elements[`${sideName}-hp-fill`];
+            const hud = document.querySelector(`.rb-hud-${sideName}`);
+            const meter = fill ? fill.closest(".rb-hp-meter") : null;
+            const low = ratio > 0 && ratio < 0.3;
+            const stateName = low ? "danger" : ratio <= 0 ? "empty" : "stable";
+            [hud, meter].forEach((element) => {
+                if (!element) return;
+                element.classList.toggle("is-low-hp", low);
+                element.dataset.healthState = stateName;
+                element.style.setProperty("--hp-ratio", ratio.toFixed(3));
+                element.style.setProperty("--hp-percent", `${Math.round(ratio * 100)}%`);
+            });
+            if (meter) {
+                meter.dataset.hpCurrent = String(Math.max(0, hp));
+                meter.dataset.hpMax = String(Math.max(1, maxHp));
             }
-            if (RebirthStore.elements["bot-hp-fill"]) {
-                RebirthStore.elements["bot-hp-fill"].style.transform = `scaleX(${botScale})`;
+            if (fill) {
+                fill.style.transform = `scaleY(${ratio})`;
             }
         },
 
@@ -1699,6 +1936,8 @@
             const selectedHandCard = RebirthStore.handCard(RebirthStore.selectedInstanceId);
             const selectedCost = RebirthMarkup.cardCost(selectedHandCard);
             const selectedEnergy = Number((state.player && state.player.energy) || 0);
+            const fieldFusion = RebirthStore.firstFieldFusion();
+            const fusionMaterialIds = new Set((fieldFusion && fieldFusion.materialIds) || []);
             const summonLockCopy = !selectedHandCard
                 ? "Selecione uma carta"
                 : selectedEnergy < selectedCost
@@ -1714,7 +1953,9 @@
                 && selectedEnergy >= selectedCost;
             playerHost.innerHTML = playerSlots.map((card) => {
                 if (card) {
-                    return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses);
+                    return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses, {
+                        fusionSource: fusionMaterialIds.has(card.instance_id)
+                    });
                 }
                 return RebirthMarkup.emptyFieldSlot(canSummonSelected ? "Invocar" : summonLockCopy, {
                     summonTarget: Boolean(canSummonSelected),
@@ -1791,11 +2032,17 @@
             const button = RebirthStore.elements["evolve-button"];
             const thumb = RebirthStore.elements["evolution-card-thumbnail"];
             if (!panel || !button) return;
+            const fieldFusion = RebirthStore.firstFieldFusion();
             const evolution = RebirthStore.firstEvolution();
-            const canUse = Boolean(evolution && RebirthStore.state.phase === "choose" && !RebirthStore.state.is_finished);
+            const canFuse = Boolean(fieldFusion && RebirthStore.state.phase === "choose" && !RebirthStore.state.is_finished);
+            const canEvolve = Boolean(evolution && RebirthStore.state.phase === "choose" && !RebirthStore.state.is_finished);
+            const canUse = canFuse || canEvolve;
             panel.classList.toggle("is-empty", !canUse);
             button.disabled = !canUse || RebirthStore.pending;
-            button.dataset.cardId = canUse ? evolution.card_id : "";
+            button.dataset.cardId = canEvolve ? evolution.card_id : "";
+            button.dataset.mode = canFuse ? "fusion" : "evolution";
+            button.hidden = canFuse;
+            button.textContent = canFuse ? "Fundir" : "Evoluir";
 
             if (!canUse) {
                 RebirthDom.setText("evolution-status", RebirthStore.state.phase === "choose" ? "Sem duplicata" : "Bloqueado");
@@ -1807,9 +2054,16 @@
                 return;
             }
 
-            RebirthDom.setText("evolution-status", "Duplicata encontrada");
-            RebirthDom.setText("evolution-name", `${evolution.name} x${evolution.count}`);
-            const sourceCard = (RebirthStore.state.player.hand || []).find((card) => card.id === evolution.card_id);
+            if (canFuse) {
+                RebirthDom.setText("evolution-status", "Fusao pronta");
+                RebirthDom.setText("evolution-name", `${fieldFusion.sourceName} x2`);
+            } else {
+                RebirthDom.setText("evolution-status", "Duplicata encontrada");
+                RebirthDom.setText("evolution-name", `${evolution.name} x${evolution.count}`);
+            }
+            const sourceCard = canFuse
+                ? fieldFusion.sourceCards[0]
+                : (RebirthStore.state.player.hand || []).find((card) => card.id === evolution.card_id);
             if (thumb && sourceCard) {
                 thumb.classList.remove("rb-asset-fallback");
                 thumb.setAttribute("style", `${RebirthAssets.artBackground(sourceCard)}; --card-accent: ${(sourceCard.palette && sourceCard.palette.accent) || "#f4ad26"}`);
@@ -2023,9 +2277,7 @@
             const panel = RebirthStore.elements["result-panel"];
             if (!panel || !signature || signature === RebirthStore.lastResultTextSignature) return;
             RebirthStore.lastResultTextSignature = signature;
-            panel.classList.remove("is-result-reading");
-            void panel.offsetWidth;
-            panel.classList.add("is-result-reading");
+            restartClass(panel, "is-result-reading");
         },
 
         abilityEvents(result) {
@@ -2088,12 +2340,20 @@
             const host = RebirthStore.elements["reward-panel"];
             if (!host) return;
             const reward = RebirthStore.reward;
-            if (!reward) {
+            const campaignReward = RebirthStore.campaignReward;
+            if (!reward && !(campaignReward && campaignReward.applied)) {
                 host.innerHTML = "";
                 host.hidden = true;
                 return;
             }
             host.hidden = false;
+            if (!reward) {
+                host.innerHTML = [
+                    '<span class="rb-reward-xp">+' + RebirthText.escape(campaignReward.xp) + " XP</span>",
+                    "<span>Encontro da campanha vencido</span>"
+                ].join("");
+                return;
+            }
             if (!reward.persisted) {
                 host.innerHTML = '<span class="rb-reward-muted">' + RebirthText.escape(reward.message) + "</span>";
                 return;
@@ -2113,6 +2373,7 @@
                 nextLabel ? "<span>" + nextLabel + "</span>" : "",
                 achievements ? "<span>" + RebirthText.escape(achievements) + "</span>" : "",
                 dailyLabel ? '<span class="rb-reward-daily">' + RebirthText.escape(dailyLabel) + "</span>" : "",
+                campaignReward && campaignReward.applied ? '<span class="rb-reward-daily">Campanha: +' + RebirthText.escape(campaignReward.xp) + " XP</span>" : "",
                 reward.next_goal ? "<span>" + RebirthText.escape(reward.next_goal) + "</span>" : ""
             ].join("");
         },
@@ -2169,7 +2430,7 @@
             const host = RebirthStore.elements["turn-log"];
             if (!host) return;
             host.innerHTML = (RebirthStore.state.log || [])
-                .slice()
+                .slice(-5)
                 .reverse()
                 .map((line) => `<li>${RebirthText.escape(line)}</li>`)
                 .join("");
@@ -2181,6 +2442,7 @@
             const canChoose = state.phase === "choose" && !state.is_finished && !RebirthStore.pending;
             const canNext = (state.phase === "result" || state.phase === "choose") && !state.is_finished && !RebirthStore.pending;
             const evolution = RebirthStore.firstEvolution();
+            const fieldFusion = RebirthStore.firstFieldFusion();
             const selected = RebirthStore.selectedInstanceId
                 ? (state.player.hand || []).find((card) => card.instance_id === RebirthStore.selectedInstanceId)
                 : null;
@@ -2197,6 +2459,7 @@
             const isMonster = selected && RebirthMarkup.isMonster(selected);
             const noOpenSlot = Boolean(isMonster && emptySlot < 0);
             let actionState = "choose";
+            let actionCopyOverride = null;
             if (RebirthStore.elements["play-button"]) {
                 const btn = RebirthStore.elements["play-button"];
                 if (state.is_finished) {
@@ -2209,6 +2472,12 @@
                     btn.innerHTML = '<i class="rb-action-sword"></i>Resolvido';
                     btn.disabled = true;
                     btn.title = "Combate resolvido. Avance para o próximo turno.";
+                } else if (fieldFusion) {
+                    actionState = "fusion";
+                    btn.innerHTML = '<i class="rb-action-loop"></i>Fundir';
+                    btn.disabled = !canChoose;
+                    btn.title = `Fundir ${fieldFusion.sourceName} x2 em uma forma evoluida.`;
+                    actionCopyOverride = `Funda ${fieldFusion.sourceName} x2.`;
                 } else if (selectedAttacker) {
                     actionState = attackRisk && attackRisk.tone ? `attack-${attackRisk.tone}` : "attack";
                     btn.innerHTML = '<i class="rb-action-sword"></i>Atacar';
@@ -2244,7 +2513,7 @@
                 }
             }
             const actionCopy = window.RebirthHotfixUI && typeof window.RebirthHotfixUI.actionCopy === "function"
-                ? window.RebirthHotfixUI.actionCopy({
+                ? (actionCopyOverride || window.RebirthHotfixUI.actionCopy({
                     state,
                     selected,
                     selectedAttacker,
@@ -2256,14 +2525,14 @@
                     pending: RebirthStore.pending,
                     directLocked,
                     attackerReady
-                })
-                : selectedAttacker
-                    ? "Attack enemy unit."
+                }))
+                : (actionCopyOverride || (selectedAttacker
+                    ? "Ataque a unidade inimiga."
                     : selected
-                        ? `Play ${selected.name}.`
-                        : "Choose a card first.";
+                        ? `Jogue ${selected.name}.`
+                        : "Escolha uma carta primeiro."));
             RebirthDom.setText("primary-action-copy", actionCopy);
-            RebirthDom.setText("action-selected-card", selectedAttacker ? selectedAttacker.name : selected ? selected.name : "Choose a card");
+            RebirthDom.setText("action-selected-card", selectedAttacker ? selectedAttacker.name : selected ? selected.name : "Escolha uma carta");
             RebirthDom.setText("action-mana-label", `Mana ${energy}/${Number((state.player && state.player.max_energy) || energy)}`);
             const actionBar = RebirthStore.elements["rebirth-action-bar"];
             if (actionBar) {
@@ -2282,7 +2551,7 @@
                 return true;  // spells/traps don't need slots
             });
             const readyAttacker = fieldCards.find((card) => card && !card.exhausted && !card.has_attacked && !card.has_acted);
-            const evolutionAvailable = Boolean(evolution);
+            const evolutionAvailable = Boolean(evolution || fieldFusion);
             const deadEnd = canChoose
                 && !handHasPlayable
                 && !readyAttacker
@@ -2317,11 +2586,11 @@
                     nextButton.title = deadEnd
                         ? "Sem ações disponíveis — encerre o turno."
                         : "Encerre o turno para o bot agir e recarregar sua mana.";
-                    RebirthDom.setText("secondary-action-copy", evolution ? "Você ainda pode evoluir antes de encerrar" : "Passe a vez para recarregar mana");
+                    RebirthDom.setText("secondary-action-copy", fieldFusion ? "Você ainda pode fundir antes de encerrar" : evolution ? "Você ainda pode evoluir antes de encerrar" : "Passe a vez para recarregar mana");
                 }
             }
             if (RebirthStore.elements["evolve-button"]) {
-                RebirthStore.elements["evolve-button"].disabled = !canChoose || !evolution;
+                RebirthStore.elements["evolve-button"].disabled = !canChoose || !(evolution || fieldFusion);
             }
         }
     };
@@ -2373,8 +2642,10 @@
             RebirthStore.setState(state);
             RebirthRenderer.render();
             try {
+                RebirthFusionMotion.observeStateEvents(previousState, state);
                 RebirthHeroDamage.evaluate(previousState, state);
                 RebirthFinaleOverlay.evaluate(previousState, state);
+                if (window.RebirthBossFX) window.RebirthBossFX.observe(previousState, state);
             } catch (err) {
                 /* nunca deixa VFX falhar derrubar a UI */
                 if (window.console) console.warn("[rebirth] signature VFX failed", err);
@@ -2386,20 +2657,31 @@
             // iniciar nova partida. Evita "Vitória" antigo aparecer por
             // um frame quando o usuário pede Nova Partida após vencer.
             RebirthFinaleOverlay.reset();
+            if (window.RebirthBossFX) window.RebirthBossFX.reset();
             await this.request(async () => {
-                RebirthStore.guidedFirstMatch = RebirthCoach.shouldGuideFirstMatch();
+                const campaignNode = String(new URLSearchParams(window.location.search).get("campaign") || "").trim();
+                const inCampaign = Boolean(campaignNode);
+                RebirthStore.guidedFirstMatch = !inCampaign && RebirthCoach.shouldGuideFirstMatch();
                 RebirthStore.tutorialCompletionSent = false;
-                const payload = await RebirthApi.post(RebirthConfig.endpoints.start, {
-                    tutorial: RebirthStore.guidedFirstMatch
-                });
+                const endpoint = inCampaign ? RebirthConfig.endpoints.campaignStart : RebirthConfig.endpoints.start;
+                const requestPayload = inCampaign
+                    ? { node_id: campaignNode }
+                    : { tutorial: RebirthStore.guidedFirstMatch };
+                const payload = await RebirthApi.post(endpoint, requestPayload);
                 RebirthStore.abandonmentSentForMatch = null;
                 RebirthStore.selectedInstanceId = null;
                 RebirthStore.reward = null;
+                RebirthStore.campaignReward = null;
                 this.applyState(payload.state);
             });
         },
 
         async evolveFirstDuplicate() {
+            const fieldFusion = RebirthStore.firstFieldFusion();
+            if (fieldFusion) {
+                await this.fuseFieldPair(fieldFusion);
+                return;
+            }
             const evolution = RebirthStore.firstEvolution();
             if (!evolution || !RebirthStore.state) return;
             await this.request(async () => {
@@ -2411,6 +2693,7 @@
                     match_id: RebirthStore.state.match_id,
                     card_id: evolution.card_id
                 });
+                RebirthStore.campaignReward = payload.campaign_reward || null;
                 RebirthStore.selectedInstanceId = payload.evolved ? payload.evolved.instance_id : null;
                 // Roda a sequência cinematográfica (overlay → convergência
                 // → runa → flash) antes do applyState, assim a UI antiga
@@ -2418,6 +2701,37 @@
                 await RebirthEvolutionMotion.play(sourceCards, payload.evolved);
                 this.applyState(payload.state);
             });
+        },
+
+        async fuseFieldPair(fusion) {
+            if (!fusion || !RebirthStore.state) return;
+            await this.request(async () => {
+                const sourceCards = RebirthFusionMotion.snapshotSources(fusion.materialIds);
+                const payload = await RebirthApi.post(RebirthConfig.endpoints.labsFusion || "/api/labs/fusion", {
+                    match_id: RebirthStore.state.match_id,
+                    player_id: "player",
+                    source_instance_a: fusion.materialIds[0],
+                    source_instance_b: fusion.materialIds[1]
+                });
+                const event = RebirthFusionMotion.latestEvent(payload.state);
+                const resultingId = payload.fusion
+                    && payload.fusion.resulting_card
+                    && payload.fusion.resulting_card.instance_id;
+                RebirthStore.selectedInstanceId = null;
+                RebirthStore.selectedAttackerId = resultingId || null;
+                await RebirthFusionMotion.play(sourceCards, event, () => {
+                    this.applyState(payload.state);
+                });
+            });
+        },
+
+        async activateEvolutionOrFusion() {
+            const fusion = RebirthStore.firstFieldFusion();
+            if (fusion) {
+                await this.fuseFieldPair(fusion);
+                return;
+            }
+            await this.evolveFirstDuplicate();
         },
 
         async playSelectedCard() {
@@ -2457,6 +2771,7 @@
                 RebirthStore.selectedInstanceId = null;
                 RebirthStore.selectedAttackerId = isMonster ? summonedInstanceId : null;
                 RebirthStore.reward = payload.match_reward || null;
+                RebirthStore.campaignReward = payload.campaign_reward || null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
             });
@@ -2502,6 +2817,7 @@
                 await RebirthCombatMotion.play(attackerInstanceId, visualTargetId, payload.state);
                 RebirthStore.selectedAttackerId = null;
                 RebirthStore.reward = payload.match_reward || null;
+                RebirthStore.campaignReward = payload.campaign_reward || null;
                 const signature = RebirthFeel.resultSignature(payload.state);
                 if (signature) {
                     RebirthStore.lastResultSignature = signature;
@@ -2534,6 +2850,7 @@
                     match_id: RebirthStore.state.match_id
                 });
                 RebirthStore.reward = null;
+                RebirthStore.campaignReward = payload.campaign_reward || null;
                 RebirthStore.selectedAttackerId = null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
@@ -2568,6 +2885,7 @@
         RebirthStore.selectedInstanceId = null;
         RebirthStore.selectedAttackerId = null;
         RebirthStore.reward = null;
+        RebirthStore.campaignReward = null;
         RebirthStore.lastResultSignature = null;
         RebirthStore.lastResultTextSignature = null;
         RebirthStore.guidedFirstMatch = false;
@@ -2739,6 +3057,10 @@
             if (playButton) {
                 playButton.addEventListener("click", () => {
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                    if (RebirthStore.firstFieldFusion()) {
+                        RebirthFlow.activateEvolutionOrFusion();
+                        return;
+                    }
                     if (RebirthStore.selectedAttackerId) {
                         RebirthFlow.clashSelectedAttacker();
                         return;
@@ -2762,7 +3084,7 @@
             if (evolveButton) {
                 evolveButton.addEventListener("click", () => {
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
-                    RebirthFlow.evolveFirstDuplicate();
+                    RebirthFlow.activateEvolutionOrFusion();
                 });
             }
 

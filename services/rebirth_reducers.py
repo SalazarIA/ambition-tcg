@@ -514,6 +514,78 @@ def reduce_monster_summoned(state: Dict[str, Any], event: Dict[str, Any]) -> Dic
     return next_state
 
 
+def _apply_monsters_fused_state(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    payload = _payload(event)
+    side_name = _side_name(event)
+    if not side_name:
+        return state
+    side = state[side_name]
+    material_ids = {str(instance_id) for instance_id in payload.get("material_instance_ids", []) if instance_id}
+    if not material_ids:
+        return state
+
+    slots = _side_slots(side)
+    material_cards = []
+    for index, card in enumerate(slots):
+        if not isinstance(card, dict):
+            continue
+        if str(card.get("instance_id")) in material_ids:
+            defeated = deepcopy(card)
+            defeated["defeated"] = True
+            defeated["fusion_material"] = True
+            material_cards.append(defeated)
+            slots[index] = None
+
+    side["battlefield"] = [
+        card
+        for card in side.get("battlefield", [])
+        if not isinstance(card, dict) or str(card.get("instance_id")) not in material_ids
+    ]
+    if not material_cards:
+        for card in payload.get("material_cards", []) or []:
+            if isinstance(card, dict):
+                defeated = deepcopy(card)
+                defeated["defeated"] = True
+                defeated["fusion_material"] = True
+                material_cards.append(defeated)
+
+    resulting_card = deepcopy(payload.get("resulting_card") or {})
+    if resulting_card:
+        slot = int(payload.get("resulting_slot", resulting_card.get("field_slot", 1)) or 1)
+        slot = max(0, min(2, slot))
+        resulting_card["field_slot"] = slot
+        resulting_card["slot"] = slot + 1
+        stats = payload.get("resulting_stats") or {}
+        for key in ("attack", "power", "guard", "current_guard", "max_guard"):
+            if key in stats:
+                resulting_card[key] = stats[key]
+        slots[slot] = resulting_card
+        side["played_card"] = deepcopy(resulting_card)
+
+    side["field"] = slots
+    _sync_side_field(side)
+    if material_cards:
+        side.setdefault("discard", []).extend(material_cards)
+    state["last_clash"] = None
+    state["phase"] = "choose"
+    state["turn_phase"] = "MAIN_PHASE"
+    state["result"] = {
+        "outcome": "Fusion",
+        "winner": None,
+        "damage": {"player": 0, "bot": 0},
+        "message": event.get("message") or "Monstros fundidos.",
+        "ability_events": ["BREAKTHROUGH"],
+        "effective_attack": {"player": 0, "bot": 0},
+    }
+    return state
+
+
+def reduce_monsters_fused(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    side_name = _side_name(event)
+    next_state = _copy_state(state, side_names=(side_name,) if side_name else ())
+    return _apply_monsters_fused_state(next_state, event)
+
+
 def reduce_trap_armed(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
     next_state = _copy_state(state)
     payload = _payload(event)
@@ -924,6 +996,9 @@ def apply_event_in_place(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[s
                 side.setdefault("discard", []).append(defeated)
         return state
 
+    if event_type == "MONSTERS_FUSED":
+        return _apply_monsters_fused_state(state, event)
+
     if event_type == "TURN_STATUS_TICKED":
         side_name = _side_name(event)
         if side_name:
@@ -963,6 +1038,7 @@ REDUCER_REGISTRY: Dict[str, Reducer] = {
     "HEALTH_RECOVERED": reduce_health_recovered,
     "MATCH_FINISHED": reduce_match_finished,
     "MONSTER_SUMMONED": reduce_monster_summoned,
+    "MONSTERS_FUSED": reduce_monsters_fused,
     "PLAYED_CARDS_CLEARED": reduce_played_cards_cleared,
     "RESOURCE_CONSUMED": reduce_resource_consumed,
     "SHIELD_APPLIED": reduce_shield_applied,

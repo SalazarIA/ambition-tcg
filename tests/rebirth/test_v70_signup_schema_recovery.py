@@ -52,12 +52,14 @@ def test_legacy_collision_preflight_runs_before_foundation_migration(monkeypatch
 
 
 def test_fk_recovery_accepts_historical_rows_and_fences_new_user_ids():
-    assert rebirth_schema.SCHEMA_VERSION == 7
+    assert rebirth_schema.SCHEMA_VERSION == 8
     assert "pg_get_serial_sequence('users', 'id')" in rebirth_schema.MIGRATION_005
     assert "match_history_legacy_ascension" in rebirth_schema.MIGRATION_005
     assert "NOT LIKE '%%_legacy_ascension'" in rebirth_schema.MIGRATION_005
     assert "ADD CONSTRAINT %%I %%s NOT VALID" in rebirth_schema.MIGRATION_005
     assert "idx_telemetry_type_created" in rebirth_schema.MIGRATION_007
+    assert "user_campaign_progress" in rebirth_schema.MIGRATION_008
+    assert "campaign_attempt" in rebirth_schema.MIGRATION_008
 
 
 def test_database_error_details_are_not_public_by_default():

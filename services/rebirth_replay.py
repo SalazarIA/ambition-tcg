@@ -14,18 +14,37 @@ from services.rebirth_domain import (
     RULESET_VERSION,
     canonical_state_hash,
 )
-from services.rebirth_dispatcher import DeclareAttackCommand, EndTurnCommand, EvolveDuplicateCommand, SummonCardCommand, dispatch_command
+from services.rebirth_dispatcher import DeclareAttackCommand, EndTurnCommand, EvolveDuplicateCommand, FuseFieldPairCommand, SummonCardCommand, dispatch_command
 from services.rebirth_engine import start_match
 from services.rebirth_contracts import RebirthError
 from services.rebirth_profiler import current_profiler
 
 
-SUPPORTED_COMMANDS = {"PLAY_CARD", "DECLARE_ATTACK", "EVOLVE_DUPLICATE", "NEXT_TURN"}
+SUPPORTED_COMMANDS = {"PLAY_CARD", "DECLARE_ATTACK", "EVOLVE_DUPLICATE", "FUSE_FIELD_PAIR", "NEXT_TURN"}
 
 
 def build_replay_envelope(match: Dict[str, Any], *, include_stream: bool = True) -> Dict[str, Any]:
     initial = deepcopy(match.get("initial") or {})
     final_hash = canonical_state_hash(match)
+    initial_payload = {
+        "player_card_ids": list(initial.get("player_card_ids") or []),
+        "player_name": initial.get("player_name") or (match.get("player") or {}).get("name") or "Voc\u00ea",
+        "bot_profile_id": initial.get("bot_profile_id") or (match.get("bot_profile") or {}).get("id"),
+    }
+    if initial.get("campaign_node"):
+        initial_payload.update(
+            {
+                "bot_card_ids": list(initial.get("bot_card_ids") or []),
+                "player_hp": int(initial.get("player_hp", 30) or 30),
+                "bot_hp": int(initial.get("bot_hp", 30) or 30),
+                "campaign_version": initial.get("campaign_version"),
+                "campaign_node": initial.get("campaign_node"),
+                "campaign_attempt": int(initial.get("campaign_attempt", 1) or 1),
+                "campaign_modifiers": deepcopy(initial.get("campaign_modifiers") or []),
+                "campaign_presentation": deepcopy(initial.get("campaign_presentation") or {}),
+                "campaign_advice": deepcopy(initial.get("campaign_advice") or {}),
+            }
+        )
     envelope = {
         "format_version": REPLAY_FORMAT_VERSION,
         "replay_schema_version": REPLAY_SCHEMA_VERSION,
@@ -37,11 +56,7 @@ def build_replay_envelope(match: Dict[str, Any], *, include_stream: bool = True)
         "game_seed": str(match.get("game_seed", match.get("seed", "")) or ""),
         "deterministic_seed": str(match.get("game_seed", match.get("seed", "")) or ""),
         "display_seed": str(match.get("seed", "") or ""),
-        "initial": {
-            "player_card_ids": list(initial.get("player_card_ids") or []),
-            "player_name": initial.get("player_name") or (match.get("player") or {}).get("name") or "Voc\u00ea",
-            "bot_profile_id": initial.get("bot_profile_id") or (match.get("bot_profile") or {}).get("id"),
-        },
+        "initial": initial_payload,
         "commands": deepcopy(match.get("commands") or []),
         "checkpoints": deepcopy(match.get("checkpoints") or []),
         "expected_canonical_state_hash": final_hash,
@@ -134,6 +149,15 @@ def replay_match(source: Dict[str, Any]) -> Dict[str, Any]:
         bot_profile_id=initial.get("bot_profile_id"),
         runtime_mode="replay",
         apply_reducers_inline=True,
+        bot_card_ids=initial.get("bot_card_ids") or None,
+        player_hp=initial.get("player_hp"),
+        bot_hp=initial.get("bot_hp"),
+        campaign_version=initial.get("campaign_version"),
+        campaign_node=initial.get("campaign_node"),
+        campaign_attempt=initial.get("campaign_attempt"),
+        campaign_modifiers=initial.get("campaign_modifiers"),
+        campaign_presentation=initial.get("campaign_presentation"),
+        campaign_advice=initial.get("campaign_advice"),
     )
     match["seed"] = str(envelope.get("display_seed", "") or "")
 
@@ -169,6 +193,15 @@ def replay_match(source: Dict[str, Any]) -> Dict[str, Any]:
                     )
                 elif command_type == "EVOLVE_DUPLICATE":
                     dispatch_command(match, EvolveDuplicateCommand(card_id=payload.get("card_id")))
+                elif command_type == "FUSE_FIELD_PAIR":
+                    dispatch_command(
+                        match,
+                        FuseFieldPairCommand(
+                            player_id=payload.get("player_id"),
+                            source_instance_a=payload.get("source_instance_a"),
+                            source_instance_b=payload.get("source_instance_b"),
+                        ),
+                    )
                 elif command_type == "NEXT_TURN":
                     dispatch_command(match, EndTurnCommand(turn=payload.get("turn")))
             finally:

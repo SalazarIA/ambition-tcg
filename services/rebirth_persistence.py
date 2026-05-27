@@ -47,6 +47,7 @@ from services.rebirth_cards import (
     is_trap,
     validate_deck_distribution,
 )
+from services.rebirth_campaign import CAMPAIGN_VERSION
 from services.rebirth_schema import SCHEMA_VERSION, normalize_database_url, validate_schema
 
 
@@ -86,6 +87,31 @@ ACHIEVEMENTS = [
         "key": "tutorial_complete",
         "name": "Desperto",
         "copy": "Conclua a introdução do Rebirth.",
+    },
+    {
+        "key": "first_campaign_clear",
+        "name": "Coroa Cinzenta",
+        "copy": "Derrote o Rei Cinzento e conclua a campanha.",
+    },
+    {
+        "key": "no_damage_win",
+        "name": "Intocavel",
+        "copy": "Venca um encontro de campanha sem perder PV.",
+    },
+    {
+        "key": "evolve_master",
+        "name": "Mestre da Evolucao",
+        "copy": "Venca um encontro apos evoluir uma unidade.",
+    },
+    {
+        "key": "shadow_slayer",
+        "name": "Cacador do Eclipse",
+        "copy": "Derrote o Parasita do Eclipse.",
+    },
+    {
+        "key": "3_win_streak",
+        "name": "Marcha Imparavel",
+        "copy": "Venca tres encontros de campanha em sequencia.",
     },
 ]
 
@@ -513,6 +539,18 @@ class RebirthRepository:
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS user_campaign_progress (
+                    user_id INTEGER NOT NULL,
+                    campaign_version TEXT NOT NULL,
+                    node_id TEXT NOT NULL,
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    completed_at TEXT,
+                    reward_claimed_at TEXT,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, campaign_version, node_id),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
                 CREATE TABLE IF NOT EXISTS reward_claims (
                     user_id INTEGER NOT NULL,
                     reward_key TEXT NOT NULL,
@@ -551,6 +589,9 @@ class RebirthRepository:
                     final_state_hash TEXT,
                     final_state_json TEXT NOT NULL,
                     runtime_state_json TEXT NOT NULL,
+                    campaign_version TEXT,
+                    campaign_node TEXT,
+                    campaign_attempt INTEGER,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
 
@@ -672,12 +713,24 @@ class RebirthRepository:
                     ON user_sessions(token_hash, revoked_at);
                 CREATE INDEX IF NOT EXISTS idx_telemetry_type_created
                     ON telemetry_events(event_type, created_at);
+                CREATE INDEX IF NOT EXISTS idx_user_campaign_progress_nodes
+                    ON user_campaign_progress(user_id, campaign_version, node_id);
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_purchase_reference_once
                     ON economy_transactions(user_id, transaction_type, reference_id)
                     WHERE transaction_type = 'IN_APP_PURCHASE' AND reference_id IS NOT NULL AND reference_id <> '';
                 """
             )
             self._ensure_sqlite_column(db, "user_collection", "locked_copies", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_sqlite_column(db, "match_history", "campaign_version", "TEXT")
+            self._ensure_sqlite_column(db, "match_history", "campaign_node", "TEXT")
+            self._ensure_sqlite_column(db, "match_history", "campaign_attempt", "INTEGER")
+            db.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_match_history_campaign
+                ON match_history(user_id, campaign_version, campaign_node)
+                WHERE campaign_node IS NOT NULL
+                """
+            )
             self._backfill_wallet_ledger(db)
 
     def _ensure_sqlite_column(self, db, table, column, definition):
@@ -1692,6 +1745,169 @@ class RebirthRepository:
             "wallet": wallet,
         }
 
+    def get_campaign_progress(self, user_id, campaign_version=CAMPAIGN_VERSION):
+        self.ensure_schema()
+        campaign_version = str(campaign_version or CAMPAIGN_VERSION)
+        with self.connect() as db:
+            rows = db.execute(
+                """
+                SELECT node_id, attempts, completed_at, reward_claimed_at, updated_at
+                FROM user_campaign_progress
+                WHERE user_id = ? AND campaign_version = ?
+                ORDER BY node_id ASC
+                """,
+                (int(user_id), campaign_version),
+            ).fetchall()
+        return {
+            "campaign_version": campaign_version,
+            "nodes": {
+                row["node_id"]: {
+                    "attempts": int(row["attempts"] or 0),
+                    "completed_at": row["completed_at"],
+                    "reward_claimed_at": row["reward_claimed_at"],
+                    "updated_at": row["updated_at"],
+                }
+                for row in rows
+            },
+        }
+
+    @_retry_postgres_serialization_write
+    def start_campaign_attempt(self, user_id, node_id, campaign_version=CAMPAIGN_VERSION):
+        self.ensure_schema()
+        campaign_version = str(campaign_version or CAMPAIGN_VERSION)
+        node_id = str(node_id or "").strip()
+        now = utc_now()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute(
+                """
+                INSERT OR IGNORE INTO user_campaign_progress
+                    (user_id, campaign_version, node_id, attempts, completed_at, reward_claimed_at, updated_at)
+                VALUES (?, ?, ?, 0, NULL, NULL, ?)
+                """,
+                (int(user_id), campaign_version, node_id, now),
+            )
+            lock = " FOR UPDATE" if self.backend == "postgresql" else ""
+            row = db.execute(
+                """
+                SELECT attempts
+                FROM user_campaign_progress
+                WHERE user_id = ? AND campaign_version = ? AND node_id = ?
+                """ + lock,
+                (int(user_id), campaign_version, node_id),
+            ).fetchone()
+            attempt = int(row["attempts"] or 0) + 1
+            db.execute(
+                """
+                UPDATE user_campaign_progress
+                SET attempts = ?, updated_at = ?
+                WHERE user_id = ? AND campaign_version = ? AND node_id = ?
+                """,
+                (attempt, now, int(user_id), campaign_version, node_id),
+            )
+        return attempt
+
+    @_retry_postgres_serialization_write
+    def record_campaign_victory(self, user_id, node_id, reward, campaign_version=CAMPAIGN_VERSION, match_state=None):
+        self.ensure_schema()
+        campaign_version = str(campaign_version or CAMPAIGN_VERSION)
+        node_id = str(node_id or "").strip()
+        xp_delta = max(0, int((reward or {}).get("xp", 0) or 0))
+        idempotency_key = f"campaign_reward:{int(user_id)}:{node_id}:{campaign_version}"
+        now = utc_now()
+        applied = False
+        unlocked = []
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            lock = " FOR UPDATE" if self.backend == "postgresql" else ""
+            row = db.execute(
+                """
+                SELECT attempts, completed_at, reward_claimed_at
+                FROM user_campaign_progress
+                WHERE user_id = ? AND campaign_version = ? AND node_id = ?
+                """ + lock,
+                (int(user_id), campaign_version, node_id),
+            ).fetchone()
+            if not row:
+                raise RebirthPersistenceError("A tentativa de campanha nao foi encontrada.", "missing_campaign_attempt", 409)
+            if not row["reward_claimed_at"]:
+                cursor = db.execute(
+                    """
+                    INSERT OR IGNORE INTO economy_idempotency_keys
+                        (user_id, idempotency_key, scope, reference_id, settled_at, metadata_json)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        int(user_id),
+                        idempotency_key,
+                        "CAMPAIGN",
+                        node_id,
+                        now,
+                        json.dumps({"campaign_version": campaign_version, "node_id": node_id, "xp": xp_delta}, sort_keys=True),
+                    ),
+                )
+                applied = bool(cursor.rowcount)
+                db.execute(
+                    """
+                    UPDATE user_campaign_progress
+                    SET completed_at = COALESCE(completed_at, ?),
+                        reward_claimed_at = CASE WHEN ? THEN COALESCE(reward_claimed_at, ?) ELSE reward_claimed_at END,
+                        updated_at = ?
+                    WHERE user_id = ? AND campaign_version = ? AND node_id = ?
+                    """,
+                    (now, applied, now, now, int(user_id), campaign_version, node_id),
+                )
+                if applied and xp_delta:
+                    db.execute(
+                        "UPDATE user_progress SET xp = xp + ?, updated_at = ? WHERE user_id = ?",
+                        (xp_delta, now, int(user_id)),
+                    )
+                    self._record_ledger_entry(
+                        db,
+                        user_id,
+                        resource="xp",
+                        delta=xp_delta,
+                        reason="campaign_reward",
+                        reference_type="campaign_node",
+                        reference_id=node_id,
+                        metadata={"campaign_version": campaign_version, "idempotency_key": idempotency_key},
+                        now=now,
+                    )
+                    self._record_economy_transaction(db, user_id, "CAMPAIGN_REWARD", xp_delta, "XP", node_id, now)
+            state = match_state or {}
+            is_campaign_win = bool(state.get("is_finished")) and state.get("winner") == "player"
+            if is_campaign_win:
+                if node_id == "node_10_gray_king":
+                    unlocked.append("first_campaign_clear")
+                if int((state.get("player") or {}).get("hp", -1) or -1) == int((state.get("player") or {}).get("max_hp", -2) or -2):
+                    unlocked.append("no_damage_win")
+                if node_id == "node_07_eclipse_parasite":
+                    unlocked.append("shadow_slayer")
+                if any(command.get("type") == "EVOLVE_DUPLICATE" for command in state.get("commands", [])):
+                    unlocked.append("evolve_master")
+                recent_campaign = db.execute(
+                    """
+                    SELECT winner, status
+                    FROM match_history
+                    WHERE user_id = ? AND campaign_node IS NOT NULL
+                    ORDER BY updated_at DESC
+                    LIMIT 3
+                    """,
+                    (int(user_id),),
+                ).fetchall()
+                if len(recent_campaign) == 3 and all(row["winner"] == "player" and row["status"] == "finished" for row in recent_campaign):
+                    unlocked.append("3_win_streak")
+                self._unlock_achievements(db, user_id, unlocked, now)
+        return {
+            "node_id": node_id,
+            "campaign_version": campaign_version,
+            "xp": xp_delta if applied else 0,
+            "applied": applied,
+            "idempotency_key": idempotency_key,
+            "progress": self.get_campaign_progress(user_id, campaign_version),
+            "achievements": self.achievements(user_id),
+        }
+
     @_retry_postgres_serialization_write
     def record_clash_result(self, user_id, public_match_state):
         if not user_id:
@@ -2007,15 +2223,18 @@ class RebirthRepository:
             db.execute(
                 """
                 INSERT INTO match_history
-                    (match_id, user_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json, runtime_state_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (match_id, user_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json, runtime_state_json, campaign_version, campaign_node, campaign_attempt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(match_id) DO UPDATE SET
                     status = excluded.status,
                     winner = excluded.winner,
                     updated_at = excluded.updated_at,
                     final_state_hash = excluded.final_state_hash,
                     final_state_json = excluded.final_state_json,
-                    runtime_state_json = excluded.runtime_state_json
+                    runtime_state_json = excluded.runtime_state_json,
+                    campaign_version = excluded.campaign_version,
+                    campaign_node = excluded.campaign_node,
+                    campaign_attempt = excluded.campaign_attempt
                 """,
                 (
                     match["match_id"],
@@ -2029,6 +2248,9 @@ class RebirthRepository:
                     canonical_state_hash(match),
                     json.dumps(public, sort_keys=True),
                     json.dumps(match, sort_keys=True),
+                    match.get("campaign_version"),
+                    match.get("campaign_node"),
+                    match.get("campaign_attempt"),
                 ),
             )
             for command in match.get("commands", []):
@@ -2073,7 +2295,8 @@ class RebirthRepository:
         with self.connect() as db:
             rows = db.execute(
                 """
-                SELECT match_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json
+                SELECT match_id, seed, bot_profile_id, status, winner, started_at, updated_at, final_state_hash, final_state_json,
+                       campaign_version, campaign_node, campaign_attempt
                 FROM match_history
                 WHERE user_id = ?
                 ORDER BY updated_at DESC
@@ -2101,6 +2324,9 @@ class RebirthRepository:
                         "started_at": row["started_at"],
                         "updated_at": row["updated_at"],
                         "state_hash": row["final_state_hash"],
+                        "campaign_version": row["campaign_version"],
+                        "campaign_node": row["campaign_node"],
+                        "campaign_attempt": row["campaign_attempt"],
                         "command_count": int(command_count),
                         "event_count": int(event_count),
                         "state": json.loads(row["final_state_json"]),
@@ -2191,6 +2417,7 @@ class RebirthRepository:
             "boosters": self.booster_history(user_id, limit=20),
             "matches": self.match_history(user_id, limit=20),
             "ledger": self.economy_ledger(user_id, limit=50),
+            "campaign": self.get_campaign_progress(user_id),
         }
 
     @_retry_postgres_serialization_write

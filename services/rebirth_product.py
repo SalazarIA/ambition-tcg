@@ -432,6 +432,11 @@ def guest_profile():
                 ("first_booster", "Booster Aberto", "Abra um booster Rebirth sem pagamento."),
                 ("daily_claimed", "Centelha Diária", "Resgate a recompensa diária do primeiro clash."),
                 ("tutorial_complete", "Desperto", "Conclua a introdução do Rebirth."),
+                ("first_campaign_clear", "Coroa Cinzenta", "Derrote o Rei Cinzento e conclua a campanha."),
+                ("no_damage_win", "Intocavel", "Venca um encontro de campanha sem perder PV."),
+                ("evolve_master", "Mestre da Evolucao", "Venca um encontro apos evoluir uma unidade."),
+                ("shadow_slayer", "Cacador do Eclipse", "Derrote o Parasita do Eclipse."),
+                ("3_win_streak", "Marcha Imparavel", "Venca tres encontros de campanha em sequencia."),
             ]
         ],
         "unlocked_achievements": 0,

@@ -8,10 +8,12 @@ from flask import Flask, jsonify, make_response, redirect, render_template, requ
 
 from services.rebirth_contracts import RebirthError
 from services.rebirth_balance import simulate_balance
+from services.rebirth_campaign import CAMPAIGN_VERSION, campaign_payload, get_node, is_unlocked
 from services.rebirth_dispatcher import (
     DeclareAttackCommand,
     EndTurnCommand,
     EvolveDuplicateCommand,
+    FuseFieldPairCommand,
     SummonCardCommand,
     dispatch_command,
 )
@@ -62,6 +64,8 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE") == "true"
 
+REBIRTH_LABS_ENABLED = True
+app.config["REBIRTH_LABS_ENABLED"] = os.environ.get("REBIRTH_LABS_ENABLED", str(REBIRTH_LABS_ENABLED)).lower() == "true"
 REBIRTH_MATCHES = MATCH_STORE
 AUTH_RATE_LIMITS = {}
 AUTH_RATE_LIMIT_LOCK = threading.Lock()
@@ -109,15 +113,16 @@ def _bootstrap_rebirth_schema():
             finally:
                 engine.dispose()
             current_version = int(status.get("version", 0) or 0)
-            if current_version >= SCHEMA_VERSION and not status.get("missing_tables"):
+            if current_version >= SCHEMA_VERSION and not status.get("missing_tables") and not status.get("missing_columns"):
                 app.logger.info("rebirth.schema already at v%s", current_version)
                 _SCHEMA_BOOTSTRAP_DONE = True
                 return
             app.logger.info(
-                "rebirth.schema bootstrap upgrading: v%s -> v%s (missing=%s)",
+                "rebirth.schema bootstrap upgrading: v%s -> v%s (missing=%s, columns=%s)",
                 current_version,
                 SCHEMA_VERSION,
                 status.get("missing_tables"),
+                status.get("missing_columns"),
             )
             upgrade_schema(normalized)
             app.logger.info("rebirth.schema bootstrap completed to v%s", SCHEMA_VERSION)
@@ -401,12 +406,16 @@ def enforce_auth_rate_limit(action, identifier="anonymous"):
 
 def get_match(match_id, user=None):
     try:
-        return MATCH_STORE.get(match_id)
+        match = MATCH_STORE.get(match_id)
     except RebirthError as error:
         if error.code != "missing_match" or not user:
             raise
         restored = rebirth_repo().runtime_match_state(user["id"], match_id)
-        return MATCH_STORE.save(restored)
+        match = MATCH_STORE.save(restored)
+    owner_id = match.get("owner_user_id")
+    if user and owner_id and int(owner_id) == int(user["id"]):
+        settle_campaign_victory(rebirth_repo(), user, match)
+    return match
 
 
 def ensure_match_access(match, user=None):
@@ -423,6 +432,25 @@ def persist_match_if_owned(repo, user, match):
     return None
 
 
+def settle_campaign_victory(repo, user, match):
+    if not repo or not user or not match:
+        return None
+    if not match.get("campaign_node") or not match.get("is_finished") or match.get("winner") != "player":
+        return None
+    if match.get("campaign_version") != CAMPAIGN_VERSION:
+        return None
+    node = get_node(match.get("campaign_node"))
+    if not node:
+        return None
+    return repo.record_campaign_victory(
+        user["id"],
+        node["id"],
+        node["reward"],
+        CAMPAIGN_VERSION,
+        match_state=match,
+    )
+
+
 def record_match_telemetry(repo, user, match, event_type, **extra):
     """Best-effort product metrics kept outside deterministic match state."""
     if not match:
@@ -431,14 +459,17 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
     if not match_id:
         return
     elapsed_ms = None
+    total_elapsed_ms = None
     now = time.monotonic()
     with MATCH_TELEMETRY_LOCK:
-        started = MATCH_TELEMETRY_CLOCKS.get(match_id)
-        if event_type == "match_started" or started is None:
-            MATCH_TELEMETRY_CLOCKS[match_id] = now
+        timing = MATCH_TELEMETRY_CLOCKS.get(match_id)
+        if event_type == "match_started" or not isinstance(timing, dict):
+            timing = {"started_at": now, "last_at": now}
+            MATCH_TELEMETRY_CLOCKS[match_id] = timing
         else:
-            elapsed_ms = round(max(0.0, now - started) * 1000)
-            MATCH_TELEMETRY_CLOCKS[match_id] = now
+            elapsed_ms = round(max(0.0, now - timing["last_at"]) * 1000)
+            timing["last_at"] = now
+        total_elapsed_ms = round(max(0.0, now - timing["started_at"]) * 1000)
         if match.get("is_finished") or event_type == "match_abandoned":
             MATCH_TELEMETRY_CLOCKS.pop(match_id, None)
     result = match.get("result") or {}
@@ -460,6 +491,14 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
         "event_count": len(events),
         "chain_count": len(chain_ids),
         "decision_elapsed_ms": elapsed_ms,
+        "campaign_version": match.get("campaign_version"),
+        "campaign_node": match.get("campaign_node"),
+        "campaign_attempt": match.get("campaign_attempt"),
+        "node_retry_count": max(0, int(match.get("campaign_attempt", 1) or 1) - 1) if match.get("campaign_node") else None,
+        "abandon_turn": int(match.get("turn", 0) or 0) if event_type == "match_abandoned" else None,
+        "first_loss_node": match.get("campaign_node") if match.get("campaign_node") and match.get("is_finished") and match.get("winner") == "bot" and int(match.get("campaign_attempt", 1) or 1) == 1 else None,
+        "victory_duration": total_elapsed_ms if match.get("campaign_node") and match.get("is_finished") and match.get("winner") == "player" else None,
+        "average_turns": int(match.get("turn", 0) or 0) if match.get("campaign_node") and match.get("is_finished") else None,
     }
     payload.update({key: value for key, value in extra.items() if value is not None})
     try:
@@ -596,6 +635,17 @@ def rebirth():
     user = current_user()
     progress = rebirth_repo().progression(user["id"]) if user else None
     return render_template("rebirth.html", account=account_payload(user), progression=progress or {})
+
+
+@app.get("/rebirth/campaign")
+def rebirth_campaign():
+    user = current_user()
+    progress = rebirth_repo().get_campaign_progress(user["id"]) if user else None
+    return render_template(
+        "rebirth_campaign.html",
+        account=account_payload(user),
+        campaign=campaign_payload(progress),
+    )
 
 
 @app.get("/rebirth/account")
@@ -772,7 +822,10 @@ def api_rebirth_start():
                 player_card_ids = DEFAULT_LOADOUT
                 bot_profile_id = "novice"
             elif progress and int(progress.get("clashes", 0) or 0) < 3:
-                bot_profile_id = "aggressive"
+                # A primeira sequência após o tutorial deve ensinar leitura
+                # de mesa; o perfil agressivo é reservado para depois que o
+                # jogador já registrou seus primeiros clashes.
+                bot_profile_id = "defensive"
         requested_seed = payload.get("seed")
         if is_first_duel and requested_seed is None:
             requested_seed = "guided-first-match"
@@ -795,6 +848,120 @@ def api_rebirth_start():
         record_match_telemetry(repo, user, match, "match_started", guest=not bool(user))
         state = public_state(match)
         return json_success(state, match.get("result"), match_id=match["match_id"])
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.get("/api/rebirth/campaign")
+def api_rebirth_campaign():
+    try:
+        user = require_user()
+        progress = rebirth_repo().get_campaign_progress(user["id"])
+        return json_payload(campaign=campaign_payload(progress))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.post("/api/rebirth/campaign/start")
+def api_rebirth_campaign_start():
+    try:
+        payload = request_json(required=True)
+        node_id = payload.get("node_id")
+        if not isinstance(node_id, str) or not node_id.strip():
+            raise RebirthError("Informe um no valido da campanha.", "invalid_campaign_payload")
+        node = get_node(node_id.strip())
+        if not node:
+            raise RebirthError("Este encontro da campanha nao existe.", "campaign_node_not_found")
+
+        user = require_user()
+        repo = rebirth_repo()
+        progress = repo.get_campaign_progress(user["id"])
+        if not is_unlocked(node["id"], progress):
+            raise RebirthError("Venca o encontro anterior para liberar este duelo.", "campaign_node_locked")
+
+        attempt = repo.start_campaign_attempt(user["id"], node["id"], CAMPAIGN_VERSION)
+        match = start_match(
+            seed=f"campaign:{user['id']}:{node['id']}:{attempt}",
+            player_card_ids=repo.loadout_card_ids(user["id"]),
+            player_name=user["username"],
+            bot_profile_id=node["bot_profile_id"],
+            runtime_mode="singleplayer",
+            apply_reducers_inline=False,
+            first_duel=False,
+            bot_card_ids=node["bot_deck_override"],
+            player_hp=node["player_hp"],
+            bot_hp=node["bot_hp"],
+            campaign_version=CAMPAIGN_VERSION,
+            campaign_node=node["id"],
+            campaign_attempt=attempt,
+            campaign_modifiers=node["modifiers"],
+            campaign_presentation={
+                **node["presentation"],
+                "name": node["name"],
+                "intro": node["intro"],
+                "order": node["order"],
+            },
+            campaign_advice={
+                "tip": node["loss_tip"],
+                "key_card": node["key_card"],
+            },
+        )
+        match["owner_user_id"] = user["id"]
+        match["seed"] = f"campaign:{node['id']}:{attempt}"
+        match = MATCH_STORE.save(match)
+        repo.upsert_match_history(user["id"], match)
+        record_match_telemetry(
+            repo,
+            user,
+            match,
+            "match_started",
+            campaign_node=node["id"],
+            campaign_attempt=attempt,
+        )
+        return json_success(
+            public_state(match),
+            match.get("result"),
+            match_id=match["match_id"],
+            campaign=campaign_payload(repo.get_campaign_progress(user["id"])),
+            campaign_reward=None,
+        )
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/labs/fusion")
+def api_labs_fusion():
+    if not app.config.get("REBIRTH_LABS_ENABLED"):
+        return json_error("Rebirth Labs esta desativado.", "labs_disabled", status=404)
+    try:
+        payload = request_json(required=True)
+        user = current_user()
+        match = get_match(payload.get("match_id"), user=user)
+        ensure_match_access(match, user=user)
+        fusion = dispatch_command(
+            match,
+            FuseFieldPairCommand(
+                player_id=payload.get("player_id"),
+                source_instance_a=payload.get("source_instance_a"),
+                source_instance_b=payload.get("source_instance_b"),
+            ),
+        )
+        repo = rebirth_repo() if user else None
+        persist_match_if_owned(repo, user, match)
+        campaign_reward = settle_campaign_victory(repo, user, match)
+        record_match_telemetry(
+            repo,
+            user,
+            match,
+            "field_pair_fused",
+            source_instance_a=payload.get("source_instance_a"),
+            source_instance_b=payload.get("source_instance_b"),
+        )
+        return json_success(public_state(match), match.get("result"), fusion=fusion, campaign_reward=campaign_reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -830,12 +997,14 @@ def api_rebirth_play_card():
         state = public_state(match)
         progress = None
         reward = match_reward_payload(None, None, state)
+        campaign_reward = None
         if user:
             if state.get("last_clash") and state.get("phase") in {"result", "finished"}:
                 before = repo.progression(user["id"])
                 progress = repo.record_clash_result(user["id"], state)
                 reward = clash_reward_payload_from_progress(before, progress, state)
             repo.upsert_match_history(user["id"], match)
+            campaign_reward = settle_campaign_victory(repo, user, match)
         record_match_telemetry(
             repo,
             user,
@@ -844,7 +1013,13 @@ def api_rebirth_play_card():
             card_id=payload.get("card_id"),
             card_instance_id=payload.get("card_instance_id"),
         )
-        return json_success(state, match.get("result"), progression=progress, match_reward=reward)
+        return json_success(
+            state,
+            match.get("result"),
+            progression=progress,
+            match_reward=reward,
+            campaign_reward=campaign_reward,
+        )
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -870,12 +1045,14 @@ def api_rebirth_attack():
         state = public_state(match)
         progress = None
         reward = match_reward_payload(None, None, state)
+        campaign_reward = None
         if user:
             if state.get("last_clash") and state.get("phase") in {"result", "finished"}:
                 before = repo.progression(user["id"])
                 progress = repo.record_clash_result(user["id"], state)
                 reward = clash_reward_payload_from_progress(before, progress, state)
             repo.upsert_match_history(user["id"], match)
+            campaign_reward = settle_campaign_victory(repo, user, match)
         record_match_telemetry(
             repo,
             user,
@@ -884,7 +1061,13 @@ def api_rebirth_attack():
             attacker_instance_id=payload.get("attacker_instance_id"),
             target_instance_id=payload.get("target_instance_id"),
         )
-        return json_success(state, match.get("result"), progression=progress, match_reward=reward)
+        return json_success(
+            state,
+            match.get("result"),
+            progression=progress,
+            match_reward=reward,
+            campaign_reward=campaign_reward,
+        )
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -901,8 +1084,9 @@ def api_rebirth_evolve():
         evolved = dispatch_command(match, EvolveDuplicateCommand(card_id=payload.get("card_id")))
         repo = rebirth_repo() if user else None
         persist_match_if_owned(repo, user, match)
+        campaign_reward = settle_campaign_victory(repo, user, match)
         record_match_telemetry(repo, user, match, "card_evolved", card_id=payload.get("card_id"))
-        return json_success(public_state(match), match.get("result"), evolved=evolved)
+        return json_success(public_state(match), match.get("result"), evolved=evolved, campaign_reward=campaign_reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -919,8 +1103,9 @@ def api_rebirth_next_turn():
         dispatch_command(match, EndTurnCommand(turn=match.get("turn")))
         repo = rebirth_repo() if user else None
         persist_match_if_owned(repo, user, match)
+        campaign_reward = settle_campaign_victory(repo, user, match)
         record_match_telemetry(repo, user, match, "turn_ended")
-        return json_success(public_state(match), match.get("result"))
+        return json_success(public_state(match), match.get("result"), campaign_reward=campaign_reward)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:

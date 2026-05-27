@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 SCHEMA_MIGRATION_LOCK_KEY = 735194302771
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
@@ -31,6 +31,10 @@ REQUIRED_TABLES = {
     "admin_audit_log",
     "market_offers",
     "telemetry_events",
+    "user_campaign_progress",
+}
+REQUIRED_COLUMNS = {
+    "match_history": {"campaign_version", "campaign_node", "campaign_attempt"},
 }
 
 # Executado antes da foundation migration: tabelas Ascension com nomes
@@ -470,7 +474,43 @@ VALUES (7, 'product_telemetry_query_index')
 ON CONFLICT (version) DO NOTHING;
 """
 
-MIGRATIONS = (MIGRATION_001, MIGRATION_002, MIGRATION_003, MIGRATION_004, MIGRATION_005, MIGRATION_006, MIGRATION_007)
+MIGRATION_008 = """
+CREATE TABLE IF NOT EXISTS user_campaign_progress (
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    campaign_version VARCHAR(64) NOT NULL,
+    node_id VARCHAR(48) NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+    completed_at TIMESTAMPTZ,
+    reward_claimed_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (user_id, campaign_version, node_id)
+);
+
+ALTER TABLE match_history ADD COLUMN IF NOT EXISTS campaign_version VARCHAR(64);
+ALTER TABLE match_history ADD COLUMN IF NOT EXISTS campaign_node VARCHAR(48);
+ALTER TABLE match_history ADD COLUMN IF NOT EXISTS campaign_attempt INTEGER;
+
+CREATE INDEX IF NOT EXISTS idx_match_history_campaign
+    ON match_history(user_id, campaign_version, campaign_node)
+    WHERE campaign_node IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_campaign_progress_nodes
+    ON user_campaign_progress(user_id, campaign_version, node_id);
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (8, 'single_player_campaign_v1_progress')
+ON CONFLICT (version) DO NOTHING;
+"""
+
+MIGRATIONS = (
+    MIGRATION_001,
+    MIGRATION_002,
+    MIGRATION_003,
+    MIGRATION_004,
+    MIGRATION_005,
+    MIGRATION_006,
+    MIGRATION_007,
+    MIGRATION_008,
+)
 
 
 def normalize_database_url(database_url: str) -> str:
@@ -515,13 +555,25 @@ def validate_schema(engine) -> dict:
         tables = set(inspect(engine).get_table_names())
         missing = sorted(REQUIRED_TABLES - tables)
         if missing:
-            return {"ok": False, "version": 0, "missing_tables": missing}
+            return {"ok": False, "version": 0, "missing_tables": missing, "missing_columns": []}
+        missing_columns = []
+        for table_name, expected in REQUIRED_COLUMNS.items():
+            columns = {column["name"] for column in inspect(engine).get_columns(table_name)}
+            missing_columns.extend(
+                f"{table_name}.{column_name}"
+                for column_name in sorted(expected - columns)
+            )
         with engine.connect() as connection:
             version = connection.execute(text("SELECT COALESCE(MAX(version), 0) FROM rebirth_schema_migrations")).scalar_one()
             connection.execute(text("SELECT 1"))
-        return {"ok": int(version or 0) >= SCHEMA_VERSION, "version": int(version or 0), "missing_tables": []}
+        return {
+            "ok": int(version or 0) >= SCHEMA_VERSION and not missing_columns,
+            "version": int(version or 0),
+            "missing_tables": [],
+            "missing_columns": missing_columns,
+        }
     except SQLAlchemyError as exc:
-        return {"ok": False, "version": 0, "missing_tables": [], "error": str(exc)}
+        return {"ok": False, "version": 0, "missing_tables": [], "missing_columns": [], "error": str(exc)}
 
 
 def main() -> None:

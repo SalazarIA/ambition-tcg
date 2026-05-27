@@ -42,6 +42,13 @@ def test_rebirth_product_pages_render_active_shell(client):
             assert "data-rebirth-market-offers" in body
 
 
+def test_collection_renders_root_relative_card_art_urls(client):
+    body = client.get("/rebirth/collection").get_data(as_text=True)
+
+    assert 'src="/static/img/cards/baralho/' in body
+    assert 'src="static/img/cards/baralho/' not in body
+
+
 def test_rebirth_product_api_contracts_are_rebirth_native(client):
     shell = client.get("/api/rebirth/shell")
     auth = client.get("/api/rebirth/auth-plan")

@@ -35,11 +35,12 @@ def _match_id(seed=None):
     return f"rebirth-{digest}"
 
 
-def create_player(name, owner, card_ids=None):
+def create_player(name, owner, card_ids=None, starting_hp=STARTING_HP):
+    starting_hp = max(1, int(starting_hp or STARTING_HP))
     return {
         "name": name,
-        "hp": STARTING_HP,
-        "max_hp": STARTING_HP,
+        "hp": starting_hp,
+        "max_hp": starting_hp,
         "energy": 2,
         "max_energy": 2,
         "deck": build_deck(owner, card_ids=card_ids),
@@ -114,6 +115,40 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
     return drawn
 
 
+def normalize_campaign_modifiers(modifiers):
+    supported = {"opening_shield", "extra_draw_turn_1", "opening_mana"}
+    normalized = []
+    for raw in modifiers or []:
+        modifier = raw if isinstance(raw, dict) else {"id": raw}
+        modifier_id = str(modifier.get("id") or "").strip()
+        if modifier_id not in supported:
+            continue
+        side = "player" if modifier.get("side") == "player" else "bot"
+        amount = max(1, min(5, int(modifier.get("amount", 1) or 1)))
+        item = {"id": modifier_id, "side": side, "amount": amount}
+        if modifier_id == "opening_shield":
+            item["turns"] = max(1, min(3, int(modifier.get("turns", 2) or 2)))
+        normalized.append(item)
+    return normalized
+
+
+def apply_campaign_opening_modifiers(player, bot, modifiers):
+    for modifier in modifiers:
+        side = player if modifier["side"] == "player" else bot
+        amount = modifier["amount"]
+        if modifier["id"] == "opening_shield":
+            side.setdefault("statuses", {})["shield"] = {
+                "potency": amount,
+                "turns": modifier["turns"],
+            }
+        elif modifier["id"] == "extra_draw_turn_1":
+            for _ in range(amount):
+                draw_card(side)
+        elif modifier["id"] == "opening_mana":
+            side["energy"] = int(side.get("energy", 0) or 0) + amount
+            side["max_energy"] = int(side.get("max_energy", 0) or 0) + amount
+
+
 def create_match(
     seed=None,
     player_card_ids=None,
@@ -122,6 +157,15 @@ def create_match(
     runtime_mode="singleplayer",
     apply_reducers_inline=None,
     first_duel=False,
+    bot_card_ids=None,
+    player_hp=None,
+    bot_hp=None,
+    campaign_version=None,
+    campaign_node=None,
+    campaign_attempt=None,
+    campaign_modifiers=None,
+    campaign_presentation=None,
+    campaign_advice=None,
 ):
     match_id = _match_id(seed)
     game_seed = str(seed if seed is not None else "rebirth-default-seed")
@@ -131,17 +175,41 @@ def create_match(
     deck_ids = None
     if player_card_ids:
         deck_ids = list(player_card_ids)
-    player = create_player(player_name, "player", card_ids=deck_ids)
-    bot = create_player("Bot", "bot")
+    bot_deck_ids = list(bot_card_ids) if bot_card_ids else None
+    player = create_player(player_name, "player", card_ids=deck_ids, starting_hp=player_hp or STARTING_HP)
+    bot = create_player("Bot", "bot", card_ids=bot_deck_ids, starting_hp=bot_hp or STARTING_HP)
     draw_to_hand_size(player)
     draw_to_hand_size(bot)
-    if first_duel:
+    if first_duel and not campaign_node:
         # Reduz HP do bot apenas — o jogador continua com a barra cheia para a
         # sensação de "ainda no controle".
         bot["hp"] = FIRST_DUEL_BOT_HP
         bot["max_hp"] = FIRST_DUEL_BOT_HP
     bot_profile = personality_payload(bot_profile_id or choose_personality(seed=game_seed, match_id=match_id))
+    modifiers = normalize_campaign_modifiers(campaign_modifiers) if campaign_node else []
+    if modifiers:
+        apply_campaign_opening_modifiers(player, bot, modifiers)
 
+    initial = {
+        "player_card_ids": list(deck_ids or PLAYER_DECK),
+        "bot_card_ids": list(bot_deck_ids or BOT_DECK),
+        "player_name": player_name,
+        "bot_profile_id": bot_profile["id"],
+        "first_duel": bool(first_duel),
+    }
+    if campaign_node:
+        initial.update(
+            {
+                "player_hp": int(player["max_hp"]),
+                "bot_hp": int(bot["max_hp"]),
+                "campaign_version": str(campaign_version or ""),
+                "campaign_node": str(campaign_node),
+                "campaign_attempt": int(campaign_attempt or 1),
+                "campaign_modifiers": deepcopy(modifiers),
+                "campaign_presentation": deepcopy(campaign_presentation or {}),
+                "campaign_advice": deepcopy(campaign_advice or {}),
+            }
+        )
     match = {
         "match_id": match_id,
         "architecture": "Ambitionz Rebirth",
@@ -154,13 +222,7 @@ def create_match(
         "game_seed": game_seed,
         "seed": str(seed or ""),
         "first_duel": bool(first_duel),
-        "initial": {
-            "player_card_ids": list(deck_ids or PLAYER_DECK),
-            "bot_card_ids": list(BOT_DECK),
-            "player_name": player_name,
-            "bot_profile_id": bot_profile["id"],
-            "first_duel": bool(first_duel),
-        },
+        "initial": initial,
         "turn": 1,
         "phase": PHASE_CHOOSE,
         "turn_phase": TurnPhase.MAIN_PHASE.value,
@@ -177,11 +239,19 @@ def create_match(
         ],
         "catalog": catalog_payload(),
     }
+    if campaign_node:
+        match.update(
+            {
+                "campaign_version": str(campaign_version or ""),
+                "campaign_node": str(campaign_node),
+                "campaign_attempt": int(campaign_attempt or 1),
+                "campaign_modifiers": deepcopy(modifiers),
+                "campaign_presentation": deepcopy(campaign_presentation or {}),
+                "campaign_advice": deepcopy(campaign_advice or {}),
+            }
+        )
     ensure_event_contract(match)
-    append_event(
-        match,
-        "MATCH_STARTED",
-        payload={
+    started_payload = {
             "seed": str(seed or ""),
             "game_seed": game_seed,
             "engine_version": ENGINE_VERSION,
@@ -190,7 +260,20 @@ def create_match(
             "bot_profile_id": bot_profile["id"],
             "player_deck_count": len(player["deck"]) + len(player["hand"]),
             "bot_deck_count": len(bot["deck"]) + len(bot["hand"]),
-        },
+        }
+    if campaign_node:
+        started_payload.update(
+            {
+                "campaign_version": match["campaign_version"],
+                "campaign_node": match["campaign_node"],
+                "campaign_attempt": match["campaign_attempt"],
+                "campaign_modifiers": deepcopy(match["campaign_modifiers"]),
+            }
+        )
+    append_event(
+        match,
+        "MATCH_STARTED",
+        payload=started_payload,
         message="Duelo Rebirth iniciado.",
     )
     append_snapshot(match, "match_started")
