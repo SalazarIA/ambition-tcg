@@ -182,6 +182,21 @@ def test_v71_gameplay_health_avoids_one_sided_dominance_and_stalls():
     assert summary["max_chain_events"] <= 16
 
 
+def test_v73_aggressive_profile_is_winnable_after_tuning():
+    # Antes do tuning v73, agressivo dava ao jogador ~15% de win-rate; o
+    # counter_window dele foi puxado pra 0.28 pra abrir janela de leitura.
+    # Este teste garante que a "vitória clara" não regrida silenciosamente —
+    # se cair abaixo de 0.25 de novo, o problema voltou.
+    payload = simulate_balance(matches=60)
+    rates = {profile["profile_id"]: profile["player_win_rate"] for profile in payload["profile_results"]}
+
+    assert rates.get("aggressive", 0) >= 0.25, (
+        f"aggressive ficou inviável de novo (player_win={rates.get('aggressive')})"
+    )
+    spread = max(rates.values()) - min(rates.values())
+    assert spread <= 0.65, f"spread de dificuldade entre perfis muito alto: {spread:.3f}"
+
+
 def test_v67_turn_flow_and_impact_feedback_ui_contract_is_present():
     template = (ROOT / "templates" / "rebirth.html").read_text(encoding="utf-8")
     script = (ROOT / "static" / "js" / "rebirth.js").read_text(encoding="utf-8")
