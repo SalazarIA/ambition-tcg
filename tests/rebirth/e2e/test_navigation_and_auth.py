@@ -126,11 +126,9 @@ def test_no_console_errors_on_arena_load(page, live_server):
     assert not errors, f"console errors on /rebirth load:\n  - " + "\n  - ".join(errors)
 
 
-def test_mobile_arena_is_native_and_keeps_touch_targets_readable(page, live_server):
+def test_mobile_arena_is_native_and_keeps_touch_targets_readable(mobile_page, live_server):
     """The phone layout must not scale down desktop controls below touch size."""
-    if page.viewport_size["width"] > 760:
-        pytest.skip("mobile viewport assertion")
-
+    page = mobile_page
     page.goto(f"{live_server}/rebirth")
     page.locator("#player-battlefield .rb-field-slot-empty").first.wait_for(state="visible", timeout=10_000)
     measurements = page.evaluate(

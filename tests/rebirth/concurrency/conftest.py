@@ -10,10 +10,13 @@ from services.rebirth_cards import get_card
 from services.rebirth_persistence import RebirthRepository
 from services.rebirth_schema import upgrade_schema
 from tests.rebirth.concurrency.availability import (
+    LOCAL_POSTGRES_AVAILABLE,
+    LOCAL_POSTGRES_BIN_DIR,
     POSTGRES_TESTCONTAINERS_AVAILABLE,
     POSTGRES_TESTCONTAINERS_SKIP_REASON,
     PostgresContainer,
 )
+from tests.rebirth.concurrency.local_postgres import LocalPostgresCluster
 
 
 pytestmark = pytest.mark.requires_postgres
@@ -41,8 +44,26 @@ DIRTY_TABLES = (
 
 
 @pytest.fixture(scope="session")
-def postgres_container() -> Iterator[str]:
-    if not POSTGRES_TESTCONTAINERS_AVAILABLE or PostgresContainer is None:
+def postgres_container(tmp_path_factory) -> Iterator[str]:
+    if not POSTGRES_TESTCONTAINERS_AVAILABLE:
+        pytest.skip(POSTGRES_TESTCONTAINERS_SKIP_REASON)
+
+    # Prefer local binary path — no Docker daemon required, faster startup.
+    if LOCAL_POSTGRES_AVAILABLE and LOCAL_POSTGRES_BIN_DIR:
+        base_dir = tmp_path_factory.mktemp("rebirth-pg-cluster")
+        cluster = LocalPostgresCluster(bin_dir=LOCAL_POSTGRES_BIN_DIR, base_dir=base_dir)
+        try:
+            cluster.start()
+        except Exception as exc:
+            cluster.stop()
+            pytest.skip(f"Could not start local Postgres cluster: {exc}")
+        try:
+            yield cluster.get_connection_url()
+        finally:
+            cluster.stop()
+        return
+
+    if PostgresContainer is None:
         pytest.skip(POSTGRES_TESTCONTAINERS_SKIP_REASON)
 
     try:

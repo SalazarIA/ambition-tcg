@@ -110,31 +110,26 @@ def live_server(tmp_path_factory) -> Iterator[str]:
             process.wait()
 
 
-@pytest.fixture(
-    params=[
-        pytest.param({"width": 1280, "height": 720}, id="desktop"),
-        pytest.param({"width": 390, "height": 844}, id="mobile"),
-    ]
-)
-def page(live_server, request):
-    """Parametrized over desktop + mobile viewports so the same test runs on both.
+DESKTOP_VIEWPORT = {"width": 1280, "height": 720}
+MOBILE_VIEWPORT = {"width": 390, "height": 844}
 
-    Important: `sync_playwright()` is scoped per-test (not session) on
-    purpose. Session-scoped Playwright leaves an asyncio event loop bound
-    to the main thread for the duration of the session, which then breaks
-    *unrelated* legacy tests that call `asyncio.run(...)` later in the
-    same pytest invocation. Per-test cleanup avoids the cross-test
-    pollution at a cost of ~500ms per test for Chromium cold-start.
-    """
+
+def _playwright_page(viewport):
+    # service_workers="block" prevents the Rebirth PWA's service-worker
+    # (pwa.js / sw.js) from registering during tests. Without this, the
+    # SW intercepts navigations and triggers a phantom reload mid-test
+    # that races the navbar assertions and produces flaky failures.
+    #
+    # sync_playwright() is scoped per-test (not session) on purpose. A
+    # session-scoped instance leaves an asyncio event loop bound to the
+    # main thread for the duration of the session, which then breaks
+    # unrelated legacy tests that call asyncio.run(...) later in the same
+    # pytest invocation.
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         try:
-            # service_workers="block" prevents the Rebirth PWA's service-worker
-            # (pwa.js / sw.js) from registering during tests. Without this, the
-            # SW intercepts navigations and triggers a phantom reload mid-test
-            # that races the navbar assertions and produces flaky failures.
             context = browser.new_context(
-                viewport=request.param,
+                viewport=viewport,
                 service_workers="block",
             )
             page = context.new_page()
@@ -144,3 +139,24 @@ def page(live_server, request):
                 context.close()
         finally:
             browser.close()
+
+
+@pytest.fixture(
+    params=[
+        pytest.param(DESKTOP_VIEWPORT, id="desktop"),
+        pytest.param(MOBILE_VIEWPORT, id="mobile"),
+    ]
+)
+def page(live_server, request):
+    """Parametrized over desktop + mobile viewports so the same test runs on both."""
+    yield from _playwright_page(request.param)
+
+
+@pytest.fixture
+def mobile_page(live_server):
+    """Mobile-only viewport for tests that only make sense on phone layout.
+
+    Use this instead of the parametrized `page` when the assertion depends
+    on the mobile UA/breakpoints. Avoids a useless desktop-variant skip.
+    """
+    yield from _playwright_page(MOBILE_VIEWPORT)
