@@ -89,6 +89,7 @@ def test_v73_chain_label_intensity_signals_long_resolutions():
     ]:
         assert token in css, f"missing CSS token: {token}"
     assert "prefers-reduced-motion" in css
+    assert 'context.chain_state !== "resolvida" || context.current_phase === "COMBAT_PHASE"' in js
     assert "chainLabel.dataset.intensity = intensity" in js
     assert "chainEventCount >= 8" in js
     assert "chainEventCount >= 4" in js

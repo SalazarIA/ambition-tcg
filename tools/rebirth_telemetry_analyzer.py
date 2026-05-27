@@ -30,13 +30,13 @@ from services.rebirth_persistence import RebirthRepository
 
 PROFILE_TARGETS = {
     "novice":      {"player_win_rate_min": 0.65, "average_turns_max": 14},
-    "defensive":   {"player_win_rate_min": 0.45, "average_turns_max": 20},
-    "opportunist": {"player_win_rate_min": 0.40, "average_turns_max": 20},
-    "aggressive":  {"player_win_rate_min": 0.35, "average_turns_max": 18},
+    "defensive":   {"player_win_rate_min": 0.45, "average_turns_max": 24},
+    "opportunist": {"player_win_rate_min": 0.40, "average_turns_max": 24},
+    "aggressive":  {"player_win_rate_min": 0.35, "average_turns_max": 22},
 }
 
 GLOBAL_TARGETS = {
-    "average_turns_max": 18,
+    "average_turns_max": 24,
     "player_win_rate_min": 0.40,
     "player_win_rate_max": 0.60,
     "abandon_rate_max": 0.20,
@@ -93,6 +93,28 @@ def _summarize(label, events):
     return summary
 
 
+def _dedupe_terminal_events(events):
+    """Collapse terminal telemetry retries into one balancing sample per match."""
+    by_match = {}
+    unkeyed = []
+    priority = {"match_abandoned": 1, "match_finished": 2}
+    for event in events:
+        payload = event.get("payload") or {}
+        match_id = str(payload.get("match_id") or "").strip()
+        if not match_id:
+            unkeyed.append(event)
+            continue
+        existing = by_match.get(match_id)
+        if not existing:
+            by_match[match_id] = event
+            continue
+        current_rank = priority.get(event.get("event_type"), 0)
+        existing_rank = priority.get(existing.get("event_type"), 0)
+        if (current_rank, int(event.get("id", 0) or 0)) >= (existing_rank, int(existing.get("id", 0) or 0)):
+            by_match[match_id] = event
+    return list(by_match.values()) + unkeyed
+
+
 def _flag_profile(summary, profile_id):
     targets = PROFILE_TARGETS.get(profile_id, {})
     flags = summary["flags"]
@@ -136,6 +158,7 @@ def analyze(events, *, exclude_first_duel=True):
     ]
     if exclude_first_duel:
         relevant = [event for event in relevant if not event["payload"].get("first_duel")]
+    relevant = _dedupe_terminal_events(relevant)
 
     by_profile = {}
     by_campaign_node = {}

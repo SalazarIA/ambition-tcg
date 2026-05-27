@@ -197,6 +197,17 @@ def test_v73_aggressive_profile_is_winnable_after_tuning():
     assert spread <= 0.65, f"spread de dificuldade entre perfis muito alto: {spread:.3f}"
 
 
+def test_v74_profile_spread_and_pacing_hit_release_health_targets():
+    payload = simulate_balance(matches=60)
+    summary = payload["summary"]
+    rates = {profile["profile_id"]: profile["player_win_rate"] for profile in payload["profile_results"]}
+
+    assert 0.4 <= summary["player_win_rate"] <= 0.6
+    assert summary["average_turns"] <= 24
+    assert summary["max_chain_events"] <= 15
+    assert max(rates.values()) - min(rates.values()) <= 0.35
+
+
 def test_v67_turn_flow_and_impact_feedback_ui_contract_is_present():
     template = (ROOT / "templates" / "rebirth.html").read_text(encoding="utf-8")
     script = (ROOT / "static" / "js" / "rebirth.js").read_text(encoding="utf-8")

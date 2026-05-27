@@ -6,8 +6,12 @@ profile/campaign node. This locks the analyzer + query contract so the
 balancing pass that consumes it does not silently break.
 """
 
+from itertools import count
+
 from services.rebirth_persistence import RebirthRepository
 from tools.rebirth_telemetry_analyzer import analyze
+
+_MATCH_SEQUENCE = count()
 
 
 def _make_repo(flask_app):
@@ -18,6 +22,7 @@ def _make_repo(flask_app):
 
 def _emit_match(repo, *, bot_profile_id, winner, turn, max_chain_length=2, first_duel=False, abandoned=False, campaign_node=None):
     payload = {
+        "match_id": f"{bot_profile_id}-{winner}-{turn}-{campaign_node or 'ladder'}-{next(_MATCH_SEQUENCE)}",
         "bot_profile_id": bot_profile_id,
         "winner": winner,
         "turn": turn,
@@ -28,6 +33,21 @@ def _emit_match(repo, *, bot_profile_id, winner, turn, max_chain_length=2, first
     }
     event_type = "match_abandoned" if abandoned else "match_finished"
     repo.record_telemetry_event(event_type, payload)
+
+
+def _emit_terminal(repo, *, match_id, bot_profile_id, winner, turn, abandoned=False):
+    repo.record_telemetry_event(
+        "match_abandoned" if abandoned else "match_finished",
+        {
+            "match_id": match_id,
+            "bot_profile_id": bot_profile_id,
+            "winner": winner,
+            "turn": turn,
+            "is_finished": not abandoned,
+            "max_chain_length": 2,
+            "first_duel": False,
+        },
+    )
 
 
 def test_query_telemetry_events_filters_by_type(flask_app):
@@ -99,6 +119,26 @@ def test_analyzer_groups_campaign_nodes(flask_app):
     assert set(node_labels) == {"node_02_guardian", "node_03_pyrelord"}
     assert node_labels["node_03_pyrelord"]["matches_finished"] == 2
     assert node_labels["node_03_pyrelord"]["player_win_rate"] == 0.5
+
+
+def test_analyzer_deduplicates_terminal_retries_per_match(flask_app):
+    repo = _make_repo(flask_app)
+    _emit_terminal(repo, match_id="retry-match", bot_profile_id="defensive", winner=None, turn=4, abandoned=True)
+    _emit_terminal(repo, match_id="retry-match", bot_profile_id="defensive", winner=None, turn=4, abandoned=True)
+    _emit_terminal(repo, match_id="finished-wins", bot_profile_id="defensive", winner="player", turn=9)
+    # A late finish should dominate an earlier abandon for the same match id.
+    _emit_terminal(repo, match_id="finish-after-beacon", bot_profile_id="aggressive", winner=None, turn=6, abandoned=True)
+    _emit_terminal(repo, match_id="finish-after-beacon", bot_profile_id="aggressive", winner="bot", turn=8)
+
+    events = repo.query_telemetry_events(event_types=("match_finished", "match_abandoned"))
+    report = analyze(events)
+    profiles = {profile["label"]: profile for profile in report["by_profile"]}
+
+    assert report["sample_size"] == 3
+    assert report["overall"]["matches_started"] == 3
+    assert report["overall"]["matches_abandoned"] == 1
+    assert profiles["defensive"]["matches_abandoned"] == 1
+    assert profiles["aggressive"]["matches_finished"] == 1
 
 
 def test_record_match_telemetry_includes_bot_profile_id(client):

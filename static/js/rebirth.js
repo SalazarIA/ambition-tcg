@@ -2332,10 +2332,11 @@
             );
             const chainLabel = RebirthStore.elements["chain-label"];
             if (chainLabel) {
+                const chainActive = context.chain_state !== "resolvida" || context.current_phase === "COMBAT_PHASE";
                 let intensity = "idle";
-                if (context.chain_id && chainEventCount >= 8) {
+                if (chainActive && context.chain_id && chainEventCount >= 8) {
                     intensity = "heavy";
-                } else if (context.chain_id && chainEventCount >= 4) {
+                } else if (chainActive && context.chain_id && chainEventCount >= 4) {
                     intensity = "rising";
                 }
                 chainLabel.dataset.intensity = intensity;

@@ -695,10 +695,10 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
         # Aggressive já joga "max attack always"; counter rate alto + picking
         # bruto criava 17% de win-rate. Baixado pra abrir janela do jogador.
         "aggressive": 0.28,
-        # Opportunist mantido em 0.85 — testes empíricos mostraram que
-        # subir/descer este rate piora vs simulador naïve. Tuning fino
-        # depende de dados reais via tools/rebirth_telemetry_analyzer.py.
-        "opportunist": 0.85,
+        # Opportunist baixo demais fica predatório; alto demais alonga partidas
+        # e entrega vitórias grátis. 0.45 mantém a personalidade reativa sem
+        # estourar o spread de dificuldade entre perfis.
+        "opportunist": 0.45,
         # Novice nunca abre janela de counter — primeira partida não pode
         # punir o jogador com leituras avançadas.
         "novice": 0.0,
