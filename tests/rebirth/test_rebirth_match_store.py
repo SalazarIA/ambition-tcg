@@ -1,7 +1,7 @@
 import pytest
 
 from services.rebirth_contracts import RebirthError
-from services.rebirth_match_store import RebirthMatchStore
+from services.rebirth_match_store import RebirthMatchStore, create_match_store
 
 
 class FakeClock:
@@ -67,3 +67,20 @@ def test_match_store_max_limit_evicts_oldest_match():
     assert store.get("rebirth-a")["match_id"] == "rebirth-a"
     assert store.get("rebirth-c")["match_id"] == "rebirth-c"
     assert len(store) == 2
+
+
+def test_factory_defaults_to_memory_backend(monkeypatch):
+    # Audit fix #2: store is selectable by env; unknown backend falls back to
+    # memory rather than crashing, and a multi-worker run is logged loudly.
+    monkeypatch.delenv("REBIRTH_MATCH_BACKEND", raising=False)
+    store = create_match_store()
+    assert isinstance(store, RebirthMatchStore)
+
+
+def test_factory_unknown_backend_falls_back(monkeypatch):
+    monkeypatch.setenv("REBIRTH_MATCH_BACKEND", "redis")
+    store = create_match_store()
+    # No redis impl yet — must not crash; memory store is returned.
+    assert isinstance(store, RebirthMatchStore)
+    saved = store.save(match("rebirth-fallback"))
+    assert store.get("rebirth-fallback") is saved

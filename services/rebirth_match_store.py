@@ -1,3 +1,4 @@
+import logging
 import os
 from collections import OrderedDict
 from threading import RLock
@@ -5,6 +6,8 @@ from time import monotonic
 
 from services.rebirth_contracts import RebirthError
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MATCH_TTL_SECONDS = 60 * 60
 DEFAULT_MAX_MATCHES = 512
@@ -87,7 +90,51 @@ class RebirthMatchStore:
             return len(self._matches)
 
 
-MATCH_STORE = RebirthMatchStore(
-    ttl_seconds=_positive_int_env("REBIRTH_MATCH_TTL_SECONDS", DEFAULT_MATCH_TTL_SECONDS),
-    max_matches=_positive_int_env("REBIRTH_MAX_MATCHES", DEFAULT_MAX_MATCHES),
-)
+def _worker_count():
+    for name in ("WEB_CONCURRENCY", "GUNICORN_WORKERS"):
+        try:
+            value = int(os.environ.get(name, "") or 0)
+        except (TypeError, ValueError):
+            value = 0
+        if value:
+            return value
+    return 1
+
+
+def create_match_store():
+    """Factory for the process match cache.
+
+    Backend is selected by REBIRTH_MATCH_BACKEND (default "memory"). Only the
+    in-process memory backend ships today — it is correct under a single
+    gunicorn worker. Authenticated matches additionally rehydrate from
+    Postgres on cache miss (see app.get_match), so they already survive a
+    worker boundary; only ephemeral guest matches are worker-local.
+
+    Multi-worker (`-w 2+`) REQUIRES a shared backend (e.g. Redis) so guest
+    matches and telemetry clocks don't fork per worker. Wiring a "redis"
+    backend here is the single config swap needed — no call-site change. We
+    log loudly if someone scales workers without one, to avoid the silent
+    cross-worker state split that the audit flagged.
+    """
+    backend = (os.environ.get("REBIRTH_MATCH_BACKEND") or "memory").strip().lower()
+    store = RebirthMatchStore(
+        ttl_seconds=_positive_int_env("REBIRTH_MATCH_TTL_SECONDS", DEFAULT_MATCH_TTL_SECONDS),
+        max_matches=_positive_int_env("REBIRTH_MAX_MATCHES", DEFAULT_MAX_MATCHES),
+    )
+    if backend not in ("memory", ""):
+        logger.warning(
+            "REBIRTH_MATCH_BACKEND=%s requested but only 'memory' is implemented; "
+            "falling back to in-process store.",
+            backend,
+        )
+    if _worker_count() > 1 and backend in ("memory", ""):
+        logger.warning(
+            "Running %d workers with the in-process match store. Guest matches "
+            "and telemetry clocks are NOT shared across workers — set "
+            "REBIRTH_MATCH_BACKEND to a shared backend before scaling beyond -w 1.",
+            _worker_count(),
+        )
+    return store
+
+
+MATCH_STORE = create_match_store()
