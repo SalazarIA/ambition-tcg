@@ -31,6 +31,48 @@ def test_rebirth_csrf_covers_labs_fusion_route(client, flask_app):
     assert rejected.get_json()["error"]["code"] == "csrf_required"
 
 
+def test_rebirth_beacon_endpoint_accepts_csrf_in_body(client, flask_app):
+    # Studio master audit P1.2: pagehide telemetry agora usa
+    # navigator.sendBeacon, que não pode setar headers. O endpoint
+    # /api/rebirth/telemetry/beacon valida CSRF lendo do corpo.
+    flask_app.config["REBIRTH_REQUIRE_CSRF"] = True
+
+    no_token = client.post(
+        "/api/rebirth/telemetry/beacon",
+        json={"event_type": "match_abandoned", "match_id": "x"},
+    )
+    assert no_token.status_code == 403
+    assert no_token.get_json()["error"]["code"] == "csrf_required"
+
+    token = client.get("/api/rebirth/csrf").get_json()["csrf"]
+    wrong_token = client.post(
+        "/api/rebirth/telemetry/beacon",
+        json={"event_type": "match_abandoned", "match_id": "x", "csrf": "wrong"},
+    )
+    assert wrong_token.status_code == 403
+    assert wrong_token.get_json()["error"]["code"] == "csrf_required"
+
+    # Header path NÃO é aceito — endpoint só verifica body.
+    header_only = client.post(
+        "/api/rebirth/telemetry/beacon",
+        json={"event_type": "match_abandoned", "match_id": "x"},
+        headers={"X-Rebirth-CSRF": token},
+    )
+    assert header_only.status_code == 403
+
+
+def test_rebirth_beacon_endpoint_rejects_other_event_types(client, flask_app):
+    flask_app.config["REBIRTH_REQUIRE_CSRF"] = True
+    token = client.get("/api/rebirth/csrf").get_json()["csrf"]
+
+    rejected = client.post(
+        "/api/rebirth/telemetry/beacon",
+        json={"event_type": "match_started", "match_id": "x", "csrf": token},
+    )
+    assert rejected.status_code == 400
+    assert rejected.get_json()["error"]["code"] == "invalid_telemetry_event"
+
+
 def test_rebirth_auth_rate_limit_returns_stable_error(client, flask_app):
     flask_app.config["REBIRTH_AUTH_RATE_LIMIT"] = 1
 

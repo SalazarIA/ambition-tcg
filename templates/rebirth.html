@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v74_COMBAT_REWORK-4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
 </head>
 <body class="rb-page rb-game-page">
     {% include "_rebirth_global_nav.html" %}
@@ -260,7 +260,8 @@
             register: "{{ url_for('api_rebirth_auth_register') }}",
             login: "{{ url_for('api_rebirth_auth_login') }}",
             logout: "{{ url_for('api_rebirth_auth_logout') }}",
-            telemetry: "{{ url_for('api_rebirth_telemetry') }}"
+            telemetry: "{{ url_for('api_rebirth_telemetry') }}",
+            telemetryBeacon: "{{ url_for('api_rebirth_telemetry_beacon') }}"
         };
         window.REBIRTH_AUTH_ENDPOINTS = {
             register: "{{ url_for('api_rebirth_auth_register') }}",
@@ -276,12 +277,12 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v74_COMBAT_REWORK-4"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v74_COMBAT_REWORK-4"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v=v74_COMBAT_REWORK-4"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v=v74_COMBAT_REWORK-4"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v=v74_COMBAT_REWORK-4"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_boss_fx.js') }}?v=v75_CAMPAIGN_ERA-1"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v=v74_COMBAT_REWORK-4"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_boss_fx.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v={{ rebirth_release_version }}"></script>
 </body>
 </html>

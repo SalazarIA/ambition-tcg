@@ -613,6 +613,10 @@ def inject_rebirth_security():
 
 
 REBIRTH_CSRF_PROTECTED_PREFIXES = ("/api/rebirth/", "/api/labs/")
+# Endpoints intended for navigator.sendBeacon, which cannot attach custom
+# headers — CSRF token travels in the request body instead. The endpoint
+# verifies the token manually before mutating anything.
+REBIRTH_CSRF_BODY_PATHS = frozenset({"/api/rebirth/telemetry/beacon"})
 
 
 @app.before_request
@@ -622,6 +626,9 @@ def protect_rebirth_mutations():
     if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
     if not any(request.path.startswith(prefix) for prefix in REBIRTH_CSRF_PROTECTED_PREFIXES):
+        return None
+    if request.path in REBIRTH_CSRF_BODY_PATHS:
+        # CSRF verification is delegated to the endpoint (reads from body).
         return None
 
     expected = session.get("rebirth_csrf_token")
@@ -1437,6 +1444,44 @@ def api_rebirth_telemetry():
         match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
         record_match_telemetry(rebirth_repo() if user else None, user, match, "match_abandoned", client_reason=payload.get("reason"))
+        return json_payload(recorded=True)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/telemetry/beacon")
+def api_rebirth_telemetry_beacon():
+    # Dedicated endpoint for navigator.sendBeacon (pagehide path). sendBeacon
+    # cannot attach custom headers, so CSRF travels in the request body and
+    # is verified explicitly here. Payload is intentionally narrow:
+    # match_abandoned only, no client-supplied user identifiers.
+    if app.config.get("REBIRTH_REQUIRE_CSRF", True):
+        body_csrf = (request.get_json(silent=True) or {}).get("csrf") if request.is_json else None
+        if not body_csrf:
+            try:
+                body_csrf = request.form.get("csrf") if request.form else None
+            except Exception:
+                body_csrf = None
+        expected = session.get("rebirth_csrf_token")
+        if not expected or not body_csrf or not secrets.compare_digest(str(expected), str(body_csrf)):
+            return json_error("O token CSRF do Rebirth é obrigatório.", "csrf_required", status=403)
+    try:
+        payload = request.get_json(silent=True) or {}
+        if payload.get("event_type") != "match_abandoned":
+            raise RebirthError("Evento de telemetria não permitido.", "invalid_telemetry_event")
+        user = current_user()
+        match = get_match(payload.get("match_id"), user=user)
+        ensure_match_access(match, user=user)
+        record_match_telemetry(
+            rebirth_repo() if user else None,
+            user,
+            match,
+            "match_abandoned",
+            client_reason=payload.get("reason") or "pagehide_beacon",
+            transport="sendBeacon",
+        )
         return json_payload(recorded=True)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)

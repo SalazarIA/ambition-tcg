@@ -1794,49 +1794,63 @@
             }
             const evolution = RebirthStore.firstEvolution();
             const selected = RebirthStore.selectedCard();
+            const selectedAttacker = RebirthStore.selectedAttackerId ? RebirthStore.fieldCard(RebirthStore.selectedAttackerId) : null;
             const recommended = this.recommendedCard();
+            const energy = Number((state.player && state.player.energy) || 0);
+            const selectedFromHand = Boolean(selected && RebirthStore.selectedInstanceId && selected.instance_id === RebirthStore.selectedInstanceId);
+            const selectedCost = selectedFromHand ? RebirthMarkup.cardCost(selected) : 0;
+            if (selectedAttacker) {
+                const risk = RebirthTactics.selectedAttackRisk(state);
+                return {
+                    badge: "Atacar",
+                    title: `${selectedAttacker.name} está pronto.`,
+                    copy: risk
+                        ? `${risk.label}: ${risk.copy} Ataque quando essa troca valer o corpo em campo.`
+                        : "Escolha um alvo no lado inimigo para resolver o duelo agora."
+                };
+            }
+            if (selectedFromHand && selectedCost > energy) {
+                return {
+                    badge: "Mana",
+                    title: `${selected.name} custa ${selectedCost}.`,
+                    copy: `Você tem ${energy} de mana agora. Escolha uma carta mais barata ou encerre o turno para recarregar.`
+                };
+            }
             if (evolution && (!selected || selected.id === evolution.card_id)) {
                 return {
                     badge: "Evoluir",
-                    title: "Evolua agora para uma linha mais forte.",
-                    copy: `${evolution.name} x${evolution.count} pode se fundir antes de jogar. Costuma somar ataque, guarda e pressão.`
+                    title: `${evolution.name} x${evolution.count} pode virar Rebirth.`,
+                    copy: "Fusão não resolve ataque sozinha: ela cria uma carta maior na mão. Confira a mana antes de invocar."
                 };
             }
             if (!selected) {
-                return { badge: "Escolher", title: "Escolha uma carta ou atacante.", copy: "Invoque da mão ou selecione um monstro pronto no campo para declarar ataque." };
+                return { badge: "Escolher", title: "Escolha uma carta ou atacante.", copy: "Mana paga cartas da mão; monstros prontos no campo atacam. O botão principal muda com a seleção." };
             }
             if (recommended && selected.instance_id === recommended.instance_id) {
                 return {
                     badge: "Ótimo",
                     title: `${selected.name} é a leitura limpa.`,
-                    copy: `Melhor pressão da mão: ${selected.attack} de ataque, ${selected.guard} de guarda. Jogue, a menos que queira blefar com defesa.`
-                };
-            }
-            if (RebirthStore.selectedAttackerId) {
-                return {
-                    badge: "Atacar",
-                    title: `${selected.name} está pronto.`,
-                    copy: "Clique em Atacar ou no lado inimigo para resolver o duelo na hora."
+                    copy: `Custa ${selectedCost} de mana e pressiona com ${selected.attack} de ataque / ${selected.guard} de guarda.`
                 };
             }
             if (Number(selected.guard || 0) <= 2) {
                 return {
                     badge: "Risco",
                     title: `${selected.name} pode ser punido.`,
-                    copy: "Pouca guarda ataca rápido, mas tomba se o bot responder com mais ataque."
+                    copy: "Pouca guarda ataca rápido, mas cai se o bot responder com mais ataque. Use quando precisar acelerar."
                 };
             }
             if (Number(selected.attack || 0) <= 3) {
                 return {
                     badge: "Risco",
                     title: `${selected.name} pode travar em guarda alta.`,
-                    copy: "Cartas defensivas reduzem dano, mas geralmente precisam de habilidade ou alvo ferido para virar o turno."
+                    copy: "Carta defensiva segura dano, mas precisa de habilidade, alvo ferido ou tempo para virar pressão."
                 };
             }
             return {
                 badge: "Plano",
                 title: `${selected.name} é jogável.`,
-                copy: recommended ? `${recommended.name} tem linha projetada mais forte, mas essa carta ainda monta pressão.` : "Jogue quando ataque e guarda se encaixarem no plano."
+                copy: recommended ? `${recommended.name} projeta mais valor, mas essa carta cabe na mana e ainda monta campo.` : "Jogue quando ataque, guarda e custo couberem no plano."
             };
         }
     };
@@ -2258,12 +2272,36 @@
                 return;
             }
 
+            const selected = RebirthStore.selectedCard();
+            const selectedAttacker = RebirthStore.selectedAttackerId ? RebirthStore.fieldCard(RebirthStore.selectedAttackerId) : null;
+            const energy = Number((state.player && state.player.energy) || 0);
+            const selectedCost = selected && RebirthStore.selectedInstanceId ? RebirthMarkup.cardCost(selected) : 0;
+            if (selectedAttacker) {
+                const risk = RebirthTactics.selectedAttackRisk(state);
+                RebirthDom.setText("guide-rule-label", "Ataque");
+                RebirthDom.setText("guide-rule-title", risk ? risk.label : "Escolha o alvo");
+                RebirthDom.setText("guide-rule-copy", risk ? `${risk.copy} Resolva só quando a troca favorecer seu plano.` : "Toque no inimigo ou no botão Atacar para resolver.");
+                RebirthDom.setText("guide-combine-label", "Risco");
+                RebirthDom.setText("guide-combine-title", "Corpo em campo vale tempo");
+                RebirthDom.setText("guide-combine-copy", "Perder um monstro abre espaço, mas também entrega pressão ao bot.");
+                return;
+            }
+            if (selected && RebirthStore.selectedInstanceId && selectedCost > energy) {
+                RebirthDom.setText("guide-rule-label", "Mana");
+                RebirthDom.setText("guide-rule-title", `${energy}/${Number((state.player && state.player.max_energy) || energy)} disponível`);
+                RebirthDom.setText("guide-rule-copy", `${selected.name} custa ${selectedCost}. Encerre o turno para recarregar ou jogue uma carta mais barata.`);
+                RebirthDom.setText("guide-combine-label", "Tempo");
+                RebirthDom.setText("guide-combine-title", "Curva antes de força");
+                RebirthDom.setText("guide-combine-copy", "Carta forte parada na mão não bloqueia dano. Monte campo com o que cabe agora.");
+                return;
+            }
+
             RebirthDom.setText("guide-rule-label", "Regra");
-            RebirthDom.setText("guide-rule-title", "Invoque e ataque");
-            RebirthDom.setText("guide-rule-copy", "Monstros ficam no campo até a Guarda chegar a zero.");
+            RebirthDom.setText("guide-rule-title", "Mana, campo e ataque");
+            RebirthDom.setText("guide-rule-copy", "Mana paga cartas da mão. Depois, selecione um monstro pronto no campo para atacar.");
             RebirthDom.setText("guide-combine-label", evolution ? "Combinar pronto" : "Combinar");
             RebirthDom.setText("guide-combine-title", evolution ? `${evolution.name} x${evolution.count}` : "Duplicatas evoluem");
-            RebirthDom.setText("guide-combine-copy", evolution ? "Funda a dupla agora ou guarde os dois corpos para pressão depois." : "Dois monstros iguais se fundem em sua forma Rebirth.");
+            RebirthDom.setText("guide-combine-copy", evolution ? "Evoluir cria uma carta maior na mão; confira o custo antes de invocar." : "Dois monstros iguais se fundem em sua forma Rebirth antes da jogada.");
         },
 
         resultImpact() {
@@ -3037,24 +3075,36 @@
             this.bindLogToggle();
             window.addEventListener("pagehide", () => {
                 const state = RebirthStore.state;
-                const endpoint = RebirthConfig.endpoints.telemetry;
+                const endpoint = RebirthConfig.endpoints.telemetryBeacon || "/api/rebirth/telemetry/beacon";
                 if (!endpoint || !state || state.is_finished || RebirthStore.abandonmentSentForMatch === state.match_id) {
                     return;
                 }
                 RebirthStore.abandonmentSentForMatch = state.match_id;
+                const body = JSON.stringify({
+                    event_type: "match_abandoned",
+                    match_id: state.match_id,
+                    reason: "pagehide",
+                    csrf: window.REBIRTH_CSRF || ""
+                });
+                // navigator.sendBeacon is the right tool for pagehide: it's
+                // queued by the browser and isn't aborted by navigation, so
+                // QA stops seeing "request_failed" on the abandonment ping.
+                // Fallback to keepalive fetch when sendBeacon isn't there
+                // (older browsers / privacy modes).
+                if (navigator.sendBeacon) {
+                    try {
+                        const blob = new Blob([body], { type: "application/json" });
+                        if (navigator.sendBeacon(endpoint, blob)) return;
+                    } catch (err) {
+                        // fall through to fetch fallback below
+                    }
+                }
                 window.fetch(endpoint, {
                     method: "POST",
                     credentials: "same-origin",
                     keepalive: true,
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Rebirth-CSRF": window.REBIRTH_CSRF || ""
-                    },
-                    body: JSON.stringify({
-                        event_type: "match_abandoned",
-                        match_id: state.match_id,
-                        reason: "pagehide"
-                    })
+                    headers: { "Content-Type": "application/json" },
+                    body
                 }).catch(() => {});
             });
 
