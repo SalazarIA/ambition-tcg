@@ -1,6 +1,7 @@
 from copy import deepcopy
 from enum import Enum
 import hashlib
+import secrets
 
 from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION, REDUCER_VERSION, RULESET_VERSION
 from services.rebirth_contracts import FIELD_SLOT_COUNT, PHASE_CHOOSE
@@ -30,7 +31,12 @@ class RebirthStateError(ValueError):
 
 
 def _match_id(seed=None):
-    source = "rebirth-default-seed" if seed is None else str(seed)
+    # When no seed is supplied we MUST NOT collapse every match onto the same
+    # id. Pre-fix, seed=None hashed the literal "rebirth-default-seed", so all
+    # guest matches shared id rebirth-963745ae6ffc — concurrent guests
+    # overwrote each other in MATCH_STORE and choose_personality always picked
+    # the same profile. Generate fresh entropy instead.
+    source = secrets.token_hex(16) if seed is None else str(seed)
     digest = hashlib.sha256(source.encode("utf-8")).hexdigest()[:12]
     return f"rebirth-{digest}"
 
@@ -167,8 +173,12 @@ def create_match(
     campaign_presentation=None,
     campaign_advice=None,
 ):
-    match_id = _match_id(seed)
-    game_seed = str(seed if seed is not None else "rebirth-default-seed")
+    # Resolve the seed ONCE so match_id, game_seed and bot personality all
+    # derive from the same entropy. With seed=None we mint a fresh seed so two
+    # concurrent guests never collide and the bot profile actually varies.
+    effective_seed = str(seed) if seed is not None else secrets.token_hex(16)
+    match_id = _match_id(effective_seed)
+    game_seed = effective_seed
     runtime_mode = str(runtime_mode or "singleplayer")
     if apply_reducers_inline is None:
         apply_reducers_inline = runtime_mode in REDUCER_INLINE_RUNTIME_MODES
