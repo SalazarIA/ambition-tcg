@@ -165,15 +165,50 @@
         ].join("");
     }
 
+    // audit #12: reason/reference_id crus do ledger vazavam pra UI
+    // ("match_clash", "card:card_040"). Traduz pra rótulos humanos e esconde
+    // identificadores técnicos.
+    const LEDGER_REASON_LABELS = {
+        match_clash: "Clash de partida",
+        match_victory: "Vitória em partida",
+        starter_wallet: "Carteira inicial",
+        starter_collection: "Coleção inicial",
+        daily_reward: "Recompensa diária",
+        booster_open: "Abertura de booster",
+        booster_card: "Carta de booster",
+        market_sale: "Venda no mercado",
+        market_purchase: "Compra no mercado",
+        campaign_reward: "Recompensa de campanha",
+    };
+
+    function humanizeLedgerReason(reason) {
+        const key = String(reason || "").toLowerCase();
+        if (LEDGER_REASON_LABELS[key]) return LEDGER_REASON_LABELS[key];
+        // Fallback: troca _/: por espaço e capitaliza, sem expor o id cru.
+        const cleaned = key.split(/[:_]/)[0].replace(/[^a-z0-9 ]/g, " ").trim();
+        return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : "Movimento";
+    }
+
+    const LEDGER_SOURCE_LABELS = {
+        match: "Partida",
+        booster: "Booster",
+        market: "Mercado",
+        campaign: "Campanha",
+        daily: "Diário",
+        system: "Sistema",
+    };
+
     function ledgerEntryMarkup(entry) {
         const delta = numberValue(entry.delta, 0);
         const positive = delta >= 0;
+        const sourceKey = String(entry.reference_type || "system").toLowerCase();
+        const source = LEDGER_SOURCE_LABELS[sourceKey] || "Sistema";
         return [
             '<article class="rb-ledger-entry ' + (positive ? "is-credit" : "is-debit") + '">',
             "<span>" + escapeHtml(entry.resource || "extrato") + "</span>",
             "<strong>" + (positive ? "+" : "") + escapeHtml(delta) + "</strong>",
-            "<p>" + escapeHtml(entry.reason || "movimento") + "</p>",
-            "<small>" + escapeHtml(entry.reference_type || "sistema") + " " + escapeHtml(entry.reference_id || "") + "</small>",
+            "<p>" + escapeHtml(humanizeLedgerReason(entry.reason)) + "</p>",
+            "<small>" + escapeHtml(source) + "</small>",
             "</article>"
         ].join("");
     }
@@ -628,6 +663,10 @@
                         Array.from(document.querySelectorAll("[data-rebirth-progression-dashboard]")).forEach(function (root) {
                             renderProgressDashboard(root, payload.claim.progression, null);
                         });
+                        // audit #11: o card e a navbar liam XP de fontes
+                        // diferentes e dessincronizavam (navbar 5200 vs card
+                        // 5175). Atualiza os dois da MESMA progressão.
+                        updateGlobalProgress(payload.claim.progression);
                     }
                     bindProgressionDashboard();
                 })

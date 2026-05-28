@@ -73,6 +73,29 @@ def test_rebirth_beacon_endpoint_rejects_other_event_types(client, flask_app):
     assert rejected.get_json()["error"]["code"] == "invalid_telemetry_event"
 
 
+def test_combat_endpoints_reject_unexpected_fields(client, flask_app):
+    # audit #15: defesa anti-injeção virou allowlist. Campos fora do conjunto
+    # esperado são rejeitados cedo (o engine já era autoritativo, mas isto
+    # fecha a porta antes do dispatch).
+    flask_app.config["REBIRTH_REQUIRE_CSRF"] = False
+    start = client.post("/api/rebirth/start", json={"seed": "allowlist-probe"}).get_json()["state"]
+    match_id = start["match_id"]
+
+    injected = client.post(
+        "/api/rebirth/play-card",
+        json={"match_id": match_id, "card_id": "card_001", "damage": 9999, "winner": "player"},
+    )
+    assert injected.status_code == 400
+    assert injected.get_json()["error"]["code"] == "unexpected_combat_fields"
+
+    attack_injected = client.post(
+        "/api/rebirth/attack",
+        json={"match_id": match_id, "attacker_instance_id": "x", "winner": "player"},
+    )
+    assert attack_injected.status_code == 400
+    assert attack_injected.get_json()["error"]["code"] == "unexpected_combat_fields"
+
+
 def test_rebirth_auth_rate_limit_returns_stable_error(client, flask_app):
     flask_app.config["REBIRTH_AUTH_RATE_LIMIT"] = 1
 

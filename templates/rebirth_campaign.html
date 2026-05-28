@@ -33,14 +33,14 @@
 
         <section class="rb-campaign-path" aria-label="Encontros da campanha">
             {% for node in campaign.nodes %}
-                <article class="rb-campaign-node is-{{ node.status }}" data-campaign-node="{{ node.id }}" tabindex="{{ '0' if account.authenticated and node.status != 'locked' else '-1' }}">
+                <article class="rb-campaign-node is-{{ node.status }}{{ ' is-next' if node.id == campaign.next_available else '' }}" data-campaign-node="{{ node.id }}" tabindex="{{ '0' if account.authenticated and node.status != 'locked' else '-1' }}">
                     <div class="rb-campaign-step">
                         <span>{{ "%02d"|format(node.order) }}</span>
                         <i aria-hidden="true"></i>
                     </div>
                     <div class="rb-campaign-copy">
                         <header>
-                            <span class="rb-campaign-status">{{ "Vencido" if node.status == "completed" else ("Disponivel" if node.status == "available" else "Bloqueado") }}</span>
+                            <span class="rb-campaign-status">{{ "Vencido" if node.status == "completed" else ("Disponível" if node.status == "available" else "Bloqueado") }}{{ " · Próximo" if node.id == campaign.next_available else "" }}</span>
                             <h2>{{ node.name }}</h2>
                         </header>
                         <p>{{ node.intro }}</p>
@@ -58,7 +58,10 @@
                         </dl>
                     </div>
                     <div class="rb-campaign-action">
-                        {% if account.authenticated and node.status != "locked" %}
+                        {% if account.authenticated and node.status == "completed" %}
+                            {# audit #10: nó vencido não rouba o CTA primário — vira "Rejogar" secundário. #}
+                            <a class="rb-secondary" href="{{ url_for('rebirth') }}?shell=1&amp;campaign={{ node.id }}">Rejogar</a>
+                        {% elif account.authenticated and node.status == "available" %}
                             <a class="rb-cta" href="{{ url_for('rebirth') }}?shell=1&amp;campaign={{ node.id }}">Duelar</a>
                         {% elif account.authenticated %}
                             <button class="rb-secondary" type="button" disabled>Bloqueado</button>

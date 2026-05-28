@@ -1977,12 +1977,21 @@
                     reason: canSummonSelected ? `Invocar ${selectedHandCard.name}` : summonLockCopy
                 });
             }).join("");
+            // audit #15: só o PRIMEIRO slot vazio carrega o rótulo de ação
+            // ("Protegido no turno 1" / "Dano direto"); os demais ficam
+            // neutros pra não repetir a mesma mensagem 2-3x e poluir a zona.
+            let leadEmptyShown = false;
             botHost.innerHTML = botSlots.map((card) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "bot", choosingAttack, botStatuses, {
                         targetable: choosingAttack,
                         risk: choosingAttack ? RebirthTactics.clashRisk(selectedAttacker, card) : null
                     });
+                }
+                const isLead = !leadEmptyShown;
+                leadEmptyShown = true;
+                if (!isLead) {
+                    return RebirthMarkup.emptyFieldSlot("", { reason: "Slot vazio do bot" });
                 }
                 return RebirthMarkup.emptyFieldSlot(botCards.length ? "Linha de guarda" : firstTurnDirectLocked ? "Protegido no turno 1" : "Dano direto", {
                     direct: !botCards.length && !firstTurnDirectLocked,
@@ -2364,9 +2373,14 @@
             if (!context) return;
             RebirthDom.setText("priority-label", `Prioridade: ${context.priority_label || "Resolvida"}`);
             const chainEventCount = Number(context.chain_event_count || 0) || 0;
+            // audit #9: o id técnico ("EVENT-000001") vazava pra UI. O jogador
+            // só precisa saber que há uma cadeia ativa e quantos efeitos ela
+            // empilha — não o identificador interno.
             RebirthDom.setText(
                 "chain-label",
-                context.chain_id ? `Cadeia ${context.chain_id} · ${chainEventCount}` : "Sem cadeia ativa"
+                context.chain_id
+                    ? (chainEventCount === 1 ? "Cadeia ativa · 1 efeito" : `Cadeia ativa · ${chainEventCount} efeitos`)
+                    : "Sem cadeia ativa"
             );
             const chainLabel = RebirthStore.elements["chain-label"];
             if (chainLabel) {

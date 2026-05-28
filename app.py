@@ -585,6 +585,21 @@ def request_json(required=False):
 
 AUTHORITATIVE_COMBAT_FIELDS = {"exhausted", "has_attacked", "has_acted"}
 
+# audit #15: a defesa anti-injeção era um denylist (3 campos). Denylist é
+# frágil — um novo campo autoritativo esquecido vira brecha. O allowlist
+# abaixo é o conjunto EXATO de chaves que os endpoints de combate aceitam no
+# corpo; qualquer outra é rejeitada. O engine continua autoritativo de
+# qualquer forma (ignora dano/winner injetados), mas isto fecha a porta cedo.
+COMBAT_PAYLOAD_ALLOWED_FIELDS = {
+    "match_id",
+    "card_instance_id",
+    "card_id",
+    "field_slot",
+    "slot",
+    "attacker_instance_id",
+    "target_instance_id",
+}
+
 
 def reject_authoritative_combat_fields(payload):
     pending = [payload]
@@ -593,13 +608,25 @@ def reject_authoritative_combat_fields(payload):
         if isinstance(value, dict):
             if AUTHORITATIVE_COMBAT_FIELDS.intersection(value):
                 raise RebirthError(
-                    "O estado de acao e controlado exclusivamente pelo servidor.",
+                    "O estado de ação é controlado exclusivamente pelo servidor.",
                     "authoritative_state_violation",
                     status=400,
                 )
             pending.extend(value.values())
         elif isinstance(value, list):
             pending.extend(value)
+
+
+def enforce_combat_payload_allowlist(payload):
+    if not isinstance(payload, dict):
+        return
+    unexpected = [key for key in payload if key not in COMBAT_PAYLOAD_ALLOWED_FIELDS]
+    if unexpected:
+        raise RebirthError(
+            "Campos não reconhecidos na ação de combate.",
+            "unexpected_combat_fields",
+            status=400,
+        )
 
 
 @app.context_processor
@@ -996,6 +1023,7 @@ def api_rebirth_play_card():
     try:
         payload = request_json(required=True)
         reject_authoritative_combat_fields(payload)
+        enforce_combat_payload_allowlist(payload)
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo() if user else None
@@ -1054,6 +1082,7 @@ def api_rebirth_attack():
     try:
         payload = request_json(required=True)
         reject_authoritative_combat_fields(payload)
+        enforce_combat_payload_allowlist(payload)
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo() if user else None
