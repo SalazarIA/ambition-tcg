@@ -1,0 +1,2 @@
+{"event_type": "requestfailed", "failure": "net::ERR_ABORTED", "method": "POST", "page_url": "http://127.0.0.1:5099/rebirth", "resource_type": "fetch", "severity": "high", "timestamp": "2026-05-27T23:05:37.347618+00:00", "url": "http://127.0.0.1:5099/api/rebirth/telemetry"}
+{"event_type": "requestfailed", "failure": "net::ERR_ABORTED", "method": "POST", "page_url": "http://127.0.0.1:5099/rebirth", "resource_type": "fetch", "severity": "high", "timestamp": "2026-05-27T23:05:40.942106+00:00", "url": "http://127.0.0.1:5099/api/rebirth/telemetry"}

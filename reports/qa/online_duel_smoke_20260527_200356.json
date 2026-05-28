@@ -1,0 +1,152 @@
+{
+  "base": "https://ambition-tcg.onrender.com",
+  "shot_dir": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/online_duel_smoke_20260527_200356",
+  "screenshots": [
+    {
+      "path": "/rebirth?onlineSmoke=1",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "hand": 5,
+      "playerField": 0,
+      "botField": 0,
+      "phase": "Principal",
+      "result": "Monte seu campo.",
+      "primary": "Jogue CINDER LYNX (1 mana).",
+      "selected": "Cinder Lynx",
+      "overflowX": 0,
+      "broken": [],
+      "name": "online_loaded",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/online_duel_smoke_20260527_200356/01_online_loaded.png"
+    },
+    {
+      "path": "/rebirth?onlineSmoke=1",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "hand": 5,
+      "playerField": 0,
+      "botField": 0,
+      "phase": "Principal",
+      "result": "Monte seu campo.",
+      "primary": "Jogue ASHEN BRAWLER (1 mana).",
+      "selected": "Ashen Brawler",
+      "overflowX": 0,
+      "broken": [],
+      "name": "online_selected",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/online_duel_smoke_20260527_200356/02_online_selected.png"
+    },
+    {
+      "path": "/rebirth?onlineSmoke=1",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "hand": 4,
+      "playerField": 1,
+      "botField": 0,
+      "phase": "Principal",
+      "result": "Unidade em campo.",
+      "primary": "Ataque direto bloqueado até o bot responder.",
+      "selected": "Ashen Brawler",
+      "overflowX": 0,
+      "broken": [],
+      "name": "online_after_play",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/online_duel_smoke_20260527_200356/03_online_after_play.png"
+    },
+    {
+      "path": "/rebirth?onlineSmoke=1",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "hand": 5,
+      "playerField": 1,
+      "botField": 1,
+      "phase": "Principal",
+      "result": "Monte seu campo.",
+      "primary": "Jogue CINDER LYNX (1 mana).",
+      "selected": "Cinder Lynx",
+      "overflowX": 0,
+      "broken": [],
+      "name": "online_after_next",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/online_duel_smoke_20260527_200356/04_online_after_next.png"
+    }
+  ],
+  "steps": [
+    {
+      "label": "select Ashen",
+      "selector": "#player-hand [data-card-instance]:has-text(\"ASHEN BRAWLER\")",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?onlineSmoke=1",
+        "hp": {
+          "player": "30",
+          "bot": "30"
+        },
+        "hand": 5,
+        "playerField": 0,
+        "botField": 0,
+        "phase": "Principal",
+        "result": "Monte seu campo.",
+        "primary": "Jogue ASHEN BRAWLER (1 mana).",
+        "selected": "Ashen Brawler",
+        "overflowX": 0,
+        "broken": []
+      }
+    },
+    {
+      "label": "play selected",
+      "selector": "#play-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?onlineSmoke=1",
+        "hp": {
+          "player": "30",
+          "bot": "30"
+        },
+        "hand": 4,
+        "playerField": 1,
+        "botField": 0,
+        "phase": "Principal",
+        "result": "Unidade em campo.",
+        "primary": "Ataque direto bloqueado até o bot responder.",
+        "selected": "Ashen Brawler",
+        "overflowX": 0,
+        "broken": []
+      }
+    },
+    {
+      "label": "next turn",
+      "selector": "#next-turn-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?onlineSmoke=1",
+        "hp": {
+          "player": "30",
+          "bot": "30"
+        },
+        "hand": 5,
+        "playerField": 1,
+        "botField": 1,
+        "phase": "Principal",
+        "result": "Monte seu campo.",
+        "primary": "Jogue CINDER LYNX (1 mana).",
+        "selected": "Cinder Lynx",
+        "overflowX": 0,
+        "broken": []
+      }
+    }
+  ],
+  "events": [
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "Service Worker registration blocked by Playwright",
+      "url": "https://ambition-tcg.onrender.com/rebirth?onlineSmoke=1"
+    }
+  ],
+  "severe_events": []
+}

@@ -1,0 +1,1463 @@
+{
+  "shot_dir": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019",
+  "screenshots": [
+    {
+      "path": "/rebirth?mechanics=clean",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "turn": "01",
+      "phase": "Principal",
+      "result": "Monte seu campo.",
+      "copy": "Invoque monstros, selecione um aliado pronto e escolha o alvo.",
+      "primary": "Jogue CINDER LYNX (1 mana).",
+      "secondary": "Você ainda pode evoluir antes de encerrar",
+      "actionState": "play-card",
+      "selected": "Cinder Lynx",
+      "handCount": 5,
+      "playerField": 0,
+      "botField": 0,
+      "chain": "Cadeia event-000001 · 1",
+      "chainIntensity": "idle",
+      "hand": [
+        {
+          "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-01-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-02-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+          "id": "player-03-card_002",
+          "disabled": false
+        },
+        {
+          "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+          "id": "player-04-card_021",
+          "disabled": false
+        },
+        {
+          "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+          "id": "player-05-card_041",
+          "disabled": false
+        }
+      ],
+      "attackers": [],
+      "targets": [],
+      "error": "",
+      "overflowX": 0,
+      "name": "01_loaded",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019/01_01_loaded.png"
+    },
+    {
+      "path": "/rebirth?mechanics=clean",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "turn": "01",
+      "phase": "Principal",
+      "result": "Monte seu campo.",
+      "copy": "Invoque monstros, selecione um aliado pronto e escolha o alvo.",
+      "primary": "Jogue ASHEN BRAWLER (1 mana).",
+      "secondary": "Você ainda pode evoluir antes de encerrar",
+      "actionState": "play-card",
+      "selected": "Ashen Brawler",
+      "handCount": 5,
+      "playerField": 0,
+      "botField": 0,
+      "chain": "Cadeia event-000001 · 1",
+      "chainIntensity": "idle",
+      "hand": [
+        {
+          "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-01-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-02-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+          "id": "player-03-card_002",
+          "disabled": false
+        },
+        {
+          "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+          "id": "player-04-card_021",
+          "disabled": false
+        },
+        {
+          "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+          "id": "player-05-card_041",
+          "disabled": false
+        }
+      ],
+      "attackers": [],
+      "targets": [],
+      "error": "",
+      "overflowX": 0,
+      "name": "02_card_selected",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019/02_02_card_selected.png"
+    },
+    {
+      "path": "/rebirth?mechanics=clean",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "turn": "01",
+      "phase": "Principal",
+      "result": "Unidade em campo.",
+      "copy": "Ashen Brawler entra em campo.",
+      "primary": "Ataque direto bloqueado até o bot responder.",
+      "secondary": "Você ainda pode evoluir antes de encerrar",
+      "actionState": "attack-favorable",
+      "selected": "Ashen Brawler",
+      "handCount": 4,
+      "playerField": 1,
+      "botField": 0,
+      "chain": "Cadeia event-000004 · 1",
+      "chainIntensity": "idle",
+      "hand": [
+        {
+          "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-01-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-02-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+          "id": "player-04-card_021",
+          "disabled": false
+        },
+        {
+          "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+          "id": "player-05-card_041",
+          "disabled": false
+        }
+      ],
+      "attackers": [
+        {
+          "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+          "id": "player-03-card_002",
+          "disabled": false
+        }
+      ],
+      "targets": [],
+      "error": "",
+      "overflowX": 0,
+      "name": "03_after_invoke",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019/03_03_after_invoke.png"
+    },
+    {
+      "path": "/rebirth?mechanics=clean",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "turn": "02",
+      "phase": "Principal",
+      "result": "Monte seu campo.",
+      "copy": "Invoque monstros, selecione um aliado pronto e escolha o alvo.",
+      "primary": "Jogue CINDER LYNX (1 mana).",
+      "secondary": "Você ainda pode evoluir antes de encerrar",
+      "actionState": "play-card",
+      "selected": "Cinder Lynx",
+      "handCount": 5,
+      "playerField": 1,
+      "botField": 1,
+      "chain": "Cadeia turn-000002 · 7",
+      "chainIntensity": "idle",
+      "hand": [
+        {
+          "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-01-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-02-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+          "id": "player-04-card_021",
+          "disabled": false
+        },
+        {
+          "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+          "id": "player-05-card_041",
+          "disabled": false
+        },
+        {
+          "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+          "id": "player-06-card_061",
+          "disabled": false
+        }
+      ],
+      "attackers": [
+        {
+          "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+          "id": "player-03-card_002",
+          "disabled": false
+        }
+      ],
+      "targets": [
+        {
+          "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+          "target": "bot-01-card_044",
+          "direct": false,
+          "disabled": false
+        }
+      ],
+      "error": "",
+      "overflowX": 0,
+      "name": "04_after_end_turn",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019/04_04_after_end_turn.png"
+    },
+    {
+      "path": "/rebirth?mechanics=clean",
+      "hp": {
+        "player": "30",
+        "bot": "30"
+      },
+      "turn": "02",
+      "phase": "Principal",
+      "result": "Monte seu campo.",
+      "copy": "Invoque monstros, selecione um aliado pronto e escolha o alvo.",
+      "primary": "Ataque arriscado detectado.",
+      "secondary": "Você ainda pode evoluir antes de encerrar",
+      "actionState": "attack-losing",
+      "selected": "Ashen Brawler",
+      "handCount": 5,
+      "playerField": 1,
+      "botField": 1,
+      "chain": "Cadeia turn-000002 · 7",
+      "chainIntensity": "idle",
+      "hand": [
+        {
+          "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-01-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-02-card_001",
+          "disabled": false
+        },
+        {
+          "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+          "id": "player-04-card_021",
+          "disabled": false
+        },
+        {
+          "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+          "id": "player-05-card_041",
+          "disabled": false
+        },
+        {
+          "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+          "id": "player-06-card_061",
+          "disabled": false
+        }
+      ],
+      "attackers": [
+        {
+          "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+          "id": "player-03-card_002",
+          "disabled": false
+        }
+      ],
+      "targets": [
+        {
+          "text": "Alto risco de perder 1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+          "target": "bot-01-card_044",
+          "direct": false,
+          "disabled": false
+        }
+      ],
+      "error": "",
+      "overflowX": 0,
+      "name": "05_attacker_selected",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019/05_05_attacker_selected.png"
+    },
+    {
+      "path": "/rebirth?mechanics=clean",
+      "hp": {
+        "player": "28",
+        "bot": "30"
+      },
+      "turn": "02",
+      "phase": "Fim",
+      "result": "Seu ataque foi contido.",
+      "copy": "Granite Pactbearer destruiu Ashen Brawler.",
+      "primary": "Resolvido - avance o turno.",
+      "secondary": "Prepare seu campo",
+      "actionState": "resolved",
+      "selected": "Escolha uma carta",
+      "handCount": 5,
+      "playerField": 0,
+      "botField": 1,
+      "chain": "Cadeia event-000023 · 1",
+      "chainIntensity": "idle",
+      "hand": [
+        {
+          "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-01-card_001",
+          "disabled": true
+        },
+        {
+          "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+          "id": "player-02-card_001",
+          "disabled": true
+        },
+        {
+          "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+          "id": "player-04-card_021",
+          "disabled": true
+        },
+        {
+          "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+          "id": "player-05-card_041",
+          "disabled": true
+        },
+        {
+          "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+          "id": "player-06-card_061",
+          "disabled": true
+        }
+      ],
+      "attackers": [],
+      "targets": [
+        {
+          "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+          "target": "bot-01-card_044",
+          "direct": false,
+          "disabled": false
+        }
+      ],
+      "error": "",
+      "overflowX": 0,
+      "name": "06_after_attack",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019/06_06_after_attack.png"
+    },
+    {
+      "path": "/rebirth?mechanics=clean",
+      "hp": {
+        "player": "12",
+        "bot": "30"
+      },
+      "turn": "04",
+      "phase": "Fim",
+      "result": "Seu ataque foi contido.",
+      "copy": "Granite Pactbearer destruiu Cinder Lynx.",
+      "primary": "Resolvido - avance o turno.",
+      "secondary": "Prepare seu campo",
+      "actionState": "resolved",
+      "selected": "Escolha uma carta",
+      "handCount": 4,
+      "playerField": 0,
+      "botField": 3,
+      "chain": "Cadeia event-000074 · 1",
+      "chainIntensity": "idle",
+      "hand": [
+        {
+          "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+          "id": "player-04-card_021",
+          "disabled": true
+        },
+        {
+          "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+          "id": "player-05-card_041",
+          "disabled": true
+        },
+        {
+          "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+          "id": "player-06-card_061",
+          "disabled": true
+        },
+        {
+          "text": "2 BEST PLAY Blazewing Adept Fogo - T1 Surto de Calor Ganha ataque nos primeiros combates. 5ATK 4GUARD",
+          "id": "player-07-card_003",
+          "disabled": true
+        }
+      ],
+      "attackers": [],
+      "targets": [
+        {
+          "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+          "target": "bot-01-card_044",
+          "direct": false,
+          "disabled": false
+        },
+        {
+          "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+          "target": "bot-02-card_043",
+          "direct": false,
+          "disabled": false
+        },
+        {
+          "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+          "target": "bot-07-card_043",
+          "direct": false,
+          "disabled": false
+        }
+      ],
+      "error": "",
+      "overflowX": 0,
+      "name": "07_after_extra_loops",
+      "screenshot": "/Users/lucassilverio/Desktop/Ambition/reports/qa/screenshots/master_duel_mechanics_20260527_200019/07_07_after_extra_loops.png"
+    }
+  ],
+  "steps": [
+    {
+      "label": "select Ashen Brawler",
+      "selector": "#player-hand [data-card-instance]:has-text(\"ASHEN BRAWLER\")",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "30",
+          "bot": "30"
+        },
+        "turn": "01",
+        "phase": "Principal",
+        "result": "Monte seu campo.",
+        "copy": "Invoque monstros, selecione um aliado pronto e escolha o alvo.",
+        "primary": "Jogue ASHEN BRAWLER (1 mana).",
+        "secondary": "Você ainda pode evoluir antes de encerrar",
+        "actionState": "play-card",
+        "selected": "Ashen Brawler",
+        "handCount": 5,
+        "playerField": 0,
+        "botField": 0,
+        "chain": "Cadeia event-000001 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+            "id": "player-03-card_002",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          }
+        ],
+        "attackers": [],
+        "targets": [],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "invoke selected monster",
+      "selector": "#play-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "30",
+          "bot": "30"
+        },
+        "turn": "01",
+        "phase": "Principal",
+        "result": "Unidade em campo.",
+        "copy": "Ashen Brawler entra em campo.",
+        "primary": "Ataque direto bloqueado até o bot responder.",
+        "secondary": "Você ainda pode evoluir antes de encerrar",
+        "actionState": "attack-favorable",
+        "selected": "Ashen Brawler",
+        "handCount": 4,
+        "playerField": 1,
+        "botField": 0,
+        "chain": "Cadeia event-000004 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          }
+        ],
+        "attackers": [
+          {
+            "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+            "id": "player-03-card_002",
+            "disabled": false
+          }
+        ],
+        "targets": [],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "end turn",
+      "selector": "#next-turn-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "30",
+          "bot": "30"
+        },
+        "turn": "02",
+        "phase": "Principal",
+        "result": "Monte seu campo.",
+        "copy": "Invoque monstros, selecione um aliado pronto e escolha o alvo.",
+        "primary": "Jogue CINDER LYNX (1 mana).",
+        "secondary": "Você ainda pode evoluir antes de encerrar",
+        "actionState": "play-card",
+        "selected": "Cinder Lynx",
+        "handCount": 5,
+        "playerField": 1,
+        "botField": 1,
+        "chain": "Cadeia turn-000002 · 7",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          }
+        ],
+        "attackers": [
+          {
+            "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+            "id": "player-03-card_002",
+            "disabled": false
+          }
+        ],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "select ready attacker",
+      "selector": "#player-battlefield [data-attacker-instance]",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "30",
+          "bot": "30"
+        },
+        "turn": "02",
+        "phase": "Principal",
+        "result": "Monte seu campo.",
+        "copy": "Invoque monstros, selecione um aliado pronto e escolha o alvo.",
+        "primary": "Ataque arriscado detectado.",
+        "secondary": "Você ainda pode evoluir antes de encerrar",
+        "actionState": "attack-losing",
+        "selected": "Ashen Brawler",
+        "handCount": 5,
+        "playerField": 1,
+        "botField": 1,
+        "chain": "Cadeia turn-000002 · 7",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          }
+        ],
+        "attackers": [
+          {
+            "text": "1 Ashen Brawler Fogo - T1 Marca Ardente Aplica queimadura após vencer o combate. 5ATK 3GUARD",
+            "id": "player-03-card_002",
+            "disabled": false
+          }
+        ],
+        "targets": [
+          {
+            "text": "Alto risco de perder 1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "attack bot unit",
+      "selector": "#bot-battlefield [data-target-instance]",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "28",
+          "bot": "30"
+        },
+        "turn": "02",
+        "phase": "Fim",
+        "result": "Seu ataque foi contido.",
+        "copy": "Granite Pactbearer destruiu Ashen Brawler.",
+        "primary": "Resolvido - avance o turno.",
+        "secondary": "Prepare seu campo",
+        "actionState": "resolved",
+        "selected": "Escolha uma carta",
+        "handCount": 5,
+        "playerField": 0,
+        "botField": 1,
+        "chain": "Cadeia event-000023 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": true
+          },
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": true
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": true
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": true
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": true
+          }
+        ],
+        "attackers": [],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop next 1",
+      "selector": "#next-turn-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "22",
+          "bot": "30"
+        },
+        "turn": "03",
+        "phase": "Principal",
+        "result": "Impacto confirmado.",
+        "copy": "A resolução foi concluída.",
+        "primary": "Jogue CINDER LYNX (1 mana).",
+        "secondary": "Você ainda pode evoluir antes de encerrar",
+        "actionState": "play-card",
+        "selected": "Cinder Lynx",
+        "handCount": 5,
+        "playerField": 0,
+        "botField": 2,
+        "chain": "Cadeia turn-000005 · 10",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          }
+        ],
+        "attackers": [],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop select hand 1",
+      "selector": "#player-hand [data-card-instance] first",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "22",
+          "bot": "30"
+        },
+        "turn": "03",
+        "phase": "Principal",
+        "result": "Impacto confirmado.",
+        "copy": "A resolução foi concluída.",
+        "primary": "Jogue CINDER LYNX (1 mana).",
+        "secondary": "Você ainda pode evoluir antes de encerrar",
+        "actionState": "play-card",
+        "selected": "Cinder Lynx",
+        "handCount": 5,
+        "playerField": 0,
+        "botField": 2,
+        "chain": "Cadeia turn-000005 · 10",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          }
+        ],
+        "attackers": [],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop play 1",
+      "selector": "#play-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "22",
+          "bot": "30"
+        },
+        "turn": "03",
+        "phase": "Principal",
+        "result": "Unidade em campo.",
+        "copy": "Cinder Lynx entra em campo.",
+        "primary": "Troca provável.",
+        "secondary": "Passe a vez para recarregar mana",
+        "actionState": "attack-risky",
+        "selected": "Cinder Lynx",
+        "handCount": 4,
+        "playerField": 1,
+        "botField": 2,
+        "chain": "Cadeia event-000040 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          }
+        ],
+        "attackers": [
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          }
+        ],
+        "targets": [
+          {
+            "text": "Alto risco de perder 1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "Troca provável 2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop select attacker 1",
+      "selector": "#player-battlefield [data-attacker-instance]",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "22",
+          "bot": "30"
+        },
+        "turn": "03",
+        "phase": "Principal",
+        "result": "Unidade em campo.",
+        "copy": "Cinder Lynx entra em campo.",
+        "primary": "Troca provável.",
+        "secondary": "Passe a vez para recarregar mana",
+        "actionState": "attack-risky",
+        "selected": "Cinder Lynx",
+        "handCount": 4,
+        "playerField": 1,
+        "botField": 2,
+        "chain": "Cadeia event-000040 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          }
+        ],
+        "attackers": [
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-01-card_001",
+            "disabled": false
+          }
+        ],
+        "targets": [
+          {
+            "text": "Alto risco de perder 1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "Troca provável 2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop attack target 1",
+      "selector": "#bot-battlefield [data-target-instance]",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "20",
+          "bot": "30"
+        },
+        "turn": "03",
+        "phase": "Fim",
+        "result": "Seu ataque foi contido.",
+        "copy": "Granite Pactbearer destruiu Cinder Lynx.",
+        "primary": "Resolvido - avance o turno.",
+        "secondary": "Prepare seu campo",
+        "actionState": "resolved",
+        "selected": "Escolha uma carta",
+        "handCount": 4,
+        "playerField": 0,
+        "botField": 2,
+        "chain": "Cadeia event-000048 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 BEST PLAY Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": true
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": true
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": true
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": true
+          }
+        ],
+        "attackers": [],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop next 2",
+      "selector": "#next-turn-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "14",
+          "bot": "30"
+        },
+        "turn": "04",
+        "phase": "Principal",
+        "result": "Impacto confirmado.",
+        "copy": "A resolução foi concluída.",
+        "primary": "Jogue BLAZEWING ADEPT (2 mana).",
+        "secondary": "Passe a vez para recarregar mana",
+        "actionState": "play-card",
+        "selected": "Blazewing Adept",
+        "handCount": 5,
+        "playerField": 0,
+        "botField": 3,
+        "chain": "Cadeia turn-000009 · 11",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          },
+          {
+            "text": "2 BEST PLAY Blazewing Adept Fogo - T1 Surto de Calor Ganha ataque nos primeiros combates. 5ATK 4GUARD",
+            "id": "player-07-card_003",
+            "disabled": false
+          }
+        ],
+        "attackers": [],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-07-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop select hand 2",
+      "selector": "#player-hand [data-card-instance] first",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "14",
+          "bot": "30"
+        },
+        "turn": "04",
+        "phase": "Principal",
+        "result": "Impacto confirmado.",
+        "copy": "A resolução foi concluída.",
+        "primary": "Jogue CINDER LYNX (1 mana).",
+        "secondary": "Passe a vez para recarregar mana",
+        "actionState": "play-card",
+        "selected": "Cinder Lynx",
+        "handCount": 5,
+        "playerField": 0,
+        "botField": 3,
+        "chain": "Cadeia turn-000009 · 11",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          },
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          },
+          {
+            "text": "2 BEST PLAY Blazewing Adept Fogo - T1 Surto de Calor Ganha ataque nos primeiros combates. 5ATK 4GUARD",
+            "id": "player-07-card_003",
+            "disabled": false
+          }
+        ],
+        "attackers": [],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-07-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop play 2",
+      "selector": "#play-button:not([disabled])",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "14",
+          "bot": "30"
+        },
+        "turn": "04",
+        "phase": "Principal",
+        "result": "Unidade em campo.",
+        "copy": "Cinder Lynx entra em campo.",
+        "primary": "Troca provável.",
+        "secondary": "Passe a vez para recarregar mana",
+        "actionState": "attack-risky",
+        "selected": "Cinder Lynx",
+        "handCount": 4,
+        "playerField": 1,
+        "botField": 3,
+        "chain": "Cadeia event-000066 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          },
+          {
+            "text": "2 BEST PLAY Blazewing Adept Fogo - T1 Surto de Calor Ganha ataque nos primeiros combates. 5ATK 4GUARD",
+            "id": "player-07-card_003",
+            "disabled": false
+          }
+        ],
+        "attackers": [
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          }
+        ],
+        "targets": [
+          {
+            "text": "Alto risco de perder 1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "Troca provável 2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "Troca provável 2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-07-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop select attacker 2",
+      "selector": "#player-battlefield [data-attacker-instance]",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "14",
+          "bot": "30"
+        },
+        "turn": "04",
+        "phase": "Principal",
+        "result": "Unidade em campo.",
+        "copy": "Cinder Lynx entra em campo.",
+        "primary": "Troca provável.",
+        "secondary": "Passe a vez para recarregar mana",
+        "actionState": "attack-risky",
+        "selected": "Cinder Lynx",
+        "handCount": 4,
+        "playerField": 1,
+        "botField": 3,
+        "chain": "Cadeia event-000066 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": false
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": false
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": false
+          },
+          {
+            "text": "2 BEST PLAY Blazewing Adept Fogo - T1 Surto de Calor Ganha ataque nos primeiros combates. 5ATK 4GUARD",
+            "id": "player-07-card_003",
+            "disabled": false
+          }
+        ],
+        "attackers": [
+          {
+            "text": "1 Cinder Lynx Fogo - T1 Faísca Direta Causa pressão adicional quando vence o combate. 4ATK 3GUARD",
+            "id": "player-02-card_001",
+            "disabled": false
+          }
+        ],
+        "targets": [
+          {
+            "text": "Alto risco de perder 1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "Troca provável 2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "Troca provável 2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-07-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    },
+    {
+      "label": "loop attack target 2",
+      "selector": "#bot-battlefield [data-target-instance]",
+      "status": "ok",
+      "state": {
+        "path": "/rebirth?mechanics=clean",
+        "hp": {
+          "player": "12",
+          "bot": "30"
+        },
+        "turn": "04",
+        "phase": "Fim",
+        "result": "Seu ataque foi contido.",
+        "copy": "Granite Pactbearer destruiu Cinder Lynx.",
+        "primary": "Resolvido - avance o turno.",
+        "secondary": "Prepare seu campo",
+        "actionState": "resolved",
+        "selected": "Escolha uma carta",
+        "handCount": 4,
+        "playerField": 0,
+        "botField": 3,
+        "chain": "Cadeia event-000074 · 1",
+        "chainIntensity": "idle",
+        "hand": [
+          {
+            "text": "1 Mistcall Tactician Água - T1 Maré Curativa Recupera PV após a pressão do combate. 4ATK 3GUARD",
+            "id": "player-04-card_021",
+            "disabled": true
+          },
+          {
+            "text": "1 Stonehide Recruit Terra - T1 Florescer do Escudo Adiciona um escudo persistente após o combate. 4ATK 3GUARD",
+            "id": "player-05-card_041",
+            "disabled": true
+          },
+          {
+            "text": "1 Duskwisp Thief Sombra - T1 Roubo de Vida Cura seu controlador após causar dano. 4ATK 3GUARD",
+            "id": "player-06-card_061",
+            "disabled": true
+          },
+          {
+            "text": "2 BEST PLAY Blazewing Adept Fogo - T1 Surto de Calor Ganha ataque nos primeiros combates. 5ATK 4GUARD",
+            "id": "player-07-card_003",
+            "disabled": true
+          }
+        ],
+        "attackers": [],
+        "targets": [
+          {
+            "text": "1 Granite Pactbearer Terra - T1 Baluarte Reduz fortemente o dano recebido em combate. 6ATK 2GUARD",
+            "target": "bot-01-card_044",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-02-card_043",
+            "direct": false,
+            "disabled": false
+          },
+          {
+            "text": "2 Amberplate Cub Terra - T1 Contra-Golpe de Pedra Contra-ataca inimigos de baixo ataque. 5ATK 4GUARD",
+            "target": "bot-07-card_043",
+            "direct": false,
+            "disabled": false
+          }
+        ],
+        "error": "",
+        "overflowX": 0
+      }
+    }
+  ],
+  "events": [
+    {
+      "kind": "console",
+      "type": "warning",
+      "text": "Service Worker registration blocked by Playwright",
+      "url": "http://127.0.0.1:5099/rebirth?mechanics=clean"
+    }
+  ],
+  "severe_events": []
+}
