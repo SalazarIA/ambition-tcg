@@ -57,6 +57,8 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v76_RELEASE_POLISH-1")
+app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
 app.config["REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS"] = max(0.0, float(os.environ.get("REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS", "0.02")))
@@ -605,6 +607,7 @@ def inject_rebirth_security():
     user = current_user()
     return {
         "csrf_token": csrf_token,
+        "rebirth_release_version": app.config["REBIRTH_RELEASE_VERSION"],
         "rebirth_navbar": rebirth_navbar_payload(user),
     }
 
@@ -880,10 +883,10 @@ def api_rebirth_campaign_start():
         payload = request_json(required=True)
         node_id = payload.get("node_id")
         if not isinstance(node_id, str) or not node_id.strip():
-            raise RebirthError("Informe um no valido da campanha.", "invalid_campaign_payload")
+            raise RebirthError("Informe um nó válido da campanha.", "invalid_campaign_payload")
         node = get_node(node_id.strip())
         if not node:
-            raise RebirthError("Este encontro da campanha nao existe.", "campaign_node_not_found")
+            raise RebirthError("Este encontro da campanha não existe.", "campaign_node_not_found")
 
         user = require_user()
         repo = rebirth_repo()

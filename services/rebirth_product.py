@@ -156,7 +156,7 @@ def product_shell_payload(account=None):
             "account": account,
             "status": [
                 {"label": "Modo", "value": "Clash TCG"},
-                {"label": "Cartas", "value": "100 no catálogo"},
+                {"label": "Cartas", "value": f"{len(catalog_payload())} no catálogo"},
                 {"label": "Economia", "value": "Ouro + Gemas"},
             ],
             "blocks": [
@@ -232,6 +232,78 @@ def card_collection(collection_counts=None, loadout_card_ids=None):
     return cards
 
 
+def curated_collection_sections(cards, loadout_ids=None):
+    def unique(sequence, limit):
+        seen = set()
+        selected = []
+        for card in sequence:
+            if not card or card["id"] in seen:
+                continue
+            seen.add(card["id"])
+            selected.append(card)
+            if len(selected) >= limit:
+                break
+        return selected
+
+    by_id = {card["id"]: card for card in cards}
+    loadout_core = unique((by_id.get(card_id) for card_id in (loadout_ids or [])), 12)
+    owned_off_deck = unique((card for card in cards if card["owned_count"] and not card["in_loadout_count"]), 10)
+    evolved_preview = unique(
+        sorted(
+            (card for card in cards if card["is_evolved"]),
+            key=lambda card: (not card["owned_count"], card["element"], card["name"]),
+        ),
+        8,
+    )
+    tactic_preview = unique(
+        sorted(
+            (card for card in cards if card.get("card_type") in {"SPELL", "TRAP"}),
+            key=lambda card: (not card["owned_count"], card.get("card_type") or "", card["name"]),
+        ),
+        8,
+    )
+    catalog_teaser = unique((card for card in cards if not card["owned_count"] and not card["is_evolved"]), 8)
+
+    sections = [
+        {
+            "key": "loadout",
+            "kicker": "Curado",
+            "title": "Núcleo do baralho",
+            "copy": "As peças que você realmente leva para a arena agora.",
+            "cards": loadout_core,
+        },
+        {
+            "key": "owned",
+            "kicker": "Reserva",
+            "title": "Boas opções fora do deck",
+            "copy": "Cartas possuídas que podem entrar quando você mudar o plano.",
+            "cards": owned_off_deck,
+        },
+        {
+            "key": "evolutions",
+            "kicker": "Meta",
+            "title": "Evoluções para perseguir",
+            "copy": "Formas Rebirth importantes, priorizando as já conquistadas.",
+            "cards": evolved_preview,
+        },
+        {
+            "key": "tactics",
+            "kicker": "Tática",
+            "title": "Magias e armadilhas",
+            "copy": "Ferramentas de tempo, cura, escudo e dano direto.",
+            "cards": tactic_preview,
+        },
+        {
+            "key": "preview",
+            "kicker": "Catálogo",
+            "title": "Próximos alvos",
+            "copy": "Uma amostra do que ainda pode aparecer em pacotes.",
+            "cards": catalog_teaser,
+        },
+    ]
+    return [section for section in sections if section["cards"]]
+
+
 def collection_payload(account=None, collection_counts=None, loadout_card_ids=None):
     account = account or guest_account()
     loadout_ids = loadout_card_ids or DEFAULT_LOADOUT
@@ -249,6 +321,7 @@ def collection_payload(account=None, collection_counts=None, loadout_card_ids=No
             "account": account,
             "is_persisted": bool(account.get("authenticated")),
             "cards": cards,
+            "collection_sections": curated_collection_sections(cards, loadout_ids),
             "loadout": [get_card(card_id) for card_id in loadout_ids],
             "summary": {
                 "owned_cards": sum(card["owned_count"] for card in cards),

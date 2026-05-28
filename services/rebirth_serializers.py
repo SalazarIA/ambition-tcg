@@ -122,7 +122,7 @@ def resolution_context(match):
         "priority_label": "Jogador" if awaiting_player else RESOLUTION_PRIORITY_LABELS.get(priority, "Resolvida"),
         "chain_id": chain_id,
         "chain_event_count": len(chain_events),
-        "chain_state": "aguardando acao" if awaiting_player and not chain_id else "resolvida",
+        "chain_state": "aguardando ação" if awaiting_player and not chain_id else "resolvida",
         "interrupt_label": "Trap resolvida" if has_interrupt else "Janela fechada",
         "feedback": feedback,
     }
