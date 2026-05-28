@@ -123,7 +123,10 @@ _CAMPAIGN_NODES = (
         "node_07_eclipse_parasite", 7, "Parasita do Eclipse",
         "A sombra nao ataca so o corpo: ela aprende com suas feridas.",
         "opportunist", 41, 235, "node_06_crimson_executioner", ("card_065", "card_064", "card_063", "card_061"),
-        modifiers=[{"id": "extra_draw_turn_1", "side": "bot", "amount": 1}],
+        modifiers=[
+            {"id": "extra_draw_turn_1", "side": "bot", "amount": 1},
+            {"id": "energy_ramp", "side": "bot", "amount": 1},
+        ],
         presentation=_presentation("Eclipse Vivo", "shadow", "#aa6cff", "void", "heavy"),
         loss_tip="Limpe deterioracao quando puder e evite trocas que alimentem roubo de vida.",
         key_card_id="card_065",
@@ -135,6 +138,7 @@ _CAMPAIGN_NODES = (
         modifiers=[
             {"id": "opening_shield", "side": "bot", "amount": 5, "turns": 2},
             {"id": "extra_draw_turn_1", "side": "bot", "amount": 1},
+            {"id": "energy_ramp", "side": "bot", "amount": 1},
         ],
         presentation=_presentation("Fortaleza Abissal", "earth", "#71bd85", "stone", "heavy"),
         loss_tip="Nao desperdice ataque no escudo inicial; monte campo e derrube tudo em cadeia.",
@@ -147,6 +151,7 @@ _CAMPAIGN_NODES = (
         modifiers=[
             {"id": "extra_draw_turn_1", "side": "bot", "amount": 2},
             {"id": "opening_mana", "side": "bot", "amount": 1},
+            {"id": "energy_ramp", "side": "bot", "amount": 1},
         ],
         presentation=_presentation("A Ultima Profecia", "shadow", "#d493ff", "void", "heavy"),
         loss_tip="O Arauto abre com opcoes demais; priorize sobrevivencia ate a mao dele estreitar.",
@@ -160,6 +165,7 @@ _CAMPAIGN_NODES = (
             {"id": "opening_shield", "side": "bot", "amount": 4, "turns": 2},
             {"id": "extra_draw_turn_1", "side": "bot", "amount": 2},
             {"id": "opening_mana", "side": "bot", "amount": 1},
+            {"id": "energy_ramp", "side": "bot", "amount": 2},
         ],
         presentation=_presentation("Rei Cinzento", "royal", "#f0c56b", "crown", "heavy"),
         loss_tip="Quebre a coroa em fases: sobreviva a abertura, remova o escudo e so entao acelere o dano.",
@@ -205,9 +211,11 @@ def _modifier_label(modifier):
     if modifier["id"] == "opening_shield":
         return f"Escudo inicial +{amount}"
     if modifier["id"] == "extra_draw_turn_1":
-        return f"Mao inicial +{amount}"
+        return f"Mão inicial +{amount}"
     if modifier["id"] == "opening_mana":
         return f"Mana inicial +{amount}"
+    if modifier["id"] == "energy_ramp":
+        return f"Tempo sustentado +{amount} mana/turno"
     return modifier["id"]
 
 

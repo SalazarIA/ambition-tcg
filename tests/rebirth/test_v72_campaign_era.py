@@ -27,10 +27,13 @@ def test_v72_campaign_has_ten_bosses_with_visible_deterministic_rules():
     assert len(nodes) == 10
     assert nodes[-1]["id"] == "node_10_gray_king"
     assert nodes[-1]["presentation"]["intensity"] == "heavy"
+    # audit #3: the boss now carries sustained tempo pressure (energy_ramp),
+    # not just a longer HP bar. Accents fixed too (Mão).
     assert nodes[-1]["modifier_labels"] == [
         "Escudo inicial +4",
-        "Mao inicial +2",
+        "Mão inicial +2",
         "Mana inicial +1",
+        "Tempo sustentado +2 mana/turno",
     ]
 
 
@@ -52,9 +55,35 @@ def test_v72_boss_modifiers_survive_replay_hash_and_parity():
 
     assert match["bot"]["statuses"]["shield"] == {"potency": 4, "turns": 2}
     assert len(match["bot"]["hand"]) == 7
-    assert match["bot"]["energy"] == 3
+    # audit #3: base 2 + opening_mana 1 + energy_ramp 2 = 5 (sustained tempo).
+    assert match["bot"]["energy"] == 5
+    assert match["bot"]["energy_ramp_bonus"] == 2
     assert canonical_state_hash(replayed) == canonical_state_hash(match)
     assert DeterministicParityRunner().verify(match)["ok"] is True
+
+
+def test_v74_energy_ramp_is_sustained_across_turns():
+    # audit #3: energy_ramp must add tempo EVERY turn, not just the opener,
+    # so late bosses keep out-curving a competent player instead of merely
+    # carrying a longer HP bar.
+    from services.rebirth_engine import next_turn
+    node = get_node("node_10_gray_king")
+    match = start_match(
+        seed="v74-ramp",
+        bot_profile_id=node["bot_profile_id"],
+        bot_card_ids=node["bot_deck_override"],
+        player_hp=node["player_hp"],
+        bot_hp=node["bot_hp"],
+        campaign_version=CAMPAIGN_VERSION,
+        campaign_node=node["id"],
+        campaign_attempt=1,
+        campaign_modifiers=node["modifiers"],
+    )
+    for _ in range(6):
+        next_turn(match)
+    # Bot keeps a +2 tempo edge mid-match (capped at 12).
+    assert match["bot"]["max_energy"] > match["player"]["max_energy"]
+    assert match["bot"]["max_energy"] - match["player"]["max_energy"] == 2
 
 
 def test_v72_defeat_advice_is_only_public_after_campaign_loss():

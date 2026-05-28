@@ -367,8 +367,12 @@ def _refresh_energy_for_turn(match):
     energy = min(10, max(2, int(match.get("turn", 1) or 1)))
     for side_name in ("player", "bot"):
         side = match[side_name]
-        side["max_energy"] = energy
-        side["energy"] = energy
+        # Campaign energy_ramp (audit #3): a SUSTAINED tempo edge — added every
+        # turn, capped a bit above the normal ceiling so late bosses keep
+        # out-curving without becoming infinite.
+        ramp = int(side.get("energy_ramp_bonus", 0) or 0)
+        side["max_energy"] = min(12, energy + ramp)
+        side["energy"] = side["max_energy"]
 
 
 def _ready_battlefield(side):

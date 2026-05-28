@@ -122,7 +122,12 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
 
 
 def normalize_campaign_modifiers(modifiers):
-    supported = {"opening_shield", "extra_draw_turn_1", "opening_mana"}
+    # opening_* = one-shot opening advantage. energy_ramp = SUSTAINED tempo:
+    # a permanent max_energy bump so the bot keeps out-curving every turn, not
+    # just turn 1. Audit #3: campaign was only inflating HP (longer bar, same
+    # threat); sustained pressure is what makes late nodes actually hard
+    # against a competent player without rewriting the bot AI.
+    supported = {"opening_shield", "extra_draw_turn_1", "opening_mana", "energy_ramp"}
     normalized = []
     for raw in modifiers or []:
         modifier = raw if isinstance(raw, dict) else {"id": raw}
@@ -153,6 +158,12 @@ def apply_campaign_opening_modifiers(player, bot, modifiers):
         elif modifier["id"] == "opening_mana":
             side["energy"] = int(side.get("energy", 0) or 0) + amount
             side["max_energy"] = int(side.get("max_energy", 0) or 0) + amount
+        elif modifier["id"] == "energy_ramp":
+            # Permanent tempo edge: lift both current and cap so the side keeps
+            # affording bigger plays for the whole match.
+            side["energy"] = int(side.get("energy", 0) or 0) + amount
+            side["max_energy"] = int(side.get("max_energy", 0) or 0) + amount
+            side["energy_ramp_bonus"] = int(side.get("energy_ramp_bonus", 0) or 0) + amount
 
 
 def create_match(
