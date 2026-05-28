@@ -612,13 +612,16 @@ def inject_rebirth_security():
     }
 
 
+REBIRTH_CSRF_PROTECTED_PREFIXES = ("/api/rebirth/", "/api/labs/")
+
+
 @app.before_request
 def protect_rebirth_mutations():
     if not app.config.get("REBIRTH_REQUIRE_CSRF", True):
         return None
     if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
-    if not request.path.startswith("/api/rebirth/"):
+    if not any(request.path.startswith(prefix) for prefix in REBIRTH_CSRF_PROTECTED_PREFIXES):
         return None
 
     expected = session.get("rebirth_csrf_token")

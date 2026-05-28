@@ -21,6 +21,16 @@ def test_rebirth_csrf_protects_mutating_api_when_enabled(client, flask_app):
     assert accepted.get_json()["csrf"]
 
 
+def test_rebirth_csrf_covers_labs_fusion_route(client, flask_app):
+    # Studio master audit P1.1: /api/labs/fusion estava fora do filtro CSRF.
+    # Esse gate trava qualquer regressão silenciosa do escopo de proteção.
+    flask_app.config["REBIRTH_REQUIRE_CSRF"] = True
+
+    rejected = client.post("/api/labs/fusion", json={"card_id": "card_001"})
+    assert rejected.status_code == 403
+    assert rejected.get_json()["error"]["code"] == "csrf_required"
+
+
 def test_rebirth_auth_rate_limit_returns_stable_error(client, flask_app):
     flask_app.config["REBIRTH_AUTH_RATE_LIMIT"] = 1
 
