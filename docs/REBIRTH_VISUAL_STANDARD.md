@@ -1,5 +1,17 @@
 # Ambitionz Rebirth Visual Standard
 
+> **⚠️ Out-of-date sections below.** This doc was written for the pre-v59
+> one-card duel layout. The current runtime is a three-slot tactical TCG
+> with chained resolution, fusion lab and ten-encounter campaign.
+> Palette and motion guidance are still authoritative; the "One card / One
+> decision / One clash" slogan, the 852×1846 fixed-portrait composition
+> and the "do not add a multi-card field" prohibition are historical.
+>
+> For the current rules and surface, see
+> [REBIRTH_RULEBOOK.md](REBIRTH_RULEBOOK.md) and
+> [REBIRTH_RELEASE_STATUS.md](REBIRTH_RELEASE_STATUS.md). A full rewrite of
+> this standard is tracked as part of the studio-master Sprint 2 backlog.
+
 ## Pattern Name
 
 Ambitionz Rebirth Premium Clash UI

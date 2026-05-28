@@ -159,18 +159,32 @@ http://127.0.0.1:8080/rebirth
 
 ## Test
 
+Use the project venv interpreter (`.venv/bin/python`) explicitly. Running
+the suite through the system `python3` masks real failures when the global
+interpreter lacks `psycopg`, `pytest-asyncio` or other dev deps. The studio
+audit P2 logs an example: `python3 -m pytest -q` reports 5 failures from
+`ModuleNotFoundError: No module named 'psycopg'`; the same command via
+`.venv/bin/python -m pytest -q` finishes with **1202 passed, 0 skipped**.
+
 ```bash
 pip install -r requirements-dev.txt
-python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py
-python3 -m pytest -q
-python3 -m pytest tests/rebirth -m requires_postgres -q  # Docker/Postgres real
-python3 -m pytest tests/rebirth -m e2e -q                # Chromium instalado
-python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md
+.venv/bin/python -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py
+.venv/bin/python -m pytest -q                             # fast suite — 1202 passed
+.venv/bin/python -m pytest tests/rebirth/concurrency -q   # Postgres (local binary OR Docker, ver tests/rebirth/concurrency/availability.py)
+.venv/bin/python -m pytest tests/rebirth -m e2e -q        # Playwright + Chromium
+.venv/bin/python -m pytest -m "" -q                       # tudo de uma vez — 1221 passed
+.venv/bin/python tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md
 node --check static/js/rebirth.js
 node --check static/js/service-worker.js
 node --check static/js/pwa.js
 node --check static/js/rebirth_product.js
+node tests/js/test_rebirth_audio_chain_dedup.cjs
 ```
+
+> Os testes de concurrency exigem PostgreSQL 15+ disponível localmente
+> (`brew install postgresql@15`) ou Docker rodando. A fixture descobre
+> qualquer dos dois automaticamente; ver
+> [tests/rebirth/concurrency/availability.py](tests/rebirth/concurrency/availability.py).
 
 The standard pytest suite is scoped to `tests/rebirth` through `pytest.ini`.
 Tests for the retired pre-Rebirth product are preserved under

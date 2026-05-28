@@ -5,11 +5,19 @@
 Decision:
 
 - Ambitionz Rebirth is the active Ambitionz runtime and product surface.
-- The current game identity is: **One card. One decision. One clash.**
-- The current genre framing is: **fast tactical card battler** / **one-card
-  clash battler**.
+- The current game identity is: **three-slot tactical TCG with chained
+  resolution, fusion lab and ten-encounter campaign**.
+- The current genre framing is: **tactical card battler**: two sides, three
+  active battlefield slots each, hand of cards with mana cost, evolution +
+  fusion as secondary actions, deterministic combat resolution per turn.
 - Arena, Ascension, BE2, legacy economy, legacy progression, old shop, old
   collection and old deck builder are retired from runtime.
+
+> Historical note (kept for context): the original framing was "One card. One
+> decision. One clash." That framing predates the v59 three-slot rework,
+> v69 fusion lab and v71/v72 campaign. Anything still describing Rebirth as a
+> one-card duel is out of date and should be reconciled against
+> [REBIRTH_RULEBOOK.md](REBIRTH_RULEBOOK.md).
 
 Why:
 
