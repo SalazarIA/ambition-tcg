@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_BASE_URL = "https://ambition-tcg.onrender.com"
-DEFAULT_EXPECTED_SW = "v71_PRODUCT_READINESS-6"
+DEFAULT_EXPECTED_SW = "v76_RELEASE_POLISH-1"
 USER_AGENT = "Ambitionz-Production-Smoke/1.0"
 
 
@@ -108,12 +108,14 @@ def run(base_url: str, timeout: int, retries: int, expected_sw: str) -> int:
     warnings: List[str] = []
     results: Dict[str, FetchResult] = {}
 
+    css_path = f"/static/css/rebirth.css?v={expected_sw}"
+    js_path = f"/static/js/rebirth.js?v={expected_sw}"
     paths = [
         "/health",
         "/rebirth",
         "/service-worker.js",
-        "/static/css/rebirth.css?v=v71_PRODUCT_READINESS-6",
-        "/static/js/rebirth.js?v=v71_PRODUCT_READINESS-6",
+        css_path,
+        js_path,
         "/static/js/service-worker.js",
     ]
 
@@ -137,7 +139,7 @@ def run(base_url: str, timeout: int, retries: int, expected_sw: str) -> int:
     else:
         assert_contains(
             arena.body,
-            ["data-rebirth-app", "phase-timeline", "priority-label", "v71_PRODUCT_READINESS-6"],
+            ["data-rebirth-app", "phase-timeline", "priority-label", expected_sw],
             warnings,
             "/rebirth HTML",
         )
@@ -151,8 +153,8 @@ def run(base_url: str, timeout: int, retries: int, expected_sw: str) -> int:
         if expected_sw and expected_sw not in service_worker.body:
             warnings.append(f"service worker does not yet contain {expected_sw}; production may not have this local RC deployed")
 
-    css = results["/static/css/rebirth.css?v=v71_PRODUCT_READINESS-6"]
-    js = results["/static/js/rebirth.js?v=v71_PRODUCT_READINESS-6"]
+    css = results[css_path]
+    js = results[js_path]
     if not css.ok:
         failures.append(f"Rebirth CSS unreachable: status={css.status} error={css.error}")
     else:

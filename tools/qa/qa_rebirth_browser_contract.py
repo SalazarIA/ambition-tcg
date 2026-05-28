@@ -19,7 +19,7 @@ os.environ["REBIRTH_DB_PATH"] = str(DB_PATH)
 os.environ["REBIRTH_REQUIRE_CSRF"] = "false"
 os.environ.setdefault("SECRET_KEY", "qa-secret-key")
 
-from app import app  # noqa: E402
+from app import REBIRTH_RELEASE_VERSION, app  # noqa: E402
 
 
 def main():
@@ -36,7 +36,7 @@ def main():
             'id="interrupt-label"',
             "static/css/rebirth.css",
             "static/js/rebirth.js",
-            "v71_PRODUCT_READINESS-6",
+            REBIRTH_RELEASE_VERSION,
             "telemetry:",
         ):
             assert token in body, f"Missing /rebirth browser contract token: {token}"

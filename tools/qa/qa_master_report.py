@@ -27,6 +27,7 @@ BROWSER_RUNNERS = {
     "browser_full_match": "tools/qa/run_browser_full_match_qa.py",
     "browser_viewports": "tools/qa/run_browser_viewports_qa.py",
     "browser_shop_deck": "tools/qa/run_browser_shop_deck_qa.py",
+    "rebirth_visual": "tools/qa/qa_rebirth_visual_screenshots.py",
 }
 
 
@@ -80,6 +81,7 @@ def parse_runner_status(suite, output):
         "browser_full_match": "RESULT=PASS browser_full_match",
         "browser_viewports": "RESULT=PASS browser_viewports",
         "browser_shop_deck": "RESULT=PASS browser_shop_deck",
+        "rebirth_visual": "RESULT=PASS rebirth_visual_screenshots",
     }
 
     marker = markers.get(suite)
@@ -270,7 +272,7 @@ def build_report(include_browser=False, include_deep_browser=False, include_prod
         results.append(run_browser_runner("browser"))
 
     if include_deep_browser:
-        for suite in ["browser_full_match", "browser_viewports", "browser_shop_deck"]:
+        for suite in ["browser_full_match", "browser_viewports", "browser_shop_deck", "rebirth_visual"]:
             print(f"RUN {suite}...")
             results.append(run_browser_runner(suite))
 
