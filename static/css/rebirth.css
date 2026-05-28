@@ -2960,6 +2960,39 @@ button {
     }
 }
 
+/* audit #8: cockpit mobile estava com 8 elementos disputando o primeiro
+   viewport (nav + identidade + XP + carteira + HUD + zona bot). Na ARENA
+   mobile, XP e carteira são ruído — escondê-los devolve altura pro
+   tabuleiro. Continuam visíveis nas outras rotas (coleção/loja/recompensas)
+   onde fazem sentido. A nav vira brand + abas roláveis + ação. */
+@media (max-width: 760px) {
+    .rb-game-page .rb-global-nav {
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+        padding: 6px 8px;
+    }
+
+    .rb-game-page .rb-global-xp,
+    .rb-game-page .rb-global-wallet,
+    .rb-game-page .rb-global-identity {
+        display: none;
+    }
+
+    .rb-game-page .rb-global-tabs {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .rb-game-page .rb-global-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .rb-game-page .rb-global-brand strong {
+        display: none;
+    }
+}
+
 .rb-product-loadout {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -7911,12 +7944,18 @@ button {
 }
 
 .rb-recommendation-badge {
-    top: 5px;
-    right: 5px;
-    min-height: 18px;
-    padding: 3px 5px;
+    /* audit #5: era top/right:5px e colidia com o título no mini-card
+       estreito ("CINDER LYN▮ST PLAY"). O card tem overflow:hidden +
+       clip-path, então o badge precisa ficar DENTRO dos limites. Fica
+       centrado sobre a área de arte, abaixo do título e acima dos stats. */
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-height: 16px;
+    padding: 2px 8px;
     font-size: 8px;
-    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+    white-space: nowrap;
+    border-radius: 8px;
 }
 
 .rb-hand .rb-mini-card.is-recommended {

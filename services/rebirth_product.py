@@ -218,6 +218,9 @@ def owned_counts(collection_counts=None):
     return Counter(PLAYER_DECK)
 
 
+_CARD_KIND_LABELS = {"SPELL": "Magia", "TRAP": "Armadilha", "MONSTER": "Monstro"}
+
+
 def card_collection(collection_counts=None, loadout_card_ids=None):
     counts = owned_counts(collection_counts)
     loadout_counts = Counter(loadout_card_ids or DEFAULT_LOADOUT)
@@ -228,6 +231,14 @@ def card_collection(collection_counts=None, loadout_card_ids=None):
         card_copy["in_loadout_count"] = loadout_counts.get(card["id"], 0)
         card_copy["unlock_state"] = "Possuída" if card_copy["owned_count"] else "Prévia"
         card_copy["is_evolved"] = int(card_copy.get("tier", 1)) > 1
+        # audit #6: spell/trap não são monstros — não mostrar "0 ATK / 0 GRD".
+        # stat_line é o que a UI deve renderizar (type-aware).
+        kind = str(card_copy.get("card_type") or card_copy.get("type") or "MONSTER").upper()
+        card_copy["kind_label"] = _CARD_KIND_LABELS.get(kind, "Monstro")
+        if kind in ("SPELL", "TRAP"):
+            card_copy["stat_line"] = card_copy["kind_label"]
+        else:
+            card_copy["stat_line"] = f"{card_copy.get('attack', 0)} ATK / {card_copy.get('guard', 0)} GRD"
         cards.append(card_copy)
     return cards
 

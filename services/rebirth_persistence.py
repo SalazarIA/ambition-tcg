@@ -1955,7 +1955,13 @@ class RebirthRepository:
         winner = public_match_state.get("winner")
         win_delta = 1 if is_finished and winner == "player" else 0
         loss_delta = 1 if is_finished and winner == "bot" else 0
-        xp_delta = 25 + (75 if win_delta else 0) + (25 if loss_delta else 0)
+        # audit #7: o claim_key é único por clash (inclui state_hash+turn), então
+        # 25 XP por clash × ~20 clashes/partida inflava a economia (nível 32 em
+        # 10 partidas). O drip mid-clash cai pra 3; o grosso fica na conclusão.
+        if is_finished:
+            xp_delta = 25 + (75 if win_delta else 0) + (25 if loss_delta else 0)
+        else:
+            xp_delta = 3
         outcome = (public_match_state.get("result") or {}).get("outcome")
         claim_seed = ":".join(
             str(value or "")

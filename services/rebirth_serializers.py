@@ -56,9 +56,29 @@ def validate_card_contract(card):
     return card
 
 
+# audit #4: campos só usados pela engine/bot que não precisam ir no fio. O
+# heuristic_vector é input do bot AI; o cliente nunca o lê. Stripá-lo encolhe
+# o payload de estado (≈6 chaves por carta × ~16 cartas por resposta) sem
+# afetar o canonical_state_hash (calculado à parte em rebirth_domain).
+_RUNTIME_STRIP_FIELDS = ("heuristic_vector",)
+
+
+def _strip_runtime_fields(card):
+    if isinstance(card, dict):
+        for key in _RUNTIME_STRIP_FIELDS:
+            card.pop(key, None)
+    return card
+
+
+def _strip_runtime_cards(cards):
+    for card in cards or []:
+        _strip_runtime_fields(card)
+    return cards
+
+
 def side_payload(side, *, reveal_hand=True):
-    field = deepcopy(field_slots(side))
-    battlefield = deepcopy(compact_battlefield(side))
+    field = _strip_runtime_cards(deepcopy(field_slots(side)))
+    battlefield = _strip_runtime_cards(deepcopy(compact_battlefield(side)))
     for card in side.get("hand", []):
         validate_card_contract(card)
     for card in side.get("deck", []):
@@ -80,7 +100,7 @@ def side_payload(side, *, reveal_hand=True):
         "max_energy": int(side.get("max_energy", 0) or 0),
         "deck_count": len(side.get("deck", [])),
         "discard_count": len(side.get("discard", [])),
-        "played_card": deepcopy(side.get("played_card")),
+        "played_card": _strip_runtime_fields(deepcopy(side.get("played_card"))),
         "battlefield": battlefield,
         "field": field,
         "trap_count": len(side.get("traps", [])),
@@ -88,8 +108,8 @@ def side_payload(side, *, reveal_hand=True):
         "statuses": deepcopy(side.get("statuses", {})),
     }
     if reveal_hand:
-        payload["hand"] = deepcopy(side.get("hand", []))
-        payload["traps"] = deepcopy(side.get("traps", []))
+        payload["hand"] = _strip_runtime_cards(deepcopy(side.get("hand", [])))
+        payload["traps"] = _strip_runtime_cards(deepcopy(side.get("traps", [])))
     else:
         payload["hand_count"] = len(side.get("hand", []))
         payload["traps"] = [

@@ -211,7 +211,10 @@ def test_rebirth_fullstack_audit_register_booster_bot_arena_and_ledger(client, f
         (user_id,),
     )
 
-    assert final_progress["xp"] >= 40 + 25 + 100
+    # audit #7: clash mid-match agora é drip de 3 XP (era 25, inflava a
+    # economia). A asserção mede as recompensas significativas — base inicial
+    # + conclusão de vitória — sem fixar a granularidade do drip.
+    assert final_progress["xp"] >= 40 + 100
     assert final_progress["level"] == 1
     assert match_history["match_id"] == state["match_id"]
     assert match_history["status"] == "finished"

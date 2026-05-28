@@ -286,7 +286,7 @@
                             <div>
                                 <span>Você tem x{{ card.owned_count }}</span>
                                 <strong>{{ card.name }}</strong>
-                                <small>{{ card.attack }} ATK / {{ card.guard }} GRD - {{ card.ability_name }}</small>
+                                <small>{{ card.stat_line }} - {{ card.ability_name }}</small>
                             </div>
                             <div class="rb-loadout-stepper" aria-label="Cópias de {{ card.name }} no baralho">
                                 <button type="button" data-loadout-decrement aria-label="Remover {{ card.name }}">-</button>
@@ -323,7 +323,7 @@
                                         <h2>{{ card.name }}</h2>
                                         <p>{{ card.role }} - {{ card.element }} - Nível {{ card.tier }}</p>
                                         <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
-                                        <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
+                                        <strong>{{ card.stat_line }}</strong>
                                     </div>
                                 </article>
                             {% endfor %}
@@ -341,7 +341,7 @@
                                     <h2>{{ card.name }}</h2>
                                     <p>{{ card.role }} - {{ card.element }} - Nível {{ card.tier }}</p>
                                     <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
-                                    <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
+                                    <strong>{{ card.stat_line }}</strong>
                                 </div>
                             </article>
                         {% endfor %}

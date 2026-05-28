@@ -215,7 +215,9 @@ def test_match_progression_daily_reward_and_tutorial_are_persisted(client):
     assert played.get_json()["progression"]["clashes"] == 1
     reward = played.get_json()["match_reward"]
     assert reward["persisted"] is True
-    assert reward["xp"] >= 25
+    # audit #7: clash não-finalizador agora é um drip pequeno (3 XP); o grosso
+    # da recompensa vai pra conclusão da partida pra não inflar a economia.
+    assert reward["xp"] >= 3
     assert reward["daily"]["ready"] is True
     assert {"key": "first_clash", "name": "Primeiro Clash"} in reward["achievements"]
 

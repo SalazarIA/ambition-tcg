@@ -162,6 +162,37 @@ FAMILY_CONFIGS = {
 }
 
 
+# audit #6: ability_name de spell/trap vinha cru em inglês ("DrawTwoCards")
+# e vazava na coleção/arena. Este mapa dá um nome de habilidade localizado
+# (display-only; ability_key segue sendo a chave funcional).
+SPELL_TRAP_ABILITY_PT = {
+    "DrawTwoCards": "Recarga Arcana",
+    "CleanseAll": "Purificação Total",
+    "DestroyShield": "Quebra-Escudo",
+    "Fireball": "Bola de Fogo",
+    "HealingRain": "Chuva Curativa",
+    "Fortify": "Fortificar",
+    "BurningEdict": "Édito Flamejante",
+    "ShadowDrain": "Dreno Sombrio",
+    "StoneSkin": "Pele de Pedra",
+    "TidalRenewal": "Renovação das Marés",
+    "BurnAttacker": "Queimar Atacante",
+    "CleanseAmbush": "Emboscada Purificadora",
+    "DrainCounter": "Contra-Dreno",
+    "EmergencyShield": "Escudo de Emergência",
+    "FreezeStrike": "Golpe Congelante",
+    "GuardBreakTrap": "Rompe-Guarda",
+    "NegateAttack": "Anular Ataque",
+    "ReflectDamage": "Refletir Dano",
+    "SecondWind": "Segundo Fôlego",
+    "StunRune": "Runa Atordoante",
+}
+
+
+def _localized_ability_name(action):
+    return SPELL_TRAP_ABILITY_PT.get(action) or str(action)
+
+
 SPELL_DEFINITIONS = [
     ("DrawTwoCards", "Recarga Arcana", "Compre duas cartas.", [{"type": "draw", "target": "self", "amount": 2}], 2),
     ("CleanseAll", "Purificação das Marés", "Remova todos os efeitos nocivos do seu lado.", [{"type": "cleanse", "target": "self", "mode": "all"}], 2),
@@ -372,9 +403,9 @@ def _spell_card(offset, definition):
         "element": "Arcano",
         "evolution_id": None,
         "ability_key": f"spell_{action.lower()}",
-        "ability_name": action,
+        "ability_name": _localized_ability_name(action),
         "ability_text": text,
-        "flavor": f"{name} bends the stack before the next clash.",
+        "flavor": f"{name} altera a pilha antes do próximo clash.",
         "action": action,
         "stack_effects": deepcopy(stack_effects),
         "heuristic_vector": _heuristic_vector(attack=0, guard=0, trigger=2, resource=1),
@@ -403,9 +434,9 @@ def _trap_card(offset, definition):
         "element": "Oculto",
         "evolution_id": None,
         "ability_key": f"trap_{action.lower()}",
-        "ability_name": action,
+        "ability_name": _localized_ability_name(action),
         "ability_text": text,
-        "flavor": f"{name} waits face down for the combat phase.",
+        "flavor": f"{name} aguarda virada para baixo até a fase de combate.",
         "action": action,
         "face_down": True,
         "trigger_phase": "COMBAT_PHASE",
