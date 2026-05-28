@@ -2847,6 +2847,119 @@ button {
     font-size: 18px;
 }
 
+.rb-curated-collection {
+    display: grid;
+    gap: 18px;
+}
+
+.rb-curated-collection .rb-product-panel-head {
+    margin-bottom: 0;
+}
+
+.rb-curated-collection .rb-product-panel-head small {
+    color: var(--rb-muted);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.rb-collection-shelf {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.32fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.025);
+    clip-path: var(--rb-cut);
+}
+
+.rb-collection-shelf-copy {
+    position: sticky;
+    top: 88px;
+    min-width: 0;
+}
+
+.rb-collection-shelf-copy h3 {
+    margin: 8px 0;
+    color: var(--rb-text);
+    font-size: 22px;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.rb-collection-shelf-copy p {
+    margin: 0;
+    color: var(--rb-muted);
+    line-height: 1.45;
+}
+
+.rb-product-card-grid-shelf {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 0;
+}
+
+.rb-product-card-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.rb-product-card-grid-compact .rb-product-card h2 {
+    font-size: 16px;
+}
+
+.rb-product-card-grid-compact .rb-product-card small {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+
+.rb-catalog-drawer {
+    padding: 14px;
+    border: 1px solid rgba(244, 173, 38, 0.22);
+    background: rgba(0, 0, 0, 0.18);
+    clip-path: var(--rb-cut);
+}
+
+.rb-catalog-drawer summary {
+    cursor: pointer;
+    color: var(--rb-gold);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 980px) {
+    .rb-collection-shelf {
+        grid-template-columns: 1fr;
+    }
+
+    .rb-collection-shelf-copy {
+        position: static;
+    }
+
+    .rb-product-card-grid-shelf {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .rb-curated-collection {
+        padding: 16px;
+    }
+
+    .rb-curated-collection .rb-product-panel-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .rb-product-card-grid-shelf,
+    .rb-product-card-grid-compact {
+        grid-template-columns: 1fr;
+    }
+}
+
 .rb-product-loadout {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2894,6 +3007,10 @@ button {
 
 .rb-loadout-builder {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: min(620px, 62vh);
+    overflow: auto;
+    padding-right: 6px;
+    scrollbar-color: rgba(244, 173, 38, 0.5) rgba(255, 255, 255, 0.08);
 }
 
 .rb-loadout-builder [data-rebirth-loadout-hidden] {
@@ -3270,7 +3387,8 @@ button {
     height: 100%;
     min-height: 210px;
     aspect-ratio: 3 / 4;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
 }
 
 .rb-market-art span {
@@ -4519,8 +4637,8 @@ button {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: center 46%;
+    object-fit: contain;
+    object-position: center 50%;
     mix-blend-mode: normal;
 }
 
@@ -9069,5 +9187,96 @@ button {
 
     .rb-boss-intro-overlay {
         transition: none;
+    }
+}
+
+/* v76: mobile readability pass. Keep the arena playable while giving nav
+   labels, economy chips and hand cards enough room to breathe. */
+@media (max-width: 760px) {
+    body.rb-game-page.rb-mobile-native {
+        --rb-mobile-nav-height: 154px;
+    }
+
+    .rb-mobile-native .rb-global-nav {
+        grid-template-columns: 38px minmax(0, 1fr);
+        grid-template-areas:
+            "brand tabs"
+            "player player";
+        gap: 5px 7px;
+        padding: 7px;
+    }
+
+    .rb-mobile-native .rb-global-brand span {
+        width: 34px;
+        height: 34px;
+        font-size: 20px;
+    }
+
+    .rb-mobile-native .rb-global-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+    }
+
+    .rb-mobile-native .rb-global-tabs a {
+        min-height: 28px;
+        padding: 5px 4px;
+        font-size: 9px;
+        letter-spacing: 0.07em;
+    }
+
+    .rb-mobile-native .rb-global-player {
+        grid-template-columns: 0.9fr 0.9fr 1fr;
+        gap: 4px;
+        overflow: visible;
+    }
+
+    .rb-mobile-native .rb-global-player > * {
+        min-height: 32px;
+        padding: 5px 6px;
+        font-size: 9px;
+    }
+
+    .rb-mobile-native .rb-global-xp {
+        display: none;
+    }
+
+    .rb-mobile-native .rb-global-identity strong,
+    .rb-mobile-native .rb-global-wallet strong {
+        font-size: 11px;
+    }
+
+    .rb-mobile-native .rb-game-viewport {
+        padding-top: calc(var(--rb-mobile-nav-height, 104px) + var(--rb-safe-top) + 5px);
+    }
+
+    .rb-mobile-native .rb-game-board {
+        height: calc(100dvh - var(--rb-mobile-nav-height, 104px) - var(--rb-safe-top) - var(--rb-safe-bottom) - 12px) !important;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card {
+        min-width: 112px;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card .rb-card-titlebar strong {
+        font-size: 8px;
+        line-height: 1.1;
+    }
+}
+
+@media (max-width: 420px) {
+    body.rb-game-page.rb-mobile-native {
+        --rb-mobile-nav-height: 164px;
+    }
+
+    .rb-mobile-native .rb-global-tabs a {
+        font-size: 8px;
+    }
+
+    .rb-mobile-native .rb-global-player {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .rb-mobile-native .rb-nav-auth {
+        grid-column: 1 / -1;
     }
 }

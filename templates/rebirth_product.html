@@ -9,7 +9,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v=v71_PRODUCT_READINESS-6">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     {% include "_rebirth_global_nav.html" %}
@@ -299,19 +299,54 @@
                 <div class="rb-product-result" data-rebirth-loadout-result aria-live="polite">Baralho pronto para validação.</div>
             </section>
 
-            <section class="rb-product-card-grid" aria-label="Rebirth collection">
-                {% for card in page.cards %}
-                    <article class="rb-product-card">
-                        <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
-                        <div>
-                            <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
-                            <h2>{{ card.name }}</h2>
-                            <p>{{ card.role }} - {{ card.element }} - Nível {{ card.tier }}</p>
-                            <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
-                            <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
+            <section class="rb-product-panel rb-product-wide rb-curated-collection" aria-label="Coleção curada">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Coleção curada</span>
+                        <h2>O que importa agora</h2>
+                    </div>
+                    <small>{{ page.cards|length }} cartas no catálogo completo</small>
+                </div>
+                {% for section in page.collection_sections %}
+                    <section class="rb-collection-shelf" aria-label="{{ section.title }}">
+                        <div class="rb-collection-shelf-copy">
+                            <span>{{ section.kicker }}</span>
+                            <h3>{{ section.title }}</h3>
+                            <p>{{ section["copy"] }}</p>
                         </div>
-                    </article>
+                        <div class="rb-product-card-grid rb-product-card-grid-shelf">
+                            {% for card in section.cards %}
+                                <article class="rb-product-card rb-product-card-compact">
+                                    <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
+                                    <div>
+                                        <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
+                                        <h2>{{ card.name }}</h2>
+                                        <p>{{ card.role }} - {{ card.element }} - Nível {{ card.tier }}</p>
+                                        <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
+                                        <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
                 {% endfor %}
+                <details class="rb-catalog-drawer">
+                    <summary>Ver catálogo completo de {{ page.cards|length }} cartas</summary>
+                    <section class="rb-product-card-grid rb-product-card-grid-compact" aria-label="Catálogo completo Rebirth">
+                        {% for card in page.cards %}
+                            <article class="rb-product-card rb-product-card-compact">
+                                <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
+                                <div>
+                                    <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
+                                    <h2>{{ card.name }}</h2>
+                                    <p>{{ card.role }} - {{ card.element }} - Nível {{ card.tier }}</p>
+                                    <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
+                                    <strong>{{ card.attack }} ATK / {{ card.guard }} GRD</strong>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </section>
+                </details>
             </section>
         {% elif page.key == "shop" %}
             <section class="rb-shop-gacha" aria-label="Gacha de boosters">
@@ -623,8 +658,8 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v=v71_PRODUCT_READINESS-6"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v=v71_PRODUCT_READINESS-6"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v=v71_PRODUCT_READINESS-6"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_product.js') }}?v={{ rebirth_release_version }}"></script>
 </body>
 </html>

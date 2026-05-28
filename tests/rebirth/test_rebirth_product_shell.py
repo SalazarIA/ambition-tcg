@@ -47,6 +47,10 @@ def test_collection_renders_root_relative_card_art_urls(client):
 
     assert 'src="/static/img/cards/baralho/' in body
     assert 'src="static/img/cards/baralho/' not in body
+    assert "O que importa agora" in body
+    assert "rb-catalog-drawer" in body
+    assert "Ver catálogo completo" in body
+    assert "built-in method" not in body
 
 
 def test_rebirth_product_api_contracts_are_rebirth_native(client):
@@ -68,7 +72,10 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert auth.status_code == 200
     assert auth.get_json()["auth"]["steps"][0]["title"] == "Criar"
     assert collection.status_code == 200
-    assert collection.get_json()["collection"]["summary"]["loadout_size"] == 30
+    collection_payload = collection.get_json()["collection"]
+    assert collection_payload["summary"]["loadout_size"] == 30
+    assert collection_payload["collection_sections"][0]["title"] == "Núcleo do baralho"
+    assert len(collection_payload["collection_sections"][0]["cards"]) <= 12
     assert shop.status_code == 200
     assert shop.get_json()["shop"]["offers"][0]["price"] == "Grátis na beta"
     assert progression.status_code == 200

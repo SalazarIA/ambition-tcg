@@ -100,7 +100,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         'data-bot-profile="aggressive"',
         "--rb-gold",
         "--rb-cyan",
-        "object-fit: cover",
+        "object-fit: contain",
         "background-size: contain",
         ".rb-card-image-layer img",
         ".rb-card-titlebar",
@@ -151,11 +151,11 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v72_FIRST_DUEL-1";' in service_worker
-    assert '"version": "v72_FIRST_DUEL-1"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v72_FIRST_DUEL-1"' in art_contract
+    assert 'const CACHE_NAME = "v76_RELEASE_POLISH-1";' in service_worker
+    assert '"version": "v76_RELEASE_POLISH-1"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v76_RELEASE_POLISH-1"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
-    assert r"v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL)" in service_worker
+    assert "RELEASE_POLISH" in service_worker
     assert r"rebirth(?:[-_].*)?" in service_worker
     assert "key !== CACHE_NAME && REBIRTH_CACHE_RE.test(key)" in service_worker
     assert 'stableAsset("/static/css/rebirth.css")' in service_worker
@@ -349,6 +349,8 @@ def test_rebirth_audio_manager_observes_game_events_without_gameplay_side_effect
     assert "data-rebirth-xp-fill" in read("templates/rebirth_product.html")
     assert "data-rebirth-ledger-list" in read("templates/rebirth_product.html")
     assert "data-rebirth-card-option" in read("templates/rebirth_product.html")
+    assert "rb-curated-collection" in read("templates/rebirth_product.html")
+    assert "rb-catalog-drawer" in read("templates/rebirth_product.html")
     assert "data-rebirth-loadout-summary" in read("templates/rebirth_product.html")
     assert "data-rebirth-balance-details" in read("templates/rebirth_product.html")
     assert "data-rebirth-balance-title" in read("templates/rebirth_product.html")
@@ -364,7 +366,11 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
     assert 'href="/rebirth"' in nav
     assert 'href="/rebirth/shop"' in nav
-    assert "v=v71_PRODUCT_READINESS-6" in combined
+    assert "rebirth_release_version" in combined
+    assert "v=v71_PRODUCT_READINESS-6" not in combined
+    assert "v=v74_COMBAT_REWORK-4" not in combined
+    assert "v=v74_CAMPAIGN_V1-1" not in combined
+    assert "v=v75_CAMPAIGN_ERA-1" not in combined
     assert "v=rebirth-058" not in combined
     assert "v=rebirth-057" not in combined
     assert "v=rebirth-056" not in combined
@@ -386,6 +392,25 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
         "Socket.IO",
     ]:
         assert forbidden not in combined
+
+
+def test_rebirth_visual_qa_captures_core_surfaces():
+    visual_qa = read("tools/qa/qa_rebirth_visual_screenshots.py")
+    master_report = read("tools/qa/qa_master_report.py")
+
+    for token in [
+        '"arena"',
+        '"/rebirth/shop"',
+        '"/rebirth/collection"',
+        '"/rebirth/campaign"',
+        '"mobile_arena"',
+        "page.screenshot",
+        "horizontal overflow",
+        "RESULT=PASS rebirth_visual_screenshots",
+    ]:
+        assert token in visual_qa
+
+    assert '"rebirth_visual": "tools/qa/qa_rebirth_visual_screenshots.py"' in master_report
 
 
 def test_rebirth_asset_manifest_lists_existing_active_assets():
