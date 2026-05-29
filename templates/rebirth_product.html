@@ -68,12 +68,21 @@
                     <p>Entre quando quiser guardar conquistas, recompensas, baralho e carteira.</p>
                     <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
                 </section>
+            {% else %}
+                {# F8: identidade própria substitui a grade de stats redundante.
+                   Avatar (inicial em moldura gold), nome + título de temporada,
+                   3 metadados leves (nível atual, vitórias, selos). #}
+                <section class="rb-profile-identity rb-product-wide" aria-label="Identidade do jogador">
+                    <div class="rb-profile-avatar" aria-hidden="true">
+                        <span>{{ (page.account.user.username or 'A')[0]|upper }}</span>
+                    </div>
+                    <div class="rb-profile-identity-copy">
+                        <span class="rb-profile-identity-tier">Temporada 0 · Nível {{ page.profile.progression.level }}</span>
+                        <h2>{{ page.account.user.username }}</h2>
+                        <p>{% if page.profile.progression.wins %}{{ page.profile.progression.wins }} vitória{{ 's' if page.profile.progression.wins != 1 else '' }} contra o bot · {{ page.profile.unlocked_achievements or 0 }} selo{{ 's' if (page.profile.unlocked_achievements or 0) != 1 else '' }} desbloqueado{{ 's' if (page.profile.unlocked_achievements or 0) != 1 else '' }}{% else %}Primeira impressão. Entre na arena para escrever sua história.{% endif %}</p>
+                    </div>
+                </section>
             {% endif %}
-            <section class="rb-product-stats" aria-label="Resumo do perfil">
-                {% for stat in page.stats %}
-                    <article><span>{{ stat.label }}</span><strong>{{ stat.value }}</strong></article>
-                {% endfor %}
-            </section>
             {% set profile_progress = page.profile.progression %}
             <section
                 class="rb-product-panel rb-product-wide rb-progress-vitrine"

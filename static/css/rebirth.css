@@ -2457,6 +2457,79 @@ button {
     text-transform: uppercase;
 }
 
+/* F8: identidade do perfil — avatar (inicial), nome e título de temporada.
+   Substitui a grade de stats redundante do template antigo. */
+.rb-profile-identity {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 28px;
+    align-items: center;
+    padding: 28px 32px;
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-cut-soft);
+    background:
+        linear-gradient(100deg, rgba(244, 173, 38, 0.16), transparent 36%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 60%),
+        var(--rb-panel);
+    box-shadow: var(--rb-shadow);
+}
+.rb-profile-avatar {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 132px;
+    height: 132px;
+    border: 2px solid var(--rb-gold);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(244, 173, 38, 0.22), transparent 60%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.3)),
+        #0c0e12;
+    box-shadow:
+        0 0 0 4px rgba(244, 173, 38, 0.12),
+        0 16px 36px rgba(0, 0, 0, 0.5);
+}
+.rb-profile-avatar > span {
+    font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+    font-size: var(--fs-display);
+    font-weight: 900;
+    color: var(--rb-gold);
+    line-height: 1;
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+}
+.rb-profile-identity-copy {
+    display: grid;
+    gap: 6px;
+}
+.rb-profile-identity-tier {
+    color: var(--rb-gold);
+    font-size: var(--fs-2xs);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+.rb-profile-identity-copy h2 {
+    margin: 0;
+    font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+    font-size: var(--fs-xl);
+    line-height: 1.05;
+    color: var(--rb-text);
+}
+.rb-profile-identity-copy p {
+    margin: 4px 0 0;
+    color: var(--rb-muted);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+    .rb-profile-identity {
+        grid-template-columns: 1fr;
+        text-align: center;
+        justify-items: center;
+    }
+}
+
 /* F7: arte CSS-illustrated do booster pack — pacote sombrio com aura gold,
    fita central e emblema. Substitui as 5 caixinhas vazias por uma presença
    visual real de "abertura de pack". */
