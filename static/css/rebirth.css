@@ -590,11 +590,16 @@ button {
 }
 
 .rb-field-row > span {
+    /* F16: label de zona ancorada por uma barra vertical do lado dono,
+       em vez de texto solto à esquerda. */
+    padding: 10px 12px 10px 14px;
+    border-left: 3px solid currentColor;
     color: var(--rb-muted);
     font-size: var(--fs-xs);
     font-weight: 1000;
-    line-height: 1.05;
+    line-height: 1.15;
     text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .rb-field-row-bot > span {
@@ -1409,9 +1414,20 @@ button {
 }
 
 .rb-hand-count {
+    /* F16: era órfão "5 CARTAS" pairando. Vira chip integrado ao topo direito
+       da mão (acima da régua de cartas). */
     position: absolute;
+    top: -16px;
     right: 8px;
-    bottom: 0;
+    bottom: auto;
+    padding: 2px 8px;
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-cut-soft);
+    background: rgba(8, 10, 13, 0.78);
+    color: var(--rb-muted);
+    font-size: var(--fs-3xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .rb-hand .rb-mini-card {

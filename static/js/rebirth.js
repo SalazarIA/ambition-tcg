@@ -2035,6 +2035,20 @@
             const host = RebirthStore.elements["bot-card"];
             if (!host) return;
             const card = RebirthStore.state.bot.played_card;
+            // F10: o overlay do bot-card sobrepunha o slot na zona do bot
+            // sempre que o bot tinha cartas em campo (o foco repetia a carta
+            // que já estava no slot mini). Quando o battlefield tem cards, o
+            // overlay vira face-down (placeholder) em vez de duplicar o foco.
+            const botField = (RebirthStore.state.bot && RebirthStore.state.bot.battlefield) || [];
+            if (botField.length > 0) {
+                host.className = "rb-bot-card rb-card-back";
+                host.removeAttribute("data-element");
+                host.removeAttribute("data-art-key");
+                host.removeAttribute("data-statuses");
+                host.removeAttribute("style");
+                host.innerHTML = "<span>Campo do bot</span>";
+                return;
+            }
             if (!card) {
                 host.className = "rb-bot-card rb-card-back";
                 host.removeAttribute("data-element");
