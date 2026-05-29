@@ -2457,6 +2457,84 @@ button {
     text-transform: uppercase;
 }
 
+/* F12: progresso da coleção em destaque (cartas antes dos stats).
+   Substitui os 4 boxes gigantes (POSSUÍDAS/ÚNICAS/BARALHO/EVOLUÇÕES) por
+   uma barra de progresso única + chips inline. */
+.rb-collection-progress {
+    display: grid;
+    gap: 14px;
+    padding: 22px 26px;
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-cut-soft);
+    background:
+        linear-gradient(120deg, rgba(244, 173, 38, 0.1), transparent 45%),
+        var(--rb-panel);
+    box-shadow: var(--rb-shadow);
+}
+.rb-collection-progress-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+}
+.rb-collection-progress-head > div:first-child span {
+    color: var(--rb-gold);
+    font-size: var(--fs-2xs);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.rb-collection-progress-head > div:first-child strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--rb-text);
+    font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+    font-size: var(--fs-xl);
+    line-height: 1;
+}
+.rb-collection-progress-head > div:first-child strong small {
+    color: var(--rb-muted);
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+.rb-collection-progress-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.rb-collection-progress-chips span {
+    padding: 6px 12px;
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-cut-soft);
+    color: var(--rb-muted);
+    font-size: var(--fs-2xs);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.rb-collection-progress-chips b {
+    margin-left: 6px;
+    color: var(--rb-text);
+    font-size: var(--fs-sm);
+}
+.rb-collection-progress-bar {
+    position: relative;
+    overflow: hidden;
+    height: 12px;
+    border: 1px solid rgba(244, 173, 38, 0.42);
+    border-radius: var(--rb-cut-soft);
+    background: rgba(0, 0, 0, 0.42);
+}
+.rb-collection-progress-bar i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--rb-gold), rgba(255, 200, 82, 0.96));
+    box-shadow: 0 0 12px rgba(244, 173, 38, 0.42);
+    transition: width 400ms ease;
+}
+
 /* F8: identidade do perfil — avatar (inicial), nome e título de temporada.
    Substitui a grade de stats redundante do template antigo. */
 .rb-profile-identity {
@@ -3477,6 +3555,20 @@ button {
     border: 1px solid rgba(244, 173, 38, 0.4);
     background: rgba(0, 0, 0, 0.42);
     clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+
+/* F13: na vitrine de progressão, a barra XP cresce para virar o hero da
+   página — substitui a grade de stats redundante que existia no topo. */
+.rb-progress-vitrine .rb-level-bar {
+    height: 28px;
+    border-width: 1.5px;
+}
+.rb-progress-vitrine .rb-level-meter-copy strong {
+    font-size: var(--fs-xl);
+}
+.rb-progress-vitrine .rb-level-meter-copy span b {
+    font-size: var(--fs-md);
+    color: var(--rb-text);
 }
 
 .rb-level-bar i {

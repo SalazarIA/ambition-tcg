@@ -250,11 +250,24 @@
                 <pre class="rb-support-output" data-rebirth-support-result>Pronto.</pre>
             </section>
         {% elif page.key == "collection" %}
-            <section class="rb-product-stats" aria-label="Resumo da coleção">
-                <article><span>Possuídas</span><strong>{{ page.summary.owned_cards }}</strong></article>
-                <article><span>Únicas</span><strong>{{ page.summary.unique_owned }}</strong></article>
-                <article><span>Baralho</span><strong>{{ page.summary.loadout_size }}</strong></article>
-                <article><span>Evoluções</span><strong>{{ page.summary.preview_evolutions }}</strong></article>
+            {# F12: progresso da coleção em destaque (barra + 1 número grande),
+               stats individuais como chips inline — não mais 4 boxes gigantes
+               engolindo a primeira viewport antes das cartas. #}
+            {% set total_cards = page.cards|length if page.cards else 103 %}
+            {% set unique_pct = (((page.summary.unique_owned or 0) * 100) // total_cards) if total_cards else 0 %}
+            <section class="rb-collection-progress" aria-label="Progresso da coleção">
+                <div class="rb-collection-progress-head">
+                    <div>
+                        <span>Coleção</span>
+                        <strong>{{ page.summary.unique_owned }}<small> / {{ total_cards }} reveladas</small></strong>
+                    </div>
+                    <div class="rb-collection-progress-chips">
+                        <span>Possuídas <b>{{ page.summary.owned_cards }}</b></span>
+                        <span>Baralho <b>{{ page.summary.loadout_size }}</b></span>
+                        <span>Evoluções <b>{{ page.summary.preview_evolutions }}</b></span>
+                    </div>
+                </div>
+                <div class="rb-collection-progress-bar" aria-label="Progresso de revelação"><i style="width: {{ unique_pct }}%"></i></div>
             </section>
             {% if not page.account.authenticated %}
                 <section class="rb-product-panel rb-product-wide">
@@ -453,12 +466,10 @@
                 </section>
             {% endif %}
         {% elif page.key == "progression" %}
-            <section class="rb-product-stats" aria-label="Perfil de progressão">
-                <article><span>Nível</span><strong>{{ page.profile.level }}</strong></article>
-                <article><span>XP</span><strong>{{ page.profile.xp }}/{{ page.profile.next_level_xp }}</strong></article>
-                <article><span>Vitórias</span><strong>{{ page.profile.wins }}</strong></article>
-                <article><span>Clashes</span><strong>{{ page.profile.clashes }}</strong></article>
-            </section>
+            {# F13: stats Nível/XP/Vitórias/Clashes eram duplicadas pelo
+               progress-vitrine logo abaixo (level meter + mini-stats). Os 4
+               boxes do topo foram removidos — barra XP gigante dentro do
+               progress-vitrine vira o hero da página. #}
             <section
                 class="rb-product-panel rb-product-wide rb-progress-vitrine"
                 data-rebirth-progression-dashboard
