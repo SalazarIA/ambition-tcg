@@ -1,5 +1,5 @@
-const CACHE_NAME = "v76_RELEASE_POLISH-1";
-const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL|CAMPAIGN(?:_V\d+|_ERA)?|RELEASE_POLISH)(?:$|-))/i;
+const CACHE_NAME = "v77_EMAIL_VERIFY-1";
+const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL|CAMPAIGN(?:_V\d+|_ERA)?|RELEASE_POLISH|EMAIL_VERIFY)(?:$|-))/i;
 
 function stableAsset(path) {
     return `${path}?v=${CACHE_NAME}`;

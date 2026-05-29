@@ -282,10 +282,47 @@
         syncAfterAuth: syncAfterAuth
     };
 
+    function bindVerifyBanner() {
+        const button = document.querySelector("[data-rebirth-resend-verification]");
+        if (!button || button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        const result = document.querySelector("[data-rebirth-verify-result]");
+        button.addEventListener("click", function () {
+            button.disabled = true;
+            if (result) result.textContent = "Enviando...";
+            postJson("/api/rebirth/auth/resend-verification", {})
+                .then(function (payload) {
+                    if (result) {
+                        result.textContent = payload.already_verified
+                            ? "Email já verificado."
+                            : "Email reenviado. Confira sua caixa.";
+                    }
+                })
+                .catch(function (error) {
+                    if (result) result.textContent = (error && error.message) || "Falha ao reenviar.";
+                    button.disabled = false;
+                });
+        });
+    }
+
+    function announceVerificationResult() {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.has("verified")) return;
+        const ok = params.get("verified") === "1";
+        const banner = document.querySelector("[data-rebirth-verify-banner]");
+        if (ok && banner) {
+            banner.querySelector("span").textContent = "Email confirmado com sucesso!";
+            const btn = banner.querySelector("[data-rebirth-resend-verification]");
+            if (btn) btn.remove();
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         bindAuthTriggers();
         bindAuthForms();
         bindLogout();
+        bindVerifyBanner();
+        announceVerificationResult();
         refreshWallet().catch(function () {});
     });
 }());

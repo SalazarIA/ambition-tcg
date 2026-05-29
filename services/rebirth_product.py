@@ -141,7 +141,13 @@ def guest_account():
 
 
 def account_payload(user=None):
-    return {"authenticated": bool(user), "user": deepcopy(user) if user else None}
+    if not user:
+        return {"authenticated": False, "user": None}
+    safe_user = deepcopy(user)
+    # Nunca expor o token de verificação no payload público da conta.
+    safe_user.pop("verification_token", None)
+    safe_user["email_verified"] = bool(safe_user.get("email_verified"))
+    return {"authenticated": True, "user": safe_user}
 
 
 def product_shell_payload(account=None):

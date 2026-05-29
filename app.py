@@ -43,6 +43,7 @@ from services.rebirth_product import (
     validate_loadout,
 )
 from services.rebirth_serializers import public_state
+from services.email_service import send_email
 
 
 app = Flask(__name__)
@@ -57,7 +58,7 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v76_RELEASE_POLISH-1")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v77_EMAIL_VERIFY-1")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -65,6 +66,18 @@ app.config["REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS"] = max(0.0, float(os.environ
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE") == "true"
+
+# Email verification. SMTP_* + MAIL_FROM são credenciais (env, não commitadas).
+# Sem elas, email_service.send_email cai no fallback que loga o link — então
+# o fluxo funciona em dev e em prod assim que o provedor for configurado.
+app.config["PUBLIC_BASE_URL"] = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+app.config["SMTP_HOST"] = os.environ.get("SMTP_HOST")
+app.config["SMTP_PORT"] = os.environ.get("SMTP_PORT", "587")
+app.config["SMTP_USERNAME"] = os.environ.get("SMTP_USERNAME")
+app.config["SMTP_PASSWORD"] = os.environ.get("SMTP_PASSWORD")
+app.config["SMTP_USE_TLS"] = os.environ.get("SMTP_USE_TLS", "true") == "true"
+app.config["MAIL_FROM"] = os.environ.get("MAIL_FROM") or os.environ.get("SMTP_USERNAME")
+app.config["REBIRTH_REQUIRE_EMAIL_VERIFICATION"] = os.environ.get("REBIRTH_REQUIRE_EMAIL_VERIFICATION", "false") == "true"
 
 REBIRTH_LABS_ENABLED = True
 app.config["REBIRTH_LABS_ENABLED"] = os.environ.get("REBIRTH_LABS_ENABLED", str(REBIRTH_LABS_ENABLED)).lower() == "true"
@@ -362,6 +375,7 @@ def rebirth_navbar_payload(user=None, progression=None):
         "authenticated": bool(user),
         "player_name": user["username"] if user else "Visitante",
         "player_label": "Jogador" if user else "Visitante",
+        "email_verified": bool(user.get("email_verified")) if user else True,
         "level": level,
         "xp": xp,
         "next_level_xp": next_level,
@@ -1197,6 +1211,32 @@ def api_rebirth_wallet():
         return json_from_persistence_error(error)
 
 
+def _verification_link(token):
+    base = app.config.get("PUBLIC_BASE_URL") or request.host_url.rstrip("/")
+    return f"{base}/rebirth/verify?token={token}"
+
+
+def send_verification_email(user_email, token):
+    """Best-effort verification email. Falls back to logging the link when
+    SMTP isn't configured (email_service handles that), so the flow never
+    blocks registration and works in dev immediately."""
+    if not user_email or not token:
+        return False
+    link = _verification_link(token)
+    subject = "Confirme seu email — Ambitionz Rebirth"
+    body = (
+        "Bem-vindo ao Ambitionz Rebirth!\n\n"
+        "Confirme seu email para garantir sua coleção, nível e recompensas:\n"
+        f"{link}\n\n"
+        "Se você não criou esta conta, ignore este email."
+    )
+    try:
+        return bool(send_email(user_email, subject, body))
+    except Exception:
+        app.logger.exception("rebirth.verification email send failed")
+        return False
+
+
 @app.post("/api/rebirth/auth/register")
 def api_rebirth_auth_register():
     try:
@@ -1207,12 +1247,56 @@ def api_rebirth_auth_register():
             payload.get("email"),
             payload.get("password"),
         )
+        # Token transiente só pra disparar o email; não vai no payload público.
+        send_verification_email(user.get("email"), user.pop("verification_token", None))
         token = establish_rebirth_session(user)
         return json_payload(account=account_payload(user), csrf=token, **auth_sync_payload(user))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
         return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/auth/verify-email")
+def api_rebirth_auth_verify_email():
+    try:
+        payload = request_json(required=True)
+        token = str(payload.get("token") or "").strip()
+        if not token:
+            raise RebirthError("Informe o token de verificação.", "invalid_verification_token")
+        user = rebirth_repo().verify_email_token(token)
+        if not user:
+            raise RebirthError("Token de verificação inválido ou já utilizado.", "verification_failed", status=410)
+        return json_payload(account=account_payload(user), verified=True)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/auth/resend-verification")
+def api_rebirth_auth_resend_verification():
+    try:
+        user = require_user()
+        enforce_auth_rate_limit("resend_verification", user.get("email"))
+        if user.get("email_verified"):
+            return json_payload(account=account_payload(user), already_verified=True)
+        token = rebirth_repo().regenerate_verification_token(user["id"])
+        if not token:
+            return json_payload(account=account_payload(user), already_verified=True)
+        send_verification_email(user.get("email"), token)
+        return json_payload(account=account_payload(user), resent=True)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.get("/rebirth/verify")
+def rebirth_verify_email_link():
+    token = str(request.args.get("token") or "").strip()
+    verified = bool(token) and bool(rebirth_repo().verify_email_token(token)) if token else False
+    return redirect(f"/rebirth?verified={'1' if verified else '0'}", code=302)
 
 
 @app.post("/api/rebirth/auth/login")

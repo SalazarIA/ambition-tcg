@@ -2130,6 +2130,52 @@ button {
     transform: translateX(-50%);
 }
 
+/* Banner de verificação de email — informativo, não-bloqueante. */
+.rb-verify-banner {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: min(calc(100% - 28px), 1280px);
+    margin: 8px auto 0;
+    padding: 8px 14px;
+    border: 1px solid rgba(244, 173, 38, 0.4);
+    background: linear-gradient(90deg, rgba(244, 173, 38, 0.14), rgba(8, 10, 13, 0.85));
+    color: var(--rb-text);
+    font-size: 13px;
+    clip-path: var(--rb-cut);
+}
+
+.rb-verify-banner .rb-verify-resend {
+    padding: 5px 12px;
+    border: 1px solid rgba(244, 173, 38, 0.6);
+    background: rgba(244, 173, 38, 0.16);
+    color: var(--rb-gold-2, #ffc852);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 11px;
+    cursor: pointer;
+    clip-path: var(--rb-cut);
+}
+
+.rb-verify-banner .rb-verify-resend:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.rb-verify-banner .rb-verify-result {
+    color: var(--rb-muted);
+    font-size: 12px;
+}
+
+.rb-game-page .rb-verify-banner {
+    position: fixed;
+    top: calc(64px + var(--rb-safe-top));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 39;
+}
+
 .rb-game-page .rb-global-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;

@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 SCHEMA_MIGRATION_LOCK_KEY = 735194302771
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
@@ -35,6 +35,7 @@ REQUIRED_TABLES = {
 }
 REQUIRED_COLUMNS = {
     "match_history": {"campaign_version", "campaign_node", "campaign_attempt"},
+    "users": {"email_verified", "verification_token", "verification_sent_at", "email_verified_at"},
 }
 
 # Executado antes da foundation migration: tabelas Ascension com nomes
@@ -501,6 +502,21 @@ VALUES (8, 'single_player_campaign_v1_progress')
 ON CONFLICT (version) DO NOTHING;
 """
 
+MIGRATION_009 = """
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_sent_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_users_verification_token
+    ON users(verification_token)
+    WHERE verification_token IS NOT NULL;
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (9, 'email_verification')
+ON CONFLICT (version) DO NOTHING;
+"""
+
 MIGRATIONS = (
     MIGRATION_001,
     MIGRATION_002,
@@ -510,6 +526,7 @@ MIGRATIONS = (
     MIGRATION_006,
     MIGRATION_007,
     MIGRATION_008,
+    MIGRATION_009,
 )
 
 

@@ -493,7 +493,11 @@ class RebirthRepository:
                     email TEXT NOT NULL UNIQUE,
                     password_salt TEXT NOT NULL,
                     password_hash TEXT NOT NULL,
-                    created_at TEXT NOT NULL
+                    created_at TEXT NOT NULL,
+                    email_verified INTEGER NOT NULL DEFAULT 0,
+                    verification_token TEXT,
+                    verification_sent_at TEXT,
+                    email_verified_at TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS user_sessions (
@@ -724,6 +728,10 @@ class RebirthRepository:
             self._ensure_sqlite_column(db, "match_history", "campaign_version", "TEXT")
             self._ensure_sqlite_column(db, "match_history", "campaign_node", "TEXT")
             self._ensure_sqlite_column(db, "match_history", "campaign_attempt", "INTEGER")
+            self._ensure_sqlite_column(db, "users", "email_verified", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_sqlite_column(db, "users", "verification_token", "TEXT")
+            self._ensure_sqlite_column(db, "users", "verification_sent_at", "TEXT")
+            self._ensure_sqlite_column(db, "users", "email_verified_at", "TEXT")
             db.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_match_history_campaign
@@ -947,15 +955,17 @@ class RebirthRepository:
 
         salt, digest = hash_password(password)
         now = utc_now()
+        verification_token = secrets.token_urlsafe(32)
         try:
             with self.connect() as db:
                 returning = " RETURNING id" if self.backend == "postgresql" else ""
                 cursor = db.execute(
                     f"""
-                    INSERT INTO users (username, email, password_salt, password_hash, created_at)
-                    VALUES (?, ?, ?, ?, ?){returning}
+                    INSERT INTO users (username, email, password_salt, password_hash, created_at,
+                                       email_verified, verification_token, verification_sent_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?){returning}
                     """,
-                    (username, email, salt, digest, now),
+                    (username, email, salt, digest, now, False, verification_token, now),
                 )
                 user_id = int(cursor.fetchone()["id"] if self.backend == "postgresql" else cursor.lastrowid)
                 self._seed_user_state(db, user_id, now, seed_source=f"{user_id}:{username}:{email}")
@@ -986,7 +996,12 @@ class RebirthRepository:
             # Seed table failure — schema mismatch ou bug em _seed_user_state.
             exposed = f"Falha ao provisionar conta. [{cause_text}]" if _EXPOSE_DB_ERRORS else "Falha ao provisionar conta."
             raise RebirthPersistenceError(exposed, "user_seed_failed", status=500) from exc
-        return self.get_user(user_id)
+        user = self.get_user(user_id)
+        # Token transiente devolvido só na criação para a rota disparar o email;
+        # não é persistido no payload público nem relido por get_user.
+        if user is not None:
+            user["verification_token"] = verification_token
+        return user
 
     @_retry_postgres_serialization_write
     def create_session(self, user_id, token, *, expires_at):
@@ -1074,8 +1089,71 @@ class RebirthRepository:
             return None
         self.ensure_schema()
         with self.connect() as db:
-            row = db.execute("SELECT id, username, email, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
-        return dict(row) if row else None
+            row = db.execute(
+                "SELECT id, username, email, created_at, email_verified, email_verified_at FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+        if not row:
+            return None
+        user = dict(row)
+        user["email_verified"] = bool(user.get("email_verified"))
+        return user
+
+    @_retry_postgres_serialization_write
+    def verify_email_token(self, token):
+        """Mark a user's email verified from a verification token.
+
+        Idempotent on the token: once consumed the token is cleared, so a
+        replayed link returns None (already used / invalid) rather than
+        re-verifying. Returns the user dict on success, None otherwise.
+        """
+        token = str(token or "").strip()
+        if not token:
+            return None
+        self.ensure_schema()
+        now = utc_now()
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT id FROM users WHERE verification_token = ?",
+                (token,),
+            ).fetchone()
+            if not row:
+                return None
+            user_id = int(row["id"])
+            db.execute(
+                """
+                UPDATE users
+                SET email_verified = ?, email_verified_at = ?, verification_token = NULL
+                WHERE id = ?
+                """,
+                (True, now, user_id),
+            )
+        return self.get_user(user_id)
+
+    @_retry_postgres_serialization_write
+    def regenerate_verification_token(self, user_id):
+        """Issue a fresh verification token for an unverified account.
+
+        Returns the new token, or None if the account is already verified or
+        missing. Callers use the token to re-send the verification email.
+        """
+        if not user_id:
+            return None
+        self.ensure_schema()
+        now = utc_now()
+        token = secrets.token_urlsafe(32)
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT email_verified FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if not row or bool(row["email_verified"]):
+                return None
+            db.execute(
+                "UPDATE users SET verification_token = ?, verification_sent_at = ? WHERE id = ?",
+                (token, now, user_id),
+            )
+        return token
 
     def _seed_user_state(self, db, user_id, now, seed_source=None):
         starter_deck = deterministic_starter_deck(seed_source or f"{user_id}:starter")

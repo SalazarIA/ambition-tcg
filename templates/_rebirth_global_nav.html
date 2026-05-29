@@ -35,6 +35,14 @@
     </section>
 </header>
 
+{% if rb_nav.authenticated and not rb_nav.email_verified %}
+<aside class="rb-verify-banner" data-rebirth-verify-banner role="status">
+    <span>Confirme seu email para garantir coleção, nível e recompensas.</span>
+    <button type="button" class="rb-verify-resend" data-rebirth-resend-verification>Reenviar email</button>
+    <span class="rb-verify-result" data-rebirth-verify-result aria-live="polite"></span>
+</aside>
+{% endif %}
+
 <div class="rb-auth-modal" data-rebirth-auth-modal hidden>
     <button class="rb-auth-backdrop" type="button" data-rebirth-auth-close aria-label="Fechar login"></button>
     <section class="rb-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="rebirth-auth-title">
