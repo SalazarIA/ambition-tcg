@@ -138,10 +138,19 @@ button {
     overflow: hidden;
     transform: translateX(calc(-50% + var(--rb-safe-offset-x))) scale(var(--rb-scale));
     transform-origin: top center;
+    /* F5: moldura de mesa — fim do vácuo preto. Spotlight central morna onde a
+       ação acontece, lados tingidos pelo dono (gold/cyan), grid mais visível
+       pra suportar leitura espacial, vinheta nas pontas pra focar o olho. */
     background:
-        linear-gradient(90deg, rgba(244, 173, 38, 0.05), transparent 28%, transparent 72%, rgba(88, 214, 255, 0.045)),
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 82px),
-        linear-gradient(180deg, #07090c 0%, #020303 100%);
+        /* spotlight central + vinheta dos cantos */
+        radial-gradient(ellipse 70% 50% at 50% 48%, rgba(244, 173, 38, 0.085), transparent 65%),
+        radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.62) 100%),
+        /* tintura dos lados — jogador à esquerda, bot à direita */
+        linear-gradient(90deg, rgba(244, 173, 38, 0.11), transparent 24%, transparent 76%, rgba(88, 214, 255, 0.1)),
+        /* grade vertical sutil — espacial sem virar wireframe */
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 82px),
+        /* fundo escuro com leve dégradé */
+        linear-gradient(180deg, #0b0f15 0%, #050708 100%);
 }
 
 .rb-game-viewport.is-screen-shaking {
