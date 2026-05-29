@@ -1116,6 +1116,42 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
     )
 
 
+# audit #18: bloco de status pós-clash extraído de resolve_turn (270 LOC).
+# Função pura de (winner, cartas) — não muta match. As regras de
+# burn/decay/lifesteal/heal/cleanse/shield por ability_key vivem aqui, fora
+# do núcleo de dano. Equivalência garantida pela suíte de canonical
+# hash + parity + replay.
+_CLASH_STATUS_BY_KEY = {
+    "molten_bite": ("status", "burn"),
+    "inferno_bite": ("status", "burn"),
+    "fire_burn": ("status", "burn"),
+    "shadow_decay": ("status", "decay"),
+}
+
+
+def _derive_clash_status_effects(winner, player_card, bot_card):
+    if winner == "player":
+        source_card, target_side, heal_side = player_card, "bot", "player"
+    elif winner == "bot":
+        source_card, target_side, heal_side = bot_card, "player", "bot"
+    else:
+        return []
+    key = ability_key(source_card)
+    effects = []
+    if key in _CLASH_STATUS_BY_KEY:
+        _, status_name = _CLASH_STATUS_BY_KEY[key]
+        effects.append({"type": "status", "side": target_side, "status": status_name, "potency": 1, "turns": 2})
+    if key in {"shadow_lifesteal", "shadow_drain"}:
+        effects.append({"type": "heal", "side": heal_side, "amount": 2})
+    if key == "water_heal":
+        effects.append({"type": "heal", "side": heal_side, "amount": 2})
+    if key == "water_cleanse":
+        effects.append({"type": "cleanse", "side": heal_side})
+    if key == "earth_shield":
+        effects.append({"type": "shield", "side": heal_side, "amount": 2, "turns": 2})
+    return effects
+
+
 def resolve_turn(
     match,
     player_card,
@@ -1200,36 +1236,8 @@ def resolve_turn(
     if persistent_field:
         result["hero_damage"] = hero_damage
 
-    status_effects = []
     status_owner = result["winner"] if result.get("winner") in {"player", "bot"} else "system"
-    if winner == "player":
-        attacker_key = ability_key(player_card)
-        if attacker_key in {"molten_bite", "inferno_bite", "fire_burn"}:
-            status_effects.append({"type": "status", "side": "bot", "status": "burn", "potency": 1, "turns": 2})
-        if attacker_key == "shadow_decay":
-            status_effects.append({"type": "status", "side": "bot", "status": "decay", "potency": 1, "turns": 2})
-        if attacker_key in {"shadow_lifesteal", "shadow_drain"}:
-            status_effects.append({"type": "heal", "side": "player", "amount": 2})
-        if ability_key(player_card) == "water_heal":
-            status_effects.append({"type": "heal", "side": "player", "amount": 2})
-        if ability_key(player_card) == "water_cleanse":
-            status_effects.append({"type": "cleanse", "side": "player"})
-        if ability_key(player_card) == "earth_shield":
-            status_effects.append({"type": "shield", "side": "player", "amount": 2, "turns": 2})
-    elif winner == "bot":
-        attacker_key = ability_key(bot_card)
-        if attacker_key in {"molten_bite", "inferno_bite", "fire_burn"}:
-            status_effects.append({"type": "status", "side": "player", "status": "burn", "potency": 1, "turns": 2})
-        if attacker_key == "shadow_decay":
-            status_effects.append({"type": "status", "side": "player", "status": "decay", "potency": 1, "turns": 2})
-        if attacker_key in {"shadow_lifesteal", "shadow_drain"}:
-            status_effects.append({"type": "heal", "side": "bot", "amount": 2})
-        if ability_key(bot_card) == "water_heal":
-            status_effects.append({"type": "heal", "side": "bot", "amount": 2})
-        if ability_key(bot_card) == "water_cleanse":
-            status_effects.append({"type": "cleanse", "side": "bot"})
-        if ability_key(bot_card) == "earth_shield":
-            status_effects.append({"type": "shield", "side": "bot", "amount": 2, "turns": 2})
+    status_effects = _derive_clash_status_effects(winner, player_card, bot_card)
     status_events = resolve_effect_sequence(
         match,
         status_owner,
