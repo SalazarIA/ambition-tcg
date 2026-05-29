@@ -2972,9 +2972,10 @@ button {
         padding: 6px 8px;
     }
 
+    /* Esconde só XP + carteira (ruído mid-combate). A identidade fica —
+       é compacta e confirma "logado como X", sinal útil mesmo na arena. */
     .rb-game-page .rb-global-xp,
-    .rb-game-page .rb-global-wallet,
-    .rb-game-page .rb-global-identity {
+    .rb-game-page .rb-global-wallet {
         display: none;
     }
 
