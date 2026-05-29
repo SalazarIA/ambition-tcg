@@ -33,7 +33,19 @@
 
         <section class="rb-campaign-path" aria-label="Encontros da campanha">
             {% for node in campaign.nodes %}
-                <article class="rb-campaign-node is-{{ node.status }}{{ ' is-next' if node.id == campaign.next_available else '' }}" data-campaign-node="{{ node.id }}" tabindex="{{ '0' if account.authenticated and node.status != 'locked' else '-1' }}">
+                <article class="rb-campaign-node is-{{ node.status }}{{ ' is-next' if node.id == campaign.next_available else '' }}"
+                         data-campaign-node="{{ node.id }}"
+                         data-tone="{{ node.presentation.tone or 'neutral' }}"
+                         style="--node-accent: {{ node.presentation.accent or '#f4ad26' }};"
+                         tabindex="{{ '0' if account.authenticated and node.status != 'locked' else '-1' }}">
+                    <div class="rb-campaign-silhouette" aria-hidden="true">
+                        <i class="rb-campaign-glyph" data-glyph="{{ node.presentation.tone or 'neutral' }}"></i>
+                        {% if node.status == 'completed' %}
+                            <span class="rb-campaign-seal" aria-label="Vencido">✓</span>
+                        {% elif node.status == 'locked' %}
+                            <span class="rb-campaign-lock" aria-label="Bloqueado">⛯</span>
+                        {% endif %}
+                    </div>
                     <div class="rb-campaign-step">
                         <span>{{ "%02d"|format(node.order) }}</span>
                         <i aria-hidden="true"></i>

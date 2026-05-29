@@ -9072,20 +9072,113 @@ button {
 }
 
 .rb-campaign-node {
+    /* F6: silhueta + accent por boss substitui o template plano. */
     display: grid;
-    grid-template-columns: 68px minmax(0, 1fr) auto;
+    grid-template-columns: 96px 68px minmax(0, 1fr) auto;
     gap: 18px;
     align-items: center;
     min-height: 154px;
     padding: 20px 24px 20px 14px;
     border: 1px solid var(--rb-line);
     background:
-        linear-gradient(100deg, rgba(199, 153, 73, 0.08), transparent 28%),
+        linear-gradient(100deg, color-mix(in srgb, var(--node-accent, #f4ad26) 18%, transparent), transparent 28%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
         rgba(8, 10, 13, 0.92);
     box-shadow: var(--rb-shadow);
     clip-path: var(--rb-cut);
     transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.rb-campaign-silhouette {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 88px;
+    height: 110px;
+    border: 1px solid color-mix(in srgb, var(--node-accent, #f4ad26) 40%, var(--rb-line));
+    border-radius: var(--rb-cut-soft);
+    background:
+        radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--node-accent, #f4ad26) 22%, transparent), transparent 65%),
+        linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.42)),
+        var(--rb-panel);
+    overflow: hidden;
+}
+
+.rb-campaign-node.is-completed .rb-campaign-silhouette {
+    border-color: rgba(244, 173, 38, 0.55);
+}
+
+.rb-campaign-node.is-locked .rb-campaign-silhouette {
+    border-color: rgba(214, 219, 222, 0.2);
+    background: rgba(8, 10, 13, 0.86);
+    opacity: 0.55;
+}
+.rb-campaign-node.is-locked .rb-campaign-glyph {
+    background: var(--rb-muted);
+    opacity: 0.5;
+}
+
+.rb-campaign-glyph {
+    width: 56px;
+    height: 56px;
+    background: var(--node-accent, #f4ad26);
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-position: center;
+    mask-size: contain;
+    -webkit-mask-size: contain;
+    opacity: 0.86;
+}
+/* Glyphs por elemento — formas SVG inline simples (chama, pedra, gota,
+   olho, coroa). Substituem placeholders quando o pipeline de arte ainda
+   não entregou ilustração bespoke. */
+.rb-campaign-glyph[data-glyph="fire"] {
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 4c4 10 14 14 14 24a14 14 0 1 1-28 0c0-6 4-10 4-16 4 4 6 4 10-8z' fill='white'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 4c4 10 14 14 14 24a14 14 0 1 1-28 0c0-6 4-10 4-16 4 4 6 4 10-8z' fill='white'/></svg>");
+}
+.rb-campaign-glyph[data-glyph="earth"] {
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M8 50 L20 22 L34 30 L46 14 L56 50z' fill='white'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M8 50 L20 22 L34 30 L46 14 L56 50z' fill='white'/></svg>");
+}
+.rb-campaign-glyph[data-glyph="water"] {
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 6c10 14 18 22 18 32a18 18 0 1 1-36 0c0-10 8-18 18-32z' fill='white'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 6c10 14 18 22 18 32a18 18 0 1 1-36 0c0-10 8-18 18-32z' fill='white'/></svg>");
+}
+.rb-campaign-glyph[data-glyph="shadow"] {
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 12 C16 12 6 28 6 32 C6 36 16 52 32 52 C48 52 58 36 58 32 C58 28 48 12 32 12z M32 22a10 10 0 1 1 0 20 a10 10 0 1 1 0-20z' fill='white' fill-rule='evenodd'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 12 C16 12 6 28 6 32 C6 36 16 52 32 52 C48 52 58 36 58 32 C58 28 48 12 32 12z M32 22a10 10 0 1 1 0 20 a10 10 0 1 1 0-20z' fill='white' fill-rule='evenodd'/></svg>");
+}
+.rb-campaign-glyph[data-glyph="royal"] {
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M8 22 L18 36 L32 14 L46 36 L56 22 L52 50 L12 50 z' fill='white'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M8 22 L18 36 L32 14 L46 36 L56 22 L52 50 L12 50 z' fill='white'/></svg>");
+}
+.rb-campaign-glyph[data-glyph="neutral"] {
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='20' fill='white'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='20' fill='white'/></svg>");
+}
+
+.rb-campaign-seal,
+.rb-campaign-lock {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: var(--fs-2xs);
+    font-weight: 900;
+}
+.rb-campaign-seal {
+    color: #1a1003;
+    background: var(--rb-gold);
+}
+.rb-campaign-lock {
+    color: var(--rb-muted);
+    background: rgba(255, 255, 255, 0.08);
+    font-size: var(--fs-3xs);
 }
 
 .rb-campaign-node.is-available,
