@@ -867,10 +867,13 @@
             const risk = options && options.risk ? options.risk : null;
             const riskClass = risk ? ` is-risk-${RebirthText.escape(risk.tone || "neutral")}` : "";
             const fusionClass = options && options.fusionSource ? " is-fusion-source" : "";
+            const ability = this.abilitySummary(card);
+            // F4: tooltip nativo com nome + habilidade pra quando o texto da
+            // carta no slot for cortado pelo line-clamp.
+            const fullTitle = `${card.name} — ${ability.name}${ability.copy ? ": " + ability.copy : ""}`;
             const riskAttrs = risk
                 ? ` data-risk-tone="${RebirthText.escape(risk.tone || "neutral")}" data-risk-label="${RebirthText.escape(risk.label || "")}" title="${RebirthText.escape((risk.label || "") + (risk.copy ? " - " + risk.copy : ""))}"`
-                : "";
-            const ability = this.abilitySummary(card);
+                : ` title="${RebirthText.escape(fullTitle)}"`;
             const targetAttr = side === "bot"
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;

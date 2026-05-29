@@ -618,7 +618,8 @@ button {
 .rb-field-card,
 .rb-field-slot-empty {
     width: 100%;
-    height: 112px;
+    /* F4: 112px → 132px pra acomodar nome+habilidade legíveis em 2 linhas. */
+    height: 132px;
     cursor: pointer;
 }
 
@@ -698,14 +699,17 @@ button {
 }
 
 .rb-field-card strong {
+    /* F4: deixa quebrar em 2 linhas; o nome completo vence o ellipsis cego. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
     color: var(--rb-text);
     font-size: var(--fs-xs);
     font-weight: 1000;
-    line-height: 1;
-    text-overflow: ellipsis;
+    line-height: 1.1;
     text-transform: uppercase;
-    white-space: nowrap;
+    word-break: break-word;
 }
 
 .rb-field-card small {
@@ -4873,14 +4877,17 @@ button {
 }
 
 .rb-card-textbox strong {
+    /* F4: nome da habilidade pode quebrar em 2 linhas em vez de virar "M..." */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
     color: #ffe7a7;
     font-size: var(--fs-3xs);
     font-weight: 1000;
-    line-height: 1;
-    text-overflow: ellipsis;
+    line-height: 1.1;
     text-transform: uppercase;
-    white-space: nowrap;
+    word-break: break-word;
 }
 
 .rb-card-textbox p {
