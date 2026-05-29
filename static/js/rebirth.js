@@ -3087,6 +3087,7 @@
     const RebirthInput = {
         bind() {
             this.bindLogToggle();
+            this.bindAnalystToggle();
             window.addEventListener("pagehide", () => {
                 const state = RebirthStore.state;
                 const endpoint = RebirthConfig.endpoints.telemetryBeacon || "/api/rebirth/telemetry/beacon";
@@ -3211,6 +3212,32 @@
                     RebirthFlow.attackTarget(target ? target.getAttribute("data-target-instance") : null);
                 });
             }
+        },
+
+        bindAnalystToggle() {
+            // F3: Análise tática colapsada por padrão. Persiste a preferência em
+            // localStorage; jogador sênior abre uma vez e fica aberto.
+            const toggle = document.querySelector("[data-rebirth-analyst-toggle]");
+            const panel = document.querySelector("[data-rebirth-analyst-mode]");
+            if (!toggle || !panel) return;
+            let opened = false;
+            try {
+                opened = window.localStorage.getItem("rebirth.analystMode") === "1";
+            } catch (e) { opened = false; }
+            const apply = (state) => {
+                toggle.setAttribute("aria-expanded", state ? "true" : "false");
+                if (state) {
+                    panel.removeAttribute("hidden");
+                } else {
+                    panel.setAttribute("hidden", "");
+                }
+            };
+            apply(opened);
+            toggle.addEventListener("click", () => {
+                opened = !opened;
+                apply(opened);
+                try { window.localStorage.setItem("rebirth.analystMode", opened ? "1" : "0"); } catch (e) {}
+            });
         },
 
         bindLogToggle() {

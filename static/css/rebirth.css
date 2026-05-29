@@ -1687,6 +1687,39 @@ button {
     color: var(--rb-text);
 }
 
+/* F3: modo analista oculto por padrão; expande sob toggle. */
+.rb-analyst-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-cut-soft);
+    background: transparent;
+    color: var(--rb-muted);
+    font-size: var(--fs-2xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+}
+.rb-analyst-toggle:hover {
+    border-color: rgba(244, 173, 38, 0.45);
+    color: var(--rb-text);
+}
+.rb-analyst-toggle[aria-expanded="true"] .rb-analyst-toggle-icon {
+    transform: rotate(45deg);
+}
+.rb-analyst-toggle-icon {
+    display: inline-block;
+    transition: transform 160ms ease;
+}
+.rb-analyst-mode {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(214, 219, 222, 0.12);
+}
+
 .rb-resolution-strip {
     display: flex !important;
     flex-wrap: wrap;

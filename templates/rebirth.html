@@ -192,12 +192,18 @@
                     <span id="result-label">Aguardando</span>
                     <strong id="result-title">Monte seu campo.</strong>
                     <p id="result-copy">Invoque monstros, depois escolha um atacante e um alvo.</p>
-                    <div class="rb-resolution-strip" id="resolution-strip" aria-label="Resolucao atual">
-                        <span id="priority-label">Prioridade: jogador</span>
-                        <span id="chain-label">Sem cadeia ativa</span>
-                        <span id="interrupt-label">Janela fechada</span>
+                    <button class="rb-analyst-toggle" type="button" data-rebirth-analyst-toggle aria-expanded="false" aria-controls="analyst-mode">
+                        <span class="rb-analyst-toggle-icon" aria-hidden="true">+</span>
+                        Análise tática
+                    </button>
+                    <div class="rb-analyst-mode" id="analyst-mode" data-rebirth-analyst-mode hidden>
+                        <div class="rb-resolution-strip" id="resolution-strip" aria-label="Resolução atual">
+                            <span id="priority-label">Prioridade: jogador</span>
+                            <span id="chain-label">Sem cadeia ativa</span>
+                            <span id="interrupt-label">Janela fechada</span>
+                        </div>
+                        <div id="tactics-strip" class="rb-tactics-strip" aria-label="Leitura tática"></div>
                     </div>
-                    <div id="tactics-strip" class="rb-tactics-strip" aria-label="Leitura tática"></div>
                     <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
                     <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
                     <div id="progression-tease" class="rb-progression-tease" aria-live="polite" hidden></div>
