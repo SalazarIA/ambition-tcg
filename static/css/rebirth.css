@@ -24,6 +24,15 @@
     --rb-nav-clearance: 0px;
     --rb-cut: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
     --rb-shadow: 0 26px 80px rgba(0, 0, 0, 0.68);
+    /* F1 audit: escala tipográfica modular — 8 tokens substituem 34 literais. */
+    --fs-3xs: 10px;
+    --fs-2xs: 12px;
+    --fs-xs: 13px;
+    --fs-sm: 15px;
+    --fs-md: 18px;
+    --fs-lg: 24px;
+    --fs-xl: 36px;
+    --fs-display: 56px;
 }
 
 * {
@@ -224,7 +233,7 @@ button {
     color: var(--rb-gold);
     background: linear-gradient(145deg, #19130b, #08090b);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 56px;
+    font-size: var(--fs-display);
     font-weight: 900;
     line-height: 1;
     text-decoration: none;
@@ -284,7 +293,7 @@ button {
 .rb-hand-count,
 .rb-log-head span {
     color: var(--rb-muted);
-    font-size: 18px;
+    font-size: var(--fs-md);
     font-weight: 900;
     letter-spacing: 0;
     line-height: 1;
@@ -318,7 +327,7 @@ button {
 
 .rb-hud-health strong,
 .rb-turn-core strong {
-    font-size: 72px;
+    font-size: var(--fs-display);
     line-height: 0.84;
     text-shadow: 0 5px 0 rgba(255, 255, 255, 0.16), 0 12px 24px rgba(0, 0, 0, 0.72);
 }
@@ -349,7 +358,7 @@ button {
     align-items: center;
     min-width: 0;
     color: var(--rb-muted);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     line-height: 1;
     text-transform: uppercase;
@@ -385,7 +394,7 @@ button {
 
 .rb-turn-core small {
     color: var(--rb-muted);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 900;
     line-height: 1;
     text-transform: uppercase;
@@ -402,7 +411,7 @@ button {
     color: var(--rb-text);
     background: rgba(255, 255, 255, 0.065);
     box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.025);
-    font-size: 13px !important;
+    font-size: var(--fs-xs) !important;
     letter-spacing: 0;
     transition: color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
     clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
@@ -473,7 +482,7 @@ button {
     gap: 8px;
     margin: 0;
     color: var(--rb-text);
-    font-size: 34px;
+    font-size: var(--fs-xl);
     font-weight: 900;
     line-height: 1.1;
     text-shadow: 0 4px 16px rgba(0, 0, 0, 0.82);
@@ -514,7 +523,7 @@ button {
     position: absolute;
     bottom: 12px;
     z-index: 1;
-    font-size: 16px;
+    font-size: var(--fs-sm);
     font-weight: 900;
     letter-spacing: 0;
     line-height: 1;
@@ -571,7 +580,7 @@ button {
 
 .rb-field-row > span {
     color: var(--rb-muted);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 1000;
     line-height: 1.05;
     text-transform: uppercase;
@@ -598,7 +607,7 @@ button {
     display: grid;
     place-items: center;
     color: rgba(255, 255, 255, 0.62);
-    font-size: 22px;
+    font-size: var(--fs-lg);
     font-weight: 1000;
     letter-spacing: 0;
     text-shadow: 0 0 18px rgba(244, 173, 38, 0.28);
@@ -641,7 +650,7 @@ button {
     place-items: center;
     color: #090603;
     background: var(--rb-gold);
-    font-size: 15px;
+    font-size: var(--fs-sm);
     font-weight: 1000;
     clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
@@ -689,7 +698,7 @@ button {
 .rb-field-card strong {
     overflow: hidden;
     color: var(--rb-text);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 1000;
     line-height: 1;
     text-overflow: ellipsis;
@@ -699,7 +708,7 @@ button {
 
 .rb-field-card small {
     color: var(--rb-cyan);
-    font-size: 10px;
+    font-size: var(--fs-3xs);
     font-weight: 900;
     line-height: 1;
     text-transform: uppercase;
@@ -743,7 +752,7 @@ button {
     border: 1px dashed rgba(255, 255, 255, 0.18);
     color: rgba(255, 255, 255, 0.38);
     background: rgba(255, 255, 255, 0.035);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 1000;
     text-transform: uppercase;
     clip-path: var(--rb-cut);
@@ -817,7 +826,7 @@ button {
 
 .rb-bot-revealed .rb-card-topline strong {
     max-width: 100px;
-    font-size: 18px;
+    font-size: var(--fs-md);
 }
 
 .rb-bot-revealed .rb-card-topline span,
@@ -829,7 +838,7 @@ button {
 .rb-bot-revealed .rb-card-rank {
     width: 38px;
     height: 38px;
-    font-size: 20px;
+    font-size: var(--fs-md);
 }
 
 .rb-bot-revealed .rb-card-art {
@@ -849,7 +858,7 @@ button {
 .rb-card-topline strong {
     display: block;
     max-width: 320px;
-    font-size: 48px;
+    font-size: var(--fs-display);
     font-weight: 900;
     line-height: 0.94;
     text-transform: uppercase;
@@ -859,7 +868,7 @@ button {
     display: block;
     margin-top: 8px;
     color: var(--rb-gold);
-    font-size: 22px;
+    font-size: var(--fs-lg);
 }
 
 .rb-card-rank,
@@ -872,7 +881,7 @@ button {
     border: 1px solid rgba(244, 173, 38, 0.84);
     color: var(--rb-gold-2);
     background: #0a0b0d;
-    font-size: 34px;
+    font-size: var(--fs-xl);
     font-weight: 900;
     line-height: 1;
     clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
@@ -935,7 +944,7 @@ button {
     place-items: center;
     color: rgba(255, 255, 255, 0.82);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 46px;
+    font-size: var(--fs-xl);
     font-weight: 900;
 }
 
@@ -958,7 +967,7 @@ button {
     color: #fff7f3;
     background: rgba(86, 16, 12, 0.82);
     box-shadow: 0 0 18px rgba(255, 72, 48, 0.24);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 1000;
     line-height: 1;
     text-transform: uppercase;
@@ -975,7 +984,7 @@ button {
     right: 7px;
     top: 8px;
     padding: 4px 6px;
-    font-size: 10px;
+    font-size: var(--fs-3xs);
     pointer-events: none;
 }
 
@@ -1010,7 +1019,7 @@ button {
 
 .rb-bot-revealed .rb-status-strip span {
     padding: 4px 6px;
-    font-size: 9px;
+    font-size: var(--fs-3xs);
 }
 
 @keyframes rb-burn-border {
@@ -1119,13 +1128,13 @@ button {
 
 .rb-card-rule strong {
     color: var(--rb-gold);
-    font-size: 22px;
+    font-size: var(--fs-lg);
 }
 
 .rb-card-rule p {
     margin: 0;
     color: #d6d4ce;
-    font-size: 20px;
+    font-size: var(--fs-md);
     line-height: 1.42;
 }
 
@@ -1140,7 +1149,7 @@ button {
     border: 1px solid rgba(244, 173, 38, 0.24);
     color: var(--rb-text);
     background: rgba(244, 173, 38, 0.075);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 1000;
     line-height: 1;
     text-transform: uppercase;
@@ -1162,7 +1171,7 @@ button {
     gap: 9px;
     align-items: center;
     color: var(--rb-gold);
-    font-size: 34px;
+    font-size: var(--fs-xl);
     font-weight: 900;
 }
 
@@ -1177,18 +1186,18 @@ button {
 
 .rb-monster-card-main .rb-card-topline strong {
     max-width: 190px;
-    font-size: 28px;
+    font-size: var(--fs-lg);
 }
 
 .rb-monster-card-main .rb-card-topline span {
     margin-top: 5px;
-    font-size: 14px;
+    font-size: var(--fs-xs);
 }
 
 .rb-monster-card-main .rb-card-rank {
     width: 44px;
     height: 44px;
-    font-size: 22px;
+    font-size: var(--fs-lg);
 }
 
 .rb-monster-card-main .rb-card-art {
@@ -1208,12 +1217,12 @@ button {
 }
 
 .rb-monster-card-main .rb-card-rule strong {
-    font-size: 15px;
+    font-size: var(--fs-sm);
 }
 
 .rb-monster-card-main .rb-card-rule p {
     overflow: hidden;
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     line-height: 1.24;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1222,7 +1231,7 @@ button {
 
 .rb-monster-card-main .rb-card-tags span {
     padding: 3px 5px;
-    font-size: 8px;
+    font-size: var(--fs-3xs);
 }
 
 .rb-monster-card-main .rb-card-stats {
@@ -1231,7 +1240,7 @@ button {
 }
 
 .rb-monster-card-main .rb-card-stats span {
-    font-size: 20px;
+    font-size: var(--fs-md);
 }
 
 .rb-stat-sword,
@@ -1282,7 +1291,7 @@ button {
 
 .rb-evolution-panel span {
     color: var(--rb-gold);
-    font-size: 18px;
+    font-size: var(--fs-md);
     line-height: 1.06;
 }
 
@@ -1298,21 +1307,21 @@ button {
 
 .rb-evolution-panel strong {
     color: var(--rb-text);
-    font-size: 17px;
+    font-size: var(--fs-sm);
     line-height: 1.05;
     text-transform: uppercase;
 }
 
 .rb-evolution-panel small {
     color: var(--rb-muted);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     line-height: 1.16;
 }
 
 .rb-actions-row small,
 .rb-coach-panel p {
     color: var(--rb-muted);
-    font-size: 16px;
+    font-size: var(--fs-sm);
     line-height: 1.28;
 }
 
@@ -1344,7 +1353,7 @@ button {
 
 .rb-coach-panel span {
     color: var(--coach-accent);
-    font-size: 18px;
+    font-size: var(--fs-md);
     font-weight: 900;
     line-height: 1;
     text-transform: uppercase;
@@ -1352,7 +1361,7 @@ button {
 
 .rb-coach-panel strong {
     color: var(--rb-text);
-    font-size: 22px;
+    font-size: var(--fs-lg);
     line-height: 1.02;
     text-transform: uppercase;
 }
@@ -1365,7 +1374,7 @@ button {
     min-height: 44px;
     width: 118px;
     color: var(--rb-gold);
-    font-size: 20px;
+    font-size: var(--fs-md);
 }
 
 .rb-player-hand {
@@ -1436,7 +1445,7 @@ button {
     padding: 4px 7px;
     color: #06110b;
     background: var(--rb-green);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 1000;
     line-height: 1;
     text-transform: uppercase;
@@ -1460,7 +1469,7 @@ button {
 
 .rb-mini-copy strong {
     color: var(--rb-text);
-    font-size: 17px;
+    font-size: var(--fs-sm);
     font-weight: 900;
     line-height: 0.98;
     text-transform: uppercase;
@@ -1468,7 +1477,7 @@ button {
 
 .rb-mini-copy span {
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 800;
     text-transform: uppercase;
 }
@@ -1478,7 +1487,7 @@ button {
     justify-content: space-between;
     gap: 8px;
     margin-top: auto;
-    font-size: 16px;
+    font-size: var(--fs-sm);
 }
 
 .rb-mini-stats b:first-child {
@@ -1496,7 +1505,7 @@ button {
     z-index: 2;
     width: 36px;
     height: 36px;
-    font-size: 16px;
+    font-size: var(--fs-sm);
 }
 
 .rb-actions-row {
@@ -1534,7 +1543,7 @@ button {
     color: #090603;
     background: linear-gradient(180deg, #ffc852, #d58b19);
     box-shadow: 0 18px 42px rgba(244, 173, 38, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.45);
-    font-size: 28px;
+    font-size: var(--fs-lg);
     font-weight: 1000;
 }
 
@@ -1543,7 +1552,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.25);
     color: var(--rb-text);
     background: linear-gradient(180deg, #272b2f, #111316);
-    font-size: 26px;
+    font-size: var(--fs-lg);
     font-weight: 900;
 }
 
@@ -1618,14 +1627,14 @@ button {
 
 .rb-result-panel strong {
     display: block;
-    font-size: 30px;
+    font-size: var(--fs-lg);
     line-height: 1.06;
 }
 
 .rb-result-panel p {
     margin: 0;
     color: var(--rb-muted);
-    font-size: 18px;
+    font-size: var(--fs-md);
     line-height: 1.22;
     overflow: hidden;
     display: -webkit-box;
@@ -1646,7 +1655,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.13);
     color: var(--rb-muted);
     background: rgba(255, 255, 255, 0.045);
-    font-size: 10px;
+    font-size: var(--fs-3xs);
     font-weight: 800;
     line-height: 1.12;
     text-transform: uppercase;
@@ -1690,7 +1699,7 @@ button {
     border: 1px solid rgba(88, 214, 255, 0.22);
     color: var(--rb-cyan);
     background: rgba(88, 214, 255, 0.065);
-    font-size: 10px;
+    font-size: var(--fs-3xs);
     font-weight: 900;
     line-height: 1.15;
     text-transform: uppercase;
@@ -1736,7 +1745,7 @@ button {
 .rb-result-panel .rb-secondary {
     min-width: 128px;
     min-height: 64px;
-    font-size: 20px;
+    font-size: var(--fs-md);
 }
 
 .rb-result-panel.is-victory {
@@ -1772,7 +1781,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.16);
     color: var(--rb-text);
     background: rgba(255, 255, 255, 0.055);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 900;
     line-height: 1.2;
     text-transform: uppercase;
@@ -1878,7 +1887,7 @@ button {
 }
 
 .rb-log-head strong {
-    font-size: 18px;
+    font-size: var(--fs-md);
 }
 
 .rb-log ol {
@@ -1896,7 +1905,7 @@ button {
     padding: 8px 18px 8px 32px;
     border-left: 3px solid var(--rb-gold);
     color: var(--rb-muted);
-    font-size: 16px;
+    font-size: var(--fs-sm);
     line-height: 1.18;
 }
 
@@ -2007,7 +2016,7 @@ button {
     place-items: center;
     color: #090603;
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 38px;
+    font-size: var(--fs-xl);
 }
 
 .rb-cta-wide i {
@@ -2093,13 +2102,13 @@ button {
     color: var(--rb-gold);
     background: #08090b;
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 28px;
+    font-size: var(--fs-lg);
     font-weight: 900;
     clip-path: var(--rb-cut);
 }
 
 .rb-brand strong {
-    font-size: 20px;
+    font-size: var(--fs-md);
 }
 
 .rb-global-nav {
@@ -2142,7 +2151,7 @@ button {
     border: 1px solid rgba(244, 173, 38, 0.4);
     background: linear-gradient(90deg, rgba(244, 173, 38, 0.14), rgba(8, 10, 13, 0.85));
     color: var(--rb-text);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     clip-path: var(--rb-cut);
 }
 
@@ -2153,7 +2162,7 @@ button {
     color: var(--rb-gold-2, #ffc852);
     font-weight: 800;
     text-transform: uppercase;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     cursor: pointer;
     clip-path: var(--rb-cut);
 }
@@ -2165,7 +2174,7 @@ button {
 
 .rb-verify-banner .rb-verify-result {
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
 }
 
 .rb-game-page .rb-verify-banner {
@@ -2208,7 +2217,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.14);
     color: var(--rb-text);
     background: rgba(0, 0, 0, 0.24);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     letter-spacing: 0;
     text-align: center;
@@ -2253,7 +2262,7 @@ button {
 .rb-global-wallet span {
     display: block;
     color: var(--rb-muted);
-    font-size: 10px;
+    font-size: var(--fs-3xs);
     font-weight: 900;
     line-height: 1;
     text-transform: uppercase;
@@ -2265,7 +2274,7 @@ button {
     display: block;
     margin-top: 4px;
     color: var(--rb-text);
-    font-size: 14px;
+    font-size: var(--fs-xs);
     line-height: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2369,7 +2378,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.18);
     color: var(--rb-text);
     background: rgba(0, 0, 0, 0.32);
-    font-size: 18px;
+    font-size: var(--fs-md);
     font-weight: 900;
     cursor: pointer;
     clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
@@ -2379,7 +2388,7 @@ button {
 .rb-auth-entry > span,
 .rb-shop-gacha-copy > span {
     color: var(--rb-gold);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -2453,13 +2462,13 @@ button {
     max-width: 560px;
     margin: 0 0 12px;
     color: var(--rb-muted);
-    font-size: 20px;
+    font-size: var(--fs-md);
     line-height: 1.42;
 }
 
 .rb-home-copy .rb-home-line {
     color: var(--rb-text);
-    font-size: 30px;
+    font-size: var(--fs-lg);
     font-weight: 900;
 }
 
@@ -2473,7 +2482,7 @@ button {
 .rb-home-actions .rb-secondary {
     min-height: 64px;
     padding: 0 26px;
-    font-size: 21px;
+    font-size: var(--fs-md);
 }
 
 .rb-home-preview {
@@ -2500,7 +2509,7 @@ button {
 .rb-home-preview .rb-score-frame span,
 .rb-home-proof span {
     color: var(--rb-muted);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -2508,7 +2517,7 @@ button {
 .rb-home-preview .rb-score-frame strong {
     display: block;
     color: var(--rb-text);
-    font-size: 30px;
+    font-size: var(--fs-lg);
 }
 
 .rb-preview-card {
@@ -2538,7 +2547,7 @@ button {
 .rb-preview-card .rb-card-body strong {
     display: block;
     margin-top: 5px;
-    font-size: 32px;
+    font-size: var(--fs-xl);
     text-transform: uppercase;
 }
 
@@ -2558,7 +2567,7 @@ button {
     min-height: 78px;
     place-items: center;
     color: var(--rb-gold);
-    font-size: 24px;
+    font-size: var(--fs-lg);
     font-weight: 900;
 }
 
@@ -2576,7 +2585,7 @@ button {
 .rb-home-proof strong {
     display: block;
     margin-top: 4px;
-    font-size: 18px;
+    font-size: var(--fs-md);
 }
 
 @media (max-width: 760px) {
@@ -2586,11 +2595,11 @@ button {
     }
 
     .rb-home-copy h1 {
-        font-size: 54px;
+        font-size: var(--fs-display);
     }
 
     .rb-home-copy .rb-home-line {
-        font-size: 24px;
+        font-size: var(--fs-lg);
     }
 }
 
@@ -2666,7 +2675,7 @@ button {
 .rb-desktop-rail span,
 .rb-booster-summary span {
     color: var(--rb-gold);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -2729,7 +2738,7 @@ button {
     display: block;
     margin: 8px 0 8px;
     color: var(--rb-text);
-    font-size: 24px;
+    font-size: var(--fs-lg);
     line-height: 1;
     text-transform: uppercase;
 }
@@ -2782,7 +2791,7 @@ button {
 .rb-account-strip span,
 .rb-auth-form span {
     color: var(--rb-gold);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -2790,7 +2799,7 @@ button {
 .rb-account-strip strong {
     min-width: 0;
     overflow-wrap: anywhere;
-    font-size: 22px;
+    font-size: var(--fs-lg);
     text-transform: uppercase;
 }
 
@@ -2845,7 +2854,7 @@ button {
     display: block;
     margin-top: 8px;
     color: var(--rb-text);
-    font-size: 30px;
+    font-size: var(--fs-lg);
     line-height: 1;
 }
 
@@ -2872,7 +2881,7 @@ button {
 }
 
 .rb-product-card h2 {
-    font-size: 20px;
+    font-size: var(--fs-md);
 }
 
 .rb-product-card strong {
@@ -2885,12 +2894,12 @@ button {
     display: block;
     margin-top: 8px;
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     line-height: 1.35;
 }
 
 .rb-product-card-compact h2 {
-    font-size: 18px;
+    font-size: var(--fs-md);
 }
 
 .rb-curated-collection {
@@ -2904,7 +2913,7 @@ button {
 
 .rb-curated-collection .rb-product-panel-head small {
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -2930,7 +2939,7 @@ button {
 .rb-collection-shelf-copy h3 {
     margin: 8px 0;
     color: var(--rb-text);
-    font-size: 22px;
+    font-size: var(--fs-lg);
     line-height: 1;
     text-transform: uppercase;
 }
@@ -2951,7 +2960,7 @@ button {
 }
 
 .rb-product-card-grid-compact .rb-product-card h2 {
-    font-size: 16px;
+    font-size: var(--fs-sm);
 }
 
 .rb-product-card-grid-compact .rb-product-card small {
@@ -3068,7 +3077,7 @@ button {
 .rb-loadout-summary span,
 .rb-loadout-row span {
     color: var(--rb-gold);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -3077,7 +3086,7 @@ button {
     display: block;
     margin-top: 6px;
     color: var(--rb-text);
-    font-size: 26px;
+    font-size: var(--fs-lg);
     line-height: 1;
 }
 
@@ -3126,7 +3135,7 @@ button {
     display: block;
     margin: 4px 0;
     color: var(--rb-text);
-    font-size: 18px;
+    font-size: var(--fs-md);
     line-height: 1;
     text-transform: uppercase;
 }
@@ -3134,7 +3143,7 @@ button {
 .rb-loadout-row small {
     display: block;
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     line-height: 1.25;
 }
 
@@ -3155,7 +3164,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: var(--rb-text);
     background: rgba(0, 0, 0, 0.28);
-    font-size: 18px;
+    font-size: var(--fs-md);
     font-weight: 900;
     clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
@@ -3240,14 +3249,14 @@ button {
 .rb-ledger-entry span,
 .rb-progress-mini-stats span {
     color: var(--rb-gold);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     text-transform: uppercase;
 }
 
 .rb-level-meter-copy strong {
     color: var(--rb-text);
-    font-size: 24px;
+    font-size: var(--fs-lg);
     line-height: 1;
 }
 
@@ -3309,7 +3318,7 @@ button {
     display: block;
     margin-top: 6px;
     color: var(--rb-text);
-    font-size: 26px;
+    font-size: var(--fs-lg);
     line-height: 1;
 }
 
@@ -3326,7 +3335,7 @@ button {
     display: block;
     margin: 6px 0;
     color: var(--rb-text);
-    font-size: 28px;
+    font-size: var(--fs-lg);
     line-height: 1;
 }
 
@@ -3343,7 +3352,7 @@ button {
     display: block;
     margin: 0;
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     line-height: 1.35;
     overflow-wrap: anywhere;
 }
@@ -3392,7 +3401,7 @@ button {
     border: 1px solid rgba(244, 173, 38, 0.24);
     color: var(--rb-text);
     background: rgba(0, 0, 0, 0.28);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     text-transform: uppercase;
     clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
@@ -3436,7 +3445,7 @@ button {
 
 .rb-booster-summary strong {
     color: var(--rb-gold);
-    font-size: 24px;
+    font-size: var(--fs-lg);
     text-transform: uppercase;
 }
 
@@ -3482,7 +3491,7 @@ button {
     border: 1px solid rgba(88, 214, 255, 0.46);
     color: var(--rb-cyan);
     background: rgba(0, 0, 0, 0.62);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     text-transform: uppercase;
     clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
@@ -3508,7 +3517,7 @@ button {
 .rb-market-price strong {
     margin: 0;
     color: var(--rb-cyan);
-    font-size: 22px;
+    font-size: var(--fs-lg);
 }
 
 .rb-booster-rarity-line {
@@ -3530,7 +3539,7 @@ button {
     display: block;
     margin: 14px 0;
     color: var(--rb-gold);
-    font-size: 34px;
+    font-size: var(--fs-xl);
 }
 
 .rb-track {
@@ -3559,7 +3568,7 @@ button {
 .rb-balance-lab h3 {
     margin: 0 0 2px;
     color: var(--rb-gold);
-    font-size: 16px;
+    font-size: var(--fs-sm);
     line-height: 1;
     text-transform: uppercase;
 }
@@ -3576,7 +3585,7 @@ button {
 .rb-balance-lab small {
     display: block;
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     line-height: 1.25;
     overflow-wrap: anywhere;
 }
@@ -3585,7 +3594,7 @@ button {
     display: block;
     margin: 4px 0;
     color: var(--rb-text);
-    font-size: 24px;
+    font-size: var(--fs-lg);
     line-height: 1;
 }
 
@@ -3600,7 +3609,7 @@ button {
 .rb-product-list code {
     color: var(--rb-text);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 13px;
+    font-size: var(--fs-xs);
     overflow-wrap: anywhere;
 }
 
@@ -3665,7 +3674,7 @@ button {
     border: 1px solid rgba(232, 235, 243, 0.12);
     background: rgba(0, 0, 0, 0.24);
     color: var(--rb-muted);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     line-height: 1.5;
     white-space: pre-wrap;
 }
@@ -3681,7 +3690,7 @@ button {
     background: rgba(7, 9, 13, 0.94);
     color: var(--rb-gold);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 800;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -3777,12 +3786,12 @@ button {
     .rb-bot-emblem {
         width: 54px;
         height: 54px;
-        font-size: 34px;
+        font-size: var(--fs-xl);
     }
 
     .rb-hud-health strong,
     .rb-turn-core strong {
-        font-size: 42px;
+        font-size: var(--fs-xl);
     }
 
     .rb-hud-copy > span,
@@ -3793,7 +3802,7 @@ button {
     .rb-result-panel span,
     .rb-hand-count,
     .rb-log-head span {
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-hp-meter {
@@ -3803,7 +3812,7 @@ button {
 
     .rb-zone-row {
         gap: 5px;
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-zone-row span {
@@ -3811,7 +3820,7 @@ button {
     }
 
     .rb-turn-core small {
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-phase-timeline {
@@ -3836,7 +3845,7 @@ button {
 
     .rb-slogan {
         gap: 4px;
-        font-size: 20px;
+        font-size: var(--fs-md);
     }
 
     .rb-slogan-bot {
@@ -3861,7 +3870,7 @@ button {
     }
 
     .rb-field-row > span {
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-field-slots {
@@ -3881,16 +3890,16 @@ button {
     .rb-field-card > b {
         width: 26px;
         height: 26px;
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-field-card strong {
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-field-card small,
     .rb-field-slot-empty {
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-card-back,
@@ -3923,18 +3932,18 @@ button {
 
     .rb-card-topline strong {
         max-width: 230px;
-        font-size: 34px;
+        font-size: var(--fs-xl);
     }
 
     .rb-card-topline span {
         margin-top: 5px;
-        font-size: 15px;
+        font-size: var(--fs-sm);
     }
 
     .rb-card-rank {
         width: 50px;
         height: 50px;
-        font-size: 24px;
+        font-size: var(--fs-lg);
     }
 
     .rb-card-art {
@@ -3949,7 +3958,7 @@ button {
 
     .rb-status-strip span {
         padding: 5px 7px;
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-card-rule {
@@ -3959,7 +3968,7 @@ button {
     }
 
     .rb-card-rule p {
-        font-size: 15px;
+        font-size: var(--fs-sm);
     }
 
     .rb-card-tags {
@@ -3968,7 +3977,7 @@ button {
 
     .rb-card-tags span {
         padding: 4px 6px;
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-card-stats {
@@ -3977,7 +3986,7 @@ button {
     }
 
     .rb-card-stats span {
-        font-size: 25px;
+        font-size: var(--fs-lg);
     }
 
     .rb-evolution-panel {
@@ -3994,19 +4003,19 @@ button {
     }
 
     .rb-evolution-panel strong {
-        font-size: 15px;
+        font-size: var(--fs-sm);
     }
 
     .rb-evolution-panel small,
     .rb-actions-row small,
     .rb-coach-panel p {
-        font-size: 12px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-combine-button {
         min-height: 46px;
         width: 94px;
-        font-size: 17px;
+        font-size: var(--fs-sm);
     }
 
     .rb-coach-panel {
@@ -4018,11 +4027,11 @@ button {
     }
 
     .rb-coach-panel span {
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-coach-panel strong {
-        font-size: 26px;
+        font-size: var(--fs-lg);
     }
 
     .rb-player-hand {
@@ -4051,21 +4060,21 @@ button {
     }
 
     .rb-mini-copy strong {
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-mini-copy span {
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mini-stats {
-        font-size: 12px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-power {
         width: 28px;
         height: 28px;
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-actions-row {
@@ -4079,7 +4088,7 @@ button {
     .rb-cta,
     .rb-secondary {
         min-height: 54px;
-        font-size: 18px;
+        font-size: var(--fs-md);
     }
 
     .rb-action-loop {
@@ -4098,11 +4107,11 @@ button {
     }
 
     .rb-result-panel strong {
-        font-size: 28px;
+        font-size: var(--fs-lg);
     }
 
     .rb-result-panel p {
-        font-size: 15px;
+        font-size: var(--fs-sm);
         -webkit-line-clamp: 4;
     }
 
@@ -4113,18 +4122,18 @@ button {
 
     .rb-tactics-strip span {
         padding: 4px 6px;
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-resolution-strip span {
         padding: 3px 5px;
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-result-panel .rb-secondary {
         min-width: 96px;
         min-height: 54px;
-        font-size: 15px;
+        font-size: var(--fs-sm);
     }
 
     .rb-ability-events,
@@ -4135,7 +4144,7 @@ button {
     .rb-ability-chip,
     .rb-reward-panel span {
         max-width: 280px;
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-log {
@@ -4151,7 +4160,7 @@ button {
 
     .rb-log li {
         min-height: 28px;
-        font-size: 12px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-log:not(.is-open) {
@@ -4313,7 +4322,7 @@ button {
         min-width: 70px;
         min-height: 46px;
         padding: 7px;
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-result-panel .rb-resolution-strip {
@@ -4475,18 +4484,18 @@ button {
     .rb-global-brand span {
         width: 38px;
         height: 38px;
-        font-size: 24px;
+        font-size: var(--fs-lg);
     }
 
     .rb-global-brand strong {
-        font-size: 17px;
+        font-size: var(--fs-sm);
     }
 
     .rb-global-tabs a,
     .rb-nav-auth {
         min-height: 34px;
         padding: 8px 9px;
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-global-player,
@@ -4524,7 +4533,7 @@ button {
     .rb-shell-nav nav a {
         min-width: auto;
         padding: 10px 11px;
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-product-hero {
@@ -4532,7 +4541,7 @@ button {
     }
 
     .rb-product-hero h1 {
-        font-size: 42px;
+        font-size: var(--fs-xl);
     }
 
     .rb-product-hero .rb-cta {
@@ -4786,7 +4795,7 @@ button {
     overflow: hidden;
     max-width: 100%;
     color: #fff7de;
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 1000;
     line-height: 1.02;
     text-overflow: ellipsis;
@@ -4799,7 +4808,7 @@ button {
 .rb-card-titlebar small {
     overflow: hidden;
     color: rgba(255, 255, 255, 0.76);
-    font-size: 8px;
+    font-size: var(--fs-3xs);
     font-weight: 900;
     line-height: 1;
     text-overflow: ellipsis;
@@ -4831,7 +4840,7 @@ button {
 .rb-card-textbox strong {
     overflow: hidden;
     color: #ffe7a7;
-    font-size: 10px;
+    font-size: var(--fs-3xs);
     font-weight: 1000;
     line-height: 1;
     text-overflow: ellipsis;
@@ -4843,7 +4852,7 @@ button {
     overflow: hidden;
     margin: 0;
     color: rgba(255, 255, 255, 0.84);
-    font-size: 9px;
+    font-size: var(--fs-3xs);
     font-weight: 800;
     line-height: 1.16;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.92);
@@ -4874,7 +4883,7 @@ button {
         inset 0 2px 4px rgba(255, 255, 255, 0.62),
         inset 0 -4px 8px rgba(49, 23, 3, 0.52);
     clip-path: none;
-    font-size: 15px;
+    font-size: var(--fs-sm);
     font-weight: 1000;
     line-height: 1;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.46);
@@ -4933,7 +4942,7 @@ button {
 .rb-card-stat b {
     display: block;
     color: inherit;
-    font-size: 15px;
+    font-size: var(--fs-sm);
     font-weight: 1000;
     line-height: 0.9;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -4942,7 +4951,7 @@ button {
 .rb-card-stat small {
     display: block;
     color: rgba(255, 255, 255, 0.78);
-    font-size: 6px;
+    font-size: var(--fs-3xs);
     font-weight: 1000;
     line-height: 1;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
@@ -4976,11 +4985,11 @@ button {
 }
 
 .rb-field-card .rb-card-titlebar .rb-card-nameplate {
-    font-size: 9px;
+    font-size: var(--fs-3xs);
 }
 
 .rb-field-card .rb-card-titlebar small {
-    font-size: 7px;
+    font-size: var(--fs-3xs);
 }
 
 .rb-field-card .rb-card-textbox {
@@ -4990,11 +4999,11 @@ button {
 }
 
 .rb-field-card .rb-card-textbox strong {
-    font-size: 8px;
+    font-size: var(--fs-3xs);
 }
 
 .rb-field-card .rb-card-textbox p {
-    font-size: 7px;
+    font-size: var(--fs-3xs);
     line-height: 1.08;
     -webkit-line-clamp: 2;
 }
@@ -5061,7 +5070,7 @@ button {
         radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02) 58%),
         rgba(0, 0, 0, 0.18);
     box-shadow: 0 14px 24px rgba(0, 0, 0, 0.38), inset 0 0 26px rgba(255, 255, 255, 0.035);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 1000;
     text-transform: uppercase;
     clip-path: var(--rb-cut);
@@ -5134,11 +5143,11 @@ button {
 }
 
 .rb-hand .rb-mini-card .rb-card-titlebar .rb-card-nameplate {
-    font-size: 11px;
+    font-size: var(--fs-2xs);
 }
 
 .rb-hand .rb-mini-card .rb-card-titlebar span {
-    font-size: 8px;
+    font-size: var(--fs-3xs);
 }
 
 .rb-mini-textbox {
@@ -5192,7 +5201,7 @@ button {
     }
 
     .rb-field-card .rb-card-titlebar .rb-card-nameplate {
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-field-card .rb-card-textbox {
@@ -5200,11 +5209,11 @@ button {
     }
 
     .rb-field-card .rb-card-textbox strong {
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-field-card .rb-card-textbox p {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
         line-height: 1.12;
     }
 
@@ -5233,11 +5242,11 @@ button {
     }
 
     .rb-hand .rb-mini-card .rb-card-titlebar .rb-card-nameplate {
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-hand .rb-mini-card .rb-card-titlebar span {
-        font-size: 6px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-hand .rb-mini-card .rb-card-textbox {
@@ -5249,11 +5258,11 @@ button {
     }
 
     .rb-hand .rb-mini-card .rb-card-textbox strong {
-        font-size: 7px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-hand .rb-mini-card .rb-card-textbox p {
-        font-size: 6px;
+        font-size: var(--fs-3xs);
         line-height: 1.04;
         -webkit-line-clamp: 1;
     }
@@ -5262,7 +5271,7 @@ button {
         top: 6px;
         left: 6px;
         border-width: 2px;
-        font-size: 12px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-hand .rb-mini-card .rb-card-statline {
@@ -5276,11 +5285,11 @@ button {
     }
 
     .rb-hand .rb-mini-card .rb-card-stat b {
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-hand .rb-mini-card .rb-card-stat small {
-        font-size: 5px;
+        font-size: var(--fs-3xs);
     }
 }
 
@@ -5334,13 +5343,13 @@ button {
     }
 
     .rb-card-titlebar .rb-card-nameplate {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-field-card .rb-card-titlebar small,
     .rb-card-titlebar span,
     .rb-card-titlebar small {
-        font-size: 6px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-card-textbox {
@@ -5353,12 +5362,12 @@ button {
     }
 
     .rb-card-textbox strong {
-        font-size: 7px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-card-textbox p,
     .rb-field-card .rb-card-textbox p {
-        font-size: 6px;
+        font-size: var(--fs-3xs);
         line-height: 1.05;
         -webkit-line-clamp: 1;
     }
@@ -5375,11 +5384,11 @@ button {
     }
 
     .rb-card-stat b {
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-card-stat small {
-        font-size: 5px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-field-card > .rb-card-cost,
@@ -5389,7 +5398,7 @@ button {
         width: var(--cost-size);
         height: var(--cost-size);
         border-width: 2px;
-        font-size: 12px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-field-card > .rb-guard-meter {
@@ -6728,7 +6737,7 @@ button {
     transform: translateX(-50%);
     display: grid;
     place-items: center;
-    font-size: 22px;
+    font-size: var(--fs-lg);
     font-weight: 900;
     color: rgba(255, 220, 180, 0.85);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 140, 80, 0.4);
@@ -7197,7 +7206,7 @@ button {
     font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
     font-weight: 900;
     letter-spacing: 0.32em;
-    font-size: 96px;
+    font-size: var(--fs-display);
     text-transform: uppercase;
     opacity: 0;
     transform: scale(0.6) translateY(20px);
@@ -7355,7 +7364,7 @@ button {
 /* --- Primeira vitória / rematch CTA --------------------------- */
 .vfx-finale-overlay .vfx-finale-subtitle {
     margin-top: 18px;
-    font-size: 18px;
+    font-size: var(--fs-md);
     font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -7375,7 +7384,7 @@ button {
 
 .vfx-finale-overlay.is-first-duel .vfx-finale-text {
     animation: rb-vfx-victory-shimmer 2.4s ease-in-out infinite, rb-vfx-first-duel-pop 0.8s ease-out;
-    font-size: 84px;
+    font-size: var(--fs-display);
     letter-spacing: 0.16em;
 }
 
@@ -7405,7 +7414,7 @@ button {
     gap: 10px;
     min-height: 56px;
     padding: 14px 26px;
-    font-size: 17px;
+    font-size: var(--fs-sm);
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -7469,7 +7478,7 @@ button {
     background: rgba(255, 200, 120, 0.08);
     border: 1px solid rgba(255, 200, 120, 0.2);
     color: rgba(245, 230, 200, 0.92);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     line-height: 1.4;
 }
 
@@ -7478,7 +7487,7 @@ button {
 }
 
 .rb-progression-tease .rb-tease-headline {
-    font-size: 14px;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -7698,7 +7707,7 @@ button {
     }
 
     .rb-mobile-native .rb-hud-copy > span {
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-mark,
@@ -7708,7 +7717,7 @@ button {
 
     .rb-mobile-native .rb-hud-health strong,
     .rb-mobile-native .rb-turn-core strong {
-        font-size: 28px;
+        font-size: var(--fs-lg);
     }
 
     .rb-mobile-native .rb-hp-meter {
@@ -7720,7 +7729,7 @@ button {
         display: grid;
         grid-template-columns: 1fr;
         gap: 3px;
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-turn-core {
@@ -7728,7 +7737,7 @@ button {
     }
 
     .rb-mobile-native .rb-turn-core small {
-        font-size: 7px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-phase-timeline {
@@ -7757,7 +7766,7 @@ button {
     }
 
     .rb-mobile-native .rb-field-row > span {
-        font-size: 10px;
+        font-size: var(--fs-3xs);
         padding-inline: 4px;
     }
 
@@ -7781,7 +7790,7 @@ button {
     }
 
     .rb-mobile-native .rb-field-card .rb-card-textbox p {
-        font-size: 7px;
+        font-size: var(--fs-3xs);
         line-height: 1.12;
     }
 
@@ -7816,7 +7825,7 @@ button {
         width: auto;
         min-width: 78px;
         min-height: 48px;
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-mobile-native .rb-player-hand {
@@ -7870,11 +7879,11 @@ button {
         width: 100%;
         min-width: 0;
         min-height: 52px;
-        font-size: 14px;
+        font-size: var(--fs-xs);
     }
 
     .rb-mobile-native .rb-actions-row small {
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-result-panel {
@@ -7897,7 +7906,7 @@ button {
         min-width: 0;
         min-height: 48px;
         padding: 8px 6px;
-        font-size: 15px;
+        font-size: var(--fs-sm);
     }
 
     .rb-mobile-native .rb-log,
@@ -8000,7 +8009,7 @@ button {
     transform: translateX(-50%);
     min-height: 16px;
     padding: 2px 8px;
-    font-size: 8px;
+    font-size: var(--fs-3xs);
     white-space: nowrap;
     border-radius: 8px;
 }
@@ -8026,7 +8035,7 @@ button {
     right: 7px;
     min-height: 20px;
     padding: 3px 5px;
-    font-size: 7px;
+    font-size: var(--fs-3xs);
     line-height: 1.05;
     background: rgba(7, 9, 12, 0.9);
     color: var(--rb-text);
@@ -8097,7 +8106,7 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.36);
     background: rgba(7, 9, 12, 0.92);
     color: #fff4d2;
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     font-weight: 950;
     text-align: center;
     box-shadow: 0 0 18px rgba(255, 115, 95, 0.32);
@@ -8193,7 +8202,7 @@ button {
     .rb-mobile-native .rb-global-tabs a {
         min-height: 26px;
         padding: 3px 2px;
-        font-size: 8px;
+        font-size: var(--fs-3xs);
         line-height: 1.05;
     }
 
@@ -8209,13 +8218,13 @@ button {
         min-width: 0;
         min-height: 30px;
         padding: 4px;
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-global-identity strong,
     .rb-mobile-native .rb-global-xp strong,
     .rb-mobile-native .rb-global-wallet strong {
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-global-wallet {
@@ -8227,7 +8236,7 @@ button {
     .rb-mobile-native .rb-nav-auth {
         min-height: 30px;
         padding: 3px;
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-game-viewport {
@@ -8279,7 +8288,7 @@ button {
 
     .rb-mobile-native .rb-hud-health strong,
     .rb-mobile-native .rb-turn-core strong {
-        font-size: 21px;
+        font-size: var(--fs-md);
     }
 
     .rb-mobile-native .rb-hp-meter {
@@ -8289,7 +8298,7 @@ button {
     .rb-mobile-native .rb-zone-row {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 2px;
-        font-size: 6px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-turn-core {
@@ -8310,7 +8319,7 @@ button {
     }
 
     .rb-mobile-native .rb-field-row > span {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
         line-height: 1;
     }
 
@@ -8329,7 +8338,7 @@ button {
     }
 
     .rb-mobile-native .rb-field-card .rb-card-titlebar strong {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-field-card .rb-card-textbox {
@@ -8337,7 +8346,7 @@ button {
     }
 
     .rb-mobile-native .rb-field-vs {
-        font-size: 13px;
+        font-size: var(--fs-xs);
     }
 
     .rb-mobile-native .rb-evolution-panel {
@@ -8372,14 +8381,14 @@ button {
         gap: 6px;
         min-height: 18px;
         color: var(--rb-muted);
-        font-size: 9px;
+        font-size: var(--fs-3xs);
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
 
     .rb-mobile-native .rb-action-bar-meta strong {
         color: var(--rb-gold-2);
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-player-hand {
@@ -8411,13 +8420,13 @@ button {
     }
 
     .rb-mobile-native .rb-hand .rb-mini-card .rb-card-titlebar strong {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-hand-count {
         right: 4px;
         bottom: 0;
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-actions-row {
@@ -8440,12 +8449,12 @@ button {
         min-height: 48px;
         height: 48px;
         padding: 6px 8px;
-        font-size: 12px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-mobile-native .rb-actions-row small {
         min-height: 14px;
-        font-size: 8px;
+        font-size: var(--fs-3xs);
         line-height: 1.15;
     }
 
@@ -8465,15 +8474,15 @@ button {
     }
 
     .rb-mobile-native .rb-result-panel span {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-result-panel strong {
-        font-size: 15px;
+        font-size: var(--fs-sm);
     }
 
     .rb-mobile-native .rb-result-panel p {
-        font-size: 10px;
+        font-size: var(--fs-3xs);
         line-height: 1.2;
     }
 
@@ -8485,7 +8494,7 @@ button {
 
     .rb-mobile-native .rb-result-panel .rb-secondary {
         min-height: 40px;
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-log,
@@ -8497,7 +8506,7 @@ button {
     .rb-mobile-native .rb-damage-number {
         top: 6%;
         right: 2%;
-        font-size: 10px;
+        font-size: var(--fs-3xs);
     }
 }
 
@@ -8549,7 +8558,7 @@ button {
 .rb-bot-emblem {
     width: 76px;
     height: 76px;
-    font-size: 42px;
+    font-size: var(--fs-xl);
     box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.06),
         inset 0 -18px 24px rgba(0, 0, 0, 0.46),
@@ -8676,7 +8685,7 @@ button {
 
 .rb-life-orb-readout small {
     color: var(--rb-muted);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 1000;
     line-height: 1;
     text-transform: uppercase;
@@ -8684,7 +8693,7 @@ button {
 
 .rb-hud-health strong,
 .rb-turn-core strong {
-    font-size: 54px;
+    font-size: var(--fs-display);
     line-height: 0.88;
 }
 
@@ -8856,11 +8865,11 @@ button {
 }
 
 .rb-card-stat b {
-    font-size: 16px;
+    font-size: var(--fs-sm);
 }
 
 .rb-card-stat small {
-    font-size: 6px;
+    font-size: var(--fs-3xs);
 }
 
 .rb-game-viewport.vfx-screen-shake {
@@ -8946,11 +8955,11 @@ button {
 
     .rb-hud-health strong,
     .rb-turn-core strong {
-        font-size: 40px;
+        font-size: var(--fs-xl);
     }
 
     .rb-card-stat b {
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 }
 
@@ -9056,7 +9065,7 @@ button {
     display: inline-flex;
     margin-bottom: 6px;
     color: var(--rb-gold);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -9093,7 +9102,7 @@ button {
     border: 1px solid rgba(199, 153, 73, 0.28);
     border-radius: 999px;
     color: #dbbb78;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -9107,14 +9116,14 @@ button {
 
 .rb-campaign-copy dt {
     color: var(--rb-muted);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     text-transform: uppercase;
 }
 
 .rb-campaign-copy dd {
     margin: 3px 0 0;
     color: var(--rb-text);
-    font-size: 16px;
+    font-size: var(--fs-sm);
     font-weight: 800;
 }
 
@@ -9146,7 +9155,7 @@ button {
 .rb-damage-number {
     min-width: 42px;
     padding: 6px 9px;
-    font-size: 22px;
+    font-size: var(--fs-lg);
     line-height: 1;
 }
 
@@ -9197,7 +9206,7 @@ button {
 
 .rb-boss-intro-kicker {
     color: var(--boss-accent, #c79949);
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 900;
     letter-spacing: 0.28em;
     text-transform: uppercase;
@@ -9216,7 +9225,7 @@ button {
 .rb-boss-intro-overlay p {
     margin: 0;
     color: #e2c387;
-    font-size: 15px;
+    font-size: var(--fs-sm);
     font-weight: 800;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -9237,7 +9246,7 @@ button {
 
 .rb-campaign-defeat-advice strong {
     color: #e7bd69;
-    font-size: 12px;
+    font-size: var(--fs-2xs);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -9246,7 +9255,7 @@ button {
 .rb-campaign-defeat-advice span {
     margin: 0;
     color: var(--rb-text);
-    font-size: 12px;
+    font-size: var(--fs-2xs);
 }
 
 @keyframes rb-boss-ambience {
@@ -9258,7 +9267,7 @@ button {
     .rb-mobile-native .rb-damage-number {
         min-width: 32px;
         padding: 4px 6px;
-        font-size: 17px;
+        font-size: var(--fs-sm);
     }
 
     .rb-boss-intro-overlay strong {
@@ -9295,7 +9304,7 @@ button {
     .rb-mobile-native .rb-global-brand span {
         width: 34px;
         height: 34px;
-        font-size: 20px;
+        font-size: var(--fs-md);
     }
 
     .rb-mobile-native .rb-global-tabs {
@@ -9306,7 +9315,7 @@ button {
     .rb-mobile-native .rb-global-tabs a {
         min-height: 28px;
         padding: 5px 4px;
-        font-size: 9px;
+        font-size: var(--fs-3xs);
         letter-spacing: 0.07em;
     }
 
@@ -9319,7 +9328,7 @@ button {
     .rb-mobile-native .rb-global-player > * {
         min-height: 32px;
         padding: 5px 6px;
-        font-size: 9px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-global-xp {
@@ -9328,7 +9337,7 @@ button {
 
     .rb-mobile-native .rb-global-identity strong,
     .rb-mobile-native .rb-global-wallet strong {
-        font-size: 11px;
+        font-size: var(--fs-2xs);
     }
 
     .rb-mobile-native .rb-game-viewport {
@@ -9344,7 +9353,7 @@ button {
     }
 
     .rb-mobile-native .rb-hand .rb-mini-card .rb-card-titlebar strong {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
         line-height: 1.1;
     }
 }
@@ -9355,7 +9364,7 @@ button {
     }
 
     .rb-mobile-native .rb-global-tabs a {
-        font-size: 8px;
+        font-size: var(--fs-3xs);
     }
 
     .rb-mobile-native .rb-global-player {
