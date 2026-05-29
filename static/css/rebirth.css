@@ -2457,6 +2457,75 @@ button {
     text-transform: uppercase;
 }
 
+/* F7: arte CSS-illustrated do booster pack — pacote sombrio com aura gold,
+   fita central e emblema. Substitui as 5 caixinhas vazias por uma presença
+   visual real de "abertura de pack". */
+.rb-booster-art {
+    display: grid;
+    justify-content: start;
+    margin-bottom: 18px;
+}
+.rb-booster-pack {
+    position: relative;
+    width: 132px;
+    height: 184px;
+    border: 1.5px solid rgba(244, 173, 38, 0.55);
+    border-radius: var(--rb-cut-soft);
+    background:
+        linear-gradient(160deg, rgba(244, 173, 38, 0.22), transparent 50%),
+        linear-gradient(180deg, #1c130a 0%, #060709 100%);
+    box-shadow:
+        0 16px 36px rgba(0, 0, 0, 0.62),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -18px 24px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+.rb-booster-pack-glow {
+    position: absolute;
+    inset: -30%;
+    background: radial-gradient(circle at 50% 30%, rgba(244, 173, 38, 0.28), transparent 55%);
+    pointer-events: none;
+}
+.rb-booster-pack-tape {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 56%;
+    height: 18px;
+    background:
+        linear-gradient(180deg, rgba(244, 173, 38, 0.85), rgba(176, 104, 19, 0.8)),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.4), transparent 12%, transparent 88%, rgba(0, 0, 0, 0.4));
+    box-shadow: 0 0 12px rgba(244, 173, 38, 0.28);
+}
+.rb-booster-pack-emblem {
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    transform: translateX(-50%);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1.5px solid rgba(244, 173, 38, 0.85);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    color: var(--rb-gold);
+    font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+    font-size: var(--fs-lg);
+    font-weight: 900;
+    line-height: 1;
+}
+
+/* Slots de raridade tingidos pelo tipo da carta — comum cinza-gold, incomum cyan. */
+.rb-gacha-slots span[data-rarity="common"] {
+    border-color: rgba(214, 219, 222, 0.32);
+    color: var(--rb-text);
+}
+.rb-gacha-slots span[data-rarity="uncommon"] {
+    border-color: rgba(88, 214, 255, 0.5);
+    color: var(--rb-cyan);
+}
+
 .rb-auth-dialog-copy h2,
 .rb-shop-gacha-copy h2 {
     margin: 8px 0 10px;

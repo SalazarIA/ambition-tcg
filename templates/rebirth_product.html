@@ -351,15 +351,22 @@
         {% elif page.key == "shop" %}
             <section class="rb-shop-gacha" aria-label="Gacha de boosters">
                 <div class="rb-shop-gacha-copy">
+                    <div class="rb-booster-art" aria-hidden="true">
+                        <div class="rb-booster-pack">
+                            <span class="rb-booster-pack-glow"></span>
+                            <span class="rb-booster-pack-tape"></span>
+                            <span class="rb-booster-pack-emblem">A</span>
+                        </div>
+                    </div>
                     <span>Booster Rebirth</span>
                     <h2>Pacote de 5 cartas</h2>
                     <p>Cada pacote entrega <strong>3 comuns + 2 incomuns garantidas</strong>. A escolha das cartas é selada no servidor antes da revelação.</p>
                     <div class="rb-gacha-slots" aria-label="Composição do pacote">
-                        <span>Comum</span>
-                        <span>Comum</span>
-                        <span>Comum</span>
-                        <span>Incomum</span>
-                        <span>Incomum</span>
+                        <span data-rarity="common">Comum</span>
+                        <span data-rarity="common">Comum</span>
+                        <span data-rarity="common">Comum</span>
+                        <span data-rarity="uncommon">Incomum</span>
+                        <span data-rarity="uncommon">Incomum</span>
                     </div>
                 </div>
                 <div class="rb-shop-pack-list">
