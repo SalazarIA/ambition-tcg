@@ -946,9 +946,9 @@
                 return { label: "Pressão", copy: "Tende a correr no ataque e forçar trocas rápidas de HP.", tone: "danger" };
             }
             if (id === "opportunist") {
-                return { label: "Janela de armadilha", copy: "Tende a buscar valor de habilidade quando abrir brecha.", tone: "warning" };
+                return { label: "Reativo", copy: "Espera abrir brecha pra punir com habilidade.", tone: "warning" };
             }
-            return { label: "Linha defensiva", copy: "Tende a absorver primeiro e punir ataques fracos.", tone: "guard" };
+            return { label: "Defensivo", copy: "Absorve o primeiro golpe e pune ataques fracos.", tone: "guard" };
         },
 
         selectedRead(card) {
@@ -959,10 +959,10 @@
             const guard = Number(card.guard || 0);
             const tempo = attack * 2 + guard + Number(card.tier || 1) * 3;
             const role = RebirthMarkup.cardRole(card);
-            const label = tempo >= 25 ? "Linha de poder" : tempo >= 18 ? "Linha estável" : "Linha de setup";
+            const label = tempo >= 25 ? "Carta forte" : tempo >= 18 ? "Carta sólida" : "Carta de apoio";
             return {
                 label,
-                copy: `${role}: ${attack} ataque / ${guard} guarda. Tempo ${tempo}.`
+                copy: `${role}: ${attack} de ataque, ${guard} de guarda.`
             };
         },
 
@@ -1004,9 +1004,9 @@
             const handDelta = Number((state.player.hand || []).length) - Number(state.bot.hand_count || 0);
             const deckDelta = Number(state.player.deck_count || 0) - Number(state.bot.deck_count || 0);
             const score = hpDelta + handDelta * 2 + deckDelta;
-            if (score >= 6) return { label: "Vantagem", copy: `Você lidera por ${score} de tempo.` };
-            if (score <= -6) return { label: "Sob pressão", copy: `O bot lidera por ${Math.abs(score)} de tempo.` };
-            return { label: "Campo equilibrado", copy: "HP, mão e baralho estão próximos." };
+            if (score >= 6) return { label: "Você está à frente", copy: "HP, mão e baralho favorecem você." };
+            if (score <= -6) return { label: "Bot à frente", copy: "Bot tem mais HP, mão ou baralho." };
+            return { label: "Equilibrado", copy: "HP, mão e baralho estão parelhos." };
         }
     };
 
@@ -2374,16 +2374,25 @@
         resolution() {
             const context = RebirthStore.state && RebirthStore.state.resolution_context;
             if (!context) return;
-            RebirthDom.setText("priority-label", `Prioridade: ${context.priority_label || "Resolvida"}`);
+            // F9: "Prioridade: jogador" virou "Sua vez de jogar" / "Vez do bot".
+            const priorityRaw = String(context.priority_label || "");
+            const priorityCopy = /jogador/i.test(priorityRaw)
+                ? "Sua vez de jogar"
+                : /bot/i.test(priorityRaw)
+                    ? "Vez do bot"
+                    : priorityRaw || "Aguardando";
+            RebirthDom.setText("priority-label", priorityCopy);
             const chainEventCount = Number(context.chain_event_count || 0) || 0;
             // audit #9: o id técnico ("EVENT-000001") vazava pra UI. O jogador
             // só precisa saber que há uma cadeia ativa e quantos efeitos ela
             // empilha — não o identificador interno.
+            // F9+F15: linguagem de jogador, sem jargão de "cadeia" de motor.
+            // Só anuncia sequência quando ≥2 efeitos (1 efeito não é cadeia).
             RebirthDom.setText(
                 "chain-label",
-                context.chain_id
-                    ? (chainEventCount === 1 ? "Cadeia ativa · 1 efeito" : `Cadeia ativa · ${chainEventCount} efeitos`)
-                    : "Sem cadeia ativa"
+                context.chain_id && chainEventCount >= 2
+                    ? `${chainEventCount} efeitos em sequência`
+                    : "Sem efeitos pendentes"
             );
             const chainLabel = RebirthStore.elements["chain-label"];
             if (chainLabel) {
@@ -2396,7 +2405,7 @@
                 }
                 chainLabel.dataset.intensity = intensity;
             }
-            RebirthDom.setText("interrupt-label", context.interrupt_label || "Janela fechada");
+            RebirthDom.setText("interrupt-label", context.interrupt_label || "Sem reação ativa");
             const interrupt = RebirthStore.elements["interrupt-label"];
             if (interrupt) {
                 interrupt.dataset.interrupt = String(context.interrupt_label || "").toLowerCase().includes("trap") ? "resolved" : "closed";
