@@ -112,12 +112,19 @@ button {
     display: grid;
     place-items: center;
     padding: var(--rb-safe-top) var(--rb-safe-right) var(--rb-safe-bottom) var(--rb-safe-left);
-    /* F22-E: arena fundo épico — gradient marrom-âmbar nas pontas, vinheta
-       central morna como spotlight. Substitui o grid wireframe digital. */
+    /* F23-D: arena fundo dark fantasy — silhueta de montanhas SVG inline
+       no rodapé (longe, low opacity) + vinhetas warm laterais + gradient
+       marrom-preto. Profundidade Duel of Champions sem asset externo. */
     background:
-        radial-gradient(ellipse 100% 70% at 50% 100%, rgba(120, 60, 20, 0.18), transparent 65%),
+        /* foreground mountains (mais perto, mais escuro) */
+        url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 600' preserveAspectRatio='xMidYMax slice'%3E%3Cpolygon points='0,600 0,420 180,300 320,360 440,260 600,330 740,220 880,290 1020,200 1180,280 1320,210 1480,290 1620,230 1760,310 1920,260 1920,600' fill='%23000' opacity='0.55'/%3E%3C/svg%3E") bottom center / 100% auto no-repeat,
+        /* background mountains (mais longe, mais opaco/azulado) */
+        url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 500' preserveAspectRatio='xMidYMax slice'%3E%3Cpolygon points='0,500 0,340 240,200 420,280 600,160 780,240 940,140 1140,220 1320,150 1500,240 1700,180 1900,250 1920,230 1920,500' fill='%23291a0e' opacity='0.62'/%3E%3C/svg%3E") bottom center / 100% auto no-repeat,
+        /* warmth vignettes */
+        radial-gradient(ellipse 100% 70% at 50% 100%, rgba(120, 60, 20, 0.20), transparent 65%),
         radial-gradient(ellipse 90% 60% at 50% 0%, rgba(196, 160, 80, 0.10), transparent 60%),
-        linear-gradient(180deg, #1a0f06 0%, #08050a 65%, #050304 100%);
+        /* base sky */
+        linear-gradient(180deg, #1a0f06 0%, #08050a 55%, #050304 100%);
 }
 
 .rb-game-viewport::before,
@@ -4588,26 +4595,39 @@ button {
             repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 82px),
             linear-gradient(180deg, #0b0f15 0%, #050708 100%);
         display: grid;
+        /* F23-A: layout Duel of Champions — hero portraits ocupam colunas
+           inteiras nas laterais (esquerda=player, direita=bot). Centro tem
+           turn-bar topo + battlefield + hand embaixo. Painéis result/evo/log
+           empilham na coluna direita abaixo do hero-bot. */
         grid-template-areas:
-            "hud    hud    hud"
-            "arena  arena  result"
-            "arena  arena  evo"
-            "arena  arena  log"
-            "hand   hand   actions";
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) clamp(340px, 22vw, 420px);
-        grid-template-rows: clamp(82px, 10vh, 110px) minmax(260px, 1fr) clamp(110px, 14vh, 150px) clamp(110px, 14vh, 150px) clamp(140px, 18vh, 190px);
-        gap: 16px 24px;
+            "hero-l   turn     hero-r"
+            "hero-l   arena    result"
+            "hero-l   arena    evo"
+            "hero-l   arena    log"
+            "hero-l   hand     actions";
+        grid-template-columns: clamp(240px, 18vw, 300px) minmax(0, 1fr) clamp(320px, 22vw, 400px);
+        grid-template-rows: clamp(72px, 9vh, 96px) minmax(280px, 1fr) clamp(110px, 14vh, 150px) clamp(110px, 14vh, 150px) clamp(140px, 18vh, 190px);
+        gap: 16px 22px;
         padding: 20px clamp(20px, 2.5vw, 40px);
     }
 
-    .rb-hud,
+    /* F23-A: .rb-hud vira display:contents pra promover os 3 filhos
+       (hud-player, turn-core, hud-bot) a filhos diretos do grid do board,
+       permitindo cada um usar grid-area próprio. */
+    .rb-hud {
+        display: contents;
+    }
+
     .rb-battle-zone,
     .rb-player-hand,
     .rb-actions-row,
     .rb-result-panel,
     .rb-log,
     .rb-evolution-panel,
-    .rb-card-stage {
+    .rb-card-stage,
+    .rb-hud-player,
+    .rb-turn-core,
+    .rb-hud-bot {
         position: relative;
         left: auto;
         top: auto;
@@ -4618,8 +4638,56 @@ button {
         min-height: 0;
     }
 
-    .rb-hud {
-        grid-area: hud;
+    /* F23-A: hero portraits viram colunas inteiras laterais. */
+    .rb-hud-player {
+        grid-area: hero-l;
+        grid-row: 1 / span 5;
+        align-self: stretch;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+        padding: 22px 18px;
+        align-content: start;
+    }
+
+    .rb-hud-bot {
+        grid-area: hero-r;
+        grid-row: 1 / span 1;
+        align-self: stretch;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 16px 18px;
+        align-content: start;
+    }
+
+    /* F23-A: dentro do hero-l/r o avatar+orb fica em cima, depois copy abaixo.
+       Inverte o flow horizontal pra vertical. */
+    .rb-hud-player .rb-mark,
+    .rb-hud-bot .rb-bot-emblem {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto;
+        font-size: var(--fs-display);
+    }
+
+    .rb-hud-player .rb-hud-copy,
+    .rb-hud-bot .rb-hud-copy {
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .rb-hud-player .rb-hud-health,
+    .rb-hud-bot .rb-hud-health {
+        justify-content: center;
+    }
+
+    .rb-turn-core {
+        grid-area: turn;
+        justify-self: center;
+        align-self: center;
     }
 
     .rb-battle-zone {
@@ -9742,4 +9810,74 @@ button {
     border: 0;
     border-radius: var(--rb-cut-soft);
     background: rgba(255, 255, 255, 0.018);
+}
+
+/* === F23-C: ornamentos de canto Duel of Champions ===
+   Aplicáveis via classe .rb-doc-corners ou direto nos painéis hero.
+   Cada canto desenha uma volta de filigrana via mask + gradient,
+   reaproveitando o ::before e ::after dos painéis. Para os hero panels
+   (rb-hud-player e rb-hud-bot) usamos diretamente. */
+.rb-hud-player,
+.rb-hud-bot,
+.rb-result-panel {
+    position: relative;
+    /* F23-C: moldura DoC — gradient + borda dupla bronze. */
+    border: 1px solid rgba(196, 160, 80, 0.45);
+    background:
+        linear-gradient(180deg, rgba(46, 33, 22, 0.92), rgba(16, 10, 5, 0.92));
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.10),
+        inset 0 0 28px rgba(0, 0, 0, 0.62),
+        0 18px 36px rgba(0, 0, 0, 0.42);
+}
+
+/* F23-C: 4 cantos com pseudo-elements desenhando volta dupla de filigrana
+   (V-bracket bronze envelhecido). Substitui o cross-pattern dos mini-cards
+   por algo mais ornamentado pros painéis maiores. */
+.rb-hud-player::before,
+.rb-hud-player::after,
+.rb-hud-bot::before,
+.rb-hud-bot::after,
+.rb-result-panel::before,
+.rb-result-panel::after {
+    content: "";
+    position: absolute;
+    z-index: 8;
+    width: 22px;
+    height: 22px;
+    pointer-events: none;
+    border: 2px solid rgba(196, 160, 80, 0.78);
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.rb-hud-player::before,
+.rb-hud-bot::before,
+.rb-result-panel::before {
+    top: 4px;
+    left: 4px;
+}
+
+.rb-hud-player::after,
+.rb-hud-bot::after,
+.rb-result-panel::after {
+    top: 4px;
+    right: 4px;
+    transform: scaleX(-1);
+}
+
+/* Bottom corners via background image — usa mesma técnica do mini-card. */
+.rb-hud-player,
+.rb-hud-bot,
+.rb-result-panel {
+    background-image:
+        linear-gradient(135deg, rgba(196, 160, 80, 0.78) 0 2px, transparent 2px),
+        linear-gradient(225deg, rgba(196, 160, 80, 0.78) 0 2px, transparent 2px),
+        linear-gradient(180deg, rgba(46, 33, 22, 0.92), rgba(16, 10, 5, 0.92));
+    background-repeat: no-repeat;
+    background-position:
+        bottom 4px left 4px,
+        bottom 4px right 4px,
+        0 0;
+    background-size: 22px 22px, 22px 22px, 100% 100%;
 }
