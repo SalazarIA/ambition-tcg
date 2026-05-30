@@ -2,7 +2,7 @@ from copy import deepcopy
 import re
 
 
-REBIRTH_ART_VERSION = "v84_DOC_LAYOUT-1"
+REBIRTH_ART_VERSION = "v85_DOC_POLISH-1"
 ART_BASE_PATH = "/static/assets/rebirth/cards"
 
 
