@@ -1,17 +1,27 @@
+/* F22-B audit (Duel of Champions): Cinzel display + Crimson Pro body via
+   Google Fonts CDN. Auto-substitutes a serifa Times do fallback de Cinzel
+   (que antes era usado sem webfont) por glyph correto. */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Crimson+Pro:wght@400;500;600;700&display=swap");
+
 :root {
-    --rb-black: #030405;
-    --rb-ink: #07090c;
-    --rb-panel: rgba(14, 17, 21, 0.96);
-    --rb-panel-soft: rgba(24, 28, 33, 0.88);
-    --rb-line: rgba(214, 219, 222, 0.22);
-    --rb-line-hard: rgba(255, 255, 255, 0.34);
-    --rb-gold: #f4ad26;
-    --rb-gold-2: #ffc852;
-    --rb-cyan: #58d6ff;
-    --rb-text: #f4f3ef;
-    --rb-muted: #a9aaa8;
-    --rb-red: #ff735f;
-    --rb-green: #78f2aa;
+    /* F22 audit (Duel of Champions): paleta dark-fantasy medieval substitui
+       o cyberpunk-noir. Pretos puros viram marrons escuros; gold neon vira
+       bronze envelhecido; cyan neon vira azul-aço de magia gelo. Mantém os
+       mesmos NOMES de token (--rb-black, --rb-gold etc) para não cascatear
+       1700+ trocas — só a entrega do hex muda. */
+    --rb-black: #0c0805;
+    --rb-ink: #16100a;
+    --rb-panel: rgba(28, 20, 12, 0.96);
+    --rb-panel-soft: rgba(46, 33, 22, 0.88);
+    --rb-line: rgba(196, 160, 80, 0.30);
+    --rb-line-hard: rgba(232, 212, 164, 0.48);
+    --rb-gold: #c4a050;
+    --rb-gold-2: #e0bf70;
+    --rb-cyan: #6c95b8;
+    --rb-text: #e8d4a4;
+    --rb-muted: #9c8666;
+    --rb-red: #c43030;
+    --rb-green: #7aa758;
     --rb-board-width: 852px;
     --rb-board-height: 1846px;
     --rb-scale: 0.45;
@@ -35,9 +45,11 @@
     --fs-lg: 24px;
     --fs-xl: 36px;
     --fs-display: 56px;
-    /* F17 audit: famílias unificadas — sans pesado nos títulos, serif epic só nos VFX. */
-    --rb-font-base: "Arial Narrow", "Roboto Condensed", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --rb-font-display: Inter, "Roboto Condensed", "Arial Narrow", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    /* F22-B audit: tipografia dark-fantasy (Duel of Champions) — serif
+       decorativa nos títulos, serif clean no body. O fallback para sans
+       garante leitura mesmo antes do webfont chegar. */
+    --rb-font-base: "Crimson Pro", "Crimson Text", "Hoefler Text", Garamond, ui-serif, Georgia, serif;
+    --rb-font-display: "Cinzel", "Trajan Pro", "Crimson Pro", ui-serif, Georgia, "Times New Roman", serif;
     --rb-font-epic: "Cinzel", "Trajan Pro", ui-serif, Georgia, "Times New Roman", serif;
 }
 
@@ -57,11 +69,15 @@ html {
 body.rb-page {
     margin: 0;
     color: var(--rb-text);
+    /* F22-E: fundo dark fantasy — gradient marrom-preto + textura sutil de
+       pergaminho. Sem grid neon (era cyberpunk-noir). */
     background:
-        linear-gradient(90deg, rgba(244, 173, 38, 0.04), transparent 28%, transparent 72%, rgba(88, 214, 255, 0.04)),
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 82px),
-        linear-gradient(180deg, #07090c 0%, #020303 100%);
+        radial-gradient(ellipse 90% 80% at 50% 0%, rgba(196, 160, 80, 0.06), transparent 60%),
+        radial-gradient(circle at 12% 88%, rgba(180, 60, 40, 0.05), transparent 38%),
+        radial-gradient(circle at 88% 12%, rgba(108, 149, 184, 0.04), transparent 38%),
+        linear-gradient(180deg, #160f08 0%, #0a0604 100%);
     font-family: var(--rb-font-base);
+    font-weight: 500;
     letter-spacing: 0;
 }
 
@@ -96,10 +112,12 @@ button {
     display: grid;
     place-items: center;
     padding: var(--rb-safe-top) var(--rb-safe-right) var(--rb-safe-bottom) var(--rb-safe-left);
+    /* F22-E: arena fundo épico — gradient marrom-âmbar nas pontas, vinheta
+       central morna como spotlight. Substitui o grid wireframe digital. */
     background:
-        linear-gradient(90deg, rgba(244, 173, 38, 0.04), transparent 32%, transparent 68%, rgba(88, 214, 255, 0.035)),
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 82px),
-        linear-gradient(180deg, #05070a, #010202);
+        radial-gradient(ellipse 100% 70% at 50% 100%, rgba(120, 60, 20, 0.18), transparent 65%),
+        radial-gradient(ellipse 90% 60% at 50% 0%, rgba(196, 160, 80, 0.10), transparent 60%),
+        linear-gradient(180deg, #1a0f06 0%, #08050a 65%, #050304 100%);
 }
 
 .rb-game-viewport::before,
@@ -142,19 +160,14 @@ button {
     overflow: hidden;
     transform: translateX(calc(-50% + var(--rb-safe-offset-x))) scale(var(--rb-scale));
     transform-origin: top center;
-    /* F5: moldura de mesa — fim do vácuo preto. Spotlight central morna onde a
-       ação acontece, lados tingidos pelo dono (gold/cyan), grid mais visível
-       pra suportar leitura espacial, vinheta nas pontas pra focar o olho. */
+    /* F22-E: mesa de jogo dark fantasy. Spotlight quente morno no centro,
+       lados tingidos pelo dono (bronze/azul-aço), textura sutil de madeira
+       envelhecida via repeating-linear-gradient. Sem grid wireframe digital. */
     background:
-        /* spotlight central + vinheta dos cantos */
-        radial-gradient(ellipse 70% 50% at 50% 48%, rgba(244, 173, 38, 0.085), transparent 65%),
-        radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.62) 100%),
-        /* tintura dos lados — jogador à esquerda, bot à direita */
-        linear-gradient(90deg, rgba(244, 173, 38, 0.11), transparent 24%, transparent 76%, rgba(88, 214, 255, 0.1)),
-        /* grade vertical sutil — espacial sem virar wireframe */
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 82px),
-        /* fundo escuro com leve dégradé */
-        linear-gradient(180deg, #0b0f15 0%, #050708 100%);
+        radial-gradient(ellipse 65% 50% at 50% 50%, rgba(196, 160, 80, 0.07), transparent 70%),
+        linear-gradient(90deg, rgba(196, 160, 80, 0.08), transparent 22%, transparent 78%, rgba(108, 149, 184, 0.07)),
+        repeating-linear-gradient(176deg, rgba(255, 220, 160, 0.012) 0 2px, transparent 2px 6px),
+        linear-gradient(180deg, #1a120b 0%, #0a0604 100%);
 }
 
 .rb-game-viewport.is-screen-shaking {

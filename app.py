@@ -153,9 +153,11 @@ CONTENT_SECURITY_POLICY = "; ".join(
     [
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline'",
-        "style-src 'self' 'unsafe-inline'",
+        # F22-B: Google Fonts CSS (style) + woff2 binaries (font) liberados para
+        # carregar Cinzel + Crimson Pro do CDN público. Sem dependência paga.
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: https://images.unsplash.com",
-        "font-src 'self' data:",
+        "font-src 'self' data: https://fonts.gstatic.com",
         "connect-src 'self'",
         "manifest-src 'self'",
         "worker-src 'self'",
