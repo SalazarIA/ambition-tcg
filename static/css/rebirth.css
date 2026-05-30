@@ -799,6 +799,16 @@ button {
     top: 0;
     width: 302px;
     height: 316px;
+    /* F22-D: a carta focus grande ganha moldura dupla bronze e box-shadow
+       morno que dá presença de carta colecionável. Cantos ornamentados via
+       border-image OK para depois. */
+    border: 2px solid rgba(196, 160, 80, 0.75);
+    border-radius: 8px;
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.18),
+        inset 0 0 28px rgba(0, 0, 0, 0.62),
+        0 22px 46px rgba(0, 0, 0, 0.62),
+        0 0 36px rgba(196, 160, 80, 0.14);
 }
 
 .rb-main-card {
@@ -1385,17 +1395,68 @@ button {
     height: 206px;
     overflow: hidden;
     padding: 0;
-    border: 1px solid rgba(244, 173, 38, 0.38);
+    /* F22-D: borda dupla DoC — outer ring bronze + inner highlight light.
+       Substitui o single border antigo. O box-shadow inset cria a impressão
+       de moldura cinzelada. */
+    border: 1px solid rgba(196, 160, 80, 0.62);
     color: var(--rb-text);
-    background: #08090b;
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.42);
+    background:
+        linear-gradient(180deg, rgba(46, 33, 22, 0.92), rgba(16, 10, 5, 0.94));
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.12),
+        inset 0 0 14px rgba(0, 0, 0, 0.62),
+        0 16px 32px rgba(0, 0, 0, 0.56);
     text-align: left;
     cursor: pointer;
-    border-radius: var(--rb-cut-soft);
-    transform: perspective(700px) translateY(var(--card-lift)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    border-radius: 6px;
+    /* F22-F: perspective maior (1100px) + transition mais responsiva
+       (40ms vs 150ms) deixam o tilt sentir "vivo" no mouse-move. */
+    transform: perspective(1100px) translateY(var(--card-lift)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
     transform-style: preserve-3d;
-    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    transition: transform 80ms ease-out, border-color 150ms ease, box-shadow 150ms ease;
     will-change: transform;
+}
+
+.rb-hand .rb-mini-card:hover {
+    /* F22-F: hover sutil — leve subida 4px + glow morno dourado. O tilt 3D
+       vem do JS RebirthHandTilt sobrescrevendo --tilt-x/y. */
+    --card-lift: -4px;
+    border-color: var(--rb-gold-2);
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.22),
+        inset 0 0 14px rgba(0, 0, 0, 0.62),
+        0 22px 40px rgba(0, 0, 0, 0.66),
+        0 0 22px rgba(196, 160, 80, 0.32);
+}
+
+/* F22-D: ornamentos de canto (filigrana dourada) nos 4 cantos do mini-card —
+   pseudo-elements em vez de SVG pra evitar request extra. */
+.rb-hand .rb-mini-card::before,
+.rb-hand .rb-mini-card::after {
+    content: "";
+    position: absolute;
+    z-index: 5;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    background:
+        linear-gradient(135deg, rgba(196, 160, 80, 0.86) 0 2px, transparent 2px),
+        linear-gradient(45deg, rgba(196, 160, 80, 0.86) 0 2px, transparent 2px);
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+}
+
+.rb-hand .rb-mini-card::before {
+    top: 3px;
+    left: 3px;
+    background-position: 0 0, 0 12px;
+}
+
+.rb-hand .rb-mini-card::after {
+    top: 3px;
+    right: 3px;
+    transform: scaleX(-1);
+    background-position: 0 0, 0 12px;
 }
 
 .rb-hand .rb-mini-card.is-selected {
@@ -4965,10 +5026,13 @@ button {
     align-content: center;
     gap: 2px;
     min-height: 30px;
-    padding: 4px 8px 5px;
-    border: 0;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.22) 70%, rgba(0, 0, 0, 0));
-    box-shadow: none;
+    padding: 4px 10px 5px;
+    /* F22-D: banner DoC — fita escura com filete dourado no topo e na base,
+       ocupando toda a largura do título. */
+    border-top: 1px solid rgba(196, 160, 80, 0.42);
+    border-bottom: 1px solid rgba(196, 160, 80, 0.42);
+    background: linear-gradient(90deg, rgba(28, 20, 12, 0.92) 0%, rgba(16, 10, 5, 0.78) 50%, rgba(28, 20, 12, 0.92) 100%);
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.58);
     clip-path: none;
 }
 
@@ -4976,8 +5040,11 @@ button {
     overflow: hidden;
     max-width: 100%;
     color: #fff7de;
+    /* F22-D: nome da carta com Cinzel (display) ao invés do sans pesado. */
+    font-family: var(--rb-font-epic);
     font-size: var(--fs-2xs);
-    font-weight: 1000;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     line-height: 1.02;
     text-overflow: ellipsis;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.88);

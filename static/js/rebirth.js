@@ -3318,6 +3318,34 @@
         }
     };
 
+    // F22-F: tilt 3D nos mini-cards da mão. Hover define --tilt-x/--tilt-y
+    // em graus baseado na posição do mouse dentro do card. A regra CSS
+    // .rb-hand .rb-mini-card já consome esses vars via rotateX/rotateY.
+    const RebirthHandTilt = {
+        init() {
+            // Delegation via document para pegar cards re-renderizados também.
+            document.addEventListener("mousemove", (event) => {
+                const card = event.target && event.target.closest
+                    ? event.target.closest(".rb-hand .rb-mini-card")
+                    : null;
+                if (!card) return;
+                const rect = card.getBoundingClientRect();
+                const dx = (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+                const dy = (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+                card.style.setProperty("--tilt-y", `${(dx * 8).toFixed(2)}deg`);
+                card.style.setProperty("--tilt-x", `${(-dy * 6).toFixed(2)}deg`);
+            }, { passive: true });
+            document.addEventListener("mouseout", (event) => {
+                const card = event.target && event.target.closest
+                    ? event.target.closest(".rb-hand .rb-mini-card")
+                    : null;
+                if (!card) return;
+                card.style.removeProperty("--tilt-x");
+                card.style.removeProperty("--tilt-y");
+            }, { passive: true });
+        }
+    };
+
     function init() {
         if ("scrollRestoration" in window.history) {
             window.history.scrollRestoration = "manual";
@@ -3327,6 +3355,7 @@
         RebirthBoardScaler.init();
         RebirthAssets.preload();
         RebirthInput.bind();
+        RebirthHandTilt.init();
         RebirthFlow.startMatch();
     }
 
