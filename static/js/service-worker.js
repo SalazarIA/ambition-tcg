@@ -1,4 +1,4 @@
-const CACHE_NAME = "v81_FULLSCREEN-1";
+const CACHE_NAME = "v82_FULLSCREEN-2";
 const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL|CAMPAIGN(?:_V\d+|_ERA)?|RELEASE_POLISH|EMAIL_VERIFY|ART_FOUNDATION|ART_PERSONALITY|FULLSCREEN)(?:$|-))/i;
 
 function stableAsset(path) {

@@ -4503,6 +4503,16 @@ button {
    sobra arena larga + painéis direita (result/evo/log) + hand wide. */
 @media (min-width: 1180px) and (min-height: 680px) {
     .rb-game-board {
+        /* F21: as vinhetas radial (rgba 0,0,0,0.62 nas pontas) e linear
+           (rgba 0,0,0,0.42 nos lados) eram moldura focal quando o board
+           tinha ~1180px centralizado. Com o board agora ocupando quase
+           toda a tela, essas vinhetas vinham como máscara escura sobre o
+           conteúdo. Stack mais leve em desktop. */
+        background:
+            radial-gradient(ellipse 60% 45% at 50% 48%, rgba(244, 173, 38, 0.07), transparent 70%),
+            linear-gradient(90deg, rgba(244, 173, 38, 0.06), transparent 20%, transparent 80%, rgba(88, 214, 255, 0.055)),
+            repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 82px),
+            linear-gradient(180deg, #0b0f15 0%, #050708 100%);
         display: grid;
         grid-template-areas:
             "hud    hud    hud"
@@ -4579,6 +4589,21 @@ button {
     .rb-actions-row {
         grid-area: actions;
         align-self: stretch;
+    }
+
+    /* F21: o ::before do board adicionava escurecimento 42% nas laterais
+       (era moldura focal). Em desktop full-width vira faixa escura visível
+       no meio dos painéis. Mantém só o leve degradê vertical. */
+    .rb-game-board::before {
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.16));
+    }
+
+    /* F21: o ::after era um cross-hair visual sobre o board centrado em
+       coordenadas absolutas (96px top/bottom, 12px lateral). Em board
+       grande fica fora do enquadramento e atrapalha. */
+    .rb-game-board::after {
+        opacity: 0.18;
     }
 }
 
