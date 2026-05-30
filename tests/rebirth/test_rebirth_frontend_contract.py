@@ -75,7 +75,6 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         ".rb-hud-player",
         ".rb-hud-bot",
         ".rb-turn-core",
-        ".rb-slogans",
         ".rb-battle-zone",
         ".rb-field-card",
         ".rb-card-back",
@@ -85,7 +84,9 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         ".rb-evolution-panel",
         ".rb-mini-card",
         ".rb-actions-row",
-        ".rb-prototype-actions",
+        ".rb-panel-hero",
+        ".rb-panel-base",
+        ".rb-panel-surface",
         "--rb-board-width",
         "--rb-board-height",
         "--rb-scale",
@@ -151,9 +152,9 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v78_ART_FOUNDATION-1";' in service_worker
-    assert '"version": "v78_ART_FOUNDATION-1"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v78_ART_FOUNDATION-1"' in art_contract
+    assert 'const CACHE_NAME = "v79_ART_PERSONALITY-1";' in service_worker
+    assert '"version": "v79_ART_PERSONALITY-1"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v79_ART_PERSONALITY-1"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
     assert "RELEASE_POLISH" in service_worker
     assert "EMAIL_VERIFY" in service_worker
