@@ -152,9 +152,9 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v79_ART_PERSONALITY-1";' in service_worker
-    assert '"version": "v79_ART_PERSONALITY-1"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v79_ART_PERSONALITY-1"' in art_contract
+    assert 'const CACHE_NAME = "v80_ART_PERSONALITY-2";' in service_worker
+    assert '"version": "v80_ART_PERSONALITY-2"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v80_ART_PERSONALITY-2"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
     assert "RELEASE_POLISH" in service_worker
     assert "EMAIL_VERIFY" in service_worker

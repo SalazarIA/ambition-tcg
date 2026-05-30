@@ -803,6 +803,16 @@ button {
     will-change: transform;
 }
 
+/* F19 fix: turno 1 sem ação do bot — overlay grande "Carta do bot" sumia
+   atrás de nada, parecia modal acidental. .is-empty deixa o slot reservado
+   transparente, mantendo a estrutura sem o ruído visual. */
+.rb-bot-card.is-empty {
+    border-color: rgba(214, 219, 222, 0.12);
+    background: transparent;
+    box-shadow: none;
+    clip-path: none;
+}
+
 .rb-bot-revealed {
     width: 164px;
     height: 202px;
@@ -1390,21 +1400,10 @@ button {
     box-shadow: 0 16px 34px rgba(244, 173, 38, 0.14), inset 0 0 24px rgba(244, 173, 38, 0.08);
 }
 
-.rb-hand .rb-mini-card.is-recommended::after {
-    content: "Melhor";
-    position: absolute;
-    z-index: 3;
-    right: 8px;
-    top: 8px;
-    padding: 4px 7px;
-    color: #06110b;
-    background: var(--rb-green);
-    font-size: var(--fs-2xs);
-    font-weight: 1000;
-    line-height: 1;
-    text-transform: uppercase;
-    clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
-}
+/* F19 fix: o ::after "Melhor" verde duplicava com o badge dourado HTML
+   "MELHOR JOGADA" centralizado introduzido em audit #5. Mantemos apenas
+   o badge dourado (.rb-recommendation-badge, top:36px) que F14 validou;
+   o ::after foi removido. */
 
 .rb-mini-art {
     position: relative;

@@ -780,7 +780,7 @@
                 <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
-                    ${options && options.recommended ? '<span class="rb-recommendation-badge">BEST PLAY</span>' : ""}
+                    ${options && options.recommended ? '<span class="rb-recommendation-badge">MELHOR JOGADA</span>' : ""}
                     ${RebirthStatus.miniBadge(statuses)}
                     <span class="rb-card-image-layer rb-mini-art">
                         ${RebirthAssets.imageMarkup(card)}
@@ -2050,6 +2050,19 @@
                 return;
             }
             if (!card) {
+                // F19 fix: no turno 1, sem carta jogada e sem battlefield, o
+                // overlay grande "Carta do bot" empurrava os slots e parecia
+                // um modal acidental. Esconde até o bot agir.
+                const turn = Number(RebirthStore.state.turn || 1);
+                if (turn <= 1) {
+                    host.className = "rb-bot-card rb-card-back is-empty";
+                    host.removeAttribute("data-element");
+                    host.removeAttribute("data-art-key");
+                    host.removeAttribute("data-statuses");
+                    host.removeAttribute("style");
+                    host.innerHTML = "";
+                    return;
+                }
                 host.className = "rb-bot-card rb-card-back";
                 host.removeAttribute("data-element");
                 host.removeAttribute("data-art-key");
