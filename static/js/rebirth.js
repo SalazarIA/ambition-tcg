@@ -384,8 +384,13 @@
             const navClearance = navHeight + 8;
             const safeHeight = Math.max(1, height - safe.top - safe.bottom - navClearance);
             const desktop = width >= 1180 && height >= 680;
-            const baseWidth = desktop ? 1180 : RebirthConfig.boardWidth;
-            const baseHeight = desktop ? 760 : RebirthConfig.boardHeight;
+            // F20: o board desktop era 1180×760 fixo e ficava centralizado
+            // com ~400px de vácuo em viewports grandes. Agora cresce com o
+            // safeWidth (até 1720) — o CSS já migrou pra grid fluido.
+            const desktopBaseWidth = Math.min(1720, Math.max(1180, Math.floor(safeWidth - 24)));
+            const desktopBaseHeight = Math.min(960, Math.max(680, Math.floor(safeHeight - 12)));
+            const baseWidth = desktop ? desktopBaseWidth : RebirthConfig.boardWidth;
+            const baseHeight = desktop ? desktopBaseHeight : RebirthConfig.boardHeight;
             document.documentElement.style.setProperty("--rb-board-width", `${baseWidth}px`);
             document.documentElement.style.setProperty("--rb-board-height", `${baseHeight}px`);
             document.documentElement.style.setProperty("--rb-safe-offset-x", `${(safe.left - safe.right) / 2}px`);
