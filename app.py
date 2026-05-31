@@ -965,6 +965,9 @@ def api_rebirth_billing_checkout():
             cancel_url=f"{public_base}/rebirth/billing?status=cancel",
         )
         return json_payload(checkout_url=session.url, session_id=session.id)
+    except RebirthPersistenceError as error:
+        # require_user() levanta RebirthPersistenceError("auth_required", 401)
+        return json_from_persistence_error(error)
     except RebirthError as error:
         return json_from_rebirth_error(error)
     except Exception as exc:  # noqa: BLE001
