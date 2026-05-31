@@ -1,6 +1,6 @@
 {
   "product": "Ambitionz Rebirth",
-  "version": "v85_DOC_POLISH-1",
+  "version": "v86_LAUNCH-1",
   "ui": {
     "bot_card_back": "/static/assets/rebirth/ui/bot-card-back.png",
     "bot_emblem": "/static/assets/rebirth/ui/bot-emblem.png"

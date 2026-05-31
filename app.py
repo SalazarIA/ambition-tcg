@@ -58,7 +58,7 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v85_DOC_POLISH-1")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v86_LAUNCH-1")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -694,6 +694,49 @@ def add_security_headers(response):
 @app.get("/")
 def index():
     return render_template("index.html", page=product_shell_payload(account=current_account()))
+
+
+# === S5: SEO discovery — sitemap + robots ===
+
+@app.get("/robots.txt")
+def robots_txt():
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        "Disallow: /rebirth/lab\n"
+        "Disallow: /rebirth/balance\n"
+        "\n"
+        "Sitemap: https://ambitionzgame.com/sitemap.xml\n"
+    )
+    return body, 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
+@app.get("/sitemap.xml")
+def sitemap_xml():
+    base = (os.environ.get("PUBLIC_BASE_URL") or "https://ambitionzgame.com").rstrip("/")
+    public_paths = [
+        "/",
+        "/rebirth",
+        "/rebirth/campaign",
+        "/rebirth/collection",
+        "/rebirth/shop",
+        "/rebirth/billing",
+        "/rebirth/progression",
+        "/rebirth/ranking",
+        "/rebirth/profile",
+    ]
+    urls = "\n".join(
+        f"    <url><loc>{base}{p}</loc><changefreq>weekly</changefreq></url>"
+        for p in public_paths
+    )
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}\n"
+        "</urlset>\n"
+    )
+    return body, 200, {"Content-Type": "application/xml; charset=utf-8"}
 
 
 @app.get("/rebirth")
