@@ -10578,6 +10578,1719 @@ button {
     font-weight: 900;
 }
 
+/* === v92 FATES_REBORN: arena visual rewrite === */
+:root {
+    --rb-faction-fire: #c43030;
+    --rb-faction-water: #4a7090;
+    --rb-faction-earth: #c4a050;
+    --rb-faction-shadow: #6b3b8a;
+    --rb-fates-ivory: #ead8a4;
+    --rb-fates-ink: #06080a;
+    --rb-fates-table: #171311;
+    --rb-fates-blue: #46b7d8;
+    --rb-fates-necro: #38d88c;
+    --rb-fates-red: #af2723;
+    --rb-fates-wood: #2a1810;
+}
+
+body.rb-game-page .rb-global-nav,
+.rb-desktop-rail {
+    display: none !important;
+}
+
+@media (min-width: 981px) {
+    body.rb-game-page {
+        background: #020304;
+    }
+
+    .rb-game-viewport {
+        padding: 0 !important;
+        background:
+            radial-gradient(circle at 18% 12%, rgba(234, 216, 164, 0.14), transparent 11%),
+            url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080' preserveAspectRatio='xMidYMid slice'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop stop-color='%23081014'/%3E%3Cstop offset='.48' stop-color='%23112b34'/%3E%3Cstop offset='1' stop-color='%23060505'/%3E%3C/linearGradient%3E%3CradialGradient id='moon' cx='.27' cy='.16' r='.16'%3E%3Cstop stop-color='%23fff3ce' stop-opacity='.95'/%3E%3Cstop offset='.36' stop-color='%23d8c98f' stop-opacity='.26'/%3E%3Cstop offset='1' stop-color='%23d8c98f' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='1920' height='1080' fill='url(%23sky)'/%3E%3Crect width='1920' height='1080' fill='url(%23moon)'/%3E%3Cg opacity='.68'%3E%3Cpath d='M0 710 L160 520 L300 620 L480 430 L650 590 L850 380 L1040 560 L1240 420 L1420 600 L1600 450 L1920 650 L1920 1080 L0 1080 Z' fill='%23070b0f'/%3E%3Cpath d='M0 780 L220 610 L420 720 L620 560 L820 700 L1010 540 L1190 700 L1420 570 L1620 735 L1920 620 L1920 1080 L0 1080 Z' fill='%23111b1d'/%3E%3C/g%3E%3Cg fill='%23060809' opacity='.82'%3E%3Cpath d='M158 492 h42 v-118 h24 v118 h46 v-172 h32 v172 h40 v82 h-184z'/%3E%3Cpath d='M1398 540 h46 v-168 h30 v168 h32 v-118 h24 v118 h44 v90 h-176z'/%3E%3Cpath d='M1512 342 l22 62 h-44zM234 318 l24 60 h-48z'/%3E%3C/g%3E%3Cg fill='none' stroke='%2338d88c' stroke-width='7' stroke-linecap='round' opacity='.58'%3E%3Cpath d='M1190 190 q60 72 12 140 q-25 38 16 92'/%3E%3Cpath d='M390 220 q-58 64 -14 128 q28 38 -18 98'/%3E%3Cpath d='M1520 260 q36 44 6 94 q-20 32 12 74'/%3E%3C/g%3E%3Cg fill='%23e88b34' opacity='.72'%3E%3Ccircle cx='210' cy='860' r='4'/%3E%3Ccircle cx='1560' cy='790' r='5'/%3E%3Ccircle cx='1720' cy='930' r='3'/%3E%3Ccircle cx='480' cy='900' r='3'/%3E%3C/g%3E%3C/svg%3E") center / cover no-repeat,
+            linear-gradient(180deg, #081014, #020304 78%);
+    }
+
+    .rb-game-viewport::before {
+        opacity: 0.74;
+        background:
+            radial-gradient(circle at 11% 86%, rgba(228, 104, 42, 0.72) 0 2px, transparent 3px),
+            radial-gradient(circle at 26% 74%, rgba(246, 184, 75, 0.56) 0 1.5px, transparent 2.5px),
+            radial-gradient(circle at 64% 82%, rgba(228, 104, 42, 0.66) 0 2px, transparent 3px),
+            radial-gradient(circle at 84% 69%, rgba(246, 184, 75, 0.52) 0 1.5px, transparent 2.5px);
+        background-size: 210px 260px, 270px 310px, 330px 280px, 240px 260px;
+        animation: rb-fates-ember-rise 18s linear infinite;
+    }
+
+    .rb-game-viewport::after {
+        inset: 0;
+        opacity: 1;
+        background:
+            radial-gradient(ellipse 72% 58% at 50% 50%, transparent 42%, rgba(0, 0, 0, 0.42) 78%, rgba(0, 0, 0, 0.86) 100%),
+            linear-gradient(90deg, rgba(0, 0, 0, 0.72), transparent 22%, transparent 76%, rgba(0, 0, 0, 0.76));
+        animation: none;
+    }
+
+    .rb-game-board {
+        top: 8px !important;
+        left: 50% !important;
+        width: var(--rb-board-width) !important;
+        height: var(--rb-board-height) !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        display: block !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .rb-game-board::before {
+        inset: -24px !important;
+        z-index: 0;
+        background:
+            radial-gradient(ellipse 48% 35% at 50% 53%, rgba(196, 160, 80, 0.14), transparent 72%),
+            radial-gradient(ellipse 22% 28% at 12% 82%, rgba(196, 160, 80, 0.18), transparent 70%),
+            radial-gradient(ellipse 24% 28% at 88% 14%, rgba(56, 216, 140, 0.12), transparent 70%);
+    }
+
+    .rb-game-board::after {
+        display: none !important;
+    }
+
+    .rb-game-board :where(.rb-hud, .rb-battle-zone, .rb-card-stage, .rb-mobile-action-bar, .rb-result-panel, .rb-log, .rb-player-hand, .rb-actions-row, .rb-field-row, .rb-bot-card-zone, .rb-field-vs) {
+        inset: auto !important;
+        margin: 0 !important;
+        transform: none !important;
+    }
+
+    .rb-result-panel,
+    .rb-evolution-panel,
+    .rb-log,
+    .rb-card-stage,
+    .rb-bot-card-zone,
+    .rb-field-vs,
+    .rb-action-bar-meta,
+    .rb-actions-row small,
+    .rb-field-row > span,
+    .rb-field-slot-empty > span {
+        display: none !important;
+    }
+
+    .rb-hud {
+        position: absolute !important;
+        inset: 0 !important;
+        z-index: 30;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        pointer-events: none;
+    }
+
+    .rb-hud-side {
+        position: absolute !important;
+        display: block !important;
+        width: 340px !important;
+        height: 340px !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 12px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        pointer-events: auto;
+        overflow: visible !important;
+        animation: rb-hero-breathe 4s ease-in-out infinite;
+        transform-style: preserve-3d;
+    }
+
+    .rb-hud-player {
+        left: 26px !important;
+        top: auto !important;
+        bottom: 38px !important;
+        perspective: 1200px;
+        transform: rotateY(4deg);
+    }
+
+    .rb-hud-bot {
+        right: 26px !important;
+        top: 28px !important;
+        bottom: auto !important;
+        perspective: 1200px;
+        transform: rotateY(-4deg);
+    }
+
+    .rb-hero-portrait,
+    .rb-hero-frame,
+    .rb-hero-art {
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+    }
+
+    .rb-hero-portrait {
+        background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 30%),
+            linear-gradient(180deg, rgba(25, 18, 12, 0.98), rgba(4, 4, 5, 0.98));
+        box-shadow:
+            0 32px 62px rgba(0, 0, 0, 0.72),
+            inset 0 0 0 1px rgba(232, 212, 164, 0.32);
+        overflow: hidden;
+    }
+
+    .rb-hero-art {
+        inset: 16px;
+        border-radius: 10px;
+        background-position: center;
+        background-size: cover;
+        box-shadow:
+            inset 0 -70px 86px rgba(0, 0, 0, 0.82),
+            inset 0 0 0 1px rgba(255, 244, 203, 0.16);
+    }
+
+    .rb-hud-player .rb-hero-art {
+        background-image:
+            linear-gradient(180deg, rgba(255, 235, 176, 0.04), rgba(0, 0, 0, 0.28)),
+            url("../img/cards/baralho/27.webp");
+    }
+
+    .rb-hud-bot .rb-hero-art {
+        background-image:
+            linear-gradient(180deg, rgba(107, 59, 138, 0.08), rgba(0, 0, 0, 0.36)),
+            url("../img/cards/baralho/75.webp");
+        transform: scaleX(-1);
+    }
+
+    .rb-hero-frame {
+        pointer-events: none;
+        border: 3px solid rgba(196, 160, 80, 0.72);
+        background:
+            linear-gradient(90deg, rgba(196, 160, 80, 0.56), transparent 16%, transparent 84%, rgba(196, 160, 80, 0.56)),
+            linear-gradient(180deg, rgba(234, 216, 164, 0.28), transparent 18%, transparent 82%, rgba(234, 216, 164, 0.24));
+        box-shadow:
+            inset 0 0 0 5px rgba(0, 0, 0, 0.52),
+            inset 0 0 42px rgba(196, 160, 80, 0.24),
+            0 0 26px rgba(196, 160, 80, 0.2);
+    }
+
+    .rb-hero-frame::before,
+    .rb-hero-frame::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        width: 92px;
+        height: 28px;
+        transform: translateX(-50%);
+        background:
+            radial-gradient(circle at 50% 50%, rgba(234, 216, 164, 0.88) 0 5px, transparent 6px),
+            linear-gradient(90deg, transparent, rgba(196, 160, 80, 0.9), transparent);
+    }
+
+    .rb-hero-frame::before { top: -13px; }
+    .rb-hero-frame::after { bottom: -13px; }
+
+    .rb-hud-copy {
+        position: absolute !important;
+        inset: 0 !important;
+        display: block !important;
+        padding: 0 !important;
+        pointer-events: none;
+    }
+
+    .rb-hud-copy > span:first-child {
+        position: absolute;
+        left: 62px;
+        right: 62px;
+        bottom: -30px;
+        min-height: 40px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--rb-fates-ivory);
+        font-family: var(--rb-font-display);
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1;
+        text-align: center;
+        text-shadow:
+            0 2px 0 #000,
+            0 0 18px rgba(196, 160, 80, 0.42);
+    }
+
+    .rb-hud-bot .rb-hud-copy > span:first-child {
+        color: #ead8ff;
+        text-shadow:
+            0 2px 0 #000,
+            0 0 18px rgba(107, 59, 138, 0.62);
+    }
+
+    .rb-hud-health {
+        position: absolute !important;
+        left: 14px;
+        bottom: 14px;
+        width: 118px !important;
+        height: 118px !important;
+        display: block !important;
+        pointer-events: none;
+    }
+
+    .rb-hud-bot .rb-hud-health {
+        left: auto;
+        right: 14px;
+    }
+
+    .rb-life-orb {
+        width: 112px !important;
+        height: 112px !important;
+        border-width: 3px;
+        border-color: rgba(234, 216, 164, 0.72);
+        box-shadow:
+            inset 0 0 0 7px rgba(0, 0, 0, 0.56),
+            inset 0 18px 24px rgba(255, 255, 255, 0.08),
+            inset 0 -28px 34px rgba(0, 0, 0, 0.72),
+            0 14px 28px rgba(0, 0, 0, 0.68),
+            0 0 22px rgba(64, 182, 220, 0.22);
+    }
+
+    .rb-hud-bot .rb-life-orb {
+        box-shadow:
+            inset 0 0 0 7px rgba(0, 0, 0, 0.56),
+            inset 0 18px 24px rgba(255, 255, 255, 0.08),
+            inset 0 -28px 34px rgba(0, 0, 0, 0.72),
+            0 14px 28px rgba(0, 0, 0, 0.68),
+            0 0 22px rgba(196, 48, 48, 0.26);
+    }
+
+    .rb-life-orb b {
+        inset: 13px !important;
+    }
+
+    .rb-life-orb-readout {
+        position: absolute !important;
+        inset: 0 !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        place-items: center !important;
+        text-align: center !important;
+        z-index: 4;
+    }
+
+    .rb-life-orb-readout i,
+    .rb-life-orb-readout small {
+        display: none !important;
+    }
+
+    .rb-hud-health strong {
+        color: #fff5d6;
+        font-family: var(--rb-font-display);
+        font-size: 48px !important;
+        font-weight: 900;
+        line-height: 1;
+        text-shadow:
+            0 3px 0 #180b08,
+            0 0 18px rgba(255, 236, 180, 0.42);
+    }
+
+    .rb-hero-level {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        z-index: 7;
+        width: 72px;
+        height: 84px;
+        display: grid;
+        place-items: center;
+        color: #ffe6ad;
+        font-family: var(--rb-font-display);
+        font-size: 56px;
+        font-weight: 900;
+        line-height: 1;
+        background:
+            radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.26), transparent 34%),
+            linear-gradient(180deg, rgba(107, 59, 138, 0.82), rgba(35, 18, 46, 0.98));
+        border: 2px solid rgba(196, 160, 80, 0.78);
+        border-radius: 10px;
+        box-shadow:
+            inset 0 0 0 2px rgba(0, 0, 0, 0.52),
+            0 0 22px rgba(196, 160, 80, 0.3);
+        text-shadow: 0 3px 0 #17090a;
+    }
+
+    .rb-hud-player .rb-hero-level {
+        background:
+            radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.3), transparent 34%),
+            linear-gradient(180deg, rgba(196, 160, 80, 0.88), rgba(63, 39, 16, 0.98));
+    }
+
+    .rb-hud-bot .rb-hero-level {
+        left: 18px;
+        right: auto;
+    }
+
+    .rb-mark,
+    .rb-bot-emblem,
+    .rb-faction-emblem {
+        position: absolute !important;
+        z-index: 8;
+        right: 20px;
+        bottom: 112px;
+        width: 58px !important;
+        height: 58px !important;
+        display: grid !important;
+        place-items: center;
+        border: 2px solid rgba(196, 160, 80, 0.74);
+        border-radius: 10px !important;
+        color: #fff1c9;
+        font-family: var(--rb-font-display);
+        font-size: 24px !important;
+        font-weight: 900;
+        text-decoration: none;
+        background:
+            radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.22), transparent 34%),
+            linear-gradient(180deg, rgba(196, 160, 80, 0.26), rgba(26, 15, 8, 0.98));
+        box-shadow:
+            inset 0 0 0 2px rgba(0, 0, 0, 0.46),
+            0 10px 22px rgba(0, 0, 0, 0.48);
+    }
+
+    .rb-bot-emblem {
+        left: 20px;
+        right: auto;
+        bottom: 112px;
+        background:
+            radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.18), transparent 34%),
+            linear-gradient(180deg, rgba(107, 59, 138, 0.44), rgba(16, 7, 22, 0.98)),
+            url("../assets/rebirth/ui/bot-emblem.png") center / 80% auto no-repeat;
+    }
+
+    .rb-zone-row {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: -68px;
+        display: flex !important;
+        justify-content: center;
+        gap: 6px;
+        opacity: 1;
+    }
+
+    .rb-zone-row span {
+        min-height: 26px;
+        padding: 5px 8px;
+        border: 1px solid rgba(196, 160, 80, 0.34);
+        border-radius: 4px;
+        background: rgba(4, 5, 6, 0.78);
+        color: rgba(234, 216, 164, 0.82);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .rb-zone-row span:first-child {
+        display: none;
+    }
+
+    .rb-hand-count {
+        display: none !important;
+    }
+
+    .rb-mana-coins {
+        position: absolute;
+        z-index: 8;
+        top: 54px;
+        right: -66px;
+        width: 52px;
+        min-height: 214px;
+        padding: 10px 8px 14px;
+        display: grid;
+        align-content: end;
+        gap: 3px;
+        border: 1px solid rgba(196, 160, 80, 0.46);
+        border-radius: 8px;
+        background:
+            linear-gradient(180deg, rgba(8, 8, 8, 0.88), rgba(0, 0, 0, 0.72));
+        box-shadow:
+            inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+            0 18px 32px rgba(0, 0, 0, 0.46);
+    }
+
+    .rb-hud-bot .rb-mana-coins {
+        left: -66px;
+        right: auto;
+    }
+
+    .rb-mana-coins::before {
+        content: attr(data-available) "/" attr(data-max);
+        color: #fff2bf;
+        font-family: var(--rb-font-display);
+        font-size: 18px;
+        font-weight: 900;
+        line-height: 1;
+        text-align: center;
+        text-shadow: 0 2px 0 #000;
+    }
+
+    .rb-mana-coin {
+        width: 34px;
+        height: 13px;
+        border: 1px solid rgba(255, 226, 135, 0.84);
+        border-radius: 50%;
+        background:
+            radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.68), transparent 30%),
+            linear-gradient(180deg, #ffe59a, #c9902f 48%, #7a4315 100%);
+        box-shadow:
+            inset 0 -2px 2px rgba(0, 0, 0, 0.38),
+            0 0 12px rgba(238, 183, 71, 0.3);
+        animation: rb-coin-birth 360ms ease both;
+        animation-delay: calc(var(--coin-index, 0) * 28ms);
+    }
+
+    .rb-mana-coin.is-spent {
+        border-color: rgba(164, 164, 164, 0.4);
+        background:
+            radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.22), transparent 30%),
+            linear-gradient(180deg, #8c8a82, #55534f 52%, #292827 100%);
+        box-shadow: inset 0 -2px 2px rgba(0, 0, 0, 0.42);
+    }
+
+    .rb-turn-core {
+        position: absolute !important;
+        z-index: 42;
+        top: 20px !important;
+        left: 50% !important;
+        width: 172px !important;
+        height: 86px !important;
+        transform: translateX(-50%) !important;
+        display: grid !important;
+        place-items: center;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        pointer-events: none;
+    }
+
+    .rb-turn-core > span,
+    .rb-turn-core small,
+    .rb-phase-timeline {
+        display: none !important;
+    }
+
+    .rb-turn-core strong {
+        width: 70px;
+        height: 70px;
+        display: grid;
+        place-items: center;
+        color: #fff4d0;
+        font-family: var(--rb-font-display);
+        font-size: 34px !important;
+        font-weight: 900;
+        line-height: 1;
+        background:
+            radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.36), transparent 30%),
+            linear-gradient(180deg, #337aa2, #102f4a 70%, #071322);
+        border: 2px solid rgba(196, 160, 80, 0.82);
+        transform: rotate(45deg);
+        box-shadow:
+            inset 0 0 0 3px rgba(0, 0, 0, 0.42),
+            0 0 28px rgba(70, 183, 216, 0.36);
+    }
+
+    .rb-turn-core strong::first-letter {
+        transform: rotate(-45deg);
+    }
+
+    .rb-battle-zone {
+        position: absolute !important;
+        z-index: 12;
+        left: 330px !important;
+        top: 176px !important;
+        width: 1060px !important;
+        height: 512px !important;
+        display: block !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 18px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        perspective: 1200px;
+    }
+
+    .rb-battle-zone::before {
+        content: "";
+        position: absolute;
+        inset: 8px -18px -16px;
+        z-index: 0;
+        border-radius: 28px;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 18%, rgba(0, 0, 0, 0.42)),
+            radial-gradient(ellipse at 50% 52%, rgba(196, 160, 80, 0.14), transparent 54%),
+            repeating-linear-gradient(92deg, rgba(255, 236, 188, 0.03) 0 2px, transparent 2px 78px),
+            linear-gradient(135deg, #2b211b 0%, #15110f 42%, #0a0a0b 100%);
+        border: 2px solid rgba(196, 160, 80, 0.34);
+        box-shadow:
+            inset 0 0 0 3px rgba(0, 0, 0, 0.42),
+            inset 0 0 92px rgba(0, 0, 0, 0.62),
+            0 42px 70px rgba(0, 0, 0, 0.58);
+        transform: rotateX(6deg);
+        transform-origin: center;
+    }
+
+    .rb-battle-zone::after {
+        content: "";
+        position: absolute;
+        z-index: 3;
+        left: 54px;
+        right: 54px;
+        top: 50%;
+        height: 3px;
+        border-radius: 999px;
+        background:
+            radial-gradient(circle at 50% 50%, #fff7ca 0 5px, transparent 6px),
+            linear-gradient(90deg, transparent, rgba(196, 160, 80, 0.52) 18%, #fff1b2 50%, rgba(196, 160, 80, 0.52) 82%, transparent);
+        box-shadow:
+            0 0 18px rgba(255, 225, 128, 0.62),
+            0 0 42px rgba(196, 160, 80, 0.32);
+    }
+
+    .battlefield-layer {
+        display: block !important;
+        position: absolute !important;
+        inset: -90px !important;
+        pointer-events: none;
+        transition: transform 180ms ease-out;
+    }
+
+    .battlefield-layer-skybox {
+        z-index: -2;
+        opacity: 0.36;
+        background:
+            radial-gradient(circle at 24% 30%, rgba(56, 216, 140, 0.18), transparent 26%),
+            radial-gradient(circle at 74% 20%, rgba(107, 59, 138, 0.16), transparent 24%);
+    }
+
+    .battlefield-layer-board {
+        z-index: 1;
+        opacity: 0.52;
+        background:
+            radial-gradient(ellipse 38% 18% at 50% 52%, rgba(255, 234, 164, 0.13), transparent 72%);
+    }
+
+    .battlefield-layer-foreground {
+        z-index: 5;
+        opacity: 0.5;
+        background:
+            radial-gradient(circle at 6% 88%, rgba(228, 104, 42, 0.24), transparent 12%),
+            radial-gradient(circle at 96% 12%, rgba(56, 216, 140, 0.14), transparent 12%);
+    }
+
+    .battlefield-embers {
+        display: block !important;
+    }
+
+    .battlefield-ember {
+        background: #f0a34c !important;
+        box-shadow: 0 0 12px rgba(240, 163, 76, 0.72);
+    }
+
+    .rb-field-row {
+        position: absolute !important;
+        z-index: 4;
+        left: 50% !important;
+        width: 890px !important;
+        transform: translateX(-50%) !important;
+        display: block !important;
+    }
+
+    .rb-field-row-bot {
+        top: 44px !important;
+    }
+
+    .rb-field-row-player {
+        bottom: 38px !important;
+    }
+
+    .rb-field-slots {
+        display: grid !important;
+        grid-template-columns: repeat(3, 168px) !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 84px !important;
+        min-height: 188px !important;
+        padding: 0 !important;
+    }
+
+    .rb-field-card,
+    .rb-field-slot-empty {
+        position: relative !important;
+        width: 164px !important;
+        height: 188px !important;
+        min-width: 164px !important;
+        border-radius: 8px !important;
+        transform: none !important;
+    }
+
+    .rb-field-slot-empty {
+        border: 2px solid rgba(196, 160, 80, 0.34) !important;
+        background:
+            radial-gradient(circle at 50% 48%, rgba(196, 160, 80, 0.13), transparent 45%),
+            radial-gradient(circle at 50% 52%, rgba(0, 0, 0, 0.34), transparent 58%),
+            linear-gradient(180deg, rgba(58, 46, 34, 0.72), rgba(9, 8, 8, 0.92)) !important;
+        box-shadow:
+            inset 0 0 0 4px rgba(0, 0, 0, 0.38),
+            inset 0 0 34px rgba(196, 160, 80, 0.12),
+            0 22px 32px rgba(0, 0, 0, 0.44) !important;
+        cursor: pointer;
+    }
+
+    .rb-field-slot-empty::before {
+        content: "";
+        position: absolute;
+        inset: 25px 18px;
+        border-radius: 8px;
+        background:
+            radial-gradient(circle at 50% 50%, rgba(234, 216, 164, 0.16), transparent 34%),
+            linear-gradient(45deg, transparent 42%, rgba(196, 160, 80, 0.45) 48% 52%, transparent 58%),
+            linear-gradient(-45deg, transparent 42%, rgba(196, 160, 80, 0.28) 48% 52%, transparent 58%);
+        border: 1px solid rgba(196, 160, 80, 0.34);
+        transform: rotate(45deg) scale(0.82);
+    }
+
+    .rb-field-slot-empty.is-summon-target,
+    .rb-field-slot-empty:hover,
+    .rb-field-slot-empty:focus-visible {
+        border-color: rgba(255, 226, 134, 0.82) !important;
+        box-shadow:
+            inset 0 0 0 4px rgba(0, 0, 0, 0.38),
+            0 0 24px rgba(255, 210, 94, 0.38),
+            0 24px 34px rgba(0, 0, 0, 0.48) !important;
+    }
+
+    .rb-tcg-card.is-element-fire { --rb-card-faction: var(--rb-faction-fire); }
+    .rb-tcg-card.is-element-water { --rb-card-faction: var(--rb-faction-water); }
+    .rb-tcg-card.is-element-earth { --rb-card-faction: var(--rb-faction-earth); }
+    .rb-tcg-card.is-element-shadow { --rb-card-faction: var(--rb-faction-shadow); }
+
+    .rb-tcg-card {
+        --rb-card-faction: var(--card-accent, var(--rb-gold));
+        border: 2px solid color-mix(in srgb, var(--rarity-metal-edge, #8c7b65), var(--rb-card-faction) 26%) !important;
+        border-radius: 8px !important;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 22%, rgba(0, 0, 0, 0.72)),
+            radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--rb-card-faction), transparent 78%), transparent 62%),
+            #070707 !important;
+        box-shadow:
+            0 22px 36px rgba(0, 0, 0, 0.62),
+            0 0 18px color-mix(in srgb, var(--rb-card-faction), transparent 78%),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+            inset 0 0 18px color-mix(in srgb, var(--rb-card-faction), transparent 82%) !important;
+        overflow: hidden !important;
+    }
+
+    .rb-tcg-card.is-rarity-common {
+        --rarity-metal-edge: #8e8c84;
+    }
+
+    .rb-tcg-card.is-rarity-uncommon,
+    .rb-tcg-card.is-rarity-rare {
+        --rarity-metal-edge: #8aa6bd;
+    }
+
+    .rb-tcg-card.is-rarity-legendary {
+        --rarity-metal-edge: #ffd978;
+    }
+
+    .rb-card-frame-layer {
+        opacity: 1 !important;
+        border-radius: 8px !important;
+        background:
+            linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 16%, transparent 84%, rgba(255, 255, 255, 0.08)),
+            linear-gradient(180deg, rgba(255, 236, 180, 0.18), transparent 18%, rgba(0, 0, 0, 0.62) 100%) !important;
+    }
+
+    .rb-card-cost {
+        position: absolute !important;
+        z-index: 8;
+        left: 7px !important;
+        top: 7px !important;
+        width: 38px !important;
+        height: 38px !important;
+        display: grid !important;
+        place-items: center !important;
+        border: 2px solid rgba(255, 232, 152, 0.86) !important;
+        border-radius: 50% !important;
+        color: #fff4cc !important;
+        font-family: var(--rb-font-display);
+        font-size: 23px !important;
+        font-weight: 900 !important;
+        background:
+            radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.52), transparent 25%),
+            linear-gradient(180deg, #c59a42, #5f2e14) !important;
+        text-shadow: 0 2px 0 #1b0d07;
+        box-shadow:
+            inset 0 0 0 2px rgba(0, 0, 0, 0.38),
+            0 6px 14px rgba(0, 0, 0, 0.48);
+    }
+
+    .rb-card-image-layer {
+        position: absolute !important;
+        z-index: 2;
+        left: 8px !important;
+        right: 8px !important;
+        top: 8px !important;
+        height: 54% !important;
+        border-radius: 6px 6px 3px 3px !important;
+        border: 1px solid rgba(234, 216, 164, 0.26);
+        overflow: hidden !important;
+        background-color: #0b0c0e;
+    }
+
+    .rb-card-image-layer img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .rb-card-titlebar {
+        position: absolute !important;
+        z-index: 5;
+        left: 8px !important;
+        right: 8px !important;
+        top: 57% !important;
+        min-height: 36px !important;
+        display: grid !important;
+        align-content: center;
+        gap: 1px;
+        padding: 5px 8px !important;
+        border: 1px solid rgba(196, 160, 80, 0.38);
+        border-radius: 4px !important;
+        background:
+            linear-gradient(90deg, color-mix(in srgb, var(--rb-card-faction), #000 72%), rgba(7, 7, 8, 0.9)) !important;
+    }
+
+    .rb-card-titlebar .rb-card-nameplate {
+        display: block;
+        color: #fff0c8 !important;
+        font-family: var(--rb-font-display);
+        font-size: 12px !important;
+        font-weight: 900 !important;
+        line-height: 1.05;
+        text-transform: uppercase;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-shadow: 0 1px 0 #000;
+    }
+
+    .rb-card-titlebar span,
+    .rb-card-titlebar small {
+        color: rgba(234, 216, 164, 0.74) !important;
+        font-size: 9px !important;
+        font-weight: 800;
+        line-height: 1;
+        text-transform: uppercase;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rb-card-textbox {
+        position: absolute !important;
+        z-index: 5;
+        left: 10px !important;
+        right: 10px !important;
+        bottom: 44px !important;
+        height: 32px !important;
+        padding: 4px 6px !important;
+        border: 0 !important;
+        background: rgba(0, 0, 0, 0.42) !important;
+        color: rgba(234, 216, 164, 0.78) !important;
+    }
+
+    .rb-field-card .rb-card-textbox {
+        display: none !important;
+    }
+
+    .rb-card-textbox strong {
+        display: block;
+        font-size: 10px !important;
+        line-height: 1.1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rb-card-textbox p {
+        display: none !important;
+    }
+
+    .rb-card-statline {
+        position: absolute !important;
+        z-index: 7;
+        left: 10px !important;
+        right: 10px !important;
+        bottom: 8px !important;
+        height: 34px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        pointer-events: none;
+    }
+
+    .rb-card-stat {
+        width: 54px !important;
+        height: 30px !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        place-items: center !important;
+        border: 1px solid rgba(234, 216, 164, 0.54);
+        border-radius: 999px !important;
+        clip-path: none !important;
+    }
+
+    .rb-card-stat b {
+        color: #fff1cb;
+        font-family: var(--rb-font-display);
+        font-size: 22px !important;
+        font-weight: 900;
+        line-height: 1;
+        text-shadow: 0 2px 0 #160806;
+    }
+
+    .rb-card-stat small {
+        display: none !important;
+    }
+
+    .rb-keyword-strip {
+        z-index: 8;
+        bottom: 42px;
+        left: 10px;
+        right: 10px;
+        justify-content: center;
+    }
+
+    .rb-keyword-badge {
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.68);
+    }
+
+    .rb-field-card .rb-card-image-layer {
+        height: 62% !important;
+    }
+
+    .rb-field-card .rb-card-titlebar {
+        top: 64% !important;
+    }
+
+    .rb-field-card > .rb-guard-meter {
+        position: absolute !important;
+        left: 10px !important;
+        right: 10px !important;
+        bottom: 44px !important;
+        height: 5px !important;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.48) !important;
+        overflow: hidden;
+    }
+
+    .rb-field-card > .rb-guard-meter::before {
+        height: 100% !important;
+        background: linear-gradient(90deg, #46b7d8, #e8d4a4) !important;
+        transform: scaleX(var(--guard-scale, 1));
+        transform-origin: left center;
+    }
+
+    .rb-field-card:hover,
+    .rb-field-card:focus-visible,
+    .rb-field-card.is-selected,
+    .rb-field-card.is-targetable {
+        transform: translateY(-8px) !important;
+        box-shadow:
+            0 28px 44px rgba(0, 0, 0, 0.68),
+            0 0 26px color-mix(in srgb, var(--rb-card-faction), transparent 52%),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .rb-mobile-action-bar {
+        position: absolute !important;
+        z-index: 34;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        pointer-events: none;
+    }
+
+    .rb-player-hand {
+        position: absolute !important;
+        left: 50% !important;
+        bottom: -4px !important;
+        width: 1080px !important;
+        height: 285px !important;
+        transform: translateX(-50%) !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        pointer-events: auto;
+        overflow: visible !important;
+    }
+
+    .rb-hand {
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+        perspective: 1200px;
+        touch-action: pan-y;
+    }
+
+    .rb-hand .rb-mini-card {
+        position: absolute !important;
+        left: 50% !important;
+        bottom: 0 !important;
+        width: 154px !important;
+        height: 230px !important;
+        min-width: 154px !important;
+        margin: 0 0 0 -77px !important;
+        transform:
+            translateX(calc(var(--fan-offset, 0) * 116px))
+            translateY(var(--fan-arc, 0px))
+            rotate(var(--fan-rotate, 0deg))
+            rotateY(var(--tilt-y, 0deg))
+            rotateX(var(--tilt-x, 0deg)) !important;
+        transform-origin: 50% 96%;
+        z-index: var(--fan-z, 1);
+        transition:
+            transform 360ms cubic-bezier(0.18, 0.89, 0.32, 1.28),
+            box-shadow 180ms ease,
+            opacity 160ms ease;
+        animation: rb-card-draw-fates 420ms cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+        animation-delay: var(--draw-delay, 0ms);
+        pointer-events: auto;
+    }
+
+    .rb-hand .rb-mini-card:hover:not(:disabled):not(.is-locked),
+    .rb-hand .rb-mini-card:focus-visible:not(:disabled):not(.is-locked) {
+        transform:
+            translateX(calc(var(--fan-offset, 0) * 116px))
+            translateY(calc(var(--fan-arc, 0px) - 28px))
+            rotate(var(--fan-rotate, 0deg))
+            rotateY(6deg)
+            scale(1.18) !important;
+        z-index: 500;
+        box-shadow:
+            0 36px 58px rgba(0, 0, 0, 0.76),
+            0 0 30px rgba(255, 218, 118, 0.64),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+    }
+
+    .rb-hand .rb-mini-card.is-selected {
+        transform:
+            translateX(0)
+            translateY(-132px)
+            rotate(0deg)
+            rotateY(6deg)
+            scale(1.2) !important;
+        z-index: 700;
+        box-shadow:
+            0 42px 68px rgba(0, 0, 0, 0.78),
+            0 0 42px rgba(255, 218, 118, 0.78),
+            0 0 80px color-mix(in srgb, var(--rb-card-faction), transparent 56%),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+    }
+
+    #player-hand:has(.rb-mini-card:hover:not(:disabled):not(.is-locked)) .rb-mini-card:not(:hover),
+    #player-hand:has(.rb-mini-card:focus-visible:not(:disabled):not(.is-locked)) .rb-mini-card:not(:focus-visible) {
+        opacity: 0.74;
+    }
+
+    .rb-hand .rb-mini-card.is-locked {
+        cursor: not-allowed;
+        opacity: 0.58;
+    }
+
+    .rb-actions-row {
+        display: contents !important;
+        pointer-events: none;
+    }
+
+    .rb-actions-row > div {
+        position: absolute !important;
+        z-index: 44;
+        display: block !important;
+        width: auto !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        pointer-events: auto;
+    }
+
+    .rb-actions-row > div:first-child {
+        left: calc(50% + 450px) !important;
+        bottom: 178px !important;
+        transform: translateX(-50%) !important;
+    }
+
+    .rb-actions-row > div:nth-child(2) {
+        left: 50% !important;
+        top: 104px !important;
+        transform: translateX(-50%) !important;
+    }
+
+    .rb-actions-row .rb-cta,
+    .rb-actions-row .rb-secondary {
+        position: relative !important;
+        min-width: 196px !important;
+        min-height: 56px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        border: 2px solid rgba(234, 216, 164, 0.58) !important;
+        border-radius: 8px !important;
+        color: #fff4d0 !important;
+        font-family: var(--rb-font-display);
+        font-size: 17px !important;
+        font-weight: 900 !important;
+        letter-spacing: 0 !important;
+        text-transform: uppercase;
+        text-shadow: 0 2px 0 #000;
+        box-shadow:
+            inset 0 0 0 2px rgba(0, 0, 0, 0.36),
+            inset 0 16px 26px rgba(255, 255, 255, 0.08),
+            0 18px 30px rgba(0, 0, 0, 0.48),
+            0 0 24px rgba(196, 160, 80, 0.24) !important;
+    }
+
+    .rb-actions-row .rb-cta::before,
+    .rb-actions-row .rb-cta::after,
+    .rb-actions-row .rb-secondary::before,
+    .rb-actions-row .rb-secondary::after {
+        content: none !important;
+        display: none !important;
+    }
+
+    #next-turn-button {
+        min-width: 250px !important;
+        min-height: 66px !important;
+        background:
+            linear-gradient(180deg, #a62922, #5c100d 74%, #2d0806) !important;
+    }
+
+    #play-button {
+        background:
+            linear-gradient(180deg, #235d76, #12334c 74%, #071520) !important;
+    }
+
+    .rb-actions-row .rb-cta i,
+    .rb-actions-row .rb-secondary i {
+        position: static !important;
+        display: inline-block !important;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        margin: 0 !important;
+        border: 1px solid rgba(255, 244, 208, 0.68) !important;
+        border-radius: 50% !important;
+        background: rgba(255, 244, 208, 0.16) !important;
+        box-shadow: none !important;
+    }
+
+    .rb-loading {
+        z-index: 80;
+    }
+}
+
+@keyframes rb-hero-breathe {
+    0%, 100% { transform: scale(0.99) rotateY(var(--hero-look, 0deg)); }
+    50% { transform: scale(1.01) rotateY(var(--hero-look, 0deg)); }
+}
+
+.rb-hud-player { --hero-look: 4deg; }
+.rb-hud-bot { --hero-look: -4deg; }
+
+@keyframes rb-coin-birth {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.72);
+        box-shadow: 0 0 0 rgba(238, 183, 71, 0);
+    }
+    55% {
+        opacity: 1;
+        transform: translateY(-2px) scale(1.08);
+        box-shadow: 0 0 22px rgba(238, 183, 71, 0.58);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes rb-card-draw-fates {
+    0% {
+        opacity: 0;
+        transform:
+            translateX(calc(var(--fan-offset, 0) * 116px))
+            translateY(90px)
+            rotate(calc(var(--fan-rotate, 0deg) - 8deg))
+            scale(0.86);
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes rb-fates-ember-rise {
+    0% { transform: translate3d(0, 16px, 0); }
+    100% { transform: translate3d(0, -36px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rb-hud-side,
+    .rb-mana-coin,
+    .rb-hand .rb-mini-card,
+    .rb-game-viewport::before {
+        animation: none !important;
+    }
+}
+
+/* v92 visual correction: closer to the Fates reference composition */
+@media (min-width: 981px) {
+    .rb-game-viewport {
+        border: 0 !important;
+        box-shadow: none !important;
+        background:
+            linear-gradient(180deg, rgba(1, 5, 8, 0.02), rgba(1, 3, 5, 0.16) 72%, rgba(1, 1, 2, 0.42)),
+            url("../img/arena_bg/fates_reborn_landscape.jpg") center top / cover no-repeat,
+            #05090d !important;
+    }
+
+    .rb-game-viewport::before {
+        opacity: 0.88;
+        background:
+            radial-gradient(circle at 8% 86%, rgba(255, 116, 36, 0.78) 0 2px, transparent 3px),
+            radial-gradient(circle at 28% 78%, rgba(255, 196, 76, 0.58) 0 1.5px, transparent 2.5px),
+            radial-gradient(circle at 77% 72%, rgba(255, 116, 36, 0.72) 0 2px, transparent 3px),
+            radial-gradient(circle at 94% 88%, rgba(255, 196, 76, 0.64) 0 2px, transparent 3px);
+        background-size: 180px 250px, 240px 310px, 300px 280px, 220px 240px;
+    }
+
+    .rb-game-viewport::after {
+        background:
+            radial-gradient(ellipse 76% 64% at 50% 51%, transparent 48%, rgba(0, 0, 0, 0.16) 82%, rgba(0, 0, 0, 0.48) 100%),
+            linear-gradient(90deg, rgba(0, 0, 0, 0.22), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.3)) !important;
+    }
+
+    .rb-game-board::before {
+        inset: 0 !important;
+        background:
+            radial-gradient(ellipse 28% 18% at 18% 79%, rgba(196, 160, 80, 0.32), transparent 72%),
+            radial-gradient(ellipse 26% 20% at 88% 22%, rgba(107, 59, 138, 0.28), transparent 70%),
+            radial-gradient(ellipse 52% 36% at 50% 54%, rgba(255, 220, 132, 0.14), transparent 68%);
+    }
+
+    .rb-turn-core {
+        top: 0 !important;
+        width: 310px !important;
+        height: 78px !important;
+    }
+
+    .rb-turn-core::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 15px;
+        width: 330px;
+        height: 34px;
+        transform: translateX(-50%);
+        background:
+            linear-gradient(90deg, transparent, rgba(196, 160, 80, 0.62) 10%, rgba(14, 13, 14, 0.9) 50%, rgba(196, 160, 80, 0.62) 90%, transparent),
+            radial-gradient(circle at 18% 50%, #25698f 0 6px, #07090b 7px 12px, transparent 13px),
+            radial-gradient(circle at 30% 50%, #17120d 0 6px, #07090b 7px 12px, transparent 13px),
+            radial-gradient(circle at 70% 50%, #17120d 0 6px, #07090b 7px 12px, transparent 13px),
+            radial-gradient(circle at 82% 50%, #17120d 0 6px, #07090b 7px 12px, transparent 13px);
+        border-radius: 0 0 18px 18px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+    }
+
+    .rb-turn-core strong {
+        width: 64px !important;
+        height: 64px !important;
+        z-index: 2;
+        font-size: 33px !important;
+        background:
+            radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.45), transparent 31%),
+            linear-gradient(180deg, #2c91c1, #0e3d66 68%, #071528) !important;
+        border-color: rgba(255, 221, 122, 0.86) !important;
+        box-shadow:
+            inset 0 0 0 4px rgba(0, 0, 0, 0.42),
+            0 0 26px rgba(70, 183, 216, 0.55),
+            0 12px 24px rgba(0, 0, 0, 0.55) !important;
+    }
+
+    .rb-actions-row > div:nth-child(2) {
+        top: 78px !important;
+    }
+
+    #next-turn-button {
+        min-width: 320px !important;
+        min-height: 72px !important;
+        font-size: 25px !important;
+        background:
+            linear-gradient(180deg, #cf3b2f 0%, #8d1f19 58%, #3b0b08 100%) !important;
+        border-color: rgba(255, 218, 124, 0.72) !important;
+        box-shadow:
+            inset 0 0 0 3px rgba(0, 0, 0, 0.42),
+            inset 0 17px 28px rgba(255, 255, 255, 0.1),
+            0 18px 34px rgba(0, 0, 0, 0.58),
+            0 0 26px rgba(196, 80, 48, 0.36) !important;
+    }
+
+    .rb-hud-player {
+        left: -10px !important;
+        bottom: 78px !important;
+        width: 430px !important;
+        height: 548px !important;
+    }
+
+    .rb-hud-bot {
+        right: 2px !important;
+        top: 34px !important;
+        width: 430px !important;
+        height: 430px !important;
+    }
+
+    .rb-hero-portrait {
+        border-radius: 28px 28px 12px 12px;
+        background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 28%),
+            linear-gradient(180deg, rgba(52, 37, 18, 0.96), rgba(6, 5, 5, 0.98)) !important;
+        box-shadow:
+            0 34px 70px rgba(0, 0, 0, 0.74),
+            0 0 0 2px rgba(64, 39, 15, 0.98),
+            0 0 0 5px rgba(196, 160, 80, 0.58),
+            inset 0 0 0 7px rgba(0, 0, 0, 0.48),
+            inset 0 0 50px rgba(255, 222, 136, 0.16) !important;
+    }
+
+    .rb-hero-portrait::before,
+    .rb-hero-portrait::after {
+        content: "";
+        position: absolute;
+        z-index: 4;
+        top: 34px;
+        bottom: 28px;
+        width: 42px;
+        background:
+            linear-gradient(180deg, transparent, rgba(255, 221, 130, 0.78) 18%, rgba(74, 48, 18, 0.92) 50%, rgba(255, 221, 130, 0.72) 82%, transparent),
+            radial-gradient(circle at 50% 16%, rgba(255, 247, 206, 0.96) 0 5px, transparent 6px),
+            radial-gradient(circle at 50% 84%, rgba(255, 247, 206, 0.9) 0 5px, transparent 6px);
+        border-radius: 999px;
+        opacity: 0.95;
+    }
+
+    .rb-hero-portrait::before {
+        left: -10px;
+        transform: rotate(-5deg);
+    }
+
+    .rb-hero-portrait::after {
+        right: -10px;
+        transform: rotate(5deg);
+    }
+
+    .rb-hero-art {
+        inset: 20px 24px 28px !important;
+        border-radius: 20px 20px 8px 8px !important;
+        background-size: cover !important;
+        box-shadow:
+            inset 0 -98px 96px rgba(0, 0, 0, 0.76),
+            inset 0 0 0 1px rgba(255, 244, 203, 0.2) !important;
+    }
+
+    .rb-hud-player .rb-hero-art {
+        background-image:
+            linear-gradient(180deg, rgba(255, 236, 172, 0.03), rgba(0, 0, 0, 0.22)),
+            url("../img/heroes/sky_haven_knight.jpg") !important;
+        background-position: 52% 30% !important;
+    }
+
+    .rb-hud-bot .rb-hero-art {
+        inset: 18px 24px 28px !important;
+        background-image:
+            linear-gradient(180deg, rgba(107, 59, 138, 0.03), rgba(0, 0, 0, 0.34)),
+            url("../img/heroes/bot_necropolis_warlord.jpg") !important;
+        background-position: 51% 28% !important;
+        transform: none !important;
+    }
+
+    .rb-hero-frame {
+        border: 4px solid rgba(226, 180, 88, 0.78) !important;
+        border-radius: 30px 30px 14px 14px !important;
+        background:
+            radial-gradient(circle at 50% -3%, rgba(255, 241, 176, 0.72) 0 8px, transparent 9px),
+            radial-gradient(circle at 50% 103%, rgba(255, 241, 176, 0.65) 0 8px, transparent 9px),
+            linear-gradient(90deg, rgba(255, 230, 150, 0.42), transparent 14%, transparent 86%, rgba(255, 230, 150, 0.42)),
+            linear-gradient(180deg, rgba(255, 245, 205, 0.22), transparent 18%, transparent 80%, rgba(255, 210, 120, 0.26)) !important;
+        box-shadow:
+            inset 0 0 0 7px rgba(0, 0, 0, 0.52),
+            inset 0 0 42px rgba(255, 214, 112, 0.22),
+            0 0 34px rgba(196, 160, 80, 0.28) !important;
+    }
+
+    .rb-hud-copy > span:first-child {
+        left: 120px;
+        right: 118px;
+        bottom: -2px;
+        min-height: 34px;
+        padding: 7px 16px;
+        border: 1px solid rgba(226, 180, 88, 0.66);
+        border-radius: 4px;
+        background: linear-gradient(180deg, rgba(50, 34, 18, 0.9), rgba(8, 7, 7, 0.96));
+        font-size: 20px !important;
+    }
+
+    .rb-hud-bot .rb-hud-copy > span:first-child {
+        left: 76px;
+        right: 76px;
+        bottom: -28px;
+        color: #ead8ff;
+        font-size: 18px !important;
+    }
+
+    .rb-hud-health {
+        left: 20px !important;
+        bottom: 34px !important;
+        width: 126px !important;
+        height: 126px !important;
+    }
+
+    .rb-hud-bot .rb-hud-health {
+        left: auto !important;
+        right: 22px !important;
+        bottom: 68px !important;
+    }
+
+    .rb-life-orb {
+        width: 122px !important;
+        height: 122px !important;
+        border-color: rgba(255, 230, 146, 0.92) !important;
+        background:
+            radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.78), transparent 20%),
+            linear-gradient(180deg, rgba(61, 186, 231, 0.95), rgba(8, 68, 114, 0.96) 52%, rgba(3, 28, 48, 0.98)) !important;
+        box-shadow:
+            inset 0 0 0 8px rgba(0, 0, 0, 0.54),
+            inset 0 -32px 38px rgba(0, 0, 0, 0.58),
+            0 16px 30px rgba(0, 0, 0, 0.66),
+            0 0 28px rgba(52, 178, 230, 0.4) !important;
+    }
+
+    .rb-hud-bot .rb-life-orb {
+        background:
+            radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.64), transparent 20%),
+            linear-gradient(180deg, rgba(235, 92, 67, 0.96), rgba(105, 13, 18, 0.98) 58%, rgba(28, 4, 9, 0.98)) !important;
+        box-shadow:
+            inset 0 0 0 8px rgba(0, 0, 0, 0.54),
+            inset 0 -32px 38px rgba(0, 0, 0, 0.58),
+            0 16px 30px rgba(0, 0, 0, 0.66),
+            0 0 28px rgba(235, 74, 60, 0.34) !important;
+    }
+
+    .rb-hud-health strong {
+        font-size: 52px !important;
+    }
+
+    .rb-hero-level {
+        right: 28px !important;
+        bottom: 40px !important;
+        width: 82px !important;
+        height: 92px !important;
+        font-size: 60px !important;
+        background:
+            radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.28), transparent 34%),
+            linear-gradient(180deg, rgba(196, 160, 80, 0.94), rgba(34, 21, 10, 0.98)) !important;
+        box-shadow:
+            inset 0 0 0 3px rgba(0, 0, 0, 0.52),
+            0 0 24px rgba(255, 219, 126, 0.36) !important;
+    }
+
+    .rb-hud-bot .rb-hero-level {
+        left: 42px !important;
+        right: auto !important;
+        bottom: 18px !important;
+        background:
+            radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.22), transparent 34%),
+            linear-gradient(180deg, rgba(107, 59, 138, 0.96), rgba(27, 9, 34, 0.98)) !important;
+    }
+
+    .rb-mark,
+    .rb-bot-emblem,
+    .rb-faction-emblem {
+        width: 64px !important;
+        height: 64px !important;
+        right: 38px !important;
+        bottom: 146px !important;
+        border-radius: 8px !important;
+    }
+
+    .rb-bot-emblem {
+        left: auto !important;
+        right: 40px !important;
+        bottom: 0 !important;
+        background:
+            radial-gradient(circle at 50% 38%, rgba(220, 102, 255, 0.62), transparent 34%),
+            linear-gradient(180deg, rgba(107, 59, 138, 0.86), rgba(16, 7, 22, 0.98)) !important;
+    }
+
+    .rb-zone-row,
+    .rb-zone-row span,
+    .rb-hand-count {
+        display: none !important;
+    }
+
+    .rb-mana-coins {
+        top: 130px !important;
+        right: -54px !important;
+        width: 58px !important;
+        min-height: 238px !important;
+        gap: 7px !important;
+        border-radius: 10px !important;
+        background:
+            linear-gradient(180deg, rgba(9, 12, 14, 0.96), rgba(1, 2, 3, 0.88)) !important;
+        border-color: rgba(226, 180, 88, 0.62) !important;
+    }
+
+    .rb-hud-bot .rb-mana-coins {
+        top: 28px !important;
+        left: -72px !important;
+        right: auto !important;
+    }
+
+    .rb-mana-coins::before {
+        font-size: 20px !important;
+    }
+
+    .rb-mana-coin {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        border-color: rgba(255, 232, 140, 0.92) !important;
+        background:
+            radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.72), transparent 22%),
+            radial-gradient(circle at 50% 50%, #ffe79d 0 22%, #d9a342 42%, #6d3b13 72%, #231108 100%) !important;
+        box-shadow:
+            inset 0 -3px 3px rgba(0, 0, 0, 0.38),
+            0 0 13px rgba(238, 183, 71, 0.38) !important;
+    }
+
+    .rb-mana-coin.is-spent {
+        background:
+            radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.18), transparent 22%),
+            radial-gradient(circle at 50% 50%, #514f4a 0 28%, #282725 70%, #11100f 100%) !important;
+        border-color: rgba(130, 125, 116, 0.58) !important;
+    }
+
+    .rb-battle-zone {
+        left: 392px !important;
+        top: 176px !important;
+        width: 1114px !important;
+        height: 548px !important;
+    }
+
+    .rb-battle-zone::before {
+        inset: 22px 10px 10px !important;
+        border-radius: 16px !important;
+        clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(0, 0, 0, 0.05) 34%, rgba(0, 0, 0, 0.28)),
+            radial-gradient(ellipse at 50% 48%, rgba(255, 221, 130, 0.16), transparent 50%),
+            repeating-linear-gradient(0deg, rgba(255, 244, 203, 0.045) 0 1px, transparent 1px 82px),
+            repeating-linear-gradient(90deg, rgba(255, 244, 203, 0.035) 0 1px, transparent 1px 96px),
+            linear-gradient(135deg, #5b4c3e 0%, #302720 48%, #171514 100%) !important;
+        border: 3px solid rgba(86, 61, 34, 0.92) !important;
+        box-shadow:
+            inset 0 0 0 4px rgba(0, 0, 0, 0.44),
+            inset 0 0 110px rgba(0, 0, 0, 0.55),
+            0 46px 80px rgba(0, 0, 0, 0.64) !important;
+        transform: rotateX(5deg) !important;
+    }
+
+    .rb-battle-zone::after {
+        left: 96px !important;
+        right: 96px !important;
+        height: 4px !important;
+        background:
+            radial-gradient(circle at 50% 50%, #fff9d8 0 8px, rgba(255, 219, 108, 0.9) 9px 11px, transparent 12px),
+            linear-gradient(90deg, transparent, rgba(255, 193, 70, 0.68) 9%, #fff0a7 50%, rgba(255, 193, 70, 0.68) 91%, transparent) !important;
+        box-shadow:
+            0 0 18px rgba(255, 225, 128, 0.86),
+            0 0 44px rgba(196, 160, 80, 0.44) !important;
+    }
+
+    .rb-field-row {
+        width: 930px !important;
+    }
+
+    .rb-field-row-bot {
+        top: 72px !important;
+    }
+
+    .rb-field-row-player {
+        bottom: 74px !important;
+    }
+
+    .rb-field-slots {
+        grid-template-columns: repeat(3, 218px) !important;
+        gap: 72px !important;
+        min-height: 156px !important;
+    }
+
+    .rb-field-slot-empty {
+        width: 218px !important;
+        height: 136px !important;
+        min-width: 218px !important;
+        border-radius: 12px !important;
+        border: 2px solid rgba(185, 148, 91, 0.56) !important;
+        background:
+            radial-gradient(circle at 50% 48%, rgba(255, 230, 152, 0.14), transparent 34%),
+            linear-gradient(180deg, rgba(71, 60, 48, 0.74), rgba(21, 18, 16, 0.98)),
+            repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 40px) !important;
+        box-shadow:
+            inset 0 0 0 5px rgba(0, 0, 0, 0.42),
+            inset 0 0 28px rgba(196, 160, 80, 0.14),
+            0 24px 32px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .rb-field-slot-empty::before {
+        left: 50% !important;
+        top: 50% !important;
+        width: 50px !important;
+        height: 50px !important;
+        inset: auto !important;
+        border-color: rgba(216, 177, 100, 0.52) !important;
+        border-radius: 8px !important;
+        background:
+            radial-gradient(circle at 50% 50%, rgba(255, 237, 176, 0.36), transparent 28%),
+            linear-gradient(180deg, rgba(216, 177, 100, 0.2), rgba(0, 0, 0, 0.18)) !important;
+        transform: translate(-50%, -50%) rotate(45deg) !important;
+    }
+
+    .rb-field-slot-empty::after {
+        content: "";
+        position: absolute;
+        inset: 10px 18px;
+        border: 1px solid rgba(216, 177, 100, 0.34);
+        border-radius: 10px;
+        box-shadow:
+            inset 0 0 18px rgba(0, 0, 0, 0.34),
+            0 0 14px rgba(216, 177, 100, 0.14);
+    }
+
+    .rb-field-card {
+        width: 154px !important;
+        height: 222px !important;
+        min-width: 154px !important;
+        justify-self: center;
+    }
+
+    .rb-player-hand {
+        bottom: -42px !important;
+        width: 1120px !important;
+        height: 360px !important;
+    }
+
+    .rb-hand .rb-mini-card {
+        width: 176px !important;
+        height: 264px !important;
+        min-width: 176px !important;
+        margin-left: -88px !important;
+        transform:
+            translateX(calc(var(--fan-offset, 0) * 136px))
+            translateY(var(--fan-arc, 0px))
+            rotate(var(--fan-rotate, 0deg))
+            rotateY(var(--tilt-y, 0deg))
+            rotateX(var(--tilt-x, 0deg)) !important;
+    }
+
+    .rb-hand .rb-mini-card:hover:not(:disabled):not(.is-locked),
+    .rb-hand .rb-mini-card:focus-visible:not(:disabled):not(.is-locked) {
+        transform:
+            translateX(calc(var(--fan-offset, 0) * 136px))
+            translateY(calc(var(--fan-arc, 0px) - 38px))
+            rotate(var(--fan-rotate, 0deg))
+            rotateY(6deg)
+            scale(1.14) !important;
+    }
+
+    .rb-hand .rb-mini-card.is-selected {
+        transform:
+            translateX(calc(var(--fan-offset, 0) * 136px))
+            translateY(calc(var(--fan-arc, 0px) - 34px))
+            rotate(var(--fan-rotate, 0deg))
+            rotateY(5deg)
+            scale(1.1) !important;
+        box-shadow:
+            0 36px 56px rgba(0, 0, 0, 0.78),
+            0 0 34px rgba(255, 218, 118, 0.76),
+            0 0 70px color-mix(in srgb, var(--rb-card-faction), transparent 58%),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+    }
+
+    .rb-hand .rb-mini-card.is-recommended:not(.is-selected) {
+        transform:
+            translateX(calc(var(--fan-offset, 0) * 136px))
+            translateY(calc(var(--fan-arc, 0px) - 24px))
+            rotate(var(--fan-rotate, 0deg))
+            rotateY(4deg)
+            scale(1.06) !important;
+        z-index: 420;
+        box-shadow:
+            0 30px 48px rgba(0, 0, 0, 0.72),
+            0 0 28px rgba(255, 218, 118, 0.54),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+    }
+
+    .rb-card-image-layer {
+        height: 58% !important;
+    }
+
+    .rb-card-titlebar {
+        top: 60% !important;
+    }
+
+    .rb-card-textbox {
+        display: none !important;
+    }
+
+    .rb-card-statline {
+        bottom: 10px !important;
+    }
+
+    .rb-keyword-strip {
+        bottom: 48px !important;
+    }
+
+    .rb-actions-row > div:first-child {
+        left: calc(50% + 520px) !important;
+        bottom: 108px !important;
+    }
+
+    #play-button {
+        min-width: 170px !important;
+        min-height: 56px !important;
+        font-size: 16px !important;
+        opacity: 0.92;
+    }
+}
+
 .rb-deck-line-remove {
     width: 22px;
     height: 22px;

@@ -22,18 +22,24 @@ def test_rebirth_template_matches_premium_clash_contract():
         'class="rb-game-viewport"',
         'id="rebirth-board"',
         'class="rb-hud"',
+        'class="rb-hero-portrait rb-hero-player"',
+        'id="player-hero-name"',
         'id="player-hp"',
         'id="player-hp-fill"',
         'id="player-energy"',
         'id="player-max-energy"',
+        'id="player-mana-coins"',
         'id="player-deck-count"',
         'id="player-discard-count"',
         'id="turn-number"',
         'id="phase-label"',
+        'class="rb-hero-portrait rb-hero-bot"',
+        'id="bot-hero-name"',
         'id="bot-hp"',
         'id="bot-hp-fill"',
         'id="bot-energy"',
         'id="bot-max-energy"',
+        'id="bot-mana-coins"',
         'id="bot-deck-count"',
         'id="bot-discard-count"',
         'id="bot-card"',
@@ -57,8 +63,6 @@ def test_rebirth_template_matches_premium_clash_contract():
         "Invocar",
         "Encerrar turno",
         "Carregando",
-        "Zona do Bot",
-        "Sua Zona",
         "Nova partida",
         "REBIRTH_ASSETS",
     ]:
@@ -101,6 +105,13 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         'data-bot-profile="aggressive"',
         "--rb-gold",
         "--rb-cyan",
+        "--rb-faction-fire",
+        "--rb-faction-water",
+        "--rb-faction-earth",
+        "--rb-faction-shadow",
+        "v92 FATES_REBORN",
+        ".rb-hero-portrait",
+        ".rb-mana-coin",
         "object-fit: contain",
         "background-size: contain",
         ".rb-card-image-layer img",
@@ -152,9 +163,9 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v91_ARENA_ZEN-1";' in service_worker
-    assert '"version": "v91_ARENA_ZEN-1"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v91_ARENA_ZEN-1"' in art_contract
+    assert 'const CACHE_NAME = "v92_FATES_REBORN-1";' in service_worker
+    assert '"version": "v92_FATES_REBORN-1"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v92_FATES_REBORN-1"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
     assert "RELEASE_POLISH" in service_worker
     assert "EMAIL_VERIFY" in service_worker

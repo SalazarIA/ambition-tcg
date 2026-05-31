@@ -34,9 +34,9 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
         "Duplicata encontrada",
         "Evoluir",
         "Nova partida",
-        "Zona do Bot",
-        "Sua Zona",
         "Combine duplicatas para evoluir",
+        "rb-hero-portrait",
+        "rb-mana-coins",
     ):
         assert text in body
 
@@ -53,6 +53,10 @@ def test_rebirth_visual_contract_text_assets_and_ids(client):
         "evolve-button",
         "player-hand",
         "hand-count",
+        "player-hero-name",
+        "player-mana-coins",
+        "bot-hero-name",
+        "bot-mana-coins",
         "play-button",
         "next-turn-button",
         "result-panel",

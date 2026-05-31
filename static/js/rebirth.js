@@ -181,14 +181,18 @@
                 "rebirth-error",
                 "player-hp",
                 "player-hp-fill",
+                "player-hero-name",
                 "player-energy",
                 "player-max-energy",
+                "player-mana-coins",
                 "player-deck-count",
                 "player-discard-count",
                 "bot-hp",
                 "bot-hp-fill",
+                "bot-hero-name",
                 "bot-energy",
                 "bot-max-energy",
+                "bot-mana-coins",
                 "bot-deck-count",
                 "bot-discard-count",
                 "turn-number",
@@ -816,8 +820,9 @@
             const statuses = options && options.statuses ? options.statuses : null;
             const statusClass = RebirthStatus.className(statuses);
             const ability = this.abilitySummary(card);
+            const inlineStyle = `${RebirthAssets.cssVars(card)};${options && options.style ? options.style : ""}`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
+                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${inlineStyle}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${options && options.recommended ? '<span class="rb-recommendation-badge">MELHOR JOGADA</span>' : ""}
@@ -1926,8 +1931,13 @@
             RebirthDom.setText("bot-discard-count", `Descarte ${state.bot.discard_count || 0}`);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
             const bossName = state.campaign && state.campaign.presentation && state.campaign.presentation.name;
-            RebirthDom.setText("bot-profile-label", bossName || (state.bot_profile && state.bot_profile.name) || "Perfil do bot");
+            const botName = bossName || (state.bot_profile && state.bot_profile.name) || "Bot";
+            RebirthDom.setText("bot-profile-label", botName);
+            RebirthDom.setText("bot-hero-name", botName);
+            RebirthDom.setText("player-hero-name", (RebirthConfig.player.account && RebirthConfig.player.account.name) || "Sky");
             this.hpBars();
+            this.manaCoins("player", state.player.energy, state.player.max_energy);
+            this.manaCoins("bot", state.bot.energy, state.bot.max_energy);
             this.battlefield();
             this.focusCard();
             this.botCard();
@@ -1951,6 +1961,19 @@
             const botScale = Math.max(0, Math.min(1, Number(state.bot.hp || 0) / botMax));
             this.lifeOrb("player", Number(state.player.hp || 0), playerMax, playerScale);
             this.lifeOrb("bot", Number(state.bot.hp || 0), botMax, botScale);
+        },
+
+        manaCoins(sideName, energy, maxEnergy) {
+            const host = RebirthStore.elements[`${sideName}-mana-coins`];
+            if (!host) return;
+            const total = Math.max(0, Math.min(10, Number(maxEnergy || energy || 0)));
+            const available = Math.max(0, Math.min(total, Number(energy || 0)));
+            host.dataset.available = String(available);
+            host.dataset.max = String(total);
+            host.innerHTML = Array.from({ length: total }).map((_, index) => {
+                const spent = index >= available ? " is-spent" : "";
+                return `<span class="rb-mana-coin${spent}" style="--coin-index:${index}" aria-hidden="true"></span>`;
+            }).join("");
         },
 
         lifeOrb(sideName, hp, maxHp, ratio) {
@@ -2021,9 +2044,7 @@
                     reason: canSummonSelected ? `Invocar ${selectedHandCard.name}` : summonLockCopy
                 });
             }).join("");
-            // audit #15: só o PRIMEIRO slot vazio carrega o rótulo de ação
-            // ("Protegido no turno 1" / "Dano direto"); os demais ficam
-            // neutros pra não repetir a mesma mensagem 2-3x e poluir a zona.
+            // v92: o slot vazio vira altar visual; a razão fica em aria/title.
             let leadEmptyShown = false;
             botHost.innerHTML = botSlots.map((card) => {
                 if (card) {
@@ -2037,7 +2058,7 @@
                 if (!isLead) {
                     return RebirthMarkup.emptyFieldSlot("", { reason: "Slot vazio do bot" });
                 }
-                return RebirthMarkup.emptyFieldSlot(botCards.length ? "Linha de guarda" : firstTurnDirectLocked ? "Protegido no turno 1" : "Dano direto", {
+                return RebirthMarkup.emptyFieldSlot("", {
                     direct: !botCards.length && !firstTurnDirectLocked,
                     selected: choosingAttack && !botCards.length && !firstTurnDirectLocked,
                     locked: firstTurnDirectLocked,
@@ -2175,19 +2196,34 @@
             const canChoose = state.phase === "choose" && !state.is_finished && !RebirthStore.pending;
             const energy = Number((state.player && state.player.energy) || 0);
             const hasOpenSlot = RebirthStore.firstOpenFieldSlot("player") >= 0;
-            host.innerHTML = hand.map((card) => RebirthMarkup.miniCard(card, {
-                selected: card.instance_id === RebirthStore.selectedInstanceId,
-                recommended: recommended && card.instance_id === recommended.instance_id,
-                statuses: card.instance_id === RebirthStore.selectedInstanceId ? RebirthStore.state.player.statuses : null,
-                locked: !canChoose || energy < RebirthMarkup.cardCost(card) || (RebirthMarkup.isMonster(card) && !hasOpenSlot),
-                lockedReason: !canChoose
-                    ? "Ação indisponível fora da sua fase principal"
-                    : energy < RebirthMarkup.cardCost(card)
-                        ? `Sem mana suficiente: precisa de ${RebirthMarkup.cardCost(card)}`
-                        : RebirthMarkup.isMonster(card) && !hasOpenSlot
-                            ? "Sem slot livre"
-                            : ""
-            })).join("");
+            const center = (hand.length - 1) / 2;
+            host.innerHTML = hand.map((card, index) => {
+                const offset = index - center;
+                const rotation = hand.length > 1 ? Math.max(-10, Math.min(10, offset * 4.2)) : 0;
+                const fanStyle = [
+                    `--fan-index:${index}`,
+                    `--fan-total:${hand.length}`,
+                    `--fan-offset:${offset.toFixed(2)}`,
+                    `--fan-rotate:${rotation.toFixed(2)}deg`,
+                    `--fan-arc:${(Math.abs(offset) * 13).toFixed(1)}px`,
+                    `--fan-z:${100 + index}`,
+                    `--draw-delay:${Math.min(360, index * 52)}ms`
+                ].join(";");
+                return RebirthMarkup.miniCard(card, {
+                    selected: card.instance_id === RebirthStore.selectedInstanceId,
+                    recommended: recommended && card.instance_id === recommended.instance_id,
+                    statuses: card.instance_id === RebirthStore.selectedInstanceId ? RebirthStore.state.player.statuses : null,
+                    style: fanStyle,
+                    locked: !canChoose || energy < RebirthMarkup.cardCost(card) || (RebirthMarkup.isMonster(card) && !hasOpenSlot),
+                    lockedReason: !canChoose
+                        ? "Ação indisponível fora da sua fase principal"
+                        : energy < RebirthMarkup.cardCost(card)
+                            ? `Sem mana suficiente: precisa de ${RebirthMarkup.cardCost(card)}`
+                            : RebirthMarkup.isMonster(card) && !hasOpenSlot
+                                ? "Sem slot livre"
+                                : ""
+                });
+            }).join("");
         },
 
         coach() {

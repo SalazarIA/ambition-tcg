@@ -38,9 +38,14 @@
         <main id="rebirth-board" class="rb-game-board rb-clash-shell" aria-label="Interface do clash Ambitionz Rebirth">
             <section class="rb-hud" aria-label="HUD da partida">
                 <div class="rb-hud-side rb-hud-player">
-                    <a class="rb-mark" href="{{ url_for('index') }}" aria-label="Início Ambitionz">A</a>
+                    <div class="rb-hero-portrait rb-hero-player" aria-hidden="true">
+                        <span class="rb-hero-art"></span>
+                        <span class="rb-hero-frame"></span>
+                    </div>
+                    <a class="rb-mark rb-faction-emblem rb-faction-earth" href="{{ url_for('index') }}" aria-label="Início Ambitionz">A</a>
+                    <div class="rb-hero-level" aria-label="Nível do herói">1</div>
                     <div class="rb-hud-copy">
-                        <span>Você</span>
+                        <span id="player-hero-name">Sky</span>
                         <div class="rb-hud-health" data-health-side="player">
                             <div class="rb-hp-meter rb-life-orb" data-health-state="stable" aria-hidden="true">
                                 <b id="player-hp-fill"></b>
@@ -55,9 +60,11 @@
                         </div>
                         <div class="rb-zone-row" aria-label="Zonas do jogador">
                             <span>Mana <b id="player-energy">1</b>/<b id="player-max-energy">1</b></span>
+                            <span id="hand-count" class="rb-hand-count">0 cartas</span>
                             <span id="player-deck-count">Baralho 0</span>
                             <span id="player-discard-count">Descarte 0</span>
                         </div>
+                        <div id="player-mana-coins" class="rb-mana-coins" aria-label="Mana do jogador"></div>
                     </div>
                 </div>
 
@@ -75,8 +82,13 @@
                 </div>
 
                 <div class="rb-hud-side rb-hud-bot">
+                    <div class="rb-hero-portrait rb-hero-bot" aria-hidden="true">
+                        <span class="rb-hero-art"></span>
+                        <span class="rb-hero-frame"></span>
+                    </div>
+                    <div class="rb-hero-level" aria-label="Nível do bot">4</div>
                     <div class="rb-hud-copy">
-                        <span>Bot</span>
+                        <span id="bot-hero-name">Bot</span>
                         <div class="rb-hud-health" data-health-side="bot">
                             <div class="rb-hp-meter rb-life-orb" data-health-state="stable" aria-hidden="true">
                                 <b id="bot-hp-fill"></b>
@@ -94,8 +106,9 @@
                             <span id="bot-deck-count">Baralho 0</span>
                             <span id="bot-discard-count">Descarte 0</span>
                         </div>
+                        <div id="bot-mana-coins" class="rb-mana-coins" aria-label="Mana do bot"></div>
                     </div>
-                    <div class="rb-bot-emblem" aria-hidden="true"></div>
+                    <div class="rb-bot-emblem rb-faction-emblem rb-faction-shadow" aria-hidden="true"></div>
                 </div>
             </section>
 
@@ -118,7 +131,7 @@
                 <div class="battlefield-layer battlefield-layer-board" data-parallax-depth="-3" aria-hidden="true"></div>
                 <div class="battlefield-layer battlefield-layer-foreground" data-parallax-depth="4" aria-hidden="true"></div>
                 <div class="rb-field-row rb-field-row-bot">
-                    <span>Zona do Bot</span>
+                    <span aria-hidden="true"></span>
                     <div id="bot-battlefield" class="rb-field-slots" aria-label="Monstros invocados pelo bot"></div>
                 </div>
                 <div class="rb-bot-card-zone" aria-label="Carta do bot">
@@ -128,7 +141,7 @@
                 </div>
                 <div class="rb-field-vs" aria-hidden="true">VS</div>
                 <div class="rb-field-row rb-field-row-player">
-                    <span>Sua Zona</span>
+                    <span aria-hidden="true"></span>
                     <div id="player-battlefield" class="rb-field-slots" aria-label="Seus monstros invocados"></div>
                 </div>
             </section>
@@ -172,7 +185,6 @@
                         <strong id="action-mana-label">Mana 0/0</strong>
                     </div>
                     <div id="player-hand" class="rb-hand"></div>
-                    <span id="hand-count" class="rb-hand-count">0 cartas</span>
                 </section>
 
                 <section class="rb-actions rb-actions-row" aria-label="Ações principais">
