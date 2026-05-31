@@ -277,15 +277,38 @@ button {
     width: 96px;
     height: 96px;
     place-items: center;
-    border: 1px solid rgba(244, 173, 38, 0.52);
-    color: var(--rb-gold);
-    background: linear-gradient(145deg, #19130b, #08090b);
-    font-family: var(--rb-font-display);
-    font-size: var(--fs-display);
-    font-weight: 900;
+    border: 1.5px solid rgba(196, 160, 80, 0.78);
+    color: var(--rb-gold-2);
+    background:
+        /* spotlight central */
+        radial-gradient(ellipse 80% 70% at 50% 40%, rgba(196, 160, 80, 0.22), transparent 70%),
+        /* base dark */
+        linear-gradient(145deg, #28190c, #0c0805);
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.22),
+        inset 0 -10px 20px rgba(0, 0, 0, 0.42),
+        0 16px 32px rgba(0, 0, 0, 0.58),
+        0 0 22px rgba(196, 160, 80, 0.28);
+    font-family: var(--rb-font-epic);
+    font-size: 0;  /* esconde a letra "A" pra dar lugar ao ::before SVG */
     line-height: 1;
     text-decoration: none;
-    border-radius: var(--rb-cut-soft);
+    border-radius: 8px;
+}
+
+/* K10: SVG hero illustration substitui a letra "A" como avatar.
+   Cavaleiro estilizado com capacete + escudo cruzado. */
+.rb-mark::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23e0bf70' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3C!-- capacete --%3E%3Cpath d='M 30 38 Q 50 22 70 38 L 70 58 Q 70 64 65 64 L 35 64 Q 30 64 30 58 Z'/%3E%3C!-- visor --%3E%3Cpath d='M 36 46 L 64 46 M 36 52 L 64 52 M 40 58 L 60 58'/%3E%3C!-- plume top --%3E%3Cpath d='M 50 22 Q 48 12 50 6 Q 52 12 50 22'/%3E%3C!-- ombros --%3E%3Cpath d='M 22 78 Q 30 64 36 64 L 64 64 Q 70 64 78 78'/%3E%3C!-- escudo cruzado --%3E%3Cpath d='M 38 82 Q 50 86 62 82 Q 62 92 50 96 Q 38 92 38 82 Z' fill='%2328190c'/%3E%3Cpath d='M 50 82 L 50 96 M 42 89 L 58 89' stroke='%23c4a050'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+    pointer-events: none;
+}
+
+.rb-mark {
+    position: relative;
+    overflow: hidden;
 }
 
 .rb-bot-emblem {
@@ -1415,9 +1438,11 @@ button {
     --card-lift: 0px;
     position: relative;
     display: grid;
-    grid-template-rows: 102px 1fr;
-    width: 154px;
-    height: 206px;
+    /* K10: cartas na mão eram 154×206 (pequenas demais pra ler nome+keywords).
+       Cresci ~17% pra 180×238 — sem comprometer caber 5 cartas em mobile. */
+    grid-template-rows: 118px 1fr;
+    width: 180px;
+    height: 238px;
     overflow: hidden;
     padding: 0;
     /* F22-D: borda dupla DoC — outer ring bronze + inner highlight light.
@@ -5296,8 +5321,10 @@ button {
 
 .rb-field-card,
 .rb-field-slot-empty {
-    height: 112px;
-    min-height: 112px;
+    /* K10: altura era 112px (muito pequena pro card ter presença). DoC
+       usa cartas grandes no battlefield. Subimos para 156px desktop. */
+    height: clamp(132px, 16vh, 168px);
+    min-height: 132px;
 }
 
 .rb-field-card {
@@ -5398,31 +5425,71 @@ button {
     opacity: 0.62;
 }
 
+/* K10: slot vazio com moldura medieval DoC — bronze envelhecido +
+   ornamentos de canto + spotlight central, em vez de caixa cyan plana. */
 .rb-field-slot-empty {
+    position: relative;
     display: grid;
     place-items: center;
-    border: 1px dashed rgba(255, 255, 255, 0.18);
-    color: rgba(255, 255, 255, 0.42);
+    border: 1.5px solid rgba(196, 160, 80, 0.45);
+    color: rgba(232, 212, 164, 0.62);
     background:
-        radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02) 58%),
-        rgba(0, 0, 0, 0.18);
-    box-shadow: 0 14px 24px rgba(0, 0, 0, 0.38), inset 0 0 26px rgba(255, 255, 255, 0.035);
-    font-size: var(--fs-2xs);
-    font-weight: 1000;
+        /* spotlight central morno */
+        radial-gradient(ellipse 80% 60% at 50% 50%, rgba(196, 160, 80, 0.12), transparent 65%),
+        /* filete bronze nos lados */
+        linear-gradient(180deg, rgba(46, 33, 22, 0.62), rgba(16, 10, 5, 0.78));
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.08),
+        inset 0 0 26px rgba(0, 0, 0, 0.62),
+        0 14px 24px rgba(0, 0, 0, 0.42);
+    font-family: var(--rb-font-display);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    border-radius: var(--rb-cut-soft);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 160ms, transform 160ms;
 }
 
+/* Ornamentos de canto (V-shape) — mesmo padrão dos painéis hero. */
+.rb-field-slot-empty::before,
+.rb-field-slot-empty::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    border: 1.5px solid rgba(196, 160, 80, 0.78);
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.rb-field-slot-empty::before { top: 4px; left: 4px; }
+.rb-field-slot-empty::after { top: 4px; right: 4px; transform: scaleX(-1); }
+
 .rb-field-slot-empty.is-summon-target {
-    border-color: var(--rb-gold-2);
+    border-color: var(--rb-gold);
     color: var(--rb-gold-2);
-    background: rgba(244, 173, 38, 0.08);
-    box-shadow: inset 0 0 26px rgba(244, 173, 38, 0.12), 0 0 18px rgba(244, 173, 38, 0.12);
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 50%, rgba(196, 160, 80, 0.24), transparent 65%),
+        linear-gradient(180deg, rgba(80, 56, 30, 0.78), rgba(28, 18, 8, 0.86));
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.32),
+        inset 0 0 28px rgba(196, 160, 80, 0.32),
+        0 0 24px rgba(196, 160, 80, 0.32);
+    transform: translateY(-2px);
+}
+
+.rb-field-slot-empty.is-summon-target::before,
+.rb-field-slot-empty.is-summon-target::after {
+    border-color: var(--rb-gold-2);
 }
 
 .rb-field-slot-empty.is-selected {
-    border-color: #ffffff;
-    color: #ffffff;
+    border-color: #fff;
+    color: #fff;
 }
 
 .rb-game-board.is-choosing-attack #bot-battlefield .rb-field-card,
@@ -6254,28 +6321,28 @@ button {
     pointer-events: none;
 }
 
-/* Player: runa azul espectral quando o slot é target de invocação */
+/* K10 (DoC re-color): runa DOURADA quando o slot é target de invocação.
+   Antes era azul espectral (cyberpunk). Agora bronze envelhecido
+   alinhado à paleta Duel of Champions. */
 #player-battlefield .rb-field-slot-empty.is-summon-target {
-    border-color: rgba(95, 175, 235, 0.5);
+    border-color: rgba(232, 212, 164, 0.62);
     background:
-        radial-gradient(ellipse at 50% 50%, rgba(40, 90, 160, 0.25) 0%, rgba(20, 50, 100, 0.1) 60%, transparent 100%),
-        linear-gradient(180deg, #16120e 0%, #0a0806 100%);
+        radial-gradient(ellipse at 50% 50%, rgba(196, 160, 80, 0.28) 0%, rgba(120, 84, 30, 0.12) 60%, transparent 100%),
+        linear-gradient(180deg, #28190c 0%, #0c0805 100%);
     box-shadow:
         inset 0 6px 14px rgba(0, 0, 0, 0.85),
         inset 0 -3px 6px rgba(0, 0, 0, 0.6),
-        inset 0 0 22px rgba(95, 175, 235, 0.32),
-        0 0 12px rgba(95, 175, 235, 0.2);
+        inset 0 0 22px rgba(196, 160, 80, 0.32),
+        0 0 16px rgba(196, 160, 80, 0.24);
 }
 
 #player-battlefield .rb-field-slot-empty.is-summon-target::before {
-    opacity: 1;
-    background:
-        radial-gradient(circle, transparent 28%, var(--rb-arcane-blue) 36%, var(--rb-arcane-blue-deep) 55%, transparent 72%);
-    animation: rb-altar-rune-blue 1.8s ease-in-out infinite;
+    /* Mantém o L-bracket ornamental — vai ser amarelo dourado. */
+    border-color: var(--rb-gold-2);
 }
 
 #player-battlefield .rb-field-slot-empty.is-summon-target::after {
-    box-shadow: inset 0 0 0 2px rgba(95, 175, 235, 0.55);
+    border-color: var(--rb-gold-2);
 }
 
 /* Bot: runa vermelha profana quando o slot é alvo de ataque direto OU
