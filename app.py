@@ -817,6 +817,41 @@ def rebirth_lab():
     return render_template("rebirth_product.html", page=lab_payload())
 
 
+# === S3: ranking ELO ===
+
+@app.get("/rebirth/ranking")
+def rebirth_ranking_page():
+    user = current_user()
+    repo = rebirth_repo()
+    top = repo.get_ranking_top(limit=20)
+    me = repo.get_user_ranking(user["id"]) if user else None
+    return render_template(
+        "rebirth_ranking.html",
+        account=account_payload(user),
+        top=top,
+        me=me,
+    )
+
+
+@app.get("/api/rebirth/ranking/top")
+def api_rebirth_ranking_top():
+    limit = request.args.get("limit", "20")
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 20
+    return json_payload(top=rebirth_repo().get_ranking_top(limit=limit))
+
+
+@app.get("/api/rebirth/ranking/me")
+def api_rebirth_ranking_me():
+    try:
+        user = require_user()
+        return json_payload(ranking=rebirth_repo().get_user_ranking(user["id"]))
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
 @app.get("/health")
 def health():
     try:

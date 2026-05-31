@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Ranking - Ambitionz Rebirth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0805">
+    <meta name="description" content="Leaderboard ranked do Ambitionz Rebirth — top 20 jogadores por ELO.">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+</head>
+<body class="rb-page rb-home-page rb-product-page rb-ranking-page">
+    {% include "_rebirth_global_nav.html" %}
+    <main class="rb-home-shell rb-product-shell rb-ranking-shell">
+        <section class="rb-product-hero" aria-label="Ranking Ambitionz">
+            <div>
+                <span class="rb-product-kicker">Temporada {{ (me.season if me else 1) }}</span>
+                <h1>Ranking</h1>
+                <p>Cada partida ranqueada ajusta seu ELO. Vença bots fortes pra escalar mais rápido.</p>
+            </div>
+            <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Jogar agora <i aria-hidden="true"></i></a>
+        </section>
+
+        {% if account.authenticated and me %}
+            <section class="rb-product-panel rb-ranking-me" aria-label="Sua posição">
+                <span>Sua posição</span>
+                <h2>#{{ me.position or '—' }} · {{ me.elo }} ELO</h2>
+                <p>{{ me.total }} jogadores ranqueados nesta temporada.</p>
+            </section>
+        {% elif not account.authenticated %}
+            <section class="rb-product-panel rb-ranking-login" aria-label="Entrar para participar">
+                <span>Participe</span>
+                <h2>Entre para entrar no ranking</h2>
+                <p>O ELO começa em 1500. Cada vitória ou derrota ajusta o seu rating.</p>
+                <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
+            </section>
+        {% endif %}
+
+        <section class="rb-ranking-board" aria-label="Top 20 jogadores">
+            <header class="rb-ranking-head">
+                <span>#</span>
+                <span>Jogador</span>
+                <span>ELO</span>
+            </header>
+            {% if top %}
+                {% for row in top %}
+                    <article class="rb-ranking-row{{ ' is-me' if account.authenticated and row.username == account.username else '' }}">
+                        <span class="rb-ranking-rank">{{ row.rank }}</span>
+                        <span class="rb-ranking-name">{{ row.username }}</span>
+                        <span class="rb-ranking-elo">{{ row.elo }}</span>
+                    </article>
+                {% endfor %}
+            {% else %}
+                <p class="rb-ranking-empty">Nenhuma partida ranqueada ainda. Seja o primeiro.</p>
+            {% endif %}
+        </section>
+    </main>
+
+    <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            wallet: "{{ url_for('api_rebirth_wallet') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+</body>
+</html>

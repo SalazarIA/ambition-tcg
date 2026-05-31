@@ -2412,7 +2412,139 @@ class RebirthRepository:
                         now,
                     ),
                 )
+        # S3: aplica ELO se match terminou
+        if match.get("is_finished"):
+            try:
+                self.apply_match_elo(user_id, match)
+            except Exception:
+                # ELO não pode quebrar o flow do match. Falha silenciosamente.
+                pass
         return self.match_history(user_id, limit=1)[0]
+
+    # === S3: ranking ELO ===
+    BOT_ELO_BY_PROFILE = {
+        "aggressive": 1450,
+        "opportunist": 1500,
+        "defensive": 1550,
+    }
+    ELO_K_FACTOR = 32
+
+    def apply_match_elo(self, user_id, match):
+        """Aplica delta de ELO ao usuário pós-match. Idempotente via match_id
+        (tabela ledger). Retorna o novo ELO."""
+        if not user_id or not match or not match.get("is_finished"):
+            return None
+        winner = match.get("winner")
+        if winner not in ("player", "bot"):
+            return None
+        self.ensure_schema()
+        match_id = match.get("match_id")
+        bot_profile = match.get("bot_profile") or {}
+        bot_profile_id = bot_profile.get("id") or "opportunist"
+        bot_elo = self.BOT_ELO_BY_PROFILE.get(bot_profile_id, 1500)
+        # Campaign bosses ganham ELO bumped (1500 + 50*node_order)
+        node_id = match.get("campaign_node")
+        if node_id:
+            try:
+                node_order = int(str(node_id).split("_")[-1])
+                bot_elo = max(bot_elo, 1500 + 50 * node_order)
+            except (ValueError, IndexError):
+                pass
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute(
+                "SELECT ranking_elo, ranking_season FROM users WHERE id = ?", (user_id,)
+            ).fetchone()
+            if not current:
+                db.execute("ROLLBACK")
+                return None
+            # Idempotência via reference_type+reference_id (economy_ledger
+            # já tem essas colunas; evita aplicar ELO duas vezes pro mesmo match).
+            already = db.execute(
+                """
+                SELECT 1 FROM economy_ledger
+                WHERE user_id = ? AND resource = 'elo'
+                  AND reference_type = 'match' AND reference_id = ?
+                """,
+                (user_id, match_id or ""),
+            ).fetchone()
+            if already:
+                db.execute("ROLLBACK")
+                return int(current["ranking_elo"] or 1500)
+            current_elo = int(current["ranking_elo"] or 1500)
+            score = 1.0 if winner == "player" else 0.0
+            expected = 1.0 / (1.0 + 10 ** ((bot_elo - current_elo) / 400.0))
+            delta = int(round(self.ELO_K_FACTOR * (score - expected)))
+            new_elo = max(0, current_elo + delta)
+            now = utc_now()
+            db.execute(
+                "UPDATE users SET ranking_elo = ? WHERE id = ?", (new_elo, user_id)
+            )
+            db.execute(
+                """
+                INSERT INTO economy_ledger
+                    (user_id, resource, delta, balance_after, reason, reference_type, reference_id, metadata_json, created_at)
+                VALUES (?, 'elo', ?, ?, ?, 'match', ?, ?, ?)
+                """,
+                (
+                    user_id,
+                    delta,
+                    new_elo,
+                    f"match_{winner}",
+                    match_id or "",
+                    json.dumps({"bot_elo": bot_elo, "expected": round(expected, 3), "score": score}),
+                    now,
+                ),
+            )
+            db.execute("COMMIT")
+            return new_elo
+
+    def get_user_ranking(self, user_id):
+        """Retorna ELO atual + posição no leaderboard."""
+        self.ensure_schema()
+        with self.connect() as db:
+            me = db.execute(
+                "SELECT ranking_elo, ranking_season FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if not me:
+                return {"elo": 1500, "season": 1, "position": None, "total": 0}
+            my_elo = int(me["ranking_elo"] or 1500)
+            higher = db.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE ranking_elo > ?",
+                (my_elo,),
+            ).fetchone()
+            total = db.execute("SELECT COUNT(*) AS n FROM users").fetchone()
+            return {
+                "elo": my_elo,
+                "season": int(me["ranking_season"] or 1),
+                "position": int(higher["n"]) + 1,
+                "total": int(total["n"]),
+            }
+
+    def get_ranking_top(self, limit=20):
+        """Top N jogadores por ELO."""
+        self.ensure_schema()
+        limit = max(1, min(int(limit or 20), 100))
+        with self.connect() as db:
+            rows = db.execute(
+                """
+                SELECT username, ranking_elo, ranking_season
+                FROM users
+                ORDER BY ranking_elo DESC, username ASC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+            return [
+                {
+                    "rank": i + 1,
+                    "username": r["username"],
+                    "elo": int(r["ranking_elo"] or 1500),
+                    "season": int(r["ranking_season"] or 1),
+                }
+                for i, r in enumerate(rows)
+            ]
 
     def match_history(self, user_id, limit=10):
         self.ensure_schema()
