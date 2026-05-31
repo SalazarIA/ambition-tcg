@@ -1706,6 +1706,25 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
         target = compact_battlefield(match["bot"])[0] if compact_battlefield(match["bot"]) else None
         target_instance_id = target.get("instance_id") if target else None
 
+    # K2: TAUNT — se o lado defensor tem alguma carta com TAUNT, o player
+    # NÃO pode atacar diretamente o HP nem outros monstros não-TAUNT.
+    # Força tactical decision: limpar taunt primeiro.
+    from services.rebirth_keywords import has_taunt_on_side, forces_target
+    bot_field = compact_battlefield(match["bot"])
+    if has_taunt_on_side(bot_field):
+        # Se atacando HP direto (sem target): bloqueia
+        if target is None:
+            raise RebirthError(
+                "Há uma carta com Provocar no campo inimigo. Ataque-a primeiro.",
+                "taunt_blocks_direct_attack",
+            )
+        # Se alvo escolhido não é taunt: bloqueia
+        if not forces_target(target):
+            raise RebirthError(
+                "Há uma carta com Provocar no campo inimigo. Ataque-a primeiro.",
+                "taunt_blocks_alternate_target",
+            )
+
     if target is None and int(match.get("turn", 1) or 1) == 1:
         raise RebirthError(
             "Dano direto não está disponível no primeiro turno. Encerre o turno para o bot responder.",
@@ -1822,6 +1841,34 @@ def next_turn(match):
     append_event(match, "PLAYED_CARDS_CLEARED", actor="system", effect_chain_id=effect_chain_id, payload={"turn": match.get("turn")})
     match["turn"] += 1
     set_turn_phase(match, TurnPhase.DRAW_PHASE)
+
+    # K2: REGEN — restaura 1 de Guarda no início do turno pra cartas que portam.
+    # Aplicado em ambos os lados; não pode exceder max_guard original da carta.
+    from services.rebirth_keywords import regen_amount as _regen_amt
+    for _side_name in ("player", "bot"):
+        for _card in compact_battlefield(match[_side_name]):
+            _heal = _regen_amt(_card)
+            if not _heal:
+                continue
+            _max = int(_card.get("max_guard", _card.get("guard", 0)) or 0)
+            _cur = int(_card.get("current_guard", _card.get("guard", 0)) or 0)
+            if _cur >= _max:
+                continue
+            _restored = min(_heal, _max - _cur)
+            _card["current_guard"] = _cur + _restored
+            if _restored > 0:
+                _msg = f"{_card['name']} regenera +{_restored} de Guarda."
+                match["log"].append(f"Turno {match['turn']:02d}   {_msg}")
+                append_event(
+                    match,
+                    "REGEN_TICK",
+                    actor=_side_name,
+                    source_card_id=_card.get("id"),
+                    target_id=_card.get("instance_id"),
+                    owner_id=_side_name,
+                    payload={"amount": _restored, "keyword": "REGEN", "new_guard": _card["current_guard"]},
+                    message=_msg,
+                )
     status_events = resolve_status_ticks(
         match,
         effect_chain_id=effect_chain_id,

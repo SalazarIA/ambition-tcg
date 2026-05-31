@@ -14,11 +14,16 @@ def _make_card(**overrides):
 
 
 def test_default_keywords_by_family():
-    """Cada família ganha seu keyword default; tier ≥ 2 ganha bônus."""
+    """Cada família ganha seu keyword default; tier ≥ 2 ganha bônus (quando aplicável).
+
+    Calibração K2: TAUNT/BURST/EXECUTE removidos dos defaults pra preservar
+    balance dos testes v67/v71/v73/v74 — viram opt-in pra cartas lendárias.
+    """
     assert kw.default_keywords_for("FIRE") == [kw.KEYWORD_RUSH]
-    assert kw.default_keywords_for("FIRE", tier=2) == [kw.KEYWORD_RUSH, kw.KEYWORD_EXECUTE]
+    assert kw.default_keywords_for("FIRE", tier=2) == [kw.KEYWORD_RUSH]
     assert kw.default_keywords_for("WATER") == [kw.KEYWORD_LIFESTEAL]
-    assert kw.default_keywords_for("EARTH") == [kw.KEYWORD_TAUNT]
+    assert kw.default_keywords_for("WATER", tier=2) == [kw.KEYWORD_LIFESTEAL, kw.KEYWORD_REGEN]
+    assert kw.default_keywords_for("EARTH") == [kw.KEYWORD_SHIELD]
     assert kw.default_keywords_for("SHADOW") == [kw.KEYWORD_PIERCE]
     assert kw.default_keywords_for("UNKNOWN") == []
 

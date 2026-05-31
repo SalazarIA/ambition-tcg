@@ -89,12 +89,15 @@ KEYWORD_COLORS = {
 # Defaults por família — usado por _monster_card quando keywords não
 # está sobrescrito pra carta específica.
 FAMILY_DEFAULT_KEYWORDS = {
+    # K2 balance: keywords que ALTERAM target selection ou geram dano direto
+    # (TAUNT, BURST) viram opt-in lendário pra não desestabilizar o meta
+    # quando aplicados em 20+ cards default. Sobram keywords passivos/sutis.
     "FIRE":    [KEYWORD_RUSH],
     "WATER":   [KEYWORD_LIFESTEAL],
-    "EARTH":   [KEYWORD_TAUNT],
+    "EARTH":   [KEYWORD_SHIELD],
     "SHADOW":  [KEYWORD_PIERCE],
-    "ARCANO":  [KEYWORD_BURST],
-    "OCULTO":  [KEYWORD_SHIELD],
+    "ARCANO":  [],
+    "OCULTO":  [],
 }
 
 # Evolved cards (tier 2+) ganham 1 keyword extra agressiva.
@@ -103,12 +106,13 @@ FAMILY_DEFAULT_KEYWORDS = {
 # ser opt-in por carta lendária específica (K2/K3). FIRE evolved fica
 # apenas com RUSH; balance preservado.
 FAMILY_EVOLVED_BONUS_KEYWORD = {
-    "FIRE":    KEYWORD_EXECUTE,    # FIRE evoluído: RUSH + EXECUTE (finisher)
+    # Tier 2: ganhos sutis que não quebram balance.
+    "FIRE":    None,               # FIRE evoluído mantém apenas RUSH
     "WATER":   KEYWORD_REGEN,      # WATER evoluído: LIFESTEAL + REGEN
-    "EARTH":   KEYWORD_SHIELD,     # EARTH evoluído: TAUNT + SHIELD
-    "SHADOW":  KEYWORD_LIFESTEAL,  # SHADOW evoluído: PIERCE + LIFESTEAL
-    "ARCANO":  KEYWORD_PIERCE,
-    "OCULTO":  KEYWORD_EXECUTE,
+    "EARTH":   None,               # EARTH evoluído mantém apenas SHIELD
+    "SHADOW":  None,               # SHADOW evoluído mantém apenas PIERCE
+    "ARCANO":  None,
+    "OCULTO":  None,
 }
 
 
@@ -118,7 +122,7 @@ def default_keywords_for(family: str, *, tier: int = 1) -> List[str]:
     base = list(FAMILY_DEFAULT_KEYWORDS.get(family, []))
     if tier >= 2:
         bonus = FAMILY_EVOLVED_BONUS_KEYWORD.get(family)
-        if bonus and bonus not in base:
+        if bonus is not None and bonus not in base:
             base.append(bonus)
     return base
 
@@ -193,3 +197,83 @@ def execute_kills(card: Dict[str, Any], target: Optional[Dict[str, Any]]) -> boo
     if not target or not has_keyword(card, KEYWORD_EXECUTE):
         return False
     return int(target.get("guard", 99) or 99) <= 1
+
+
+# ─────────────────────────────────────────────────────────────────────
+# K2: Sinergias condicionais
+# ─────────────────────────────────────────────────────────────────────
+# Cartas podem ter um campo `synergy` opcional com a estrutura:
+#
+#   "synergy": {
+#       "condition": "controls_family",  # ou "low_hp", "field_count", "tier_2"
+#       "value": "FIRE",                 # parâmetro da condição
+#       "effect": {"attack": 2, "guard": 1}  # bônus aplicado quando true
+#   }
+#
+# Engine consulta synergy_active() + apply_synergy_bonus() em momentos chave.
+
+def synergy_active(card: Dict[str, Any], owner_field: List[Dict[str, Any]],
+                   owner_hp: int = 30) -> bool:
+    """Avalia se a condição de sinergia da carta está satisfeita."""
+    if not card:
+        return False
+    syn = card.get("synergy")
+    if not isinstance(syn, dict):
+        return False
+    condition = str(syn.get("condition") or "")
+    value = syn.get("value")
+    if condition == "controls_family":
+        # Conta cartas no campo do MESMO dono com mesmo family (exceto a própria).
+        target_family = str(value or "").upper()
+        return any(
+            c.get("family") == target_family
+            and c.get("instance_id") != card.get("instance_id")
+            for c in (owner_field or [])
+        )
+    if condition == "low_hp":
+        threshold = int(value or 10)
+        return int(owner_hp or 0) <= threshold
+    if condition == "field_count":
+        threshold = int(value or 2)
+        return len([c for c in (owner_field or []) if c.get("instance_id") != card.get("instance_id")]) >= threshold
+    if condition == "tier_2":
+        # Ativo se controla ao menos 1 carta tier ≥ 2.
+        return any(int(c.get("tier", 1) or 1) >= 2 for c in (owner_field or []))
+    return False
+
+
+def synergy_bonus(card: Dict[str, Any]) -> Dict[str, int]:
+    """Retorna bônus declarado pela sinergia (zeros se não houver)."""
+    if not card:
+        return {"attack": 0, "guard": 0}
+    syn = card.get("synergy") or {}
+    effect = syn.get("effect") or {}
+    return {
+        "attack": int(effect.get("attack", 0) or 0),
+        "guard": int(effect.get("guard", 0) or 0),
+    }
+
+
+def synergy_label(card: Dict[str, Any]) -> Optional[str]:
+    """Texto pt-BR descrevendo a sinergia, pra UI tooltip."""
+    syn = (card or {}).get("synergy")
+    if not isinstance(syn, dict):
+        return None
+    condition = str(syn.get("condition") or "")
+    value = syn.get("value")
+    effect = syn.get("effect") or {}
+    parts = []
+    if effect.get("attack"):
+        parts.append(f"+{effect['attack']} Ataque")
+    if effect.get("guard"):
+        parts.append(f"+{effect['guard']} Guarda")
+    bonus = " e ".join(parts) or "bônus"
+    if condition == "controls_family":
+        return f"Se você controla outro {str(value or '').title()}: {bonus}."
+    if condition == "low_hp":
+        return f"Se seu HP ≤ {value}: {bonus}."
+    if condition == "field_count":
+        return f"Se você tem {value}+ monstros: {bonus}."
+    if condition == "tier_2":
+        return f"Se controla aliado evoluído: {bonus}."
+    return None
