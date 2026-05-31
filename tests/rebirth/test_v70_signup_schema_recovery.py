@@ -52,8 +52,9 @@ def test_legacy_collision_preflight_runs_before_foundation_migration(monkeypatch
 
 
 def test_fk_recovery_accepts_historical_rows_and_fences_new_user_ids():
-    assert rebirth_schema.SCHEMA_VERSION == 10
+    assert rebirth_schema.SCHEMA_VERSION == 11
     assert "ranking_elo" in rebirth_schema.MIGRATION_010
+    assert "user_decks" in rebirth_schema.MIGRATION_011
     assert "pg_get_serial_sequence('users', 'id')" in rebirth_schema.MIGRATION_005
     assert "match_history_legacy_ascension" in rebirth_schema.MIGRATION_005
     assert "NOT LIKE '%%_legacy_ascension'" in rebirth_schema.MIGRATION_005

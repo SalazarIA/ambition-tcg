@@ -58,7 +58,7 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v88_KEYWORDS-1")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v89_DECK_BUILDER-1")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -904,6 +904,100 @@ def api_rebirth_ranking_me():
         return json_from_persistence_error(error)
     except RebirthError as error:
         return json_from_rebirth_error(error)
+
+
+# === K3: Deck Builder — endpoints + página ===
+
+@app.get("/api/rebirth/catalog")
+def api_rebirth_catalog():
+    """Retorna o catálogo completo de cartas (sem dados sensíveis).
+    Usado pelo deck builder + ferramentas de análise."""
+    from services.rebirth_cards import CARD_CATALOG
+    # Stripa campos internos pesados (heuristic_vector, art_status, etc)
+    fields = (
+        "id", "name", "type", "family", "element", "tier", "rarity",
+        "cost", "attack", "guard", "ability_name", "ability_text",
+        "keywords", "synergy", "art",
+    )
+    catalog = [
+        {k: c.get(k) for k in fields if k in c}
+        for c in CARD_CATALOG
+    ]
+    return json_payload(catalog=catalog, count=len(catalog))
+
+
+
+
+@app.get("/rebirth/deck-builder")
+def rebirth_deck_builder_page():
+    user = current_user()
+    repo = rebirth_repo()
+    decks = repo.list_decks(user["id"]) if user else []
+    return render_template(
+        "rebirth_deck_builder.html",
+        account=account_payload(user),
+        decks=decks,
+    )
+
+
+@app.get("/api/rebirth/decks")
+def api_rebirth_decks_list():
+    try:
+        user = require_user()
+        return json_payload(decks=rebirth_repo().list_decks(user["id"]))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.post("/api/rebirth/decks")
+def api_rebirth_decks_create():
+    try:
+        user = require_user()
+        payload = request_json(required=True)
+        result = rebirth_repo().save_deck(
+            user["id"],
+            name=payload.get("name", "Novo Deck"),
+            cards=payload.get("cards", []),
+        )
+        return json_payload(deck=result)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.put("/api/rebirth/decks/<int:deck_id>")
+def api_rebirth_decks_update(deck_id):
+    try:
+        user = require_user()
+        payload = request_json(required=True)
+        result = rebirth_repo().save_deck(
+            user["id"],
+            name=payload.get("name", "Deck"),
+            cards=payload.get("cards", []),
+            deck_id=deck_id,
+        )
+        return json_payload(deck=result)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.delete("/api/rebirth/decks/<int:deck_id>")
+def api_rebirth_decks_delete(deck_id):
+    try:
+        user = require_user()
+        return json_payload(result=rebirth_repo().delete_deck(user["id"], deck_id))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.post("/api/rebirth/decks/<int:deck_id>/activate")
+def api_rebirth_decks_activate(deck_id):
+    try:
+        user = require_user()
+        return json_payload(result=rebirth_repo().set_active_deck(user["id"], deck_id))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
 
 
 # === S4: Stripe billing — venda de gems ===

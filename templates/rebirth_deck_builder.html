@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Deck Builder - Ambitionz Rebirth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0805">
+    <meta name="description" content="Monte decks de 30 cartas com filtros por elemento, raridade, custo e keyword.">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+</head>
+<body class="rb-page rb-home-page rb-product-page rb-deck-builder-page">
+    {% include "_rebirth_global_nav.html" %}
+    <main class="rb-home-shell rb-product-shell rb-deck-builder-shell" data-deck-builder>
+        <section class="rb-product-hero" aria-label="Deck Builder">
+            <div>
+                <span class="rb-product-kicker">Construa seu deck</span>
+                <h1>Deck Builder</h1>
+                <p>Monte combos com 30 cartas. Máx. 3 cópias por carta. Aplique filtros, salve até 10 decks, ative o seu favorito antes da próxima partida.</p>
+            </div>
+            <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Voltar à Arena <i aria-hidden="true"></i></a>
+        </section>
+
+        {% if not account.authenticated %}
+            <section class="rb-product-panel rb-deck-builder-login" aria-label="Entrar para montar decks">
+                <span>Conta necessária</span>
+                <h2>Entre para salvar seu deck</h2>
+                <p>Decks customizados ficam atrelados à sua conta. Sem login, só dá pra visualizar a coleção.</p>
+                <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
+            </section>
+        {% endif %}
+
+        <section class="rb-deck-toolbar" aria-label="Filtros do deck builder">
+            <input type="text" class="rb-deck-name" placeholder="Nome do deck" maxlength="60" data-deck-name>
+            <select class="rb-deck-filter" data-filter="element">
+                <option value="">Todos elementos</option>
+                <option value="Fogo">Fogo</option>
+                <option value="Água">Água</option>
+                <option value="Terra">Terra</option>
+                <option value="Sombra">Sombra</option>
+                <option value="Arcano">Arcano</option>
+                <option value="Oculto">Oculto</option>
+            </select>
+            <select class="rb-deck-filter" data-filter="rarity">
+                <option value="">Todas raridades</option>
+                <option value="COMMON">Comum</option>
+                <option value="UNCOMMON">Incomum</option>
+                <option value="LEGENDARY">Lendária</option>
+            </select>
+            <select class="rb-deck-filter" data-filter="cost">
+                <option value="">Custo qualquer</option>
+                <option value="1">1 mana</option>
+                <option value="2">2 mana</option>
+                <option value="3">3 mana</option>
+                <option value="4">4 mana</option>
+                <option value="5">5+ mana</option>
+            </select>
+            <select class="rb-deck-filter" data-filter="keyword">
+                <option value="">Qualquer keyword</option>
+                <option value="RUSH">Investida</option>
+                <option value="BURST">Detonação</option>
+                <option value="LIFESTEAL">Drenar</option>
+                <option value="TAUNT">Provocar</option>
+                <option value="SHIELD">Escudo</option>
+                <option value="PIERCE">Perfurar</option>
+                <option value="REGEN">Regenerar</option>
+                <option value="EXECUTE">Executar</option>
+            </select>
+        </section>
+
+        <section class="rb-deck-workspace">
+            <div class="rb-deck-catalog" data-deck-catalog aria-label="Catálogo de cartas">
+                <h3>Catálogo · <span data-catalog-count>0</span> cartas</h3>
+                <div class="rb-deck-catalog-grid" data-catalog-grid></div>
+            </div>
+
+            <aside class="rb-deck-current" data-deck-current aria-label="Deck atual">
+                <header>
+                    <h3>Deck Atual</h3>
+                    <div class="rb-deck-meta">
+                        <span class="rb-deck-counter" data-deck-size>0</span> / 30
+                    </div>
+                </header>
+                <div class="rb-deck-current-list" data-deck-list>
+                    <p class="rb-deck-empty">Clique numa carta do catálogo pra adicionar.</p>
+                </div>
+                <div class="rb-deck-actions">
+                    <button type="button" class="rb-secondary" data-deck-clear>Limpar</button>
+                    <button type="button" class="rb-button-primary rb-cta" data-deck-save>Salvar deck</button>
+                </div>
+                <p class="rb-deck-result" data-deck-result aria-live="polite"></p>
+            </aside>
+        </section>
+
+        {% if account.authenticated and decks %}
+        <section class="rb-deck-list-saved" aria-label="Decks salvos">
+            <h3>Seus decks salvos ({{ decks|length }}/10)</h3>
+            <div class="rb-deck-saved-grid">
+                {% for d in decks %}
+                <article class="rb-deck-saved-card{{ ' is-active' if d.is_active else '' }}" data-deck-id="{{ d.id }}">
+                    <header>
+                        <strong>{{ d.name }}</strong>
+                        {% if d.is_active %}<span class="rb-deck-badge-active">Ativo</span>{% endif %}
+                    </header>
+                    <p>{{ d.cards.values()|sum }} cartas</p>
+                    <div class="rb-deck-saved-actions">
+                        <button type="button" class="rb-secondary" data-deck-load="{{ d.id }}">Carregar</button>
+                        {% if not d.is_active %}
+                        <button type="button" class="rb-secondary" data-deck-activate="{{ d.id }}">Ativar</button>
+                        {% endif %}
+                        <button type="button" class="rb-secondary rb-deck-delete-btn" data-deck-delete="{{ d.id }}">Excluir</button>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            wallet: "{{ url_for('api_rebirth_wallet') }}"
+        };
+        window.REBIRTH_DECKS_SAVED = {{ decks | tojson }};
+        window.REBIRTH_IS_AUTH = {{ 'true' if account.authenticated else 'false' }};
+    </script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_deck_builder.js') }}?v={{ rebirth_release_version }}"></script>
+</body>
+</html>

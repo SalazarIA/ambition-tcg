@@ -735,6 +735,27 @@ class RebirthRepository:
             # S3: ranking ELO por usuário
             self._ensure_sqlite_column(db, "users", "ranking_elo", "INTEGER NOT NULL DEFAULT 1500")
             self._ensure_sqlite_column(db, "users", "ranking_season", "INTEGER NOT NULL DEFAULT 1")
+            # K3: decks salvos pelo user (schema v11)
+            db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS user_decks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    cards_json TEXT NOT NULL,
+                    is_active INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+                """
+            )
+            db.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_user_decks_user
+                    ON user_decks(user_id, updated_at DESC);
+                """
+            )
             db.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_match_history_campaign
@@ -2521,6 +2542,162 @@ class RebirthRepository:
                 "position": int(higher["n"]) + 1,
                 "total": int(total["n"]),
             }
+
+    # === K3: Deck Builder — persistência de decks customizados ===
+    DECK_SIZE_MIN = 30
+    DECK_SIZE_MAX = 30
+    DECK_MAX_COPIES = 3
+    DECK_MAX_PER_USER = 10
+
+    def _validate_deck_cards(self, cards):
+        """Valida formato e regras: 30 cartas, max 3 cópias por card_id.
+
+        Aceita cards como lista de strings (id) OU lista de {id, copies}.
+        Normaliza pra dict {card_id: copies}."""
+        if not isinstance(cards, (list, dict)):
+            raise RebirthPersistenceError("Formato de deck inválido.", "deck_invalid_format", 400)
+        # Normaliza pra dict {card_id: copies}
+        counts = {}
+        if isinstance(cards, dict):
+            for cid, c in cards.items():
+                counts[str(cid)] = int(c or 0)
+        else:
+            for entry in cards:
+                if isinstance(entry, str):
+                    counts[entry] = counts.get(entry, 0) + 1
+                elif isinstance(entry, dict) and entry.get("id"):
+                    counts[str(entry["id"])] = counts.get(str(entry["id"]), 0) + int(entry.get("copies", 1) or 1)
+        # Regras
+        total = sum(counts.values())
+        if total != self.DECK_SIZE_MIN:
+            raise RebirthPersistenceError(
+                f"Deck precisa ter exatamente {self.DECK_SIZE_MIN} cartas (atual: {total}).",
+                "deck_invalid_size", 400,
+            )
+        for cid, c in counts.items():
+            if c < 1 or c > self.DECK_MAX_COPIES:
+                raise RebirthPersistenceError(
+                    f"Cada carta admite no máximo {self.DECK_MAX_COPIES} cópias ({cid}: {c}).",
+                    "deck_invalid_copies", 400,
+                )
+        # Valida que IDs existem no catálogo
+        from services.rebirth_cards import CARD_CATALOG
+        valid_ids = {c.get("id") for c in CARD_CATALOG}
+        for cid in counts:
+            if cid not in valid_ids:
+                raise RebirthPersistenceError(f"Carta inválida: {cid}", "deck_invalid_card", 400)
+        return counts
+
+    def list_decks(self, user_id):
+        """Retorna todos os decks salvos do user."""
+        self.ensure_schema()
+        with self.connect() as db:
+            rows = db.execute(
+                """
+                SELECT id, name, cards_json, is_active, created_at, updated_at
+                FROM user_decks
+                WHERE user_id = ?
+                ORDER BY is_active DESC, updated_at DESC
+                """,
+                (user_id,),
+            ).fetchall()
+            return [
+                {
+                    "id": int(r["id"]),
+                    "name": r["name"],
+                    "cards": json.loads(r["cards_json"]),
+                    "is_active": bool(r["is_active"]),
+                    "created_at": str(r["created_at"]),
+                    "updated_at": str(r["updated_at"]),
+                }
+                for r in rows
+            ]
+
+    def save_deck(self, user_id, name, cards, deck_id=None):
+        """Cria ou atualiza um deck. Se deck_id passado, atualiza; senão cria."""
+        name = (name or "").strip()
+        if not name:
+            raise RebirthPersistenceError("Nome do deck obrigatório.", "deck_invalid_name", 400)
+        if len(name) > 80:
+            name = name[:80]
+        counts = self._validate_deck_cards(cards)
+        cards_json = json.dumps(counts, sort_keys=True)
+        now = utc_now()
+        self.ensure_schema()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if deck_id is not None:
+                exists = db.execute(
+                    "SELECT 1 FROM user_decks WHERE id = ? AND user_id = ?",
+                    (deck_id, user_id),
+                ).fetchone()
+                if not exists:
+                    db.execute("ROLLBACK")
+                    raise RebirthPersistenceError("Deck não encontrado.", "deck_not_found", 404)
+                db.execute(
+                    """
+                    UPDATE user_decks SET name = ?, cards_json = ?, updated_at = ?
+                    WHERE id = ? AND user_id = ?
+                    """,
+                    (name, cards_json, now, deck_id, user_id),
+                )
+                new_id = deck_id
+            else:
+                # Limite de decks por user
+                count = db.execute(
+                    "SELECT COUNT(*) AS n FROM user_decks WHERE user_id = ?",
+                    (user_id,),
+                ).fetchone()
+                if int(count["n"]) >= self.DECK_MAX_PER_USER:
+                    db.execute("ROLLBACK")
+                    raise RebirthPersistenceError(
+                        f"Limite de {self.DECK_MAX_PER_USER} decks por conta atingido.",
+                        "deck_limit_reached", 409,
+                    )
+                cur = db.execute(
+                    """
+                    INSERT INTO user_decks (user_id, name, cards_json, is_active, created_at, updated_at)
+                    VALUES (?, ?, ?, 0, ?, ?)
+                    """,
+                    (user_id, name, cards_json, now, now),
+                )
+                new_id = int(cur.lastrowid)
+            db.execute("COMMIT")
+        return {"id": new_id, "name": name, "cards": counts}
+
+    def delete_deck(self, user_id, deck_id):
+        self.ensure_schema()
+        with self.connect() as db:
+            cur = db.execute(
+                "DELETE FROM user_decks WHERE id = ? AND user_id = ?",
+                (deck_id, user_id),
+            )
+            if cur.rowcount == 0:
+                raise RebirthPersistenceError("Deck não encontrado.", "deck_not_found", 404)
+        return {"deleted": True, "id": deck_id}
+
+    def set_active_deck(self, user_id, deck_id):
+        """Marca um deck como ativo (desativa os demais do user)."""
+        self.ensure_schema()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            target = db.execute(
+                "SELECT 1 FROM user_decks WHERE id = ? AND user_id = ?",
+                (deck_id, user_id),
+            ).fetchone()
+            if not target:
+                db.execute("ROLLBACK")
+                raise RebirthPersistenceError("Deck não encontrado.", "deck_not_found", 404)
+            db.execute(
+                "UPDATE user_decks SET is_active = 0 WHERE user_id = ? AND is_active = 1",
+                (user_id,),
+            )
+            db.execute(
+                "UPDATE user_decks SET is_active = 1, updated_at = ? WHERE id = ? AND user_id = ?",
+                (utc_now(), deck_id, user_id),
+            )
+            db.execute("COMMIT")
+        return {"active_deck_id": deck_id}
 
     # === S4: Stripe billing — crédito de gems via checkout ===
     BILLING_PACKAGES = {

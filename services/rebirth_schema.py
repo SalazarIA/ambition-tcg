@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 SCHEMA_MIGRATION_LOCK_KEY = 735194302771
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
@@ -532,6 +532,29 @@ VALUES (10, 'ranking_elo')
 ON CONFLICT (version) DO NOTHING;
 """
 
+MIGRATION_011 = """
+CREATE TABLE IF NOT EXISTS user_decks (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(80) NOT NULL,
+    cards_json TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_decks_user
+    ON user_decks(user_id, updated_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_decks_active
+    ON user_decks(user_id)
+    WHERE is_active = TRUE;
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (11, 'user_decks')
+ON CONFLICT (version) DO NOTHING;
+"""
+
 MIGRATIONS = (
     MIGRATION_001,
     MIGRATION_002,
@@ -543,6 +566,7 @@ MIGRATIONS = (
     MIGRATION_008,
     MIGRATION_009,
     MIGRATION_010,
+    MIGRATION_011,
 )
 
 
