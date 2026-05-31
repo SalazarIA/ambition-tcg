@@ -4638,35 +4638,45 @@ button {
             repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 82px),
             linear-gradient(180deg, #0b0f15 0%, #050708 100%);
         display: grid;
-        /* F23-A: layout Duel of Champions — hero portraits ocupam colunas
-           inteiras nas laterais (esquerda=player, direita=bot). Centro tem
-           turn-bar topo + battlefield + hand embaixo. Painéis result/evo/log
-           empilham na coluna direita abaixo do hero-bot. */
+        /* K11 ARENA ZEN: layout minimalista. 3 zonas verticais:
+            ┌──────────────────────────────────┐
+            │  HUD compacto (1 linha)          │
+            ├──────────────────────────────────┤
+            │                                  │
+            │  BATTLEFIELD GIGANTE no centro   │
+            │  (zona bot top + sua zona bot)   │
+            │                                  │
+            ├──────────────────────────────────┤
+            │  Mão (5 cartas grandes)          │
+            └──────────────────────────────────┘
+           Hero-portraits, result/evo/log/actions saem do flow visual
+           (display:none ou hidden) — zone main. */
         grid-template-areas:
-            "hero-l   turn     hero-r"
-            "hero-l   arena    result"
-            "hero-l   arena    evo"
-            "hero-l   arena    log"
-            "hero-l   hand     actions";
-        grid-template-columns: clamp(240px, 18vw, 300px) minmax(0, 1fr) clamp(320px, 22vw, 400px);
-        grid-template-rows: clamp(72px, 9vh, 96px) minmax(280px, 1fr) clamp(110px, 14vh, 150px) clamp(110px, 14vh, 150px) clamp(140px, 18vh, 190px);
-        gap: 16px 22px;
-        padding: 20px clamp(20px, 2.5vw, 40px);
+            "hud"
+            "arena"
+            "hand";
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: clamp(68px, 8vh, 88px) minmax(360px, 1fr) clamp(190px, 24vh, 260px);
+        gap: 12px;
+        padding: 16px clamp(20px, 3vw, 48px);
     }
 
-    /* F23-A: .rb-hud vira display:contents pra promover os 3 filhos
-       (hud-player, turn-core, hud-bot) a filhos diretos do grid do board,
-       permitindo cada um usar grid-area próprio. */
+    /* K11: HUD vira faixa horizontal compacta (1 linha). 3 filhos viram
+       direct children do grid via display:contents. */
     .rb-hud {
-        display: contents;
+        grid-area: hud;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 8px;
+        border: 1px solid rgba(196, 160, 80, 0.32);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(28, 18, 8, 0.78), rgba(12, 8, 5, 0.86));
     }
 
     .rb-battle-zone,
     .rb-player-hand,
-    .rb-actions-row,
-    .rb-result-panel,
-    .rb-log,
-    .rb-evolution-panel,
     .rb-card-stage,
     .rb-hud-player,
     .rb-turn-core,
@@ -4681,56 +4691,105 @@ button {
         min-height: 0;
     }
 
-    /* F23-A: hero portraits viram colunas inteiras laterais. */
-    .rb-hud-player {
-        grid-area: hero-l;
-        grid-row: 1 / span 5;
-        align-self: stretch;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 18px;
-        padding: 22px 18px;
-        align-content: start;
-    }
-
+    /* K11: hero portraits viram CHIPs compactos no HUD (não mais colunas
+       full-height). Hide as ornamentos pesados — fica só avatar pequeno
+       + HP número grande + mana inline. */
+    .rb-hud-player,
     .rb-hud-bot {
-        grid-area: hero-r;
-        grid-row: 1 / span 1;
-        align-self: stretch;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
-        padding: 16px 18px;
-        align-content: start;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 10px;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
     }
 
-    /* F23-A: dentro do hero-l/r o avatar+orb fica em cima, depois copy abaixo.
-       Inverte o flow horizontal pra vertical. */
+    .rb-hud-player::before, .rb-hud-player::after,
+    .rb-hud-bot::before, .rb-hud-bot::after {
+        display: none !important;
+    }
+
     .rb-hud-player .rb-mark,
     .rb-hud-bot .rb-bot-emblem {
-        width: 96px;
-        height: 96px;
-        margin: 0 auto;
-        font-size: var(--fs-display);
+        width: 48px;
+        height: 48px;
+        font-size: var(--fs-md);
+        margin: 0;
     }
 
     .rb-hud-player .rb-hud-copy,
     .rb-hud-bot .rb-hud-copy {
-        display: grid;
-        gap: 10px;
-        justify-items: center;
-        text-align: center;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .rb-hud-player .rb-hud-copy > span,
+    .rb-hud-bot .rb-hud-copy > span {
+        font-size: var(--fs-2xs);
+        color: var(--rb-muted);
     }
 
     .rb-hud-player .rb-hud-health,
     .rb-hud-bot .rb-hud-health {
-        justify-content: center;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .rb-hud-player .rb-life-orb,
+    .rb-hud-bot .rb-life-orb {
+        width: 32px;
+        height: 32px;
+    }
+
+    .rb-hud-player .rb-hud-health strong,
+    .rb-hud-bot .rb-hud-health strong {
+        font-size: var(--fs-lg);
+        font-family: var(--rb-font-display);
+        color: var(--rb-text);
+    }
+
+    .rb-hud-player .rb-hud-health small,
+    .rb-hud-bot .rb-hud-health small {
+        display: none;
+    }
+
+    .rb-hud-player .rb-zone-row,
+    .rb-hud-bot .rb-zone-row {
+        font-size: var(--fs-2xs);
+        gap: 8px;
     }
 
     .rb-turn-core {
-        grid-area: turn;
-        justify-self: center;
-        align-self: center;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 14px;
+        border-left: 1px solid rgba(196, 160, 80, 0.32);
+        border-right: 1px solid rgba(196, 160, 80, 0.32);
+    }
+
+    .rb-turn-core > span {
+        font-size: var(--fs-2xs);
+        color: var(--rb-muted);
+        text-transform: uppercase;
+    }
+
+    .rb-turn-core strong {
+        font-family: var(--rb-font-display);
+        font-size: var(--fs-xl);
+        color: var(--rb-gold-2);
+    }
+
+    .rb-turn-core small {
+        font-size: var(--fs-2xs);
+        color: var(--rb-muted);
+    }
+
+    .rb-turn-core .rb-phase-timeline {
+        display: none;  /* Em zen, esconde phase timeline (volta só com toggle). */
     }
 
     .rb-battle-zone {
@@ -4751,29 +4810,31 @@ button {
         margin: 0 auto;
     }
 
-    .rb-result-panel {
-        grid-area: result;
-        align-self: start;
-    }
-
-    .rb-evolution-panel {
-        grid-area: evo;
-        align-self: start;
-    }
-
-    .rb-log {
-        grid-area: log;
-        align-self: stretch;
-    }
-
     .rb-player-hand {
         grid-area: hand;
         align-self: stretch;
     }
 
+    /* K11: painéis acessórios SAEM da arena zen. Result/evo/log/actions
+       ainda existem no DOM (engine produz events lá) mas escondidos no
+       layout principal. */
+    .rb-result-panel,
+    .rb-evolution-panel,
+    .rb-log,
     .rb-actions-row {
-        grid-area: actions;
-        align-self: stretch;
+        display: none;
+    }
+
+    /* Action mínima: botão "Encerrar Turno" + "Nova Partida" flutuante
+       no canto inferior direito, fora do grid. */
+    .rb-actions-row {
+        display: flex;
+        position: fixed;
+        right: clamp(16px, 2vw, 32px);
+        bottom: clamp(16px, 2vh, 28px);
+        z-index: 50;
+        gap: 8px;
+        padding: 0;
     }
 
     /* F21: o ::before do board adicionava escurecimento 42% nas laterais
