@@ -588,12 +588,11 @@ button {
     width: 804px;
     height: 324px;
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background:
-        linear-gradient(180deg, rgba(88, 214, 255, 0.08), transparent 36%, rgba(244, 173, 38, 0.08)),
-        radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.07), transparent 62%),
-        rgba(3, 5, 8, 0.72);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.54), inset 0 0 48px rgba(244, 173, 38, 0.035);
+    /* K11.5: era caixa preta 72% opacity sobreposta no HUD. Agora transparente
+       — o fundo bonito vem do .rb-game-board (gradient marrom DoC). */
+    border: 0;
+    background: transparent;
+    box-shadow: none;
     border-radius: var(--rb-cut-soft);
 }
 
@@ -4825,8 +4824,8 @@ button {
         display: none;
     }
 
-    /* Action mínima: botão "Encerrar Turno" + "Nova Partida" flutuante
-       no canto inferior direito, fora do grid. */
+    /* K11.5: action floating MINIMALISTA — 2 ícones redondos pequenos
+       no canto inferior direito. Sem text labels nem caixas grandes. */
     .rb-actions-row {
         display: flex;
         position: fixed;
@@ -4835,6 +4834,46 @@ button {
         z-index: 50;
         gap: 8px;
         padding: 0;
+        width: auto;
+        height: auto;
+        grid-template-columns: none;
+    }
+
+    .rb-actions-row > div {
+        display: flex;
+        gap: 0;
+    }
+
+    .rb-actions-row > div small,
+    .rb-actions-row > div p {
+        display: none;  /* esconde captions "Jogue CINDER LYNX (1 mana)" */
+    }
+
+    .rb-actions-row .rb-cta,
+    .rb-actions-row .rb-secondary {
+        width: 56px;
+        height: 56px;
+        min-height: 56px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 0;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.62);
+    }
+
+    /* "ZONA DO BOT" / "SUA ZONA" labels são ruído no zen — esconde só
+       o label (mantém o slot row inteiro). */
+    .rb-field-row > span:first-child {
+        display: none;
+    }
+
+    /* Sem label, a coluna 76px do label vira 0 — slots ocupam tudo. */
+    .rb-field-row {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    /* "PROTEGIDO NO TURNO 1" — esconde texto interno dos slots vazios do bot. */
+    .rb-field-row-bot .rb-field-slot-empty > span {
+        display: none;
     }
 
     /* F21: o ::before do board adicionava escurecimento 42% nas laterais
