@@ -425,6 +425,41 @@
         }
     };
 
+    // K1: Sistema de keywords mecânicas. Mantém sincronizado com
+    // services/rebirth_keywords.py (KEYWORD_LABELS e KEYWORD_COLORS).
+    const RebirthKeywords = {
+        LABELS: {
+            RUSH:      "Investida",
+            BURST:     "Detonação",
+            LIFESTEAL: "Drenar",
+            TAUNT:     "Provocar",
+            SHIELD:    "Escudo",
+            PIERCE:    "Perfurar",
+            REGEN:     "Regenerar",
+            EXECUTE:   "Executar",
+        },
+        TOOLTIPS: {
+            RUSH:      "Pode atacar no turno em que é invocado.",
+            BURST:     "Causa 2 de dano direto ao oponente ao ser invocado.",
+            LIFESTEAL: "Recupera HP igual ao dano causado em combate.",
+            TAUNT:     "Inimigos devem atacar esta carta primeiro.",
+            SHIELD:    "Ignora a primeira instância de dano recebida.",
+            PIERCE:    "Dano excedente sobre Guarda vai direto pro HP.",
+            REGEN:     "Restaura 1 de Guarda no início do turno do dono.",
+            EXECUTE:   "Mata instantaneamente alvos com Guarda ≤ 1.",
+        },
+        badges(card) {
+            const kws = (card && card.keywords) || [];
+            if (!kws.length) return "";
+            const items = kws.map(k => {
+                const label = this.LABELS[k] || k;
+                const tip = this.TOOLTIPS[k] || "";
+                return `<span class="rb-keyword-badge rb-kw-${k.toLowerCase()}" title="${RebirthText.escape(tip)}">${RebirthText.escape(label)}</span>`;
+            });
+            return `<span class="rb-keyword-strip" aria-label="Palavras-chave">${items.join("")}</span>`;
+        },
+    };
+
     const RebirthStatus = {
         label(name) {
             return {
@@ -787,6 +822,7 @@
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${options && options.recommended ? '<span class="rb-recommendation-badge">MELHOR JOGADA</span>' : ""}
                     ${RebirthStatus.miniBadge(statuses)}
+                    ${RebirthKeywords.badges(card)}
                     <span class="rb-card-image-layer rb-mini-art">
                         ${RebirthAssets.imageMarkup(card)}
                     </span>

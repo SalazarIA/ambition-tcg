@@ -10142,3 +10142,45 @@ button {
     text-align: center;
     line-height: 1.4;
 }
+
+/* === K1: Keyword badges nas cartas === */
+.rb-keyword-strip {
+    position: absolute;
+    z-index: 5;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.rb-keyword-badge {
+    display: inline-block;
+    padding: 1px 4px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    background: rgba(0, 0, 0, 0.78);
+    pointer-events: auto;
+}
+
+.rb-kw-rush      { color: #ff6b3c; }
+.rb-kw-burst     { color: #ffb22e; }
+.rb-kw-lifesteal { color: #7aa758; }
+.rb-kw-taunt     { color: #c4a050; }
+.rb-kw-shield    { color: #8aa6c8; }
+.rb-kw-pierce    { color: #c43030; }
+.rb-kw-regen     { color: #6ad29a; }
+.rb-kw-execute   { color: #a85cff; }
+
+/* Em field cards (cards no board), badges menores */
+.rb-field-card .rb-keyword-badge {
+    font-size: 7px;
+    padding: 1px 3px;
+}

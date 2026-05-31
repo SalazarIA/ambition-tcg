@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+from services.rebirth_keywords import default_keywords_for
+
 
 CARD_IMAGE_TEMPLATE = "static/img/cards/baralho/{card_number}.webp"
 CARD_TYPES = {"MONSTER", "SPELL", "TRAP"}
@@ -368,6 +370,8 @@ def _monster_card(card_number, *, family, name, tier, slot):
         "ability_key": ability_key,
         "ability_name": ability_name,
         "ability_text": ability_text,
+        # K1: keywords mecânicas por família. Tier ≥ 2 ganha keyword bônus.
+        "keywords": default_keywords_for(family, tier=tier),
         "flavor": f"{name} conduz a linhagem de {config['element'].lower()} à arena viva.",
         "status_affinity": family.lower(),
         "heuristic_vector": _heuristic_vector(

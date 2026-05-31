@@ -605,6 +605,28 @@ def _summon_monster_card(match, side_name, card, field_slot=None):
         parent_event_id=played_event["event_id"],
         root_event_id=played_event["root_event_id"],
     )
+    # K1: BURST keyword — dano direto ao oponente ao invocar.
+    from services.rebirth_keywords import on_summon_burst
+    burst_damage = on_summon_burst(summoned)
+    if burst_damage > 0:
+        opponent_side = "bot" if side_name == "player" else "player"
+        opponent = match[opponent_side]
+        actual = apply_turn_damage(match, opponent_side, burst_damage)
+        if actual > 0:
+            burst_msg = f"{summoned['name']} detona ao entrar — {actual} de dano direto."
+            match["log"].append(f"{turn_label}   {burst_msg}")
+            append_event(
+                match,
+                "BURST_DAMAGE",
+                actor=side_name,
+                source_card_id=summoned["id"],
+                target_id=opponent_side,
+                payload={"amount": actual, "keyword": "BURST"},
+                message=burst_msg,
+                parent_event_id=summoned_event["event_id"],
+                root_event_id=summoned_event["root_event_id"],
+            )
+
     passive_events = apply_legendary_passives(
         match,
         "CARD_SUMMONED",

@@ -2,7 +2,7 @@ from copy import deepcopy
 import re
 
 
-REBIRTH_ART_VERSION = "v87_LAUNCH-2"
+REBIRTH_ART_VERSION = "v88_KEYWORDS-1"
 ART_BASE_PATH = "/static/assets/rebirth/cards"
 
 
