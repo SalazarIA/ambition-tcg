@@ -899,6 +899,9 @@ def api_rebirth_ranking_me():
     try:
         user = require_user()
         return json_payload(ranking=rebirth_repo().get_user_ranking(user["id"]))
+    except RebirthPersistenceError as error:
+        # require_user() levanta RebirthPersistenceError(auth_required, 401)
+        return json_from_persistence_error(error)
     except RebirthError as error:
         return json_from_rebirth_error(error)
 
