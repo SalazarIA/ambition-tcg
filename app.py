@@ -58,7 +58,7 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v86_LAUNCH-1")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v87_LAUNCH-2")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -660,6 +660,11 @@ REBIRTH_CSRF_PROTECTED_PREFIXES = ("/api/rebirth/", "/api/labs/")
 # headers — CSRF token travels in the request body instead. The endpoint
 # verifies the token manually before mutating anything.
 REBIRTH_CSRF_BODY_PATHS = frozenset({"/api/rebirth/telemetry/beacon"})
+# S4 fix: Stripe webhook é POST server-to-server (Stripe → nosso backend).
+# Não tem sessão, não tem cookie, não pode mandar X-Rebirth-CSRF. A
+# autenticidade é verificada por Stripe-Signature (HMAC com whsec_).
+# Por isso isentamos do CSRF middleware.
+REBIRTH_CSRF_EXEMPT_PATHS = frozenset({"/api/rebirth/billing/webhook"})
 
 
 @app.before_request
@@ -669,6 +674,9 @@ def protect_rebirth_mutations():
     if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
     if not any(request.path.startswith(prefix) for prefix in REBIRTH_CSRF_PROTECTED_PREFIXES):
+        return None
+    if request.path in REBIRTH_CSRF_EXEMPT_PATHS:
+        # Webhooks externos (Stripe etc) usam HMAC próprio em vez de CSRF.
         return None
     if request.path in REBIRTH_CSRF_BODY_PATHS:
         # CSRF verification is delegated to the endpoint (reads from body).

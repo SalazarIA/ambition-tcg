@@ -3456,7 +3456,7 @@
                     credentials: "same-origin",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRFToken": window.REBIRTH_CSRF || "",
+                        "X-Rebirth-CSRF": window.REBIRTH_CSRF || "",
                     },
                     body: JSON.stringify({ step }),
                 });
