@@ -5,7 +5,6 @@ from services.rebirth.rebirth_state import (
     activate_card_from_hand,
     create_rebirth_match,
     draw_card,
-    get_opponent_side,
     get_side,
 )
 

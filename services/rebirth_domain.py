@@ -11,7 +11,6 @@ import base64
 import gzip
 import hashlib
 import json
-from copy import deepcopy
 from typing import Any, Dict
 
 from services.rebirth_profiler import current_profiler

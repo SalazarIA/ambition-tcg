@@ -1,6 +1,5 @@
 import hashlib
 import json
-from copy import deepcopy
 
 from services.rebirth_domain import (
     CARD_SET_VERSION,
@@ -11,7 +10,7 @@ from services.rebirth_domain import (
     canonical_json,
     SNAPSHOT_FORMAT_VERSION,
     REPLAY_SCHEMA_VERSION,
-    compress_canonical_state,
+    compress_canonical_state,  # noqa: F401 — re-exportado via monkeypatch nos testes v65
     compress_serialized_state,
     canonical_state_hash,
     serialize_canonical_state,
