@@ -4674,19 +4674,31 @@ button {
         background: linear-gradient(180deg, rgba(28, 18, 8, 0.78), rgba(12, 8, 5, 0.86));
     }
 
+    /* K11.6: RESET AGRESSIVO. Layout base tem position:absolute + z-index:1
+       em .rb-hud, .rb-battle-zone, .rb-player-hand, .rb-card-stage,
+       .rb-result, .rb-turn-log — coordenadas pixel-perfect do board
+       portrait 852×1846. No grid moderno DOC todos viram block flow normal
+       com !important pra vencer especificidade. */
+    .rb-hud,
+    .rb-hud-player,
+    .rb-hud-bot,
+    .rb-turn-core,
     .rb-battle-zone,
     .rb-player-hand,
     .rb-card-stage,
-    .rb-hud-player,
-    .rb-turn-core,
-    .rb-hud-bot {
-        position: relative;
-        left: auto;
-        top: auto;
-        right: auto;
-        bottom: auto;
-        width: auto;
-        height: auto;
+    .rb-result-panel,
+    .rb-evolution-panel,
+    .rb-log,
+    .rb-actions {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        inset: auto !important;
+        z-index: auto !important;
+        width: auto !important;
+        height: auto !important;
         min-height: 0;
     }
 
