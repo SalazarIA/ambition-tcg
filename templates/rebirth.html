@@ -233,6 +233,21 @@
             <div class="vfx-evolution-stage" id="rebirth-evolution-stage" aria-hidden="true"></div>
             <div class="vfx-finale-overlay" id="rebirth-finale-overlay" role="status" aria-live="polite" aria-hidden="true"></div>
             <div class="rb-boss-intro-overlay" id="rebirth-boss-intro" role="status" aria-live="polite" aria-hidden="true"></div>
+
+            {# S1: overlay de tutorial in-game — 4 steps guiando primeira partida. JS ativa quando
+               state.player.tutorial_complete === false e clashes === 0. #}
+            <div class="rb-tutorial-overlay" id="rebirth-tutorial" data-rebirth-tutorial hidden>
+                <div class="rb-tutorial-spotlight" data-tutorial-spotlight></div>
+                <div class="rb-tutorial-balloon" data-tutorial-balloon role="dialog" aria-label="Tutorial">
+                    <span class="rb-tutorial-step" data-tutorial-step-label>Passo 1 de 4</span>
+                    <h3 data-tutorial-title>Bem-vindo à Arena</h3>
+                    <p data-tutorial-body>Toque numa carta da sua mão para selecionar.</p>
+                    <div class="rb-tutorial-actions">
+                        <button type="button" class="rb-secondary" data-tutorial-skip>Pular tutorial</button>
+                        <button type="button" class="rb-button-primary rb-cta" data-tutorial-next>Entendi</button>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <aside class="rb-desktop-rail rb-desktop-rail-right" aria-label="Guia da partida">

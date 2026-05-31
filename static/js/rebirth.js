@@ -2758,6 +2758,13 @@
                 /* nunca deixa VFX falhar derrubar a UI */
                 if (window.console) console.warn("[rebirth] signature VFX failed", err);
             }
+            // S1: dispara tutorial in-game se for primeira partida do user autenticado.
+            // Tolerante: nunca derruba UI.
+            try {
+                if (!previousState && window.RebirthTutorial) {
+                    setTimeout(() => window.RebirthTutorial.maybeStart(state), 600);
+                }
+            } catch (err) { /* silencioso */ }
         },
 
         async startMatch() {
@@ -3318,6 +3325,154 @@
         }
     };
 
+    // S1: Tutorial in-game. 4 steps guiados quando o usuário é autenticado
+    // E ainda não completou (progression.tutorial_complete === false).
+    // Ancorado em elementos do jogo via data-tutorial-spotlight (bounding box).
+    const RebirthTutorial = {
+        STEPS: [
+            {
+                step: 1,
+                title: "Bem-vindo à Arena",
+                body: "Toque numa carta da sua mão (faixa inferior) pra escolher qual monstro invocar primeiro.",
+                target: ".rb-hand .rb-mini-card",
+            },
+            {
+                step: 2,
+                title: "Invoque no campo",
+                body: "Toque num dos slots livres da SUA ZONA pra invocar a carta selecionada. Cada invocação custa mana.",
+                target: ".rb-field-row:not(.rb-field-row-bot) .rb-field-card, .rb-field-row:not(.rb-field-row-bot) .rb-field-slot-empty, .rb-actions-row [data-rebirth-summon]",
+            },
+            {
+                step: 3,
+                title: "Ataque a vida do bot",
+                body: "Quando um monstro seu estiver no campo, toque pra atacar a guarda do bot. Quando a guarda cai, o dano vai pro HP.",
+                target: ".rb-actions-row [data-rebirth-attack], #attack-button, .rb-monster-card-main",
+            },
+            {
+                step: 4,
+                title: "Encerre o turno",
+                body: "Quando não houver mais o que jogar, encerre o turno e deixe o bot agir. Repita até derrotá-lo.",
+                target: ".rb-actions-row [data-rebirth-end], #end-turn-button",
+            },
+        ],
+        state: { active: false, currentIdx: 0, dom: null },
+
+        init() {
+            const overlay = document.getElementById("rebirth-tutorial");
+            if (!overlay) return;
+            this.state.dom = {
+                overlay,
+                spotlight: overlay.querySelector("[data-tutorial-spotlight]"),
+                balloon: overlay.querySelector("[data-tutorial-balloon]"),
+                stepLabel: overlay.querySelector("[data-tutorial-step-label]"),
+                title: overlay.querySelector("[data-tutorial-title]"),
+                body: overlay.querySelector("[data-tutorial-body]"),
+                skipBtn: overlay.querySelector("[data-tutorial-skip]"),
+                nextBtn: overlay.querySelector("[data-tutorial-next]"),
+            };
+            this.state.dom.nextBtn.addEventListener("click", () => this.advance());
+            this.state.dom.skipBtn.addEventListener("click", () => this.finish(true));
+            window.addEventListener("resize", () => {
+                if (this.state.active) this.repositionSpotlight();
+            }, { passive: true });
+        },
+
+        // chamado pelo flow do match após state arrivar
+        maybeStart(state) {
+            if (!state || !state.player) return;
+            const progression = (window.REBIRTH_PLAYER_CONTEXT && window.REBIRTH_PLAYER_CONTEXT.progression) || {};
+            const account = (window.REBIRTH_PLAYER_CONTEXT && window.REBIRTH_PLAYER_CONTEXT.account) || {};
+            // Mostra tutorial pra: autenticado + progression.tutorial_complete=false +
+            // clashes=0 (primeira partida real, não restart)
+            const shouldShow = (
+                account.authenticated &&
+                progression && !progression.tutorial_complete &&
+                Number(progression.clashes || 0) === 0
+            );
+            if (!shouldShow || this.state.active) return;
+            this.start();
+        },
+
+        start() {
+            if (!this.state.dom) return;
+            this.state.active = true;
+            this.state.currentIdx = 0;
+            this.state.dom.overlay.hidden = false;
+            this.renderStep();
+        },
+
+        renderStep() {
+            const dom = this.state.dom;
+            const step = this.STEPS[this.state.currentIdx];
+            if (!step) return this.finish(false);
+            dom.stepLabel.textContent = `Passo ${step.step} de ${this.STEPS.length}`;
+            dom.title.textContent = step.title;
+            dom.body.textContent = step.body;
+            dom.nextBtn.textContent = step.step >= this.STEPS.length ? "Concluir" : "Entendi";
+            this.repositionSpotlight();
+        },
+
+        repositionSpotlight() {
+            const dom = this.state.dom;
+            const step = this.STEPS[this.state.currentIdx];
+            if (!dom || !step) return;
+            const targets = step.target.split(",").map((s) => s.trim()).filter(Boolean);
+            let el = null;
+            for (const sel of targets) {
+                el = document.querySelector(sel);
+                if (el && el.getBoundingClientRect().width > 0) break;
+            }
+            if (!el) {
+                dom.spotlight.style.display = "none";
+                return;
+            }
+            const rect = el.getBoundingClientRect();
+            const pad = 8;
+            dom.spotlight.style.display = "block";
+            dom.spotlight.style.top = `${Math.max(0, rect.top - pad)}px`;
+            dom.spotlight.style.left = `${Math.max(0, rect.left - pad)}px`;
+            dom.spotlight.style.width = `${rect.width + pad * 2}px`;
+            dom.spotlight.style.height = `${rect.height + pad * 2}px`;
+        },
+
+        advance() {
+            // Reporta passo ao backend (best-effort, não bloqueia UX)
+            const step = this.STEPS[this.state.currentIdx];
+            if (step) {
+                this.reportStep(step.step).catch(() => {});
+            }
+            this.state.currentIdx += 1;
+            if (this.state.currentIdx >= this.STEPS.length) {
+                this.finish(false);
+                return;
+            }
+            this.renderStep();
+        },
+
+        async reportStep(step) {
+            try {
+                await fetch("/api/rebirth/onboarding/complete", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": window.REBIRTH_CSRF || "",
+                    },
+                    body: JSON.stringify({ step }),
+                });
+            } catch (e) { /* silencioso */ }
+        },
+
+        finish(skipped) {
+            this.state.active = false;
+            if (this.state.dom) {
+                this.state.dom.overlay.hidden = true;
+            }
+            // Conclui no backend (step 4) marcando tutorial completo
+            this.reportStep(4).catch(() => {});
+        },
+    };
+
     // F22-F: tilt 3D nos mini-cards da mão. Hover define --tilt-x/--tilt-y
     // em graus baseado na posição do mouse dentro do card. A regra CSS
     // .rb-hand .rb-mini-card já consome esses vars via rotateX/rotateY.
@@ -3356,8 +3511,12 @@
         RebirthAssets.preload();
         RebirthInput.bind();
         RebirthHandTilt.init();
+        RebirthTutorial.init();
         RebirthFlow.startMatch();
     }
+
+    // S1: expor pra integração com flow — chamado após state inicial chegar
+    window.RebirthTutorial = RebirthTutorial;
 
     window.initiateMobilePurchase = initiateMobilePurchase;
     window.renderTurnPhase = renderTurnPhase;

@@ -732,6 +732,9 @@ class RebirthRepository:
             self._ensure_sqlite_column(db, "users", "verification_token", "TEXT")
             self._ensure_sqlite_column(db, "users", "verification_sent_at", "TEXT")
             self._ensure_sqlite_column(db, "users", "email_verified_at", "TEXT")
+            # S3: ranking ELO por usuário
+            self._ensure_sqlite_column(db, "users", "ranking_elo", "INTEGER NOT NULL DEFAULT 1500")
+            self._ensure_sqlite_column(db, "users", "ranking_season", "INTEGER NOT NULL DEFAULT 1")
             db.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_match_history_campaign

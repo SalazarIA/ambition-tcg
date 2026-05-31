@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 SCHEMA_MIGRATION_LOCK_KEY = 735194302771
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
@@ -35,7 +35,10 @@ REQUIRED_TABLES = {
 }
 REQUIRED_COLUMNS = {
     "match_history": {"campaign_version", "campaign_node", "campaign_attempt"},
-    "users": {"email_verified", "verification_token", "verification_sent_at", "email_verified_at"},
+    "users": {
+        "email_verified", "verification_token", "verification_sent_at", "email_verified_at",
+        "ranking_elo", "ranking_season",
+    },
 }
 
 # Executado antes da foundation migration: tabelas Ascension com nomes
@@ -517,6 +520,18 @@ VALUES (9, 'email_verification')
 ON CONFLICT (version) DO NOTHING;
 """
 
+MIGRATION_010 = """
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ranking_elo INTEGER NOT NULL DEFAULT 1500;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ranking_season INTEGER NOT NULL DEFAULT 1;
+
+CREATE INDEX IF NOT EXISTS idx_users_ranking_elo
+    ON users(ranking_elo DESC);
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (10, 'ranking_elo')
+ON CONFLICT (version) DO NOTHING;
+"""
+
 MIGRATIONS = (
     MIGRATION_001,
     MIGRATION_002,
@@ -527,6 +542,7 @@ MIGRATIONS = (
     MIGRATION_007,
     MIGRATION_008,
     MIGRATION_009,
+    MIGRATION_010,
 )
 
 

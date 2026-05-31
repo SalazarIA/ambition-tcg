@@ -9872,3 +9872,107 @@ button {
     pointer-events: none;
     background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 16'%3E%3Cg fill='%23c4a050'%3E%3Cpath d='M 16 0 L 22 6 L 16 12 L 10 6 Z' opacity='0.92'/%3E%3Ccircle cx='16' cy='6' r='1.6' fill='%230c0805'/%3E%3Cpath d='M 4 6 Q 8 4 12 6 Q 8 8 4 6 Z' opacity='0.62'/%3E%3Cpath d='M 28 6 Q 24 4 20 6 Q 24 8 28 6 Z' opacity='0.62'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
 }
+
+/* === S1: Tutorial in-game overlay === */
+.rb-tutorial-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.72);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.rb-tutorial-spotlight {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    border: 2px solid rgba(196, 160, 80, 0.85);
+    border-radius: 12px;
+    box-shadow:
+        0 0 0 9999px rgba(0, 0, 0, 0.72),
+        0 0 32px rgba(196, 160, 80, 0.42),
+        inset 0 0 18px rgba(196, 160, 80, 0.22);
+    transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease;
+}
+
+.rb-tutorial-balloon {
+    position: relative;
+    z-index: 2;
+    max-width: 420px;
+    padding: 24px 26px 22px;
+    border: 1.5px solid rgba(196, 160, 80, 0.62);
+    border-radius: 10px;
+    background:
+        linear-gradient(180deg, rgba(46, 33, 22, 0.96), rgba(16, 10, 5, 0.96));
+    box-shadow:
+        inset 0 0 0 1px rgba(232, 212, 164, 0.14),
+        inset 0 0 32px rgba(0, 0, 0, 0.62),
+        0 24px 64px rgba(0, 0, 0, 0.72);
+    color: var(--rb-text);
+    text-align: left;
+}
+
+.rb-tutorial-step {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--rb-gold);
+    font-size: var(--fs-xs);
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.rb-tutorial-balloon h3 {
+    margin: 0 0 10px;
+    font-family: var(--rb-font-display);
+    font-size: var(--fs-lg);
+    line-height: 1.1;
+    color: var(--rb-text);
+}
+
+.rb-tutorial-balloon p {
+    margin: 0 0 18px;
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+    color: rgba(232, 212, 164, 0.84);
+}
+
+.rb-tutorial-actions {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+}
+
+.rb-tutorial-actions .rb-secondary {
+    padding: 10px 14px;
+    border: 1px solid rgba(196, 160, 80, 0.42);
+    background: transparent;
+    color: rgba(232, 212, 164, 0.72);
+    font-size: var(--fs-xs);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.rb-tutorial-actions .rb-secondary:hover {
+    color: var(--rb-gold-2);
+    border-color: var(--rb-gold);
+}
+
+.rb-tutorial-actions .rb-cta {
+    padding: 12px 22px;
+    font-weight: 900;
+}
+
+@media (max-width: 760px) {
+    .rb-tutorial-balloon {
+        max-width: calc(100vw - 32px);
+        padding: 18px 20px 18px;
+    }
+    .rb-tutorial-balloon h3 {
+        font-size: var(--fs-md);
+    }
+}
