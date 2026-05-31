@@ -3,3 +3,4 @@ gunicorn==22.0.0
 sqlalchemy==2.0.49
 psycopg[binary]==3.2.10
 pydantic==2.12.5
+stripe==12.6.1

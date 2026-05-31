@@ -852,6 +852,103 @@ def api_rebirth_ranking_me():
         return json_from_rebirth_error(error)
 
 
+# === S4: Stripe billing — venda de gems ===
+
+@app.get("/rebirth/billing")
+def rebirth_billing_page():
+    user = current_user()
+    repo = rebirth_repo()
+    packages = [{"id": pid, **info} for pid, info in repo.BILLING_PACKAGES.items()]
+    return render_template(
+        "rebirth_billing.html",
+        account=account_payload(user),
+        packages=packages,
+        stripe_publishable_key=os.environ.get("STRIPE_PUBLISHABLE_KEY", ""),
+    )
+
+
+@app.post("/api/rebirth/billing/checkout")
+def api_rebirth_billing_checkout():
+    """Cria uma Stripe Checkout Session pro pacote selecionado. Retorna
+    a URL de redirect que o frontend abre. Requer STRIPE_SECRET_KEY no env."""
+    try:
+        user = require_user()
+        payload = request_json(required=True)
+        package_id = str(payload.get("package_id") or "")
+        repo = rebirth_repo()
+        pkg = repo.BILLING_PACKAGES.get(package_id)
+        if not pkg:
+            return json_error("Pacote inválido.", "billing_invalid_package", 400)
+        # invalida package_id que o frontend tentou enviar com whitespace etc
+        secret = os.environ.get("STRIPE_SECRET_KEY")
+        if not secret:
+            return json_error(
+                "Stripe não está configurado neste ambiente.",
+                "billing_not_configured",
+                503,
+            )
+        try:
+            import stripe  # noqa: WPS433
+        except ImportError:
+            return json_error(
+                "Dependência stripe não instalada (pip install stripe).",
+                "billing_not_configured",
+                503,
+            )
+        stripe.api_key = secret
+        public_base = (os.environ.get("PUBLIC_BASE_URL") or request.url_root).rstrip("/")
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            client_reference_id=str(user["id"]),
+            line_items=[{
+                "price_data": {
+                    "currency": "brl",
+                    "unit_amount": int(pkg["price_cents"]),
+                    "product_data": {"name": f"Ambitionz Rebirth · {pkg['label']}"},
+                },
+                "quantity": 1,
+            }],
+            metadata={"user_id": str(user["id"]), "package_id": package_id},
+            success_url=f"{public_base}/rebirth/billing?status=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{public_base}/rebirth/billing?status=cancel",
+        )
+        return json_payload(checkout_url=session.url, session_id=session.id)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+    except Exception as exc:  # noqa: BLE001
+        return json_error(str(exc), "billing_checkout_failed", 500)
+
+
+@app.post("/api/rebirth/billing/webhook")
+def api_rebirth_billing_webhook():
+    """Webhook Stripe: processa checkout.session.completed e credita gems.
+    Configurado na Stripe Dashboard apontando pra este endpoint."""
+    secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    if not secret:
+        return ("", 503)
+    try:
+        import stripe  # noqa: WPS433
+    except ImportError:
+        return ("", 503)
+    payload = request.get_data(as_text=False)
+    sig_header = request.headers.get("Stripe-Signature", "")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, secret)
+    except Exception as exc:  # noqa: BLE001
+        return (f"webhook_invalid: {exc}", 400)
+    if event["type"] == "checkout.session.completed":
+        sess = event["data"]["object"]
+        user_id = int(sess.get("metadata", {}).get("user_id") or 0)
+        package_id = sess.get("metadata", {}).get("package_id") or ""
+        if user_id and package_id:
+            try:
+                rebirth_repo().credit_billing_gems(user_id, package_id, sess["id"])
+            except RebirthPersistenceError as err:
+                return (f"credit_failed: {err.code}", 200)
+    return ("", 200)
+
+
 @app.get("/health")
 def health():
     try:

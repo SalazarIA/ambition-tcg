@@ -2522,6 +2522,63 @@ class RebirthRepository:
                 "total": int(total["n"]),
             }
 
+    # === S4: Stripe billing — crédito de gems via checkout ===
+    BILLING_PACKAGES = {
+        "gems_100": {"gems": 100, "price_cents": 990, "label": "100 Gemas"},
+        "gems_550": {"gems": 550, "price_cents": 4990, "label": "550 Gemas"},
+        "gems_1300": {"gems": 1300, "price_cents": 9990, "label": "1300 Gemas"},
+    }
+
+    def credit_billing_gems(self, user_id, package_id, stripe_session_id):
+        """Credita gems do pacote Stripe ao usuário. Idempotente via stripe
+        session_id (uma sessão = um crédito). Chamado pelo webhook."""
+        if not user_id or not stripe_session_id:
+            return None
+        pkg = self.BILLING_PACKAGES.get(package_id)
+        if not pkg:
+            raise RebirthPersistenceError(
+                f"Pacote desconhecido: {package_id}", "billing_invalid_package", 400
+            )
+        self.ensure_schema()
+        amount = int(pkg["gems"])
+        now = utc_now()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            already = db.execute(
+                """
+                SELECT 1 FROM economy_ledger
+                WHERE user_id = ? AND resource = 'coinz'
+                  AND reference_type = 'stripe' AND reference_id = ?
+                """,
+                (user_id, stripe_session_id),
+            ).fetchone()
+            if already:
+                db.execute("ROLLBACK")
+                return {"credited": False, "reason": "already_processed"}
+            self._record_wallet_entry(
+                db,
+                user_id,
+                currency="COINZ",
+                entry_type="CREDIT",
+                amount=amount,
+                source="BILLING",
+                reference_id=stripe_session_id,
+                now=now,
+            )
+            self._record_ledger_entry(
+                db,
+                user_id,
+                resource="coinz",
+                delta=amount,
+                reason=f"stripe_purchase_{package_id}",
+                reference_type="stripe",
+                reference_id=stripe_session_id,
+                metadata={"package_id": package_id, "gems": amount, "price_cents": pkg["price_cents"]},
+                now=now,
+            )
+            db.execute("COMMIT")
+            return {"credited": True, "gems": amount, "package_id": package_id}
+
     def get_ranking_top(self, limit=20):
         """Top N jogadores por ELO."""
         self.ensure_schema()

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprar Gemas - Ambitionz Rebirth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0805">
+    <meta name="description" content="Compre gemas pra abrir mais boosters e acelerar sua coleção em Ambitionz Rebirth.">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+</head>
+<body class="rb-page rb-home-page rb-product-page rb-billing-page">
+    {% include "_rebirth_global_nav.html" %}
+    <main class="rb-home-shell rb-product-shell rb-billing-shell" data-rebirth-billing>
+        <section class="rb-product-hero" aria-label="Comprar gemas">
+            <div>
+                <span class="rb-product-kicker">Loja Premium</span>
+                <h1>Gemas</h1>
+                <p>Gemas abrem boosters extras e aceleram sua coleção. Pagamento processado pela Stripe.</p>
+            </div>
+        </section>
+
+        {% if request.args.get('status') == 'success' %}
+            <section class="rb-product-panel rb-billing-status is-success">
+                <span>✓ Pagamento confirmado</span>
+                <h2>Suas gemas foram creditadas</h2>
+                <p>Pode demorar alguns segundos pro saldo atualizar no header.</p>
+            </section>
+        {% elif request.args.get('status') == 'cancel' %}
+            <section class="rb-product-panel rb-billing-status is-cancel">
+                <span>Pagamento cancelado</span>
+                <h2>Nenhum valor foi cobrado</h2>
+                <p>Tente de novo a qualquer momento.</p>
+            </section>
+        {% endif %}
+
+        {% if not account.authenticated %}
+            <section class="rb-product-panel rb-billing-login" aria-label="Entrar para comprar">
+                <span>Conta necessária</span>
+                <h2>Entre para comprar gemas</h2>
+                <p>As gemas são creditadas na sua conta após o pagamento.</p>
+                <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
+            </section>
+        {% endif %}
+
+        <section class="rb-billing-grid" aria-label="Pacotes de gemas">
+            {% for pkg in packages %}
+                <article class="rb-billing-pack" data-package-id="{{ pkg.id }}">
+                    <header>
+                        <span class="rb-billing-icon" aria-hidden="true">💎</span>
+                        <h3>{{ pkg.label }}</h3>
+                    </header>
+                    <p class="rb-billing-price">R$ {{ "%.2f"|format(pkg.price_cents / 100) }}</p>
+                    <p class="rb-billing-perk">{{ pkg.gems }} gemas creditadas na conta</p>
+                    {% if account.authenticated %}
+                        <button class="rb-button-primary rb-cta" type="button" data-billing-checkout="{{ pkg.id }}">Comprar</button>
+                    {% else %}
+                        <button class="rb-secondary" type="button" data-rebirth-auth-open>Entrar para comprar</button>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </section>
+
+        <p class="rb-billing-disclaimer">
+            Pagamentos processados pela Stripe. Pix, cartão de crédito e débito aceitos.
+            Nenhum dado de cartão é armazenado pela Ambitionz.
+        </p>
+    </main>
+
+    <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            wallet: "{{ url_for('api_rebirth_wallet') }}"
+        };
+
+        // S4: handler de checkout — chama backend, recebe URL Stripe e redireciona.
+        document.addEventListener("click", async (event) => {
+            const btn = event.target.closest("[data-billing-checkout]");
+            if (!btn) return;
+            const packageId = btn.getAttribute("data-billing-checkout");
+            const originalLabel = btn.textContent;
+            btn.textContent = "Aguarde...";
+            btn.disabled = true;
+            try {
+                const response = await fetch("/api/rebirth/billing/checkout", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": window.REBIRTH_CSRF || "",
+                    },
+                    body: JSON.stringify({ package_id: packageId }),
+                });
+                const data = await response.json();
+                if (data && data.ok && data.checkout_url) {
+                    window.location.assign(data.checkout_url);
+                    return;
+                }
+                const message = (data && data.error && data.error.message) || "Falha no checkout.";
+                alert(message);
+            } catch (err) {
+                alert("Não foi possível iniciar o pagamento. Tente novamente.");
+            } finally {
+                btn.textContent = originalLabel;
+                btn.disabled = false;
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+</body>
+</html>
