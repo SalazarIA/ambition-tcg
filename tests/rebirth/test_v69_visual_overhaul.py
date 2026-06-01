@@ -111,8 +111,9 @@ def test_visual_pass_does_not_touch_authoritative_replay_or_heavy_css():
         "CREATE TABLE",
         "ALTER TABLE",
         "requestAnimationFrame(requestAnimationFrame",
-        "filter:",
         "backdrop-filter",
         "drop-shadow",
     ]:
         assert forbidden not in combined_frontend
+    assert "filter: brightness(1.18)" in combined_frontend
+    assert "blur(" not in combined_frontend

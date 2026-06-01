@@ -1,6 +1,6 @@
 {
   "product": "Ambitionz Rebirth",
-  "version": "v94_NO_TABLE-1",
+  "version": "v95_GAME_FEEL_PASS",
   "ui": {
     "bot_card_back": "/static/assets/rebirth/ui/bot-card-back.png",
     "bot_emblem": "/static/assets/rebirth/ui/bot-emblem.png"

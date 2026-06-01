@@ -18,6 +18,7 @@
         campaignReward: null,
         lastResultSignature: null,
         lastResultTextSignature: null,
+        lastActionPopupSignature: null,
         guidedFirstMatch: false,
         tutorialCompletionSent: false,
         pending: false,
@@ -1706,6 +1707,246 @@
         },
     };
 
+    const RebirthGameFeel = {
+        turnBannerTimer: null,
+        actionPopupTimer: null,
+        delayedPlayerTurnTimer: null,
+        botPreviewHoldUntil: 0,
+        activeSide: "player",
+
+        layer() {
+            const board = RebirthStore.elements["rebirth-board"];
+            if (!board) return null;
+            let layer = board.querySelector(".rb-feedback-layer");
+            if (!layer) {
+                layer = document.createElement("div");
+                layer.className = "rb-feedback-layer";
+                layer.setAttribute("aria-live", "polite");
+                layer.setAttribute("aria-atomic", "true");
+                layer.innerHTML = `
+                    <div class="rb-turn-banner" hidden></div>
+                    <div class="rb-action-popup" hidden></div>
+                `;
+                board.appendChild(layer);
+            }
+            return layer;
+        },
+
+        setActiveTurn(sideName) {
+            const side = sideName === "bot" ? "bot" : "player";
+            this.activeSide = side;
+            const board = RebirthStore.elements["rebirth-board"];
+            const playerHud = document.querySelector(".rb-hud-player");
+            const botHud = document.querySelector(".rb-hud-bot");
+            if (board) board.dataset.activeTurn = side;
+            if (playerHud) playerHud.classList.toggle("is-active-turn", side === "player");
+            if (botHud) botHud.classList.toggle("is-active-turn", side === "bot");
+        },
+
+        activeSideForState(state) {
+            const phase = String((state && (state.turn_phase || state.phase)) || "").toLowerCase();
+            if (phase.includes("bot") || phase.includes("enemy") || phase.includes("opponent")) {
+                return "bot";
+            }
+            return "player";
+        },
+
+        showTurnBanner(sideName, copy) {
+            const layer = this.layer();
+            const banner = layer && layer.querySelector(".rb-turn-banner");
+            if (!banner) return;
+            const side = sideName === "bot" ? "bot" : "player";
+            banner.textContent = copy || (side === "bot" ? "TURNO DO BOT" : "SEU TURNO");
+            banner.dataset.turnSide = side;
+            banner.hidden = false;
+            restartClass(banner, "is-visible");
+            if (this.turnBannerTimer) window.clearTimeout(this.turnBannerTimer);
+            this.turnBannerTimer = window.setTimeout(() => {
+                banner.classList.remove("is-visible");
+                banner.hidden = true;
+                this.turnBannerTimer = null;
+            }, 1250);
+        },
+
+        previewBotTurn() {
+            if (this.delayedPlayerTurnTimer) {
+                window.clearTimeout(this.delayedPlayerTurnTimer);
+                this.delayedPlayerTurnTimer = null;
+            }
+            this.setActiveTurn("bot");
+            this.botPreviewHoldUntil = Date.now() + 650;
+            this.showTurnBanner("bot", "TURNO DO BOT");
+        },
+
+        showActionPopup(lines, tone) {
+            const layer = this.layer();
+            const popup = layer && layer.querySelector(".rb-action-popup");
+            if (!popup || !lines || !lines.length) return;
+            popup.dataset.tone = tone || "neutral";
+            popup.innerHTML = lines
+                .filter(Boolean)
+                .slice(0, 3)
+                .map((line) => `<span>${RebirthText.escape(line)}</span>`)
+                .join("");
+            popup.hidden = false;
+            restartClass(popup, "is-visible");
+            if (this.actionPopupTimer) window.clearTimeout(this.actionPopupTimer);
+            this.actionPopupTimer = window.setTimeout(() => {
+                popup.classList.remove("is-visible");
+                popup.hidden = true;
+                this.actionPopupTimer = null;
+            }, 1550);
+        },
+
+        hpDrop(previousState, nextState, sideName) {
+            if (!previousState || !nextState) return 0;
+            const prevHp = Number(((previousState[sideName] || {}).hp) || 0);
+            const nextHp = Number(((nextState[sideName] || {}).hp) || 0);
+            return Math.max(0, prevHp - nextHp);
+        },
+
+        fieldCards(state, sideName) {
+            if (!state) return [];
+            const slots = sideName === "player" ? state.player_field : state.bot_field;
+            return Array.isArray(slots) ? slots.filter(Boolean) : [];
+        },
+
+        shortName(card) {
+            const raw = String((card && card.name) || "Unidade").trim();
+            return raw.length > 16 ? `${raw.slice(0, 15)}...` : raw;
+        },
+
+        guardValue(card) {
+            return Number(card && (card.current_guard != null ? card.current_guard : card.guard || 0)) || 0;
+        },
+
+        guardLossLines(previousState, nextState) {
+            const lines = [];
+            ["player", "bot"].forEach((sideName) => {
+                const before = new Map(this.fieldCards(previousState, sideName).map((card) => [card.instance_id, card]));
+                this.fieldCards(nextState, sideName).forEach((card) => {
+                    const prev = before.get(card.instance_id);
+                    if (!prev) return;
+                    const loss = this.guardValue(prev) - this.guardValue(card);
+                    if (loss > 0) lines.push(`${this.shortName(card)} -${loss}`);
+                });
+            });
+            return lines;
+        },
+
+        resultLines(previousState, nextState) {
+            if (!previousState || !nextState) return null;
+            const result = nextState.result || null;
+            const damage = (result && result.damage) || {};
+            const clash = nextState.last_clash || {};
+            const lines = [];
+            let tone = "neutral";
+
+            if (result && result.outcome === "Summon") {
+                const played = (nextState.player && nextState.player.played_card) || null;
+                lines.push(`${this.shortName(played)} invocada`);
+                tone = "summon";
+            }
+
+            if (result && result.outcome === "Clash") {
+                const playerDamage = Number(damage.player || 0);
+                const botDamage = Number(damage.bot || 0);
+                if (playerDamage > 0 && clash.player_card) lines.push(`${this.shortName(clash.player_card)} -${playerDamage}`);
+                if (botDamage > 0 && clash.bot_card) lines.push(`${this.shortName(clash.bot_card)} -${botDamage}`);
+                tone = "clash";
+            }
+
+            this.guardLossLines(previousState, nextState).forEach((line) => {
+                if (!lines.includes(line)) lines.push(line);
+            });
+
+            const botHpDrop = this.hpDrop(previousState, nextState, "bot");
+            const playerHpDrop = this.hpDrop(previousState, nextState, "player");
+            if (botHpDrop > 0) {
+                lines.unshift(`+${botHpDrop} dano direto`);
+                tone = "success";
+            }
+            if (playerHpDrop > 0) {
+                lines.unshift(`-${playerHpDrop} HP recebido`);
+                tone = "danger";
+            }
+
+            if (!lines.length && result && result.message) {
+                lines.push(result.message);
+            }
+            if (!lines.length) return null;
+            return { lines: Array.from(new Set(lines)), tone };
+        },
+
+        actionResult(previousState, nextState) {
+            const described = this.resultLines(previousState, nextState);
+            if (!described) return;
+            const signature = [
+                nextState.match_id || "",
+                nextState.turn || "",
+                nextState.version || "",
+                nextState.result && nextState.result.outcome,
+                described.lines.join("|")
+            ].join(":");
+            if (signature === RebirthStore.lastActionPopupSignature) return;
+            RebirthStore.lastActionPopupSignature = signature;
+            this.showActionPopup(described.lines, described.tone);
+        },
+
+        damageFeedback(previousState, nextState) {
+            if (!previousState || !nextState || RebirthFeel.reducedMotion()) return;
+            let anyDamage = false;
+            [
+                { side: "player", selector: ".rb-hud-player" },
+                { side: "bot", selector: ".rb-hud-bot" }
+            ].forEach(({ side, selector }) => {
+                if (this.hpDrop(previousState, nextState, side) <= 0) return;
+                anyDamage = true;
+                const hud = document.querySelector(selector);
+                if (!hud) return;
+                restartClass(hud, "is-taking-damage");
+                window.setTimeout(() => hud.classList.remove("is-taking-damage"), 620);
+            });
+            if (anyDamage) {
+                const board = RebirthStore.elements["rebirth-board"];
+                restartClass(board, "is-screen-hit");
+                window.setTimeout(() => {
+                    if (board) board.classList.remove("is-screen-hit");
+                }, 220);
+            }
+        },
+
+        turnTransition(previousState, nextState) {
+            if (!previousState || !nextState || nextState.is_finished) return;
+            const previousTurn = Number(previousState.turn || 0);
+            const nextTurn = Number(nextState.turn || 0);
+            if (!previousTurn || !nextTurn || previousTurn === nextTurn) return;
+            if (this.delayedPlayerTurnTimer) window.clearTimeout(this.delayedPlayerTurnTimer);
+            this.delayedPlayerTurnTimer = window.setTimeout(() => {
+                this.setActiveTurn("player");
+                this.showTurnBanner("player", "SEU TURNO");
+                this.delayedPlayerTurnTimer = null;
+            }, 620);
+        },
+
+        selectionPulse() {
+            const selected = document.querySelector(".rb-hand .rb-mini-card.is-selected");
+            if (selected) restartClass(selected, "is-selection-pulse");
+        },
+
+        evaluate(previousState, nextState) {
+            if (!nextState) return;
+            const turnChanged = previousState && Number(previousState.turn || 0) !== Number(nextState.turn || 0);
+            const holdBotPreview = turnChanged && this.activeSide === "bot" && Date.now() < this.botPreviewHoldUntil;
+            if (!holdBotPreview) {
+                this.setActiveTurn(this.activeSideForState(nextState));
+            }
+            this.turnTransition(previousState, nextState);
+            this.damageFeedback(previousState, nextState);
+            this.actionResult(previousState, nextState);
+        }
+    };
+
     const RebirthFinaleOverlay = {
         // Detecta transição não-finished → finished e dispara overlay.
         // Idempotente: só dispara uma vez por match_id+winner pra não
@@ -1968,12 +2209,17 @@
             if (!host) return;
             const total = Math.max(0, Math.min(10, Number(maxEnergy || energy || 0)));
             const available = Math.max(0, Math.min(total, Number(energy || 0)));
+            const previousAvailable = host.dataset.available == null ? null : Number(host.dataset.available);
+            const gainedMana = previousAvailable != null && available > previousAvailable;
             host.dataset.available = String(available);
             host.dataset.max = String(total);
             host.innerHTML = Array.from({ length: total }).map((_, index) => {
                 const spent = index >= available ? " is-spent" : "";
                 return `<span class="rb-mana-coin${spent}" style="--coin-index:${index}" aria-hidden="true"></span>`;
             }).join("");
+            if (gainedMana) {
+                restartClass(host, "is-mana-gaining");
+            }
         },
 
         lifeOrb(sideName, hp, maxHp, ratio) {
@@ -1998,14 +2244,29 @@
             }
         },
 
+        visualFieldSlots(slots) {
+            const cards = (slots || []).filter(Boolean).slice(0, FIELD_SLOT_COUNT);
+            if (cards.length === 1) return [null, cards[0], null];
+            if (cards.length === 2) return [cards[0], null, cards[1]];
+            return (slots || []).slice(0, FIELD_SLOT_COUNT);
+        },
+
+        decorateFieldHost(host, sideName, cardCount) {
+            if (!host) return;
+            host.dataset.side = sideName;
+            host.dataset.cardCount = String(cardCount || 0);
+            host.classList.toggle("has-active-cards", Number(cardCount || 0) > 0);
+        },
+
         battlefield() {
             const playerHost = RebirthStore.elements["player-battlefield"];
             const botHost = RebirthStore.elements["bot-battlefield"];
             const state = RebirthStore.state;
             if (!playerHost || !botHost || !state) return;
-            const playerSlots = RebirthStore.fieldSlots("player");
-            const botSlots = RebirthStore.fieldSlots("bot");
+            const playerCards = RebirthStore.fieldCards("player");
             const botCards = RebirthStore.fieldCards("bot");
+            const playerSlots = this.visualFieldSlots(RebirthStore.fieldSlots("player"));
+            const botSlots = this.visualFieldSlots(RebirthStore.fieldSlots("bot"));
             const firstTurnDirectLocked = Number(state.turn || 1) === 1 && !botCards.length;
             const choosingAttack = Boolean(RebirthStore.selectedAttackerId)
                 && state.phase === "choose"
@@ -2032,6 +2293,8 @@
                 && !state.is_finished
                 && !RebirthStore.pending
                 && selectedEnergy >= selectedCost;
+            this.decorateFieldHost(playerHost, "player", playerCards.length);
+            this.decorateFieldHost(botHost, "bot", botCards.length);
             playerHost.innerHTML = playerSlots.map((card) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses, {
@@ -2045,16 +2308,14 @@
                 });
             }).join("");
             // v92: o slot vazio vira altar visual; a razão fica em aria/title.
-            let leadEmptyShown = false;
-            botHost.innerHTML = botSlots.map((card) => {
+            botHost.innerHTML = botSlots.map((card, index) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "bot", choosingAttack, botStatuses, {
                         targetable: choosingAttack,
                         risk: choosingAttack ? RebirthTactics.clashRisk(selectedAttacker, card) : null
                     });
                 }
-                const isLead = !leadEmptyShown;
-                leadEmptyShown = true;
+                const isLead = !botCards.length ? index === 1 : index === 0;
                 if (!isLead) {
                     return RebirthMarkup.emptyFieldSlot("", { reason: "Slot vazio do bot" });
                 }
@@ -2824,6 +3085,7 @@
             try {
                 RebirthFusionMotion.observeStateEvents(previousState, state);
                 RebirthHeroDamage.evaluate(previousState, state);
+                RebirthGameFeel.evaluate(previousState, state);
                 RebirthFinaleOverlay.evaluate(previousState, state);
                 if (window.RebirthBossFX) window.RebirthBossFX.observe(previousState, state);
             } catch (err) {
@@ -2859,6 +3121,7 @@
                 RebirthStore.selectedInstanceId = null;
                 RebirthStore.reward = null;
                 RebirthStore.campaignReward = null;
+                RebirthStore.lastActionPopupSignature = null;
                 this.applyState(payload.state);
             });
         },
@@ -2960,6 +3223,10 @@
                 RebirthStore.reward = payload.match_reward || null;
                 RebirthStore.campaignReward = payload.campaign_reward || null;
                 this.applyState(payload.state);
+                RebirthGameFeel.showActionPopup(
+                    [`${RebirthGameFeel.shortName(selectedCard)} ${isMonster ? "invocada" : "resolvida"}`],
+                    isMonster ? "summon" : "neutral"
+                );
                 this.completeTutorialIfNeeded(payload.state);
             });
         },
@@ -3033,6 +3300,7 @@
         async nextTurn() {
             if (!RebirthStore.state) return;
             await this.request(async () => {
+                RebirthGameFeel.previewBotTurn();
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.nextTurn, {
                     match_id: RebirthStore.state.match_id
                 });
@@ -3300,6 +3568,7 @@
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     RebirthErrors.clear();
                     RebirthRenderer.render();
+                    RebirthGameFeel.selectionPulse();
                 });
             }
 
@@ -3321,6 +3590,7 @@
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     RebirthErrors.clear();
                     RebirthRenderer.render();
+                    RebirthGameFeel.selectionPulse();
                 });
             }
 
