@@ -13709,6 +13709,125 @@ body.rb-game-page .rb-global-nav,
     }
 }
 
+/* v97 MOBILE_WEB_FIX: mobile web repair. The Fates rewrite hides the desktop chrome, but the
+   phone web layout still depends on a compact global nav and touch dock. */
+@media (max-width: 760px) {
+    body.rb-game-page.rb-mobile-native .rb-global-nav {
+        display: grid !important;
+    }
+
+    .rb-mobile-native .rb-game-viewport {
+        overflow-x: hidden !important;
+    }
+
+    .rb-mobile-native .rb-game-board {
+        width: min(100%, 390px) !important;
+        max-width: calc(100vw - 10px) !important;
+        overflow: hidden !important;
+    }
+
+    .rb-mobile-native .rb-mobile-action-bar {
+        grid-template-rows: 130px 52px !important;
+        gap: 5px !important;
+    }
+
+    .rb-mobile-native .rb-player-hand {
+        height: 130px !important;
+        display: grid !important;
+        grid-template-rows: 21px minmax(0, 1fr);
+        gap: 3px;
+        overflow: visible !important;
+    }
+
+    .rb-mobile-native .rb-action-bar-meta {
+        min-height: 21px !important;
+        height: 21px !important;
+        align-self: start;
+        padding: 0 2px !important;
+        line-height: 1;
+    }
+
+    .rb-mobile-native .rb-hand {
+        grid-auto-columns: clamp(96px, 27vw, 112px) !important;
+        height: 104px !important;
+        min-height: 104px;
+        padding: 2px 1px 4px !important;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        scrollbar-width: none;
+    }
+
+    .rb-mobile-native .rb-hand::-webkit-scrollbar,
+    .rb-mobile-native .rb-result-panel > div::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card {
+        height: 100px !important;
+        min-height: 100px !important;
+        grid-template-rows: 48px 1fr !important;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card:hover:not(:disabled):not(.is-locked):not(.is-selected),
+    .rb-mobile-native .rb-hand .rb-mini-card:focus-visible:not(:disabled):not(.is-locked):not(.is-selected) {
+        transform: translateY(-8px) scale(1.05) !important;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card.is-selected {
+        transform: translateY(-12px) scale(1.08) !important;
+    }
+
+    .rb-mobile-native .rb-actions-row {
+        height: 52px !important;
+        align-items: start;
+    }
+
+    .rb-mobile-native #next-turn-button.rb-button-secondary,
+    .rb-mobile-native #play-button.rb-button-primary,
+    .rb-mobile-native .rb-actions-row .rb-cta,
+    .rb-mobile-native .rb-actions-row .rb-secondary {
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 5px 7px !important;
+    }
+
+    .rb-mobile-native .rb-result-panel {
+        max-height: 92px !important;
+        grid-template-columns: minmax(0, 1fr) 70px !important;
+        align-items: stretch;
+    }
+
+    .rb-mobile-native .rb-result-panel > div {
+        max-height: 76px !important;
+        overflow-y: auto !important;
+        scrollbar-width: none;
+    }
+}
+
+@media (max-width: 380px) {
+    .rb-mobile-native .rb-mobile-action-bar {
+        grid-template-rows: 118px 50px !important;
+    }
+
+    .rb-mobile-native .rb-player-hand {
+        height: 118px !important;
+    }
+
+    .rb-mobile-native .rb-hand {
+        grid-auto-columns: clamp(88px, 26vw, 100px) !important;
+        height: 92px !important;
+        min-height: 92px;
+    }
+
+    .rb-mobile-native .rb-hand .rb-mini-card {
+        height: 90px !important;
+        min-height: 90px !important;
+        grid-template-rows: 42px 1fr !important;
+    }
+}
+
 .rb-deck-line-remove {
     width: 22px;
     height: 22px;
