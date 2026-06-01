@@ -106,6 +106,17 @@ def side_has_ready_attackers(side):
     )
 
 
+def ready_attacker_count(side):
+    return sum(
+        1
+        for card in side.get("battlefield", [])
+        if card
+        and not card.get("exhausted")
+        and not card.get("has_attacked")
+        and not card.get("has_acted")
+    )
+
+
 def side_has_breakable_shield(match, side_name):
     side = match[side_name]
     if "shield" in (side.get("statuses") or {}):
@@ -137,15 +148,28 @@ def support_card_score(match, side_name, card):
     aggressive_pressure = opponent_profile_id == "aggressive"
 
     if is_trap(card):
-        if len(side.get("traps") or []) >= 2:
+        trap_limit = 1 if side_name == "player" else 2
+        if len(side.get("traps") or []) >= trap_limit:
+            return -1
+        if side_name == "player":
+            ready_count = ready_attacker_count(opponent)
+            turn = int(match.get("turn", 1) or 1)
+            under_pressure = side_hp <= side_max_hp - (5 if aggressive_pressure else 10)
+            wide_board_pressure = ready_count >= 2 and turn >= (4 if aggressive_pressure else 6)
+            if opponent_ready and (under_pressure or (wide_board_pressure and side_hp <= side_max_hp - (3 if aggressive_pressure else 5))):
+                return 5 - cost
+            if opponent_pressure >= 3 and turn >= 8:
+                return 3 - cost
             return -1
         if opponent_ready:
-            return 13 - cost
-        if opponent_pressure and int(match.get("turn", 1) or 1) >= 3:
-            return 8 - cost
+            return 15 - cost
+        if opponent_pressure and int(match.get("turn", 1) or 1) >= 2:
+            return 12 - cost
+        if int(match.get("turn", 1) or 1) >= 4:
+            return 7 - cost
         return -1
 
-    if action == "drawtwocards" and len(side.get("hand") or []) <= 3 and side.get("deck"):
+    if action == "drawtwocards" and len(side.get("hand") or []) <= 4 and side.get("deck"):
         return 10 - cost
     if action in {"cleanseall", "tidalrenewal"} and side.get("statuses"):
         return 12 - cost
@@ -162,7 +186,7 @@ def support_card_score(match, side_name, card):
         return 11 - cost
     if action == "shadowdrain" and (side_hp <= side_max_hp - (7 if aggressive_pressure else 8) or opponent_hp <= (9 if aggressive_pressure else 7)):
         return 10 - cost
-    if action == "fireball" and opponent_hp <= (8 if aggressive_pressure else 6):
+    if action == "fireball" and opponent_hp <= (14 if aggressive_pressure else 11):
         return 9 - cost
     if action == "burningedict" and opponent_pressure and "burn" not in (opponent.get("statuses") or {}):
         return 7 - cost
@@ -178,19 +202,24 @@ def choose_tactical_support_card(match):
     scored = [(score, card) for score, card in scored if score > 0]
     if not scored:
         return None
+    best_score, best_card = sorted(scored, key=lambda item: (item[0], -card_cost(item[1]), item[1]["name"]))[-1]
     energy = int(match["player"].get("energy", 0) or 0)
     board_can_grow = len(match["player"].get("battlefield", [])) < FIELD_SLOT_COUNT
     has_ready_attack = choose_ready_attacker(match) is not None
     if board_can_grow and not has_ready_attack:
+        trap_setup = (
+            is_trap(best_card)
+            and (len(match["bot"].get("battlefield", [])) > 0 or int(match.get("turn", 1) or 1) >= 2)
+        )
         affordable_after_support = [
             card
             for card in match["player"]["hand"]
             if is_monster(card) and card_cost(card) <= energy - min(card_cost(item[1]) for item in scored)
         ]
         lethal_support = any(str(card.get("action") or "").lower() in {"fireball", "shadowdrain"} for _score, card in scored)
-        if not affordable_after_support and not lethal_support:
+        if not trap_setup and not affordable_after_support and not lethal_support:
             return None
-    return sorted(scored, key=lambda item: (item[0], -card_cost(item[1]), item[1]["name"]))[-1][1]
+    return best_card
 
 
 def choose_ready_attacker(match):
@@ -356,6 +385,8 @@ def simulate_match(seed=None, max_turns=30, bot_profile_id=None):
         card_id = None
         if event_type == "CARD_PLAYED":
             card_id = payload.get("card_id") or event.get("source_card_id")
+        elif event_type == "TRAP_ARMED":
+            card_id = payload.get("card_id") or event.get("source_card_id")
         elif event_type == "CARD_EVOLVED":
             card_id = payload.get("evolution_id")
             if card_id:
@@ -451,8 +482,8 @@ def simulate_match(seed=None, max_turns=30, bot_profile_id=None):
     }
 
 
-def simulate_balance(matches=40):
-    matches = max(1, min(int(matches or 40), 200))
+def _simulate_balance_core(matches=40, *, seed_prefix="balance", max_turns=30):
+    matches = max(1, int(matches or 40))
     winners = Counter()
     card_usage = Counter()
     card_wins = Counter()
@@ -480,7 +511,7 @@ def simulate_balance(matches=40):
     samples = []
     for index in range(matches):
         profile_id = BOT_PERSONALITY_ORDER[index % len(BOT_PERSONALITY_ORDER)]
-        result = simulate_match(seed=f"balance-{index}", bot_profile_id=profile_id)
+        result = simulate_match(seed=f"{seed_prefix}-{index}", max_turns=max_turns, bot_profile_id=profile_id)
         winners[result["winner"]] += 1
         card_usage.update(result["card_usage"])
         card_wins.update(result["card_wins"])
@@ -578,6 +609,7 @@ def simulate_balance(matches=40):
         )
     return {
         "matches": matches,
+        "seed_prefix": seed_prefix,
         "summary": {
             "player_win_rate": round(player_wins / matches, 3),
             "bot_win_rate": round(bot_wins / matches, 3),
@@ -607,6 +639,18 @@ def simulate_balance(matches=40):
             "status": "season 0 parity lab",
         },
     }
+
+
+def simulate_balance(matches=40):
+    return _simulate_balance_core(matches=max(1, min(int(matches or 40), 200)), seed_prefix="balance")
+
+
+def simulate_controlled_balance(matches=1000, *, seed_prefix="controlled-balance", max_turns=30):
+    return _simulate_balance_core(
+        matches=max(1, min(int(matches or 1000), 5000)),
+        seed_prefix=seed_prefix,
+        max_turns=max(1, min(int(max_turns or 30), 120)),
+    )
 
 
 def balance_flags(plays, match_uses, wins, damage, matches, dead_count, evolve_count):

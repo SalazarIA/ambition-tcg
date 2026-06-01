@@ -524,6 +524,9 @@ CARD_BALANCE_OVERRIDES = {
     # Scorchscale Imp: ATK 7 + burn ainda era obrigatório; ATK 6 mantém
     # pressão de fogo sem decidir a partida sozinho.
     "card_006": {"attack": 6, "power": 6, "cost": 3},
+    # Cinder Lynx Alpha: o par tutorial gera esta evolução em 100% das runs.
+    # Custo 4 preserva o payoff, mas tira o pico automático do early game.
+    "card_011": {"cost": 4},
     # Granite Pactbearer: 6/2 com bulwark por 1 mana gerava tempo demais.
     "card_044": {"cost": 2},
     # Stonehide Recruit: era corpo defensivo sem impacto; +1 guarda o torna
@@ -561,26 +564,28 @@ LEGENDARY_CARDS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card
 CARD_ABILITY_KEYS = {card_id: card["ability_key"] for card_id, card in CARD_CATALOG_DICT.items()}
 
 PLAYER_DECK = [
+    # v97: preserve the tutorial opener pair while seeding more duplicate
+    # families through the default deck so tier-2 cards appear beyond card_011.
     "card_001",
     "card_001",
     "card_002",
     "card_021",
     "card_041",
     "card_061",
+    "card_061",
     "card_003",
     "card_022",
-    "card_065",
+    "card_062",
     "card_062",
     "card_004",
+    "card_023",
     "card_023",
     "card_043",
     "card_043",
     "card_005",
     "card_024",
     "card_044",
-    "card_063",
     "card_006",
-    "card_045",
     "card_083",
     "card_088",
     "card_085",
@@ -594,28 +599,28 @@ PLAYER_DECK = [
 ]
 
 BOT_DECK = [
-    # v96: composição média e evolutiva; a variação vem do seed sem empurrar
-    # finalizadores pesados cedo demais.
+    # v97: composição média com múltiplos pares tier-1; o bot continua sem
+    # começar com evoluídas, mas o catálogo tier-2 entra no loop via fusão.
     "card_044",
+    "card_044",
+    "card_043",
     "card_043",
     "card_042",
     "card_061",
+    "card_061",
     "card_021",
     "card_001",
+    "card_001",
     "card_041",
+    "card_041",
+    "card_062",
     "card_062",
     "card_022",
     "card_002",
-    "card_043",
-    "card_061",
     "card_023",
     "card_003",
     "card_025",
-    "card_062",
-    "card_024",
     "card_004",
-    "card_046",
-    "card_041",
     "card_083",
     "card_082",
     "card_087",

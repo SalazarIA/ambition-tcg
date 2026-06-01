@@ -73,6 +73,18 @@ def test_rebirth_evolutions_are_tier_two_and_not_in_default_decks():
         assert evolution_id not in starter_ids
 
 
+def test_default_decks_seed_multiple_evolution_families_without_tier_two_cards():
+    for deck in (PLAYER_DECK, BOT_DECK):
+        counts = Counter(deck)
+        duplicate_evolution_families = [
+            card_id
+            for card_id, count in counts.items()
+            if count >= 2 and CARD_BY_ID[card_id].get("evolution_id")
+        ]
+
+        assert len(duplicate_evolution_families) >= 4
+
+
 def test_default_starter_decks_are_30_card_tcg_distributions():
     assert validate_deck_distribution(list(PLAYER_DECK)) == {"MONSTER": 20, "SPELL": 5, "TRAP": 5}
     assert validate_deck_distribution(list(BOT_DECK)) == {"MONSTER": 20, "SPELL": 5, "TRAP": 5}

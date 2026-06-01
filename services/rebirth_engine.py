@@ -737,13 +737,15 @@ def _bot_support_score(match, card, profile_id):
     if is_trap(card):
         if len(bot.get("traps") or []) >= 2:
             return -1
-        if player_ready and int(bot.get("hp", 30) or 0) <= 22:
-            return 13 - cost
-        if player_pressure and int(match.get("turn", 1) or 1) >= 5 and int(bot.get("hp", 30) or 0) <= 18:
-            return 9 - cost
+        if player_ready:
+            return 14 - cost
+        if player_pressure and int(match.get("turn", 1) or 1) >= 2:
+            return 11 - cost
+        if int(match.get("turn", 1) or 1) >= 4 and profile_id == "defensive":
+            return 7 - cost
         return -1
 
-    if action == "drawtwocards" and len(bot.get("hand") or []) <= 3 and bot.get("deck"):
+    if action == "drawtwocards" and len(bot.get("hand") or []) <= 4 and bot.get("deck"):
         return 10 - cost
     if action in {"cleanseall", "tidalrenewal"} and bot.get("statuses"):
         return 12 - cost
@@ -755,7 +757,7 @@ def _bot_support_score(match, card, profile_id):
         return 11 - cost
     if action == "shadowdrain" and (int(bot.get("hp", 30) or 0) <= 18 or int(player.get("hp", 30) or 0) <= 6):
         return 10 - cost
-    if action == "fireball" and int(player.get("hp", 30) or 0) <= (6 if profile_id != "aggressive" else 8):
+    if action == "fireball" and int(player.get("hp", 30) or 0) <= (11 if profile_id != "aggressive" else 14):
         return 10 - cost
     if action == "burningedict" and player_wounded and "burn" not in (player.get("statuses") or {}):
         return 7 - cost
@@ -2015,10 +2017,10 @@ def next_turn(match):
         payload={"turn": match.get("turn"), "energy": int(match["player"].get("energy", 0) or 0)},
     )
     evolve_bot_if_ready(match)
-    _bot_auto_attack(match, effect_chain_id=effect_chain_id)
+    _bot_auto_play_support(match)
     if match.get("is_finished"):
         return match
-    _bot_auto_play_support(match)
+    _bot_auto_attack(match, effect_chain_id=effect_chain_id)
     if match.get("is_finished"):
         return match
     _bot_auto_summon(match)

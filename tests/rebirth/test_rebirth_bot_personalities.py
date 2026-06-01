@@ -1,4 +1,4 @@
-from services.rebirth_balance import simulate_balance
+from services.rebirth_balance import simulate_balance, simulate_controlled_balance
 from services.rebirth_bot import BOT_PERSONALITIES, choose_bot_attack, choose_response, personality_payload, tactical_utility_matrix
 from services.rebirth_contracts import FIELD_SLOT_COUNT
 from services.rebirth_engine import start_match
@@ -42,10 +42,31 @@ def test_balance_lab_reports_profiles_cards_and_abilities():
     payload = simulate_balance(matches=9)
 
     assert payload["matches"] == 9
+    assert payload["seed_prefix"] == "balance"
     assert len(payload["profile_results"]) == 3
     assert payload["card_stats"]
     assert payload["ability_stats"]
     assert payload["samples"][0]["bot_profile"]["id"] in BOT_PERSONALITIES
+
+
+def test_controlled_balance_harness_uses_requested_seed_prefix_and_size():
+    payload = simulate_controlled_balance(matches=12, seed_prefix="contract-seed", max_turns=24)
+
+    assert payload["matches"] == 12
+    assert payload["seed_prefix"] == "contract-seed"
+    assert len(payload["profile_results"]) == 3
+
+
+def test_balance_lab_exercises_traps_and_multiple_evolution_families():
+    payload = simulate_balance(matches=60)
+    trap_rows = [
+        row
+        for row in payload["card_stats"]
+        if str(row.get("ability_key") or "").startswith("trap_")
+    ]
+
+    assert any(row["plays"] > 0 for row in trap_rows)
+    assert len(payload["evolution_usage"]) >= 2
 
 
 def test_bot_refuses_high_tier_symmetric_suicide_without_lethal_window():

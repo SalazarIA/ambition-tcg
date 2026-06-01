@@ -165,7 +165,7 @@ def test_mobile_web_arena_reclaims_hidden_nav_space_after_fates_rewrite():
     assert "v97 MOBILE_WEB_FIX: mobile web repair" in css
     assert "body.rb-game-page.rb-mobile-native .rb-global-nav" in css
     assert "display: grid !important;" in css
-    assert "grid-template-rows: 130px 52px !important;" in css
+    assert "grid-template-rows: 130px 54px !important;" in css
     assert ".rb-mobile-native .rb-hand::-webkit-scrollbar" in css
     assert ".rb-mobile-native .rb-result-panel > div::-webkit-scrollbar" in css
     assert "scrollbar-width: none;" in css
@@ -179,11 +179,12 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v97_MOBILE_WEB_FIX";' in service_worker
-    assert '"version": "v97_MOBILE_WEB_FIX"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v97_MOBILE_WEB_FIX"' in art_contract
+    assert 'const CACHE_NAME = "v98_CORE_LOOP_STABILIZATION";' in service_worker
+    assert '"version": "v98_CORE_LOOP_STABILIZATION"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v98_CORE_LOOP_STABILIZATION"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
     assert "MOBILE_WEB_FIX" in service_worker
+    assert "CORE_LOOP_STABILIZATION" in service_worker
     assert "RELEASE_POLISH" in service_worker
     assert "EMAIL_VERIFY" in service_worker
     assert r"rebirth(?:[-_].*)?" in service_worker

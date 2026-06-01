@@ -201,7 +201,7 @@ def render_dashboard(payload):
 <head>
   <meta charset=\"utf-8\">
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-  <title>Ambitionz Rebirth v96 Core Loop</title>
+  <title>Ambitionz Rebirth v97 Balance Harness</title>
   <style>
     body {{ margin: 0; font: 14px/1.45 Inter, system-ui, sans-serif; background: #111; color: #f5eee1; }}
     main {{ max-width: 1180px; margin: 0 auto; padding: 28px; }}
@@ -217,7 +217,7 @@ def render_dashboard(payload):
 </head>
 <body>
 <main>
-  <h1>Ambitionz Rebirth v96 Core Loop</h1>
+  <h1>Ambitionz Rebirth v97 Balance Harness</h1>
   <div class=\"metrics\">
     <div class=\"metric\"><span>Partidas</span><strong>{payload["matches"]}</strong></div>
     <div class=\"metric\"><span>Player WR</span><strong>{pct(summary["player_win_rate"])}</strong></div>

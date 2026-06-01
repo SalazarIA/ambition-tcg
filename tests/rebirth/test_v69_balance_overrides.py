@@ -28,6 +28,7 @@ def test_v69_balance_overrides_documents_only_targeted_cards():
     # Garante que o tuning não vazou para cartas fora da lista auditada.
     assert set(CARD_BALANCE_OVERRIDES.keys()) == {
         "card_006",
+        "card_011",
         "card_023",
         "card_041",
         "card_043",
