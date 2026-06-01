@@ -1,4 +1,4 @@
-"""v69: nerfs cirúrgicos do trio opressor (Bramblehorn / Mossback / Coalheart)."""
+"""v69/v96: overrides cirúrgicos e auditáveis de balance."""
 
 from services.rebirth_cards import CARD_BALANCE_OVERRIDES, get_card
 from services.rebirth_engine import damage_details
@@ -14,7 +14,8 @@ def make_card(**fields):
 def test_v69_bramblehorn_cost_override_applied():
     card = get_card("card_046")
     assert card["name"] == "Bramblehorn Knight"
-    assert card["cost"] == 3, "v69 nerf: Bramblehorn deve subir de 2 para 3 mana"
+    assert card["attack"] == card["power"] == 5
+    assert card["cost"] == 2, "v96 nerf: Bramblehorn deve virar utilitário de fortify"
 
 
 def test_v69_mossback_cost_override_applied():
@@ -24,8 +25,21 @@ def test_v69_mossback_cost_override_applied():
 
 
 def test_v69_balance_overrides_documents_only_targeted_cards():
-    # Garante que o nerf não vazou pra cartas além do trio documentado.
-    assert set(CARD_BALANCE_OVERRIDES.keys()) == {"card_045", "card_046"}
+    # Garante que o tuning não vazou para cartas fora da lista auditada.
+    assert set(CARD_BALANCE_OVERRIDES.keys()) == {
+        "card_006",
+        "card_023",
+        "card_041",
+        "card_043",
+        "card_044",
+        "card_045",
+        "card_046",
+        "card_053",
+        "card_061",
+        "card_062",
+        "card_071",
+        "card_072",
+    }
 
 
 def test_v69_fire_execute_bonus_reduced_to_two():

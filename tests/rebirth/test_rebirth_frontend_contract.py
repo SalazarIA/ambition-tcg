@@ -110,7 +110,7 @@ def test_rebirth_css_locks_reference_classes_and_assets():
         "--rb-faction-earth",
         "--rb-faction-shadow",
         "v93 FATES_FIX",
-        "v95 GAME_FEEL_PASS",
+        "v96 CORE_LOOP_STABILIZATION",
         ".rb-hero-portrait",
         ".rb-mana-coin",
         "object-fit: contain",
@@ -164,10 +164,11 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v95_GAME_FEEL_PASS";' in service_worker
-    assert '"version": "v95_GAME_FEEL_PASS"' in asset_manifest
-    assert 'REBIRTH_ART_VERSION = "v95_GAME_FEEL_PASS"' in art_contract
+    assert 'const CACHE_NAME = "v96_CORE_LOOP_STABILIZATION";' in service_worker
+    assert '"version": "v96_CORE_LOOP_STABILIZATION"' in asset_manifest
+    assert 'REBIRTH_ART_VERSION = "v96_CORE_LOOP_STABILIZATION"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
+    assert "CORE_LOOP_STABILIZATION" in service_worker
     assert "RELEASE_POLISH" in service_worker
     assert "EMAIL_VERIFY" in service_worker
     assert r"rebirth(?:[-_].*)?" in service_worker

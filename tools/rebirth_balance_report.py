@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import argparse
+import csv
+from html import escape
 import sys
 from pathlib import Path
 
@@ -65,12 +67,14 @@ def render_report(payload):
         "## Card Impact",
         "",
         table(
-            ["Card", "Plays", "WR", "Avg Damage", "Evolve Rate", "Dead Rate", "Flags"],
+            ["Card", "Plays", "Match Uses", "WR", "Pick Rate", "Avg Damage", "Evolve Rate", "Dead Rate", "Flags"],
             [
                 [
                     row["name"],
                     row["plays"],
+                    row.get("match_uses", 0),
                     pct(row["win_rate"]),
+                    pct(row.get("pick_rate", 0)),
                     row["avg_damage"],
                     pct(row["evolve_rate"]),
                     pct(row["dead_card_rate"]),
@@ -83,9 +87,9 @@ def render_report(payload):
         "## Ability Impact",
         "",
         table(
-            ["Ability", "Plays", "WR", "Avg Damage"],
+            ["Ability", "Plays", "Match Uses", "WR", "Avg Damage"],
             [
-                [row["name"], row["plays"], pct(row["win_rate"]), row["avg_damage"]]
+                [row["name"], row["plays"], row.get("match_uses", 0), pct(row["win_rate"]), row["avg_damage"]]
                 for row in payload["ability_stats"]
             ],
         ),
@@ -108,10 +112,140 @@ def render_report(payload):
     return "\n".join(lines)
 
 
+def write_csv(path, rows):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rows = list(rows)
+    if not rows:
+        path.write_text("", encoding="utf-8")
+        return
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_csv_bundle(payload, output_dir):
+    summary = payload["summary"]
+    write_csv(
+        output_dir / "summary.csv",
+        [
+            {
+                "matches": payload["matches"],
+                "player_win_rate": summary["player_win_rate"],
+                "bot_win_rate": summary["bot_win_rate"],
+                "unfinished_rate": summary["unfinished_rate"],
+                "average_turns": summary["average_turns"],
+                "dead_turn_rate": summary["dead_turn_rate"],
+                "evolution_count": sum(row["count"] for row in payload["evolution_usage"]),
+            }
+        ],
+    )
+    write_csv(output_dir / "profiles.csv", payload["profile_results"])
+    write_csv(output_dir / "cards.csv", payload["card_stats"])
+    write_csv(output_dir / "abilities.csv", payload["ability_stats"])
+    write_csv(output_dir / "evolutions.csv", payload["evolution_usage"] or [{"card_id": "none", "count": 0}])
+
+
+def render_dashboard(payload):
+    summary = payload["summary"]
+    flagged_cards = [row for row in payload["card_stats"] if row.get("flags")]
+    support_rows = [
+        row
+        for row in payload["card_stats"]
+        if str(row.get("ability_key") or "").startswith(("spell_", "trap_"))
+    ]
+
+    def html_table(headers, rows):
+        head = "".join(f"<th>{escape(str(header))}</th>" for header in headers)
+        body = []
+        for row in rows:
+            body.append("<tr>" + "".join(f"<td>{escape(str(cell))}</td>" for cell in row) + "</tr>")
+        return f"<table><thead><tr>{head}</tr></thead><tbody>{''.join(body)}</tbody></table>"
+
+    cards = html_table(
+        ["Card", "Plays", "Match Uses", "WR", "Pick Rate", "Damage", "Dead", "Flags"],
+        [
+            [
+                row["name"],
+                row["plays"],
+                row.get("match_uses", 0),
+                pct(row["win_rate"]),
+                pct(row.get("pick_rate", 0)),
+                row.get("total_damage", 0),
+                pct(row["dead_card_rate"]),
+                ", ".join(row["flags"]) or "ok",
+            ]
+            for row in flagged_cards[:24]
+        ],
+    )
+    profiles = html_table(
+        ["Profile", "Matches", "Player WR", "Bot WR", "Avg Turns"],
+        [
+            [row["name"], row["matches"], pct(row["player_win_rate"]), pct(row["bot_win_rate"]), row["average_turns"]]
+            for row in payload["profile_results"]
+        ],
+    )
+    support = html_table(
+        ["Support", "Plays", "WR", "Dead", "Damage"],
+        [
+            [row["name"], row["plays"], pct(row["win_rate"]), pct(row["dead_card_rate"]), row.get("total_damage", 0)]
+            for row in support_rows
+        ],
+    )
+    evolutions = html_table(
+        ["Evolution", "Count"],
+        [[row["card_id"], row["count"]] for row in payload["evolution_usage"]] or [["none", 0]],
+    )
+    return f"""<!doctype html>
+<html lang=\"pt-BR\">
+<head>
+  <meta charset=\"utf-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Ambitionz Rebirth v96 Core Loop</title>
+  <style>
+    body {{ margin: 0; font: 14px/1.45 Inter, system-ui, sans-serif; background: #111; color: #f5eee1; }}
+    main {{ max-width: 1180px; margin: 0 auto; padding: 28px; }}
+    h1, h2 {{ margin: 0 0 12px; }}
+    section {{ margin: 24px 0; }}
+    .metrics {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }}
+    .metric {{ border: 1px solid #5f4a27; background: #1d1812; border-radius: 8px; padding: 14px; }}
+    .metric strong {{ display: block; font-size: 26px; color: #ffd36a; }}
+    table {{ width: 100%; border-collapse: collapse; background: #181512; }}
+    th, td {{ border-bottom: 1px solid #3a3023; padding: 8px 10px; text-align: left; }}
+    th {{ color: #ffd36a; background: #211b14; }}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Ambitionz Rebirth v96 Core Loop</h1>
+  <div class=\"metrics\">
+    <div class=\"metric\"><span>Partidas</span><strong>{payload["matches"]}</strong></div>
+    <div class=\"metric\"><span>Player WR</span><strong>{pct(summary["player_win_rate"])}</strong></div>
+    <div class=\"metric\"><span>Bot WR</span><strong>{pct(summary["bot_win_rate"])}</strong></div>
+    <div class=\"metric\"><span>Turnos médios</span><strong>{summary["average_turns"]}</strong></div>
+    <div class=\"metric\"><span>Evoluções</span><strong>{sum(row["count"] for row in payload["evolution_usage"])}</strong></div>
+  </div>
+  <section><h2>Perfis do bot</h2>{profiles}</section>
+  <section><h2>Cartas sinalizadas</h2>{cards}</section>
+  <section><h2>Spells e traps</h2>{support}</section>
+  <section><h2>Evoluções</h2>{evolutions}</section>
+</main>
+</body>
+</html>
+"""
+
+
+def write_dashboard(payload, output_path):
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(render_dashboard(payload), encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate an Ambitionz Rebirth balance report.")
     parser.add_argument("--matches", type=int, default=120)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--csv-dir", type=Path)
+    parser.add_argument("--dashboard", type=Path)
     args = parser.parse_args()
 
     payload = simulate_balance(matches=args.matches)
@@ -119,6 +253,10 @@ def main():
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(report, encoding="utf-8")
+    if args.csv_dir:
+        write_csv_bundle(payload, args.csv_dir)
+    if args.dashboard:
+        write_dashboard(payload, args.dashboard)
     print(report)
 
 

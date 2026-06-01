@@ -121,6 +121,18 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
     return drawn
 
 
+def shuffle_deck_tail(player, *, seed, owner):
+    source = str(seed or "rebirth")
+    side = str(owner or player.get("name") or "side")
+    player["deck"] = sorted(
+        player.get("deck") or [],
+        key=lambda card: hashlib.sha256(
+            f"{source}|{side}|{card.get('instance_id')}|{card.get('id')}".encode("utf-8")
+        ).hexdigest(),
+    )
+    return player
+
+
 def normalize_campaign_modifiers(modifiers):
     # opening_* = one-shot opening advantage. energy_ramp = SUSTAINED tempo:
     # a permanent max_energy bump so the bot keeps out-curving every turn, not
@@ -201,6 +213,10 @@ def create_match(
     bot = create_player("Bot", "bot", card_ids=bot_deck_ids, starting_hp=bot_hp or STARTING_HP)
     draw_to_hand_size(player)
     draw_to_hand_size(bot)
+    if not player_card_ids:
+        shuffle_deck_tail(player, seed=game_seed, owner="player")
+    if not bot_card_ids:
+        shuffle_deck_tail(bot, seed=game_seed, owner="bot")
     if first_duel and not campaign_node:
         # Reduz HP do bot apenas — o jogador continua com a barra cheia para a
         # sensação de "ainda no controle".
@@ -214,6 +230,8 @@ def create_match(
     initial = {
         "player_card_ids": list(deck_ids or PLAYER_DECK),
         "bot_card_ids": list(bot_deck_ids or BOT_DECK),
+        "player_uses_default_deck": not bool(player_card_ids),
+        "bot_uses_default_deck": not bool(bot_card_ids),
         "player_name": player_name,
         "bot_profile_id": bot_profile["id"],
         "first_duel": bool(first_duel),

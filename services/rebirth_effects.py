@@ -507,6 +507,43 @@ def _dispatch_effect(
                 key=lambda card: (int(card.get("field_slot", 0) or 0), _card_key(card)),
             )
             if not shielded_units:
+                guarded_units = sorted(
+                    (
+                        card
+                        for card in _field_cards(match, side_name)
+                        if _current_guard(card) > 0
+                    ),
+                    key=lambda card: (-_current_guard(card), int(card.get("field_slot", 0) or 0), _card_key(card)),
+                )
+                if not guarded_units:
+                    return
+                protected = guarded_units[0]
+                guard_break = min(2, _current_guard(protected))
+                target_id = protected.get("instance_id")
+                status_name = "guard_break"
+                payload = _card_event_payload(
+                    protected,
+                    side=side_name,
+                    status=status_name,
+                    guard_bonus=guard_break,
+                    armor_break=False,
+                )
+                message = f"{protected['name']} perde {guard_break} de Guarda."
+                bus.dispatch(
+                    "SHIELD_BROKEN",
+                    actor=side_name,
+                    source_card_id=source_card_id,
+                    target_id=target_id,
+                    owner_id=side_name,
+                    payload=payload,
+                    message=message,
+                    order=order,
+                    priority_level=priority_level,
+                    trigger_timestamp=order,
+                    stable_entity_id=stable_entity_id,
+                    parent_event_id=parent_event_id,
+                    root_event_id=root_event_id,
+                )
                 return
             protected = shielded_units[0]
             target_id = protected.get("instance_id")

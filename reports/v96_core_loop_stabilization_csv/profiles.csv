@@ -1,0 +1,4 @@
+profile_id,name,matches,player_win_rate,bot_win_rate,average_turns
+defensive,Bot Defensivo,34,0.471,0.529,20.29
+aggressive,Bot Agressivo,33,0.576,0.424,21.88
+opportunist,Bot Oportunista,33,0.545,0.424,19.91

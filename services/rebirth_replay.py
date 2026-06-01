@@ -26,15 +26,19 @@ SUPPORTED_COMMANDS = {"PLAY_CARD", "DECLARE_ATTACK", "EVOLVE_DUPLICATE", "FUSE_F
 def build_replay_envelope(match: Dict[str, Any], *, include_stream: bool = True) -> Dict[str, Any]:
     initial = deepcopy(match.get("initial") or {})
     final_hash = canonical_state_hash(match)
+    player_uses_default_deck = bool(initial.get("player_uses_default_deck", False))
+    bot_uses_default_deck = bool(initial.get("bot_uses_default_deck", False))
     initial_payload = {
-        "player_card_ids": list(initial.get("player_card_ids") or []),
+        "player_card_ids": [] if player_uses_default_deck else list(initial.get("player_card_ids") or []),
+        "bot_card_ids": [] if bot_uses_default_deck else list(initial.get("bot_card_ids") or []),
+        "player_uses_default_deck": player_uses_default_deck,
+        "bot_uses_default_deck": bot_uses_default_deck,
         "player_name": initial.get("player_name") or (match.get("player") or {}).get("name") or "Voc\u00ea",
         "bot_profile_id": initial.get("bot_profile_id") or (match.get("bot_profile") or {}).get("id"),
     }
     if initial.get("campaign_node"):
         initial_payload.update(
             {
-                "bot_card_ids": list(initial.get("bot_card_ids") or []),
                 "player_hp": int(initial.get("player_hp", 30) or 30),
                 "bot_hp": int(initial.get("bot_hp", 30) or 30),
                 "campaign_version": initial.get("campaign_version"),

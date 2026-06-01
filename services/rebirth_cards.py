@@ -514,14 +514,34 @@ def _build_catalog_dict():
 CARD_CATALOG_DICT = _build_catalog_dict()
 
 
-# v69 balance overrides: ajustes cirúrgicos sobre o catálogo gerado, sem mexer
+# v96 balance overrides: ajustes cirúrgicos sobre o catálogo gerado, sem mexer
 # em _monster_cost (que é o contrato canônico da curva de mana). Cada entrada
-# documenta o porquê para auditoria. gameplay_health 60p antes: Bramblehorn
-# 100% WR, Mossback 100% WR (28 plays cada), Coalheart 80% WR (154 plays).
+# documenta o porquê para auditoria e mantém a correção restrita ao PvE atual.
 CARD_BALANCE_OVERRIDES = {
-    # Bramblehorn Knight: ATK 7 + GUARD 3 por 2 mana é dominante midgame.
-    # +1 mana atrasa o snowball sem mexer no perfil ofensivo.
-    "card_046": {"cost": 3},
+    # Tidepool Acolyte: water_tide escalava cedo demais por 2 mana.
+    # +1 mana preserva a identidade de scaling sem virar escolha obrigatória.
+    "card_023": {"cost": 3},
+    # Scorchscale Imp: ATK 7 + burn ainda era obrigatório; ATK 6 mantém
+    # pressão de fogo sem decidir a partida sozinho.
+    "card_006": {"attack": 6, "power": 6, "cost": 3},
+    # Granite Pactbearer: 6/2 com bulwark por 1 mana gerava tempo demais.
+    "card_044": {"cost": 2},
+    # Stonehide Recruit: era corpo defensivo sem impacto; +1 guarda o torna
+    # opener real sem mexer no custo de entrada.
+    "card_041": {"guard": 4},
+    # Amberplate Cub: contra-golpe precisava de ataque suficiente para trocar.
+    "card_043": {"attack": 6, "power": 6},
+    # Evoluções correspondentes precisam continuar claramente acima da base.
+    "card_053": {"attack": 7, "power": 7, "cost": 4},
+    # Duskwisp Thief: lifesteal com 4 ATK raramente convertia em pressão.
+    "card_061": {"attack": 5, "power": 5},
+    "card_071": {"attack": 6, "power": 6},
+    # Hollowmark Stalker: decay precisava ameaçar troca real para sair da mão.
+    "card_062": {"attack": 6, "power": 6, "cost": 2},
+    "card_072": {"attack": 7, "power": 7},
+    # Bramblehorn Knight: earth_fortify deve ser utilitário, não finisher.
+    # ATK 5 tira o pico que empurrava todos os bots acima de 60% WR.
+    "card_046": {"attack": 5, "power": 5, "cost": 2},
     # Mossback Brute: 6/4 com earth_shield por 2 mana segura board demais.
     # +1 mana alinha à curva real do stat-total (10 → cost 3 na fórmula).
     "card_045": {"cost": 3},
@@ -549,23 +569,23 @@ PLAYER_DECK = [
     "card_061",
     "card_003",
     "card_022",
-    "card_042",
+    "card_065",
     "card_062",
     "card_004",
     "card_023",
     "card_043",
-    "card_063",
+    "card_043",
     "card_005",
     "card_024",
     "card_044",
-    "card_064",
+    "card_063",
     "card_006",
-    "card_025",
-    "card_081",
-    "card_082",
+    "card_045",
     "card_083",
-    "card_084",
+    "card_088",
     "card_085",
+    "card_086",
+    "card_090",
     "card_091",
     "card_092",
     "card_093",
@@ -574,33 +594,33 @@ PLAYER_DECK = [
 ]
 
 BOT_DECK = [
-    # Two distinct guard/counter bodies reduce low-consequence opening trades
-    # without creating a stall-heavy or burst-dominant bot curve.
+    # v96: composição média e evolutiva; a variação vem do seed sem empurrar
+    # finalizadores pesados cedo demais.
     "card_044",
     "card_043",
     "card_042",
     "card_061",
     "card_021",
     "card_001",
-    "card_043",
+    "card_041",
     "card_062",
     "card_022",
     "card_002",
-    "card_044",
-    "card_063",
+    "card_043",
+    "card_061",
     "card_023",
     "card_003",
-    "card_045",
-    "card_064",
+    "card_025",
+    "card_062",
     "card_024",
     "card_004",
     "card_046",
-    "card_065",
-    "card_086",
+    "card_041",
+    "card_083",
+    "card_082",
     "card_087",
     "card_088",
     "card_089",
-    "card_090",
     "card_096",
     "card_097",
     "card_098",

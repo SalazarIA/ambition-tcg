@@ -263,9 +263,10 @@ def attack_utility_projection(
         direct_damage = card_attack(attacker)
         remaining_damage = remaining_damage_vector(bot_battlefield or [], excluded_attacker=attacker)
         lethal_window = direct_damage + remaining_damage["total"] >= int(player_hp or 0)
+        direct_weight = 10 if int(turn or 1) >= 4 else 7
         return {
             "allowed": direct_damage > 0,
-            "utility": direct_damage * 12 + (5000 if lethal_window else 0),
+            "utility": direct_damage * direct_weight + (5000 if lethal_window else 0),
             "reason": "direct_lethal" if lethal_window else "direct_pressure",
             "outcome": "direct",
             "damage_dealt": direct_damage,
@@ -598,11 +599,11 @@ def choose_aggressive(bot_hand, player_card, **context):
             **combat_context,
         )
         return (
-            1 if utility["allowed"] else 0,
             card_attack(card),
             ability_priority(card),
             projection["damage_dealt"],
             -projection["damage_taken"],
+            1 if utility["allowed"] else 0,
             utility["utility"],
             card_guard(card),
             card["name"],
@@ -692,9 +693,9 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
         return False
     rates = {
         "defensive": 0.45,
-        # Aggressive já joga "max attack always"; counter rate alto + picking
-        # bruto criava 17% de win-rate. Baixado pra abrir janela do jogador.
-        "aggressive": 0.28,
+        # Aggressive já joga linhas de pressão por padrão; counter rate alto
+        # somado ao MCTS deixava o perfil ler o jogador com precisão demais.
+        "aggressive": 0.0,
         # Opportunist baixo demais fica predatório; alto demais alonga partidas
         # e entrega vitórias grátis. 0.45 mantém a personalidade reativa sem
         # estourar o spread de dificuldade entre perfis.

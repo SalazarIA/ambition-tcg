@@ -1,0 +1,24 @@
+ability_key,name,plays,match_uses,wins,win_rate,total_damage,avg_damage
+fire_direct,Faísca Direta,383,188,89,0.473,570,1.49
+earth_counter,Contra-Golpe de Pedra,370,197,99,0.503,1885,5.09
+shadow_lifesteal,Roubo de Vida,363,197,98,0.497,655,1.8
+earth_shield,Florescer do Escudo,350,188,88,0.468,372,1.06
+shadow_decay,Deterioração,277,190,93,0.489,977,3.53
+fire_burn,Marca Ardente,272,182,84,0.462,459,1.69
+water_heal,Maré Curativa,244,160,69,0.431,304,1.25
+fire_execute,Execução de Cinzas,191,191,95,0.497,2776,14.53
+earth_bulwark,Baluarte,185,185,91,0.492,780,4.22
+spell_destroyshield,Quebra-Escudo,183,183,88,0.481,0,0.0
+water_tide,Maré Crescente,181,181,91,0.503,1842,10.18
+spell_tidalrenewal,Renovação das Marés,176,176,81,0.46,0,0.0
+water_guard,Guarda Fluida,171,171,76,0.444,472,2.76
+earth_fortify,Fortificar,169,95,41,0.432,146,0.86
+fire_surge,Surto de Calor,163,163,73,0.448,241,1.48
+water_cleanse,Corrente Purificadora,137,137,54,0.394,114,0.83
+spell_burningedict,Édito Flamejante,88,88,37,0.42,0,0.0
+shadow_mark,Marca da Ferida,87,87,46,0.529,261,3.0
+spell_healingrain,Chuva Curativa,81,81,41,0.506,0,0.0
+spell_fortify,Fortificar,77,77,37,0.481,0,0.0
+spell_stoneskin,Pele de Pedra,74,74,23,0.311,0,0.0
+spell_shadowdrain,Dreno Sombrio,72,72,38,0.528,144,2.0
+spell_cleanseall,Purificação Total,47,47,21,0.447,0,0.0

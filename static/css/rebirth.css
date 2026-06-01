@@ -13020,7 +13020,7 @@ body.rb-game-page .rb-global-nav,
     }
 }
 
-/* === v95 GAME_FEEL_PASS: arena feedback and clarity === */
+/* === v95 GAME_FEEL_PASS / v96 CORE_LOOP_STABILIZATION: arena feedback and clarity === */
 .rb-feedback-layer {
     position: absolute;
     inset: 0;

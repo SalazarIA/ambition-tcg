@@ -699,6 +699,97 @@ def _bot_auto_summon(match):
     return _summon_monster_card(match, "bot", bot_card)
 
 
+def _side_has_ready_attackers(side):
+    return any(
+        card
+        and not card.get("exhausted")
+        and not card.get("has_attacked")
+        and not card.get("has_acted")
+        for card in compact_battlefield(side)
+    )
+
+
+def _side_has_breakable_shield(match, side_name):
+    side = match[side_name]
+    if "shield" in (side.get("statuses") or {}):
+        return True
+    return any(
+        "aegis_sentinel_shield" in (card.get("statuses") or {})
+        or int(card.get("current_guard", card.get("guard", 0)) or 0) > 0
+        for card in compact_battlefield(side)
+    )
+
+
+def _bot_support_score(match, card, profile_id):
+    if not (is_spell(card) or is_trap(card)):
+        return -1
+    bot = match["bot"]
+    cost = _card_cost(card)
+    if cost > int(bot.get("energy", 0) or 0):
+        return -1
+    player = match["player"]
+    action = str(card.get("action") or "").lower()
+    player_pressure = len(compact_battlefield(player))
+    player_ready = _side_has_ready_attackers(player)
+    player_wounded = int(player.get("hp", 30) or 0) <= int(player.get("max_hp", 30) or 30) - 3
+    bot_shielded = "shield" in (bot.get("statuses") or {})
+
+    if is_trap(card):
+        if len(bot.get("traps") or []) >= 2:
+            return -1
+        if player_ready and int(bot.get("hp", 30) or 0) <= 22:
+            return 13 - cost
+        if player_pressure and int(match.get("turn", 1) or 1) >= 5 and int(bot.get("hp", 30) or 0) <= 18:
+            return 9 - cost
+        return -1
+
+    if action == "drawtwocards" and len(bot.get("hand") or []) <= 3 and bot.get("deck"):
+        return 10 - cost
+    if action in {"cleanseall", "tidalrenewal"} and bot.get("statuses"):
+        return 12 - cost
+    if action == "destroyshield":
+        return 13 - cost if _side_has_breakable_shield(match, "player") else -1
+    if action in {"healingrain", "tidalrenewal"} and int(bot.get("hp", 30) or 0) <= 20:
+        return 12 - cost
+    if action in {"fortify", "stoneskin"} and not bot_shielded and player_ready and int(bot.get("hp", 30) or 0) <= 20:
+        return 11 - cost
+    if action == "shadowdrain" and (int(bot.get("hp", 30) or 0) <= 18 or int(player.get("hp", 30) or 0) <= 6):
+        return 10 - cost
+    if action == "fireball" and int(player.get("hp", 30) or 0) <= (6 if profile_id != "aggressive" else 8):
+        return 10 - cost
+    if action == "burningedict" and player_wounded and "burn" not in (player.get("statuses") or {}):
+        return 7 - cost
+    return -1
+
+
+def _bot_auto_play_support(match):
+    if match.get("is_finished"):
+        return None
+    profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+    affordable = [
+        card
+        for card in match["bot"].get("hand", [])
+        if (is_spell(card) or is_trap(card)) and _card_cost(card) <= int(match["bot"].get("energy", 0) or 0)
+    ]
+    scored = [(score, card) for card in affordable if (score := _bot_support_score(match, card, profile_id)) > 0]
+    if not scored:
+        return None
+    _score, chosen = sorted(scored, key=lambda item: (item[0], -_card_cost(item[1]), item[1]["name"]))[-1]
+    append_event(
+        match,
+        "BOT_DECISION",
+        actor="bot",
+        payload={"profile_id": profile_id, "card_id": chosen["id"], "instance_id": chosen["instance_id"], "support": True},
+        message=f"O bot preparou {chosen['name']}.",
+    )
+    bot_card = remove_from_hand(match["bot"], card_instance_id=chosen["instance_id"])
+    if is_spell(bot_card):
+        return _resolve_spell_card(match, "bot", bot_card)
+    if is_trap(bot_card):
+        return _arm_trap_card(match, "bot", bot_card)
+    return None
+
+
 def _apply_trap_effect(match, owner_side, trap, owner_card, opponent_card):
     effect = str(trap.get("trap_effect") or "").strip().lower()
     effect_chain_id = trap.get("effect_chain_id") or new_effect_chain_id(match, "interrupt")
@@ -1091,6 +1182,15 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
         bot_wounded=match["bot"].get("wounded", False),
     )
     if not decision:
+        return None
+    profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+    if (
+        profile_id == "aggressive"
+        and decision.get("outcome") == "direct"
+        and not decision.get("lethal_window")
+        and int(match.get("turn", 1) or 1) <= 5
+        and int(match["player"].get("hp", 30) or 0) > 10
+    ):
         return None
     _attacker_index, attacker = _find_battlefield_card(match["bot"], decision.get("attacker_instance_id"))
     if not attacker:
@@ -1916,6 +2016,9 @@ def next_turn(match):
     )
     evolve_bot_if_ready(match)
     _bot_auto_attack(match, effect_chain_id=effect_chain_id)
+    if match.get("is_finished"):
+        return match
+    _bot_auto_play_support(match)
     if match.get("is_finished"):
         return match
     _bot_auto_summon(match)
