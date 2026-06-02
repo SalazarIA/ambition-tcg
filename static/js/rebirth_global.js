@@ -80,7 +80,7 @@
         const payload = {};
         Array.from(form.elements).forEach(function (element) {
             if (element.name) {
-                payload[element.name] = element.value;
+                payload[element.name] = element.type === "checkbox" ? Boolean(element.checked) : element.value;
             }
         });
         return payload;

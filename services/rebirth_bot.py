@@ -598,12 +598,16 @@ def choose_aggressive(bot_hand, player_card, **context):
             player_hp=context.get("player_hp", 30),
             **combat_context,
         )
+        outcome_rank = {"loss": 0, "tie": 1, "win": 2}[projection["outcome"]]
+        lethal_rank = 1 if utility.get("reason") == "lethal_window" or utility.get("lethal_window") else 0
         return (
+            1 if utility["allowed"] else 0,
+            lethal_rank,
+            outcome_rank,
             card_attack(card),
             ability_priority(card),
             projection["damage_dealt"],
             -projection["damage_taken"],
-            1 if utility["allowed"] else 0,
             utility["utility"],
             card_guard(card),
             card["name"],
@@ -692,7 +696,7 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
     if not match_id:
         return False
     rates = {
-        "defensive": 0.45,
+        "defensive": 0.5,
         # Aggressive já joga linhas de pressão por padrão; counter rate alto
         # somado ao MCTS deixava o perfil ler o jogador com precisão demais.
         "aggressive": 0.0,

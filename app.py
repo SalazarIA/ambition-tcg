@@ -1526,6 +1526,13 @@ def send_verification_email(user_email, token):
 def api_rebirth_auth_register():
     try:
         payload = request_json(required=True)
+        if not app.config.get("TESTING"):
+            if payload.get("age_confirmed") is not True or payload.get("privacy_accepted") is not True:
+                raise RebirthError(
+                    "Confirme idade minima e aceite Termos/Privacidade para criar a conta beta.",
+                    "consent_required",
+                    status=400,
+                )
         enforce_auth_rate_limit("register", payload.get("email") or payload.get("username"))
         user = rebirth_repo().create_user(
             payload.get("username"),
@@ -1909,6 +1916,23 @@ def api_rebirth_support_reset():
         if payload.get("confirm") != "RESET REBIRTH":
             raise RebirthPersistenceError("Digite RESET REBIRTH para reiniciar esta conta.", "reset_confirmation_required", 409)
         return json_payload(export=rebirth_repo().reset_account(user["id"]))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/support/delete-account")
+def api_rebirth_support_delete_account():
+    try:
+        payload = request_json(required=True)
+        user = require_user()
+        if payload.get("confirm") != "DELETE REBIRTH":
+            raise RebirthPersistenceError("Digite DELETE REBIRTH para excluir esta conta.", "delete_confirmation_required", 409)
+        deletion = rebirth_repo().delete_account(user["id"])
+        session.clear()
+        csrf = csrf_token()
+        return json_payload(deletion=deletion, account=account_payload(None), csrf=csrf)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:

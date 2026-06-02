@@ -1190,7 +1190,7 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
         profile_id == "aggressive"
         and decision.get("outcome") == "direct"
         and not decision.get("lethal_window")
-        and int(match.get("turn", 1) or 1) <= 5
+        and int(match.get("turn", 1) or 1) <= 2
         and int(match["player"].get("hp", 30) or 0) > 10
     ):
         return None

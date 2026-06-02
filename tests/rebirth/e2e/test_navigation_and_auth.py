@@ -104,6 +104,8 @@ def test_auth_modal_opens_with_login_and_register_forms(page, live_server):
     assert login_form.locator('input[name="email"]').count() >= 1
     assert login_form.locator('input[name="password"]').count() >= 1
     assert register_form.locator('input[name="username"]').count() >= 1
+    assert register_form.locator('input[name="age_confirmed"]').count() >= 1
+    assert register_form.locator('input[name="privacy_accepted"]').count() >= 1
 
 
 # --- console / network sanity --------------------------------------------
@@ -228,6 +230,8 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
     register.locator('input[name="username"]').fill(username)
     register.locator('input[name="email"]').fill(email)
     register.locator('input[name="password"]').fill("password123")
+    register.locator('input[name="age_confirmed"]').check()
+    register.locator('input[name="privacy_accepted"]').check()
 
     with page.expect_response(lambda response: "/api/rebirth/auth/register" in response.url) as register_info:
         register.locator('button[type="submit"]').click()

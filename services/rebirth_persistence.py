@@ -2912,6 +2912,59 @@ class RebirthRepository:
         }
 
     @_retry_postgres_serialization_write
+    def delete_account(self, user_id):
+        self.ensure_schema()
+        user_id = int(user_id)
+        now = utc_now()
+        with self.connect() as db:
+            user = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user:
+                raise RebirthPersistenceError("A conta Rebirth nao foi encontrada.", "missing_user", 404)
+            counts = {
+                "matches": int(db.execute("SELECT COUNT(*) AS count FROM match_history WHERE user_id = ?", (user_id,)).fetchone()["count"] or 0),
+                "ledger_entries": int(db.execute("SELECT COUNT(*) AS count FROM economy_ledger WHERE user_id = ?", (user_id,)).fetchone()["count"] or 0),
+                "collection_rows": int(db.execute("SELECT COUNT(*) AS count FROM user_collection WHERE user_id = ?", (user_id,)).fetchone()["count"] or 0),
+                "boosters": int(db.execute("SELECT COUNT(*) AS count FROM booster_history WHERE user_id = ?", (user_id,)).fetchone()["count"] or 0),
+                "decks": int(db.execute("SELECT COUNT(*) AS count FROM user_decks WHERE user_id = ?", (user_id,)).fetchone()["count"] or 0),
+            }
+            db.execute(
+                """
+                INSERT INTO admin_audit_log (actor, action, user_id, metadata_json, created_at)
+                VALUES (?, ?, NULL, ?, ?)
+                """,
+                (
+                    "self-service",
+                    "account_deleted",
+                    json.dumps({"deleted_user_id": user_id, "counts": counts}, sort_keys=True),
+                    now,
+                ),
+            )
+            db.execute("UPDATE telemetry_events SET user_id = NULL WHERE user_id = ?", (user_id,))
+            db.execute("UPDATE admin_audit_log SET user_id = NULL WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM market_offers WHERE seller_id = ?", (user_id,))
+            db.execute("DELETE FROM match_events WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM match_commands WHERE user_id = ?", (user_id,))
+            for table in (
+                "user_decks",
+                "user_campaign_progress",
+                "reward_claims",
+                "booster_history",
+                "user_achievements",
+                "economy_ledger",
+                "economy_transactions",
+                "economy_idempotency_keys",
+                "wallet_ledger",
+                "user_collection",
+                "user_loadout",
+                "user_progress",
+                "user_sessions",
+                "match_history",
+            ):
+                db.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
+            db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        return {"deleted": True, "deleted_user_id": user_id, "deleted_at": now, "counts": counts}
+
+    @_retry_postgres_serialization_write
     def reset_account(self, user_id):
         self.ensure_schema()
         now = utc_now()

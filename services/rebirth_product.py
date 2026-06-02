@@ -12,6 +12,7 @@ from services.rebirth_cards import (
     get_card,
     validate_deck_distribution,
 )
+from services.rebirth_keywords import KEYWORD_LABELS
 
 
 PRODUCT_NAV = [
@@ -76,6 +77,16 @@ TUTORIAL_STEPS = [
         "title": "Resgate Progresso",
         "copy": "Clashes, boosters e a conclusão do tutorial ficam salvos na sua conta Rebirth.",
     },
+    {
+        "step": 5,
+        "title": "Leia Keywords",
+        "copy": "Investida, Drenar, Escudo e Perfurar mudam quando atacar, curar, absorver ou atravessar guarda.",
+    },
+    {
+        "step": 6,
+        "title": "Feche O Loop",
+        "copy": "Depois da partida, resgate missão diária, abra booster e ajuste o deck antes do próximo duelo.",
+    },
 ]
 
 RELEASE_CHECKS = [
@@ -89,6 +100,8 @@ RELEASE_CHECKS = [
     {"name": "Histórico", "state": "passed", "copy": "Partidas autenticadas persistem comandos, eventos, hash de estado e retrato final."},
     {"name": "Extrato Econômico", "state": "passed", "copy": "XP, cartas iniciais, boosters, recompensas diárias e concessões escrevem um extrato auditável."},
     {"name": "Ferramentas de Suporte", "state": "passed", "copy": "Jogadores podem exportar/reiniciar a conta; concessões exigem token do servidor."},
+    {"name": "LGPD Self-Service", "state": "passed", "copy": "Exportação, reinício e exclusão permanente exigem sessão e confirmação explícita."},
+    {"name": "Beta Fechado", "state": "passed", "copy": "Runbook e workflow agendado cobrem E2E, visual QA, pip-audit e balance report."},
     {"name": "Controle de QA", "state": "passed", "copy": "py_compile, pytest, verificação Node e teste do navegador passaram neste bloco."},
 ]
 
@@ -461,11 +474,64 @@ def progression_payload(account=None, progression=None):
     )
     daily_claimed = bool(profile.get("daily_claimed", False))
     daily_ready = int(profile.get("clashes", 0)) >= 1
+    clashes = int(profile.get("clashes", 0) or 0)
+    wins = int(profile.get("wins", 0) or 0)
+    boosters = int(profile.get("boosters_opened", 0) or 0)
+    tutorial_complete = bool(profile.get("tutorial_complete", False))
+    quests = [
+        {
+            "key": "play_one",
+            "name": "Jogue 1 partida",
+            "progress": min(1, clashes),
+            "goal": 1,
+            "reward": "25 XP diario",
+            "state": "claimed" if daily_claimed else "ready" if daily_ready else "locked",
+        },
+        {
+            "key": "win_one",
+            "name": "Venca 1 partida",
+            "progress": min(1, wins),
+            "goal": 1,
+            "reward": "Selo de leitura",
+            "state": "ready" if wins >= 1 else "locked",
+        },
+        {
+            "key": "open_booster",
+            "name": "Abra 1 booster",
+            "progress": min(1, boosters),
+            "goal": 1,
+            "reward": "Novas opcoes de deck",
+            "state": "ready" if boosters >= 1 else "locked",
+        },
+        {
+            "key": "finish_tutorial",
+            "name": "Conclua o tutorial",
+            "progress": 1 if tutorial_complete else 0,
+            "goal": 1,
+            "reward": "60 XP",
+            "state": "claimed" if tutorial_complete else "ready",
+        },
+    ]
+    next_goal = (
+        "Resgate a recompensa diaria."
+        if daily_ready and not daily_claimed
+        else "Conclua o tutorial guiado."
+        if not tutorial_complete
+        else "Abra um booster e ajuste seu baralho."
+        if boosters < 1
+        else "Jogue por vitorias e teste novas linhas."
+    )
     payload.update(
         {
             "account": account,
             "profile": profile,
             "track": progression_track(profile),
+            "quests": quests,
+            "retention": {
+                "next_goal": next_goal,
+                "daily_complete": daily_claimed,
+                "beta_loop": ["Jogar", "Resgatar", "Abrir booster", "Ajustar deck"],
+            },
             "daily": {
                 "name": "Jogue um clash",
                 "progress": min(1, int(profile.get("clashes", 0))),
@@ -605,6 +671,7 @@ def support_payload(account=None, export=None):
             "checks": [
                 "A exportação é autônoma e limitada à conta conectada.",
                 "O reinício exige confirmação explícita.",
+                "A exclusão permanente exige confirmação separada e encerra a sessão.",
                 "A concessão administrativa fica desativada sem REBIRTH_ADMIN_TOKEN.",
                 "Toda concessão registra entradas em admin_audit_log e economy_ledger.",
             ],
@@ -660,6 +727,16 @@ def onboarding_payload(account=None, progression=None):
         {
             "account": account,
             "steps": deepcopy(TUTORIAL_STEPS),
+            "keyword_glossary": [
+                {"key": key, "label": label, "copy": copy}
+                for key, (label, copy) in KEYWORD_LABELS.items()
+            ],
+            "practice_goals": [
+                "Invocar um monstro com mana suficiente.",
+                "Atacar um alvo em campo antes de tentar dano direto.",
+                "Evoluir uma duplicata quando o painel aparecer.",
+                "Resgatar a diaria e abrir booster depois da partida.",
+            ],
             "current_step": int(progress.get("tutorial_step", 0) or 0),
             "complete": bool(progress.get("tutorial_complete", False)),
         }
@@ -705,10 +782,13 @@ def release_payload():
                 "python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py",
                 "python3 -m pytest -q",
                 "python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md",
+                "pip-audit -r requirements.txt",
+                "python3 tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-visual",
                 "node --check static/js/rebirth.js",
                 "node --check static/js/service-worker.js",
                 "node --check static/js/pwa.js",
                 "node --check static/js/rebirth_product.js",
+                "node --check static/js/rebirth_audio.js",
             ],
         }
     )

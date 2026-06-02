@@ -69,6 +69,12 @@ def test_balance_lab_exercises_traps_and_multiple_evolution_families():
     assert len(payload["evolution_usage"]) >= 2
 
 
+def test_balance_lab_rotates_seasonal_decks_for_catalog_coverage():
+    payload = simulate_balance(matches=80)
+    used = [row for row in payload["card_stats"] if row.get("plays", 0) > 0]
+    assert len(used) >= 60
+
+
 def test_bot_refuses_high_tier_symmetric_suicide_without_lethal_window():
     bot_card = {
         "id": "bot_tier_high",

@@ -1,7 +1,17 @@
+import hashlib
 from collections import Counter, defaultdict
 
 from services.rebirth_bot import BOT_PERSONALITY_ORDER, BOT_PERSONALITIES
-from services.rebirth_cards import catalog_payload, is_monster, is_spell, is_trap
+from services.rebirth_cards import (
+    BASE_MONSTERS,
+    SPELL_CARDS,
+    TRAP_CARDS,
+    catalog_payload,
+    is_monster,
+    is_spell,
+    is_trap,
+    validate_deck_distribution,
+)
 from services.rebirth_contracts import FIELD_SLOT_COUNT, RebirthError
 from services.rebirth_engine import (
     compare_clash,
@@ -30,6 +40,48 @@ def choose_player_card(hand):
         ),
         reverse=True,
     )[0]
+
+
+def _rotating_ids(pool, start, count):
+    if not pool:
+        return []
+    return [pool[(start + offset) % len(pool)]["id"] for offset in range(count)]
+
+
+def seasonal_balance_deck(index, *, side="player", profile_id=None):
+    """Build a legal deterministic lab deck that rotates through Season 0.
+
+    Production players keep their saved loadout. The balance lab needs broader
+    coverage, otherwise a healthy engine can look like 60+ cards are dead just
+    because fixed starter decks never draw them.
+    """
+    index = max(0, int(index or 0))
+    side_offset = 7 if side == "bot" else 0
+    profile_offset = {"defensive": 0, "aggressive": 5, "opportunist": 11}.get(str(profile_id or ""), 3)
+    seed = index * 3 + side_offset + profile_offset
+    monster_pool = sorted(BASE_MONSTERS, key=lambda card: (card["family"], card["id"]))
+    spell_pool = sorted(SPELL_CARDS, key=lambda card: card["id"])
+    trap_pool = sorted(TRAP_CARDS, key=lambda card: card["id"])
+
+    duplicate_count = 6 if side == "bot" else 5
+    monster_count = 22 if side == "bot" else 20
+    support_count = (30 - monster_count) // 2
+    duplicate_bases = _rotating_ids(monster_pool, seed, duplicate_count)
+    singles = [
+        card_id
+        for card_id in _rotating_ids(monster_pool, seed + duplicate_count, 18)
+        if card_id not in set(duplicate_bases)
+    ][: monster_count - (duplicate_count * 2)]
+    monsters = []
+    for card_id in duplicate_bases:
+        monsters.extend([card_id, card_id])
+    monsters.extend(singles)
+    monsters = monsters[:monster_count]
+    spells = _rotating_ids(spell_pool, seed + index, support_count)
+    traps = _rotating_ids(trap_pool, seed + index, 30 - monster_count - support_count)
+    deck = monsters + spells + traps
+    validate_deck_distribution(deck)
+    return deck
 
 
 def card_cost(card):
@@ -90,10 +142,15 @@ def choose_tactical_player_card(match):
     hand = [card for card in match["player"]["hand"] if is_monster(card) and card_cost(card) <= energy]
     if not hand:
         return None
-    return sorted(
+    ranked = sorted(
         hand,
         key=lambda card: (projected_player_score(match, card), int(card.get("guard", 0)), card["name"]),
-    )[-1]
+        reverse=True,
+    )
+    top_window = ranked[: min(3, len(ranked))]
+    source = f"{match.get('match_id')}:{match.get('turn')}:{energy}:{len(match['player'].get('battlefield', []))}"
+    index = int(hashlib.sha256(source.encode("utf-8")).hexdigest()[:2], 16) % len(top_window)
+    return top_window[index]
 
 
 def side_has_ready_attackers(side):
@@ -265,8 +322,13 @@ def declare_best_attack(match, attacker):
     )
 
 
-def simulate_match(seed=None, max_turns=30, bot_profile_id=None):
-    match = start_match(seed=seed, bot_profile_id=bot_profile_id)
+def simulate_match(seed=None, max_turns=30, bot_profile_id=None, player_card_ids=None, bot_card_ids=None):
+    match = start_match(
+        seed=seed,
+        bot_profile_id=bot_profile_id,
+        player_card_ids=player_card_ids,
+        bot_card_ids=bot_card_ids,
+    )
     card_usage = Counter()
     card_wins = Counter()
     card_damage = Counter()
@@ -511,7 +573,13 @@ def _simulate_balance_core(matches=40, *, seed_prefix="balance", max_turns=30):
     samples = []
     for index in range(matches):
         profile_id = BOT_PERSONALITY_ORDER[index % len(BOT_PERSONALITY_ORDER)]
-        result = simulate_match(seed=f"{seed_prefix}-{index}", max_turns=max_turns, bot_profile_id=profile_id)
+        result = simulate_match(
+            seed=f"{seed_prefix}-{index}",
+            max_turns=max_turns,
+            bot_profile_id=profile_id,
+            player_card_ids=seasonal_balance_deck(index, side="player", profile_id=profile_id),
+            bot_card_ids=seasonal_balance_deck(index, side="bot", profile_id=profile_id),
+        )
         winners[result["winner"]] += 1
         card_usage.update(result["card_usage"])
         card_wins.update(result["card_wins"])

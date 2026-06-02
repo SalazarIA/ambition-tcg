@@ -1,6 +1,6 @@
 # Rebirth Release Status
 
-> Updated for the campaign-era roadmap pass on 2026-05-27. Operational
+> Updated for the closed-beta hardening pass on 2026-06-01. Operational
 > persistence, asset and mobile guidance is also defined in
 > `docs/AAA_FOUNDATION_V58.md`.
 
@@ -10,9 +10,9 @@ Ambitionz Rebirth is the only active Ambitionz runtime product.
 
 The active product is a Flask-served, vanilla-frontend, three-slot monster
 duel with a ten-node PvE campaign, Rebirth-native auth, PostgreSQL persistence, account collection, account
-loadout, no-payment booster ownership, progression, onboarding, balance
+loadout, no-payment booster ownership, progression, onboarding, beta retention quests, balance
 simulation, player profile/achievements, match history, economy ledger,
-support/admin tooling, auth hardening and release hygiene pages.
+support/admin tooling, self-service export/deletion, consent-gated signup, auth hardening and release hygiene pages.
 
 The active catalog spans 103 cards (83 monsters, 10 spells and 10 traps),
 including three Legendary contracts, with stable `ability_key` values,
@@ -128,6 +128,7 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `GET /api/rebirth/release`
 - `GET /api/rebirth/support/export`
 - `POST /api/rebirth/support/reset`
+- `POST /api/rebirth/support/delete-account`
 - `POST /api/rebirth/admin/grant`
 - `POST /api/rebirth/telemetry`
 
@@ -198,6 +199,7 @@ Current Rebirth coverage includes:
 - player profile and persisted achievement unlocks
 - tutorial completion and daily reward persistence
 - deterministic balance simulation and release route contracts
+- age/privacy consent, authenticated support export and permanent account deletion
 - Rebirth card set art/manifest truth, tier-2 evolution contract and
   engine-backed abilities
 - bot personality contracts for defensive, aggressive and opportunist profiles
@@ -208,7 +210,7 @@ Current Rebirth coverage includes:
 - persisted match history and event replay source data
 - economy ledger entries for starter cards, match XP, boosters, daily rewards,
   tutorial XP and admin grants
-- support export/reset and admin token safety
+- support export/reset/delete and admin token safety
 - defeated-monster cleanup regression (engine destruction bug)
 - mana curve playability (cheapest monster anchored in starter deck)
 - campaign unlock/reward/idempotency and boss presentation contracts

@@ -31,8 +31,10 @@
             this.fusionExplosionLockUntil = 0;
             this.debounceMs = 90;
             this.replayAudioMutedMode = false;
+            this.userMuted = window.localStorage && window.localStorage.getItem("rebirth_audio_muted") === "true";
             this.resumeOnGesture = this.resumeOnGesture.bind(this);
             window.addEventListener("click", this.resumeOnGesture, { passive: true });
+            window.addEventListener("DOMContentLoaded", () => this.bindToggle());
             RebirthAudioManager.instance = this;
         }
 
@@ -87,6 +89,38 @@
             this.replayAudioMutedMode = Boolean(enabled);
         }
 
+        isMuted() {
+            return Boolean(this.userMuted || this.replayAudioMutedMode);
+        }
+
+        setMuted(enabled) {
+            this.userMuted = Boolean(enabled);
+            try {
+                window.localStorage.setItem("rebirth_audio_muted", this.userMuted ? "true" : "false");
+            } catch (_error) {}
+            this.syncToggle();
+        }
+
+        syncToggle() {
+            const button = document.querySelector("[data-rebirth-audio-toggle]");
+            if (!button) return;
+            button.setAttribute("aria-pressed", this.userMuted ? "true" : "false");
+            button.textContent = this.userMuted ? "Som off" : "Som";
+        }
+
+        bindToggle() {
+            const button = document.querySelector("[data-rebirth-audio-toggle]");
+            if (!button || button.dataset.rebirthAudioBound === "true") return;
+            button.dataset.rebirthAudioBound = "true";
+            this.syncToggle();
+            button.addEventListener("click", () => {
+                this.setMuted(!this.userMuted);
+                if (!this.userMuted) {
+                    this.uiClickConfirmed();
+                }
+            });
+        }
+
         eventKey(event, soundKey) {
             // Dedup por chain de efeito: chains longas (até 15 eventos) reproduzem
             // um único impacto por janela do debounce. Sem effect_chain_id, cai
@@ -106,7 +140,7 @@
         }
 
         shouldPlayFusion(event) {
-            if (this.replayAudioMutedMode) return false;
+            if (this.isMuted()) return false;
             const now = window.performance && window.performance.now ? window.performance.now() : Date.now();
             const key = this.fusionEventKey(event);
             if (this.fusionExplosionKeys.has(key)) return false;
@@ -120,7 +154,7 @@
         }
 
         shouldPlay(event, soundKey) {
-            if (this.replayAudioMutedMode) return false;
+            if (this.isMuted()) return false;
             const eventType = String(event && (event.event_type || event.type) || "");
             if (eventType === "MONSTERS_FUSED" && soundKey === "evolution") {
                 return this.shouldPlayFusion(event);
@@ -139,7 +173,7 @@
 
         async play(soundKey, options) {
             const context = this.ensureContext();
-            if (!context) return false;
+            if (!context || this.userMuted) return false;
             await this.preload();
             const buffer = this.buffers.get(soundKey);
             if (!buffer) return false;
@@ -192,7 +226,7 @@
         observeEvents(events, options) {
             const list = Array.isArray(events) ? events.slice() : [];
             this.setReplayMutedMode(Boolean(options && options.replayAudioMutedMode));
-            if (!list.length || this.replayAudioMutedMode) return;
+            if (!list.length || this.isMuted()) return;
             const delayMs = Math.max(0, Number(options && options.hitPauseMs || 0));
             const fusionChains = new Set(
                 list

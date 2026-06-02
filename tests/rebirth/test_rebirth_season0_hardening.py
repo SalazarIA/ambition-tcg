@@ -107,3 +107,31 @@ def test_support_export_reset_and_admin_grant(client, flask_app):
     assert any(entry["reason"] == "account_reset_compensation" for entry in export["ledger"])
     retained_ledger = client.get("/api/rebirth/economy-ledger?limit=100").get_json()["ledger"]
     assert any(entry["reason"] == "qa_grant" for entry in retained_ledger)
+
+
+def test_support_delete_account_removes_login_and_private_state(client):
+    created = register(client, username="delete_user", email="delete@example.com").get_json()
+    user_id = created["account"]["user"]["id"]
+
+    client.post("/api/rebirth/booster/open", json={"seed": "delete-booster"})
+    rejected = client.post("/api/rebirth/support/delete-account", json={"confirm": "wrong"})
+    assert rejected.status_code == 409
+    assert rejected.get_json()["error"]["code"] == "delete_confirmation_required"
+
+    deleted = client.post("/api/rebirth/support/delete-account", json={"confirm": "DELETE REBIRTH"})
+    payload = deleted.get_json()
+    assert deleted.status_code == 200
+    assert payload["deletion"]["deleted"] is True
+    assert payload["deletion"]["deleted_user_id"] == user_id
+    assert payload["account"]["authenticated"] is False
+
+    export_after = client.get("/api/rebirth/support/export")
+    assert export_after.status_code == 401
+    assert export_after.get_json()["error"]["code"] == "auth_required"
+
+    login_after = client.post(
+        "/api/rebirth/auth/login",
+        json={"email": "delete@example.com", "password": "password123"},
+    )
+    assert login_after.status_code == 401
+    assert login_after.get_json()["error"]["code"] == "invalid_credentials"

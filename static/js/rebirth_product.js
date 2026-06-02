@@ -767,6 +767,7 @@
     function bindSupport() {
         const exportButton = document.querySelector("[data-rebirth-export]");
         const resetButton = document.querySelector("[data-rebirth-reset]");
+        const deleteButton = document.querySelector("[data-rebirth-delete-account]");
         const result = document.querySelector("[data-rebirth-support-result]");
         if (!result) {
             return;
@@ -803,6 +804,34 @@
                     })
                     .finally(function () {
                         resetButton.disabled = false;
+                    });
+            });
+        }
+        if (deleteButton && endpoints.supportDelete) {
+            deleteButton.addEventListener("click", function () {
+                const first = window.confirm("Excluir permanentemente esta conta Rebirth e encerrar a sessão?");
+                if (!first) {
+                    return;
+                }
+                const typed = window.prompt("Digite DELETE REBIRTH para confirmar a exclusão permanente.");
+                if (typed !== "DELETE REBIRTH") {
+                    result.textContent = "Exclusão cancelada: confirmação incorreta.";
+                    return;
+                }
+                deleteButton.disabled = true;
+                result.textContent = "Excluindo conta...";
+                postJson(endpoints.supportDelete, { confirm: "DELETE REBIRTH" })
+                    .then(function (payload) {
+                        write(payload);
+                        window.setTimeout(function () {
+                            window.location.href = "/rebirth/account?deleted=1";
+                        }, 450);
+                    })
+                    .catch(function (error) {
+                        result.textContent = error.message;
+                    })
+                    .finally(function () {
+                        deleteButton.disabled = false;
                     });
             });
         }

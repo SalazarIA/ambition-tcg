@@ -40,6 +40,18 @@ def test_rebirth_product_pages_render_active_shell(client):
         if path == "/rebirth/shop":
             assert "Mercado de Jogadores" in body
             assert "data-rebirth-market-offers" in body
+        if path == "/rebirth/account":
+            assert "age_confirmed" in body
+            assert "privacy_accepted" in body
+        if path == "/rebirth/support":
+            assert "data-rebirth-delete-account" in body
+            assert "Excluir Minha Conta" in body
+        if path == "/rebirth/progression":
+            assert "Loop de retenção beta" in body
+            assert "rb-quest-grid" in body
+        if path == "/rebirth/onboarding":
+            assert "Glossário de keywords" in body
+            assert "rb-keyword-grid" in body
 
 
 def test_collection_renders_root_relative_card_art_urls(client):
@@ -90,10 +102,12 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert "tabuleiro vertical" in desktop.get_json()["desktop"]["checks"][0]
     assert onboarding.status_code == 200
     assert onboarding.get_json()["onboarding"]["steps"][0]["title"] == "Escolha Um Monstro"
+    assert len(onboarding.get_json()["onboarding"]["keyword_glossary"]) >= 8
     assert balance.status_code == 200
     assert balance.get_json()["balance"]["matches"] == 8
     assert release.status_code == 200
     assert release.get_json()["release"]["checks"][0]["name"] == "Produto Ativo"
+    assert any(check["name"] == "LGPD Self-Service" for check in release.get_json()["release"]["checks"])
 
 
 def test_rebirth_loadout_preview_validates_owned_cards(client):

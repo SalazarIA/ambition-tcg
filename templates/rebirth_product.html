@@ -254,6 +254,12 @@
                     <p>Reinicie coleção e baralho; seu extrato auditável permanece preservado com lançamentos compensatórios.</p>
                     <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-reset>Reiniciar Conta</button>
                 </article>
+                <article class="rb-product-panel rb-danger-panel">
+                    <span>LGPD</span>
+                    <h2>Excluir Conta</h2>
+                    <p>Remove login, coleção, decks, histórico, extrato e carteira. Esta ação encerra a sessão e não pode ser desfeita.</p>
+                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-delete-account>Excluir Minha Conta</button>
+                </article>
             </section>
             <section class="rb-product-panel rb-product-wide">
                 <h2>Resultado do Suporte</h2>
@@ -557,6 +563,29 @@
                     {{ 'Recompensa diária resgatada.' if page.daily.state == 'claimed' else 'Recompensa diária pronta.' if page.daily.state == 'ready' else 'Jogue uma partida para desbloquear a recompensa diária.' }}
                 </div>
             </section>
+            <section class="rb-product-panel rb-product-wide rb-beta-loop-panel" aria-label="Loop de retenção beta">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Beta fechado</span>
+                        <h2>Próximo melhor passo</h2>
+                    </div>
+                    <strong>{{ page.retention.next_goal }}</strong>
+                </div>
+                <div class="rb-quest-grid">
+                    {% for quest in page.quests %}
+                        <article class="rb-quest-card is-{{ quest.state }}">
+                            <span>{{ 'Pronta' if quest.state == 'ready' else 'Concluída' if quest.state == 'claimed' else 'Bloqueada' }}</span>
+                            <h3>{{ quest.name }}</h3>
+                            <p>{{ quest.progress }}/{{ quest.goal }} - {{ quest.reward }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+                <div class="rb-beta-loop-strip" aria-label="Loop diário">
+                    {% for step in page.retention.beta_loop %}
+                        <span>{{ step }}</span>
+                    {% endfor %}
+                </div>
+            </section>
         {% elif page.key == "lab" %}
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Links do laboratório Rebirth">
                 {% for item in page.links %}
@@ -601,6 +630,29 @@
                 <p>Conclua a introdução para gravar o XP do tutorial na conta ativa.</p>
                 <button class="rb-button-primary rb-cta" type="button" data-rebirth-tutorial-complete>Concluir Tutorial</button>
                 <div class="rb-product-result" data-rebirth-tutorial-result aria-live="polite">Tutorial pronto.</div>
+            </section>
+            <section class="rb-product-panel rb-product-wide rb-keyword-school" aria-label="Glossário de keywords">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Keywords</span>
+                        <h2>Leitura rápida de cartas</h2>
+                    </div>
+                    <a class="rb-secondary" href="{{ url_for('rebirth') }}?firstRun=1">Praticar</a>
+                </div>
+                <div class="rb-keyword-grid">
+                    {% for keyword in page.keyword_glossary %}
+                        <article>
+                            <span>{{ keyword.key }}</span>
+                            <strong>{{ keyword.label }}</strong>
+                            <p>{{ keyword["copy"] }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+                <ul class="rb-product-list rb-practice-goals">
+                    {% for goal in page.practice_goals %}
+                        <li>{{ goal }}</li>
+                    {% endfor %}
+                </ul>
             </section>
         {% elif page.key == "balance" %}
             <section class="rb-product-grid" aria-label="Notas de balanceamento">
@@ -704,6 +756,7 @@
             marketBuy: "{{ url_for('api_rebirth_market_buy') }}",
             supportExport: "{{ url_for('api_rebirth_support_export') }}",
             supportReset: "{{ url_for('api_rebirth_support_reset') }}",
+            supportDelete: "{{ url_for('api_rebirth_support_delete_account') }}",
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
         window.REBIRTH_AUTH_ENDPOINTS = {
