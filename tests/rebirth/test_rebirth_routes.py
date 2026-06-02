@@ -119,6 +119,12 @@ def test_authenticated_match_state_uses_single_repository(client):
     assert persisted.get_json()["state"]["match_id"] == state["match_id"]
 
     ambition_app.MATCH_STORE.clear()
+    explicit_resume = client.post("/api/rebirth/resume", json={"match_id": state["match_id"]})
+    assert explicit_resume.status_code == 200
+    assert explicit_resume.get_json()["resumed"] is True
+    assert explicit_resume.get_json()["state"]["match_id"] == state["match_id"]
+
+    ambition_app.MATCH_STORE.clear()
     resumed = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]})
     resumed_state = resumed.get_json()["state"]
 

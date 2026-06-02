@@ -578,6 +578,7 @@ def choose_defensive(bot_hand, player_card, **context):
             -projection["damage_taken"],
             card_guard(card),
             projection["damage_dealt"],
+            ability_priority(card),
             utility["utility"],
             card_attack(card),
             card["name"],
@@ -696,7 +697,7 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
     if not match_id:
         return False
     rates = {
-        "defensive": 0.5,
+        "defensive": 0.78,
         # Aggressive já joga linhas de pressão por padrão; counter rate alto
         # somado ao MCTS deixava o perfil ler o jogador com precisão demais.
         "aggressive": 0.0,

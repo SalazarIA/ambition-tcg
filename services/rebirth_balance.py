@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 from services.rebirth_bot import BOT_PERSONALITY_ORDER, BOT_PERSONALITIES
 from services.rebirth_cards import (
     BASE_MONSTERS,
+    LEGENDARY_CARDS,
     SPELL_CARDS,
     TRAP_CARDS,
     catalog_payload,
@@ -56,26 +57,31 @@ def seasonal_balance_deck(index, *, side="player", profile_id=None):
     because fixed starter decks never draw them.
     """
     index = max(0, int(index or 0))
-    side_offset = 7 if side == "bot" else 0
+    side_offset = 0 if side == "bot" and profile_id == "defensive" else (7 if side == "bot" else 0)
     profile_offset = {"defensive": 0, "aggressive": 5, "opportunist": 11}.get(str(profile_id or ""), 3)
     seed = index * 3 + side_offset + profile_offset
     monster_pool = sorted(BASE_MONSTERS, key=lambda card: (card["family"], card["id"]))
+    legendary_pool = sorted(LEGENDARY_CARDS, key=lambda card: (card["family"], card["id"]))
     spell_pool = sorted(SPELL_CARDS, key=lambda card: card["id"])
     trap_pool = sorted(TRAP_CARDS, key=lambda card: card["id"])
 
     duplicate_count = 6 if side == "bot" else 5
     monster_count = 22 if side == "bot" else 20
     support_count = (30 - monster_count) // 2
+    legendary_ids = _rotating_ids(legendary_pool, seed + index, 1)
+    base_monster_count = monster_count - len(legendary_ids)
+    duplicate_count = min(duplicate_count, base_monster_count // 2)
     duplicate_bases = _rotating_ids(monster_pool, seed, duplicate_count)
     singles = [
         card_id
         for card_id in _rotating_ids(monster_pool, seed + duplicate_count, 18)
         if card_id not in set(duplicate_bases)
-    ][: monster_count - (duplicate_count * 2)]
+    ][: base_monster_count - (duplicate_count * 2)]
     monsters = []
     for card_id in duplicate_bases:
         monsters.extend([card_id, card_id])
     monsters.extend(singles)
+    monsters.extend(legendary_ids)
     monsters = monsters[:monster_count]
     spells = _rotating_ids(spell_pool, seed + index, support_count)
     traps = _rotating_ids(trap_pool, seed + index, 30 - monster_count - support_count)
@@ -226,8 +232,15 @@ def support_card_score(match, side_name, card):
             return 7 - cost
         return -1
 
-    if action == "drawtwocards" and len(side.get("hand") or []) <= 4 and side.get("deck"):
-        return 10 - cost
+    if action == "drawtwocards" and side.get("deck"):
+        hand_size = len(side.get("hand") or [])
+        turn = int(match.get("turn", 1) or 1)
+        if hand_size <= 3:
+            return 15 - cost
+        if hand_size <= 5 and turn >= 3:
+            return 11 - cost
+        if hand_size <= 6 and turn >= 6:
+            return 7 - cost
     if action in {"cleanseall", "tidalrenewal"} and side.get("statuses"):
         return 12 - cost
     if action == "destroyshield":
@@ -725,12 +738,12 @@ def balance_flags(plays, match_uses, wins, damage, matches, dead_count, evolve_c
     flags = []
     if not plays:
         flags.append("unused")
-    elif plays >= max(3, matches * 0.2):
+    elif plays >= max(3, matches * 0.2) and match_uses >= max(8, matches * 0.18):
         win_rate = wins / max(1, match_uses)
         avg_damage = damage / plays
-        if win_rate >= 0.7:
+        if win_rate >= 0.78 and avg_damage >= 1.5:
             flags.append("dominant")
-        if win_rate <= 0.25 and avg_damage <= 1:
+        if win_rate <= 0.2 and avg_damage <= 0.75:
             flags.append("low-impact")
     if dead_count >= matches * 0.4:
         flags.append("dead-hand-risk")

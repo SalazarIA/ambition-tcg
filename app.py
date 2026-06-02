@@ -23,6 +23,9 @@ from services.rebirth_persistence import (
     RebirthPersistenceError,
     RebirthRepository,
 )
+from services.rebirth_beta_ops import beta_dashboard_payload, external_gate_payload
+from services.rebirth_deck_coach import deck_suggestions
+from services.rebirth_postmatch import post_match_recap
 from services.rebirth_product import (
     account_payload,
     auth_plan_payload,
@@ -63,6 +66,14 @@ app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
 app.config["REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS"] = max(0.0, float(os.environ.get("REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS", "0.02")))
+app.config["REBIRTH_ENABLE_BILLING"] = os.environ.get("REBIRTH_ENABLE_BILLING", "false").strip().lower() == "true"
+app.config["REBIRTH_ALLOW_STRIPE_LIVE"] = os.environ.get("REBIRTH_ALLOW_STRIPE_LIVE", "false").strip().lower() == "true"
+app.config["REBIRTH_LEGAL_REVIEWED"] = os.environ.get("REBIRTH_LEGAL_REVIEWED", "false").strip().lower() == "true"
+app.config["REBIRTH_BACKUP_RESTORE_DRILL"] = os.environ.get("REBIRTH_BACKUP_RESTORE_DRILL", "false").strip().lower() == "true"
+app.config["REBIRTH_GITHUB_QA_GREEN"] = os.environ.get("REBIRTH_GITHUB_QA_GREEN", "false").strip().lower() == "true"
+app.config["SENTRY_DSN"] = os.environ.get("SENTRY_DSN")
+app.config["SENTRY_ENVIRONMENT"] = os.environ.get("SENTRY_ENVIRONMENT") or os.environ.get("RENDER_SERVICE_NAME") or "development"
+app.config["SENTRY_TRACES_SAMPLE_RATE"] = float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0") or 0)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE") == "true"
@@ -88,6 +99,29 @@ MATCH_TELEMETRY_CLOCKS = {}
 MATCH_TELEMETRY_LOCK = threading.Lock()
 _SCHEMA_BOOTSTRAP_LOCK = threading.Lock()
 _SCHEMA_BOOTSTRAP_DONE = False
+
+
+def _init_error_tracking():
+    dsn = app.config.get("SENTRY_DSN")
+    if not dsn:
+        return
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+    except Exception:
+        app.logger.warning("rebirth.error_tracking skipped: sentry-sdk is not installed")
+        return
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[FlaskIntegration()],
+        environment=app.config.get("SENTRY_ENVIRONMENT"),
+        release=app.config.get("REBIRTH_RELEASE_VERSION"),
+        traces_sample_rate=max(0.0, min(1.0, float(app.config.get("SENTRY_TRACES_SAMPLE_RATE", 0) or 0))),
+    )
+    app.logger.info("rebirth.error_tracking enabled")
+
+
+_init_error_tracking()
 
 
 def _bootstrap_rebirth_schema():
@@ -210,6 +244,7 @@ def match_reward_payload(before, after, state):
             "daily": {"name": "Jogue um clash", "progress": 0, "goal": 1, "state": "locked", "ready": False},
             "next_goal": "Abra Login / Cadastro no topo para guardar recompensas futuras.",
             "message": "Partida concluída como visitante.",
+            "recap": post_match_recap(state),
         }
 
     before = before or {}
@@ -252,6 +287,7 @@ def match_reward_payload(before, after, state):
         },
         "next_goal": "Resgate sua recompensa diária." if daily_state == "ready" else "Abra Cartas para ajustar seu baralho." if level >= 3 else "Jogue o próximo clash guiado.",
         "message": f"{outcome_label}: +{xp_delta} XP salvos na sua conta Rebirth.",
+        "recap": post_match_recap(state),
     }
 
 
@@ -854,7 +890,10 @@ def rebirth_balance():
 
 @app.get("/rebirth/release")
 def rebirth_release():
-    return render_template("rebirth_product.html", page=release_payload())
+    repo = rebirth_repo()
+    gates = external_gate_payload(app.config)
+    dashboard = beta_dashboard_payload(repo)
+    return render_template("rebirth_product.html", page=release_payload(gates=gates, dashboard=dashboard))
 
 
 @app.get("/rebirth/support")
@@ -1002,6 +1041,34 @@ def api_rebirth_decks_activate(deck_id):
 
 # === S4: Stripe billing — venda de gems ===
 
+
+def rebirth_billing_status():
+    secret = os.environ.get("STRIPE_SECRET_KEY", "")
+    live_key = secret.startswith("sk_live_")
+    billing_enabled = bool(app.config.get("REBIRTH_ENABLE_BILLING"))
+    live_allowed = bool(app.config.get("REBIRTH_ALLOW_STRIPE_LIVE"))
+    disabled = not billing_enabled or (live_key and not live_allowed)
+    reason = None
+    if not billing_enabled:
+        reason = "Pagamentos reais estão desligados durante o beta fechado."
+    elif live_key and not live_allowed:
+        reason = "Chaves Stripe live foram detectadas, mas REBIRTH_ALLOW_STRIPE_LIVE não está ativo."
+    return {
+        "enabled": billing_enabled and not (live_key and not live_allowed),
+        "live_key_present": live_key,
+        "live_allowed": live_allowed,
+        "disabled": disabled,
+        "reason": reason,
+    }
+
+
+def require_rebirth_billing_enabled():
+    status = rebirth_billing_status()
+    if status["disabled"]:
+        raise RebirthError(status["reason"], "monetization_disabled", status=410)
+    return status
+
+
 @app.get("/rebirth/billing")
 def rebirth_billing_page():
     user = current_user()
@@ -1011,6 +1078,7 @@ def rebirth_billing_page():
         "rebirth_billing.html",
         account=account_payload(user),
         packages=packages,
+        billing_status=rebirth_billing_status(),
         stripe_publishable_key=os.environ.get("STRIPE_PUBLISHABLE_KEY", ""),
     )
 
@@ -1027,6 +1095,7 @@ def api_rebirth_billing_checkout():
         pkg = repo.BILLING_PACKAGES.get(package_id)
         if not pkg:
             return json_error("Pacote inválido.", "billing_invalid_package", 400)
+        require_rebirth_billing_enabled()
         # invalida package_id que o frontend tentou enviar com whitespace etc
         secret = os.environ.get("STRIPE_SECRET_KEY")
         if not secret:
@@ -1075,6 +1144,8 @@ def api_rebirth_billing_checkout():
 def api_rebirth_billing_webhook():
     """Webhook Stripe: processa checkout.session.completed e credita gems.
     Configurado na Stripe Dashboard apontando pra este endpoint."""
+    if rebirth_billing_status()["disabled"]:
+        return ("billing_disabled", 200)
     secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
     if not secret:
         return ("", 503)
@@ -1718,14 +1789,23 @@ def api_rebirth_booster_open():
         booster = open_booster(seed)
         repo = rebirth_repo()
         repo.record_booster(user["id"], booster, seed)
+        collection_counts = repo.collection_counts(user["id"])
+        loadout_card_ids = repo.loadout_card_ids(user["id"])
+        progression = repo.progression(user["id"])
         return json_payload(
             booster=booster,
             collection=collection_payload(
                 account=account_payload(user),
-                collection_counts=repo.collection_counts(user["id"]),
-                loadout_card_ids=repo.loadout_card_ids(user["id"]),
+                collection_counts=collection_counts,
+                loadout_card_ids=loadout_card_ids,
             ),
-            progression=repo.progression(user["id"]),
+            progression=progression,
+            deck_suggestions=deck_suggestions(
+                profile=progression,
+                collection_counts=collection_counts,
+                loadout_card_ids=loadout_card_ids,
+                booster_cards=booster.get("cards") or [],
+            ),
         )
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -1786,6 +1866,25 @@ def api_rebirth_match_state(match_id):
         return json_from_rebirth_error(error)
 
 
+@app.post("/api/rebirth/resume")
+def api_rebirth_resume():
+    try:
+        payload = request_json(required=True)
+        user = require_user()
+        match_id = str(payload.get("match_id") or "").strip()
+        if not match_id:
+            raise RebirthError("Informe match_id para retomar a partida.", "missing_match")
+        restored = rebirth_repo().runtime_match_state(user["id"], match_id)
+        match = MATCH_STORE.save(restored)
+        ensure_match_access(match, user=user)
+        record_match_telemetry(rebirth_repo(), user, match, "match_resumed")
+        return json_success(public_state(match), match.get("result"), match_id=match["match_id"], resumed=True)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
 @app.get("/api/rebirth/economy-ledger")
 def api_rebirth_economy_ledger():
     try:
@@ -1821,7 +1920,19 @@ def api_rebirth_onboarding_complete():
     try:
         payload = request_json(required=True)
         user = require_user()
-        return json_payload(tutorial=rebirth_repo().complete_tutorial_step(user["id"], payload.get("step", 4)))
+        step = payload.get("step", 4)
+        repo = rebirth_repo()
+        tutorial = repo.complete_tutorial_step(user["id"], step)
+        repo.record_telemetry_event(
+            "tutorial_step_completed",
+            {
+                "step": tutorial.get("step"),
+                "already_claimed": bool(tutorial.get("already_claimed")),
+                "rebirth_release_version": app.config["REBIRTH_RELEASE_VERSION"],
+            },
+            user_id=user["id"],
+        )
+        return json_payload(tutorial=tutorial)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -1839,16 +1950,53 @@ def api_rebirth_balance_simulate():
         return json_from_rebirth_error(error)
 
 
+REBIRTH_CLIENT_TELEMETRY_EVENTS = {
+    "match_abandoned",
+    "client_error",
+    "tutorial_step_viewed",
+    "feedback_opened",
+}
+
+
+def client_telemetry_payload(event_type, payload, user=None):
+    clean = {
+        "event_type": event_type,
+        "rebirth_release_version": app.config["REBIRTH_RELEASE_VERSION"],
+        "authenticated": bool(user),
+        "match_id": str(payload.get("match_id") or "").strip() or None,
+        "surface": str(payload.get("surface") or "").strip()[:80] or None,
+        "reason": str(payload.get("reason") or "").strip()[:240] or None,
+        "step": payload.get("step"),
+        "message": str(payload.get("message") or "").strip()[:1000] or None,
+    }
+    metadata = payload.get("metadata")
+    if isinstance(metadata, dict):
+        clean["metadata"] = {
+            str(key)[:60]: str(value)[:240]
+            for key, value in metadata.items()
+            if value is not None
+        }
+    return {key: value for key, value in clean.items() if value is not None}
+
+
 @app.post("/api/rebirth/telemetry")
 def api_rebirth_telemetry():
     try:
         payload = request_json(required=True)
-        if payload.get("event_type") != "match_abandoned":
+        event_type = str(payload.get("event_type") or "").strip().lower()
+        if event_type not in REBIRTH_CLIENT_TELEMETRY_EVENTS:
             raise RebirthError("Evento de telemetria não permitido.", "invalid_telemetry_event")
         user = current_user()
-        match = get_match(payload.get("match_id"), user=user)
-        ensure_match_access(match, user=user)
-        record_match_telemetry(rebirth_repo() if user else None, user, match, "match_abandoned", client_reason=payload.get("reason"))
+        if event_type == "match_abandoned":
+            match = get_match(payload.get("match_id"), user=user)
+            ensure_match_access(match, user=user)
+            record_match_telemetry(rebirth_repo() if user else None, user, match, "match_abandoned", client_reason=payload.get("reason"))
+        else:
+            rebirth_repo().record_telemetry_event(
+                event_type,
+                client_telemetry_payload(event_type, payload, user=user),
+                user_id=(user or {}).get("id"),
+            )
         return json_payload(recorded=True)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
@@ -1896,7 +2044,13 @@ def api_rebirth_telemetry_beacon():
 
 @app.get("/api/rebirth/release")
 def api_rebirth_release():
-    return json_payload(release=release_payload())
+    repo = rebirth_repo()
+    return json_payload(
+        release=release_payload(
+            gates=external_gate_payload(app.config),
+            dashboard=beta_dashboard_payload(repo),
+        )
+    )
 
 
 @app.get("/api/rebirth/support/export")
@@ -1933,6 +2087,39 @@ def api_rebirth_support_delete_account():
         session.clear()
         csrf = csrf_token()
         return json_payload(deletion=deletion, account=account_payload(None), csrf=csrf)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/support/feedback")
+def api_rebirth_support_feedback():
+    try:
+        payload = request_json(required=True)
+        user = current_user()
+        message = str(payload.get("message") or "").strip()
+        if len(message) < 8:
+            raise RebirthError("Descreva o feedback com pelo menos 8 caracteres.", "feedback_too_short")
+        category = str(payload.get("category") or "general").strip().lower()[:40] or "general"
+        severity = str(payload.get("severity") or "normal").strip().lower()[:24] or "normal"
+        match_id = str(payload.get("match_id") or "").strip()[:120] or None
+        if match_id and user:
+            try:
+                rebirth_repo().runtime_match_state(user["id"], match_id)
+            except RebirthPersistenceError:
+                match_id = None
+        feedback = {
+            "category": category,
+            "severity": severity,
+            "message": message[:2000],
+            "match_id": match_id,
+            "account_authenticated": bool(user),
+            "rebirth_release_version": app.config["REBIRTH_RELEASE_VERSION"],
+            "surface": str(payload.get("surface") or "support").strip()[:80],
+        }
+        rebirth_repo().record_telemetry_event("feedback_submitted", feedback, user_id=(user or {}).get("id"))
+        return json_payload(recorded=True, feedback={"category": category, "severity": severity, "match_id": match_id})
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:

@@ -12,6 +12,8 @@ from services.rebirth_cards import (
     get_card,
     validate_deck_distribution,
 )
+from services.rebirth_beta_ops import external_gate_payload
+from services.rebirth_deck_coach import deck_suggestions
 from services.rebirth_keywords import KEYWORD_LABELS
 
 
@@ -419,6 +421,7 @@ def shop_payload(account=None, booster_history=None, market_offers=None):
             },
             "account": account,
             "history": booster_history or [],
+            "deck_suggestions": deck_suggestions(),
             "disclaimer": "Boosters são grátis durante a beta Rebirth. O mercado opera apenas em Ouro e bloqueia cartas listadas até a venda ou o cancelamento.",
         }
     )
@@ -532,6 +535,7 @@ def progression_payload(account=None, progression=None):
                 "daily_complete": daily_claimed,
                 "beta_loop": ["Jogar", "Resgatar", "Abrir booster", "Ajustar deck"],
             },
+            "deck_suggestions": deck_suggestions(profile=profile),
             "daily": {
                 "name": "Jogue um clash",
                 "progress": min(1, int(profile.get("clashes", 0))),
@@ -616,6 +620,7 @@ def profile_payload(account=None, profile=None):
         {
             "account": account,
             "profile": profile,
+            "deck_suggestions": deck_suggestions(profile=progress),
             "stats": [
                 {"label": "Nível", "value": progress.get("level", 1)},
                 {"label": "XP", "value": f"{progress.get('xp', 0)}/{progress.get('next_level_xp', 500)}"},
@@ -767,7 +772,7 @@ def balance_payload(simulation=None):
     return payload
 
 
-def release_payload():
+def release_payload(gates=None, dashboard=None):
     payload = page_payload(
         "release",
         "Higiene da Versão Candidata",
@@ -778,12 +783,15 @@ def release_payload():
     payload.update(
         {
             "checks": deepcopy(RELEASE_CHECKS),
+            "external_gates": gates or external_gate_payload(),
+            "dashboard": dashboard,
             "commands": [
                 "python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py",
                 "python3 -m pytest -q",
                 "python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md",
                 "pip-audit -r requirements.txt",
                 "python3 tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-visual",
+                "python3 tools/ops/rebirth_pre_external_gate.py --report-only",
                 "node --check static/js/rebirth.js",
                 "node --check static/js/service-worker.js",
                 "node --check static/js/pwa.js",

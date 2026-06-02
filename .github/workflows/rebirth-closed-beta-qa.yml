@@ -34,7 +34,9 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: Security dependency audit
-        run: pip-audit -r requirements.txt
+        run: |
+          pip-audit -r requirements.txt
+          pip-audit -r requirements-dev.txt
 
       - name: Rebirth fast suite
         run: pytest tests/rebirth -q

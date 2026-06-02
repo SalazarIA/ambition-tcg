@@ -1,6 +1,6 @@
 # Ambitionz Rebirth Roadmap
 
-Verified on 2026-06-01 after the V0.0 stabilization pass, V0 visual polish pass, closed-beta hardening pass, focused tests, and a fresh 200-match balance simulation.
+Verified on 2026-06-02 after the external-beta readiness pass, guided-first-match polish, product telemetry pass, versioned visual baseline capture, focused tests, and a fresh 200-match balance simulation.
 
 ## Review Of The Attached Analysis
 
@@ -9,12 +9,12 @@ The analysis is directionally useful: Rebirth should move from clarity, to onboa
 The analysis is not accurate as a current state snapshot:
 
 - V0.0/V0 visual fixes are now shipped and tested: desktop nav/auth, result/rematch actions, direct-damage lock copy, card truncation, card proportions, turn CTA, guest empty states, mana/readability, and finite damage aura behavior.
-- Current full suite result is `1258 passed, 5 skipped, 19 deselected`, not `1252/1252`.
+- Current full suite result is `1262 passed, 5 skipped, 19 deselected`, not `1252/1252`.
 - The repo already has Python 3.11 pinning, Render config, CI for Rebirth tests, public terms/privacy routes, a data deletion information page, and support export UI/API.
-- Compliance is now beta-gated instead of missing: signup captures age/privacy consent, support export remains available, and authenticated self-service account deletion is implemented and tested. Legal copy still needs review before monetization or public beta.
-- Current balance simulation is healthier than the attached numbers: player win rate is 49.5% over 200 deterministic matches, profile spread is 47.0% to 52.2%, and tier-2 evolution usage is present.
-- The remaining balance/content problem moved from catalog coverage to watchlist tuning: 99/103 cards were used, 4/103 remained unused, and the flagged set is now concentrated in rare dominant/low-impact cards rather than broad spell failure.
-- Current size risk is still real: `services/rebirth_persistence.py` has 3104 lines and `static/css/rebirth.css` has 14217 lines.
+- Compliance is now beta-gated instead of missing: signup captures age/privacy consent, support export/delete remain available, billing is disabled by default, and the external tester gate blocks launch until legal review, backup/restore, error tracking and GitHub QA evidence are present.
+- Current balance simulation is healthier than the attached numbers: player win rate is 47.5% over 200 deterministic matches, profile spread is 47.0% to 47.8%, and tier-2 evolution usage is present.
+- The remaining balance/content problem moved from catalog coverage to live-telemetry validation: 103/103 cards were used, the 4 previously unused cards now appear in the lab, and no card is currently flagged dominant/low-impact/dead-hand in the deterministic report.
+- Current size risk is still real: `services/rebirth_persistence.py` has 3157 lines, `static/css/rebirth.css` has 14270 lines, `static/js/rebirth.js` has 3961 lines, `app.py` has 2195 lines, and `services/rebirth_engine.py` has 2051 lines.
 
 ## Verified Baseline
 
@@ -22,14 +22,14 @@ The analysis is not accurate as a current state snapshot:
 | --- | --- |
 | Product shell | `/rebirth` desktop nav/auth visible; profile/progression guest states visible |
 | Arena UX | result/rematch actions visible; turn CTA prominent; first-turn direct damage explains the lock |
-| Focused tests | `21 passed` for product shell, compliance hardening and bot/balance contracts |
+| Focused tests | `82 passed` for product shell, persistence, compliance hardening, frontend contracts and bot/balance contracts |
 | E2E tests | `19 passed` for Rebirth navigation/auth/arena coverage |
-| Visual QA | PASS, no detected overflow in desktop arena/profile/progression screenshots |
-| Full suite | `1258 passed, 5 skipped, 19 deselected` |
-| Balance 200 | Player WR 49.5%, Bot WR 50.0%, Avg Turns 14.54 |
-| Bot profiles | Defensive 52.2%, Aggressive 49.3%, Opportunist 47.0% player WR |
-| Card utilization | 99/103 used, 4/103 unused |
-| Dead-hand risk | No broad dead-hand issue in the closed-beta lab; remaining flags are rare dominant/low-impact cards |
+| Visual QA | PASS, no overflow in arena/shop/collection/campaign/mobile screenshots; baseline committed under `tests/rebirth/visual_baselines/` |
+| Full suite | `1262 passed, 5 skipped, 19 deselected` |
+| Balance 200 | Player WR 47.5%, Bot WR 51.5%, Avg Turns 15.77 |
+| Bot profiles | Defensive 47.8%, Aggressive 47.8%, Opportunist 47.0% player WR |
+| Card utilization | 103/103 used, 0/103 unused |
+| Dead-hand risk | No broad dead-hand issue in the closed-beta lab; no current dominant/low-impact/dead-hand flags |
 | Evolution usage | `card_020`, `card_060`, `card_077`, `card_080`, `card_055` lead the current lab |
 
 ## Phase 0 - Stabilized Foundation
@@ -79,16 +79,17 @@ Acceptance:
 
 ## Phase 2 - Onboarding And Teachability
 
-Status: closed-beta first pass implemented.
+Status: closed-beta first pass implemented; in-match guided tutorial and post-match recap added.
 
 Goal: make the first real match understandable without external explanation.
 
 Scope:
 
-- Tutorial steps now cover summon, attack, direct damage lock, spells/traps, evolution, keywords and the post-match loop.
+- Tutorial steps now cover summon, attack, direct damage lock, ending turn, evolution and the post-match loop inside the first match.
+- Finished matches now return a post-match recap explaining the likely win/loss causes and next action.
 - Keyword glossary is exposed from `/rebirth/onboarding`.
 - Practice goals point players through summon, attack, evolve duplicate, claim daily and open booster.
-- Remaining polish: richer post-match explanation and guided deck-edit suggestions.
+- Remaining polish: use closed-beta telemetry to shorten or reorder steps that players skip.
 
 Acceptance:
 
@@ -99,16 +100,17 @@ Acceptance:
 
 ## Phase 3 - Content Utilization And Balance
 
-Status: closed-beta lab gate met; watchlist remains.
+Status: closed-beta lab gate met; live telemetry validation remains.
 
 Goal: use the 103-card catalog more intentionally.
 
 Scope:
 
 - Seasonal balance decks now rotate through the Season 0 catalog.
-- Used-card coverage increased from 40/103 to 99/103 in the deterministic 200-match lab.
-- Global player win-rate is 49.5%; profile player WR stays inside 47.0% to 52.2%.
-- Remaining tuning: investigate the 4 unused cards and rare dominant/low-impact flags.
+- Used-card coverage increased from 40/103 to 103/103 in the deterministic 200-match lab.
+- Global player win-rate is 47.5%; profile player WR stays inside 47.0% to 47.8%.
+- The 4 previously unused cards now appear in the lab: Aegis Sentinel, Infernus Core, Shadow Reaper and Recarga Arcana.
+- Remaining tuning: validate Infernus Core and Shadow Reaper with real player telemetry before buffing them.
 - Make tier-2 evolution lines more visible without letting one line dominate.
 - Keep player win-rate target near a 44% to 52% ideal band, with a 44% to 53% closed-beta gate across bot profiles.
 
@@ -129,8 +131,8 @@ Scope:
 
 - Daily quest panel, retention next-goal copy and beta loop strip are visible in progression.
 - Existing rewards expose XP, gold, daily readiness and booster ownership.
-- Remaining polish: weekly quests, streak/comeback rewards, post-match reward panel improvements and deck suggestions.
-- Deck suggestions based on recently used cards and missing curve pieces.
+- Remaining polish: weekly quests and streak/comeback rewards.
+- Deck suggestions now appear after boosters and on profile/progression surfaces based on collection, loadout and recent context.
 - Profile history with meaningful match and collection milestones.
 
 Acceptance:
@@ -142,7 +144,7 @@ Acceptance:
 
 ## Phase 5 - Tech Debt And Operations
 
-Status: closed-beta ops lane added; scale hardening remains.
+Status: closed-beta ops lane added; scale hardening and external proof remain.
 
 Goal: reduce product risk before scale.
 
@@ -153,8 +155,9 @@ Scope:
 - Keep route/API ownership documented and tested.
 - Scheduled closed-beta QA workflow added for dependency audit, tests, E2E, visual screenshots and balance report.
 - Closed-beta runbook added for entry gate, tester loop, metrics, operational checks and incident response.
-- Add error reporting such as Sentry or GlitchTip.
-- Add DB backup, restore drill, and operational runbook.
+- Error tracking initialization is wired for Sentry, GlitchTip or a compatible DSN; production still needs `SENTRY_DSN`.
+- External gate script checks legal review, backup/restore drill, error tracking, GitHub QA and Stripe-off status.
+- Visual screenshot baselines are now versioned under `tests/rebirth/visual_baselines/`.
 - Add dependency/security checks such as `pip-audit` or equivalent.
 
 Acceptance:
@@ -166,7 +169,7 @@ Acceptance:
 
 ## Phase 6 - MVP Beta
 
-Status: closed-beta entry package produced; final invite decision depends on full green QA and external ops/legal checks.
+Status: closed-beta entry package produced; final invite decision depends on external ops/legal checks.
 
 Goal: controlled public learning without pretending the game is finished.
 
@@ -175,7 +178,7 @@ Scope:
 - Invite-only or small public beta.
 - Instrument onboarding, match completion, balance, retention, errors, and economy events.
 - Keep monetization disabled or sandboxed unless compliance and operations gates are complete.
-- Add beta feedback capture from support/profile surfaces.
+- Beta feedback capture is wired from Support with release version, account context and optional last match.
 
 Acceptance:
 
@@ -238,12 +241,12 @@ Acceptance:
 
 ## Immediate Order
 
-1. Run the full closed-beta QA gate: unit suite, E2E navigation/auth, visual screenshots, balance report and dependency audit.
-2. Complete legal/privacy/backup/error-tracking checks before external testers.
-3. Invite a small closed-beta cohort and watch onboarding, match completion, retention, errors and balance telemetry daily.
-4. Tune the 4 unused cards plus rare dominant/low-impact flags with fresh 200-match reports.
-5. Add post-match recap, weekly/streak retention and deck suggestions.
-6. Pay down persistence/CSS modularization before public beta.
+1. Complete legal/privacy copy review, Render/Postgres backup-restore proof, `SENTRY_DSN` and a green GitHub `rebirth-closed-beta-qa` run.
+2. Invite a tiny closed-beta cohort only after the external gate is green.
+3. Watch D1/D7, first-match completion, tutorial completion, client errors, feedback and balance telemetry daily from `/rebirth/release`.
+4. Validate Infernus Core, Shadow Reaper and defensive pacing with human matches before changing card text again.
+5. Pay down persistence/CSS/JS modularization before public beta.
+6. Harden durable reconnect for guest and in-progress match cases.
 7. Run MVP beta and GTM.
 8. Add social systems.
 9. Delay PvP until solo retention proves the game deserves that complexity.

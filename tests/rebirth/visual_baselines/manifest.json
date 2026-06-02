@@ -1,0 +1,78 @@
+{
+  "ok": true,
+  "base_url": "http://127.0.0.1:60289",
+  "generated_at": "20260602_074350",
+  "screenshots": [
+    {
+      "name": "arena",
+      "path": "/rebirth",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "screenshot": "tests/rebirth/visual_baselines/arena.png",
+      "overflow": {
+        "width": 1366,
+        "scrollWidth": 1366,
+        "bodyScrollWidth": 1366
+      }
+    },
+    {
+      "name": "shop",
+      "path": "/rebirth/shop",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "screenshot": "tests/rebirth/visual_baselines/shop.png",
+      "overflow": {
+        "width": 1366,
+        "scrollWidth": 1366,
+        "bodyScrollWidth": 1366
+      }
+    },
+    {
+      "name": "collection",
+      "path": "/rebirth/collection",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "screenshot": "tests/rebirth/visual_baselines/collection.png",
+      "overflow": {
+        "width": 1366,
+        "scrollWidth": 1366,
+        "bodyScrollWidth": 1366
+      }
+    },
+    {
+      "name": "campaign",
+      "path": "/rebirth/campaign",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "screenshot": "tests/rebirth/visual_baselines/campaign.png",
+      "overflow": {
+        "width": 1366,
+        "scrollWidth": 1366,
+        "bodyScrollWidth": 1366
+      }
+    },
+    {
+      "name": "mobile_arena",
+      "path": "/rebirth",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "tests/rebirth/visual_baselines/mobile_arena.png",
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyScrollWidth": 390
+      }
+    }
+  ],
+  "issues": []
+}

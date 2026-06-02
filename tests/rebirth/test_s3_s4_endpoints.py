@@ -5,8 +5,8 @@ Cobre os endpoints adicionados nos sprints recentes:
   - GET  /api/rebirth/ranking/top
   - GET  /rebirth/ranking
   - GET  /rebirth/billing
-  - POST /api/rebirth/billing/checkout   (sem Stripe configurado: 503)
-  - POST /api/rebirth/billing/webhook    (sem signature: 400)
+  - POST /api/rebirth/billing/checkout   (desligado por padrão)
+  - POST /api/rebirth/billing/webhook    (desligado por padrão; 503 se billing ligado sem secret)
   - GET  /robots.txt
   - GET  /sitemap.xml
 """
@@ -22,11 +22,17 @@ import app as application
 def client(monkeypatch):
     application.app.config["TESTING"] = True
     application.app.config["REBIRTH_REQUIRE_CSRF"] = False
+    previous_billing = application.app.config.get("REBIRTH_ENABLE_BILLING")
+    previous_live = application.app.config.get("REBIRTH_ALLOW_STRIPE_LIVE")
+    application.app.config["REBIRTH_ENABLE_BILLING"] = False
+    application.app.config["REBIRTH_ALLOW_STRIPE_LIVE"] = False
     # Garante que Stripe NÃO está configurado pra testar fallback 503.
     monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
     monkeypatch.delenv("STRIPE_WEBHOOK_SECRET", raising=False)
     with application.app.test_client() as c:
         yield c
+    application.app.config["REBIRTH_ENABLE_BILLING"] = previous_billing
+    application.app.config["REBIRTH_ALLOW_STRIPE_LIVE"] = previous_live
 
 
 def test_ranking_page_renders(client):
@@ -68,14 +74,23 @@ def test_billing_checkout_requires_auth(client):
     assert res.get_json()["error"]["code"] == "auth_required"
 
 
-def test_billing_webhook_without_signature_rejected(client):
-    # Mesmo sem STRIPE_WEBHOOK_SECRET configurado, retorna 503 silencioso
-    # (sem corpo) em vez de aceitar requisição.
+def test_billing_webhook_disabled_by_default(client):
     res = client.post(
         "/api/rebirth/billing/webhook",
         json={"type": "ping"},
     )
-    # 503 quando webhook secret não configurado
+
+    assert res.status_code == 200
+    assert res.get_data(as_text=True) == "billing_disabled"
+
+
+def test_billing_webhook_without_secret_rejected_when_billing_enabled(client):
+    application.app.config["REBIRTH_ENABLE_BILLING"] = True
+    res = client.post(
+        "/api/rebirth/billing/webhook",
+        json={"type": "ping"},
+    )
+
     assert res.status_code == 503
 
 

@@ -325,6 +325,10 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert "syncAfterAuth" in global_js
     assert "rebirth:auth-synced" in global_js
     assert "refreshCollection" in global_js
+    assert "bindClientErrorTelemetry" in global_js
+    assert 'event_type: "client_error"' in global_js
+    assert "window.REBIRTH_RELEASE_VERSION" in read("templates/rebirth.html")
+    assert "window.REBIRTH_RELEASE_VERSION" in read("templates/rebirth_product.html")
     assert '.rb-global-tabs' not in product_js
     assert "history.pushState" not in product_js
     assert 'fetch(url, { credentials: "same-origin" })' in product_js
@@ -386,6 +390,11 @@ def test_rebirth_audio_manager_observes_game_events_without_gameplay_side_effect
     assert "data-rebirth-balance-details" in read("templates/rebirth_product.html")
     assert "data-rebirth-balance-title" in read("templates/rebirth_product.html")
     assert "data-rebirth-change-password" in read("templates/rebirth_product.html")
+    assert "data-rebirth-feedback" in read("templates/rebirth_product.html")
+    assert "rb-external-gates" in read("templates/rebirth_product.html")
+    assert "rebirth_beta.css" in read("templates/rebirth_product.html")
+    assert "RebirthPostMatchRecap" in read("static/js/rebirth_recap.js")
+    assert "rebirth_recap.js" in read("templates/rebirth.html")
 
 
 def test_active_home_and_rebirth_do_not_load_legacy_assets():
@@ -426,8 +435,11 @@ def test_active_home_and_rebirth_do_not_load_legacy_assets():
 
 
 def test_rebirth_visual_qa_captures_core_surfaces():
+    import json
+
     visual_qa = read("tools/qa/qa_rebirth_visual_screenshots.py")
     master_report = read("tools/qa/qa_master_report.py")
+    baseline_manifest = json.loads(read("tests/rebirth/visual_baselines/manifest.json"))
 
     for token in [
         '"arena"',
@@ -442,6 +454,16 @@ def test_rebirth_visual_qa_captures_core_surfaces():
         assert token in visual_qa
 
     assert '"rebirth_visual": "tools/qa/qa_rebirth_visual_screenshots.py"' in master_report
+    assert baseline_manifest["ok"] is True
+    assert {shot["name"] for shot in baseline_manifest["screenshots"]} == {
+        "arena",
+        "shop",
+        "collection",
+        "campaign",
+        "mobile_arena",
+    }
+    for shot in baseline_manifest["screenshots"]:
+        assert (PROJECT_ROOT / shot["screenshot"]).is_file()
 
 
 def test_rebirth_asset_manifest_lists_existing_active_assets():

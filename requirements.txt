@@ -4,7 +4,10 @@ sqlalchemy==2.0.49
 psycopg[binary]==3.2.10
 pydantic==2.12.5
 stripe==12.5.1
-# Security pins — transitive deps com CVE: bump explícito para versão patched.
+sentry-sdk[flask]>=2.0.0,<3.0.0
+# Security pins — transitive deps com CVE. O runtime suportado é Python 3.11.9
+# (`runtime.txt`, `.python-version`, Render e CI), porque as versões patched
+# recentes de requests/urllib3 não resolvem em Python 3.9.
 # requests<2.33.0  → GHSA-gc5v-m9x4-r6x2 (tempfile race condition em extract_zipped_paths)
 # urllib3<2.7.0    → PYSEC-2026-141 (cross-origin redirect leaking auth header)
 #                  → PYSEC-2026-142 (Brotli decompression DoS)

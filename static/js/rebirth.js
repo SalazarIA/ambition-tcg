@@ -2798,8 +2798,12 @@
                 ].join("");
                 return;
             }
+            const recapMarkup = window.RebirthPostMatchRecap
+                && typeof window.RebirthPostMatchRecap.render === "function"
+                ? window.RebirthPostMatchRecap.render(reward, RebirthText.escape)
+                : "";
             if (!reward.persisted) {
-                host.innerHTML = '<span class="rb-reward-muted">' + RebirthText.escape(reward.message) + "</span>";
+                host.innerHTML = '<span class="rb-reward-muted">' + RebirthText.escape(reward.message) + "</span>" + recapMarkup;
                 return;
             }
             const achievements = (reward.achievements || []).map((item) => item.name).join(", ");
@@ -2818,7 +2822,8 @@
                 achievements ? "<span>" + RebirthText.escape(achievements) + "</span>" : "",
                 dailyLabel ? '<span class="rb-reward-daily">' + RebirthText.escape(dailyLabel) + "</span>" : "",
                 campaignReward && campaignReward.applied ? '<span class="rb-reward-daily">Campanha: +' + RebirthText.escape(campaignReward.xp) + " XP</span>" : "",
-                reward.next_goal ? "<span>" + RebirthText.escape(reward.next_goal) + "</span>" : ""
+                reward.next_goal ? "<span>" + RebirthText.escape(reward.next_goal) + "</span>" : "",
+                recapMarkup
             ].join("");
         },
 
@@ -3078,12 +3083,48 @@
             }
         },
 
+        persistReconnectHint(state) {
+            if (!state || !state.match_id || !window.localStorage) return;
+            try {
+                window.localStorage.setItem("rebirth.lastMatchId", state.match_id);
+                window.localStorage.setItem("rebirth.lastMatchFinished", state.is_finished ? "1" : "0");
+            } catch (err) {
+                /* storage may be disabled */
+            }
+        },
+
+        async maybeResumeMatch(options) {
+            options = options || {};
+            if (options.forceNew || !RebirthConfig.endpoints.resume || !RebirthCoach.account().authenticated || RebirthStore.guidedFirstMatch) {
+                return null;
+            }
+            let matchId = "";
+            let finished = "1";
+            try {
+                matchId = window.localStorage ? window.localStorage.getItem("rebirth.lastMatchId") || "" : "";
+                finished = window.localStorage ? window.localStorage.getItem("rebirth.lastMatchFinished") || "1" : "1";
+            } catch (err) {
+                return null;
+            }
+            if (!matchId || finished === "1") return null;
+            try {
+                return await RebirthApi.post(RebirthConfig.endpoints.resume, { match_id: matchId });
+            } catch (err) {
+                try {
+                    window.localStorage.removeItem("rebirth.lastMatchId");
+                    window.localStorage.removeItem("rebirth.lastMatchFinished");
+                } catch (storageErr) {}
+                return null;
+            }
+        },
+
         applyState(state) {
             // v55 Fase 4 — captura estado anterior ANTES do setState pra
             // os módulos de assinatura compararem HP/finished. Roda em
             // microtask depois pra não bloquear o render.
             const previousState = RebirthStore.state;
             RebirthStore.setState(state);
+            this.persistReconnectHint(state);
             RebirthRenderer.render();
             try {
                 RebirthFusionMotion.observeStateEvents(previousState, state);
@@ -3104,7 +3145,8 @@
             } catch (err) { /* silencioso */ }
         },
 
-        async startMatch() {
+        async startMatch(options) {
+            options = options || {};
             // v55 Fase 4 — limpa overlay de finale residual antes de
             // iniciar nova partida. Evita "Vitória" antigo aparecer por
             // um frame quando o usuário pede Nova Partida após vencer.
@@ -3115,6 +3157,24 @@
                 const inCampaign = Boolean(campaignNode);
                 RebirthStore.guidedFirstMatch = !inCampaign && RebirthCoach.shouldGuideFirstMatch();
                 RebirthStore.tutorialCompletionSent = false;
+                if (options.forceNew) {
+                    try {
+                        window.localStorage.removeItem("rebirth.lastMatchId");
+                        window.localStorage.removeItem("rebirth.lastMatchFinished");
+                    } catch (err) {}
+                }
+                if (!inCampaign) {
+                    const resumed = await this.maybeResumeMatch(options);
+                    if (resumed && resumed.state) {
+                        RebirthStore.abandonmentSentForMatch = null;
+                        RebirthStore.selectedInstanceId = null;
+                        RebirthStore.reward = resumed.match_reward || null;
+                        RebirthStore.campaignReward = resumed.campaign_reward || null;
+                        RebirthStore.lastActionPopupSignature = null;
+                        this.applyState(resumed.state);
+                        return;
+                    }
+                }
                 const endpoint = inCampaign ? RebirthConfig.endpoints.campaignStart : RebirthConfig.endpoints.start;
                 const requestPayload = inCampaign
                     ? { node_id: campaignNode }
@@ -3349,7 +3409,7 @@
         RebirthStore.guidedFirstMatch = false;
         RebirthStore.tutorialCompletionSent = false;
         RebirthStore.setPending(false);
-        await this.startMatch();
+        await this.startMatch({ forceNew: true });
         return { handled: true };
     };
 
@@ -3520,7 +3580,7 @@
             document.querySelectorAll("[data-new-match]").forEach((button) => {
                 button.addEventListener("click", () => {
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
-                    RebirthFlow.startMatch();
+                    RebirthFlow.startMatch({ forceNew: true });
                 });
             });
 
@@ -3670,7 +3730,7 @@
         }
     };
 
-    // S1: Tutorial in-game. 4 steps guiados quando o usuário é autenticado
+    // S1: Tutorial in-game. Passos guiados quando o usuário é autenticado
     // E ainda não completou (progression.tutorial_complete === false).
     // Ancorado em elementos do jogo via data-tutorial-spotlight (bounding box).
     const RebirthTutorial = {
@@ -3678,26 +3738,44 @@
             {
                 step: 1,
                 title: "Bem-vindo à Arena",
-                body: "Toque numa carta da sua mão (faixa inferior) pra escolher qual monstro invocar primeiro.",
+                body: "Toque numa carta da sua mão para ver custo, ataque, guarda e habilidade antes de jogar.",
                 target: ".rb-hand .rb-mini-card",
             },
             {
                 step: 2,
-                title: "Invoque no campo",
-                body: "Toque num dos slots livres da SUA ZONA pra invocar a carta selecionada. Cada invocação custa mana.",
-                target: ".rb-field-row:not(.rb-field-row-bot) .rb-field-card, .rb-field-row:not(.rb-field-row-bot) .rb-field-slot-empty, .rb-actions-row [data-rebirth-summon]",
+                title: "Invoque com mana",
+                body: "O botão principal joga a carta selecionada. Se faltar mana, encerre o turno para recarregar.",
+                target: "#play-button",
             },
             {
                 step: 3,
-                title: "Ataque a vida do bot",
-                body: "Quando um monstro seu estiver no campo, toque pra atacar a guarda do bot. Quando a guarda cai, o dano vai pro HP.",
-                target: ".rb-actions-row [data-rebirth-attack], #attack-button, .rb-monster-card-main",
+                title: "Ataque do campo",
+                body: "Depois de invocar, selecione um monstro pronto no seu campo. O botão principal vira Atacar.",
+                target: ".rb-field-card[data-attacker-instance], #play-button",
             },
             {
                 step: 4,
+                title: "Dano direto tem trava",
+                body: "No primeiro turno, o jogo bloqueia dano direto para dar tempo do bot responder. Procure o texto no slot inimigo vazio.",
+                target: ".rb-field-slot-empty.is-locked, #result-panel",
+            },
+            {
+                step: 5,
+                title: "Evolua duplicatas",
+                body: "Quando duas cópias aparecem, o painel de evolução mostra a fusão. Evoluir antes de atacar muda a troca.",
+                target: "#evolution-panel, #evolve-button",
+            },
+            {
+                step: 6,
                 title: "Encerre o turno",
-                body: "Quando não houver mais o que jogar, encerre o turno e deixe o bot agir. Repita até derrotá-lo.",
-                target: ".rb-actions-row [data-rebirth-end], #end-turn-button",
+                body: "Quando não houver boa jogada, encerre o turno. O bot age, sua mana sobe e você compra novas cartas.",
+                target: "#next-turn-button",
+            },
+            {
+                step: 7,
+                title: "Leia o recap",
+                body: "Ao terminar, o painel mostra por que você venceu ou perdeu e sugere o próximo ajuste do deck.",
+                target: "#reward-panel, #result-actions",
             },
         ],
         state: { active: false, currentIdx: 0, dom: null },
@@ -3796,14 +3874,19 @@
 
         async reportStep(step) {
             try {
-                await fetch("/api/rebirth/onboarding/complete", {
+                await fetch(RebirthConfig.endpoints.telemetry || "/api/rebirth/telemetry", {
                     method: "POST",
                     credentials: "same-origin",
                     headers: {
                         "Content-Type": "application/json",
                         "X-Rebirth-CSRF": window.REBIRTH_CSRF || "",
                     },
-                    body: JSON.stringify({ step }),
+                    body: JSON.stringify({
+                        event_type: "tutorial_step_viewed",
+                        step,
+                        match_id: RebirthStore.state && RebirthStore.state.match_id,
+                        surface: "arena_tutorial"
+                    }),
                 });
             } catch (e) { /* silencioso */ }
         },
@@ -3813,8 +3896,9 @@
             if (this.state.dom) {
                 this.state.dom.overlay.hidden = true;
             }
-            // Conclui no backend (step 4) marcando tutorial completo
-            this.reportStep(4).catch(() => {});
+            if (!skipped && RebirthConfig.endpoints.completeTutorial && RebirthCoach.account().authenticated) {
+                RebirthApi.post(RebirthConfig.endpoints.completeTutorial, { step: 4 }).catch(() => {});
+            }
         },
     };
 

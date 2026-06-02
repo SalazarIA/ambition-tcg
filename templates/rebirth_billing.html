@@ -2,24 +2,33 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Comprar Gemas - Ambitionz Rebirth</title>
+    <title>Gemas beta - Ambitionz Rebirth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0c0805">
-    <meta name="description" content="Compre gemas pra abrir mais boosters e acelerar sua coleção em Ambitionz Rebirth.">
+    <meta name="description" content="Status de gemas beta em Ambitionz Rebirth. Pagamentos reais permanecem desligados.">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth_beta.css') }}?v={{ rebirth_release_version }}">
 </head>
 <body class="rb-page rb-home-page rb-product-page rb-billing-page">
     {% include "_rebirth_global_nav.html" %}
     <main class="rb-home-shell rb-product-shell rb-billing-shell" data-rebirth-billing>
         <section class="rb-product-hero" aria-label="Comprar gemas">
             <div>
-                <span class="rb-product-kicker">Loja Premium</span>
+                <span class="rb-product-kicker">Loja beta</span>
                 <h1>Gemas</h1>
-                <p>Gemas abrem boosters extras e aceleram sua coleção. Pagamento processado pela Stripe.</p>
+                <p>Pagamentos reais permanecem desligados no beta fechado. Boosters continuam grátis para teste.</p>
             </div>
         </section>
+
+        {% if billing_status.disabled %}
+            <section class="rb-product-panel rb-product-wide rb-billing-disabled" aria-label="Pagamentos desativados">
+                <span>Monetização desligada</span>
+                <h2>Checkout bloqueado por gate de beta</h2>
+                <p>{{ billing_status.reason }}</p>
+            </section>
+        {% endif %}
 
         {% if request.args.get('status') == 'success' %}
             <section class="rb-product-panel rb-billing-status is-success">
@@ -54,7 +63,7 @@
                     <p class="rb-billing-price">R$ {{ "%.2f"|format(pkg.price_cents / 100) }}</p>
                     <p class="rb-billing-perk">{{ pkg.gems }} gemas creditadas na conta</p>
                     {% if account.authenticated %}
-                        <button class="rb-button-primary rb-cta" type="button" data-billing-checkout="{{ pkg.id }}">Comprar</button>
+                        <button class="rb-button-primary rb-cta" type="button" data-billing-checkout="{{ pkg.id }}" {{ 'disabled' if billing_status.disabled else '' }}>{{ 'Desativado' if billing_status.disabled else 'Comprar' }}</button>
                     {% else %}
                         <button class="rb-secondary" type="button" data-rebirth-auth-open>Entrar para comprar</button>
                     {% endif %}
@@ -63,8 +72,8 @@
         </section>
 
         <p class="rb-billing-disclaimer">
-            Pagamentos processados pela Stripe. Pix, cartão de crédito e débito aceitos.
-            Nenhum dado de cartão é armazenado pela Ambitionz.
+            Stripe/live payments ficam bloqueados até revisão legal, backup/restore e QA externa verde.
+            Nenhum dado de cartão é coletado enquanto o gate estiver fechado.
         </p>
     </main>
 

@@ -745,15 +745,22 @@ def _bot_support_score(match, card, profile_id):
             return 7 - cost
         return -1
 
-    if action == "drawtwocards" and len(bot.get("hand") or []) <= 4 and bot.get("deck"):
-        return 10 - cost
+    if action == "drawtwocards" and bot.get("deck"):
+        hand_size = len(bot.get("hand") or [])
+        turn = int(match.get("turn", 1) or 1)
+        if hand_size <= 3:
+            return 14 - cost
+        if hand_size <= 5 and turn >= 3:
+            return 10 - cost
+        if hand_size <= 6 and turn >= 6 and profile_id == "defensive":
+            return 7 - cost
     if action in {"cleanseall", "tidalrenewal"} and bot.get("statuses"):
         return 12 - cost
     if action == "destroyshield":
         return 13 - cost if _side_has_breakable_shield(match, "player") else -1
-    if action in {"healingrain", "tidalrenewal"} and int(bot.get("hp", 30) or 0) <= 20:
+    if action in {"healingrain", "tidalrenewal"} and int(bot.get("hp", 30) or 0) <= (22 if profile_id == "defensive" else 20):
         return 12 - cost
-    if action in {"fortify", "stoneskin"} and not bot_shielded and player_ready and int(bot.get("hp", 30) or 0) <= 20:
+    if action in {"fortify", "stoneskin"} and not bot_shielded and player_ready and int(bot.get("hp", 30) or 0) <= (23 if profile_id == "defensive" else 20):
         return 11 - cost
     if action == "shadowdrain" and (int(bot.get("hp", 30) or 0) <= 18 or int(player.get("hp", 30) or 0) <= 6):
         return 10 - cost

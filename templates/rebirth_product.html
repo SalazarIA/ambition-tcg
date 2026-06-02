@@ -10,6 +10,7 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth_beta.css') }}?v={{ rebirth_release_version }}">
 </head>
 <body class="rb-page rb-home-page rb-product-page">
     {% include "_rebirth_global_nav.html" %}
@@ -265,6 +266,38 @@
                 <h2>Resultado do Suporte</h2>
                 <pre class="rb-support-output" data-rebirth-support-result>Pronto.</pre>
             </section>
+            <section class="rb-product-panel rb-product-wide rb-feedback-panel" aria-label="Enviar feedback beta">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Beta fechado</span>
+                        <h2>Enviar Feedback</h2>
+                    </div>
+                    <small>Versão {{ rebirth_release_version }}</small>
+                </div>
+                <form class="rb-feedback-form" data-rebirth-feedback>
+                    <label>Categoria
+                        <select name="category">
+                            <option value="bug">Bug</option>
+                            <option value="balance">Balanceamento</option>
+                            <option value="visual">Visual</option>
+                            <option value="onboarding">Tutorial</option>
+                            <option value="general">Geral</option>
+                        </select>
+                    </label>
+                    <label>Severidade
+                        <select name="severity">
+                            <option value="normal">Normal</option>
+                            <option value="blocking">Bloqueante</option>
+                            <option value="minor">Pequena</option>
+                        </select>
+                    </label>
+                    <label class="rb-feedback-message">Mensagem
+                        <textarea name="message" rows="4" minlength="8" maxlength="2000" required placeholder="O que aconteceu, onde e o que você esperava?"></textarea>
+                    </label>
+                    <button class="rb-button-primary rb-cta" type="submit">Enviar</button>
+                </form>
+                <div class="rb-product-result" data-rebirth-feedback-result aria-live="polite">Feedback conecta versão, conta e última partida conhecida.</div>
+            </section>
         {% elif page.key == "collection" %}
             {# F12: progresso da coleção em destaque (barra + 1 número grande),
                stats individuais como chips inline — não mais 4 boxes gigantes
@@ -433,6 +466,24 @@
                 </div>
                 <div id="rebirth-booster-result" class="rb-product-result rb-booster-result" aria-live="polite">Compre um booster para revelar 5 cartas Rebirth.</div>
             </section>
+            <section class="rb-product-panel rb-product-wide rb-deck-coach-panel" aria-label="Sugestões de deck pós-booster">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Coach de deck</span>
+                        <h2>Depois do booster</h2>
+                    </div>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_collection') }}">Editar deck</a>
+                </div>
+                <div class="rb-deck-coach-grid" data-rebirth-deck-suggestions>
+                    {% for suggestion in page.deck_suggestions %}
+                        <article>
+                            <span>{{ suggestion.title }}</span>
+                            <p>{{ suggestion["copy"] }}</p>
+                            <small>{{ suggestion.action }}</small>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
             <section class="rb-product-panel rb-product-wide" aria-label="Mercado de jogadores">
                 <div class="rb-product-panel-head">
                     <div>
@@ -586,6 +637,24 @@
                     {% endfor %}
                 </div>
             </section>
+            <section class="rb-product-panel rb-product-wide rb-deck-coach-panel" aria-label="Sugestões de deck por progresso">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Coach de deck</span>
+                        <h2>Próximo ajuste</h2>
+                    </div>
+                    <a class="rb-secondary" href="{{ url_for('rebirth_collection') }}">Abrir coleção</a>
+                </div>
+                <div class="rb-deck-coach-grid">
+                    {% for suggestion in page.deck_suggestions %}
+                        <article>
+                            <span>{{ suggestion.title }}</span>
+                            <p>{{ suggestion["copy"] }}</p>
+                            <small>{{ suggestion.action }}</small>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
         {% elif page.key == "lab" %}
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Links do laboratório Rebirth">
                 {% for item in page.links %}
@@ -712,6 +781,40 @@
                 </div>
             </section>
         {% elif page.key == "release" %}
+            {% if page.dashboard %}
+                <section class="rb-product-panel rb-product-wide rb-beta-dashboard" aria-label="Dashboard beta fechado">
+                    <div class="rb-product-panel-head">
+                        <div>
+                            <span>Telemetry</span>
+                            <h2>D1 / D7 / Tutorial / Erros</h2>
+                        </div>
+                        <small>{{ page.dashboard.updated_at }}</small>
+                    </div>
+                    <div class="rb-product-stats rb-product-stats-compact">
+                        {% for card in page.dashboard.cards %}
+                            <article><span>{{ card.label }}</span><strong>{{ card.value }}</strong></article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+            <section class="rb-product-panel rb-product-wide rb-external-gates" aria-label="Gates pré-tester externo">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>{{ 'Pronto' if page.external_gates.ready else 'Bloqueado' }}</span>
+                        <h2>Pré-tester externo</h2>
+                    </div>
+                    <strong>{{ 'GO' if page.external_gates.ready else 'NO-GO' }}</strong>
+                </div>
+                <div class="rb-release-gate-grid">
+                    {% for gate in page.external_gates.checks %}
+                        <article class="is-{{ gate.state }}">
+                            <span>{{ gate.state }}</span>
+                            <strong>{{ gate.name }}</strong>
+                            <p>{{ gate["copy"] }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Verificações da versão">
                 {% for check in page.checks %}
                     <article class="rb-product-panel">
@@ -734,6 +837,7 @@
 
     <script>
         window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_RELEASE_VERSION = "{{ rebirth_release_version }}";
         window.REBIRTH_PRODUCT_ENDPOINTS = {
             authenticated: {{ (page.account.authenticated if page.account is defined else false) | tojson }},
             loadout: "{{ url_for('api_rebirth_loadout') }}",
@@ -757,6 +861,8 @@
             supportExport: "{{ url_for('api_rebirth_support_export') }}",
             supportReset: "{{ url_for('api_rebirth_support_reset') }}",
             supportDelete: "{{ url_for('api_rebirth_support_delete_account') }}",
+            supportFeedback: "{{ url_for('api_rebirth_support_feedback') }}",
+            telemetry: "{{ url_for('api_rebirth_telemetry') }}",
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
         window.REBIRTH_AUTH_ENDPOINTS = {

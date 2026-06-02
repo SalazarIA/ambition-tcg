@@ -3533,76 +3533,6 @@ button {
     color: #ffb0aa;
 }
 
-.rb-quest-grid,
-.rb-keyword-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 12px;
-}
-
-.rb-quest-card,
-.rb-keyword-grid article {
-    min-height: 126px;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(0, 0, 0, 0.22);
-    border-radius: var(--rb-cut-soft);
-}
-
-.rb-quest-card span,
-.rb-keyword-grid span {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--rb-gold);
-    font-size: var(--fs-2xs);
-    font-weight: 900;
-    text-transform: uppercase;
-}
-
-.rb-quest-card h3,
-.rb-keyword-grid strong {
-    display: block;
-    margin: 0 0 8px;
-    color: var(--rb-text);
-    font-size: var(--fs-sm);
-}
-
-.rb-quest-card p,
-.rb-keyword-grid p {
-    margin: 0;
-    color: var(--rb-muted);
-    line-height: 1.45;
-}
-
-.rb-quest-card.is-ready {
-    border-color: rgba(125, 218, 138, 0.46);
-    background:
-        linear-gradient(135deg, rgba(84, 196, 112, 0.12), transparent 52%),
-        rgba(0, 0, 0, 0.22);
-}
-
-.rb-quest-card.is-claimed {
-    border-color: rgba(244, 173, 38, 0.44);
-}
-
-.rb-beta-loop-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 14px;
-}
-
-.rb-beta-loop-strip span {
-    padding: 7px 10px;
-    border: 1px solid rgba(244, 173, 38, 0.34);
-    color: var(--rb-gold-2);
-    background: rgba(244, 173, 38, 0.08);
-    font-size: var(--fs-2xs);
-    font-weight: 900;
-    text-transform: uppercase;
-    border-radius: 999px;
-}
-
 .rb-practice-goals {
     margin-top: 16px;
 }
@@ -4062,19 +3992,6 @@ button {
 
 .rb-desktop-rail {
     display: none;
-}
-
-.rb-support-output {
-    overflow: auto;
-    max-height: 360px;
-    margin: 0;
-    padding: 14px;
-    border: 1px solid rgba(232, 235, 243, 0.12);
-    background: rgba(0, 0, 0, 0.24);
-    color: var(--rb-muted);
-    font-size: var(--fs-2xs);
-    line-height: 1.5;
-    white-space: pre-wrap;
 }
 
 .rb-update-prompt {

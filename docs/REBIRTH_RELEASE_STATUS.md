@@ -1,6 +1,6 @@
 # Rebirth Release Status
 
-> Updated for the closed-beta hardening pass on 2026-06-01. Operational
+> Updated for the external-beta readiness pass on 2026-06-02. Operational
 > persistence, asset and mobile guidance is also defined in
 > `docs/AAA_FOUNDATION_V58.md`.
 
@@ -10,9 +10,10 @@ Ambitionz Rebirth is the only active Ambitionz runtime product.
 
 The active product is a Flask-served, vanilla-frontend, three-slot monster
 duel with a ten-node PvE campaign, Rebirth-native auth, PostgreSQL persistence, account collection, account
-loadout, no-payment booster ownership, progression, onboarding, beta retention quests, balance
-simulation, player profile/achievements, match history, economy ledger,
-support/admin tooling, self-service export/deletion, consent-gated signup, auth hardening and release hygiene pages.
+loadout, no-payment booster ownership, progression, guided first-match tutorial, post-match recap,
+deck suggestions, beta retention quests, balance simulation, player profile/achievements, match history,
+economy ledger, support/admin tooling, feedback capture, self-service export/deletion,
+consent-gated signup, auth hardening and release hygiene pages.
 
 The active catalog spans 103 cards (83 monsters, 10 spells and 10 traps),
 including three Legendary contracts, with stable `ability_key` values,
@@ -38,6 +39,9 @@ builder surfaces are active. Historical tests live under
 - `services/rebirth_product.py`
 - `services/rebirth_persistence.py`
 - `services/rebirth_balance.py`
+- `services/rebirth_beta_ops.py`
+- `services/rebirth_deck_coach.py`
+- `services/rebirth_postmatch.py`
 - `services/rebirth_schema.py`
 - `services/rebirth_campaign.py`
 - `templates/index.html`
@@ -46,7 +50,9 @@ builder surfaces are active. Historical tests live under
 - `templates/rebirth_product.html`
 - `templates/_rebirth_global_nav.html`
 - `static/css/rebirth.css`
+- `static/css/rebirth_beta.css`
 - `static/js/rebirth.js`
+- `static/js/rebirth_recap.js`
 - `static/js/rebirth_ui.js`
 - `static/js/rebirth_campaign.js`
 - `static/js/rebirth_boss_fx.js`
@@ -93,6 +99,7 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 ## Active APIs
 
 - `POST /api/rebirth/start`
+- `POST /api/rebirth/resume`
 - `GET /api/rebirth/campaign`
 - `POST /api/rebirth/campaign/start`
 - `POST /api/rebirth/play-card`
@@ -127,10 +134,14 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `GET /api/rebirth/balance/simulate`
 - `GET /api/rebirth/release`
 - `GET /api/rebirth/support/export`
+- `POST /api/rebirth/support/feedback`
 - `POST /api/rebirth/support/reset`
 - `POST /api/rebirth/support/delete-account`
 - `POST /api/rebirth/admin/grant`
 - `POST /api/rebirth/telemetry`
+- `POST /api/rebirth/telemetry/beacon`
+- `POST /api/rebirth/billing/checkout`
+- `POST /api/rebirth/billing/webhook`
 
 State-changing Rebirth APIs require `X-Rebirth-CSRF` by default. Auth endpoints
 have a small in-memory rate limit. Password changes are available for signed-in
@@ -211,13 +222,21 @@ Current Rebirth coverage includes:
 - economy ledger entries for starter cards, match XP, boosters, daily rewards,
   tutorial XP and admin grants
 - support export/reset/delete and admin token safety
+- support feedback linked to account, release version and optional last match
+- release dashboard cards for D1/D7, first-match completion, tutorial completion,
+  feedback and client errors
 - defeated-monster cleanup regression (engine destruction bug)
 - mana curve playability (cheapest monster anchored in starter deck)
 - campaign unlock/reward/idempotency and boss presentation contracts
 - Labs field-fusion persistence and deterministic replay coverage
 
-Current verification is reported per roadmap pass; use `python3 -m pytest -q
-tests/rebirth` and explicitly run `-m e2e` before release.
+Current verification for this pass: `python3 -m pytest -q` reported
+`1262 passed, 5 skipped, 19 deselected`; focused product/persistence/frontend/balance
+tests reported `82 passed`; E2E navigation/auth reported `19 passed`; visual baselines
+were captured under `tests/rebirth/visual_baselines/`. Dependency audit must run
+against both `requirements.txt` and `requirements-dev.txt` in the supported Python
+3.11.9 environment; the local Python 3.9 venv cannot resolve the patched
+`requests>=2.33.0` runtime pin.
 
 ## Security Headers
 
@@ -276,31 +295,41 @@ Signed-in match snapshots are copied into `match_history`, `match_commands` and
 store; this is not yet a durable reconnect system.
 
 `economy_ledger` records movement reasons and balances for XP and card grants.
-There is no payment processor and no retired economy runtime.
+Billing endpoints exist behind a hard closed-beta gate, but checkout and live
+payments are disabled by default. There is no active real-money economy runtime.
 
 ## Current Limitations
 
 - No real multiplayer.
-- No payment processor.
+- No live payment flow; billing is disabled by default and live Stripe keys are blocked unless explicitly allowed after compliance.
 - Admin grant support is MVP-only and requires `REBIRTH_ADMIN_TOKEN`.
 - Authenticated live in-progress match snapshots are recoverable from persisted
   runtime state; guest in-progress matches remain memory-only.
 - One starter collection per account.
 - The current asset directory exposes premium bespoke art for selected cards;
   remaining catalog entries use optimized WebP deck art paths.
-- Browser screenshots are not committed as visual baselines yet.
-- The 3197-line `static/js/rebirth.js` is still a single IIFE and would benefit
+- Browser screenshots are committed as baseline artifacts under
+  `tests/rebirth/visual_baselines/`, but there is not yet a pixel-diff approval workflow.
+- The 3961-line `static/js/rebirth.js` is still a single IIFE and would benefit
   from a future modularization pass.
-- Current deterministic health checks still flag long matches, chain
-  readability and a large bot-profile difficulty spread.
+- `static/css/rebirth.css` is still 14270 lines, `services/rebirth_persistence.py`
+  is 3157 lines, `app.py` is 2195 lines and `services/rebirth_engine.py` is 2051 lines.
+- Durable reconnect is improved for authenticated matches, but guest and active
+  in-progress recovery are not yet a complete product.
+- External tester launch remains blocked until legal review, Render/Postgres
+  backup-restore proof, Sentry/GlitchTip DSN and GitHub closed-beta QA success
+  are present.
 
 ## Next Steps
 
 - Expand bespoke card art beyond the original 13 silhouettes.
-- Modularize `static/js/rebirth.js` into testable units.
-- Add screenshot-based visual QA baselines for desktop/mobile `/rebirth`.
-- Tune the aggressive difficulty spike, long-match pacing and low-impact cards against
-  `docs/REBIRTH_BALANCE_REPORT.md` plus real play sessions.
-- Add real payment/economy only if a future product decision asks for it.
+- Modularize `static/js/rebirth.js`, `static/css/rebirth.css`,
+  `services/rebirth_persistence.py`, `app.py` and `services/rebirth_engine.py`
+  into smaller ownership areas.
+- Add pixel-diff or review tooling on top of the committed visual baselines.
+- Validate Infernus Core, Shadow Reaper and defensive pacing against real closed-beta
+  telemetry before changing card text again.
+- Complete the external tester gate before inviting users outside the trusted inner loop.
+- Add real payment/economy only if a future product decision asks for it after compliance.
 - Keep retired APIs and routes retired unless a future product decision says
   otherwise.

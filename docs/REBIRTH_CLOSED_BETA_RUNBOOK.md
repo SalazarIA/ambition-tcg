@@ -1,16 +1,23 @@
 # Ambitionz Rebirth Closed Beta Runbook
 
-Updated on 2026-06-01.
+Updated on 2026-06-02.
 
 ## Entry Gate
 
 - `pytest -q` passes locally.
 - `pytest -q -m e2e tests/rebirth/e2e/test_navigation_and_auth.py` passes.
-- `python tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-closed-beta-qa` passes with no blocking overlap.
+- `python tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-closed-beta-qa` passes with no blocking overlap. Committed baselines live in `tests/rebirth/visual_baselines/`.
 - `python tools/rebirth_balance_report.py --matches 200 --output docs/REBIRTH_BALANCE_REPORT.md` shows global/profile player win rate inside the 44% to 53% closed-beta gate, with 44% to 52% kept as the next tuning target.
-- Support export, reset and permanent account deletion are tested.
+- `pip-audit -r requirements.txt` and `pip-audit -r requirements-dev.txt` pass in the supported Python 3.11.9 environment used by Render/CI.
+- Support export, reset, feedback capture and permanent account deletion are tested.
 - Terms, Privacy, Data Deletion and Support are reachable from the account/support surfaces.
-- Monetization remains beta/sandbox unless legal and ops review approve live payments.
+- `python tools/ops/rebirth_pre_external_gate.py --report-only` records the
+  external-test readiness gates.
+- Monetization remains off by default. `REBIRTH_ENABLE_BILLING=true` is required
+  for checkout, and Stripe live keys also require `REBIRTH_ALLOW_STRIPE_LIVE=true`.
+- The current local pre-external gate is expected to be **not ready** until
+  external legal, Render/Postgres, Sentry/GlitchTip and GitHub workflow evidence
+  are supplied.
 
 ## Beta Tester Loop
 
@@ -38,9 +45,39 @@ Updated on 2026-06-01.
 - Run the scheduled `rebirth-closed-beta-qa` workflow daily.
 - Keep a fresh 200-match balance report after balance changes.
 - Review `/health` after deploy.
-- Confirm Render/Postgres backup policy before inviting external testers.
+- Configure `SENTRY_DSN` for Sentry, GlitchTip or a compatible endpoint before
+  inviting external testers.
+- Confirm and date a Render/Postgres backup restore drill before inviting
+  external testers.
 - Keep a manual rollback target: last green commit on `main`.
 - Keep Stripe live keys unset during closed beta unless compliance and backup checks are done.
+- Use `/rebirth/release` to watch D1/D7 active users, first-match completion,
+  tutorial completion, feedback and client errors.
+
+## External Proof Checklist
+
+- Legal: have counsel or the responsible operator review Terms, Privacy,
+  deletion/export language and monetization/refund copy. Set
+  `REBIRTH_LEGAL_REVIEWED=true` only after that review is recorded.
+- Backup/restore: run a real Postgres drill against a disposable restore
+  database, compare `/health` plus a signed-in export, then set
+  `REBIRTH_BACKUP_RESTORE_DRILL=true`.
+- Error tracking: set `SENTRY_DSN` for Sentry, GlitchTip or a compatible DSN.
+  Keep `SENTRY_ENVIRONMENT=closed-beta` and a conservative
+  `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood.
+- GitHub QA: run or schedule `rebirth-closed-beta-qa.yml`; `gh run list
+  --workflow rebirth-closed-beta-qa.yml --limit 1 --json status,conclusion,headSha`
+  must show `conclusion=success`.
+- Stripe: keep `REBIRTH_ENABLE_BILLING=false`, `REBIRTH_ALLOW_STRIPE_LIVE=false`
+  and live Stripe keys unset for closed beta.
+
+Example backup drill commands:
+
+```bash
+pg_dump "$REBIRTH_DATABASE_URL" --format=custom --file=/tmp/rebirth-drill.dump
+createdb rebirth_restore_drill
+pg_restore --clean --if-exists --no-owner --dbname=rebirth_restore_drill /tmp/rebirth-drill.dump
+```
 
 ## Incident Response
 

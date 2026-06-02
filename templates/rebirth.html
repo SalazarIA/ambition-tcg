@@ -10,6 +10,7 @@
     <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
     <link rel="preload" as="image" href="{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}" type="image/webp">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth_beta.css') }}?v={{ rebirth_release_version }}">
 </head>
 <body class="rb-page rb-game-page">
     {% include "_rebirth_global_nav.html" %}
@@ -280,11 +281,13 @@
 
     <script>
         window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_RELEASE_VERSION = "{{ rebirth_release_version }}";
         window.REBIRTH_ENDPOINTS = {
             start: "{{ url_for('api_rebirth_start') }}",
             campaignStart: "{{ url_for('api_rebirth_campaign_start') }}",
             playCard: "{{ url_for('api_rebirth_play_card') }}",
             attack: "{{ url_for('api_rebirth_attack') }}",
+            resume: "{{ url_for('api_rebirth_resume') }}",
             evolve: "{{ url_for('api_rebirth_evolve') }}",
             labsFusion: "{{ url_for('api_labs_fusion') }}",
             nextTurn: "{{ url_for('api_rebirth_next_turn') }}",
@@ -317,6 +320,7 @@
     <script src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v={{ rebirth_release_version }}"></script>
     <script src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v={{ rebirth_release_version }}"></script>
     <script src="{{ url_for('static', filename='js/rebirth_boss_fx.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_recap.js') }}?v={{ rebirth_release_version }}"></script>
     <script src="{{ url_for('static', filename='js/rebirth.js') }}?v={{ rebirth_release_version }}"></script>
 </body>
 </html>

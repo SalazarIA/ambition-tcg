@@ -143,6 +143,30 @@
         ].join("");
     }
 
+    function deckSuggestionMarkup(suggestion) {
+        return [
+            "<article>",
+            "<span>" + escapeHtml(suggestion.title || "Sugestão") + "</span>",
+            "<p>" + escapeHtml(suggestion.copy || "") + "</p>",
+            "<small>" + escapeHtml(suggestion.action || "") + "</small>",
+            "</article>"
+        ].join("");
+    }
+
+    function renderDeckSuggestions(suggestions) {
+        const host = document.querySelector("[data-rebirth-deck-suggestions]");
+        if (!host || !suggestions || !suggestions.length) return;
+        host.innerHTML = suggestions.map(deckSuggestionMarkup).join("");
+    }
+
+    function lastMatchId() {
+        try {
+            return window.localStorage ? window.localStorage.getItem("rebirth.lastMatchId") || "" : "";
+        } catch (error) {
+            return "";
+        }
+    }
+
     function marketOfferMarkup(offer) {
         const card = offer.card || {};
         const currency = String(offer.currency_type || "COINZ").toUpperCase();
@@ -303,6 +327,7 @@
                             "</div>"
                         ].join("");
                         bindImageFallbacks(result);
+                        renderDeckSuggestions(payload.deck_suggestions || []);
                     })
                     .catch(function (error) {
                         result.textContent = error.message;
@@ -837,6 +862,35 @@
         }
     }
 
+    function bindFeedback() {
+        const form = document.querySelector("[data-rebirth-feedback]");
+        const result = document.querySelector("[data-rebirth-feedback-result]");
+        if (!form || !result || !endpoints.supportFeedback) {
+            return;
+        }
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const button = form.querySelector("button");
+            if (button) button.disabled = true;
+            result.textContent = "Enviando feedback...";
+            const payload = formPayload(form);
+            payload.match_id = lastMatchId();
+            payload.surface = "support";
+            postJson(endpoints.supportFeedback, payload)
+                .then(function (body) {
+                    const matchCopy = body.feedback && body.feedback.match_id ? " Última partida vinculada." : "";
+                    result.textContent = "Feedback registrado para esta versão." + matchCopy;
+                    form.reset();
+                })
+                .catch(function (error) {
+                    result.textContent = error.message;
+                })
+                .finally(function () {
+                    if (button) button.disabled = false;
+                });
+        });
+    }
+
     window.initiateMobilePurchase = initiateMobilePurchase;
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -850,5 +904,6 @@
         bindTutorial();
         bindBalance();
         bindSupport();
+        bindFeedback();
     });
 }());

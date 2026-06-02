@@ -1,61 +1,41 @@
-# Ambitionz Beta Balance Watchlist
+# Ambitionz Rebirth Balance Watchlist
 
-Generated: 2026-05-16 01:26 UTC
+Generated: 2026-06-02 local Season 0 lab.
 
 ## Simulation Snapshot
 
-- total_matches: 100
-- player_wins: 50
-- bot_wins: 50
-- win_rate: 0.5
-- average_rounds: 13.91
-- timeout_count: 0
-- integrity_error_count: 0
+- Command: `python3 tools/rebirth_balance_report.py --matches 200 --output docs/REBIRTH_BALANCE_REPORT.md`
+- total_matches: 200
+- player_win_rate: 47.5%
+- bot_win_rate: 51.5%
+- unfinished_rate: 1.0%
+- average_turns: 15.77
 
-## Intent Signals
+## Bot Profiles
 
-- bot:Guard: 520
-- bot:Strike: 871
-- player:Focus: 100
-- player:Guard: 308
-- player:Strike: 983
+- defensive: 67 matches, player WR 47.8%, bot WR 52.2%, avg turns 18.18
+- aggressive: 67 matches, player WR 47.8%, bot WR 50.7%, avg turns 14.37
+- opportunist: 66 matches, player WR 47.0%, bot WR 51.5%, avg turns 14.74
 
-## Top Cards Played
+## Catalog Coverage
 
-- water_002: 126
-- plant_005: 126
-- fire_005: 124
-- earth_002: 122
-- fire_002: 119
-- fire_007: 118
-- plant_006: 117
-- earth_003: 116
-- earth_005: 115
-- fire_003: 114
+- total_cards: 103
+- used_cards: 103
+- unused_cards: 0
+- cards_above_30_percent_dead_rate: 0
+- supports_above_30_percent_dead_rate: 0
+- flagged_dominant_or_low_impact_cards: 0
 
-## Local Telemetry
+## Former Unused Card Investigation
 
-- total_events: 1464
-- db_source: ok
-- jsonl_source: checked instance/beta_telemetry.jsonl, logs/beta_telemetry.jsonl
-- buy_booster: 0
-- claim_daily: 0
-- finish_match: 1
-- open_booster: 0
-- save_deck: 0
-- start_training: 38
-- view_collection: 0
-- view_roadmap: 0
-- visit_home: 0
+- Aegis Sentinel: 56 plays, 56 match uses, 42.9% WR, 0.2 avg damage.
+- Infernus Core: 21 plays, 21 match uses, 14.3% WR, 0.48 avg damage.
+- Shadow Reaper: 11 plays, 11 match uses, 18.2% WR, 0.45 avg damage.
+- Recarga Arcana: 40 plays, 40 match uses, 37.5% WR, 0 avg damage.
 
-## Alerts
+## Current Notes
 
-- Intent variety may be narrow in telemetry: Strike is over 75% of tracked intent events.
-
-## Notes
-
-- This watchlist is local and defensive; it does not require an external analytics provider.
-- RC V6 includes Intent Balance V2: Strike is leaner, Guard absorbs more damage and Focus generates clearer Ambition value.
-- Confirm post-deploy telemetry before declaring Strike usage fixed; local historical events may still overrepresent old behavior.
-- Gold, boosters and rewards are internal beta systems with no real-money payment flow.
-- Use this file to decide what to inspect before changing card balance or bot behavior.
+- The defensive profile is now below the 52% ideal player-WR target in the deterministic lab.
+- The old dominant/low-impact flags were removed by better catalog coverage and stricter signal thresholds.
+- Infernus Core and Shadow Reaper are used but still low-win in deterministic play; keep them on the live telemetry watchlist before changing card text.
+- This lab is deterministic and useful for regression detection, but it is not a substitute for human closed-beta telemetry.

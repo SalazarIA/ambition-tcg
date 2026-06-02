@@ -317,12 +317,49 @@
         }
     }
 
+    function bindClientErrorTelemetry() {
+        const endpoint = endpoints.telemetry || "/api/rebirth/telemetry";
+        if (!endpoint || window.__rebirthErrorTelemetryBound) return;
+        window.__rebirthErrorTelemetryBound = true;
+        let sent = 0;
+
+        function report(message, metadata) {
+            if (sent >= 3) return;
+            sent += 1;
+            postJson(endpoint, {
+                event_type: "client_error",
+                surface: document.body ? document.body.getAttribute("data-page-key") || document.body.className || "rebirth" : "rebirth",
+                message: String(message || "Erro de cliente").slice(0, 1000),
+                metadata: Object.assign(
+                    {
+                        path: window.location.pathname,
+                        release: window.REBIRTH_RELEASE_VERSION || ""
+                    },
+                    metadata || {}
+                )
+            }).catch(function () {});
+        }
+
+        window.addEventListener("error", function (event) {
+            report(event.message, {
+                filename: event.filename || "",
+                lineno: event.lineno || "",
+                colno: event.colno || ""
+            });
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+            const reason = event.reason || {};
+            report(reason.message || String(reason), { type: "unhandledrejection" });
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         bindAuthTriggers();
         bindAuthForms();
         bindLogout();
         bindVerifyBanner();
         announceVerificationResult();
+        bindClientErrorTelemetry();
         refreshWallet().catch(function () {});
     });
 }());

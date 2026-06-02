@@ -329,6 +329,16 @@ def test_coinz_receipt_credit_is_disabled_until_official_store_validation(client
     assert client.get("/api/rebirth/wallet").get_json()["wallet"]["COINZ"] == 0
 
 
+def test_stripe_checkout_is_disabled_by_default_even_when_authenticated(client):
+    register(client, username="stripe_off", email="stripe-off@example.com")
+
+    response = client.post("/api/rebirth/billing/checkout", json={"package_id": "gems_100"})
+
+    assert response.status_code == 410
+    assert response.get_json()["error"]["code"] == "monetization_disabled"
+    assert client.get("/api/rebirth/wallet").get_json()["wallet"]["COINZ"] == 0
+
+
 def test_balance_simulation_is_capped_and_deterministic(client):
     response = client.get("/api/rebirth/balance/simulate?matches=500")
     payload = response.get_json()["balance"]

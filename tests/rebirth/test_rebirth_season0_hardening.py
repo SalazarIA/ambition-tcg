@@ -73,6 +73,36 @@ def test_history_and_support_pages_render(client):
         assert response.status_code == 200
         assert label in body
         assert "Ambitionz Rebirth" in body
+    assert "data-rebirth-feedback" in client.get("/rebirth/support").get_data(as_text=True)
+
+
+def test_feedback_capture_links_version_account_and_last_match(client, flask_app):
+    created = register(client, username="feedback_user", email="feedback@example.com").get_json()
+    user_id = created["account"]["user"]["id"]
+    state = client.post("/api/rebirth/start", json={"seed": "feedback-match"}).get_json()["state"]
+
+    response = client.post(
+        "/api/rebirth/support/feedback",
+        json={
+            "category": "balance",
+            "severity": "normal",
+            "message": "A partida tutorial ficou clara, mas o bot defensivo demorou.",
+            "match_id": state["match_id"],
+            "surface": "support",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["feedback"]["match_id"] == state["match_id"]
+    from services.rebirth_persistence import RebirthRepository
+
+    events = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"]).query_telemetry_events(
+        event_types=("feedback_submitted",),
+        limit=1,
+    )
+    assert events[0]["user_id"] == user_id
+    assert events[0]["payload"]["category"] == "balance"
+    assert events[0]["payload"]["rebirth_release_version"]
 
 
 def test_support_export_reset_and_admin_grant(client, flask_app):

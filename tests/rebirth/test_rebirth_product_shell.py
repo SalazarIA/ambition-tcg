@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from services.rebirth_beta_ops import external_gate_payload
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -46,9 +48,11 @@ def test_rebirth_product_pages_render_active_shell(client):
         if path == "/rebirth/support":
             assert "data-rebirth-delete-account" in body
             assert "Excluir Minha Conta" in body
+            assert "data-rebirth-feedback" in body
         if path == "/rebirth/progression":
             assert "Loop de retenção beta" in body
             assert "rb-quest-grid" in body
+            assert "Coach de deck" in body
         if path == "/rebirth/onboarding":
             assert "Glossário de keywords" in body
             assert "rb-keyword-grid" in body
@@ -108,6 +112,25 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert release.status_code == 200
     assert release.get_json()["release"]["checks"][0]["name"] == "Produto Ativo"
     assert any(check["name"] == "LGPD Self-Service" for check in release.get_json()["release"]["checks"])
+    assert release.get_json()["release"]["external_gates"]["checks"][0]["key"] == "legal_review"
+    assert release.get_json()["release"]["dashboard"]["cards"][0]["label"] == "D1 ativos"
+
+
+def test_external_beta_gate_parses_string_booleans():
+    gates = external_gate_payload(
+        {
+            "REBIRTH_ENABLE_BILLING": "false",
+            "REBIRTH_ALLOW_STRIPE_LIVE": "false",
+            "REBIRTH_LEGAL_REVIEWED": "true",
+            "REBIRTH_BACKUP_RESTORE_DRILL": "true",
+            "REBIRTH_GITHUB_QA_GREEN": "true",
+            "SENTRY_DSN": "https://example.invalid/1",
+        }
+    )
+
+    assert gates["ready"] is True
+    assert gates["billing_enabled"] is False
+    assert {check["key"]: check["state"] for check in gates["checks"]}["billing_off"] == "passed"
 
 
 def test_rebirth_loadout_preview_validates_owned_cards(client):
