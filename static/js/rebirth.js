@@ -3095,7 +3095,7 @@
 
         async maybeResumeMatch(options) {
             options = options || {};
-            if (options.forceNew || !RebirthConfig.endpoints.resume || !RebirthCoach.account().authenticated || RebirthStore.guidedFirstMatch) {
+            if (options.forceNew || !RebirthConfig.endpoints.resume || RebirthStore.guidedFirstMatch) {
                 return null;
             }
             let matchId = "";
@@ -3734,7 +3734,7 @@
     // E ainda não completou (progression.tutorial_complete === false).
     // Ancorado em elementos do jogo via data-tutorial-spotlight (bounding box).
     const RebirthTutorial = {
-        STEPS: [
+        FALLBACK_STEPS: [
             {
                 step: 1,
                 title: "Bem-vindo à Arena",
@@ -3826,18 +3826,18 @@
 
         renderStep() {
             const dom = this.state.dom;
-            const step = this.STEPS[this.state.currentIdx];
+            const step = this.steps()[this.state.currentIdx];
             if (!step) return this.finish(false);
-            dom.stepLabel.textContent = `Passo ${step.step} de ${this.STEPS.length}`;
+            dom.stepLabel.textContent = `Passo ${step.step} de ${this.steps().length}`;
             dom.title.textContent = step.title;
             dom.body.textContent = step.body;
-            dom.nextBtn.textContent = step.step >= this.STEPS.length ? "Concluir" : "Entendi";
+            dom.nextBtn.textContent = step.step >= this.steps().length ? "Concluir" : "Entendi";
             this.repositionSpotlight();
         },
 
         repositionSpotlight() {
             const dom = this.state.dom;
-            const step = this.STEPS[this.state.currentIdx];
+            const step = this.steps()[this.state.currentIdx];
             if (!dom || !step) return;
             const targets = step.target.split(",").map((s) => s.trim()).filter(Boolean);
             let el = null;
@@ -3860,12 +3860,12 @@
 
         advance() {
             // Reporta passo ao backend (best-effort, não bloqueia UX)
-            const step = this.STEPS[this.state.currentIdx];
+            const step = this.steps()[this.state.currentIdx];
             if (step) {
                 this.reportStep(step.step).catch(() => {});
             }
             this.state.currentIdx += 1;
-            if (this.state.currentIdx >= this.STEPS.length) {
+            if (this.state.currentIdx >= this.steps().length) {
                 this.finish(false);
                 return;
             }
@@ -3889,6 +3889,11 @@
                     }),
                 });
             } catch (e) { /* silencioso */ }
+        },
+
+        steps() {
+            const configured = window.REBIRTH_FIRST_SESSION && window.REBIRTH_FIRST_SESSION.arena_tutorial_steps;
+            return Array.isArray(configured) && configured.length ? configured : this.FALLBACK_STEPS;
         },
 
         finish(skipped) {

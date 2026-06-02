@@ -41,6 +41,9 @@ jobs:
       - name: Rebirth fast suite
         run: pytest tests/rebirth -q
 
+      - name: Rebirth content pipeline
+        run: python tools/rebirth_content_validate.py
+
       - name: Rebirth E2E navigation/auth
         run: pytest -q -m e2e tests/rebirth/e2e/test_navigation_and_auth.py
 

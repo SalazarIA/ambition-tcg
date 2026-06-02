@@ -1,19 +1,21 @@
 # Rebirth Release Status
 
-> Updated for the external-beta readiness pass on 2026-06-02. Operational
+> Updated for the AAA studio-foundation pass on 2026-06-02. Operational
 > persistence, asset and mobile guidance is also defined in
 > `docs/AAA_FOUNDATION_V58.md`.
 
 ## Official Product State
 
 Ambitionz Rebirth is the only active Ambitionz runtime product.
+The forward studio roadmap is `docs/REBIRTH_AAA_GAME_STUDIO_ROADMAP.md`.
 
 The active product is a Flask-served, vanilla-frontend, three-slot monster
 duel with a ten-node PvE campaign, Rebirth-native auth, PostgreSQL persistence, account collection, account
 loadout, no-payment booster ownership, progression, guided first-match tutorial, post-match recap,
-deck suggestions, beta retention quests, balance simulation, player profile/achievements, match history,
-economy ledger, support/admin tooling, feedback capture, self-service export/deletion,
-consent-gated signup, auth hardening and release hygiene pages.
+deck suggestions, beta retention quests, first-session planning, content validation, live telemetry balance
+reporting, async replay/ghost contracts, player profile/achievements, match history, economy ledger,
+support/admin tooling, feedback capture, self-service export/deletion, consent-gated signup, auth hardening
+and release hygiene pages.
 
 The active catalog spans 103 cards (83 monsters, 10 spells and 10 traps),
 including three Legendary contracts, with stable `ability_key` values,
@@ -40,6 +42,12 @@ builder surfaces are active. Historical tests live under
 - `services/rebirth_persistence.py`
 - `services/rebirth_balance.py`
 - `services/rebirth_beta_ops.py`
+- `services/rebirth_first_session.py`
+- `services/rebirth_retention.py`
+- `services/rebirth_content_pipeline.py`
+- `services/rebirth_live_balance.py`
+- `services/rebirth_async_competition.py`
+- `services/rebirth_telemetry.py`
 - `services/rebirth_deck_coach.py`
 - `services/rebirth_postmatch.py`
 - `services/rebirth_schema.py`
@@ -109,6 +117,7 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `POST /api/rebirth/next-turn`
 - `GET /api/rebirth/shell`
 - `GET /api/rebirth/session`
+- `GET /api/rebirth/first-session`
 - `GET /api/rebirth/csrf`
 - `POST /api/rebirth/auth/register`
 - `POST /api/rebirth/auth/login`
@@ -132,6 +141,10 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 - `GET /api/rebirth/onboarding`
 - `POST /api/rebirth/onboarding/complete`
 - `GET /api/rebirth/balance/simulate`
+- `GET /api/rebirth/balance/telemetry`
+- `GET /api/rebirth/content/validate`
+- `GET /api/rebirth/async/share/<match_id>`
+- `GET /api/rebirth/async/ghosts`
 - `GET /api/rebirth/release`
 - `GET /api/rebirth/support/export`
 - `POST /api/rebirth/support/feedback`
@@ -146,6 +159,25 @@ Retired browser routes redirect to `/rebirth`; examples include `/arena`,
 State-changing Rebirth APIs require `X-Rebirth-CSRF` by default. Auth endpoints
 have a small in-memory rate limit. Password changes are available for signed-in
 Rebirth users.
+
+## AAA Studio Foundation Pass
+
+The 2026-06-02 studio-foundation pass moved the next production layer into
+Python-owned contracts:
+
+- First 10 minutes are described by `services/rebirth_first_session.py` and
+  exposed through `/api/rebirth/first-session` plus `window.REBIRTH_FIRST_SESSION`.
+- Retention quests now come from `services/rebirth_retention.py`, including
+  daily and weekly beta loops.
+- Content/art validation is available through `services/rebirth_content_pipeline.py`
+  and `/api/rebirth/content/validate`.
+- Real-player balance reporting is available through `services/rebirth_live_balance.py`
+  and `/api/rebirth/balance/telemetry`; it deliberately blocks balance claims
+  until enough human matches exist.
+- Async competition starts with deterministic replay-share and ghost-challenge
+  contracts in `services/rebirth_async_competition.py`.
+- Guest reconnect now resumes the active in-memory match inside the same session;
+  authenticated reconnect remains PostgreSQL-backed.
 
 Retired API groups return JSON `410 legacy_disabled`:
 

@@ -637,6 +637,24 @@
                     {% endfor %}
                 </div>
             </section>
+            <section class="rb-product-panel rb-product-wide rb-beta-loop-panel" aria-label="Quests semanais de retenção">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>Live loop</span>
+                        <h2>Semana da Temporada 0</h2>
+                    </div>
+                    <small>{{ page.retention.live_loop_version }}</small>
+                </div>
+                <div class="rb-quest-grid">
+                    {% for quest in page.weekly_quests %}
+                        <article class="rb-quest-card is-{{ quest.state }}">
+                            <span>{{ 'Pronta' if quest.state == 'ready' else 'Bloqueada' }}</span>
+                            <h3>{{ quest.name }}</h3>
+                            <p>{{ quest.progress }}/{{ quest.goal }} - {{ quest.reward }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
             <section class="rb-product-panel rb-product-wide rb-deck-coach-panel" aria-label="Sugestões de deck por progresso">
                 <div class="rb-product-panel-head">
                     <div>
@@ -684,6 +702,24 @@
                 </div>
             </section>
         {% elif page.key == "tutorial" %}
+            <section class="rb-product-panel rb-product-wide rb-beta-loop-panel" aria-label="Primeiros 10 minutos">
+                <div class="rb-product-panel-head">
+                    <div>
+                        <span>{{ page.first_session.version }}</span>
+                        <h2>Primeiros 10 minutos</h2>
+                    </div>
+                    <strong>{{ page.first_session.next_action.title }}</strong>
+                </div>
+                <div class="rb-quest-grid">
+                    {% for action in page.first_session.actions %}
+                        <article class="rb-quest-card is-{{ action.state }}">
+                            <span>{{ action.minute }}</span>
+                            <h3>{{ action.title }}</h3>
+                            <p>{{ action["copy"] }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Etapas do tutorial">
                 {% for step in page.steps %}
                     <article class="rb-product-panel">
@@ -797,6 +833,40 @@
                     </div>
                 </section>
             {% endif %}
+            {% if page.live_balance %}
+                <section class="rb-product-panel rb-product-wide rb-beta-dashboard" aria-label="Balanceamento com telemetria humana">
+                    <div class="rb-product-panel-head">
+                        <div>
+                            <span>{{ page.live_balance.version }}</span>
+                            <h2>Balanceamento Real</h2>
+                        </div>
+                        <strong>{{ page.live_balance.human_match_gate.state }}</strong>
+                    </div>
+                    <div class="rb-product-stats rb-product-stats-compact">
+                        <article><span>Amostra</span><strong>{{ page.live_balance.sample_size }}</strong></article>
+                        <article><span>Matches humanos</span><strong>{{ page.live_balance.human_match_gate.observed_finished_matches }}/{{ page.live_balance.human_match_gate.required_finished_matches }}</strong></article>
+                        <article><span>Win rate jogador</span><strong>{{ page.live_balance.overall.player_win_rate or 'sem amostra' }}</strong></article>
+                        <article><span>Turnos médios</span><strong>{{ page.live_balance.overall.average_turns or 'sem amostra' }}</strong></article>
+                    </div>
+                </section>
+            {% endif %}
+            {% if page.content_pipeline %}
+                <section class="rb-product-panel rb-product-wide rb-external-gates" aria-label="Pipeline de conteúdo e arte">
+                    <div class="rb-product-panel-head">
+                        <div>
+                            <span>{{ 'OK' if page.content_pipeline.ok else 'Ajustar' }}</span>
+                            <h2>Conteúdo + Arte</h2>
+                        </div>
+                        <strong>{{ page.content_pipeline.card_count }} cartas</strong>
+                    </div>
+                    <div class="rb-product-stats rb-product-stats-compact">
+                        <article><span>Deck inicial</span><strong>{{ 'OK' if page.content_pipeline.starter_deck_ok else 'Falha' }}</strong></article>
+                        <article><span>Arte pronta</span><strong>{{ page.content_pipeline.art.ready }}/{{ page.content_pipeline.card_count }}</strong></article>
+                        <article><span>Erros</span><strong>{{ page.content_pipeline.error_count }}</strong></article>
+                        <article><span>Avisos</span><strong>{{ page.content_pipeline.warning_count }}</strong></article>
+                    </div>
+                </section>
+            {% endif %}
             <section class="rb-product-panel rb-product-wide rb-external-gates" aria-label="Gates pré-tester externo">
                 <div class="rb-product-panel-head">
                     <div>
@@ -863,6 +933,9 @@
             supportDelete: "{{ url_for('api_rebirth_support_delete_account') }}",
             supportFeedback: "{{ url_for('api_rebirth_support_feedback') }}",
             telemetry: "{{ url_for('api_rebirth_telemetry') }}",
+            firstSession: "{{ url_for('api_rebirth_first_session') }}",
+            contentValidate: "{{ url_for('api_rebirth_content_validate') }}",
+            liveBalance: "{{ url_for('api_rebirth_balance_telemetry') }}",
             csrf: "{{ url_for('api_rebirth_csrf') }}"
         };
         window.REBIRTH_AUTH_ENDPOINTS = {

@@ -7,8 +7,10 @@ from datetime import datetime, timedelta, timezone
 from flask import Flask, jsonify, make_response, redirect, render_template, request, send_from_directory, session
 
 from services.rebirth_contracts import RebirthError
+from services.rebirth_async_competition import async_competition_payload, async_history_payload
 from services.rebirth_balance import simulate_balance
 from services.rebirth_campaign import CAMPAIGN_VERSION, campaign_payload, get_node, is_unlocked
+from services.rebirth_content_pipeline import content_pipeline_report
 from services.rebirth_dispatcher import (
     DeclareAttackCommand,
     EndTurnCommand,
@@ -17,6 +19,8 @@ from services.rebirth_dispatcher import (
     SummonCardCommand,
     dispatch_command,
 )
+from services.rebirth_first_session import first_session_plan
+from services.rebirth_live_balance import live_balance_payload
 from services.rebirth_engine import start_match
 from services.rebirth_match_store import MATCH_STORE
 from services.rebirth_persistence import (
@@ -46,6 +50,11 @@ from services.rebirth_product import (
     validate_loadout,
 )
 from services.rebirth_serializers import public_state
+from services.rebirth_telemetry import (
+    REBIRTH_CLIENT_TELEMETRY_EVENTS,
+    build_match_telemetry_payload,
+    client_telemetry_payload as build_client_telemetry_payload,
+)
 from services.email_service import send_email
 
 
@@ -353,6 +362,24 @@ def guest_wallet_payload():
     return {"GOLD": 0, "COINZ": 0, "ledger_source": "wallet_ledger", "guest": True}
 
 
+def remember_active_match(match, user=None):
+    if not match or not match.get("match_id"):
+        return None
+    session["rebirth_active_match_id"] = match["match_id"]
+    session["rebirth_active_match_owner"] = int(user["id"]) if user else None
+    return match["match_id"]
+
+
+def reconnect_payload(match=None, user=None):
+    match_id = (match or {}).get("match_id") or session.get("rebirth_active_match_id")
+    return {
+        "active_match_id": match_id,
+        "durable": bool(user),
+        "scope": "account_postgres" if user else "guest_session_memory",
+        "in_progress": bool(match and not match.get("is_finished")),
+    }
+
+
 def shop_data_for_user(user):
     repo = rebirth_repo()
     history = []
@@ -526,45 +553,15 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
         total_elapsed_ms = round(max(0.0, now - timing["started_at"]) * 1000)
         if match.get("is_finished") or event_type == "match_abandoned":
             MATCH_TELEMETRY_CLOCKS.pop(match_id, None)
-    result = match.get("result") or {}
-    events = match.get("events") or []
-    chain_ids = {
-        event.get("effect_chain_id")
-        for event in events
-        if event.get("effect_chain_id")
-    }
-    chain_lengths = {}
-    for event in events:
-        chain_id = event.get("effect_chain_id")
-        if chain_id:
-            chain_lengths[chain_id] = chain_lengths.get(chain_id, 0) + 1
-    max_chain_length = max(chain_lengths.values()) if chain_lengths else 0
-    bot_profile_id = (match.get("bot_profile") or {}).get("id") or match.get("bot_profile_id")
-    payload = {
-        "match_id": match_id,
-        "turn": int(match.get("turn", 0) or 0),
-        "phase": match.get("phase"),
-        "is_finished": bool(match.get("is_finished")),
-        "winner": match.get("winner"),
-        "outcome": result.get("outcome"),
-        "player_hp": int((match.get("player") or {}).get("hp", 0) or 0),
-        "bot_hp": int((match.get("bot") or {}).get("hp", 0) or 0),
-        "event_count": len(events),
-        "chain_count": len(chain_ids),
-        "max_chain_length": max_chain_length,
-        "bot_profile_id": bot_profile_id,
-        "first_duel": bool(match.get("first_duel")),
-        "decision_elapsed_ms": elapsed_ms,
-        "campaign_version": match.get("campaign_version"),
-        "campaign_node": match.get("campaign_node"),
-        "campaign_attempt": match.get("campaign_attempt"),
-        "node_retry_count": max(0, int(match.get("campaign_attempt", 1) or 1) - 1) if match.get("campaign_node") else None,
-        "abandon_turn": int(match.get("turn", 0) or 0) if event_type == "match_abandoned" else None,
-        "first_loss_node": match.get("campaign_node") if match.get("campaign_node") and match.get("is_finished") and match.get("winner") == "bot" and int(match.get("campaign_attempt", 1) or 1) == 1 else None,
-        "victory_duration": total_elapsed_ms if match.get("campaign_node") and match.get("is_finished") and match.get("winner") == "player" else None,
-        "average_turns": int(match.get("turn", 0) or 0) if match.get("campaign_node") and match.get("is_finished") else None,
-    }
-    payload.update({key: value for key, value in extra.items() if value is not None})
+    payload = build_match_telemetry_payload(
+        match,
+        event_type,
+        elapsed_ms=elapsed_ms,
+        total_elapsed_ms=total_elapsed_ms,
+        release_version=app.config["REBIRTH_RELEASE_VERSION"],
+        authenticated=bool(user),
+        extra=extra,
+    )
     try:
         telemetry_repo = repo or rebirth_repo()
         telemetry_repo.record_telemetry_event(event_type, payload, user_id=(user or {}).get("id"))
@@ -606,12 +603,24 @@ def start_memory_rebirth_match(payload):
         first_duel=is_first_duel,
     )
     match = MATCH_STORE.save(match)
+    remember_active_match(match)
     try:
         record_match_telemetry(None, None, match, "match_started", guest=True)
     except Exception:
         app.logger.info("rebirth.telemetry unavailable for guest match start")
     state = public_state(match)
-    return json_success(state, match.get("result"), match_id=match["match_id"])
+    return json_success(
+        state,
+        match.get("result"),
+        match_id=match["match_id"],
+        reconnect=reconnect_payload(match),
+        first_session=first_session_plan(
+            account=account_payload(None),
+            progression={},
+            state=state,
+            release_version=app.config["REBIRTH_RELEASE_VERSION"],
+        ),
+    )
 
 
 def require_admin_token():
@@ -787,7 +796,17 @@ def sitemap_xml():
 def rebirth():
     user = current_user()
     progress = rebirth_repo().progression(user["id"]) if user else None
-    return render_template("rebirth.html", account=account_payload(user), progression=progress or {})
+    account = account_payload(user)
+    return render_template(
+        "rebirth.html",
+        account=account,
+        progression=progress or {},
+        first_session=first_session_plan(
+            account=account,
+            progression=progress or {},
+            release_version=app.config["REBIRTH_RELEASE_VERSION"],
+        ),
+    )
 
 
 @app.get("/rebirth/campaign")
@@ -893,7 +912,15 @@ def rebirth_release():
     repo = rebirth_repo()
     gates = external_gate_payload(app.config)
     dashboard = beta_dashboard_payload(repo)
-    return render_template("rebirth_product.html", page=release_payload(gates=gates, dashboard=dashboard))
+    return render_template(
+        "rebirth_product.html",
+        page=release_payload(
+            gates=gates,
+            dashboard=dashboard,
+            content_report=content_pipeline_report(),
+            live_balance=live_balance_payload(repo, release_version=app.config["REBIRTH_RELEASE_VERSION"]),
+        ),
+    )
 
 
 @app.get("/rebirth/support")
@@ -1263,11 +1290,23 @@ def api_rebirth_start():
             match["owner_user_id"] = user["id"]
             match["seed"] = str(requested_seed or "")
         match = MATCH_STORE.save(match)
+        remember_active_match(match, user=user)
         if user:
             repo.upsert_match_history(user["id"], match)
         record_match_telemetry(repo, user, match, "match_started", guest=not bool(user))
         state = public_state(match)
-        return json_success(state, match.get("result"), match_id=match["match_id"])
+        return json_success(
+            state,
+            match.get("result"),
+            match_id=match["match_id"],
+            reconnect=reconnect_payload(match, user=user),
+            first_session=first_session_plan(
+                account=account_payload(user),
+                progression=progress or {},
+                state=state,
+                release_version=app.config["REBIRTH_RELEASE_VERSION"],
+            ),
+        )
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -1331,6 +1370,7 @@ def api_rebirth_campaign_start():
         match["owner_user_id"] = user["id"]
         match["seed"] = f"campaign:{node['id']}:{attempt}"
         match = MATCH_STORE.save(match)
+        remember_active_match(match, user=user)
         repo.upsert_match_history(user["id"], match)
         record_match_telemetry(
             repo,
@@ -1344,6 +1384,7 @@ def api_rebirth_campaign_start():
             public_state(match),
             match.get("result"),
             match_id=match["match_id"],
+            reconnect=reconnect_payload(match, user=user),
             campaign=campaign_payload(repo.get_campaign_progress(user["id"])),
             campaign_reward=None,
         )
@@ -1548,7 +1589,19 @@ def api_rebirth_auth_plan():
 def api_rebirth_session():
     user = current_user()
     wallet = rebirth_repo().wallet_payload(user["id"]) if user else guest_wallet_payload()
-    return json_payload(account=account_payload(user), wallet=wallet, **csrf_payload())
+    progress = rebirth_repo().progression(user["id"]) if user else {}
+    account = account_payload(user)
+    return json_payload(
+        account=account,
+        wallet=wallet,
+        reconnect=reconnect_payload(user=user),
+        first_session=first_session_plan(
+            account=account,
+            progression=progress or {},
+            release_version=app.config["REBIRTH_RELEASE_VERSION"],
+        ),
+        **csrf_payload(),
+    )
 
 
 @app.get("/api/rebirth/csrf")
@@ -1870,15 +1923,36 @@ def api_rebirth_match_state(match_id):
 def api_rebirth_resume():
     try:
         payload = request_json(required=True)
-        user = require_user()
-        match_id = str(payload.get("match_id") or "").strip()
+        user = current_user()
+        match_id = str(payload.get("match_id") or session.get("rebirth_active_match_id") or "").strip()
         if not match_id:
             raise RebirthError("Informe match_id para retomar a partida.", "missing_match")
-        restored = rebirth_repo().runtime_match_state(user["id"], match_id)
-        match = MATCH_STORE.save(restored)
-        ensure_match_access(match, user=user)
-        record_match_telemetry(rebirth_repo(), user, match, "match_resumed")
-        return json_success(public_state(match), match.get("result"), match_id=match["match_id"], resumed=True)
+        if user:
+            restored = rebirth_repo().runtime_match_state(user["id"], match_id)
+            match = MATCH_STORE.save(restored)
+            ensure_match_access(match, user=user)
+            repo = rebirth_repo()
+        else:
+            if match_id != session.get("rebirth_active_match_id"):
+                raise RebirthError("Esta partida de visitante nao pertence a sessao atual.", "match_forbidden", status=403)
+            match = MATCH_STORE.get(match_id)
+            repo = None
+        remember_active_match(match, user=user)
+        record_match_telemetry(repo, user, match, "match_resumed")
+        state = public_state(match)
+        return json_success(
+            state,
+            match.get("result"),
+            match_id=match["match_id"],
+            resumed=True,
+            reconnect=reconnect_payload(match, user=user),
+            first_session=first_session_plan(
+                account=account_payload(user),
+                progression=rebirth_repo().progression(user["id"]) if user else {},
+                state=state,
+                release_version=app.config["REBIRTH_RELEASE_VERSION"],
+            ),
+        )
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -1913,6 +1987,20 @@ def api_rebirth_onboarding():
     user = current_user()
     progress = rebirth_repo().progression(user["id"]) if user else None
     return json_payload(onboarding=onboarding_payload(account=account_payload(user), progression=progress))
+
+
+@app.get("/api/rebirth/first-session")
+def api_rebirth_first_session():
+    user = current_user()
+    progress = rebirth_repo().progression(user["id"]) if user else {}
+    account = account_payload(user)
+    return json_payload(
+        first_session=first_session_plan(
+            account=account,
+            progression=progress or {},
+            release_version=app.config["REBIRTH_RELEASE_VERSION"],
+        )
+    )
 
 
 @app.post("/api/rebirth/onboarding/complete")
@@ -1950,33 +2038,20 @@ def api_rebirth_balance_simulate():
         return json_from_rebirth_error(error)
 
 
-REBIRTH_CLIENT_TELEMETRY_EVENTS = {
-    "match_abandoned",
-    "client_error",
-    "tutorial_step_viewed",
-    "feedback_opened",
-}
-
-
-def client_telemetry_payload(event_type, payload, user=None):
-    clean = {
-        "event_type": event_type,
-        "rebirth_release_version": app.config["REBIRTH_RELEASE_VERSION"],
-        "authenticated": bool(user),
-        "match_id": str(payload.get("match_id") or "").strip() or None,
-        "surface": str(payload.get("surface") or "").strip()[:80] or None,
-        "reason": str(payload.get("reason") or "").strip()[:240] or None,
-        "step": payload.get("step"),
-        "message": str(payload.get("message") or "").strip()[:1000] or None,
-    }
-    metadata = payload.get("metadata")
-    if isinstance(metadata, dict):
-        clean["metadata"] = {
-            str(key)[:60]: str(value)[:240]
-            for key, value in metadata.items()
-            if value is not None
-        }
-    return {key: value for key, value in clean.items() if value is not None}
+@app.get("/api/rebirth/balance/telemetry")
+def api_rebirth_balance_telemetry():
+    try:
+        require_internal_lab_access()
+        return json_payload(
+            live_balance=live_balance_payload(
+                rebirth_repo(),
+                release_version=app.config["REBIRTH_RELEASE_VERSION"],
+            )
+        )
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
 
 
 @app.post("/api/rebirth/telemetry")
@@ -1994,7 +2069,12 @@ def api_rebirth_telemetry():
         else:
             rebirth_repo().record_telemetry_event(
                 event_type,
-                client_telemetry_payload(event_type, payload, user=user),
+                build_client_telemetry_payload(
+                    event_type,
+                    payload,
+                    user=user,
+                    release_version=app.config["REBIRTH_RELEASE_VERSION"],
+                ),
                 user_id=(user or {}).get("id"),
             )
         return json_payload(recorded=True)
@@ -2049,8 +2129,56 @@ def api_rebirth_release():
         release=release_payload(
             gates=external_gate_payload(app.config),
             dashboard=beta_dashboard_payload(repo),
+            content_report=content_pipeline_report(),
+            live_balance=live_balance_payload(repo, release_version=app.config["REBIRTH_RELEASE_VERSION"]),
         )
     )
+
+
+@app.get("/api/rebirth/content/validate")
+def api_rebirth_content_validate():
+    try:
+        require_internal_lab_access()
+        return json_payload(content_pipeline=content_pipeline_report())
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.get("/api/rebirth/async/share/<match_id>")
+def api_rebirth_async_share(match_id):
+    try:
+        user = require_user()
+        match = rebirth_repo().runtime_match_state(user["id"], match_id)
+        ensure_match_access(match, user=user)
+        if not match.get("is_finished"):
+            raise RebirthError("Finalize a partida antes de gerar um replay competitivo.", "match_not_finished", status=409)
+        return json_payload(async_competition=async_competition_payload(match))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.get("/api/rebirth/async/ghosts")
+def api_rebirth_async_ghosts():
+    try:
+        user = require_user()
+        repo = rebirth_repo()
+        states = []
+        for item in repo.match_history(user["id"], limit=6):
+            if item.get("status") != "finished":
+                continue
+            try:
+                states.append(repo.runtime_match_state(user["id"], item["match_id"]))
+            except RebirthPersistenceError:
+                continue
+        return json_payload(async_competition=async_history_payload(states))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
 
 
 @app.get("/api/rebirth/support/export")
@@ -2115,9 +2243,13 @@ def api_rebirth_support_feedback():
             "message": message[:2000],
             "match_id": match_id,
             "account_authenticated": bool(user),
+            "cohort": "account" if user else "guest",
+            "user_id": user["id"] if user else None,
+            "session_active_match_id": session.get("rebirth_active_match_id"),
             "rebirth_release_version": app.config["REBIRTH_RELEASE_VERSION"],
             "surface": str(payload.get("surface") or "support").strip()[:80],
         }
+        feedback = {key: value for key, value in feedback.items() if value is not None}
         rebirth_repo().record_telemetry_event("feedback_submitted", feedback, user_id=(user or {}).get("id"))
         return json_payload(recorded=True, feedback={"category": category, "severity": severity, "match_id": match_id})
     except RebirthPersistenceError as error:

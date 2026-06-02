@@ -307,6 +307,7 @@
             wallet: "{{ url_for('api_rebirth_wallet') }}"
         };
         window.REBIRTH_PLAYER_CONTEXT = {{ {"account": account, "progression": progression} | tojson }};
+        window.REBIRTH_FIRST_SESSION = {{ first_session | tojson }};
         window.REBIRTH_ASSETS = {
             fallbackCardArt: "{{ url_for('static', filename='assets/rebirth/cards/dreadclaw-art.webp') }}",
             botCardBack: "{{ url_for('static', filename='assets/rebirth/ui/bot-card-back.png') }}",

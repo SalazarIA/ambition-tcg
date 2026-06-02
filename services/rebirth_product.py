@@ -13,8 +13,11 @@ from services.rebirth_cards import (
     validate_deck_distribution,
 )
 from services.rebirth_beta_ops import external_gate_payload
+from services.rebirth_content_pipeline import content_pipeline_report
 from services.rebirth_deck_coach import deck_suggestions
+from services.rebirth_first_session import first_session_plan
 from services.rebirth_keywords import KEYWORD_LABELS
+from services.rebirth_retention import retention_questline
 
 
 PRODUCT_NAV = [
@@ -475,74 +478,18 @@ def progression_payload(account=None, progression=None):
         primary_label="Jogar por XP",
         primary_href="/rebirth",
     )
-    daily_claimed = bool(profile.get("daily_claimed", False))
-    daily_ready = int(profile.get("clashes", 0)) >= 1
-    clashes = int(profile.get("clashes", 0) or 0)
-    wins = int(profile.get("wins", 0) or 0)
-    boosters = int(profile.get("boosters_opened", 0) or 0)
-    tutorial_complete = bool(profile.get("tutorial_complete", False))
-    quests = [
-        {
-            "key": "play_one",
-            "name": "Jogue 1 partida",
-            "progress": min(1, clashes),
-            "goal": 1,
-            "reward": "25 XP diario",
-            "state": "claimed" if daily_claimed else "ready" if daily_ready else "locked",
-        },
-        {
-            "key": "win_one",
-            "name": "Venca 1 partida",
-            "progress": min(1, wins),
-            "goal": 1,
-            "reward": "Selo de leitura",
-            "state": "ready" if wins >= 1 else "locked",
-        },
-        {
-            "key": "open_booster",
-            "name": "Abra 1 booster",
-            "progress": min(1, boosters),
-            "goal": 1,
-            "reward": "Novas opcoes de deck",
-            "state": "ready" if boosters >= 1 else "locked",
-        },
-        {
-            "key": "finish_tutorial",
-            "name": "Conclua o tutorial",
-            "progress": 1 if tutorial_complete else 0,
-            "goal": 1,
-            "reward": "60 XP",
-            "state": "claimed" if tutorial_complete else "ready",
-        },
-    ]
-    next_goal = (
-        "Resgate a recompensa diaria."
-        if daily_ready and not daily_claimed
-        else "Conclua o tutorial guiado."
-        if not tutorial_complete
-        else "Abra um booster e ajuste seu baralho."
-        if boosters < 1
-        else "Jogue por vitorias e teste novas linhas."
-    )
+    retention = retention_questline(profile)
     payload.update(
         {
             "account": account,
             "profile": profile,
             "track": progression_track(profile),
-            "quests": quests,
-            "retention": {
-                "next_goal": next_goal,
-                "daily_complete": daily_claimed,
-                "beta_loop": ["Jogar", "Resgatar", "Abrir booster", "Ajustar deck"],
-            },
+            "quests": retention["quests"],
+            "weekly_quests": retention["weekly"],
+            "retention": retention["retention"],
             "deck_suggestions": deck_suggestions(profile=profile),
-            "daily": {
-                "name": "Jogue um clash",
-                "progress": min(1, int(profile.get("clashes", 0))),
-                "goal": 1,
-                "reward": "25 XP",
-                "state": "claimed" if daily_claimed else "ready" if daily_ready else "locked",
-            },
+            "daily": retention["daily"],
+            "first_session": first_session_plan(account=account, progression=profile),
         }
     )
     return payload
@@ -744,6 +691,7 @@ def onboarding_payload(account=None, progression=None):
             ],
             "current_step": int(progress.get("tutorial_step", 0) or 0),
             "complete": bool(progress.get("tutorial_complete", False)),
+            "first_session": first_session_plan(account=account, progression=progress),
         }
     )
     return payload
@@ -772,7 +720,7 @@ def balance_payload(simulation=None):
     return payload
 
 
-def release_payload(gates=None, dashboard=None):
+def release_payload(gates=None, dashboard=None, content_report=None, live_balance=None):
     payload = page_payload(
         "release",
         "Higiene da Versão Candidata",
@@ -785,9 +733,12 @@ def release_payload(gates=None, dashboard=None):
             "checks": deepcopy(RELEASE_CHECKS),
             "external_gates": gates or external_gate_payload(),
             "dashboard": dashboard,
+            "content_pipeline": content_report or content_pipeline_report(),
+            "live_balance": live_balance,
             "commands": [
                 "python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py",
                 "python3 -m pytest -q",
+                "python3 tools/rebirth_content_validate.py",
                 "python3 tools/rebirth_balance_report.py --matches 120 --output docs/REBIRTH_BALANCE_REPORT.md",
                 "pip-audit -r requirements.txt",
                 "python3 tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-visual",

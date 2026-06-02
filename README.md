@@ -13,7 +13,7 @@ collection and deck-building surfaces are part of the official product path.
 - Python
 - Flask
 - PostgreSQL persistence through the synchronous Rebirth repository
-- Vanilla HTML/CSS/JavaScript
+- Vanilla HTML/CSS/JavaScript as a renderer/input layer only
 - PWA manifest and service worker
 - PostgreSQL-authoritative authenticated match state with an in-process hot cache
 - Command/event log on Rebirth match state with state hashes
@@ -29,6 +29,9 @@ The production runtime does not initialize SocketIO, async database loops,
 legacy economy systems or the old multiplayer arena. PostgreSQL is the sole
 production source of truth. SQLite is accepted only when `TESTING` is active
 or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
+Gameplay authority is Python-first: rules, card effects, bot logic, balance
+simulation, replay, telemetry analysis and economy decisions belong in Python;
+browser code renders returned state and sends player intent.
 
 ## Active Routes
 
@@ -54,6 +57,7 @@ or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 ## Active APIs
 
 - `POST /api/rebirth/start`
+- `POST /api/rebirth/resume`
 - `GET /api/rebirth/campaign`
 - `POST /api/rebirth/campaign/start`
 - `POST /api/rebirth/play-card`
@@ -63,6 +67,7 @@ or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 - `POST /api/rebirth/next-turn`
 - `GET /api/rebirth/shell`
 - `GET /api/rebirth/session`
+- `GET /api/rebirth/first-session`
 - `GET /api/rebirth/csrf`
 - `POST /api/rebirth/auth/register`
 - `POST /api/rebirth/auth/login`
@@ -86,10 +91,20 @@ or `REBIRTH_ALLOW_SQLITE_TESTING=true` is explicitly supplied for isolated QA.
 - `GET /api/rebirth/onboarding`
 - `POST /api/rebirth/onboarding/complete`
 - `GET /api/rebirth/balance/simulate`
+- `GET /api/rebirth/balance/telemetry`
+- `GET /api/rebirth/content/validate`
+- `GET /api/rebirth/async/share/<match_id>`
+- `GET /api/rebirth/async/ghosts`
 - `GET /api/rebirth/release`
 - `GET /api/rebirth/support/export`
+- `POST /api/rebirth/support/feedback`
 - `POST /api/rebirth/support/reset`
+- `POST /api/rebirth/support/delete-account`
 - `POST /api/rebirth/admin/grant`
+- `POST /api/rebirth/telemetry`
+- `POST /api/rebirth/telemetry/beacon`
+- `POST /api/rebirth/billing/checkout`
+- `POST /api/rebirth/billing/webhook`
 
 The Rebirth collection, shop and progression endpoints persist to Rebirth
 accounts. Booster opening mutates signed-in ownership. Real-money Coinz/Gemas
@@ -209,6 +224,7 @@ progression or SocketIO-era work. Treat those files as historical unless a
 current Rebirth status document says otherwise. The current source of truth is:
 
 - `docs/REBIRTH_RELEASE_STATUS.md`
+- `docs/REBIRTH_AAA_GAME_STUDIO_ROADMAP.md`
 - `docs/REBIRTH_ARCHITECTURE.md`
 - `docs/REBIRTH_V60_V65_ENGINE_CONTRACT.md`
 - `docs/REBIRTH_CARD_SET_STATUS.md`
