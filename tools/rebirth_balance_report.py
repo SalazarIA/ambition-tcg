@@ -26,6 +26,43 @@ def table(headers, rows):
     return "\n".join(lines)
 
 
+def card_coverage_summary(payload):
+    cards = payload["card_stats"]
+    total_cards = len(cards)
+    unused_cards = [row for row in cards if "unused" in row.get("flags", [])]
+    used_cards = total_cards - len(unused_cards)
+    dead_over_30 = [row for row in cards if float(row.get("dead_card_rate", 0)) > 0.3]
+    support_rows = [
+        row
+        for row in cards
+        if str(row.get("ability_key") or "").startswith(("spell_", "trap_"))
+    ]
+    support_dead_over_30 = [
+        row for row in support_rows if float(row.get("dead_card_rate", 0)) > 0.3
+    ]
+    max_support_dead = max(
+        support_rows,
+        key=lambda row: float(row.get("dead_card_rate", 0)),
+        default=None,
+    )
+    max_support_copy = (
+        f"{max_support_dead['name']} ({pct(max_support_dead['dead_card_rate'])})"
+        if max_support_dead
+        else "none"
+    )
+    evolution_total = sum(row["count"] for row in payload["evolution_usage"])
+
+    return [
+        ["Total Cards", total_cards],
+        ["Used Cards", f"{used_cards} ({pct(used_cards / total_cards if total_cards else 0)})"],
+        ["Unused Cards", f"{len(unused_cards)} ({pct(len(unused_cards) / total_cards if total_cards else 0)})"],
+        ["Cards Above 30% Dead Rate", len(dead_over_30)],
+        ["Supports Above 30% Dead Rate", len(support_dead_over_30)],
+        ["Highest Support Dead Rate", max_support_copy],
+        ["Evolution Events", evolution_total],
+    ]
+
+
 def render_report(payload):
     summary = payload["summary"]
     lines = [
@@ -63,6 +100,10 @@ def render_report(payload):
                 for row in payload["profile_results"]
             ],
         ),
+        "",
+        "## Card Coverage",
+        "",
+        table(["Metric", "Value"], card_coverage_summary(payload)),
         "",
         "## Card Impact",
         "",

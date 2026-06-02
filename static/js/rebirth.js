@@ -1905,7 +1905,7 @@
                 const hud = document.querySelector(selector);
                 if (!hud) return;
                 restartClass(hud, "is-taking-damage");
-                window.setTimeout(() => hud.classList.remove("is-taking-damage"), 620);
+                window.setTimeout(() => hud.classList.remove("is-taking-damage"), 1120);
             });
             if (anyDamage) {
                 const board = RebirthStore.elements["rebirth-board"];
@@ -2319,7 +2319,7 @@
                 if (!isLead) {
                     return RebirthMarkup.emptyFieldSlot("", { reason: "Slot vazio do bot" });
                 }
-                return RebirthMarkup.emptyFieldSlot("", {
+                return RebirthMarkup.emptyFieldSlot(firstTurnDirectLocked ? "Protegido no turno 1" : "", {
                     direct: !botCards.length && !firstTurnDirectLocked,
                     selected: choosingAttack && !botCards.length && !firstTurnDirectLocked,
                     locked: firstTurnDirectLocked,
@@ -2518,7 +2518,7 @@
             const result = state.result;
             const panel = RebirthStore.elements["result-panel"];
             if (panel) {
-                panel.classList.remove("is-victory", "is-defeat", "is-clash", "is-first-duel");
+                panel.classList.remove("is-victory", "is-defeat", "is-clash", "is-first-duel", "is-idle");
             }
             this.abilityEvents(result);
             this.rewardPanel();
@@ -2586,6 +2586,9 @@
             }
             RebirthStore.lastResultSignature = null;
             RebirthStore.lastResultTextSignature = null;
+            if (panel) {
+                panel.classList.add("is-idle");
+            }
             RebirthDom.setText("result-label", "Aguardando");
             RebirthDom.setText("result-title", "Monte seu campo.");
             RebirthDom.setText("result-copy", "Invoque monstros, selecione um aliado pronto e escolha o alvo.");

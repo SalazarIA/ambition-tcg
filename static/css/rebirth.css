@@ -10593,7 +10593,6 @@ button {
     --rb-fates-wood: #2a1810;
 }
 
-body.rb-game-page .rb-global-nav,
 .rb-desktop-rail {
     display: none !important;
 }
@@ -10664,7 +10663,6 @@ body.rb-game-page .rb-global-nav,
         transform: none !important;
     }
 
-    .rb-result-panel,
     .rb-evolution-panel,
     .rb-log,
     .rb-card-stage,
@@ -10672,8 +10670,7 @@ body.rb-game-page .rb-global-nav,
     .rb-field-vs,
     .rb-action-bar-meta,
     .rb-actions-row small,
-    .rb-field-row > span,
-    .rb-field-slot-empty > span {
+    .rb-field-row > span {
         display: none !important;
     }
 
@@ -12354,14 +12351,12 @@ body.rb-game-page .rb-global-nav,
     }
 
     .rb-card-stage,
-    .rb-result-panel,
     .rb-evolution-panel,
     .rb-log,
     .rb-bot-card-zone,
     .rb-field-vs,
     .rb-actions-row small,
     .rb-field-row > span,
-    .rb-field-slot-empty > span,
     .rb-turn-core > span,
     .rb-turn-core small,
     .rb-phase-timeline,
@@ -13935,4 +13930,288 @@ body.rb-game-page .rb-global-nav,
 .rb-deck-delete-btn {
     border-color: rgba(196, 48, 48, 0.42) !important;
     color: var(--rb-red) !important;
+}
+
+/* === v0.0/v0: desktop stability and first visual polish === */
+@media (min-width: 761px) {
+    body.rb-game-page .rb-global-nav {
+        display: grid !important;
+        z-index: 220;
+    }
+
+    body.rb-game-page .rb-game-board {
+        top: calc(var(--rb-safe-top) + var(--rb-nav-clearance)) !important;
+    }
+}
+
+.rb-field-slot-empty.is-locked > span {
+    position: relative;
+    z-index: 2;
+    display: grid !important;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    place-items: center;
+    padding: 8px;
+    color: #f9e8bd;
+    font-family: var(--rb-font-display);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.08;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: normal;
+    text-shadow: 0 2px 0 #000, 0 0 12px rgba(255, 210, 94, 0.34);
+}
+
+.rb-field-slot-empty.is-locked {
+    cursor: not-allowed;
+}
+
+.rb-hand .rb-mini-card .rb-card-titlebar .rb-card-nameplate {
+    display: -webkit-box !important;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 10px !important;
+    line-height: 1.05;
+    text-overflow: clip;
+    white-space: normal !important;
+}
+
+@media (min-width: 1180px) and (min-height: 680px) {
+    .rb-result-panel {
+        position: absolute !important;
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: clamp(92px, 13vh, 132px) !important;
+        z-index: 76 !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        width: min(460px, 38vw) !important;
+        height: auto !important;
+        min-height: 92px;
+        max-height: 150px;
+        padding: 12px 14px !important;
+        transform: translateX(-50%) !important;
+        pointer-events: auto;
+    }
+
+    .rb-result-panel > div:first-child {
+        display: grid !important;
+        gap: 3px;
+        align-content: center;
+        min-width: 0;
+    }
+
+    .rb-result-panel #result-title {
+        margin: 2px 0;
+        font-size: 16px !important;
+    }
+
+    .rb-result-panel #result-copy {
+        font-size: 12px !important;
+        line-height: 1.2;
+        -webkit-line-clamp: 2;
+    }
+
+    .rb-result-panel .rb-result-actions {
+        display: grid !important;
+        gap: 8px;
+        align-content: center;
+        min-width: 116px;
+    }
+
+    .rb-result-panel .rb-secondary,
+    .rb-result-panel .rb-cta {
+        width: 116px !important;
+        min-width: 116px !important;
+        min-height: 42px !important;
+        padding: 0 10px !important;
+        font-size: 11px !important;
+        line-height: 1 !important;
+        white-space: normal;
+    }
+
+    .rb-result-panel .rb-analyst-toggle,
+    .rb-result-panel .rb-analyst-mode {
+        display: none !important;
+    }
+
+    .rb-result-panel.is-idle {
+        left: calc(50% + 300px) !important;
+        bottom: clamp(236px, 35vh, 280px) !important;
+        display: grid !important;
+        grid-template-columns: 1fr;
+        width: 126px !important;
+        min-height: 42px;
+        max-height: 48px;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .rb-result-panel.is-idle > div:first-child {
+        display: none !important;
+    }
+
+    .rb-result-panel.is-idle .rb-result-actions {
+        min-width: 0;
+    }
+
+    .rb-field-slots {
+        grid-template-columns: repeat(3, minmax(150px, 1fr)) !important;
+        gap: clamp(18px, 2.4vw, 32px) !important;
+    }
+
+    .rb-field-card,
+    .rb-hand .rb-mini-card {
+        width: 150px !important;
+        height: 214px !important;
+        min-width: 150px !important;
+    }
+
+    .rb-hand .rb-mini-card {
+        flex-basis: 150px !important;
+    }
+
+    .rb-hand .rb-mini-card + .rb-mini-card {
+        margin-left: -20px !important;
+    }
+
+    .rb-field-slot-empty {
+        width: 150px !important;
+        max-width: 150px !important;
+        min-width: 150px !important;
+    }
+
+    .rb-actions-row > div:nth-child(2) {
+        grid-area: turn;
+        justify-self: center;
+        align-self: end;
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    #next-turn-button {
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+        height: 56px !important;
+        min-height: 56px !important;
+        padding: 0 18px !important;
+        border-radius: 8px !important;
+        border-color: rgba(255, 226, 134, 0.78) !important;
+        background:
+            linear-gradient(180deg, rgba(183, 57, 45, 0.98), rgba(108, 24, 18, 0.98) 64%, rgba(43, 8, 7, 0.98)) !important;
+        color: #fff4d0 !important;
+        font-size: 13px !important;
+        box-shadow:
+            inset 0 0 0 2px rgba(0, 0, 0, 0.36),
+            inset 0 14px 24px rgba(255, 255, 255, 0.08),
+            0 18px 34px rgba(0, 0, 0, 0.54),
+            0 0 28px rgba(255, 198, 91, 0.32) !important;
+    }
+
+    #next-turn-button:hover:not(:disabled),
+    #next-turn-button:focus-visible:not(:disabled) {
+        background:
+            linear-gradient(180deg, rgba(207, 72, 52, 0.98), rgba(128, 30, 22, 0.98) 64%, rgba(50, 10, 8, 0.98)) !important;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .rb-hud-side.is-taking-damage .rb-hero-portrait {
+        animation: rb-hero-hit 520ms cubic-bezier(0.18, 0.89, 0.32, 1.08) 2 both !important;
+    }
+}
+
+.rb-guest-cta-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 230px);
+    align-items: center;
+    gap: 22px;
+    overflow: hidden;
+    background:
+        linear-gradient(135deg, rgba(244, 173, 38, 0.13), transparent 42%),
+        linear-gradient(315deg, rgba(88, 214, 255, 0.1), transparent 38%),
+        rgba(8, 10, 13, 0.92);
+}
+
+.rb-guest-copy {
+    min-width: 0;
+}
+
+.rb-guest-copy > span {
+    color: var(--rb-gold);
+    font-size: var(--fs-xs);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.rb-guest-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.rb-product-panel .rb-guest-actions .rb-secondary {
+    margin-top: 0;
+}
+
+.rb-guest-visual {
+    position: relative;
+    min-height: 148px;
+    display: grid;
+    place-items: center;
+}
+
+.rb-guest-visual > span {
+    width: 112px;
+    height: 126px;
+    border: 2px solid rgba(244, 173, 38, 0.7);
+    clip-path: polygon(50% 0, 88% 16%, 82% 70%, 50% 100%, 18% 70%, 12% 16%);
+    background:
+        linear-gradient(180deg, rgba(244, 173, 38, 0.22), rgba(88, 214, 255, 0.12)),
+        rgba(0, 0, 0, 0.32);
+    box-shadow:
+        inset 0 0 0 7px rgba(0, 0, 0, 0.28),
+        0 20px 34px rgba(0, 0, 0, 0.34);
+}
+
+.rb-guest-visual > i {
+    position: absolute;
+    width: 112px;
+    height: 10px;
+    border: 1px solid rgba(255, 232, 166, 0.62);
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(255, 232, 166, 0.86), transparent);
+    transform: rotate(-38deg);
+}
+
+.rb-guest-visual > b {
+    position: absolute;
+    width: 24px;
+    height: 76px;
+    border: 1px solid rgba(88, 214, 255, 0.44);
+    border-radius: 999px 999px 6px 6px;
+    background: linear-gradient(180deg, rgba(88, 214, 255, 0.34), rgba(2, 7, 10, 0.68));
+    transform: translateY(12px) rotate(-38deg);
+}
+
+@media (max-width: 700px) {
+    .rb-guest-cta-card {
+        grid-template-columns: 1fr;
+    }
+
+    .rb-guest-visual {
+        order: -1;
+        min-height: 118px;
+    }
 }

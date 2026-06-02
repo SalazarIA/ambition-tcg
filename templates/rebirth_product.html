@@ -62,11 +62,21 @@
             </section>
         {% elif page.key == "profile" %}
             {% if not page.account.authenticated %}
-                <section class="rb-product-panel rb-product-wide">
-                    <span>Visitante</span>
-                    <h2>Perfil em espera</h2>
-                    <p>Entre quando quiser guardar conquistas, recompensas, baralho e carteira.</p>
-                    <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
+                <section class="rb-product-panel rb-product-wide rb-guest-cta-card" aria-label="Perfil visitante">
+                    <div class="rb-guest-copy">
+                        <span>Visitante</span>
+                        <h2>Perfil em espera</h2>
+                        <p>Entre quando quiser guardar conquistas, recompensas, baralho e carteira.</p>
+                        <div class="rb-guest-actions">
+                            <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
+                            <a class="rb-secondary" href="{{ url_for('rebirth') }}">Jogar agora</a>
+                        </div>
+                    </div>
+                    <div class="rb-guest-visual" aria-hidden="true">
+                        <span></span>
+                        <i></i>
+                        <b></b>
+                    </div>
                 </section>
             {% else %}
                 {# F8: identidade própria substitui a grade de stats redundante.
@@ -470,6 +480,24 @@
                progress-vitrine logo abaixo (level meter + mini-stats). Os 4
                boxes do topo foram removidos — barra XP gigante dentro do
                progress-vitrine vira o hero da página. #}
+            {% if not page.account.authenticated %}
+                <section class="rb-product-panel rb-product-wide rb-guest-cta-card" aria-label="Recompensas de visitante">
+                    <div class="rb-guest-copy">
+                        <span>Visitante</span>
+                        <h2>Recompensas em espera</h2>
+                        <p>Crie uma conta para transformar partidas em XP, resgates diários e progresso salvo.</p>
+                        <div class="rb-guest-actions">
+                            <button class="rb-button-secondary rb-secondary" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
+                            <a class="rb-secondary" href="{{ url_for('rebirth') }}">Jogar agora</a>
+                        </div>
+                    </div>
+                    <div class="rb-guest-visual" aria-hidden="true">
+                        <span></span>
+                        <i></i>
+                        <b></b>
+                    </div>
+                </section>
+            {% endif %}
             <section
                 class="rb-product-panel rb-product-wide rb-progress-vitrine"
                 data-rebirth-progression-dashboard
