@@ -74,6 +74,10 @@ Updated on 2026-06-02.
   `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood. A valid external
   evidence JSON can also prove the target environment received a test event
   without storing the DSN in source control.
+  Use `python tools/ops/rebirth_error_tracking_smoke.py --send` in the target
+  environment to emit a smoke event. After confirming the event in the provider,
+  re-run with `--confirmed-evidence-ref` or copy the printed evidence fields
+  into the private gate evidence file.
 - GitHub QA: run or schedule `rebirth-closed-beta-qa.yml`; `gh run list
   --workflow rebirth-closed-beta-qa.yml --limit 1 --json status,conclusion,headSha`
   must show `conclusion=success`.
