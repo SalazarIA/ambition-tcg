@@ -743,6 +743,7 @@ def release_payload(gates=None, dashboard=None, content_report=None, live_balanc
                 "pip-audit -r requirements.txt",
                 "python3 tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-visual",
                 "python3 tools/ops/rebirth_pre_external_gate.py --report-only",
+                "python3 tools/ops/rebirth_pre_external_gate.py --report-only --evidence /secure/path/rebirth-external-gates.json",
                 "node --check static/js/rebirth.js",
                 "node --check static/js/service-worker.js",
                 "node --check static/js/pwa.js",

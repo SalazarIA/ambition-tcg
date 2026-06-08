@@ -36,10 +36,14 @@ No public beta gate bypass was implemented.
 Secret-free evidence validation was added so remaining Phase 0 gates can be
 proven by operator records without committing secrets or relying only on manual
 boolean flags.
+The release dashboard now displays the evidence validity/errors and the
+operator command for passing a private evidence file.
 
 ## Files Changed
 
 - `services/rebirth_gate_evidence.py`
+- `services/rebirth_product.py`
+- `templates/rebirth_product.html`
 - `tools/ops/rebirth_pre_external_gate.py`
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 

@@ -45,6 +45,9 @@ Current status: **blocked on external proof**.
      secret-free evidence shape for legal, backup/restore and error tracking.
    - `tools/ops/rebirth_pre_external_gate.py` can now validate an external
      evidence file with `--evidence`.
+   - `/rebirth/release` now surfaces external-evidence validity/errors so the
+     operator can see why legal, backup/restore or error tracking remain
+     blocked.
 
 ## Files Changed
 
@@ -65,6 +68,8 @@ Current status: **blocked on external proof**.
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `docs/REBIRTH_PHASE_0_READINESS_REPORT.md`
 - `services/rebirth_gate_evidence.py`
+- `services/rebirth_product.py`
+- `templates/rebirth_product.html`
 
 ## Tests Executed
 
@@ -84,6 +89,7 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python tools/rebirth_balance_report.py --matches 120 --output /tmp/rebirth-phase0-balance.md`
 - `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only`
 - `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only --evidence docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
+- `.venv/bin/python -m pytest tests/rebirth/test_rebirth_product_shell.py -q`
 - `git diff --check`
 
 Key local results:
@@ -114,6 +120,7 @@ Coverage was not reduced. New regression coverage was added for:
 - secret-free external gate evidence validation.
 - external evidence template rejection for source-control examples and common
   secret-like values.
+- release dashboard rendering for evidence errors and `--evidence` command.
 
 ## Current Risks
 

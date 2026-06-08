@@ -885,6 +885,28 @@
                     {% endfor %}
                 </div>
             </section>
+            {% if page.external_gates.evidence %}
+                <section class="rb-product-panel rb-product-wide" aria-label="Evidência externa">
+                    <div class="rb-product-panel-head">
+                        <div>
+                            <span>Gates externos</span>
+                            <h2>Evidência externa</h2>
+                        </div>
+                        <strong>{{ 'Completa' if page.external_gates.ready else 'Pendente' }}</strong>
+                    </div>
+                    <ul class="rb-product-list">
+                        {% for key, evidence in page.external_gates.evidence.items() %}
+                            <li>
+                                <strong>{{ key }}</strong>
+                                <span>{{ 'valid' if evidence.valid else 'blocked' }}</span>
+                                {% if evidence.errors %}
+                                    <small>{{ evidence.errors | join(', ') }}</small>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
             <section class="rb-product-grid rb-product-grid-steps" aria-label="Verificações da versão">
                 {% for check in page.checks %}
                     <article class="rb-product-panel">
