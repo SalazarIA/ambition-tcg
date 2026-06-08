@@ -10110,7 +10110,7 @@ button {
     position: fixed;
     inset: 0;
     z-index: 9000;
-    pointer-events: auto;
+    pointer-events: none;
     background: rgba(0, 0, 0, 0.72);
     display: grid;
     place-items: center;
@@ -10133,6 +10133,7 @@ button {
 .rb-tutorial-balloon {
     position: relative;
     z-index: 2;
+    pointer-events: auto;
     max-width: 420px;
     padding: 24px 26px 22px;
     border: 1.5px solid rgba(196, 160, 80, 0.62);

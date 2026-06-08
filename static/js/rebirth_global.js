@@ -7,6 +7,51 @@
         window.REBIRTH_ENDPOINTS || {},
         window.REBIRTH_AUTH_ENDPOINTS || {}
     );
+    const CLIENT_ERROR_LIMIT = 5;
+    let clientErrorCount = 0;
+
+    function apiPath(url) {
+        try {
+            return new URL(url, window.location.href).pathname;
+        } catch (_error) {
+            return String(url || "");
+        }
+    }
+
+    function shouldReportApiFailure(url) {
+        return apiPath(url).indexOf("/api/rebirth/telemetry") !== 0;
+    }
+
+    function reportClientError(message, metadata) {
+        const endpoint = endpoints.telemetry || "/api/rebirth/telemetry";
+        if (!endpoint || clientErrorCount >= CLIENT_ERROR_LIMIT) return;
+        clientErrorCount += 1;
+        const payload = {
+            event_type: "client_error",
+            surface: document.body ? document.body.getAttribute("data-page-key") || document.body.className || "rebirth" : "rebirth",
+            message: String(message || "Erro de cliente").slice(0, 1000),
+            metadata: Object.assign(
+                {
+                    path: window.location.pathname,
+                    release: window.REBIRTH_RELEASE_VERSION || ""
+                },
+                metadata || {}
+            )
+        };
+        fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Rebirth-CSRF": window.REBIRTH_CSRF || ""
+            },
+            credentials: "same-origin",
+            keepalive: true,
+            body: JSON.stringify(payload)
+        }).catch(function () {});
+    }
+
+    window.RebirthClientTelemetry = window.RebirthClientTelemetry || {};
+    window.RebirthClientTelemetry.report = reportClientError;
 
     function postJson(url, payload) {
         return fetch(url, {
@@ -23,10 +68,35 @@
                     const serverError = body && body.error ? body.error : {};
                     const error = new Error(serverError.message || "A solicitação falhou.");
                     error.code = serverError.code || "rebirth_error";
+                    if (shouldReportApiFailure(url)) {
+                        reportClientError(error.message, {
+                            type: "api_failure",
+                            endpoint: apiPath(url),
+                            status: response.status,
+                            code: error.code
+                        });
+                    }
                     throw error;
                 }
                 return body;
+            }, function (error) {
+                if (shouldReportApiFailure(url)) {
+                    reportClientError(error.message || "Resposta API ilegível.", {
+                        type: "api_malformed_response",
+                        endpoint: apiPath(url),
+                        status: response.status
+                    });
+                }
+                throw error;
             });
+        }, function (error) {
+            if (shouldReportApiFailure(url)) {
+                reportClientError(error.message || "Falha de rede.", {
+                    type: "api_network_error",
+                    endpoint: apiPath(url)
+                });
+            }
+            throw error;
         });
     }
 
@@ -37,10 +107,35 @@
                     const serverError = body && body.error ? body.error : {};
                     const error = new Error(serverError.message || "A solicitação falhou.");
                     error.code = serverError.code || "rebirth_error";
+                    if (shouldReportApiFailure(url)) {
+                        reportClientError(error.message, {
+                            type: "api_failure",
+                            endpoint: apiPath(url),
+                            status: response.status,
+                            code: error.code
+                        });
+                    }
                     throw error;
                 }
                 return body;
+            }, function (error) {
+                if (shouldReportApiFailure(url)) {
+                    reportClientError(error.message || "Resposta API ilegível.", {
+                        type: "api_malformed_response",
+                        endpoint: apiPath(url),
+                        status: response.status
+                    });
+                }
+                throw error;
             });
+        }, function (error) {
+            if (shouldReportApiFailure(url)) {
+                reportClientError(error.message || "Falha de rede.", {
+                    type: "api_network_error",
+                    endpoint: apiPath(url)
+                });
+            }
+            throw error;
         });
     }
 
@@ -318,30 +413,11 @@
     }
 
     function bindClientErrorTelemetry() {
-        const endpoint = endpoints.telemetry || "/api/rebirth/telemetry";
-        if (!endpoint || window.__rebirthErrorTelemetryBound) return;
+        if (window.__rebirthErrorTelemetryBound) return;
         window.__rebirthErrorTelemetryBound = true;
-        let sent = 0;
-
-        function report(message, metadata) {
-            if (sent >= 3) return;
-            sent += 1;
-            postJson(endpoint, {
-                event_type: "client_error",
-                surface: document.body ? document.body.getAttribute("data-page-key") || document.body.className || "rebirth" : "rebirth",
-                message: String(message || "Erro de cliente").slice(0, 1000),
-                metadata: Object.assign(
-                    {
-                        path: window.location.pathname,
-                        release: window.REBIRTH_RELEASE_VERSION || ""
-                    },
-                    metadata || {}
-                )
-            }).catch(function () {});
-        }
 
         window.addEventListener("error", function (event) {
-            report(event.message, {
+            reportClientError(event.message, {
                 filename: event.filename || "",
                 lineno: event.lineno || "",
                 colno: event.colno || ""
@@ -349,7 +425,7 @@
         });
         window.addEventListener("unhandledrejection", function (event) {
             const reason = event.reason || {};
-            report(reason.message || String(reason), { type: "unhandledrejection" });
+            reportClientError(reason.message || String(reason), { type: "unhandledrejection" });
         });
     }
 

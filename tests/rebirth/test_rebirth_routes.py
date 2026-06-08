@@ -285,6 +285,33 @@ def test_guest_match_actions_record_product_telemetry_without_false_reward(clien
     assert "decision_elapsed_ms" in telemetry
 
 
+def test_client_error_telemetry_records_api_failure_metadata(client, flask_app):
+    response = client.post(
+        "/api/rebirth/telemetry",
+        json={
+            "event_type": "client_error",
+            "message": "A requisição Rebirth falhou.",
+            "surface": "arena",
+            "metadata": {
+                "type": "api_failure",
+                "endpoint": "/api/rebirth/play-card",
+                "status": 503,
+                "code": "database_schema_invalid",
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+    events = repo.query_telemetry_events(event_types=("client_error",), limit=1)
+    payload = events[0]["payload"]
+    assert payload["message"] == "A requisição Rebirth falhou."
+    assert payload["metadata"]["type"] == "api_failure"
+    assert payload["metadata"]["endpoint"] == "/api/rebirth/play-card"
+    assert payload["metadata"]["status"] == "503"
+    assert payload["metadata"]["code"] == "database_schema_invalid"
+
+
 def test_play_card_api_accepts_explicit_monster_slot(client):
     start = client.post("/api/rebirth/start", json={"seed": "routes-play-slot"})
     state = start.get_json()["state"]

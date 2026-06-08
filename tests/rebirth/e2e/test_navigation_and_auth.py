@@ -244,6 +244,7 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
     page.wait_for_url("**/rebirth?firstRun=1", timeout=10_000)
     page.locator("[data-rebirth-username]").wait_for(state="visible", timeout=10_000)
     assert page.locator("[data-rebirth-username]").inner_text() == username
+    assert page.locator("#rebirth-tutorial").evaluate("node => getComputedStyle(node).pointerEvents") == "none"
     page.locator("#player-hand [data-card-instance]:not([disabled])").first.wait_for(
         state="visible",
         timeout=10_000,

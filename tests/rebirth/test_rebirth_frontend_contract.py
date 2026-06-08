@@ -145,6 +145,8 @@ def test_rebirth_css_locks_reference_classes_and_assets():
     assert ".is-cta-pulse:not(:disabled)," in css
     assert ".vfx-finale-overlay.is-active {\n    display: flex;\n    pointer-events: none;" in css
     assert ".vfx-finale-overlay .vfx-finale-curtain,\n    .vfx-finale-overlay .vfx-finale-text {" in css
+    assert ".rb-tutorial-overlay {\n    position: fixed;\n    inset: 0;\n    z-index: 9000;\n    pointer-events: none;" in css
+    assert ".rb-tutorial-balloon {\n    position: relative;\n    z-index: 2;\n    pointer-events: auto;" in css
     assert "#player-hand:has(" in css
     assert ".rb-hand:has(" not in css
     assert "overflow: hidden !important;" in css
@@ -255,6 +257,7 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     assert "Rebirth3D" not in js
     for token in [
         "RebirthApi",
+        "reportFailure",
         "RebirthStore",
         "RebirthRenderer",
         "RebirthInput",
@@ -322,11 +325,14 @@ def test_rebirth_js_uses_json_api_and_card_art_contract():
     product_js = read("static/js/rebirth_product.js")
     global_js = read("static/js/rebirth_global.js")
     assert "X-Rebirth-CSRF" in product_js
+    assert "reportApiFailure" in product_js
     assert "syncAfterAuth" in global_js
     assert "rebirth:auth-synced" in global_js
     assert "refreshCollection" in global_js
+    assert "window.RebirthClientTelemetry" in global_js
     assert "bindClientErrorTelemetry" in global_js
     assert 'event_type: "client_error"' in global_js
+    assert 'type: "api_failure"' in global_js
     assert "window.REBIRTH_RELEASE_VERSION" in read("templates/rebirth.html")
     assert "window.REBIRTH_RELEASE_VERSION" in read("templates/rebirth_product.html")
     assert '.rb-global-tabs' not in product_js

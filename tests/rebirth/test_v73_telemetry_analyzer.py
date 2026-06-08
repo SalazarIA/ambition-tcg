@@ -155,6 +155,7 @@ def test_record_match_telemetry_includes_bot_profile_id(client):
         "bot": {"hp": 0},
         "bot_profile": {"id": "aggressive"},
         "first_duel": False,
+        "initial": {"player_card_ids": ["card_001", "card_001", "card_002"]},
         "events": [
             {"effect_chain_id": "chain-a"},
             {"effect_chain_id": "chain-a"},
@@ -170,3 +171,10 @@ def test_record_match_telemetry_includes_bot_profile_id(client):
     assert payload["max_chain_length"] == 2
     assert payload["winner"] == "player"
     assert payload["first_duel"] is False
+    assert payload["player_deck_size"] == 3
+    assert payload["player_deck_signature"]
+    assert payload["match_duration_ms"] is not None
+
+    won = repo.query_telemetry_events(event_types=("match_won",), limit=1)
+    assert won, "expected terminal victory event to be persisted"
+    assert won[0]["payload"]["match_id"] == "telemetry-profile"

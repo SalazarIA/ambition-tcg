@@ -69,6 +69,8 @@ def test_first_session_plan_is_python_owned():
     assert plan["should_guide_match"] is True
     assert plan["estimated_minutes"] == 10
     assert plan["arena_tutorial_steps"][0]["target"] == ".rb-hand .rb-mini-card"
+    assert len(plan["arena_tutorial_steps"]) == 8
+    assert "Funda no campo" in [step["title"] for step in plan["arena_tutorial_steps"]]
     assert [action["key"] for action in plan["actions"]][-1] == "tune_deck"
 
 
@@ -94,12 +96,29 @@ def test_live_balance_report_requires_real_human_sample_before_balance_claims():
                 "turn": 12,
                 "bot_profile_id": "defensive",
                 "rebirth_release_version": "v-test",
+                "match_duration_ms": 42000,
+                "player_deck_signature": "deck-alpha",
             },
         },
         {
             "id": 2,
             "event_type": "card_played",
             "payload": {"match_id": "m1", "card_id": "card_001", "cohort": "account"},
+        },
+        {
+            "id": 3,
+            "event_type": "card_evolved",
+            "payload": {"match_id": "m1", "card_id": "card_001", "cohort": "account"},
+        },
+        {
+            "id": 4,
+            "event_type": "field_pair_fused",
+            "payload": {"match_id": "m1", "cohort": "account"},
+        },
+        {
+            "id": 5,
+            "event_type": "match_won",
+            "payload": {"match_id": "m1", "winner": "player", "cohort": "account"},
         },
     ]
     report = live_balance_report(events, release_version="v-test")
@@ -108,6 +127,11 @@ def test_live_balance_report_requires_real_human_sample_before_balance_claims():
     assert report["human_match_gate"]["state"] == "insufficient_sample"
     assert "needs_human_telemetry" in report["flags"]
     assert report["card_usage"][0]["card_id"] == "card_001"
+    assert report["deck_usage"][0]["deck_signature"] == "deck-alpha"
+    assert report["evolution_usage"][0]["card_id"] == "card_001"
+    assert report["fusion_count"] == 1
+    assert report["terminal_events"]["wins"] == 1
+    assert report["overall"]["average_match_duration_ms"] == 42000
     assert report["release_versions"]["v-test"] == 1
 
 

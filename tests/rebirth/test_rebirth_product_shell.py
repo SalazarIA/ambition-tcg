@@ -58,6 +58,30 @@ def test_rebirth_product_pages_render_active_shell(client):
             assert "rb-keyword-grid" in body
 
 
+def test_phase0_legal_pages_are_publicly_reachable(client):
+    expected = {
+        "/terms": "Terms of Use",
+        "/privacy": "Privacy Policy",
+        "/data-deletion": "Data Deletion",
+    }
+
+    for path, title in expected.items():
+        response = client.get(path)
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert title in body
+        assert "/rebirth/support" in body or "feedback" in body.lower()
+
+    feedback = client.get("/feedback")
+    closed_test = client.get("/closed-test")
+    first_session = client.get("/first-session")
+    assert feedback.status_code == 302
+    assert feedback.headers["Location"] == "/rebirth/support"
+    assert closed_test.headers["Location"] == "/rebirth/release"
+    assert first_session.headers["Location"] == "/rebirth/onboarding"
+
+
 def test_collection_renders_root_relative_card_art_urls(client):
     body = client.get("/rebirth/collection").get_data(as_text=True)
 

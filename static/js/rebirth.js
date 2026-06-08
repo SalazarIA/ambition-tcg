@@ -272,7 +272,9 @@
     const RebirthApi = {
         async post(url, body) {
             if (!url) {
-                throw this.error("missing_endpoint", "O endpoint Rebirth não está configurado.");
+                const missing = this.error("missing_endpoint", "O endpoint Rebirth não está configurado.");
+                this.reportFailure(url, missing, { type: "api_missing_endpoint" });
+                throw missing;
             }
             let response;
             try {
@@ -286,22 +288,44 @@
                     body: JSON.stringify(body || {})
                 });
             } catch (error) {
-                throw this.error("network_error", error.message || "Falha na requisição de rede.");
+                const apiError = this.error("network_error", error.message || "Falha na requisição de rede.");
+                this.reportFailure(url, apiError, { type: "api_network_error" });
+                throw apiError;
             }
 
             let payload = null;
             try {
                 payload = await response.json();
             } catch (_error) {
-                throw this.error("malformed_response", "O servidor retornou uma resposta ilegível.");
+                const apiError = this.error("malformed_response", "O servidor retornou uma resposta ilegível.");
+                this.reportFailure(url, apiError, { type: "api_malformed_response", status: response.status });
+                throw apiError;
             }
 
             if (!response.ok || !payload || payload.ok !== true) {
                 const serverError = payload && payload.error ? payload.error : {};
-            throw this.error(serverError.code || "rebirth_error", serverError.message || "A requisição Rebirth falhou.");
+                const apiError = this.error(serverError.code || "rebirth_error", serverError.message || "A requisição Rebirth falhou.");
+                this.reportFailure(url, apiError, { type: "api_failure", status: response.status });
+                throw apiError;
             }
 
             return payload;
+        },
+
+        reportFailure(url, error, metadata) {
+            const endpoint = (() => {
+                try {
+                    return new URL(url || "", window.location.href).pathname;
+                } catch (_error) {
+                    return String(url || "");
+                }
+            })();
+            if (endpoint.indexOf("/api/rebirth/telemetry") === 0) return;
+            if (!window.RebirthClientTelemetry || typeof window.RebirthClientTelemetry.report !== "function") return;
+            window.RebirthClientTelemetry.report(error.message || "Falha de API Rebirth.", Object.assign({
+                endpoint,
+                code: error.code || "rebirth_error"
+            }, metadata || {}));
         },
 
         error(code, message) {
@@ -3762,17 +3786,23 @@
             {
                 step: 5,
                 title: "Evolua duplicatas",
-                body: "Quando duas cópias aparecem, o painel de evolução mostra a fusão. Evoluir antes de atacar muda a troca.",
+                body: "Quando duas cópias aparecem na mão, o painel de evolução cria a forma Rebirth antes da invocação.",
                 target: "#evolution-panel, #evolve-button",
             },
             {
                 step: 6,
+                title: "Funda no campo",
+                body: "Duas unidades iguais no campo podem virar uma fusão maior. Use isso antes de atacar quando precisar quebrar guarda.",
+                target: "#evolution-panel, #evolve-button, .rb-field-card",
+            },
+            {
+                step: 7,
                 title: "Encerre o turno",
                 body: "Quando não houver boa jogada, encerre o turno. O bot age, sua mana sobe e você compra novas cartas.",
                 target: "#next-turn-button",
             },
             {
-                step: 7,
+                step: 8,
                 title: "Leia o recap",
                 body: "Ao terminar, o painel mostra por que você venceu ou perdeu e sugere o próximo ajuste do deck.",
                 target: "#reward-panel, #result-actions",

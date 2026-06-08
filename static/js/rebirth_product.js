@@ -21,6 +21,24 @@
         return Math.max(min, Math.min(max, value));
     }
 
+    function apiPath(url) {
+        try {
+            return new URL(url, window.location.href).pathname;
+        } catch (_error) {
+            return String(url || "");
+        }
+    }
+
+    function reportApiFailure(url, error, metadata) {
+        if (apiPath(url).indexOf("/api/rebirth/telemetry") === 0) return;
+        if (!window.RebirthClientTelemetry || typeof window.RebirthClientTelemetry.report !== "function") return;
+        window.RebirthClientTelemetry.report((error && error.message) || "Falha de API.", Object.assign({
+            type: "api_failure",
+            endpoint: apiPath(url),
+            code: error && error.code ? error.code : "rebirth_error"
+        }, metadata || {}));
+    }
+
     function levelProgress(profile) {
         const level = Math.max(1, numberValue(profile && profile.level, 1));
         const xp = Math.max(0, numberValue(profile && profile.xp, 0));
@@ -51,10 +69,17 @@
                     const serverError = body && body.error ? body.error : {};
                     const error = new Error(serverError.message || "A requisição falhou.");
                     error.code = serverError.code || "rebirth_error";
+                    reportApiFailure(url, error, { status: response.status });
                     throw error;
                 }
                 return body;
+            }, function (error) {
+                reportApiFailure(url, error, { type: "api_malformed_response", status: response.status });
+                throw error;
             });
+        }, function (error) {
+            reportApiFailure(url, error, { type: "api_network_error" });
+            throw error;
         });
     }
 
@@ -71,10 +96,17 @@
                     const serverError = body && body.error ? body.error : {};
                     const error = new Error(serverError.message || "A requisição falhou.");
                     error.code = serverError.code || "rebirth_error";
+                    reportApiFailure(url, error, { status: response.status });
                     throw error;
                 }
                 return body;
+            }, function (error) {
+                reportApiFailure(url, error, { type: "api_malformed_response", status: response.status });
+                throw error;
             });
+        }, function (error) {
+            reportApiFailure(url, error, { type: "api_network_error" });
+            throw error;
         });
     }
 

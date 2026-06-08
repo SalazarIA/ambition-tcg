@@ -48,7 +48,8 @@ Updated on 2026-06-02.
 - Configure `SENTRY_DSN` for Sentry, GlitchTip or a compatible endpoint before
   inviting external testers.
 - Confirm and date a Render/Postgres backup restore drill before inviting
-  external testers.
+  external testers. Use `docs/REBIRTH_DISASTER_RECOVERY_RUNBOOK.md` as the
+  operator checklist.
 - Keep a manual rollback target: last green commit on `main`.
 - Keep Stripe live keys unset during closed beta unless compliance and backup checks are done.
 - Use `/rebirth/release` to watch D1/D7 active users, first-match completion,
@@ -78,6 +79,11 @@ pg_dump "$REBIRTH_DATABASE_URL" --format=custom --file=/tmp/rebirth-drill.dump
 createdb rebirth_restore_drill
 pg_restore --clean --if-exists --no-owner --dbname=rebirth_restore_drill /tmp/rebirth-drill.dump
 ```
+
+The drill is not complete until a disposable restored database passes
+`python -m services.rebirth_schema check`, `/health`, and a signed-in support
+export check. Store the evidence record outside source control before setting
+`REBIRTH_BACKUP_RESTORE_DRILL=true`.
 
 ## Incident Response
 

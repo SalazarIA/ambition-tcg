@@ -46,6 +46,11 @@ def _profile_summary(label: str, events: List[Dict[str, Any]]) -> Dict[str, Any]
     finished = [event for event in events if event.get("event_type") == "match_finished" and _payload(event).get("is_finished")]
     abandoned = [event for event in events if event.get("event_type") == "match_abandoned"]
     turns = [int(_payload(event).get("turn", 0) or 0) for event in finished]
+    durations = [
+        int(_payload(event).get("match_duration_ms", 0) or 0)
+        for event in finished + abandoned
+        if _payload(event).get("match_duration_ms") is not None
+    ]
     player_wins = sum(1 for event in finished if _payload(event).get("winner") == "player")
     bot_wins = sum(1 for event in finished if _payload(event).get("winner") == "bot")
     total = len(finished) + len(abandoned)
@@ -71,6 +76,7 @@ def _profile_summary(label: str, events: List[Dict[str, Any]]) -> Dict[str, Any]
         "bot_win_rate": _rate(bot_wins, len(finished)),
         "abandon_rate": _rate(len(abandoned), total),
         "average_turns": average_turns,
+        "average_match_duration_ms": round(fmean(durations), 2) if durations else None,
         "flags": flags,
     }
 
@@ -82,6 +88,11 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
     cohort_counts = Counter()
     card_play_counts = Counter()
     card_dead_counts = Counter()
+    deck_counts = Counter()
+    evolution_counts = Counter()
+    fusion_count = 0
+    win_events = 0
+    loss_events = 0
     release_counts = Counter()
 
     for event in events:
@@ -95,6 +106,16 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
             card_play_counts[str(payload["card_id"])] += 1
         if event.get("event_type") == "card_dead_in_hand" and payload.get("card_id"):
             card_dead_counts[str(payload["card_id"])] += 1
+        if payload.get("player_deck_signature"):
+            deck_counts[str(payload["player_deck_signature"])] += 1
+        if event.get("event_type") == "card_evolved" and payload.get("card_id"):
+            evolution_counts[str(payload["card_id"])] += 1
+        if event.get("event_type") == "field_pair_fused":
+            fusion_count += 1
+        if event.get("event_type") == "match_won":
+            win_events += 1
+        if event.get("event_type") == "match_lost":
+            loss_events += 1
 
     for event in terminal:
         profile = _payload(event).get("bot_profile_id") or "unknown"
@@ -121,10 +142,23 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
         "by_profile": by_profile,
         "cohorts": dict(sorted(cohort_counts.items())),
         "release_versions": dict(release_counts.most_common(5)),
+        "terminal_events": {
+            "wins": win_events,
+            "losses": loss_events,
+        },
         "card_usage": [
             {"card_id": card_id, "plays": count, "dead_in_hand": card_dead_counts.get(card_id, 0)}
             for card_id, count in card_play_counts.most_common(12)
         ],
+        "deck_usage": [
+            {"deck_signature": signature, "samples": count}
+            for signature, count in deck_counts.most_common(12)
+        ],
+        "evolution_usage": [
+            {"card_id": card_id, "count": count}
+            for card_id, count in evolution_counts.most_common(12)
+        ],
+        "fusion_count": fusion_count,
         "flags": flags,
     }
 

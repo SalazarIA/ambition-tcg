@@ -5,6 +5,7 @@ Persistence still belongs to the repository; this module owns event shape.
 
 from __future__ import annotations
 
+from hashlib import sha256
 from typing import Any, Dict, Optional
 
 
@@ -29,6 +30,8 @@ def build_match_telemetry_payload(
 ) -> Dict[str, Any]:
     result = match.get("result") or {}
     events = match.get("events") or []
+    initial = match.get("initial") or {}
+    player_deck_ids = [str(card_id) for card_id in (initial.get("player_card_ids") or []) if card_id]
     chain_ids = {event.get("effect_chain_id") for event in events if event.get("effect_chain_id")}
     chain_lengths: Dict[str, int] = {}
     for event in events:
@@ -49,6 +52,9 @@ def build_match_telemetry_payload(
         "chain_count": len(chain_ids),
         "max_chain_length": max(chain_lengths.values()) if chain_lengths else 0,
         "bot_profile_id": bot_profile_id,
+        "match_duration_ms": total_elapsed_ms if event_type in {"match_finished", "match_abandoned"} or match.get("is_finished") else None,
+        "player_deck_size": len(player_deck_ids) if player_deck_ids else None,
+        "player_deck_signature": sha256(",".join(player_deck_ids).encode("utf-8")).hexdigest()[:16] if player_deck_ids else None,
         "first_duel": bool(match.get("first_duel")),
         "decision_elapsed_ms": elapsed_ms,
         "campaign_version": match.get("campaign_version"),

@@ -41,17 +41,23 @@ ARENA_TUTORIAL_STEPS: List[Dict[str, Any]] = [
     {
         "step": 5,
         "title": "Evolua duplicatas",
-        "body": "Quando duas copias aparecem, o painel de evolucao mostra a fusao. Evoluir antes de atacar muda a troca.",
+        "body": "Quando duas copias aparecem na mao, o painel de evolucao cria a forma Rebirth antes da invocacao.",
         "target": "#evolution-panel, #evolve-button",
     },
     {
         "step": 6,
+        "title": "Funda no campo",
+        "body": "Duas unidades iguais no campo podem virar uma fusao maior. Use isso antes de atacar quando precisar quebrar guarda.",
+        "target": "#evolution-panel, #evolve-button, .rb-field-card",
+    },
+    {
+        "step": 7,
         "title": "Encerre o turno",
         "body": "Quando nao houver boa jogada, encerre o turno. O bot age, sua mana sobe e voce compra novas cartas.",
         "target": "#next-turn-button",
     },
     {
-        "step": 7,
+        "step": 8,
         "title": "Leia o recap",
         "body": "Ao terminar, o painel mostra por que voce venceu ou perdeu e sugere o proximo ajuste do deck.",
         "target": "#reward-panel, #result-actions",

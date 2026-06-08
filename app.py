@@ -592,6 +592,16 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
         telemetry_repo.record_telemetry_event(event_type, payload, user_id=(user or {}).get("id"))
         if match.get("is_finished") and event_type != "match_finished":
             telemetry_repo.record_telemetry_event("match_finished", payload, user_id=(user or {}).get("id"))
+        if match.get("is_finished"):
+            outcome_event = None
+            if match.get("winner") == "player":
+                outcome_event = "match_won"
+            elif match.get("winner") == "bot":
+                outcome_event = "match_lost"
+            elif match.get("winner"):
+                outcome_event = "match_drawn"
+            if outcome_event and event_type != outcome_event:
+                telemetry_repo.record_telemetry_event(outcome_event, payload, user_id=(user or {}).get("id"))
     except Exception:
         app.logger.exception("rebirth.telemetry write failed for %s", event_type)
 
@@ -1133,6 +1143,36 @@ def rebirth_billing_page():
         billing_status=rebirth_billing_status(),
         stripe_publishable_key=os.environ.get("STRIPE_PUBLISHABLE_KEY", ""),
     )
+
+
+@app.get("/terms")
+def terms():
+    return render_template("terms.html")
+
+
+@app.get("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
+@app.get("/data-deletion")
+def data_deletion():
+    return render_template("data_deletion.html")
+
+
+@app.get("/feedback")
+def feedback():
+    return redirect("/rebirth/support", code=302)
+
+
+@app.get("/closed-test")
+def closed_test():
+    return redirect("/rebirth/release", code=302)
+
+
+@app.get("/first-session")
+def first_session():
+    return redirect("/rebirth/onboarding", code=302)
 
 
 @app.post("/api/rebirth/billing/checkout")
