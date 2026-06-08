@@ -165,6 +165,18 @@ def _bootstrap_rebirth_schema():
                 app.logger.info("rebirth.schema bootstrap skipped (non-postgres backend)")
                 _SCHEMA_BOOTSTRAP_DONE = True
                 return
+            # Observabilidade de incidente: loga host/porta/db ALVO (sem
+            # usuário/senha) antes de conectar, para distinguir "banco fora"
+            # de "host stale na env var" direto no log do Render.
+            from urllib.parse import urlsplit
+
+            _target = urlsplit(normalized)
+            app.logger.info(
+                "rebirth.schema bootstrap alvo: host=%s port=%s db=%s",
+                _target.hostname,
+                _target.port,
+                (_target.path or "").lstrip("/"),
+            )
             engine = make_engine(normalized)
             try:
                 status = validate_schema(engine)
@@ -399,11 +411,24 @@ def shop_data_for_user(user):
     return history, market, warnings
 
 
-def current_user():
+def current_user(*, required=False):
     token = session.get("rebirth_session_token")
     if not token:
         return None
-    return rebirth_repo().user_for_session(token)
+    try:
+        return rebirth_repo().user_for_session(token)
+    except RebirthPersistenceError as error:
+        if required:
+            raise
+        # Banco/schema indisponível (ex.: Postgres fora do ar ou host que não
+        # resolve): degrada para deslogado em vez de derrubar páginas HTML
+        # com 500. Fluxos que exigem conta chamam current_user(required=True)
+        # e preservam o erro real de persistência.
+        app.logger.warning(
+            "current_user indisponível, degradando para deslogado: %s",
+            getattr(error, "code", "unknown"),
+        )
+        return None
 
 
 def current_account():
@@ -452,7 +477,7 @@ def rebirth_navbar_payload(user=None, progression=None):
 
 
 def require_user():
-    user = current_user()
+    user = current_user(required=True)
     if not user:
         raise RebirthPersistenceError("Entre para usar a coleção persistida do Rebirth.", "auth_required", status=401)
     return user

@@ -19,6 +19,28 @@ def test_home_rebirth_and_health_routes_return_200(client):
     assert health.get_json()["product"] == "Ambitionz Rebirth"
 
 
+def test_home_degrades_to_logged_out_when_database_unavailable(client, monkeypatch):
+    """Postgres fora (host não resolve no Render) não pode derrubar a home com
+    500: current_user degrada para deslogado em vez de propagar o erro."""
+
+    def _raise(self, token):
+        raise RebirthPersistenceError(
+            "O schema PostgreSQL do Rebirth nao esta migrado.",
+            "database_schema_invalid",
+            status=503,
+        )
+
+    monkeypatch.setattr(RebirthRepository, "user_for_session", _raise)
+
+    with client.session_transaction() as session:
+        session["rebirth_session_token"] = "sessao-orfa-de-banco"
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Duelos, coleção e mercado em uma mesa viva." in response.get_data(as_text=True)
+
+
 def test_rebirth_visual_contract_text_assets_and_ids(client):
     response = client.get("/rebirth")
     body = response.get_data(as_text=True)
@@ -149,6 +171,23 @@ def test_shop_survives_market_read_failure(client, monkeypatch):
     assert payload["ok"] is True
     assert payload["shop"]["market"]["offers"] == []
     assert payload["shop"]["warnings"][0]["surface"] == "market"
+
+
+def test_public_home_survives_stale_session_when_database_is_unavailable(client, monkeypatch):
+    def broken_session_lookup(*_args, **_kwargs):
+        raise RebirthPersistenceError("database unavailable", "database_schema_invalid", status=503)
+
+    monkeypatch.setattr("services.rebirth_persistence.RebirthRepository.user_for_session", broken_session_lookup)
+    with client.session_transaction() as flask_session:
+        flask_session["rebirth_session_token"] = "stale-production-cookie"
+
+    home = client.get("/")
+    decks = client.get("/api/rebirth/decks")
+
+    assert home.status_code == 200
+    assert "Visitante" in home.get_data(as_text=True)
+    assert decks.status_code == 503
+    assert decks.get_json()["error"]["code"] == "database_schema_invalid"
 
 
 def test_shop_route_is_server_rendered_with_native_nav(client):
