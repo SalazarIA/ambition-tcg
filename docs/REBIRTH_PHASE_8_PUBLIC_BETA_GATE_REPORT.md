@@ -10,9 +10,10 @@ Current status: **blocked**.
 
 ## Gate Checklist
 
-- QA green: local Rebirth suite was green in Phase 0, but GitHub QA must be
-  green on the pushed commit. Current local suite: `1272 passed, 5 skipped,
-  19 deselected`.
+- QA green: passed locally and on GitHub. Current local suite:
+  `1272 passed, 5 skipped, 19 deselected`. GitHub
+  `rebirth-closed-beta-qa` passed on
+  `ad4e55997c1c7eaeec8e505501c4215d73cfed09`.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
   is configured in the target environment.
 - Backup validated: blocked until a real PostgreSQL backup is recorded.
@@ -46,8 +47,8 @@ Current external gate states:
 - `legal_review`: blocked.
 - `backup_restore`: blocked.
 - `error_tracking`: blocked.
-- `github_workflow`: pending, latest GitHub run failed on SHA
-  `48b815cf04c9b704ea08dd9f188caa18db826f10`.
+- `github_workflow`: passed. Run:
+  `https://github.com/SalazarIA/ambition-tcg/actions/runs/27158730659`.
 - `billing_off`: passed.
 
 ## Coverage

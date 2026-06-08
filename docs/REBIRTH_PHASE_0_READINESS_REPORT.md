@@ -4,10 +4,10 @@ Updated: 2026-06-08
 
 ## Status
 
-Phase 0 implementation work is complete locally for this pass, and the local
-Rebirth suite is green. The phase itself is not complete until external
-evidence is attached for GitHub QA, error tracking, backup/restore and legal
-review.
+Phase 0 implementation work is complete locally for this pass, the local
+Rebirth suite is green, and GitHub QA is green on the pushed branch. The phase
+itself is not complete until external evidence is attached for error tracking,
+backup/restore and legal review.
 
 Current status: **blocked on external proof**.
 
@@ -88,8 +88,12 @@ Key local results:
 - Content validation: `ok=true`, `103` cards, art coverage `1.0`.
 - Balance smoke report: player winrate `45.8%`, bot winrate `53.3%`,
   unfinished `0.8%`, average turns `15.57`, cards used `103/103`.
+- GitHub `rebirth-closed-beta-qa`: passed on
+  `ad4e55997c1c7eaeec8e505501c4215d73cfed09`.
+- GitHub run URL:
+  `https://github.com/SalazarIA/ambition-tcg/actions/runs/27158730659`.
 - Pre-external gate report: blocked on external proof for legal review,
-  backup/restore, error tracking and latest GitHub QA.
+  backup/restore and error tracking.
 
 ## Coverage
 
@@ -102,8 +106,6 @@ Coverage was not reduced. New regression coverage was added for:
 
 ## Current Risks
 
-- The last GitHub `rebirth-closed-beta-qa` run on SHA `48b815c` failed before
-  this patch. A new run is required after pushing this branch/commit.
 - `SENTRY_DSN` must be configured in the target environment before the
   error-tracking gate can pass.
 - A real PostgreSQL backup/restore drill must be executed and recorded outside
@@ -114,12 +116,11 @@ Coverage was not reduced. New regression coverage was added for:
 
 ## Next Steps
 
-1. Push the fix and rerun `rebirth-closed-beta-qa`.
-2. Configure `SENTRY_DSN` / GlitchTip-compatible DSN.
-3. Execute the PostgreSQL restore drill using
+1. Configure `SENTRY_DSN` / GlitchTip-compatible DSN.
+2. Execute the PostgreSQL restore drill using
    `docs/REBIRTH_DISASTER_RECOVERY_RUNBOOK.md`.
-4. Complete external legal review and record approval.
-5. Re-run `tools/ops/rebirth_pre_external_gate.py` without `--report-only`.
+3. Complete external legal review and record approval.
+4. Re-run `tools/ops/rebirth_pre_external_gate.py` without `--report-only`.
 
 ## Project Status
 
