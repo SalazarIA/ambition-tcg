@@ -1,0 +1,39 @@
+{
+  "example": true,
+  "updated_at": "2026-06-08T00:00:00Z",
+  "legal_review": {
+    "approved": true,
+    "reviewer": "Responsible operator or counsel name",
+    "approved_at": "2026-06-08T00:00:00Z",
+    "scope": [
+      "terms",
+      "privacy",
+      "data_deletion",
+      "billing_disabled"
+    ],
+    "evidence_ref": "Private ticket, signed note, or operator log reference"
+  },
+  "backup_restore": {
+    "validated": true,
+    "drill_at": "2026-06-08T00:00:00Z",
+    "operator": "Operator name",
+    "source_commit": "git-sha-or-deployed-release",
+    "source_database": "redacted-production-db-identifier",
+    "dump_filename": "rebirth-YYYYMMDDTHHMMSSZ.dump",
+    "dump_bytes": 123456,
+    "restore_target": "redacted-disposable-restore-db",
+    "schema_check": "passed",
+    "health_check": "passed",
+    "support_export_check": "passed",
+    "unresolved_issues": [],
+    "evidence_ref": "Private incident/drill record reference"
+  },
+  "error_tracking": {
+    "validated": true,
+    "provider": "sentry-or-glitchtip",
+    "environment": "closed-beta",
+    "test_event_id": "provider-event-id-or-private-log-reference",
+    "tested_at": "2026-06-08T00:00:00Z",
+    "evidence_ref": "Private provider screenshot or event link reference"
+  }
+}

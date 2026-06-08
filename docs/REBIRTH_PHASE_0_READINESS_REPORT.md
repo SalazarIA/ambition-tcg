@@ -41,6 +41,10 @@ Current status: **blocked on external proof**.
      restore drill, validation and incident decision flow.
    - `docs/REBIRTH_CLOSED_BETA_RUNBOOK.md` links the DR runbook and clarifies
      evidence required before setting `REBIRTH_BACKUP_RESTORE_DRILL=true`.
+   - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json` documents the
+     secret-free evidence shape for legal, backup/restore and error tracking.
+   - `tools/ops/rebirth_pre_external_gate.py` can now validate an external
+     evidence file with `--evidence`.
 
 ## Files Changed
 
@@ -58,7 +62,9 @@ Current status: **blocked on external proof**.
 - `tests/rebirth/test_rebirth_routes.py`
 - `docs/REBIRTH_CLOSED_BETA_RUNBOOK.md`
 - `docs/REBIRTH_DISASTER_RECOVERY_RUNBOOK.md`
+- `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `docs/REBIRTH_PHASE_0_READINESS_REPORT.md`
+- `services/rebirth_gate_evidence.py`
 
 ## Tests Executed
 
@@ -77,11 +83,13 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-phase0-visual`
 - `.venv/bin/python tools/rebirth_balance_report.py --matches 120 --output /tmp/rebirth-phase0-balance.md`
 - `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only`
+- `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only --evidence docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `git diff --check`
 
 Key local results:
 
 - Full Rebirth test suite: `1272 passed, 5 skipped, 19 deselected`.
+- External evidence validation pass: `1274 passed, 5 skipped, 19 deselected`.
 - Full navigation/auth E2E suite: `19 passed`.
 - Phase 0 focused tests: `12 passed`.
 - Visual screenshots: `RESULT=PASS`, no issues.
@@ -93,6 +101,7 @@ Key local results:
   workflow result.
 - Pre-external gate report: blocked on external proof for legal review,
   backup/restore and error tracking.
+- Example evidence file: rejected intentionally with `example_evidence_file`.
 
 ## Coverage
 
@@ -102,6 +111,9 @@ Coverage was not reduced. New regression coverage was added for:
 - mobile authenticated first-turn E2E overlay contract;
 - API failure telemetry payload persistence;
 - public reachability of legal pages and active Rebirth support redirects.
+- secret-free external gate evidence validation.
+- external evidence template rejection for source-control examples and common
+  secret-like values.
 
 ## Current Risks
 
@@ -111,6 +123,8 @@ Coverage was not reduced. New regression coverage was added for:
   the repo before setting `REBIRTH_BACKUP_RESTORE_DRILL=true`.
 - LGPD/Terms/Privacy copy still requires owner/counsel review before setting
   `REBIRTH_LEGAL_REVIEWED=true`.
+- Evidence JSONs must stay outside source control when filled with real
+  operator references.
 - Phase 0 cannot be closed from code alone.
 
 ## Next Steps

@@ -115,6 +115,18 @@ Record each drill outside source control with:
 Set `REBIRTH_BACKUP_RESTORE_DRILL=true` only after the evidence record exists
 and the disposable restore has been validated.
 
+Alternatively, keep the operator evidence outside source control and pass it to
+the external gate checker:
+
+```bash
+python tools/ops/rebirth_pre_external_gate.py \
+  --evidence /secure/path/rebirth-external-gates.json
+```
+
+Use `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json` as the field template,
+then remove `"example": true` in the private copy. Never store raw Postgres
+URLs, passwords, Sentry DSNs or Stripe keys in the evidence file.
+
 ## Legal And Privacy Notes
 
 The LGPD official text is Lei 13.709/2018. ANPD guidance for data subjects and

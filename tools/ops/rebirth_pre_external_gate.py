@@ -77,19 +77,38 @@ def _config_from_env():
     }
 
 
+def _load_evidence(path):
+    if not path:
+        return None, {"path": None, "loaded": False}
+    evidence_path = Path(path)
+    try:
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return None, {"path": str(evidence_path), "loaded": False, "error": f"{type(exc).__name__}:{exc}"}
+    return evidence, {"path": str(evidence_path), "loaded": True}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Check Rebirth external tester readiness gates.")
     parser.add_argument("--report-only", action="store_true", help="Print JSON but do not fail on blocked gates.")
+    parser.add_argument(
+        "--evidence",
+        default=os.environ.get("REBIRTH_EXTERNAL_EVIDENCE_PATH"),
+        help="Path to a secret-free JSON evidence file for legal, backup/restore and error-tracking gates.",
+    )
     args = parser.parse_args()
 
     workflow = _workflow_status()
-    gates = external_gate_payload(_config_from_env(), workflow=workflow)
+    evidence, evidence_file = _load_evidence(args.evidence)
+    gates = external_gate_payload(_config_from_env(), workflow=workflow, evidence=evidence)
     payload = {
         "ok": gates["ready"],
         "workflow": workflow,
+        "evidence_file": evidence_file,
         "gates": gates,
         "notes": [
-            "Legal review and Render/Postgres restore drill are external proof points.",
+            "Legal review, Render/Postgres restore drill and error tracking are external proof points.",
+            "Use --evidence or REBIRTH_EXTERNAL_EVIDENCE_PATH with a secret-free evidence JSON when available.",
             "Stripe/live payments must stay disabled unless explicit compliance flags are set.",
         ],
     }

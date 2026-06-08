@@ -1,18 +1,23 @@
 import os
 from datetime import datetime, timedelta, timezone
 
+from services.rebirth_gate_evidence import validate_external_gate_evidence
+
 
 def truthy(value):
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def external_gate_payload(config=None, workflow=None):
+def external_gate_payload(config=None, workflow=None, evidence=None):
     config = config or {}
+    evidence_report = validate_external_gate_evidence(evidence)
     billing_enabled = truthy(config.get("REBIRTH_ENABLE_BILLING"))
     live_allowed = truthy(config.get("REBIRTH_ALLOW_STRIPE_LIVE"))
     stripe_secret = os.environ.get("STRIPE_SECRET_KEY", "")
     stripe_live_key_present = stripe_secret.startswith("sk_live_")
-    sentry_configured = bool(config.get("SENTRY_DSN") or os.environ.get("SENTRY_DSN"))
+    legal_proven = truthy(config.get("REBIRTH_LEGAL_REVIEWED") or os.environ.get("REBIRTH_LEGAL_REVIEWED")) or evidence_report["legal_review"]["valid"]
+    backup_proven = truthy(config.get("REBIRTH_BACKUP_RESTORE_DRILL") or os.environ.get("REBIRTH_BACKUP_RESTORE_DRILL")) or evidence_report["backup_restore"]["valid"]
+    sentry_configured = bool(config.get("SENTRY_DSN") or os.environ.get("SENTRY_DSN")) or evidence_report["error_tracking"]["valid"]
     workflow_green = (workflow and workflow.get("conclusion") == "success") or truthy(
         config.get("REBIRTH_GITHUB_QA_GREEN") or os.environ.get("REBIRTH_GITHUB_QA_GREEN")
     )
@@ -21,14 +26,14 @@ def external_gate_payload(config=None, workflow=None):
         {
             "key": "legal_review",
             "name": "Revisão legal",
-            "state": "passed" if truthy(config.get("REBIRTH_LEGAL_REVIEWED") or os.environ.get("REBIRTH_LEGAL_REVIEWED")) else "blocked",
-            "copy": "Termos, Privacidade, deleção/exportação e monetização precisam de aceite externo.",
+            "state": "passed" if legal_proven else "blocked",
+            "copy": "Termos, Privacidade, deleção/exportação e monetização precisam de aceite externo ou evidência auditável.",
         },
         {
             "key": "backup_restore",
             "name": "Backup/restore Postgres",
-            "state": "passed" if truthy(config.get("REBIRTH_BACKUP_RESTORE_DRILL") or os.environ.get("REBIRTH_BACKUP_RESTORE_DRILL")) else "blocked",
-            "copy": "Drill real no Render/Postgres deve ser datado antes de convidar testers externos.",
+            "state": "passed" if backup_proven else "blocked",
+            "copy": "Drill real no Render/Postgres deve ser datado antes de convidar testers externos e ter evidência auditável.",
         },
         {
             "key": "error_tracking",
@@ -53,6 +58,7 @@ def external_gate_payload(config=None, workflow=None):
         "ready": all(check["state"] == "passed" for check in checks),
         "billing_enabled": billing_enabled,
         "stripe_live_key_present": stripe_live_key_present,
+        "evidence": evidence_report,
         "checks": checks,
     }
 

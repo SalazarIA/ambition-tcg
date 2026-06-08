@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1272 passed, 5 skipped, 19 deselected`. GitHub
+  `1274 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -27,20 +27,29 @@ Current status: **blocked**.
 - Telemetry active: local infrastructure is active; production verification
   still required.
 - Balance healthy: blocked until 500+ human matches are collected.
+- External evidence path: supported through
+  `tools/ops/rebirth_pre_external_gate.py --evidence /secure/path/rebirth-external-gates.json`.
 
 ## What Was Implemented
 
 No public beta gate bypass was implemented.
+Secret-free evidence validation was added so remaining Phase 0 gates can be
+proven by operator records without committing secrets or relying only on manual
+boolean flags.
 
 ## Files Changed
 
-None specifically for Phase 8.
+- `services/rebirth_gate_evidence.py`
+- `tools/ops/rebirth_pre_external_gate.py`
+- `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 
 ## Tests Executed
 
 No Phase 8-specific public-beta validation was run because the gate is blocked.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
+The evidence template was also run through `--evidence` and correctly rejected
+with `example_evidence_file`.
 
 Current external gate states:
 

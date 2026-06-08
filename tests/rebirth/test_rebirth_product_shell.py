@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from services.rebirth_beta_ops import external_gate_payload
+from services.rebirth_gate_evidence import validate_external_gate_evidence
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -8,6 +9,38 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 def read(path):
     return (PROJECT_ROOT / path).read_text(encoding="utf-8")
+
+
+def valid_external_evidence():
+    return {
+        "legal_review": {
+            "approved": True,
+            "reviewer": "Operator",
+            "approved_at": "2026-06-08T12:00:00Z",
+            "scope": ["terms", "privacy", "data_deletion", "billing_disabled"],
+            "evidence_ref": "private-ticket-legal-1",
+        },
+        "backup_restore": {
+            "validated": True,
+            "drill_at": "2026-06-08T12:10:00Z",
+            "operator": "Operator",
+            "source_commit": "abc123",
+            "restore_target": "redacted-restore-db",
+            "dump_bytes": 42,
+            "schema_check": "passed",
+            "health_check": "passed",
+            "support_export_check": "passed",
+            "evidence_ref": "private-ticket-dr-1",
+        },
+        "error_tracking": {
+            "validated": True,
+            "provider": "glitchtip",
+            "environment": "closed-beta",
+            "test_event_id": "event-123",
+            "tested_at": "2026-06-08T12:20:00Z",
+            "evidence_ref": "private-ticket-sentry-1",
+        },
+    }
 
 
 def test_rebirth_product_pages_render_active_shell(client):
@@ -155,6 +188,36 @@ def test_external_beta_gate_parses_string_booleans():
     assert gates["ready"] is True
     assert gates["billing_enabled"] is False
     assert {check["key"]: check["state"] for check in gates["checks"]}["billing_off"] == "passed"
+
+
+def test_external_beta_gate_accepts_secret_free_evidence():
+    gates = external_gate_payload(
+        {
+            "REBIRTH_ENABLE_BILLING": "false",
+            "REBIRTH_ALLOW_STRIPE_LIVE": "false",
+        },
+        workflow={"conclusion": "success"},
+        evidence=valid_external_evidence(),
+    )
+    states = {check["key"]: check["state"] for check in gates["checks"]}
+
+    assert gates["ready"] is True
+    assert states["legal_review"] == "passed"
+    assert states["backup_restore"] == "passed"
+    assert states["error_tracking"] == "passed"
+    assert gates["evidence"]["legal_review"]["valid"] is True
+
+
+def test_external_gate_evidence_rejects_examples_and_secrets():
+    evidence = valid_external_evidence()
+    evidence["example"] = True
+    evidence["backup_restore"]["restore_target"] = "postgresql://user:password@example.invalid/db"
+    report = validate_external_gate_evidence(evidence)
+
+    assert report["legal_review"]["valid"] is False
+    assert "example_evidence_file" in report["legal_review"]["errors"]
+    assert report["backup_restore"]["valid"] is False
+    assert "secret_like_value_detected" in report["backup_restore"]["errors"]
 
 
 def test_rebirth_loadout_preview_validates_owned_cards(client):

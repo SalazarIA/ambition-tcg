@@ -13,6 +13,10 @@ Updated on 2026-06-02.
 - Terms, Privacy, Data Deletion and Support are reachable from the account/support surfaces.
 - `python tools/ops/rebirth_pre_external_gate.py --report-only` records the
   external-test readiness gates.
+- When external checks exist, pass a secret-free evidence file with
+  `python tools/ops/rebirth_pre_external_gate.py --evidence /secure/path/rebirth-external-gates.json`.
+  Use `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json` only as a template;
+  the example file is intentionally rejected by the validator.
 - Monetization remains off by default. `REBIRTH_ENABLE_BILLING=true` is required
   for checkout, and Stripe live keys also require `REBIRTH_ALLOW_STRIPE_LIVE=true`.
 - The current local pre-external gate is expected to be **not ready** until
@@ -59,13 +63,17 @@ Updated on 2026-06-02.
 
 - Legal: have counsel or the responsible operator review Terms, Privacy,
   deletion/export language and monetization/refund copy. Set
-  `REBIRTH_LEGAL_REVIEWED=true` only after that review is recorded.
+  `REBIRTH_LEGAL_REVIEWED=true` only after that review is recorded, or provide
+  a valid external evidence JSON through `--evidence`.
 - Backup/restore: run a real Postgres drill against a disposable restore
   database, compare `/health` plus a signed-in export, then set
-  `REBIRTH_BACKUP_RESTORE_DRILL=true`.
+  `REBIRTH_BACKUP_RESTORE_DRILL=true`, or provide a valid external evidence
+  JSON through `--evidence`.
 - Error tracking: set `SENTRY_DSN` for Sentry, GlitchTip or a compatible DSN.
   Keep `SENTRY_ENVIRONMENT=closed-beta` and a conservative
-  `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood.
+  `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood. A valid external
+  evidence JSON can also prove the target environment received a test event
+  without storing the DSN in source control.
 - GitHub QA: run or schedule `rebirth-closed-beta-qa.yml`; `gh run list
   --workflow rebirth-closed-beta-qa.yml --limit 1 --json status,conclusion,headSha`
   must show `conclusion=success`.
@@ -84,6 +92,10 @@ The drill is not complete until a disposable restored database passes
 `python -m services.rebirth_schema check`, `/health`, and a signed-in support
 export check. Store the evidence record outside source control before setting
 `REBIRTH_BACKUP_RESTORE_DRILL=true`.
+
+Evidence files must not contain raw database URLs, DSNs, passwords, Stripe keys
+or unredacted host credentials. The validator rejects the repository template
+and common secret-like values.
 
 ## Incident Response
 
