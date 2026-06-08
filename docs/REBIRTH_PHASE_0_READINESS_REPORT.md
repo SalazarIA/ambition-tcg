@@ -88,10 +88,9 @@ Key local results:
 - Content validation: `ok=true`, `103` cards, art coverage `1.0`.
 - Balance smoke report: player winrate `45.8%`, bot winrate `53.3%`,
   unfinished `0.8%`, average turns `15.57`, cards used `103/103`.
-- GitHub `rebirth-closed-beta-qa`: passed on
-  `ad4e55997c1c7eaeec8e505501c4215d73cfed09`.
-- GitHub run URL:
-  `https://github.com/SalazarIA/ambition-tcg/actions/runs/27158730659`.
+- GitHub `rebirth-closed-beta-qa`: passed on the pushed branch; the
+  pre-external gate reports `github_workflow=passed` against the latest GitHub
+  workflow result.
 - Pre-external gate report: blocked on external proof for legal review,
   backup/restore and error tracking.
 
