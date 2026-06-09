@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from services.rebirth_public_beta_gate import public_beta_gate_report
+from services.rebirth_public_beta_gate import public_beta_gate_payload, public_beta_gate_report
 
 
 def _event(event_id, event_type, *, user_id=1, created_at=None, payload=None):
@@ -30,6 +30,23 @@ def test_public_beta_gate_blocks_without_real_samples():
     assert "telemetry_active" in report["blockers"]
     assert "human_telemetry_sample" in report["blockers"]
     assert {check["key"]: check["state"] for check in report["checks"]}["crash_rate"] == "pending"
+
+
+def test_public_beta_gate_payload_passes_since_to_repository():
+    class Repo:
+        def __init__(self):
+            self.calls = []
+
+        def query_telemetry_events(self, *, limit=None, since=None):
+            self.calls.append({"limit": limit, "since": since})
+            return []
+
+    repo = Repo()
+    report = public_beta_gate_payload(repo, limit=250, since="2026-06-01T00:00:00+00:00", release_version="v-test")
+
+    assert repo.calls == [{"limit": 250, "since": "2026-06-01T00:00:00+00:00"}]
+    assert report["release_version"] == "v-test"
+    assert report["ready"] is False
 
 
 def test_public_beta_gate_passes_only_when_all_kpis_are_met():

@@ -304,6 +304,13 @@ def public_beta_gate_report(
     }
 
 
-def public_beta_gate_payload(repo, *, limit: int = 5000, release_version: Optional[str] = None, live_balance: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    events = repo.query_telemetry_events(limit=limit)
+def public_beta_gate_payload(
+    repo,
+    *,
+    limit: int = 5000,
+    since: Optional[str] = None,
+    release_version: Optional[str] = None,
+    live_balance: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    events = repo.query_telemetry_events(limit=limit, since=since)
     return public_beta_gate_report(events, live_balance=live_balance, release_version=release_version)

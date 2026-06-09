@@ -32,6 +32,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Check the complete Ambitionz Rebirth public beta gate.")
     parser.add_argument("--report-only", action="store_true", help="Print JSON but do not fail on blocked gates.")
     parser.add_argument("--limit", type=int, default=5000, help="Maximum telemetry events to read.")
+    parser.add_argument("--since", default=None, help="ISO timestamp lower bound for the public beta cohort/event window.")
     parser.add_argument("--release-version", default=os.environ.get("REBIRTH_RELEASE_VERSION"), help="Release label for the report.")
     parser.add_argument(
         "--evidence",
@@ -46,6 +47,7 @@ def main() -> int:
     public_beta_gate = public_beta_gate_payload(
         _open_repo(),
         limit=args.limit,
+        since=args.since,
         release_version=args.release_version,
     )
     readiness = release_readiness_report(external_gates, public_beta_gate)

@@ -18,9 +18,9 @@ Updated on 2026-06-09.
   Use `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json` only as a template;
   the example file is intentionally rejected by the validator.
 - Public beta KPIs are checked separately with
-  `python tools/ops/rebirth_public_beta_gate.py --require-ready`.
+  `python tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`.
 - The final Phase 8 gate composes external proof and product KPIs with
-  `python tools/ops/rebirth_release_readiness.py --evidence /secure/path/rebirth-external-gates.json`.
+  `python tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`.
 - Monetization remains off by default. `REBIRTH_ENABLE_BILLING=true` is required
   for checkout, and Stripe live keys also require `REBIRTH_ALLOW_STRIPE_LIVE=true`.
 - The current local pre-external gate is expected to be **not ready** until
@@ -66,8 +66,10 @@ Updated on 2026-06-09.
 - Keep Stripe live keys unset during closed beta unless compliance and backup checks are done.
 - Use `/rebirth/release` to watch Readiness Final, external gates, D1/D7,
   first-match completion, tutorial completion, feedback and client errors.
-- Run `python tools/ops/rebirth_release_readiness.py --report-only --evidence /secure/path/rebirth-external-gates.json`
+- Run `python tools/ops/rebirth_release_readiness.py --report-only --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`
   after each evidence update or KPI review.
+- Add `--since 2026-06-09T00:00:00+00:00` to KPI/readiness commands when
+  reviewing a specific closed-beta cohort window; use the real cohort start.
 
 ## External Proof Checklist
 
@@ -129,7 +131,7 @@ and common secret-like values.
 - Legal review completed for Terms, Privacy, deletion/export and monetization copy.
 - Backup restore drill completed.
 - Error tracking configured through Sentry, GlitchTip or equivalent.
-- `python tools/ops/rebirth_release_readiness.py --evidence /secure/path/rebirth-external-gates.json`
+- `python tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`
   exits with success.
 - Public beta KPI gate is green: tutorial 80%+, first match 70%+, D1 35%+,
   D7 20%+, crash/error below 1%, 500+ finished human matches and healthy

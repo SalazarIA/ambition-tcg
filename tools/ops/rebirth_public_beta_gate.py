@@ -28,6 +28,7 @@ def _open_repo() -> RebirthRepository:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evaluate Ambitionz Rebirth Public Beta KPI gates.")
     parser.add_argument("--limit", type=int, default=5000, help="Maximum telemetry events to read.")
+    parser.add_argument("--since", default=None, help="ISO timestamp lower bound for the cohort/event window.")
     parser.add_argument("--release-version", default=os.environ.get("REBIRTH_RELEASE_VERSION"), help="Release label for the report.")
     parser.add_argument("--require-ready", action="store_true", help="Exit non-zero when the gate is not ready.")
     args = parser.parse_args()
@@ -35,6 +36,7 @@ def main() -> int:
     report = public_beta_gate_payload(
         _open_repo(),
         limit=args.limit,
+        since=args.since,
         release_version=args.release_version,
     )
     print(json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False, default=str))

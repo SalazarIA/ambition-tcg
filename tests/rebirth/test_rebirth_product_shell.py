@@ -95,8 +95,11 @@ def test_rebirth_product_pages_render_active_shell(client):
             assert "Gate Beta Público" in body
             assert "evidence_missing" in body
             assert "--evidence /secure/path/rebirth-external-gates.json" in body
-            assert "tools/ops/rebirth_public_beta_gate.py --require-ready" in body
-            assert "tools/ops/rebirth_release_readiness.py --evidence /secure/path/rebirth-external-gates.json" in body
+            assert "tools/ops/rebirth_public_beta_gate.py --since &lt;cohort-start-iso&gt; --require-ready" in body
+            assert (
+                "tools/ops/rebirth_release_readiness.py --since &lt;cohort-start-iso&gt; "
+                "--evidence /secure/path/rebirth-external-gates.json"
+            ) in body
 
 
 def test_phase0_legal_pages_are_publicly_reachable(client):

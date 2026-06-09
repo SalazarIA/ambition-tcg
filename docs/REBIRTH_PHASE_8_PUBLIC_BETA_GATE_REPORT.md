@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1282 passed, 5 skipped, 19 deselected`. GitHub
+  `1283 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -30,9 +30,9 @@ Current status: **blocked**.
 - External evidence path: supported through
   `tools/ops/rebirth_pre_external_gate.py --evidence /secure/path/rebirth-external-gates.json`.
 - Public beta KPI gate: supported through
-  `tools/ops/rebirth_public_beta_gate.py --require-ready`.
+  `tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`.
 - Final readiness gate: supported through
-  `tools/ops/rebirth_release_readiness.py --evidence /secure/path/rebirth-external-gates.json`.
+  `tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`.
 
 ## What Was Implemented
 
@@ -77,7 +77,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1282 passed, 5 skipped,
+The current local Rebirth suite passed with `1283 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.

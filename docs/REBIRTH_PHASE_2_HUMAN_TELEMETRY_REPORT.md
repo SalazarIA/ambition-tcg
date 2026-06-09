@@ -38,8 +38,10 @@ Current status: **implemented locally, blocked on 500+ human matches**.
    - The evaluator is conservative: D1/D7 only count matured cohorts, crash
      rate requires a minimum telemetry sample and balance cannot pass below
      500 finished human matches.
-   - `tools/ops/rebirth_public_beta_gate.py --require-ready` gives operators a
-     repeatable JSON report against the active database.
+   - `tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`
+     gives operators a repeatable JSON report against the active database.
+   - `--since <ISO timestamp>` scopes KPI reads to a real closed-beta cohort
+     window so D1/D7 retention is not mixed with earlier local or test events.
 
 ## Files Changed
 
@@ -61,7 +63,7 @@ Current status: **implemented locally, blocked on 500+ human matches**.
 - `.venv/bin/python -m pytest tests/rebirth -q`
 
 Focused result: `12 passed`.
-Full Rebirth suite: `1282 passed, 5 skipped, 19 deselected`.
+Full Rebirth suite: `1283 passed, 5 skipped, 19 deselected`.
 
 ## Coverage
 
@@ -104,8 +106,8 @@ The system still requires 500+ human matches before major balance decisions.
 2. Collect 500+ human finished/abandoned matches.
 3. Export live telemetry through `/api/rebirth/balance/telemetry`.
 4. Run `tools/rebirth_telemetry_analyzer.py` against the production database.
-5. Run `tools/ops/rebirth_public_beta_gate.py --require-ready` once cohorts
-   have matured.
+5. Run `tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`
+   once cohorts have matured.
 6. Only then consider large balance or content changes.
 
 ## Project Status
