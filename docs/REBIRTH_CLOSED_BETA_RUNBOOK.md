@@ -66,6 +66,9 @@ Updated on 2026-06-09.
 - Keep Stripe live keys unset during closed beta unless compliance and backup checks are done.
 - Use `/rebirth/release` to watch Readiness Final, external gates, D1/D7,
   first-match completion, tutorial completion, feedback and client errors.
+- Use `/rebirth/release?since=<cohort-start-iso>` or
+  `/api/rebirth/release?since=<cohort-start-iso>` when reviewing a specific
+  closed-beta cohort window.
 - Run `python tools/ops/rebirth_release_readiness.py --report-only --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`
   after each evidence update or KPI review.
 - Add `--since 2026-06-09T00:00:00+00:00` to KPI/readiness commands when

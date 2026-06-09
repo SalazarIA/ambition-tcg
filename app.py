@@ -944,14 +944,21 @@ def rebirth_balance():
         return json_from_rebirth_error(error)
 
 
+def release_since_arg():
+    since = request.args.get("since") or None
+    return since.replace(" ", "+") if since else None
+
+
 @app.get("/rebirth/release")
 def rebirth_release():
     repo = rebirth_repo()
+    since = release_since_arg()
     gates = external_gate_payload(app.config)
-    dashboard = beta_dashboard_payload(repo)
-    live_balance = live_balance_payload(repo, release_version=app.config["REBIRTH_RELEASE_VERSION"])
+    dashboard = beta_dashboard_payload(repo, since=since)
+    live_balance = live_balance_payload(repo, since=since, release_version=app.config["REBIRTH_RELEASE_VERSION"])
     public_gate = public_beta_gate_payload(
         repo,
+        since=since,
         release_version=app.config["REBIRTH_RELEASE_VERSION"],
         live_balance=live_balance,
     )
@@ -2200,17 +2207,19 @@ def api_rebirth_telemetry_beacon():
 @app.get("/api/rebirth/release")
 def api_rebirth_release():
     repo = rebirth_repo()
+    since = release_since_arg()
     gates = external_gate_payload(app.config)
-    live_balance = live_balance_payload(repo, release_version=app.config["REBIRTH_RELEASE_VERSION"])
+    live_balance = live_balance_payload(repo, since=since, release_version=app.config["REBIRTH_RELEASE_VERSION"])
     public_gate = public_beta_gate_payload(
         repo,
+        since=since,
         release_version=app.config["REBIRTH_RELEASE_VERSION"],
         live_balance=live_balance,
     )
     return json_payload(
         release=release_payload(
             gates=gates,
-            dashboard=beta_dashboard_payload(repo),
+            dashboard=beta_dashboard_payload(repo, since=since),
             content_report=content_pipeline_report(),
             live_balance=live_balance,
             public_beta_gate=public_gate,

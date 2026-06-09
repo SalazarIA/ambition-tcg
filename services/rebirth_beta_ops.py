@@ -74,8 +74,8 @@ def _iso_days_ago(days):
     return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(timespec="seconds")
 
 
-def beta_dashboard_payload(repo, *, limit=5000):
-    events = repo.query_telemetry_events(limit=limit)
+def beta_dashboard_payload(repo, *, limit=5000, since=None):
+    events = repo.query_telemetry_events(limit=limit, since=since)
     d1_since = _iso_days_ago(1)
     d7_since = _iso_days_ago(7)
 
@@ -106,6 +106,7 @@ def beta_dashboard_payload(repo, *, limit=5000):
     first_completion_rate = round(len(first_finishes) / max(1, len(first_starts)), 3) if first_starts else None
     return {
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "since": since,
         "sample_size": len(events),
         "cards": [
             {"label": "D1 ativos", "value": users_for(lambda event: created_after(event, d1_since))},

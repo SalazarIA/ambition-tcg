@@ -841,7 +841,7 @@
                             <span>Telemetry</span>
                             <h2>D1 / D7 / Tutorial / Erros</h2>
                         </div>
-                        <small>{{ page.dashboard.updated_at }}</small>
+                        <small>{{ page.dashboard.since or page.dashboard.updated_at }}</small>
                     </div>
                     <div class="rb-product-stats rb-product-stats-compact">
                         {% for card in page.dashboard.cards %}

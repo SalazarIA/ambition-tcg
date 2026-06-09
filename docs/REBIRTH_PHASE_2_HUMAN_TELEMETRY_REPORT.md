@@ -42,10 +42,15 @@ Current status: **implemented locally, blocked on 500+ human matches**.
      gives operators a repeatable JSON report against the active database.
    - `--since <ISO timestamp>` scopes KPI reads to a real closed-beta cohort
      window so D1/D7 retention is not mixed with earlier local or test events.
+   - `/rebirth/release?since=<cohort-start-iso>` and
+     `/api/rebirth/release?since=<cohort-start-iso>` now apply the same cohort
+     window to the dashboard, live balance and public beta gate.
 
 ## Files Changed
 
 - `app.py`
+- `templates/rebirth_product.html`
+- `services/rebirth_beta_ops.py`
 - `services/rebirth_telemetry.py`
 - `services/rebirth_live_balance.py`
 - `services/rebirth_public_beta_gate.py`
@@ -63,7 +68,7 @@ Current status: **implemented locally, blocked on 500+ human matches**.
 - `.venv/bin/python -m pytest tests/rebirth -q`
 
 Focused result: `12 passed`.
-Full Rebirth suite: `1286 passed, 5 skipped, 19 deselected`.
+Full Rebirth suite: `1287 passed, 5 skipped, 19 deselected`.
 
 ## Coverage
 
@@ -71,6 +76,8 @@ Coverage was not reduced. New coverage asserts:
 
 - live balance exposes deck usage, evolution usage, fusion count, terminal
   outcome counters and average duration;
+- release dashboard, live balance and public beta gate preserve the same
+  `since` cohort window;
 - `record_match_telemetry` persists deck signature, deck size, duration and a
   derived `match_won` event.
 

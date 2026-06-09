@@ -46,6 +46,7 @@ def test_public_beta_gate_payload_passes_since_to_repository():
 
     assert repo.calls == [{"limit": 250, "since": "2026-06-01T00:00:00+00:00"}]
     assert report["release_version"] == "v-test"
+    assert report["since"] == "2026-06-01T00:00:00+00:00"
     assert report["ready"] is False
 
 

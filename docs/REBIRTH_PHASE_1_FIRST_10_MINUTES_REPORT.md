@@ -44,7 +44,7 @@ Current status: **implemented locally, blocked on beta-player evidence**.
 - `.venv/bin/python -m pytest tests/rebirth -q`
 
 Focused result: `12 passed`.
-Full Rebirth suite: `1286 passed, 5 skipped, 19 deselected`.
+Full Rebirth suite: `1287 passed, 5 skipped, 19 deselected`.
 
 ## Coverage
 

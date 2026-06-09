@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1286 passed, 5 skipped, 19 deselected`. GitHub
+  `1287 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -49,6 +49,9 @@ execution against disposable restore databases.
 A public beta KPI gate evaluator now exists and is surfaced on `/rebirth/release`
 and `/api/rebirth/release`; it blocks unless tutorial, first-match, D1, D7,
 crash/error rate, telemetry coverage, human sample and balance checks all pass.
+Those release surfaces accept `?since=<cohort-start-iso>` so the dashboard,
+live balance and public beta gate can be reviewed against the same beta cohort
+window as the CLI gates.
 A final readiness evaluator now composes the external evidence gate with the
 public beta KPI gate, so Phase 8 has a single `ready=false/true` operator report
 without weakening either source gate.
@@ -60,6 +63,7 @@ release gate.
 
 - `services/rebirth_gate_evidence.py`
 - `services/rebirth_beta_ops.py`
+- `services/rebirth_live_balance.py`
 - `services/rebirth_public_beta_gate.py`
 - `services/rebirth_release_readiness.py`
 - `services/rebirth_product.py`
@@ -82,7 +86,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1286 passed, 5 skipped,
+The current local Rebirth suite passed with `1287 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.

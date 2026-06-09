@@ -1,8 +1,9 @@
 from services.rebirth_async_competition import async_competition_payload
+from services.rebirth_beta_ops import beta_dashboard_payload
 from services.rebirth_content_pipeline import content_pipeline_report
 from services.rebirth_engine import RebirthError, declare_attack, next_turn, play_card, start_match
 from services.rebirth_first_session import first_session_plan
-from services.rebirth_live_balance import live_balance_report
+from services.rebirth_live_balance import live_balance_payload, live_balance_report
 from services.rebirth_persistence import RebirthRepository
 
 
@@ -133,6 +134,27 @@ def test_live_balance_report_requires_real_human_sample_before_balance_claims():
     assert report["terminal_events"]["wins"] == 1
     assert report["overall"]["average_match_duration_ms"] == 42000
     assert report["release_versions"]["v-test"] == 1
+
+
+def test_release_dashboard_and_live_balance_payload_scope_to_since():
+    class Repo:
+        def __init__(self):
+            self.calls = []
+
+        def query_telemetry_events(self, *, limit=None, since=None):
+            self.calls.append({"limit": limit, "since": since})
+            return []
+
+    repo = Repo()
+    dashboard = beta_dashboard_payload(repo, limit=125, since="2026-06-01T00:00:00+00:00")
+    balance = live_balance_payload(repo, limit=250, since="2026-06-01T00:00:00+00:00", release_version="v-test")
+
+    assert repo.calls == [
+        {"limit": 125, "since": "2026-06-01T00:00:00+00:00"},
+        {"limit": 250, "since": "2026-06-01T00:00:00+00:00"},
+    ]
+    assert dashboard["since"] == "2026-06-01T00:00:00+00:00"
+    assert balance["since"] == "2026-06-01T00:00:00+00:00"
 
 
 def test_guest_can_resume_active_match_from_session(client):

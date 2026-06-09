@@ -163,6 +163,14 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
     }
 
 
-def live_balance_payload(repo, *, limit: int = 5000, release_version: Optional[str] = None) -> Dict[str, Any]:
-    events = repo.query_telemetry_events(limit=limit)
-    return live_balance_report(events, release_version=release_version)
+def live_balance_payload(
+    repo,
+    *,
+    limit: int = 5000,
+    since: Optional[str] = None,
+    release_version: Optional[str] = None,
+) -> Dict[str, Any]:
+    events = repo.query_telemetry_events(limit=limit, since=since)
+    report = live_balance_report(events, release_version=release_version)
+    report["since"] = since
+    return report

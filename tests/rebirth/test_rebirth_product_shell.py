@@ -188,6 +188,13 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert release.get_json()["release"]["release_readiness"]["version"] == "rebirth-release-readiness-v1"
     assert release.get_json()["release"]["release_readiness"]["ready"] is False
 
+    windowed_release = client.get("/api/rebirth/release?since=2026-06-01T00:00:00+00:00")
+    windowed_payload = windowed_release.get_json()["release"]
+    assert windowed_release.status_code == 200
+    assert windowed_payload["dashboard"]["since"] == "2026-06-01T00:00:00+00:00"
+    assert windowed_payload["live_balance"]["since"] == "2026-06-01T00:00:00+00:00"
+    assert windowed_payload["public_beta_gate"]["since"] == "2026-06-01T00:00:00+00:00"
+
 
 def test_external_beta_gate_parses_string_booleans():
     gates = external_gate_payload(
