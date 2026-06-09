@@ -20,6 +20,8 @@ Current status: **blocked on external proof**.
    - The tutorial overlay now lets battlefield controls receive pointer input.
    - The tutorial balloon remains interactive for skip/next controls.
    - The E2E asserts the overlay contract directly.
+   - The console sanity E2E keeps failing on JS/page errors but ignores known
+     Chromium runner network blips such as `ERR_NETWORK_CHANGED`.
 
 2. Client observability strengthened.
    - Backend Sentry/GlitchTip initialization already exists through
@@ -127,6 +129,8 @@ Coverage was not reduced. New regression coverage was added for:
 
 - tutorial overlay pointer-event contract;
 - mobile authenticated first-turn E2E overlay contract;
+- arena console sanity still catches app/JS errors while tolerating transient
+  browser network errors from the CI runner;
 - API failure telemetry payload persistence;
 - public reachability of legal pages and active Rebirth support redirects.
 - secret-free external gate evidence validation.

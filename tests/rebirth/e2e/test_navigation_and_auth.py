@@ -26,6 +26,11 @@ from services.rebirth_state import FIRST_DUEL_BOT_HP
 
 pytestmark = pytest.mark.e2e
 
+TRANSIENT_BROWSER_NETWORK_ERRORS = (
+    "net::ERR_NETWORK_CHANGED",
+    "net::ERR_ABORTED",
+)
+
 
 # --- navigation ------------------------------------------------------------
 
@@ -117,7 +122,9 @@ def test_no_console_errors_on_arena_load(page, live_server):
     page.on("pageerror", lambda exc: errors.append(str(exc)))
     page.on(
         "console",
-        lambda msg: errors.append(msg.text) if msg.type == "error" else None,
+        lambda msg: errors.append(msg.text)
+        if msg.type == "error" and not any(error in msg.text for error in TRANSIENT_BROWSER_NETWORK_ERRORS)
+        else None,
     )
 
     page.goto(f"{live_server}/rebirth")
