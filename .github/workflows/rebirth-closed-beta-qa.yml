@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   closed-beta-qa:
@@ -52,3 +53,17 @@ jobs:
 
       - name: Balance report 200
         run: python tools/rebirth_balance_report.py --matches 200 --output /tmp/rebirth-balance-report.md
+
+      - name: Phase report audit
+        run: python tools/ops/rebirth_phase_report_audit.py
+
+      - name: Release readiness snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REBIRTH_GITHUB_QA_BRANCH: ${{ github.ref_name }}
+          REBIRTH_GITHUB_QA_HEAD_SHA: ${{ github.sha }}
+        run: |
+          python tools/ops/rebirth_release_readiness.py \
+            --report-only \
+            --since 2026-06-01T00:00:00+00:00 \
+            --release-version "${GITHUB_SHA}"

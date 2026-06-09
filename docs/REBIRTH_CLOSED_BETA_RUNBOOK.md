@@ -60,6 +60,10 @@ Updated on 2026-06-09.
 ## Operational Checks
 
 - Run the scheduled `rebirth-closed-beta-qa` workflow daily.
+  It now gates on `tools/ops/rebirth_phase_report_audit.py` and prints a
+  report-only release readiness snapshot for the workflow branch/SHA.
+  Treat that snapshot as operational visibility; the final GitHub QA proof is
+  still the completed workflow conclusion for the exact branch/head commit.
 - Keep a fresh 200-match balance report after balance changes.
 - Review `/health` after deploy.
 - Configure `SENTRY_DSN` for Sentry, GlitchTip or a compatible endpoint before

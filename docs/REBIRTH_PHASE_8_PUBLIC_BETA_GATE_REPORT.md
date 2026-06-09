@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1294 passed, 5 skipped, 19 deselected`. GitHub
+  `1295 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -80,6 +80,9 @@ external proof, phase reports and product KPIs.
 The release dashboard/API now run external gates in strict evidence mode too,
 so they cannot appear public-beta ready from local flags or a configured DSN
 alone.
+The closed-beta QA workflow now runs the Phase 0-8 report audit as a blocking
+step and emits a report-only release readiness snapshot for the current
+branch/SHA, with GitHub `actions: read` permission for workflow lookup.
 
 ## Files Changed
 
@@ -114,7 +117,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1294 passed, 5 skipped,
+The current local Rebirth suite passed with `1295 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -130,6 +133,8 @@ external proof and human KPI gates remain blocked.
 The release API contract now asserts `require_external_evidence=true` and keeps
 legal, backup/restore, error tracking and GitHub workflow blocked/pending when
 only local readiness flags are supplied.
+The closed-beta QA workflow contract now asserts that phase-report audit and
+release-readiness snapshot commands remain wired into CI.
 
 Current external gate states:
 
@@ -142,7 +147,9 @@ Current external gate states:
 
 ## Coverage
 
-Coverage was not reduced.
+Coverage was not reduced. New governance coverage asserts that the closed-beta
+QA workflow keeps phase-report audit and release-readiness snapshot checks wired
+to the current branch/head SHA.
 
 ## Risks
 
@@ -156,6 +163,8 @@ Coverage was not reduced.
   legal, restore, error-tracking or human telemetry evidence.
 - GitHub Actions major updates can change CI behavior; the current workflow
   must stay green on GitHub after each push before using it as release proof.
+- The readiness snapshot inside the same workflow is report-only because a run
+  cannot prove its own final successful conclusion while it is still executing.
 - A synthetic passing gate only proves evaluator behavior. Real public beta
   readiness still requires production events and external evidence records.
 

@@ -76,6 +76,8 @@ Current status: **blocked on external proof**.
    - The release dashboard/API also use strict external evidence mode, so local
      flags and DSNs cannot make the web readiness surface greener than the
      final Phase 8 CLI gate.
+   - `rebirth-closed-beta-qa` now runs the phase report audit as a CI gate and
+     prints a report-only release readiness snapshot for the current branch/SHA.
    - This does not mark blocked phases complete; it only prevents missing or
      under-specified phase reports.
 
@@ -135,6 +137,7 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python tools/ops/rebirth_backup_restore_drill.py`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_ops_tools.py tests/rebirth/test_rebirth_product_shell.py -q`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_product_shell.py -q`
+- `.venv/bin/python -m pytest tests/rebirth/test_rebirth_ops_tools.py::test_closed_beta_workflow_runs_release_governance_checks -q`
 - `.venv/bin/python -c "import yaml; [yaml.safe_load(open(path, encoding='utf-8')) for path in ['.github/workflows/test.yml', '.github/workflows/rebirth-closed-beta-qa.yml']]; print('workflow_yaml_ok')"`
 - `rg -n "actions/checkout@v4|actions/setup-python@v5|node20|Node.js 20" .github`
 - `.venv/bin/python tools/ops/rebirth_phase_report_audit.py`
@@ -143,7 +146,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1294 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1295 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -158,6 +161,9 @@ Key local results:
 - GitHub Actions workflow YAML parses locally, and the repo no longer contains
   the Node 20-deprecated action pins that were warning on the QA run.
 - Phase report audit: `ok=true` for Phase 0 through Phase 8 report files.
+- The closed-beta QA workflow now gates on the Phase 0-8 report audit and
+  records a report-only release readiness snapshot with `actions: read` and the
+  current branch/head SHA.
 - Release readiness report now surfaces `phase_reports_ready=true` and
   `phase_reports_passed=9/9` while still blocking on external proof and human
   KPI evidence.
@@ -197,6 +203,8 @@ Coverage was not reduced. New regression coverage was added for:
 - backup/restore evidence with unresolved issues cannot pass the external gate.
 - GitHub QA evidence is scoped to the expected branch/head commit instead of
   any latest workflow run or manual override.
+- closed-beta QA workflow coverage asserts that release governance checks stay
+  wired into CI without turning blocked external/human gates into a bypass.
 
 ## Risks
 

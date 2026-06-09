@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from services.rebirth_beta_ops import external_gate_payload
 from services.rebirth_gate_evidence import validate_external_gate_evidence
@@ -81,6 +82,17 @@ def test_phase_report_audit_covers_all_execution_plan_reports():
         "status",
         "tests_executed",
     ]
+
+
+def test_closed_beta_workflow_runs_release_governance_checks():
+    workflow = Path(".github/workflows/rebirth-closed-beta-qa.yml").read_text(encoding="utf-8")
+
+    assert "actions: read" in workflow
+    assert "python tools/ops/rebirth_phase_report_audit.py" in workflow
+    assert "python tools/ops/rebirth_release_readiness.py" in workflow
+    assert "--report-only" in workflow
+    assert "REBIRTH_GITHUB_QA_BRANCH: ${{ github.ref_name }}" in workflow
+    assert "REBIRTH_GITHUB_QA_HEAD_SHA: ${{ github.sha }}" in workflow
 
 
 def test_error_tracking_smoke_dry_run_without_dsn_does_not_fail_shell():
