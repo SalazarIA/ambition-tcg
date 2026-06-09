@@ -7,11 +7,13 @@ credentials, DSNs or database identifiers in source control.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Mapping
 
 
 LEGAL_SCOPE = {"terms", "privacy", "data_deletion", "billing_disabled"}
+BACKUP_RESTORE_MAX_AGE_DAYS = 30
+ERROR_TRACKING_MAX_AGE_DAYS = 14
 
 
 def _present(value: Any) -> bool:
@@ -22,14 +24,31 @@ def _bool(value: Any) -> bool:
     return value is True or str(value).strip().lower() in {"1", "true", "yes", "on", "passed"}
 
 
-def _iso(value: Any) -> bool:
+def _parse_iso(value: Any) -> datetime | None:
     if not _present(value):
-        return False
+        return None
     try:
-        datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        return True
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _iso(value: Any) -> bool:
+    return _parse_iso(value) is not None
+
+
+def _fresh_iso(value: Any, *, now: datetime, max_age_days: int) -> bool:
+    parsed = _parse_iso(value)
+    if not parsed:
         return False
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    now = now.astimezone(timezone.utc)
+    age = now - parsed
+    return 0 <= age.total_seconds() <= max_age_days * 24 * 60 * 60
 
 
 def _has_any_secret_text(values: Iterable[Any]) -> bool:
@@ -62,7 +81,7 @@ def _legal(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, Any]:
     return _result(not errors, errors)
 
 
-def _backup_restore(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, Any]:
+def _backup_restore(evidence: Mapping[str, Any], *, example: bool, now: datetime) -> Dict[str, Any]:
     data = evidence.get("backup_restore") or {}
     errors: List[str] = []
     if example:
@@ -71,6 +90,8 @@ def _backup_restore(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, 
         errors.append("validated_required")
     if not _iso(data.get("drill_at")):
         errors.append("drill_at_iso_required")
+    elif not _fresh_iso(data.get("drill_at"), now=now, max_age_days=BACKUP_RESTORE_MAX_AGE_DAYS):
+        errors.append(f"drill_at_stale:>{BACKUP_RESTORE_MAX_AGE_DAYS}d")
     for key in ("operator", "source_commit", "restore_target", "evidence_ref"):
         if not _present(data.get(key)):
             errors.append(f"{key}_required")
@@ -87,7 +108,7 @@ def _backup_restore(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, 
     return _result(not errors, errors)
 
 
-def _error_tracking(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, Any]:
+def _error_tracking(evidence: Mapping[str, Any], *, example: bool, now: datetime) -> Dict[str, Any]:
     data = evidence.get("error_tracking") or {}
     errors: List[str] = []
     if example:
@@ -99,15 +120,18 @@ def _error_tracking(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, 
             errors.append(f"{key}_required")
     if _present(data.get("tested_at")) and not _iso(data.get("tested_at")):
         errors.append("tested_at_iso_required")
+    elif _present(data.get("tested_at")) and not _fresh_iso(data.get("tested_at"), now=now, max_age_days=ERROR_TRACKING_MAX_AGE_DAYS):
+        errors.append(f"tested_at_stale:>{ERROR_TRACKING_MAX_AGE_DAYS}d")
     if _has_any_secret_text(data.values()):
         errors.append("secret_like_value_detected")
     return _result(not errors, errors)
 
 
-def validate_external_gate_evidence(evidence: Mapping[str, Any] | None) -> Dict[str, Any]:
+def validate_external_gate_evidence(evidence: Mapping[str, Any] | None, *, now: datetime | None = None) -> Dict[str, Any]:
     """Validate an external evidence payload without trusting source-control examples."""
 
     evidence = evidence or {}
+    now = now or datetime.now(timezone.utc)
     if not evidence:
         return {
             "legal_review": _result(False, ["evidence_missing"]),
@@ -117,6 +141,6 @@ def validate_external_gate_evidence(evidence: Mapping[str, Any] | None) -> Dict[
     example = _bool(evidence.get("example"))
     return {
         "legal_review": _legal(evidence, example=example),
-        "backup_restore": _backup_restore(evidence, example=example),
-        "error_tracking": _error_tracking(evidence, example=example),
+        "backup_restore": _backup_restore(evidence, example=example, now=now),
+        "error_tracking": _error_tracking(evidence, example=example, now=now),
     }

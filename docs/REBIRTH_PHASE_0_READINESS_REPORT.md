@@ -55,6 +55,8 @@ Current status: **blocked on external proof**.
      after operator confirmation.
    - `tools/ops/rebirth_backup_restore_drill.py` can dry-run or execute the
      PostgreSQL restore drill without printing database URLs.
+   - External backup/restore evidence now expires after 30 days, and
+     error-tracking smoke evidence expires after 14 days.
 
 ## Files Changed
 
@@ -107,7 +109,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1287 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1288 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -143,6 +145,8 @@ Coverage was not reduced. New regression coverage was added for:
 - dry-run backup/restore drill does not execute restore or print database URLs.
 - backup/restore evidence requires schema, health and support-export checks
   before it can pass the gate.
+- backup/restore and error-tracking evidence must be fresh enough for an
+  external tester gate.
 - GitHub QA evidence is scoped to the expected branch/head commit instead of
   any latest workflow run or manual override.
 

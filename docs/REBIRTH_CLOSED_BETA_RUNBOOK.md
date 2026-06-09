@@ -86,7 +86,8 @@ Updated on 2026-06-09.
   JSON through `--evidence`. Use
   `python tools/ops/rebirth_backup_restore_drill.py` for a redacted dry-run and
   add `--execute --i-understand-restore-target-is-disposable` only when the
-  restore target is disposable.
+  restore target is disposable. The evidence `drill_at` must be no more than
+  30 days old.
 - Error tracking: set `SENTRY_DSN` for Sentry, GlitchTip or a compatible DSN.
   Keep `SENTRY_ENVIRONMENT=closed-beta` and a conservative
   `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood. A valid external
@@ -95,7 +96,8 @@ Updated on 2026-06-09.
   Use `python tools/ops/rebirth_error_tracking_smoke.py --send` in the target
   environment to emit a smoke event. After confirming the event in the provider,
   re-run with `--confirmed-evidence-ref` or copy the printed evidence fields
-  into the private gate evidence file.
+  into the private gate evidence file. The evidence `tested_at` must be no more
+  than 14 days old.
 - GitHub QA: run or schedule `rebirth-closed-beta-qa.yml`; the gate checks the
   current `HEAD` by default. When auditing manually, use `gh run list
   --workflow rebirth-closed-beta-qa.yml --branch <branch> --commit <head-sha> --limit 1 --json status,conclusion,headSha`

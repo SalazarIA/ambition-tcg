@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 
 from services.rebirth_beta_ops import external_gate_payload
@@ -12,17 +13,18 @@ def read(path):
 
 
 def valid_external_evidence():
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     return {
         "legal_review": {
             "approved": True,
             "reviewer": "Operator",
-            "approved_at": "2026-06-08T12:00:00Z",
+            "approved_at": now,
             "scope": ["terms", "privacy", "data_deletion", "billing_disabled"],
             "evidence_ref": "private-ticket-legal-1",
         },
         "backup_restore": {
             "validated": True,
-            "drill_at": "2026-06-08T12:10:00Z",
+            "drill_at": now,
             "operator": "Operator",
             "source_commit": "abc123",
             "restore_target": "redacted-restore-db",
@@ -37,7 +39,7 @@ def valid_external_evidence():
             "provider": "glitchtip",
             "environment": "closed-beta",
             "test_event_id": "event-123",
-            "tested_at": "2026-06-08T12:20:00Z",
+            "tested_at": now,
             "evidence_ref": "private-ticket-sentry-1",
         },
     }

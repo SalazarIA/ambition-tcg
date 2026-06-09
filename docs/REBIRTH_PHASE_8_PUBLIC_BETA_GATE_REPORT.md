@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1287 passed, 5 skipped, 19 deselected`. GitHub
+  `1288 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -40,6 +40,8 @@ No public beta gate bypass was implemented.
 Secret-free evidence validation was added so remaining Phase 0 gates can be
 proven by operator records without committing secrets or relying only on manual
 boolean flags.
+Backup/restore and error-tracking evidence now has freshness checks, preventing
+stale operational proof from satisfying the final gate.
 The release dashboard now displays the evidence validity/errors and the
 operator command for passing a private evidence file.
 An error-tracking smoke command now exists for Sentry/GlitchTip target
@@ -86,7 +88,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1287 passed, 5 skipped,
+The current local Rebirth suite passed with `1288 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.

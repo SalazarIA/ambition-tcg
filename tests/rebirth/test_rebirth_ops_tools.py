@@ -2,12 +2,17 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
 
 from services.rebirth_beta_ops import external_gate_payload
 from services.rebirth_gate_evidence import validate_external_gate_evidence
 from tools.ops.rebirth_backup_restore_drill import build_evidence_payload as build_backup_evidence_payload
 from tools.ops.rebirth_error_tracking_smoke import build_evidence_payload
 from tools.ops import rebirth_pre_external_gate
+
+
+def _now_iso():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def test_error_tracking_smoke_evidence_requires_operator_confirmation():
@@ -21,7 +26,7 @@ def test_error_tracking_smoke_evidence_requires_operator_confirmation():
         environment="closed-beta",
         event_id="event-123",
         confirmed_evidence_ref="private-ticket-123",
-        tested_at="2026-06-08T12:00:00Z",
+        tested_at=_now_iso(),
     )
 
     assert validate_external_gate_evidence(candidate)["error_tracking"]["valid"] is False
@@ -61,7 +66,7 @@ def test_backup_restore_evidence_requires_health_and_support_checks(tmp_path):
         health_check="pending",
         support_export_check="passed",
         evidence_ref="private-drill-1",
-        drill_at="2026-06-08T12:00:00Z",
+        drill_at=_now_iso(),
     )
     valid = build_backup_evidence_payload(
         validated=True,
@@ -73,11 +78,44 @@ def test_backup_restore_evidence_requires_health_and_support_checks(tmp_path):
         health_check="passed",
         support_export_check="passed",
         evidence_ref="private-drill-1",
-        drill_at="2026-06-08T12:00:00Z",
+        drill_at=_now_iso(),
     )
 
     assert validate_external_gate_evidence(pending)["backup_restore"]["valid"] is False
     assert validate_external_gate_evidence(valid)["backup_restore"]["valid"] is True
+
+
+def test_external_evidence_rejects_stale_operational_proof(tmp_path):
+    dump = tmp_path / "rebirth.dump"
+    dump.write_bytes(b"backup")
+    now = datetime(2026, 6, 9, 12, tzinfo=timezone.utc)
+    stale_backup = build_backup_evidence_payload(
+        validated=True,
+        operator="Operator",
+        source_commit="abc123",
+        dump_path=dump,
+        restore_target="redacted-restore",
+        schema_check="passed",
+        health_check="passed",
+        support_export_check="passed",
+        evidence_ref="private-drill-1",
+        drill_at=(now - timedelta(days=31)).isoformat(),
+    )
+    stale_error = build_evidence_payload(
+        provider="glitchtip",
+        environment="closed-beta",
+        event_id="event-123",
+        confirmed_evidence_ref="private-ticket-123",
+        tested_at=(now - timedelta(days=15)).isoformat(),
+    )
+
+    evidence = {**stale_backup, **stale_error}
+    report = validate_external_gate_evidence(evidence, now=now)
+
+    assert report["backup_restore"]["valid"] is False
+    assert "drill_at_stale:>30d" in report["backup_restore"]["errors"]
+    assert report["error_tracking"]["valid"] is False
+    assert "tested_at_stale:>14d" in report["error_tracking"]["errors"]
 
 
 def test_backup_restore_drill_dry_run_does_not_print_database_url():
