@@ -61,6 +61,12 @@ Current status: **blocked on external proof**.
      local flags and DSNs cannot substitute for legal, restore or
      error-tracking proof.
 
+5. GitHub Actions runner deprecation risk addressed.
+   - `rebirth-closed-beta-qa` and the PR `tests` workflow now use
+     Node 24-compatible official Actions majors.
+   - The change is CI infrastructure only; no gameplay, balance or engine rules
+     were changed.
+
 ## Files Changed
 
 - `app.py`
@@ -79,6 +85,8 @@ Current status: **blocked on external proof**.
 - `docs/REBIRTH_DISASTER_RECOVERY_RUNBOOK.md`
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `docs/REBIRTH_PHASE_0_READINESS_REPORT.md`
+- `.github/workflows/rebirth-closed-beta-qa.yml`
+- `.github/workflows/test.yml`
 - `services/rebirth_gate_evidence.py`
 - `services/rebirth_product.py`
 - `templates/rebirth_product.html`
@@ -108,6 +116,8 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python tools/ops/rebirth_backup_restore_drill.py`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_ops_tools.py tests/rebirth/test_rebirth_product_shell.py -q`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_product_shell.py -q`
+- `.venv/bin/python -c "import yaml; [yaml.safe_load(open(path, encoding='utf-8')) for path in ['.github/workflows/test.yml', '.github/workflows/rebirth-closed-beta-qa.yml']]; print('workflow_yaml_ok')"`
+- `rg -n "actions/checkout@v4|actions/setup-python@v5|node20|Node.js 20" .github`
 - `git diff --check`
 
 Key local results:
@@ -124,6 +134,8 @@ Key local results:
 - GitHub `rebirth-closed-beta-qa`: passed on the pushed branch; the
   pre-external gate reports `github_workflow=passed` only when the GitHub
   workflow result matches the expected branch/head commit.
+- GitHub Actions workflow YAML parses locally, and the repo no longer contains
+  the Node 20-deprecated action pins that were warning on the QA run.
 - Pre-external gate report: blocked on external proof for legal review,
   backup/restore and error tracking.
 - Example evidence file: rejected intentionally with `example_evidence_file`.

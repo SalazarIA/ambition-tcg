@@ -68,6 +68,9 @@ matching workflow run and valid legal, restore and error-tracking evidence.
 GitHub QA proof is matched to the expected branch/head commit, preventing an
 unrelated older workflow run or manual override from satisfying or blocking the
 release gate.
+The closed-beta QA workflow and PR `tests` workflow now use Node 24-compatible
+official GitHub Actions majors, removing the runner deprecation warning from
+the release path without changing gameplay.
 
 ## Files Changed
 
@@ -87,6 +90,8 @@ release gate.
 - `tests/rebirth/test_rebirth_public_beta_gate.py`
 - `tests/rebirth/test_rebirth_release_readiness.py`
 - `tests/rebirth/test_rebirth_ops_tools.py`
+- `.github/workflows/rebirth-closed-beta-qa.yml`
+- `.github/workflows/test.yml`
 
 ## Tests Executed
 
@@ -102,6 +107,8 @@ The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
 The evidence template was also run through `--evidence` and correctly rejected
 with `example_evidence_file`.
+The GitHub Actions workflow YAML was parsed locally, and old Node 20 action
+pins were searched for and removed from `.github`.
 
 Current external gate states:
 
@@ -124,6 +131,8 @@ Coverage was not reduced.
   missing production evidence.
 - Local readiness flags can no longer close the Phase 8 gate by themselves;
   operators must provide the private evidence JSON and real cohort window.
+- GitHub Actions major updates can change CI behavior; the current workflow
+  must stay green on GitHub after each push before using it as release proof.
 - A synthetic passing gate only proves evaluator behavior. Real public beta
   readiness still requires production events and external evidence records.
 
