@@ -61,6 +61,15 @@ def _has_secret_like_validation_error(validation: Mapping[str, Any]) -> bool:
     return False
 
 
+def _path_inside_repo(path: Path) -> bool:
+    try:
+        resolved = path.resolve()
+        root = ROOT.resolve()
+    except OSError:
+        return False
+    return resolved == root or root in resolved.parents
+
+
 def build_bundle_payload(evidence: Mapping[str, Any], *, source_paths: list[str]) -> dict[str, Any]:
     validation = validate_external_gate_evidence(evidence)
     secret_like = _has_secret_like_validation_error(validation)
@@ -87,6 +96,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Merge Rebirth external evidence blocks into one validated bundle.")
     parser.add_argument("inputs", nargs="+", help="JSON files containing evidence blocks or helper command output.")
     parser.add_argument("--output", default="", help="Optional path for the merged secret-free evidence JSON.")
+    parser.add_argument(
+        "--allow-repo-output",
+        action="store_true",
+        help="Allow writing inside the repository. Use only for disposable local tests, never real evidence.",
+    )
     parser.add_argument("--report-only", action="store_true", help="Print JSON but do not fail on incomplete evidence.")
     args = parser.parse_args()
 
@@ -105,7 +119,11 @@ def main() -> int:
         print(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False))
         return 0 if args.report_only else 2
 
-    if args.output and not payload.get("secret_like_value_detected"):
+    if args.output and _path_inside_repo(Path(args.output)) and not args.allow_repo_output:
+        payload["output"] = None
+        payload["output_error"] = "output_path_inside_repo"
+        payload["notes"].append("Use an output path outside the repository, such as /secure/path/rebirth-external-gates.json.")
+    elif args.output and not payload.get("secret_like_value_detected"):
         output_path = Path(args.output)
         output_path.write_text(
             json.dumps(payload["evidence"], indent=2, sort_keys=True, ensure_ascii=False) + "\n",
@@ -118,7 +136,7 @@ def main() -> int:
     print(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False))
     if args.report_only:
         return 0
-    return 0 if payload["ok"] and not payload.get("secret_like_value_detected") else 2
+    return 0 if payload["ok"] and not payload.get("secret_like_value_detected") and not payload.get("output_error") else 2
 
 
 if __name__ == "__main__":

@@ -62,6 +62,8 @@ Current status: **blocked on external proof**.
    - `tools/ops/rebirth_external_evidence_bundle.py` can merge legal,
      backup/restore and error-tracking helper outputs into one validated private
      evidence JSON without printing evidence when secret-like values are found.
+   - The evidence bundler refuses repository-local output paths by default, and
+     root-level generated evidence filenames are ignored by Git.
    - External backup/restore evidence now expires after 30 days, and
      error-tracking smoke evidence expires after 14 days.
    - The final Phase 8 release gate now requires strict external evidence, so
@@ -108,6 +110,7 @@ Current status: **blocked on external proof**.
 - `docs/REBIRTH_PHASE_0_READINESS_REPORT.md`
 - `.github/workflows/rebirth-closed-beta-qa.yml`
 - `.github/workflows/test.yml`
+- `.gitignore`
 - `services/rebirth_gate_evidence.py`
 - `services/rebirth_phase_reports.py`
 - `services/rebirth_product.py`
@@ -145,6 +148,7 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python -m py_compile services/rebirth_gate_evidence.py tools/ops/rebirth_legal_review_evidence.py`
 - `.venv/bin/python -m py_compile tools/ops/rebirth_external_evidence_bundle.py`
 - `.venv/bin/python tools/ops/rebirth_external_evidence_bundle.py docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json --report-only`
+- `git check-ignore -v rebirth-external-gates-test-output.json rebirth-evidence-bundle-test-output.json`
 - `.venv/bin/python tools/ops/rebirth_error_tracking_smoke.py`
 - `.venv/bin/python tools/ops/rebirth_backup_restore_drill.py`
 - `.venv/bin/python tools/ops/rebirth_legal_review_evidence.py --approved --reviewer Operator --evidence-ref private-legal-1 --all-required-scopes-reviewed`
@@ -159,7 +163,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1302 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1305 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -191,7 +195,8 @@ Key local results:
   repo templates.
 - External evidence bundler: merges helper output blocks, writes a private
   evidence JSON only when no secret-like value is detected, and keeps incomplete
-  bundles visible through validation errors.
+  bundles visible through validation errors. It now blocks repo-local output by
+  default.
 
 ## Coverage
 
@@ -209,6 +214,9 @@ Coverage was not reduced. New regression coverage was added for:
 - legal evidence validation rejects stale Terms/Privacy/Data Deletion hashes.
 - external evidence bundling rejects duplicate evidence groups and redacts output
   when a secret-like value is detected.
+- private external evidence filenames are ignored at the repo root and the
+  bundler refuses repo-local writes unless an explicit disposable-test override
+  is used.
 - external evidence template rejection for source-control examples and common
   secret-like values.
 - mandatory Phase 0-8 report structure.

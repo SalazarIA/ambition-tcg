@@ -261,6 +261,73 @@ def test_external_evidence_bundle_redacts_secret_like_values(tmp_path):
     assert "password" not in result.stdout
 
 
+def test_external_evidence_bundle_refuses_repo_output_by_default(tmp_path):
+    dump = tmp_path / "rebirth.dump"
+    dump.write_bytes(b"backup")
+    evidence = _valid_external_evidence()
+    evidence["backup_restore"]["dump_bytes"] = dump.stat().st_size
+    path = tmp_path / "valid.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    output = Path("rebirth-external-gates-test-output.json")
+    if output.exists():
+        output.unlink()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/ops/rebirth_external_evidence_bundle.py",
+            str(path),
+            "--output",
+            str(output),
+        ],
+        cwd=os.getcwd(),
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 2
+    assert payload["ok"] is True
+    assert payload["output"] is None
+    assert payload["output_error"] == "output_path_inside_repo"
+    assert not output.exists()
+
+
+def test_external_evidence_bundle_allows_repo_output_only_with_override(tmp_path):
+    evidence = _valid_external_evidence()
+    path = tmp_path / "valid.json"
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    output = Path("rebirth-external-gates-test-output.json")
+    if output.exists():
+        output.unlink()
+
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "tools/ops/rebirth_external_evidence_bundle.py",
+                str(path),
+                "--output",
+                str(output),
+                "--allow-repo-output",
+            ],
+            cwd=os.getcwd(),
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        payload = json.loads(result.stdout)
+
+        assert result.returncode == 0
+        assert payload["ok"] is True
+        assert payload["output"] == str(output)
+        assert output.exists()
+    finally:
+        if output.exists():
+            output.unlink()
+
+
 def test_external_evidence_bundle_preserves_example_marker():
     report = validate_external_gate_evidence(
         merge_evidence_blocks(
@@ -324,6 +391,13 @@ def test_closed_beta_workflow_runs_release_governance_checks():
     assert "--report-only" in workflow
     assert "REBIRTH_GITHUB_QA_BRANCH: ${{ github.ref_name }}" in workflow
     assert "REBIRTH_GITHUB_QA_HEAD_SHA: ${{ github.sha }}" in workflow
+
+
+def test_private_external_evidence_files_are_gitignored():
+    gitignore = Path(".gitignore").read_text(encoding="utf-8")
+
+    assert "/rebirth-external-gates*.json" in gitignore
+    assert "/rebirth-evidence-bundle*.json" in gitignore
 
 
 def test_error_tracking_smoke_dry_run_without_dsn_does_not_fail_shell():

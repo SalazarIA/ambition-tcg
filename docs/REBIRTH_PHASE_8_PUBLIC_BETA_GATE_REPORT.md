@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1302 passed, 5 skipped, 19 deselected`. GitHub
+  `1305 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -56,6 +56,8 @@ evidence.
 An external evidence bundler now merges legal, backup/restore and
 error-tracking helper outputs into one private evidence JSON and refuses to
 print or write the merged evidence when a secret-like value is detected.
+It also refuses repository-local output paths by default, and generated private
+evidence filenames are ignored at the repo root.
 The release dashboard now displays the evidence validity/errors and the
 operator command for passing a private evidence file.
 An error-tracking smoke command now exists for Sentry/GlitchTip target
@@ -113,6 +115,7 @@ branch/SHA, with GitHub `actions: read` permission for workflow lookup.
 - `tools/ops/rebirth_release_readiness.py`
 - `tools/ops/rebirth_phase_report_audit.py`
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
+- `.gitignore`
 - `tests/rebirth/test_rebirth_public_beta_gate.py`
 - `tests/rebirth/test_rebirth_release_readiness.py`
 - `tests/rebirth/test_rebirth_ops_tools.py`
@@ -128,7 +131,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1302 passed, 5 skipped,
+The current local Rebirth suite passed with `1305 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -153,7 +156,8 @@ The legal evidence validator now rejects stale document hashes for reviewed
 Terms, Privacy and Data Deletion templates.
 The external evidence bundler contract now asserts successful helper-output
 merge, duplicate-block rejection and redaction when a secret-like value is
-detected.
+detected. It also asserts that private evidence output is kept outside the repo
+by default.
 
 Current external gate states:
 
@@ -173,7 +177,8 @@ Phase 8 legal gate still requires approval, reviewer, private evidence reference
 and the complete required scope. Legal evidence validation also rejects stale
 document hashes after legal-copy changes. Evidence bundle coverage asserts that
 the final private evidence JSON can be assembled repeatably without printing
-secret-like values.
+secret-like values and without writing the private bundle inside the repository
+by default.
 
 ## Risks
 

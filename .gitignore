@@ -49,6 +49,8 @@ reports/audit_*/
 reports_*.txt
 *_scan.txt
 *_check.txt
+/rebirth-external-gates*.json
+/rebirth-evidence-bundle*.json
 # Ambitionz QA local artifacts
 reports/qa/qa_run_*.md
 reports/qa/screenshots/
