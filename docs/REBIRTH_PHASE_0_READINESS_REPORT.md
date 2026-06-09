@@ -105,10 +105,9 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Full Rebirth test suite: `1272 passed, 5 skipped, 19 deselected`.
-- External evidence validation pass: `1274 passed, 5 skipped, 19 deselected`.
-- Error-tracking smoke pass: `1276 passed, 5 skipped, 19 deselected`.
-- Backup/restore drill pass: `1278 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1282 passed, 5 skipped, 19 deselected`.
+- External evidence, error-tracking smoke and backup/restore drill contracts are
+  covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
 - Phase 0 focused tests: `12 passed`.
 - Visual screenshots: `RESULT=PASS`, no issues.
@@ -141,7 +140,7 @@ Coverage was not reduced. New regression coverage was added for:
 - backup/restore evidence requires schema, health and support-export checks
   before it can pass the gate.
 
-## Current Risks
+## Risks
 
 - `SENTRY_DSN` must be configured in the target environment before the
   error-tracking gate can pass.
