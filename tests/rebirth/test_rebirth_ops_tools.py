@@ -3,9 +3,11 @@ import os
 import subprocess
 import sys
 
+from services.rebirth_beta_ops import external_gate_payload
 from services.rebirth_gate_evidence import validate_external_gate_evidence
 from tools.ops.rebirth_backup_restore_drill import build_evidence_payload as build_backup_evidence_payload
 from tools.ops.rebirth_error_tracking_smoke import build_evidence_payload
+from tools.ops import rebirth_pre_external_gate
 
 
 def test_error_tracking_smoke_evidence_requires_operator_confirmation():
@@ -98,3 +100,53 @@ def test_backup_restore_drill_dry_run_does_not_print_database_url():
     assert "postgresql://" not in result.stdout
     assert payload["source"]["database"] == "prod"
     assert payload["restore"]["database"] == "restore"
+
+
+def test_external_gate_requires_workflow_for_expected_head():
+    gates = external_gate_payload(
+        {},
+        workflow={
+            "conclusion": "success",
+            "expectedHeadSha": "abc123",
+            "matchedExpectedHead": False,
+        },
+    )
+    states = {check["key"]: check["state"] for check in gates["checks"]}
+
+    assert states["github_workflow"] == "pending"
+
+
+def test_workflow_status_filters_github_run_by_expected_head(monkeypatch):
+    calls = []
+
+    def fake_run(command, **kwargs):
+        calls.append(command)
+
+        class Result:
+            stdout = json.dumps(
+                [
+                    {
+                        "status": "completed",
+                        "conclusion": "success",
+                        "headSha": "abc123",
+                        "headBranch": "fix/current",
+                        "databaseId": 123,
+                        "url": "https://example.invalid/run",
+                        "createdAt": "2026-06-09T12:00:00Z",
+                    }
+                ]
+            )
+
+        return Result()
+
+    monkeypatch.setattr(rebirth_pre_external_gate.shutil, "which", lambda name: "/usr/bin/gh")
+    monkeypatch.setattr(rebirth_pre_external_gate.subprocess, "run", fake_run)
+
+    status = rebirth_pre_external_gate._workflow_status(branch="fix/current", head_sha="abc123")
+
+    assert calls
+    assert "--commit" in calls[0]
+    assert "abc123" in calls[0]
+    assert status["conclusion"] == "success"
+    assert status["matchedExpectedHead"] is True
+    assert status["expectedHeadSha"] == "abc123"

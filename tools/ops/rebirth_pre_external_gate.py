@@ -24,33 +24,61 @@ from services.rebirth_beta_ops import external_gate_payload, truthy
 WORKFLOW_NAME = "rebirth-closed-beta-qa.yml"
 
 
-def _workflow_status():
+def _git_value(*args):
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=ROOT,
+            check=True,
+            text=True,
+            capture_output=True,
+            timeout=10,
+        )
+    except Exception:
+        return None
+    value = result.stdout.strip()
+    return value or None
+
+
+def _workflow_status(*, branch=None, head_sha=None):
     workflow_path = ROOT / ".github" / "workflows" / WORKFLOW_NAME
+    branch = branch or os.environ.get("REBIRTH_GITHUB_QA_BRANCH") or _git_value("rev-parse", "--abbrev-ref", "HEAD")
+    if branch == "HEAD":
+        branch = None
+    head_sha = head_sha or os.environ.get("REBIRTH_GITHUB_QA_HEAD_SHA") or _git_value("rev-parse", "HEAD")
     status = {
         "workflow": WORKFLOW_NAME,
         "exists": workflow_path.exists(),
         "status": None,
         "conclusion": None,
         "headSha": None,
+        "expectedHeadSha": head_sha,
+        "branch": branch,
+        "matchedExpectedHead": False,
         "source": "local_file",
     }
     gh = shutil.which("gh")
     if not gh:
         status["error"] = "gh_cli_missing"
         return status
+    command = [
+        gh,
+        "run",
+        "list",
+        "--workflow",
+        WORKFLOW_NAME,
+        "--limit",
+        "1",
+        "--json",
+        "status,conclusion,headSha,headBranch,databaseId,url,createdAt",
+    ]
+    if head_sha:
+        command.extend(["--commit", head_sha])
+    elif branch:
+        command.extend(["--branch", branch])
     try:
         result = subprocess.run(
-            [
-                gh,
-                "run",
-                "list",
-                "--workflow",
-                WORKFLOW_NAME,
-                "--limit",
-                "1",
-                "--json",
-                "status,conclusion,headSha",
-            ],
+            command,
             cwd=ROOT,
             check=True,
             text=True,
@@ -61,6 +89,10 @@ def _workflow_status():
         if runs:
             status.update(runs[0])
             status["source"] = "github"
+            status["matchedExpectedHead"] = not head_sha or runs[0].get("headSha") == head_sha
+        elif head_sha:
+            status["source"] = "github"
+            status["error"] = "matching_workflow_run_missing"
     except Exception as exc:
         status["error"] = f"gh_query_failed:{type(exc).__name__}"
     return status
@@ -96,9 +128,19 @@ def main():
         default=os.environ.get("REBIRTH_EXTERNAL_EVIDENCE_PATH"),
         help="Path to a secret-free JSON evidence file for legal, backup/restore and error-tracking gates.",
     )
+    parser.add_argument(
+        "--workflow-branch",
+        default=os.environ.get("REBIRTH_GITHUB_QA_BRANCH"),
+        help="Git branch used to find the Rebirth closed-beta QA workflow run. Defaults to the current branch.",
+    )
+    parser.add_argument(
+        "--workflow-head-sha",
+        default=os.environ.get("REBIRTH_GITHUB_QA_HEAD_SHA"),
+        help="Commit SHA that must have a green Rebirth closed-beta QA workflow run. Defaults to HEAD.",
+    )
     args = parser.parse_args()
 
-    workflow = _workflow_status()
+    workflow = _workflow_status(branch=args.workflow_branch, head_sha=args.workflow_head_sha)
     evidence, evidence_file = _load_evidence(args.evidence)
     gates = external_gate_payload(_config_from_env(), workflow=workflow, evidence=evidence)
     payload = {

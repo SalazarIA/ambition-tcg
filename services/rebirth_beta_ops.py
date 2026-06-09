@@ -18,7 +18,8 @@ def external_gate_payload(config=None, workflow=None, evidence=None):
     legal_proven = truthy(config.get("REBIRTH_LEGAL_REVIEWED") or os.environ.get("REBIRTH_LEGAL_REVIEWED")) or evidence_report["legal_review"]["valid"]
     backup_proven = truthy(config.get("REBIRTH_BACKUP_RESTORE_DRILL") or os.environ.get("REBIRTH_BACKUP_RESTORE_DRILL")) or evidence_report["backup_restore"]["valid"]
     sentry_configured = bool(config.get("SENTRY_DSN") or os.environ.get("SENTRY_DSN")) or evidence_report["error_tracking"]["valid"]
-    workflow_green = (workflow and workflow.get("conclusion") == "success") or truthy(
+    workflow_matches = not workflow or not workflow.get("expectedHeadSha") or workflow.get("matchedExpectedHead")
+    workflow_green = (workflow and workflow.get("conclusion") == "success" and workflow_matches) or truthy(
         config.get("REBIRTH_GITHUB_QA_GREEN") or os.environ.get("REBIRTH_GITHUB_QA_GREEN")
     )
 

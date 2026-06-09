@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1283 passed, 5 skipped, 19 deselected`. GitHub
+  `1285 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -52,10 +52,13 @@ crash/error rate, telemetry coverage, human sample and balance checks all pass.
 A final readiness evaluator now composes the external evidence gate with the
 public beta KPI gate, so Phase 8 has a single `ready=false/true` operator report
 without weakening either source gate.
+GitHub QA proof is matched to the expected head commit, preventing an unrelated
+older workflow run from satisfying or blocking the release gate.
 
 ## Files Changed
 
 - `services/rebirth_gate_evidence.py`
+- `services/rebirth_beta_ops.py`
 - `services/rebirth_public_beta_gate.py`
 - `services/rebirth_release_readiness.py`
 - `services/rebirth_product.py`
@@ -68,6 +71,7 @@ without weakening either source gate.
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `tests/rebirth/test_rebirth_public_beta_gate.py`
 - `tests/rebirth/test_rebirth_release_readiness.py`
+- `tests/rebirth/test_rebirth_ops_tools.py`
 
 ## Tests Executed
 
@@ -77,7 +81,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1283 passed, 5 skipped,
+The current local Rebirth suite passed with `1285 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.

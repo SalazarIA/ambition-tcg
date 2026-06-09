@@ -39,9 +39,19 @@ def main() -> int:
         default=os.environ.get("REBIRTH_EXTERNAL_EVIDENCE_PATH"),
         help="Path to a secret-free external gate evidence JSON file.",
     )
+    parser.add_argument(
+        "--workflow-branch",
+        default=os.environ.get("REBIRTH_GITHUB_QA_BRANCH"),
+        help="Git branch used to find the Rebirth closed-beta QA workflow run. Defaults to the current branch.",
+    )
+    parser.add_argument(
+        "--workflow-head-sha",
+        default=os.environ.get("REBIRTH_GITHUB_QA_HEAD_SHA"),
+        help="Commit SHA that must have a green Rebirth closed-beta QA workflow run. Defaults to HEAD.",
+    )
     args = parser.parse_args()
 
-    workflow = _workflow_status()
+    workflow = _workflow_status(branch=args.workflow_branch, head_sha=args.workflow_head_sha)
     evidence, evidence_file = _load_evidence(args.evidence)
     external_gates = external_gate_payload(_config_from_env(), workflow=workflow, evidence=evidence)
     public_beta_gate = public_beta_gate_payload(

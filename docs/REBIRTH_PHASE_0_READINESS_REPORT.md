@@ -105,7 +105,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1283 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1285 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -115,8 +115,8 @@ Key local results:
 - Balance smoke report: player winrate `45.8%`, bot winrate `53.3%`,
   unfinished `0.8%`, average turns `15.57`, cards used `103/103`.
 - GitHub `rebirth-closed-beta-qa`: passed on the pushed branch; the
-  pre-external gate reports `github_workflow=passed` against the latest GitHub
-  workflow result.
+  pre-external gate reports `github_workflow=passed` only when the GitHub
+  workflow result matches the expected branch/head commit.
 - Pre-external gate report: blocked on external proof for legal review,
   backup/restore and error tracking.
 - Example evidence file: rejected intentionally with `example_evidence_file`.
@@ -139,6 +139,8 @@ Coverage was not reduced. New regression coverage was added for:
 - dry-run backup/restore drill does not execute restore or print database URLs.
 - backup/restore evidence requires schema, health and support-export checks
   before it can pass the gate.
+- GitHub QA evidence is scoped to the expected head commit instead of any
+  latest workflow run.
 
 ## Risks
 
