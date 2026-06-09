@@ -91,7 +91,10 @@ Updated on 2026-06-09.
   deletion/export language and monetization/refund copy. Set
   `REBIRTH_LEGAL_REVIEWED=true` for local/pre-external dashboards only after
   that review is recorded. The Phase 8 release gate still requires a valid
-  external evidence JSON through `--evidence`.
+  external evidence JSON through `--evidence`. Use
+  `python tools/ops/rebirth_legal_review_evidence.py --approved --reviewer "<name-or-role>" --evidence-ref "<private-ticket>" --all-required-scopes-reviewed`
+  to generate the secret-free `legal_review` block after the real approval
+  exists.
 - Backup/restore: run a real Postgres drill against a disposable restore
   database, compare `/health` plus a signed-in export, then set
   `REBIRTH_BACKUP_RESTORE_DRILL=true` for local/pre-external dashboards only

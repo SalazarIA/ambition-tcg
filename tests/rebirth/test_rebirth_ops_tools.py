@@ -9,6 +9,7 @@ from services.rebirth_beta_ops import external_gate_payload
 from services.rebirth_gate_evidence import validate_external_gate_evidence
 from tools.ops.rebirth_backup_restore_drill import build_evidence_payload as build_backup_evidence_payload
 from tools.ops.rebirth_error_tracking_smoke import build_evidence_payload
+from tools.ops.rebirth_legal_review_evidence import build_evidence_payload as build_legal_evidence_payload
 from tools.ops import rebirth_phase_report_audit, rebirth_pre_external_gate
 
 
@@ -65,6 +66,63 @@ def test_error_tracking_smoke_evidence_requires_operator_confirmation():
 
     assert validate_external_gate_evidence(candidate)["error_tracking"]["valid"] is False
     assert validate_external_gate_evidence(valid)["error_tracking"]["valid"] is True
+
+
+def test_legal_review_evidence_requires_real_approval_record():
+    candidate = build_legal_evidence_payload(
+        approved=False,
+        reviewer="",
+        evidence_ref="",
+        scope=["terms"],
+        approved_at=_now_iso(),
+    )
+    valid = build_legal_evidence_payload(
+        approved=True,
+        reviewer="Operator",
+        evidence_ref="private-legal-1",
+        scope=["terms", "privacy", "data_deletion", "billing_disabled"],
+        approved_at=_now_iso(),
+    )
+
+    candidate_report = validate_external_gate_evidence(candidate)["legal_review"]
+    valid_report = validate_external_gate_evidence(valid)["legal_review"]
+
+    assert candidate_report["valid"] is False
+    assert "approved_required" in candidate_report["errors"]
+    assert "reviewer_required" in candidate_report["errors"]
+    assert "scope_missing:billing_disabled,data_deletion,privacy" in candidate_report["errors"]
+    assert "evidence_ref_required" in candidate_report["errors"]
+    assert valid_report["valid"] is True
+
+
+def test_legal_review_evidence_command_builds_valid_scope_block():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/ops/rebirth_legal_review_evidence.py",
+            "--approved",
+            "--reviewer",
+            "Operator",
+            "--evidence-ref",
+            "private-legal-1",
+            "--all-required-scopes-reviewed",
+        ],
+        cwd=os.getcwd(),
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["ok"] is True
+    assert payload["validation"]["valid"] is True
+    assert sorted(payload["evidence"]["legal_review"]["scope"]) == [
+        "billing_disabled",
+        "data_deletion",
+        "privacy",
+        "terms",
+    ]
 
 
 def test_phase_report_audit_covers_all_execution_plan_reports():

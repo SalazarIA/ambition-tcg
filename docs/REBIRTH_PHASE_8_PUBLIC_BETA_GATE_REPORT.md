@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1295 passed, 5 skipped, 19 deselected`. GitHub
+  `1297 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -47,6 +47,9 @@ boolean flags.
 Backup/restore and error-tracking evidence now has freshness checks, preventing
 stale operational proof from satisfying the final gate.
 Backup/restore evidence with unresolved drill issues is also rejected.
+Legal review evidence now has an operator helper that formats the
+`legal_review` block only after approval, reviewer, private evidence reference
+and the full required scope are supplied.
 The release dashboard now displays the evidence validity/errors and the
 operator command for passing a private evidence file.
 An error-tracking smoke command now exists for Sentry/GlitchTip target
@@ -98,6 +101,7 @@ branch/SHA, with GitHub `actions: read` permission for workflow lookup.
 - `tools/ops/rebirth_pre_external_gate.py`
 - `tools/ops/rebirth_error_tracking_smoke.py`
 - `tools/ops/rebirth_backup_restore_drill.py`
+- `tools/ops/rebirth_legal_review_evidence.py`
 - `tools/ops/rebirth_public_beta_gate.py`
 - `tools/ops/rebirth_release_readiness.py`
 - `tools/ops/rebirth_phase_report_audit.py`
@@ -117,7 +121,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1295 passed, 5 skipped,
+The current local Rebirth suite passed with `1297 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -135,6 +139,9 @@ legal, backup/restore, error tracking and GitHub workflow blocked/pending when
 only local readiness flags are supplied.
 The closed-beta QA workflow contract now asserts that phase-report audit and
 release-readiness snapshot commands remain wired into CI.
+The legal evidence helper contract now asserts that incomplete legal approval
+records stay invalid and that a complete, private-reference-backed scope block
+passes validation.
 
 Current external gate states:
 
@@ -149,7 +156,9 @@ Current external gate states:
 
 Coverage was not reduced. New governance coverage asserts that the closed-beta
 QA workflow keeps phase-report audit and release-readiness snapshot checks wired
-to the current branch/head SHA.
+to the current branch/head SHA. Legal evidence helper coverage asserts that the
+Phase 8 legal gate still requires approval, reviewer, private evidence reference
+and the complete required scope.
 
 ## Risks
 
