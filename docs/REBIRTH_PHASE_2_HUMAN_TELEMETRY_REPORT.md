@@ -45,6 +45,9 @@ Current status: **implemented locally, blocked on 500+ human matches**.
    - `/rebirth/release?since=<cohort-start-iso>` and
      `/api/rebirth/release?since=<cohort-start-iso>` now apply the same cohort
      window to the dashboard, live balance and public beta gate.
+   - The release dashboard cards now reuse the public beta gate checks for
+     D1 retention, D7 retention, first-match completion, tutorial completion
+     and crash/error rate instead of mixing in recent-activity counters.
 
 ## Files Changed
 
@@ -57,6 +60,7 @@ Current status: **implemented locally, blocked on 500+ human matches**.
 - `tools/ops/rebirth_public_beta_gate.py`
 - `tests/rebirth/test_rebirth_aaa_studio_foundations.py`
 - `tests/rebirth/test_rebirth_public_beta_gate.py`
+- `tests/rebirth/test_rebirth_product_shell.py`
 - `tests/rebirth/test_v73_telemetry_analyzer.py`
 
 ## Tests Executed
@@ -64,11 +68,12 @@ Current status: **implemented locally, blocked on 500+ human matches**.
 - `node --check static/js/rebirth.js`
 - `.venv/bin/python -m py_compile app.py services/rebirth_first_session.py services/rebirth_telemetry.py services/rebirth_live_balance.py`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_aaa_studio_foundations.py tests/rebirth/test_v73_telemetry_analyzer.py -q`
+- `.venv/bin/python -m pytest tests/rebirth/test_rebirth_aaa_studio_foundations.py tests/rebirth/test_rebirth_product_shell.py tests/rebirth/test_rebirth_public_beta_gate.py -q`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_public_beta_gate.py -q`
 - `.venv/bin/python -m pytest tests/rebirth -q`
 
-Focused result: `12 passed`.
-Full Rebirth suite: `1288 passed, 5 skipped, 19 deselected`.
+Focused dashboard/gate result: `22 passed`.
+Full Rebirth suite: `1306 passed, 5 skipped, 19 deselected`.
 
 ## Coverage
 
@@ -78,6 +83,8 @@ Coverage was not reduced. New coverage asserts:
   outcome counters and average duration;
 - release dashboard, live balance and public beta gate preserve the same
   `since` cohort window;
+- release dashboard retention cards use the same matured-cohort D1/D7
+  semantics as the public beta gate;
 - `record_match_telemetry` persists deck signature, deck size, duration and a
   derived `match_won` event.
 

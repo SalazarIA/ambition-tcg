@@ -255,8 +255,8 @@ Current Rebirth coverage includes:
   tutorial XP and admin grants
 - support export/reset/delete and admin token safety
 - support feedback linked to account, release version and optional last match
-- release dashboard cards for D1/D7, first-match completion, tutorial completion,
-  feedback and client errors
+- release dashboard cards for matured-cohort D1/D7 retention, first-match
+  completion, tutorial completion, feedback and client errors
 - defeated-monster cleanup regression (engine destruction bug)
 - mana curve playability (cheapest monster anchored in starter deck)
 - campaign unlock/reward/idempotency and boss presentation contracts

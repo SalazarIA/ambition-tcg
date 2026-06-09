@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1305 passed, 5 skipped, 19 deselected`. GitHub
+  `1306 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -70,6 +70,10 @@ crash/error rate, telemetry coverage, human sample and balance checks all pass.
 Those release surfaces accept `?since=<cohort-start-iso>` so the dashboard,
 live balance and public beta gate can be reviewed against the same beta cohort
 window as the CLI gates.
+The release dashboard telemetry cards now reuse the public beta gate's
+matured-cohort checks for D1 retention, D7 retention, first-match completion,
+tutorial completion and crash/error rate, avoiding a mismatch between
+operational visibility and final gate semantics.
 A final readiness evaluator now composes the external evidence gate with the
 public beta KPI gate, so Phase 8 has a single `ready=false/true` operator report
 without weakening either source gate.
@@ -131,7 +135,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1305 passed, 5 skipped,
+The current local Rebirth suite passed with `1306 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -147,6 +151,8 @@ external proof and human KPI gates remain blocked.
 The release API contract now asserts `require_external_evidence=true` and keeps
 legal, backup/restore, error tracking and GitHub workflow blocked/pending when
 only local readiness flags are supplied.
+The release dashboard contract now asserts that D1/D7 cards are retention
+cards backed by the public beta gate, not recent active-user counters.
 The closed-beta QA workflow contract now asserts that phase-report audit and
 release-readiness snapshot commands remain wired into CI.
 The legal evidence helper contract now asserts that incomplete legal approval
@@ -178,7 +184,8 @@ and the complete required scope. Legal evidence validation also rejects stale
 document hashes after legal-copy changes. Evidence bundle coverage asserts that
 the final private evidence JSON can be assembled repeatably without printing
 secret-like values and without writing the private bundle inside the repository
-by default.
+by default. Dashboard coverage asserts that the visible release cards share the
+same matured-cohort D1/D7 semantics as the public beta gate.
 
 ## Risks
 

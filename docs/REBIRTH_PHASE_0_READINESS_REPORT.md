@@ -163,7 +163,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1305 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1306 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.

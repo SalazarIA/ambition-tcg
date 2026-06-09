@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from services.rebirth_async_competition import async_competition_payload
 from services.rebirth_beta_ops import beta_dashboard_payload
 from services.rebirth_content_pipeline import content_pipeline_report
@@ -57,6 +59,16 @@ def _finish_engine_match(seed="aaa-async-match"):
         if not acted:
             next_turn(match)
     raise AssertionError("expected deterministic helper to finish match")
+
+
+def _telemetry_event(event_id, event_type, *, user_id=1, created_at=None, payload=None):
+    return {
+        "id": event_id,
+        "user_id": user_id,
+        "event_type": event_type,
+        "created_at": (created_at or datetime(2026, 6, 9, 12, tzinfo=timezone.utc)).isoformat(timespec="seconds"),
+        "payload": payload or {},
+    }
 
 
 def test_first_session_plan_is_python_owned():
@@ -155,6 +167,34 @@ def test_release_dashboard_and_live_balance_payload_scope_to_since():
     ]
     assert dashboard["since"] == "2026-06-01T00:00:00+00:00"
     assert balance["since"] == "2026-06-01T00:00:00+00:00"
+
+
+def test_beta_dashboard_uses_matured_cohort_retention_cards():
+    now = datetime(2026, 6, 9, 12, tzinfo=timezone.utc)
+    first_seen = now - timedelta(days=8)
+    events = [
+        _telemetry_event(1, "first_session_action", user_id=1, created_at=first_seen),
+        _telemetry_event(2, "first_session_action", user_id=1, created_at=first_seen + timedelta(days=1)),
+        _telemetry_event(3, "first_session_action", user_id=1, created_at=first_seen + timedelta(days=7)),
+        _telemetry_event(4, "first_session_action", user_id=2, created_at=first_seen),
+        _telemetry_event(5, "first_session_action", user_id=3, created_at=now),
+    ]
+
+    class Repo:
+        def query_telemetry_events(self, *, limit=None, since=None):
+            return events
+
+    dashboard = beta_dashboard_payload(Repo(), since="2026-06-01T00:00:00+00:00")
+    cards = {card["label"]: card for card in dashboard["cards"]}
+
+    assert "D1 ativos" not in cards
+    assert cards["D1 retenção"]["value"] == "50%"
+    assert cards["D1 retenção"]["state"] == "passed"
+    assert cards["D1 retenção"]["target"] == ">=35%"
+    assert cards["D7 retenção"]["value"] == "50%"
+    assert cards["D7 retenção"]["state"] == "passed"
+    assert cards["D7 retenção"]["target"] == ">=20%"
+    assert dashboard["public_beta_gate"]["checks"][4]["key"] == "d1_retention"
 
 
 def test_guest_can_resume_active_match_from_session(client):

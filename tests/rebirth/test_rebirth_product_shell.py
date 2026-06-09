@@ -188,7 +188,7 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert release.get_json()["release"]["external_gates"]["checks"][0]["key"] == "legal_review"
     assert release.get_json()["release"]["external_gates"]["require_external_evidence"] is True
     assert release.get_json()["release"]["external_gates"]["evidence"]["legal_review"]["errors"] == ["evidence_missing"]
-    assert release.get_json()["release"]["dashboard"]["cards"][0]["label"] == "D1 ativos"
+    assert release.get_json()["release"]["dashboard"]["cards"][0]["label"] == "D1 retenção"
     assert release.get_json()["release"]["public_beta_gate"]["version"] == "public-beta-gate-v1"
     assert release.get_json()["release"]["public_beta_gate"]["ready"] is False
     assert release.get_json()["release"]["phase_report_audit"]["ok"] is True

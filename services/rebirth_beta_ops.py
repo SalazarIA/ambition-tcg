@@ -1,7 +1,8 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from services.rebirth_gate_evidence import validate_external_gate_evidence
+from services.rebirth_public_beta_gate import public_beta_gate_report
 
 
 def truthy(value):
@@ -93,25 +94,26 @@ def external_gate_payload(
     }
 
 
-def _iso_days_ago(days):
-    return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(timespec="seconds")
+def _check_by_key(report, key):
+    for check in report.get("checks") or []:
+        if check.get("key") == key:
+            return check
+    return {"key": key, "state": "pending", "value": "sem amostra"}
+
+
+def _card_from_check(report, key, label):
+    check = _check_by_key(report, key)
+    return {
+        "label": label,
+        "value": check.get("value") or "sem amostra",
+        "state": check.get("state") or "pending",
+        "target": check.get("target"),
+    }
 
 
 def beta_dashboard_payload(repo, *, limit=5000, since=None):
     events = repo.query_telemetry_events(limit=limit, since=since)
-    d1_since = _iso_days_ago(1)
-    d7_since = _iso_days_ago(7)
-
-    def created_after(event, since):
-        return str(event.get("created_at") or "") >= since
-
-    def users_for(predicate):
-        users = {
-            int(event["user_id"])
-            for event in events
-            if event.get("user_id") is not None and predicate(event)
-        }
-        return len(users)
+    public_gate = public_beta_gate_report(events)
 
     starts = [event for event in events if event["event_type"] == "match_started"]
     finishes = [event for event in events if event["event_type"] == "match_finished"]
@@ -132,16 +134,14 @@ def beta_dashboard_payload(repo, *, limit=5000, since=None):
         "since": since,
         "sample_size": len(events),
         "cards": [
-            {"label": "D1 ativos", "value": users_for(lambda event: created_after(event, d1_since))},
-            {"label": "D7 ativos", "value": users_for(lambda event: created_after(event, d7_since))},
-            {
-                "label": "1a partida",
-                "value": f"{round(first_completion_rate * 100)}%" if first_completion_rate is not None else "sem amostra",
-            },
-            {"label": "Tutoriais", "value": len(tutorial_done)},
-            {"label": "Erros", "value": len(errors)},
+            _card_from_check(public_gate, "d1_retention", "D1 retenção"),
+            _card_from_check(public_gate, "d7_retention", "D7 retenção"),
+            _card_from_check(public_gate, "first_match_completion", "1a partida"),
+            _card_from_check(public_gate, "tutorial_completion", "Tutorial"),
+            _card_from_check(public_gate, "crash_rate", "Crash/Error"),
             {"label": "Feedbacks", "value": len(feedback)},
         ],
+        "public_beta_gate": public_gate,
         "first_match": {
             "started": len(first_starts),
             "finished": len(first_finishes),

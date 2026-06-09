@@ -78,8 +78,9 @@ Updated on 2026-06-09.
   operator checklist.
 - Keep a manual rollback target: last green commit on `main`.
 - Keep Stripe live keys unset during closed beta unless compliance and backup checks are done.
-- Use `/rebirth/release` to watch Readiness Final, external gates, D1/D7,
-  first-match completion, tutorial completion, feedback and client errors.
+- Use `/rebirth/release` to watch Readiness Final, external gates,
+  matured-cohort D1/D7 retention, first-match completion, tutorial completion,
+  feedback and client errors.
   This surface is conservative: it does not treat local flags or DSNs as final
   legal, restore or error-tracking evidence.
 - Use `/rebirth/release?since=<cohort-start-iso>` or
