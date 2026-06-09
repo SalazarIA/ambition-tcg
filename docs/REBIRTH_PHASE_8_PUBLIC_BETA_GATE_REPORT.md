@@ -11,11 +11,12 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1288 passed, 5 skipped, 19 deselected`. GitHub
+  `1290 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
-  is configured in the target environment.
+  is configured in the target environment and a smoke event is confirmed in a
+  valid evidence record.
 - Backup validated: blocked until a real PostgreSQL backup is recorded.
 - Restore validated: blocked until a disposable PostgreSQL restore drill passes.
 - Legal complete: blocked until owner/counsel approves LGPD, Privacy and Terms.
@@ -33,6 +34,8 @@ Current status: **blocked**.
   `tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`.
 - Final readiness gate: supported through
   `tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`.
+  This Phase 8 gate is strict: local flags and DSNs are not accepted as
+  substitutes for the secret-free evidence JSON.
 
 ## What Was Implemented
 
@@ -58,6 +61,10 @@ window as the CLI gates.
 A final readiness evaluator now composes the external evidence gate with the
 public beta KPI gate, so Phase 8 has a single `ready=false/true` operator report
 without weakening either source gate.
+The final readiness evaluator now calls the external gate in strict evidence
+mode, so `REBIRTH_LEGAL_REVIEWED`, `REBIRTH_BACKUP_RESTORE_DRILL`,
+`REBIRTH_GITHUB_QA_GREEN` and `SENTRY_DSN` cannot make Phase 8 pass without a
+matching workflow run and valid legal, restore and error-tracking evidence.
 GitHub QA proof is matched to the expected branch/head commit, preventing an
 unrelated older workflow run or manual override from satisfying or blocking the
 release gate.
@@ -89,7 +96,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1288 passed, 5 skipped,
+The current local Rebirth suite passed with `1290 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -115,6 +122,8 @@ Coverage was not reduced.
   would violate the project plan and increase operational risk.
 - The project can look locally healthy while still failing public beta due to
   missing production evidence.
+- Local readiness flags can no longer close the Phase 8 gate by themselves;
+  operators must provide the private evidence JSON and real cohort window.
 - A synthetic passing gate only proves evaluator behavior. Real public beta
   readiness still requires production events and external evidence records.
 

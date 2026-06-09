@@ -21,6 +21,8 @@ Updated on 2026-06-09.
   `python tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`.
 - The final Phase 8 gate composes external proof and product KPIs with
   `python tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`.
+  This command is intentionally strict: local flags and DSNs are not substitutes
+  for the private evidence JSON or real human telemetry.
 - Monetization remains off by default. `REBIRTH_ENABLE_BILLING=true` is required
   for checkout, and Stripe live keys also require `REBIRTH_ALLOW_STRIPE_LIVE=true`.
 - The current local pre-external gate is expected to be **not ready** until
@@ -78,21 +80,23 @@ Updated on 2026-06-09.
 
 - Legal: have counsel or the responsible operator review Terms, Privacy,
   deletion/export language and monetization/refund copy. Set
-  `REBIRTH_LEGAL_REVIEWED=true` only after that review is recorded, or provide
-  a valid external evidence JSON through `--evidence`.
+  `REBIRTH_LEGAL_REVIEWED=true` for local/pre-external dashboards only after
+  that review is recorded. The Phase 8 release gate still requires a valid
+  external evidence JSON through `--evidence`.
 - Backup/restore: run a real Postgres drill against a disposable restore
   database, compare `/health` plus a signed-in export, then set
-  `REBIRTH_BACKUP_RESTORE_DRILL=true`, or provide a valid external evidence
-  JSON through `--evidence`. Use
+  `REBIRTH_BACKUP_RESTORE_DRILL=true` for local/pre-external dashboards only
+  after the drill is recorded. The Phase 8 release gate still requires a valid
+  external evidence JSON through `--evidence`. Use
   `python tools/ops/rebirth_backup_restore_drill.py` for a redacted dry-run and
   add `--execute --i-understand-restore-target-is-disposable` only when the
   restore target is disposable. The evidence `drill_at` must be no more than
   30 days old and `unresolved_issues` must be empty.
 - Error tracking: set `SENTRY_DSN` for Sentry, GlitchTip or a compatible DSN.
   Keep `SENTRY_ENVIRONMENT=closed-beta` and a conservative
-  `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood. A valid external
-  evidence JSON can also prove the target environment received a test event
-  without storing the DSN in source control.
+  `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood. The Phase 8 release
+  gate requires a valid external evidence JSON proving the target environment
+  received a test event without storing the DSN in source control.
   Use `python tools/ops/rebirth_error_tracking_smoke.py --send` in the target
   environment to emit a smoke event. After confirming the event in the provider,
   re-run with `--confirmed-evidence-ref` or copy the printed evidence fields

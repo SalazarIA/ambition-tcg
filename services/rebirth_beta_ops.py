@@ -8,23 +8,41 @@ def truthy(value):
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def external_gate_payload(config=None, workflow=None, evidence=None):
+def external_gate_payload(
+    config=None,
+    workflow=None,
+    evidence=None,
+    *,
+    require_external_evidence=False,
+):
     config = config or {}
     evidence_report = validate_external_gate_evidence(evidence)
     billing_enabled = truthy(config.get("REBIRTH_ENABLE_BILLING"))
     live_allowed = truthy(config.get("REBIRTH_ALLOW_STRIPE_LIVE"))
     stripe_secret = os.environ.get("STRIPE_SECRET_KEY", "")
     stripe_live_key_present = stripe_secret.startswith("sk_live_")
-    legal_proven = truthy(config.get("REBIRTH_LEGAL_REVIEWED") or os.environ.get("REBIRTH_LEGAL_REVIEWED")) or evidence_report["legal_review"]["valid"]
-    backup_proven = truthy(config.get("REBIRTH_BACKUP_RESTORE_DRILL") or os.environ.get("REBIRTH_BACKUP_RESTORE_DRILL")) or evidence_report["backup_restore"]["valid"]
-    sentry_configured = bool(config.get("SENTRY_DSN") or os.environ.get("SENTRY_DSN")) or evidence_report["error_tracking"]["valid"]
+    legal_flag = truthy(
+        config.get("REBIRTH_LEGAL_REVIEWED") or os.environ.get("REBIRTH_LEGAL_REVIEWED")
+    )
+    backup_flag = truthy(
+        config.get("REBIRTH_BACKUP_RESTORE_DRILL") or os.environ.get("REBIRTH_BACKUP_RESTORE_DRILL")
+    )
+    sentry_configured = bool(config.get("SENTRY_DSN") or os.environ.get("SENTRY_DSN"))
+    if require_external_evidence:
+        legal_proven = evidence_report["legal_review"]["valid"]
+        backup_proven = evidence_report["backup_restore"]["valid"]
+        error_tracking_proven = evidence_report["error_tracking"]["valid"]
+    else:
+        legal_proven = legal_flag or evidence_report["legal_review"]["valid"]
+        backup_proven = backup_flag or evidence_report["backup_restore"]["valid"]
+        error_tracking_proven = sentry_configured or evidence_report["error_tracking"]["valid"]
     workflow_expected = bool(workflow and (workflow.get("expectedHeadSha") or workflow.get("branch")))
     workflow_matches = not workflow_expected or (
         (not workflow.get("expectedHeadSha") or workflow.get("matchedExpectedHead"))
         and (not workflow.get("branch") or workflow.get("matchedExpectedBranch"))
     )
     workflow_green = bool(workflow and workflow.get("conclusion") == "success" and workflow_matches)
-    if not workflow_expected:
+    if not workflow_expected and not require_external_evidence:
         workflow_green = workflow_green or truthy(
             config.get("REBIRTH_GITHUB_QA_GREEN") or os.environ.get("REBIRTH_GITHUB_QA_GREEN")
         )
@@ -45,8 +63,12 @@ def external_gate_payload(config=None, workflow=None, evidence=None):
         {
             "key": "error_tracking",
             "name": "Error tracking",
-            "state": "passed" if sentry_configured else "blocked",
-            "copy": "Configure SENTRY_DSN para Sentry, GlitchTip ou provedor compatível.",
+            "state": "passed" if error_tracking_proven else "blocked",
+            "copy": (
+                "Confirme um evento real em Sentry, GlitchTip ou provedor compatível."
+                if require_external_evidence
+                else "Configure SENTRY_DSN para Sentry, GlitchTip ou provedor compatível."
+            ),
         },
         {
             "key": "github_workflow",
@@ -65,6 +87,7 @@ def external_gate_payload(config=None, workflow=None, evidence=None):
         "ready": all(check["state"] == "passed" for check in checks),
         "billing_enabled": billing_enabled,
         "stripe_live_key_present": stripe_live_key_present,
+        "require_external_evidence": require_external_evidence,
         "evidence": evidence_report,
         "checks": checks,
     }

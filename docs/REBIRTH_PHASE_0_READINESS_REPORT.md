@@ -57,6 +57,9 @@ Current status: **blocked on external proof**.
      PostgreSQL restore drill without printing database URLs.
    - External backup/restore evidence now expires after 30 days, and
      error-tracking smoke evidence expires after 14 days.
+   - The final Phase 8 release gate now requires strict external evidence, so
+     local flags and DSNs cannot substitute for legal, restore or
+     error-tracking proof.
 
 ## Files Changed
 
@@ -109,7 +112,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1288 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1290 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -154,13 +157,16 @@ Coverage was not reduced. New regression coverage was added for:
 ## Risks
 
 - `SENTRY_DSN` must be configured in the target environment before the
-  error-tracking gate can pass.
+  pre-external error-tracking gate can pass, and a confirmed smoke-event
+  evidence record is required before the strict Phase 8 gate can pass.
 - A real PostgreSQL backup/restore drill must be executed and recorded outside
   the repo before setting `REBIRTH_BACKUP_RESTORE_DRILL=true`.
 - LGPD/Terms/Privacy copy still requires owner/counsel review before setting
   `REBIRTH_LEGAL_REVIEWED=true`.
 - Evidence JSONs must stay outside source control when filled with real
   operator references.
+- Local readiness flags are useful for closed-beta operations only after real
+  evidence exists; they do not close the final public-beta gate.
 - Phase 0 cannot be closed from code alone.
 
 ## Next Steps

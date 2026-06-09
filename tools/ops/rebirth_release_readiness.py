@@ -53,7 +53,12 @@ def main() -> int:
 
     workflow = _workflow_status(branch=args.workflow_branch, head_sha=args.workflow_head_sha)
     evidence, evidence_file = _load_evidence(args.evidence)
-    external_gates = external_gate_payload(_config_from_env(), workflow=workflow, evidence=evidence)
+    external_gates = external_gate_payload(
+        _config_from_env(),
+        workflow=workflow,
+        evidence=evidence,
+        require_external_evidence=True,
+    )
     public_beta_gate = public_beta_gate_payload(
         _open_repo(),
         limit=args.limit,

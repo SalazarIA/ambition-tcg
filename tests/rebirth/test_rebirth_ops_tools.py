@@ -15,6 +15,39 @@ def _now_iso():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _valid_external_evidence():
+    now = _now_iso()
+    return {
+        "legal_review": {
+            "approved": True,
+            "reviewer": "Operator",
+            "approved_at": now,
+            "scope": ["terms", "privacy", "data_deletion", "billing_disabled"],
+            "evidence_ref": "private-ticket-legal-1",
+        },
+        "backup_restore": {
+            "validated": True,
+            "drill_at": now,
+            "operator": "Operator",
+            "source_commit": "abc123",
+            "restore_target": "redacted-restore-db",
+            "dump_bytes": 42,
+            "schema_check": "passed",
+            "health_check": "passed",
+            "support_export_check": "passed",
+            "evidence_ref": "private-ticket-dr-1",
+        },
+        "error_tracking": {
+            "validated": True,
+            "provider": "glitchtip",
+            "environment": "closed-beta",
+            "test_event_id": "event-123",
+            "tested_at": now,
+            "evidence_ref": "private-ticket-sentry-1",
+        },
+    }
+
+
 def test_error_tracking_smoke_evidence_requires_operator_confirmation():
     candidate = build_evidence_payload(
         provider="glitchtip",
@@ -186,6 +219,46 @@ def test_external_gate_requires_workflow_for_expected_branch():
     states = {check["key"]: check["state"] for check in gates["checks"]}
 
     assert states["github_workflow"] == "pending"
+
+
+def test_strict_external_gate_rejects_local_flags_without_evidence():
+    gates = external_gate_payload(
+        {
+            "REBIRTH_LEGAL_REVIEWED": "true",
+            "REBIRTH_BACKUP_RESTORE_DRILL": "true",
+            "REBIRTH_GITHUB_QA_GREEN": "true",
+            "SENTRY_DSN": "https://example.invalid/1",
+        },
+        workflow={"conclusion": "success"},
+        require_external_evidence=True,
+    )
+    states = {check["key"]: check["state"] for check in gates["checks"]}
+
+    assert gates["ready"] is False
+    assert gates["require_external_evidence"] is True
+    assert states["legal_review"] == "blocked"
+    assert states["backup_restore"] == "blocked"
+    assert states["error_tracking"] == "blocked"
+    assert states["github_workflow"] == "passed"
+
+
+def test_strict_external_gate_accepts_valid_evidence():
+    gates = external_gate_payload(
+        {
+            "REBIRTH_ENABLE_BILLING": "false",
+            "REBIRTH_ALLOW_STRIPE_LIVE": "false",
+        },
+        workflow={"conclusion": "success"},
+        evidence=_valid_external_evidence(),
+        require_external_evidence=True,
+    )
+    states = {check["key"]: check["state"] for check in gates["checks"]}
+
+    assert gates["ready"] is True
+    assert states["legal_review"] == "passed"
+    assert states["backup_restore"] == "passed"
+    assert states["error_tracking"] == "passed"
+    assert states["billing_off"] == "passed"
 
 
 def test_workflow_status_filters_github_run_by_expected_head(monkeypatch):
