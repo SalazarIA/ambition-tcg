@@ -817,6 +817,23 @@
                 </div>
             </section>
         {% elif page.key == "release" %}
+            {% if page.release_readiness %}
+                <section class="rb-product-panel rb-product-wide rb-beta-dashboard" aria-label="Readiness final beta publico">
+                    <div class="rb-product-panel-head">
+                        <div>
+                            <span>{{ page.release_readiness.version }}</span>
+                            <h2>Readiness Final</h2>
+                        </div>
+                        <strong>{{ 'Pronto' if page.release_readiness.ready else 'Bloqueado' }}</strong>
+                    </div>
+                    <div class="rb-product-stats rb-product-stats-compact">
+                        <article><span>Gates externos</span><strong>{{ page.release_readiness.summary.external_passed }}/{{ page.release_readiness.summary.external_total }}</strong></article>
+                        <article><span>KPIs beta público</span><strong>{{ page.release_readiness.summary.public_beta_passed }}/{{ page.release_readiness.summary.public_beta_total }}</strong></article>
+                        <article><span>Externo</span><strong>{{ 'OK' if page.release_readiness.external_ready else 'bloqueado' }}</strong></article>
+                        <article><span>Produto</span><strong>{{ 'OK' if page.release_readiness.public_beta_ready else 'bloqueado' }}</strong></article>
+                    </div>
+                </section>
+            {% endif %}
             {% if page.dashboard %}
                 <section class="rb-product-panel rb-product-wide rb-beta-dashboard" aria-label="Dashboard beta fechado">
                     <div class="rb-product-panel-head">

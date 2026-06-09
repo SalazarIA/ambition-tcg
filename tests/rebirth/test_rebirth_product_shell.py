@@ -90,11 +90,13 @@ def test_rebirth_product_pages_render_active_shell(client):
             assert "Glossário de keywords" in body
             assert "rb-keyword-grid" in body
         if path == "/rebirth/release":
+            assert "Readiness Final" in body
             assert "Evidência externa" in body
             assert "Gate Beta Público" in body
             assert "evidence_missing" in body
             assert "--evidence /secure/path/rebirth-external-gates.json" in body
             assert "tools/ops/rebirth_public_beta_gate.py --require-ready" in body
+            assert "tools/ops/rebirth_release_readiness.py --evidence /secure/path/rebirth-external-gates.json" in body
 
 
 def test_phase0_legal_pages_are_publicly_reachable(client):
@@ -180,6 +182,8 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert release.get_json()["release"]["dashboard"]["cards"][0]["label"] == "D1 ativos"
     assert release.get_json()["release"]["public_beta_gate"]["version"] == "public-beta-gate-v1"
     assert release.get_json()["release"]["public_beta_gate"]["ready"] is False
+    assert release.get_json()["release"]["release_readiness"]["version"] == "rebirth-release-readiness-v1"
+    assert release.get_json()["release"]["release_readiness"]["ready"] is False
 
 
 def test_external_beta_gate_parses_string_booleans():

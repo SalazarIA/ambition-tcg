@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Evaluate the full Rebirth public beta readiness gate."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.rebirth_beta_ops import external_gate_payload  # noqa: E402
+from services.rebirth_persistence import RebirthRepository  # noqa: E402
+from services.rebirth_public_beta_gate import public_beta_gate_payload  # noqa: E402
+from services.rebirth_release_readiness import release_readiness_report  # noqa: E402
+from tools.ops.rebirth_pre_external_gate import _config_from_env, _load_evidence, _workflow_status  # noqa: E402
+
+
+def _open_repo() -> RebirthRepository:
+    database_url = os.environ.get("REBIRTH_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    if database_url:
+        return RebirthRepository(database_url=database_url)
+    db_path = os.environ.get("REBIRTH_DB_PATH") or str(ROOT / "instance" / "database.db")
+    return RebirthRepository(db_path=db_path)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Check the complete Ambitionz Rebirth public beta gate.")
+    parser.add_argument("--report-only", action="store_true", help="Print JSON but do not fail on blocked gates.")
+    parser.add_argument("--limit", type=int, default=5000, help="Maximum telemetry events to read.")
+    parser.add_argument("--release-version", default=os.environ.get("REBIRTH_RELEASE_VERSION"), help="Release label for the report.")
+    parser.add_argument(
+        "--evidence",
+        default=os.environ.get("REBIRTH_EXTERNAL_EVIDENCE_PATH"),
+        help="Path to a secret-free external gate evidence JSON file.",
+    )
+    args = parser.parse_args()
+
+    workflow = _workflow_status()
+    evidence, evidence_file = _load_evidence(args.evidence)
+    external_gates = external_gate_payload(_config_from_env(), workflow=workflow, evidence=evidence)
+    public_beta_gate = public_beta_gate_payload(
+        _open_repo(),
+        limit=args.limit,
+        release_version=args.release_version,
+    )
+    readiness = release_readiness_report(external_gates, public_beta_gate)
+    payload = {
+        "ok": readiness["ready"],
+        "workflow": workflow,
+        "evidence_file": evidence_file,
+        "external_gates": external_gates,
+        "public_beta_gate": public_beta_gate,
+        "readiness": readiness,
+        "notes": [
+            "This command is the final Phase 8 gate: external proof plus human/product KPIs must both pass.",
+            "It never treats local flags as a replacement for real legal, restore, error-tracking or human telemetry evidence.",
+        ],
+    }
+    print(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False, default=str))
+    if not args.report_only and not readiness["ready"]:
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -31,6 +31,8 @@ Current status: **blocked**.
   `tools/ops/rebirth_pre_external_gate.py --evidence /secure/path/rebirth-external-gates.json`.
 - Public beta KPI gate: supported through
   `tools/ops/rebirth_public_beta_gate.py --require-ready`.
+- Final readiness gate: supported through
+  `tools/ops/rebirth_release_readiness.py --evidence /secure/path/rebirth-external-gates.json`.
 
 ## What Was Implemented
 
@@ -47,19 +49,25 @@ execution against disposable restore databases.
 A public beta KPI gate evaluator now exists and is surfaced on `/rebirth/release`
 and `/api/rebirth/release`; it blocks unless tutorial, first-match, D1, D7,
 crash/error rate, telemetry coverage, human sample and balance checks all pass.
+A final readiness evaluator now composes the external evidence gate with the
+public beta KPI gate, so Phase 8 has a single `ready=false/true` operator report
+without weakening either source gate.
 
 ## Files Changed
 
 - `services/rebirth_gate_evidence.py`
 - `services/rebirth_public_beta_gate.py`
+- `services/rebirth_release_readiness.py`
 - `services/rebirth_product.py`
 - `templates/rebirth_product.html`
 - `tools/ops/rebirth_pre_external_gate.py`
 - `tools/ops/rebirth_error_tracking_smoke.py`
 - `tools/ops/rebirth_backup_restore_drill.py`
 - `tools/ops/rebirth_public_beta_gate.py`
+- `tools/ops/rebirth_release_readiness.py`
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `tests/rebirth/test_rebirth_public_beta_gate.py`
+- `tests/rebirth/test_rebirth_release_readiness.py`
 
 ## Tests Executed
 
@@ -67,7 +75,9 @@ Phase 8-specific public-beta validation now exists through
 `tests/rebirth/test_rebirth_public_beta_gate.py` and the release payload
 contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
-The current local Rebirth suite passed with `1280 passed, 5 skipped,
+The final readiness composition is covered by
+`tests/rebirth/test_rebirth_release_readiness.py`.
+The current local Rebirth suite passed with `1282 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.

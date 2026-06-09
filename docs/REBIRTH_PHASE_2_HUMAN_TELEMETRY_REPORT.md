@@ -61,7 +61,7 @@ Current status: **implemented locally, blocked on 500+ human matches**.
 - `.venv/bin/python -m pytest tests/rebirth -q`
 
 Focused result: `12 passed`.
-Full Rebirth suite: `1280 passed, 5 skipped, 19 deselected`.
+Full Rebirth suite: `1282 passed, 5 skipped, 19 deselected`.
 
 ## Coverage
 

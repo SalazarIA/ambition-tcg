@@ -31,6 +31,7 @@ from services.rebirth_beta_ops import beta_dashboard_payload, external_gate_payl
 from services.rebirth_deck_coach import deck_suggestions
 from services.rebirth_postmatch import post_match_recap
 from services.rebirth_public_beta_gate import public_beta_gate_payload
+from services.rebirth_release_readiness import release_readiness_report
 from services.rebirth_product import (
     account_payload,
     auth_plan_payload,
@@ -949,6 +950,11 @@ def rebirth_release():
     gates = external_gate_payload(app.config)
     dashboard = beta_dashboard_payload(repo)
     live_balance = live_balance_payload(repo, release_version=app.config["REBIRTH_RELEASE_VERSION"])
+    public_gate = public_beta_gate_payload(
+        repo,
+        release_version=app.config["REBIRTH_RELEASE_VERSION"],
+        live_balance=live_balance,
+    )
     return render_template(
         "rebirth_product.html",
         page=release_payload(
@@ -956,11 +962,8 @@ def rebirth_release():
             dashboard=dashboard,
             content_report=content_pipeline_report(),
             live_balance=live_balance,
-            public_beta_gate=public_beta_gate_payload(
-                repo,
-                release_version=app.config["REBIRTH_RELEASE_VERSION"],
-                live_balance=live_balance,
-            ),
+            public_beta_gate=public_gate,
+            release_readiness=release_readiness_report(gates, public_gate),
         ),
     )
 
@@ -2197,18 +2200,21 @@ def api_rebirth_telemetry_beacon():
 @app.get("/api/rebirth/release")
 def api_rebirth_release():
     repo = rebirth_repo()
+    gates = external_gate_payload(app.config)
     live_balance = live_balance_payload(repo, release_version=app.config["REBIRTH_RELEASE_VERSION"])
+    public_gate = public_beta_gate_payload(
+        repo,
+        release_version=app.config["REBIRTH_RELEASE_VERSION"],
+        live_balance=live_balance,
+    )
     return json_payload(
         release=release_payload(
-            gates=external_gate_payload(app.config),
+            gates=gates,
             dashboard=beta_dashboard_payload(repo),
             content_report=content_pipeline_report(),
             live_balance=live_balance,
-            public_beta_gate=public_beta_gate_payload(
-                repo,
-                release_version=app.config["REBIRTH_RELEASE_VERSION"],
-                live_balance=live_balance,
-            ),
+            public_beta_gate=public_gate,
+            release_readiness=release_readiness_report(gates, public_gate),
         )
     )
 
