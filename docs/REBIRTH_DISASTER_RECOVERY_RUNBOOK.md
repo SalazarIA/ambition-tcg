@@ -141,7 +141,8 @@ Record each drill outside source control with:
 
 Set `REBIRTH_BACKUP_RESTORE_DRILL=true` only after the evidence record exists
 and the disposable restore has been validated. The public gate accepts
-backup/restore evidence only when `drill_at` is no more than 30 days old.
+backup/restore evidence only when `drill_at` is no more than 30 days old and
+`unresolved_issues` is empty.
 
 Alternatively, keep the operator evidence outside source control and pass it to
 the external gate checker:

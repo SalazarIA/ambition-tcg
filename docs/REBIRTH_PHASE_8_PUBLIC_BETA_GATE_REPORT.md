@@ -42,6 +42,7 @@ proven by operator records without committing secrets or relying only on manual
 boolean flags.
 Backup/restore and error-tracking evidence now has freshness checks, preventing
 stale operational proof from satisfying the final gate.
+Backup/restore evidence with unresolved drill issues is also rejected.
 The release dashboard now displays the evidence validity/errors and the
 operator command for passing a private evidence file.
 An error-tracking smoke command now exists for Sentry/GlitchTip target

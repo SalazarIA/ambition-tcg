@@ -147,6 +147,7 @@ Coverage was not reduced. New regression coverage was added for:
   before it can pass the gate.
 - backup/restore and error-tracking evidence must be fresh enough for an
   external tester gate.
+- backup/restore evidence with unresolved issues cannot pass the external gate.
 - GitHub QA evidence is scoped to the expected branch/head commit instead of
   any latest workflow run or manual override.
 

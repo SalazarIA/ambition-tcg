@@ -103,6 +103,9 @@ def _backup_restore(evidence: Mapping[str, Any], *, example: bool, now: datetime
     for key in ("schema_check", "health_check", "support_export_check"):
         if str(data.get(key) or "").strip().lower() != "passed":
             errors.append(f"{key}_passed_required")
+    unresolved = [str(item).strip() for item in data.get("unresolved_issues") or [] if str(item).strip()]
+    if unresolved:
+        errors.append("unresolved_issues_present")
     if _has_any_secret_text(data.values()):
         errors.append("secret_like_value_detected")
     return _result(not errors, errors)

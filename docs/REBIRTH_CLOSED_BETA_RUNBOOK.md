@@ -87,7 +87,7 @@ Updated on 2026-06-09.
   `python tools/ops/rebirth_backup_restore_drill.py` for a redacted dry-run and
   add `--execute --i-understand-restore-target-is-disposable` only when the
   restore target is disposable. The evidence `drill_at` must be no more than
-  30 days old.
+  30 days old and `unresolved_issues` must be empty.
 - Error tracking: set `SENTRY_DSN` for Sentry, GlitchTip or a compatible DSN.
   Keep `SENTRY_ENVIRONMENT=closed-beta` and a conservative
   `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood. A valid external

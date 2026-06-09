@@ -80,9 +80,25 @@ def test_backup_restore_evidence_requires_health_and_support_checks(tmp_path):
         evidence_ref="private-drill-1",
         drill_at=_now_iso(),
     )
+    unresolved = build_backup_evidence_payload(
+        validated=True,
+        operator="Operator",
+        source_commit="abc123",
+        dump_path=dump,
+        restore_target="redacted-restore",
+        schema_check="passed",
+        health_check="passed",
+        support_export_check="passed",
+        evidence_ref="private-drill-1",
+        drill_at=_now_iso(),
+        unresolved_issues=["support-export mismatch under investigation"],
+    )
 
     assert validate_external_gate_evidence(pending)["backup_restore"]["valid"] is False
     assert validate_external_gate_evidence(valid)["backup_restore"]["valid"] is True
+    unresolved_report = validate_external_gate_evidence(unresolved)
+    assert unresolved_report["backup_restore"]["valid"] is False
+    assert "unresolved_issues_present" in unresolved_report["backup_restore"]["errors"]
 
 
 def test_external_evidence_rejects_stale_operational_proof(tmp_path):
