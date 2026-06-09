@@ -185,6 +185,7 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert release.get_json()["release"]["checks"][0]["name"] == "Produto Ativo"
     assert any(check["name"] == "LGPD Self-Service" for check in release.get_json()["release"]["checks"])
     assert release.get_json()["release"]["external_gates"]["checks"][0]["key"] == "legal_review"
+    assert release.get_json()["release"]["external_gates"]["require_external_evidence"] is True
     assert release.get_json()["release"]["external_gates"]["evidence"]["legal_review"]["errors"] == ["evidence_missing"]
     assert release.get_json()["release"]["dashboard"]["cards"][0]["label"] == "D1 ativos"
     assert release.get_json()["release"]["public_beta_gate"]["version"] == "public-beta-gate-v1"
@@ -201,6 +202,39 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert windowed_payload["dashboard"]["since"] == "2026-06-01T00:00:00+00:00"
     assert windowed_payload["live_balance"]["since"] == "2026-06-01T00:00:00+00:00"
     assert windowed_payload["public_beta_gate"]["since"] == "2026-06-01T00:00:00+00:00"
+
+
+def test_release_surface_does_not_treat_local_flags_as_final_evidence(client, flask_app):
+    keys = [
+        "REBIRTH_LEGAL_REVIEWED",
+        "REBIRTH_BACKUP_RESTORE_DRILL",
+        "REBIRTH_GITHUB_QA_GREEN",
+        "SENTRY_DSN",
+    ]
+    previous = {key: flask_app.config.get(key) for key in keys}
+    try:
+        flask_app.config.update(
+            REBIRTH_LEGAL_REVIEWED=True,
+            REBIRTH_BACKUP_RESTORE_DRILL=True,
+            REBIRTH_GITHUB_QA_GREEN=True,
+            SENTRY_DSN="https://example.invalid/1",
+        )
+        release = client.get("/api/rebirth/release").get_json()["release"]
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                flask_app.config.pop(key, None)
+            else:
+                flask_app.config[key] = value
+
+    states = {check["key"]: check["state"] for check in release["external_gates"]["checks"]}
+
+    assert release["external_gates"]["require_external_evidence"] is True
+    assert states["legal_review"] == "blocked"
+    assert states["backup_restore"] == "blocked"
+    assert states["error_tracking"] == "blocked"
+    assert states["github_workflow"] == "pending"
+    assert release["release_readiness"]["external_ready"] is False
 
 
 def test_external_beta_gate_parses_string_booleans():

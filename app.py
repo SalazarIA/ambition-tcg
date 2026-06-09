@@ -954,7 +954,7 @@ def release_since_arg():
 def rebirth_release():
     repo = rebirth_repo()
     since = release_since_arg()
-    gates = external_gate_payload(app.config)
+    gates = external_gate_payload(app.config, require_external_evidence=True)
     dashboard = beta_dashboard_payload(repo, since=since)
     live_balance = live_balance_payload(repo, since=since, release_version=app.config["REBIRTH_RELEASE_VERSION"])
     public_gate = public_beta_gate_payload(
@@ -2215,7 +2215,7 @@ def api_rebirth_telemetry_beacon():
 def api_rebirth_release():
     repo = rebirth_repo()
     since = release_since_arg()
-    gates = external_gate_payload(app.config)
+    gates = external_gate_payload(app.config, require_external_evidence=True)
     live_balance = live_balance_payload(repo, since=since, release_version=app.config["REBIRTH_RELEASE_VERSION"])
     public_gate = public_beta_gate_payload(
         repo,

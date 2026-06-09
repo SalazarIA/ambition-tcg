@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1293 passed, 5 skipped, 19 deselected`. GitHub
+  `1294 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -77,6 +77,9 @@ and keeps the mandatory technical sections required by the execution plan.
 That audit is now included in the final release readiness report, `/rebirth/release`
 and `/api/rebirth/release`, so the public beta gate has one shared view of
 external proof, phase reports and product KPIs.
+The release dashboard/API now run external gates in strict evidence mode too,
+so they cannot appear public-beta ready from local flags or a configured DSN
+alone.
 
 ## Files Changed
 
@@ -111,7 +114,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1293 passed, 5 skipped,
+The current local Rebirth suite passed with `1294 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -124,6 +127,9 @@ through Phase 8.
 The final release readiness command was run in report-only mode and returned
 `phase_reports_ready=true`, `phase_reports_passed=9/9`, and `ok=false` because
 external proof and human KPI gates remain blocked.
+The release API contract now asserts `require_external_evidence=true` and keeps
+legal, backup/restore, error tracking and GitHub workflow blocked/pending when
+only local readiness flags are supplied.
 
 Current external gate states:
 

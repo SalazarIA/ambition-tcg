@@ -739,7 +739,7 @@ def release_payload(
     payload.update(
         {
             "checks": deepcopy(RELEASE_CHECKS),
-            "external_gates": gates or external_gate_payload(),
+            "external_gates": gates or external_gate_payload(require_external_evidence=True),
             "dashboard": dashboard,
             "content_pipeline": content_report or content_pipeline_report(),
             "live_balance": live_balance,

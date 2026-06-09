@@ -73,6 +73,9 @@ Current status: **blocked on external proof**.
      execution plan.
    - The release readiness command and release dashboard/API now include this
      phase-report audit as a first-class gate group.
+   - The release dashboard/API also use strict external evidence mode, so local
+     flags and DSNs cannot make the web readiness surface greener than the
+     final Phase 8 CLI gate.
    - This does not mark blocked phases complete; it only prevents missing or
      under-specified phase reports.
 
@@ -140,7 +143,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1293 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1294 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -158,6 +161,8 @@ Key local results:
 - Release readiness report now surfaces `phase_reports_ready=true` and
   `phase_reports_passed=9/9` while still blocking on external proof and human
   KPI evidence.
+- Release dashboard/API external gates run in strict evidence mode and reject
+  local flags as final readiness proof.
 - Pre-external gate report: blocked on external proof for legal review,
   backup/restore and error tracking.
 - Example evidence file: rejected intentionally with `example_evidence_file`.
@@ -178,6 +183,8 @@ Coverage was not reduced. New regression coverage was added for:
 - mandatory Phase 0-8 report structure.
 - final release readiness composition includes external proof, phase reports
   and public beta KPIs.
+- release dashboard/API cannot pass final external gates with local flags or a
+  configured DSN alone.
 - release dashboard rendering for evidence errors and `--evidence` command.
 - error-tracking smoke evidence requires operator confirmation before the gate
   can pass.
