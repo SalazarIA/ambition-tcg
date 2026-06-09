@@ -71,6 +71,8 @@ Current status: **blocked on external proof**.
    - `tools/ops/rebirth_phase_report_audit.py` now verifies that Phase 0-8
      reports all exist and keep the mandatory report sections from the
      execution plan.
+   - The release readiness command and release dashboard/API now include this
+     phase-report audit as a first-class gate group.
    - This does not mark blocked phases complete; it only prevents missing or
      under-specified phase reports.
 
@@ -95,12 +97,18 @@ Current status: **blocked on external proof**.
 - `.github/workflows/rebirth-closed-beta-qa.yml`
 - `.github/workflows/test.yml`
 - `services/rebirth_gate_evidence.py`
+- `services/rebirth_phase_reports.py`
 - `services/rebirth_product.py`
+- `services/rebirth_release_readiness.py`
 - `templates/rebirth_product.html`
+- `app.py`
 - `tools/ops/rebirth_error_tracking_smoke.py`
 - `tools/ops/rebirth_backup_restore_drill.py`
 - `tools/ops/rebirth_phase_report_audit.py`
+- `tools/ops/rebirth_release_readiness.py`
 - `tests/rebirth/test_rebirth_ops_tools.py`
+- `tests/rebirth/test_rebirth_product_shell.py`
+- `tests/rebirth/test_rebirth_release_readiness.py`
 
 ## Tests Executed
 
@@ -127,11 +135,12 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python -c "import yaml; [yaml.safe_load(open(path, encoding='utf-8')) for path in ['.github/workflows/test.yml', '.github/workflows/rebirth-closed-beta-qa.yml']]; print('workflow_yaml_ok')"`
 - `rg -n "actions/checkout@v4|actions/setup-python@v5|node20|Node.js 20" .github`
 - `.venv/bin/python tools/ops/rebirth_phase_report_audit.py`
+- `.venv/bin/python tools/ops/rebirth_release_readiness.py --report-only --since 2026-06-01T00:00:00+00:00 --release-version phase-report-gate`
 - `git diff --check`
 
 Key local results:
 
-- Current full Rebirth test suite: `1291 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1293 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -146,6 +155,9 @@ Key local results:
 - GitHub Actions workflow YAML parses locally, and the repo no longer contains
   the Node 20-deprecated action pins that were warning on the QA run.
 - Phase report audit: `ok=true` for Phase 0 through Phase 8 report files.
+- Release readiness report now surfaces `phase_reports_ready=true` and
+  `phase_reports_passed=9/9` while still blocking on external proof and human
+  KPI evidence.
 - Pre-external gate report: blocked on external proof for legal review,
   backup/restore and error tracking.
 - Example evidence file: rejected intentionally with `example_evidence_file`.
@@ -164,6 +176,8 @@ Coverage was not reduced. New regression coverage was added for:
 - external evidence template rejection for source-control examples and common
   secret-like values.
 - mandatory Phase 0-8 report structure.
+- final release readiness composition includes external proof, phase reports
+  and public beta KPIs.
 - release dashboard rendering for evidence errors and `--evidence` command.
 - error-tracking smoke evidence requires operator confirmation before the gate
   can pass.

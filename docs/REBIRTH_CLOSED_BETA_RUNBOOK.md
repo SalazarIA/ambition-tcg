@@ -22,10 +22,10 @@ Updated on 2026-06-09.
   the example file is intentionally rejected by the validator.
 - Public beta KPIs are checked separately with
   `python tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`.
-- The final Phase 8 gate composes external proof and product KPIs with
+- The final Phase 8 gate composes external proof, phase reports and product KPIs with
   `python tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`.
   This command is intentionally strict: local flags and DSNs are not substitutes
-  for the private evidence JSON or real human telemetry.
+  for the private evidence JSON, complete phase reports or real human telemetry.
 - Monetization remains off by default. `REBIRTH_ENABLE_BILLING=true` is required
   for checkout, and Stripe live keys also require `REBIRTH_ALLOW_STRIPE_LIVE=true`.
 - The current local pre-external gate is expected to be **not ready** until

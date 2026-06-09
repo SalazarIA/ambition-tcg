@@ -95,8 +95,10 @@ def test_rebirth_product_pages_render_active_shell(client):
             assert "Readiness Final" in body
             assert "Evidência externa" in body
             assert "Gate Beta Público" in body
+            assert "Relatórios" in body
             assert "evidence_missing" in body
             assert "--evidence /secure/path/rebirth-external-gates.json" in body
+            assert "tools/ops/rebirth_phase_report_audit.py" in body
             assert "tools/ops/rebirth_public_beta_gate.py --since &lt;cohort-start-iso&gt; --require-ready" in body
             assert (
                 "tools/ops/rebirth_release_readiness.py --since &lt;cohort-start-iso&gt; "
@@ -187,6 +189,9 @@ def test_rebirth_product_api_contracts_are_rebirth_native(client):
     assert release.get_json()["release"]["dashboard"]["cards"][0]["label"] == "D1 ativos"
     assert release.get_json()["release"]["public_beta_gate"]["version"] == "public-beta-gate-v1"
     assert release.get_json()["release"]["public_beta_gate"]["ready"] is False
+    assert release.get_json()["release"]["phase_report_audit"]["ok"] is True
+    assert release.get_json()["release"]["release_readiness"]["phase_reports_ready"] is True
+    assert release.get_json()["release"]["release_readiness"]["summary"]["phase_reports_total"] == 9
     assert release.get_json()["release"]["release_readiness"]["version"] == "rebirth-release-readiness-v1"
     assert release.get_json()["release"]["release_readiness"]["ready"] is False
 

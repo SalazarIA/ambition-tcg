@@ -829,8 +829,14 @@
                     <div class="rb-product-stats rb-product-stats-compact">
                         <article><span>Gates externos</span><strong>{{ page.release_readiness.summary.external_passed }}/{{ page.release_readiness.summary.external_total }}</strong></article>
                         <article><span>KPIs beta público</span><strong>{{ page.release_readiness.summary.public_beta_passed }}/{{ page.release_readiness.summary.public_beta_total }}</strong></article>
+                        {% if page.release_readiness.summary.phase_reports_total is defined %}
+                            <article><span>Relatórios</span><strong>{{ page.release_readiness.summary.phase_reports_passed }}/{{ page.release_readiness.summary.phase_reports_total }}</strong></article>
+                        {% endif %}
                         <article><span>Externo</span><strong>{{ 'OK' if page.release_readiness.external_ready else 'bloqueado' }}</strong></article>
                         <article><span>Produto</span><strong>{{ 'OK' if page.release_readiness.public_beta_ready else 'bloqueado' }}</strong></article>
+                        {% if page.release_readiness.phase_reports_ready is defined %}
+                            <article><span>Fases</span><strong>{{ 'OK' if page.release_readiness.phase_reports_ready else 'bloqueado' }}</strong></article>
+                        {% endif %}
                     </div>
                 </section>
             {% endif %}

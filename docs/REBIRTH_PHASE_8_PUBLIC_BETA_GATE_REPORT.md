@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1291 passed, 5 skipped, 19 deselected`. GitHub
+  `1293 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -35,7 +35,8 @@ Current status: **blocked**.
 - Final readiness gate: supported through
   `tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json`.
   This Phase 8 gate is strict: local flags and DSNs are not accepted as
-  substitutes for the secret-free evidence JSON.
+  substitutes for the secret-free evidence JSON, complete phase reports or
+  real human telemetry.
 
 ## What Was Implemented
 
@@ -73,6 +74,9 @@ official GitHub Actions majors, removing the runner deprecation warning from
 the release path without changing gameplay.
 A phase-report audit command now verifies that every Phase 0-8 report exists
 and keeps the mandatory technical sections required by the execution plan.
+That audit is now included in the final release readiness report, `/rebirth/release`
+and `/api/rebirth/release`, so the public beta gate has one shared view of
+external proof, phase reports and product KPIs.
 
 ## Files Changed
 
@@ -81,7 +85,9 @@ and keeps the mandatory technical sections required by the execution plan.
 - `services/rebirth_live_balance.py`
 - `services/rebirth_public_beta_gate.py`
 - `services/rebirth_release_readiness.py`
+- `services/rebirth_phase_reports.py`
 - `services/rebirth_product.py`
+- `app.py`
 - `templates/rebirth_product.html`
 - `tools/ops/rebirth_pre_external_gate.py`
 - `tools/ops/rebirth_error_tracking_smoke.py`
@@ -93,6 +99,7 @@ and keeps the mandatory technical sections required by the execution plan.
 - `tests/rebirth/test_rebirth_public_beta_gate.py`
 - `tests/rebirth/test_rebirth_release_readiness.py`
 - `tests/rebirth/test_rebirth_ops_tools.py`
+- `tests/rebirth/test_rebirth_product_shell.py`
 - `.github/workflows/rebirth-closed-beta-qa.yml`
 - `.github/workflows/test.yml`
 
@@ -104,7 +111,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1291 passed, 5 skipped,
+The current local Rebirth suite passed with `1293 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -114,6 +121,9 @@ The GitHub Actions workflow YAML was parsed locally, and old Node 20 action
 pins were searched for and removed from `.github`.
 The phase-report audit was run and returned `ok=true` for reports Phase 0
 through Phase 8.
+The final release readiness command was run in report-only mode and returned
+`phase_reports_ready=true`, `phase_reports_passed=9/9`, and `ok=false` because
+external proof and human KPI gates remain blocked.
 
 Current external gate states:
 
@@ -136,6 +146,8 @@ Coverage was not reduced.
   missing production evidence.
 - Local readiness flags can no longer close the Phase 8 gate by themselves;
   operators must provide the private evidence JSON and real cohort window.
+- Passing phase reports prove governance coverage only; they do not replace
+  legal, restore, error-tracking or human telemetry evidence.
 - GitHub Actions major updates can change CI behavior; the current workflow
   must stay green on GitHub after each push before using it as release proof.
 - A synthetic passing gate only proves evaluator behavior. Real public beta

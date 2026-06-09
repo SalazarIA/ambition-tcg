@@ -30,6 +30,7 @@ from services.rebirth_persistence import (
 from services.rebirth_beta_ops import beta_dashboard_payload, external_gate_payload
 from services.rebirth_deck_coach import deck_suggestions
 from services.rebirth_postmatch import post_match_recap
+from services.rebirth_phase_reports import audit_phase_reports
 from services.rebirth_public_beta_gate import public_beta_gate_payload
 from services.rebirth_release_readiness import release_readiness_report
 from services.rebirth_product import (
@@ -962,6 +963,7 @@ def rebirth_release():
         release_version=app.config["REBIRTH_RELEASE_VERSION"],
         live_balance=live_balance,
     )
+    phase_report_audit = audit_phase_reports()
     return render_template(
         "rebirth_product.html",
         page=release_payload(
@@ -970,7 +972,12 @@ def rebirth_release():
             content_report=content_pipeline_report(),
             live_balance=live_balance,
             public_beta_gate=public_gate,
-            release_readiness=release_readiness_report(gates, public_gate),
+            phase_report_audit=phase_report_audit,
+            release_readiness=release_readiness_report(
+                gates,
+                public_gate,
+                phase_report_audit=phase_report_audit,
+            ),
         ),
     )
 
@@ -2216,6 +2223,7 @@ def api_rebirth_release():
         release_version=app.config["REBIRTH_RELEASE_VERSION"],
         live_balance=live_balance,
     )
+    phase_report_audit = audit_phase_reports()
     return json_payload(
         release=release_payload(
             gates=gates,
@@ -2223,7 +2231,12 @@ def api_rebirth_release():
             content_report=content_pipeline_report(),
             live_balance=live_balance,
             public_beta_gate=public_gate,
-            release_readiness=release_readiness_report(gates, public_gate),
+            phase_report_audit=phase_report_audit,
+            release_readiness=release_readiness_report(
+                gates,
+                public_gate,
+                phase_report_audit=phase_report_audit,
+            ),
         )
     )
 

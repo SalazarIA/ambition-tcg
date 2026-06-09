@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 
 from services.rebirth_beta_ops import external_gate_payload  # noqa: E402
 from services.rebirth_persistence import RebirthRepository  # noqa: E402
+from services.rebirth_phase_reports import audit_phase_reports  # noqa: E402
 from services.rebirth_public_beta_gate import public_beta_gate_payload  # noqa: E402
 from services.rebirth_release_readiness import release_readiness_report  # noqa: E402
 from tools.ops.rebirth_pre_external_gate import _config_from_env, _load_evidence, _workflow_status  # noqa: E402
@@ -65,16 +66,22 @@ def main() -> int:
         since=args.since,
         release_version=args.release_version,
     )
-    readiness = release_readiness_report(external_gates, public_beta_gate)
+    phase_report_audit = audit_phase_reports()
+    readiness = release_readiness_report(
+        external_gates,
+        public_beta_gate,
+        phase_report_audit=phase_report_audit,
+    )
     payload = {
         "ok": readiness["ready"],
         "workflow": workflow,
         "evidence_file": evidence_file,
         "external_gates": external_gates,
         "public_beta_gate": public_beta_gate,
+        "phase_report_audit": phase_report_audit,
         "readiness": readiness,
         "notes": [
-            "This command is the final Phase 8 gate: external proof plus human/product KPIs must both pass.",
+            "This command is the final Phase 8 gate: external proof, phase reports and human/product KPIs must all pass.",
             "It never treats local flags as a replacement for real legal, restore, error-tracking or human telemetry evidence.",
         ],
     }

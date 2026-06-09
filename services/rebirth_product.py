@@ -726,6 +726,7 @@ def release_payload(
     content_report=None,
     live_balance=None,
     public_beta_gate=None,
+    phase_report_audit=None,
     release_readiness=None,
 ):
     payload = page_payload(
@@ -743,6 +744,7 @@ def release_payload(
             "content_pipeline": content_report or content_pipeline_report(),
             "live_balance": live_balance,
             "public_beta_gate": public_beta_gate,
+            "phase_report_audit": phase_report_audit,
             "release_readiness": release_readiness,
             "commands": [
                 "python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py",
@@ -753,6 +755,7 @@ def release_payload(
                 "python3 tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-visual",
                 "python3 tools/ops/rebirth_pre_external_gate.py --report-only",
                 "python3 tools/ops/rebirth_pre_external_gate.py --report-only --evidence /secure/path/rebirth-external-gates.json",
+                "python3 tools/ops/rebirth_phase_report_audit.py",
                 "python3 tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready",
                 "python3 tools/ops/rebirth_release_readiness.py --since <cohort-start-iso> --evidence /secure/path/rebirth-external-gates.json",
                 "REBIRTH_DATABASE_URL=$REBIRTH_DATABASE_URL REBIRTH_RESTORE_DATABASE_URL=$REBIRTH_RESTORE_DATABASE_URL python3 tools/ops/rebirth_backup_restore_drill.py",
