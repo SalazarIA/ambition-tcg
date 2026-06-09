@@ -90,6 +90,7 @@ Updated on 2026-06-09.
   after each evidence update or KPI review.
 - Add `--since 2026-06-09T00:00:00+00:00` to KPI/readiness commands when
   reviewing a specific closed-beta cohort window; use the real cohort start.
+  The public beta gate cannot pass without an explicit cohort window.
 
 ## External Proof Checklist
 

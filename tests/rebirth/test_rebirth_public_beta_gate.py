@@ -27,6 +27,7 @@ def test_public_beta_gate_blocks_without_real_samples():
     report = public_beta_gate_report([], live_balance={"human_match_gate": {"observed_finished_matches": 0, "required_finished_matches": 500}})
 
     assert report["ready"] is False
+    assert "cohort_window" in report["blockers"]
     assert "telemetry_active" in report["blockers"]
     assert "human_telemetry_sample" in report["blockers"]
     assert {check["key"]: check["state"] for check in report["checks"]}["crash_rate"] == "pending"
@@ -48,6 +49,26 @@ def test_public_beta_gate_payload_passes_since_to_repository():
     assert report["release_version"] == "v-test"
     assert report["since"] == "2026-06-01T00:00:00+00:00"
     assert report["ready"] is False
+
+
+def test_public_beta_gate_blocks_when_cohort_window_is_missing():
+    report = public_beta_gate_report(
+        [
+            _event(1, "match_started", payload={"match_id": "m1"}),
+            _event(2, "match_finished", payload={"match_id": "m1", "is_finished": True, "winner": "player"}),
+            _event(3, "match_abandoned", payload={"match_id": "m2"}),
+            _event(4, "match_won", payload={"match_id": "m1"}),
+            _event(5, "match_lost", payload={"match_id": "m3"}),
+            _event(6, "card_played", payload={"match_id": "m1", "card_id": "card_001"}),
+            _event(7, "card_evolved", payload={"match_id": "m1", "card_id": "card_001"}),
+            _event(8, "field_pair_fused", payload={"match_id": "m1"}),
+        ],
+        live_balance=_passing_live_balance(),
+    )
+
+    assert report["ready"] is False
+    assert {check["key"]: check["state"] for check in report["checks"]}["cohort_window"] == "blocked"
+    assert "cohort_window" in report["blockers"]
 
 
 def test_public_beta_gate_passes_only_when_all_kpis_are_met():
@@ -111,11 +132,17 @@ def test_public_beta_gate_passes_only_when_all_kpis_are_met():
         ]
     )
 
-    report = public_beta_gate_report(events, live_balance=_passing_live_balance(), now=now)
+    report = public_beta_gate_report(
+        events,
+        live_balance=_passing_live_balance(),
+        now=now,
+        since="2026-06-01T00:00:00+00:00",
+    )
     states = {check["key"]: check["state"] for check in report["checks"]}
 
     assert report["ready"] is True
     assert report["blockers"] == []
+    assert states["cohort_window"] == "passed"
     assert states["tutorial_completion"] == "passed"
     assert states["first_match_completion"] == "passed"
     assert states["d1_retention"] == "passed"

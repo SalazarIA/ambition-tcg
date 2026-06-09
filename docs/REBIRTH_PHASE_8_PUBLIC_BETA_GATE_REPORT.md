@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1306 passed, 5 skipped, 19 deselected`. GitHub
+  `1307 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -22,6 +22,8 @@ Current status: **blocked**.
 - Legal complete: blocked until owner/counsel approves LGPD, Privacy and Terms.
 - Tutorial > 80%: blocked until real-player telemetry exists.
 - First Match > 70%: blocked until real-player telemetry exists.
+- Cohort window: blocked unless the KPI/readiness command receives a real
+  `--since <cohort-start-iso>` window.
 - D1 > 35%: blocked until real cohort data exists.
 - D7 > 20%: blocked until real cohort data exists.
 - Crash Rate < 1%: blocked until production error tracking is active.
@@ -66,10 +68,13 @@ A backup/restore drill command now exists for redacted dry-runs and guarded
 execution against disposable restore databases.
 A public beta KPI gate evaluator now exists and is surfaced on `/rebirth/release`
 and `/api/rebirth/release`; it blocks unless tutorial, first-match, D1, D7,
-crash/error rate, telemetry coverage, human sample and balance checks all pass.
+crash/error rate, telemetry coverage, human sample, balance and explicit
+cohort-window checks all pass.
 Those release surfaces accept `?since=<cohort-start-iso>` so the dashboard,
 live balance and public beta gate can be reviewed against the same beta cohort
 window as the CLI gates.
+The public beta gate now refuses to become ready when the cohort window is
+omitted, preventing all-time local or test telemetry from satisfying Phase 8.
 The release dashboard telemetry cards now reuse the public beta gate's
 matured-cohort checks for D1 retention, D7 retention, first-match completion,
 tutorial completion and crash/error rate, avoiding a mismatch between
@@ -135,7 +140,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1306 passed, 5 skipped,
+The current local Rebirth suite passed with `1307 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -148,11 +153,17 @@ through Phase 8.
 The final release readiness command was run in report-only mode and returned
 `phase_reports_ready=true`, `phase_reports_passed=9/9`, and `ok=false` because
 external proof and human KPI gates remain blocked.
+The public beta KPI command was run both without `--since` and with
+`--since 2026-06-01T00:00:00+00:00`; the first report blocked on
+`cohort_window`, while the second passed the cohort-window check and remained
+blocked on missing human/KPI evidence.
 The release API contract now asserts `require_external_evidence=true` and keeps
 legal, backup/restore, error tracking and GitHub workflow blocked/pending when
 only local readiness flags are supplied.
 The release dashboard contract now asserts that D1/D7 cards are retention
 cards backed by the public beta gate, not recent active-user counters.
+The public beta gate contract now asserts that `cohort_window` blocks readiness
+without `--since`, and passes only when an explicit cohort window is supplied.
 The closed-beta QA workflow contract now asserts that phase-report audit and
 release-readiness snapshot commands remain wired into CI.
 The legal evidence helper contract now asserts that incomplete legal approval
@@ -185,7 +196,8 @@ document hashes after legal-copy changes. Evidence bundle coverage asserts that
 the final private evidence JSON can be assembled repeatably without printing
 secret-like values and without writing the private bundle inside the repository
 by default. Dashboard coverage asserts that the visible release cards share the
-same matured-cohort D1/D7 semantics as the public beta gate.
+same matured-cohort D1/D7 semantics as the public beta gate. Public beta gate
+coverage also asserts that a cohort window is mandatory for readiness.
 
 ## Risks
 

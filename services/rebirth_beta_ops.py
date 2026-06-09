@@ -113,7 +113,7 @@ def _card_from_check(report, key, label):
 
 def beta_dashboard_payload(repo, *, limit=5000, since=None):
     events = repo.query_telemetry_events(limit=limit, since=since)
-    public_gate = public_beta_gate_report(events)
+    public_gate = public_beta_gate_report(events, since=since)
 
     starts = [event for event in events if event["event_type"] == "match_started"]
     finishes = [event for event in events if event["event_type"] == "match_finished"]

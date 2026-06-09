@@ -194,7 +194,9 @@ def test_beta_dashboard_uses_matured_cohort_retention_cards():
     assert cards["D7 retenção"]["value"] == "50%"
     assert cards["D7 retenção"]["state"] == "passed"
     assert cards["D7 retenção"]["target"] == ">=20%"
-    assert dashboard["public_beta_gate"]["checks"][4]["key"] == "d1_retention"
+    public_gate_checks = {check["key"]: check for check in dashboard["public_beta_gate"]["checks"]}
+    assert public_gate_checks["cohort_window"]["state"] == "passed"
+    assert public_gate_checks["d1_retention"]["value"] == "50%"
 
 
 def test_guest_can_resume_active_match_from_session(client):

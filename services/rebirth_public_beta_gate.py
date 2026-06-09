@@ -42,6 +42,17 @@ CRITICAL_BALANCE_FLAGS = {
 }
 
 
+def _cohort_window_gate(since: Optional[str]) -> Dict[str, Any]:
+    value = str(since or "").strip()
+    return {
+        "key": "cohort_window",
+        "label": "Coorte",
+        "state": "passed" if value else "blocked",
+        "value": value or "sem janela",
+        "target": "--since <cohort-start-iso>",
+    }
+
+
 def _payload(event: Dict[str, Any]) -> Dict[str, Any]:
     payload = event.get("payload") or {}
     return payload if isinstance(payload, dict) else {}
@@ -277,11 +288,13 @@ def public_beta_gate_report(
     live_balance: Optional[Dict[str, Any]] = None,
     now: Optional[datetime] = None,
     release_version: Optional[str] = None,
+    since: Optional[str] = None,
 ) -> Dict[str, Any]:
     events = list(events or [])
     observed_now = _now_from_events(events, now)
     live_balance = live_balance or live_balance_report(events, release_version=release_version)
     checks = [
+        _cohort_window_gate(since),
         _telemetry_gate(events),
         _human_match_gate(live_balance),
         _tutorial_gate(events),
@@ -295,6 +308,7 @@ def public_beta_gate_report(
     return {
         "version": PUBLIC_BETA_GATE_VERSION,
         "release_version": release_version,
+        "since": since,
         "updated_at": observed_now.isoformat(timespec="seconds"),
         "ready": not blockers,
         "targets": PUBLIC_BETA_TARGETS,
@@ -313,6 +327,9 @@ def public_beta_gate_payload(
     live_balance: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     events = repo.query_telemetry_events(limit=limit, since=since)
-    report = public_beta_gate_report(events, live_balance=live_balance, release_version=release_version)
-    report["since"] = since
-    return report
+    return public_beta_gate_report(
+        events,
+        live_balance=live_balance,
+        release_version=release_version,
+        since=since,
+    )

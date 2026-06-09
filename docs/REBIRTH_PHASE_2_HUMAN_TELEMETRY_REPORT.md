@@ -38,6 +38,9 @@ Current status: **implemented locally, blocked on 500+ human matches**.
    - The evaluator is conservative: D1/D7 only count matured cohorts, crash
      rate requires a minimum telemetry sample and balance cannot pass below
      500 finished human matches.
+   - The evaluator now includes a `cohort_window` check, so public beta
+     readiness cannot pass from all-time or mixed local telemetry; operators
+     must provide a real `--since <cohort-start-iso>` window.
    - `tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`
      gives operators a repeatable JSON report against the active database.
    - `--since <ISO timestamp>` scopes KPI reads to a real closed-beta cohort
@@ -67,13 +70,16 @@ Current status: **implemented locally, blocked on 500+ human matches**.
 
 - `node --check static/js/rebirth.js`
 - `.venv/bin/python -m py_compile app.py services/rebirth_first_session.py services/rebirth_telemetry.py services/rebirth_live_balance.py`
+- `.venv/bin/python -m py_compile services/rebirth_public_beta_gate.py services/rebirth_beta_ops.py tools/ops/rebirth_public_beta_gate.py tools/ops/rebirth_release_readiness.py`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_aaa_studio_foundations.py tests/rebirth/test_v73_telemetry_analyzer.py -q`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_aaa_studio_foundations.py tests/rebirth/test_rebirth_product_shell.py tests/rebirth/test_rebirth_public_beta_gate.py -q`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_public_beta_gate.py -q`
+- `.venv/bin/python tools/ops/rebirth_public_beta_gate.py --require-ready`
+- `.venv/bin/python tools/ops/rebirth_public_beta_gate.py --since 2026-06-01T00:00:00+00:00 --require-ready`
 - `.venv/bin/python -m pytest tests/rebirth -q`
 
-Focused dashboard/gate result: `22 passed`.
-Full Rebirth suite: `1306 passed, 5 skipped, 19 deselected`.
+Focused dashboard/gate result: `27 passed`.
+Full Rebirth suite: `1307 passed, 5 skipped, 19 deselected`.
 
 ## Coverage
 
@@ -83,6 +89,8 @@ Coverage was not reduced. New coverage asserts:
   outcome counters and average duration;
 - release dashboard, live balance and public beta gate preserve the same
   `since` cohort window;
+- public beta readiness stays blocked when a cohort window is omitted, even if
+  telemetry-like events exist;
 - release dashboard retention cards use the same matured-cohort D1/D7
   semantics as the public beta gate;
 - `record_match_telemetry` persists deck signature, deck size, duration and a
@@ -99,6 +107,8 @@ Coverage was not reduced. New coverage asserts:
 - Retention: the public beta gate computes event-sourced D1/D7 rates from
   matured user cohorts, but real D1/D7 retention still requires production
   cohort data.
+- Cohort window: implemented as a required public beta gate check through
+  `--since <cohort-start-iso>`.
 
 ## Human Sample Gate
 
