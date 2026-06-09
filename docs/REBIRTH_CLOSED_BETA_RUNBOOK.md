@@ -8,6 +8,9 @@ Updated on 2026-06-09.
 - `pytest -q -m e2e tests/rebirth/e2e/test_navigation_and_auth.py` passes.
 - `python tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-closed-beta-qa` passes with no blocking overlap. Committed baselines live in `tests/rebirth/visual_baselines/`.
 - `python tools/rebirth_balance_report.py --matches 200 --output docs/REBIRTH_BALANCE_REPORT.md` shows global/profile player win rate inside the 44% to 53% closed-beta gate, with 44% to 52% kept as the next tuning target.
+- `python tools/ops/rebirth_phase_report_audit.py` passes, proving every
+  Phase 0-8 report exists and keeps the required status, implementation, files,
+  tests, coverage, risks, next steps and project-status sections.
 - `pip-audit -r requirements.txt` and `pip-audit -r requirements-dev.txt` pass in the supported Python 3.11.9 environment used by Render/CI.
 - Support export, reset, feedback capture and permanent account deletion are tested.
 - Terms, Privacy, Data Deletion and Support are reachable from the account/support surfaces.

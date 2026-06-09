@@ -8,7 +8,7 @@ from services.rebirth_beta_ops import external_gate_payload
 from services.rebirth_gate_evidence import validate_external_gate_evidence
 from tools.ops.rebirth_backup_restore_drill import build_evidence_payload as build_backup_evidence_payload
 from tools.ops.rebirth_error_tracking_smoke import build_evidence_payload
-from tools.ops import rebirth_pre_external_gate
+from tools.ops import rebirth_phase_report_audit, rebirth_pre_external_gate
 
 
 def _now_iso():
@@ -64,6 +64,23 @@ def test_error_tracking_smoke_evidence_requires_operator_confirmation():
 
     assert validate_external_gate_evidence(candidate)["error_tracking"]["valid"] is False
     assert validate_external_gate_evidence(valid)["error_tracking"]["valid"] is True
+
+
+def test_phase_report_audit_covers_all_execution_plan_reports():
+    report = rebirth_phase_report_audit.audit_phase_reports()
+
+    assert report["ok"] is True
+    assert [phase["phase"] for phase in report["phases"]] == list(range(9))
+    assert report["required_sections"] == [
+        "coverage",
+        "files_changed",
+        "implemented",
+        "next_steps",
+        "project_status",
+        "risks",
+        "status",
+        "tests_executed",
+    ]
 
 
 def test_error_tracking_smoke_dry_run_without_dsn_does_not_fail_shell():

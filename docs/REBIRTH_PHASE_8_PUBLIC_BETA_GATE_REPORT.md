@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1290 passed, 5 skipped, 19 deselected`. GitHub
+  `1291 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -71,6 +71,8 @@ release gate.
 The closed-beta QA workflow and PR `tests` workflow now use Node 24-compatible
 official GitHub Actions majors, removing the runner deprecation warning from
 the release path without changing gameplay.
+A phase-report audit command now verifies that every Phase 0-8 report exists
+and keeps the mandatory technical sections required by the execution plan.
 
 ## Files Changed
 
@@ -86,6 +88,7 @@ the release path without changing gameplay.
 - `tools/ops/rebirth_backup_restore_drill.py`
 - `tools/ops/rebirth_public_beta_gate.py`
 - `tools/ops/rebirth_release_readiness.py`
+- `tools/ops/rebirth_phase_report_audit.py`
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `tests/rebirth/test_rebirth_public_beta_gate.py`
 - `tests/rebirth/test_rebirth_release_readiness.py`
@@ -101,7 +104,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1290 passed, 5 skipped,
+The current local Rebirth suite passed with `1291 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -109,6 +112,8 @@ The evidence template was also run through `--evidence` and correctly rejected
 with `example_evidence_file`.
 The GitHub Actions workflow YAML was parsed locally, and old Node 20 action
 pins were searched for and removed from `.github`.
+The phase-report audit was run and returned `ok=true` for reports Phase 0
+through Phase 8.
 
 Current external gate states:
 
