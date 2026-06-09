@@ -104,11 +104,29 @@ def test_backup_restore_drill_dry_run_does_not_print_database_url():
 
 def test_external_gate_requires_workflow_for_expected_head():
     gates = external_gate_payload(
-        {},
+        {"REBIRTH_GITHUB_QA_GREEN": "true"},
         workflow={
             "conclusion": "success",
             "expectedHeadSha": "abc123",
             "matchedExpectedHead": False,
+            "branch": "fix/current",
+            "matchedExpectedBranch": True,
+        },
+    )
+    states = {check["key"]: check["state"] for check in gates["checks"]}
+
+    assert states["github_workflow"] == "pending"
+
+
+def test_external_gate_requires_workflow_for_expected_branch():
+    gates = external_gate_payload(
+        {"REBIRTH_GITHUB_QA_GREEN": "true"},
+        workflow={
+            "conclusion": "success",
+            "expectedHeadSha": "abc123",
+            "matchedExpectedHead": True,
+            "branch": "fix/current",
+            "matchedExpectedBranch": False,
         },
     )
     states = {check["key"]: check["state"] for check in gates["checks"]}
@@ -145,8 +163,11 @@ def test_workflow_status_filters_github_run_by_expected_head(monkeypatch):
     status = rebirth_pre_external_gate._workflow_status(branch="fix/current", head_sha="abc123")
 
     assert calls
+    assert "--branch" in calls[0]
+    assert "fix/current" in calls[0]
     assert "--commit" in calls[0]
     assert "abc123" in calls[0]
     assert status["conclusion"] == "success"
     assert status["matchedExpectedHead"] is True
+    assert status["matchedExpectedBranch"] is True
     assert status["expectedHeadSha"] == "abc123"

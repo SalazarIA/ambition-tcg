@@ -105,7 +105,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1285 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1286 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -139,8 +139,8 @@ Coverage was not reduced. New regression coverage was added for:
 - dry-run backup/restore drill does not execute restore or print database URLs.
 - backup/restore evidence requires schema, health and support-export checks
   before it can pass the gate.
-- GitHub QA evidence is scoped to the expected head commit instead of any
-  latest workflow run.
+- GitHub QA evidence is scoped to the expected branch/head commit instead of
+  any latest workflow run or manual override.
 
 ## Risks
 

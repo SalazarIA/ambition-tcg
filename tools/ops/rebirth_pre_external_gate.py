@@ -55,6 +55,7 @@ def _workflow_status(*, branch=None, head_sha=None):
         "expectedHeadSha": head_sha,
         "branch": branch,
         "matchedExpectedHead": False,
+        "matchedExpectedBranch": False,
         "source": "local_file",
     }
     gh = shutil.which("gh")
@@ -72,10 +73,10 @@ def _workflow_status(*, branch=None, head_sha=None):
         "--json",
         "status,conclusion,headSha,headBranch,databaseId,url,createdAt",
     ]
+    if branch:
+        command.extend(["--branch", branch])
     if head_sha:
         command.extend(["--commit", head_sha])
-    elif branch:
-        command.extend(["--branch", branch])
     try:
         result = subprocess.run(
             command,
@@ -90,6 +91,7 @@ def _workflow_status(*, branch=None, head_sha=None):
             status.update(runs[0])
             status["source"] = "github"
             status["matchedExpectedHead"] = not head_sha or runs[0].get("headSha") == head_sha
+            status["matchedExpectedBranch"] = not branch or runs[0].get("headBranch") == branch
         elif head_sha:
             status["source"] = "github"
             status["error"] = "matching_workflow_run_missing"

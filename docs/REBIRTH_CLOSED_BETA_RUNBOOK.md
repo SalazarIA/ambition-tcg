@@ -96,7 +96,7 @@ Updated on 2026-06-09.
 - GitHub QA: run or schedule `rebirth-closed-beta-qa.yml`; the gate checks the
   current `HEAD` by default. When auditing manually, use `gh run list
   --workflow rebirth-closed-beta-qa.yml --branch <branch> --commit <head-sha> --limit 1 --json status,conclusion,headSha`
-  and require `conclusion=success` for that exact commit.
+  and require `conclusion=success` for that exact branch and commit.
 - Stripe: keep `REBIRTH_ENABLE_BILLING=false`, `REBIRTH_ALLOW_STRIPE_LIVE=false`
   and live Stripe keys unset for closed beta.
 
