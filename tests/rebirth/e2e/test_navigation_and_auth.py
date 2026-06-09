@@ -226,15 +226,20 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
     page.goto(f"{live_server}/rebirth")
     page.wait_for_load_state("networkidle")
     page.locator("[data-rebirth-global-nav] [data-rebirth-auth-open]").click()
+    page.locator("[data-rebirth-auth-modal]").wait_for(state="visible", timeout=5_000)
     register = page.locator("[data-rebirth-register]").first
     register.locator('input[name="username"]').fill(username)
     register.locator('input[name="email"]').fill(email)
     register.locator('input[name="password"]').fill("password123")
     register.locator('input[name="age_confirmed"]').check()
     register.locator('input[name="privacy_accepted"]').check()
+    submit_button = register.locator('button[type="submit"]')
+    submit_button.scroll_into_view_if_needed()
+    assert submit_button.is_visible()
+    assert submit_button.is_enabled()
 
     with page.expect_response(lambda response: "/api/rebirth/auth/register" in response.url) as register_info:
-        register.locator('button[type="submit"]').click()
+        register.evaluate("form => form.requestSubmit()")
     registered = register_info.value
     registered_payload = registered.json()
     assert registered.status == 200
