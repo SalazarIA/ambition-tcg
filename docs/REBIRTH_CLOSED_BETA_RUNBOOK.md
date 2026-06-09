@@ -94,7 +94,9 @@ Updated on 2026-06-09.
   external evidence JSON through `--evidence`. Use
   `python tools/ops/rebirth_legal_review_evidence.py --approved --reviewer "<name-or-role>" --evidence-ref "<private-ticket>" --all-required-scopes-reviewed`
   to generate the secret-free `legal_review` block after the real approval
-  exists.
+  exists. The generated block includes SHA-256 hashes for the current Terms,
+  Privacy and Data Deletion templates, so a later copy change requires a fresh
+  legal evidence record.
 - Backup/restore: run a real Postgres drill against a disposable restore
   database, compare `/health` plus a signed-in export, then set
   `REBIRTH_BACKUP_RESTORE_DRILL=true` for local/pre-external dashboards only

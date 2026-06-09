@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from services.rebirth_beta_ops import external_gate_payload
-from services.rebirth_gate_evidence import validate_external_gate_evidence
+from services.rebirth_gate_evidence import current_legal_document_hashes, validate_external_gate_evidence
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +20,7 @@ def valid_external_evidence():
             "reviewer": "Operator",
             "approved_at": now,
             "scope": ["terms", "privacy", "data_deletion", "billing_disabled"],
+            "document_hashes": current_legal_document_hashes(),
             "evidence_ref": "private-ticket-legal-1",
         },
         "backup_restore": {

@@ -18,7 +18,11 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from services.rebirth_gate_evidence import LEGAL_SCOPE, validate_external_gate_evidence  # noqa: E402
+from services.rebirth_gate_evidence import (  # noqa: E402
+    LEGAL_SCOPE,
+    current_legal_document_hashes,
+    validate_external_gate_evidence,
+)
 
 
 SCOPE_FLAGS = {
@@ -40,6 +44,7 @@ def build_evidence_payload(
     evidence_ref: str,
     scope: list[str],
     approved_at: str | None = None,
+    document_hashes: dict[str, str] | None = None,
 ) -> dict:
     return {
         "legal_review": {
@@ -47,6 +52,7 @@ def build_evidence_payload(
             "reviewer": reviewer,
             "approved_at": approved_at or utc_now(),
             "scope": sorted(set(scope)),
+            "document_hashes": document_hashes or current_legal_document_hashes(),
             "evidence_ref": evidence_ref,
         }
     }

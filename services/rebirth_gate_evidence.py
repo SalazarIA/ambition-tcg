@@ -7,13 +7,21 @@ credentials, DSNs or database identifiers in source control.
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping
 
 
 LEGAL_SCOPE = {"terms", "privacy", "data_deletion", "billing_disabled"}
+LEGAL_DOCUMENT_PATHS = {
+    "terms": "templates/terms.html",
+    "privacy": "templates/privacy.html",
+    "data_deletion": "templates/data_deletion.html",
+}
 BACKUP_RESTORE_MAX_AGE_DAYS = 30
 ERROR_TRACKING_MAX_AGE_DAYS = 14
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _present(value: Any) -> bool:
@@ -61,6 +69,15 @@ def _result(valid: bool, errors: List[str]) -> Dict[str, Any]:
     return {"valid": bool(valid), "errors": errors}
 
 
+def current_legal_document_hashes(root: Path | None = None) -> Dict[str, str]:
+    root = root or ROOT
+    hashes: Dict[str, str] = {}
+    for key, relative_path in LEGAL_DOCUMENT_PATHS.items():
+        path = root / relative_path
+        hashes[key] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashes
+
+
 def _legal(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, Any]:
     data = evidence.get("legal_review") or {}
     errors: List[str] = []
@@ -78,6 +95,21 @@ def _legal(evidence: Mapping[str, Any], *, example: bool) -> Dict[str, Any]:
         errors.append("scope_missing:" + ",".join(missing))
     if not _present(data.get("evidence_ref")):
         errors.append("evidence_ref_required")
+    document_hashes = data.get("document_hashes") or {}
+    try:
+        current_hashes = current_legal_document_hashes()
+    except OSError:
+        current_hashes = {}
+    for key in sorted(LEGAL_DOCUMENT_PATHS):
+        provided = str(document_hashes.get(key) or "").strip()
+        if not provided:
+            errors.append(f"document_hash_required:{key}")
+            continue
+        current = current_hashes.get(key)
+        if not current:
+            errors.append(f"document_hash_current_unavailable:{key}")
+        elif provided != current:
+            errors.append(f"document_hash_mismatch:{key}")
     return _result(not errors, errors)
 
 

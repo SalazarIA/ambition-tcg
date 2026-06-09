@@ -57,6 +57,8 @@ Current status: **blocked on external proof**.
      PostgreSQL restore drill without printing database URLs.
    - `tools/ops/rebirth_legal_review_evidence.py` can format the secret-free
      legal approval evidence after owner/counsel review is actually recorded.
+   - Legal approval evidence now includes SHA-256 hashes for the current Terms,
+     Privacy and Data Deletion templates and is rejected if those hashes drift.
    - External backup/restore evidence now expires after 30 days, and
      error-tracking smoke evidence expires after 14 days.
    - The final Phase 8 release gate now requires strict external evidence, so
@@ -136,7 +138,7 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python tools/rebirth_balance_report.py --matches 120 --output /tmp/rebirth-phase0-balance.md`
 - `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only`
 - `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only --evidence docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
-- `.venv/bin/python -m py_compile tools/ops/rebirth_legal_review_evidence.py`
+- `.venv/bin/python -m py_compile services/rebirth_gate_evidence.py tools/ops/rebirth_legal_review_evidence.py`
 - `.venv/bin/python tools/ops/rebirth_error_tracking_smoke.py`
 - `.venv/bin/python tools/ops/rebirth_backup_restore_drill.py`
 - `.venv/bin/python tools/ops/rebirth_legal_review_evidence.py --approved --reviewer Operator --evidence-ref private-legal-1 --all-required-scopes-reviewed`
@@ -151,7 +153,7 @@ Current status: **blocked on external proof**.
 
 Key local results:
 
-- Current full Rebirth test suite: `1297 passed, 5 skipped, 19 deselected`.
+- Current full Rebirth test suite: `1298 passed, 5 skipped, 19 deselected`.
 - External evidence, error-tracking smoke and backup/restore drill contracts are
   covered by focused ops/product tests and the current full suite.
 - Full navigation/auth E2E suite: `19 passed`.
@@ -179,7 +181,8 @@ Key local results:
 - Example evidence file: rejected intentionally with `example_evidence_file`.
 - Legal evidence helper: produces a valid `legal_review` block only when
   approval, reviewer, private evidence reference and all required scopes are
-  supplied.
+  supplied, and only while the reviewed legal-document hashes match the current
+  repo templates.
 
 ## Coverage
 
@@ -194,6 +197,7 @@ Coverage was not reduced. New regression coverage was added for:
 - secret-free external gate evidence validation.
 - secret-free legal evidence generation requires a real approval-shaped record
   and complete LGPD/Terms/Privacy/deletion/billing scope.
+- legal evidence validation rejects stale Terms/Privacy/Data Deletion hashes.
 - external evidence template rejection for source-control examples and common
   secret-like values.
 - mandatory Phase 0-8 report structure.

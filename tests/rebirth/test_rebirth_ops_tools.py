@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from services.rebirth_beta_ops import external_gate_payload
-from services.rebirth_gate_evidence import validate_external_gate_evidence
+from services.rebirth_gate_evidence import current_legal_document_hashes, validate_external_gate_evidence
 from tools.ops.rebirth_backup_restore_drill import build_evidence_payload as build_backup_evidence_payload
 from tools.ops.rebirth_error_tracking_smoke import build_evidence_payload
 from tools.ops.rebirth_legal_review_evidence import build_evidence_payload as build_legal_evidence_payload
@@ -25,6 +25,7 @@ def _valid_external_evidence():
             "reviewer": "Operator",
             "approved_at": now,
             "scope": ["terms", "privacy", "data_deletion", "billing_disabled"],
+            "document_hashes": current_legal_document_hashes(),
             "evidence_ref": "private-ticket-legal-1",
         },
         "backup_restore": {
@@ -95,6 +96,22 @@ def test_legal_review_evidence_requires_real_approval_record():
     assert valid_report["valid"] is True
 
 
+def test_legal_review_evidence_rejects_stale_document_hashes():
+    evidence = build_legal_evidence_payload(
+        approved=True,
+        reviewer="Operator",
+        evidence_ref="private-legal-1",
+        scope=["terms", "privacy", "data_deletion", "billing_disabled"],
+        approved_at=_now_iso(),
+    )
+    evidence["legal_review"]["document_hashes"]["terms"] = "0" * 64
+
+    report = validate_external_gate_evidence(evidence)["legal_review"]
+
+    assert report["valid"] is False
+    assert "document_hash_mismatch:terms" in report["errors"]
+
+
 def test_legal_review_evidence_command_builds_valid_scope_block():
     result = subprocess.run(
         [
@@ -119,6 +136,11 @@ def test_legal_review_evidence_command_builds_valid_scope_block():
     assert payload["validation"]["valid"] is True
     assert sorted(payload["evidence"]["legal_review"]["scope"]) == [
         "billing_disabled",
+        "data_deletion",
+        "privacy",
+        "terms",
+    ]
+    assert sorted(payload["evidence"]["legal_review"]["document_hashes"]) == [
         "data_deletion",
         "privacy",
         "terms",

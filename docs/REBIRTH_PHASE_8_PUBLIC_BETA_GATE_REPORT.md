@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1297 passed, 5 skipped, 19 deselected`. GitHub
+  `1298 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -50,6 +50,9 @@ Backup/restore evidence with unresolved drill issues is also rejected.
 Legal review evidence now has an operator helper that formats the
 `legal_review` block only after approval, reviewer, private evidence reference
 and the full required scope are supplied.
+Legal review evidence is now tied to SHA-256 hashes of the current Terms,
+Privacy and Data Deletion templates, so a copy change requires fresh review
+evidence.
 The release dashboard now displays the evidence validity/errors and the
 operator command for passing a private evidence file.
 An error-tracking smoke command now exists for Sentry/GlitchTip target
@@ -121,7 +124,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1297 passed, 5 skipped,
+The current local Rebirth suite passed with `1298 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -142,6 +145,8 @@ release-readiness snapshot commands remain wired into CI.
 The legal evidence helper contract now asserts that incomplete legal approval
 records stay invalid and that a complete, private-reference-backed scope block
 passes validation.
+The legal evidence validator now rejects stale document hashes for reviewed
+Terms, Privacy and Data Deletion templates.
 
 Current external gate states:
 
@@ -158,7 +163,8 @@ Coverage was not reduced. New governance coverage asserts that the closed-beta
 QA workflow keeps phase-report audit and release-readiness snapshot checks wired
 to the current branch/head SHA. Legal evidence helper coverage asserts that the
 Phase 8 legal gate still requires approval, reviewer, private evidence reference
-and the complete required scope.
+and the complete required scope. Legal evidence validation also rejects stale
+document hashes after legal-copy changes.
 
 ## Risks
 

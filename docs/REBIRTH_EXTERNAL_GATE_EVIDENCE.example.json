@@ -11,6 +11,11 @@
       "data_deletion",
       "billing_disabled"
     ],
+    "document_hashes": {
+      "terms": "sha256-of-current-templates-terms-html",
+      "privacy": "sha256-of-current-templates-privacy-html",
+      "data_deletion": "sha256-of-current-templates-data-deletion-html"
+    },
     "evidence_ref": "Private ticket, signed note, or operator log reference"
   },
   "backup_restore": {
