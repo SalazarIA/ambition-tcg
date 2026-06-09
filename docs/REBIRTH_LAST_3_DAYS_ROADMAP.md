@@ -221,7 +221,7 @@ Must happen:
 Exit criteria:
 
 - First match completion target: 70%+.
-- Tutorial completion target: 60%+.
+- Tutorial completion target: 80%+.
 - Most common onboarding complaint is no longer "I do not know what to do."
 
 ### Phase 2 - Human Balance And Retention Read

@@ -211,7 +211,7 @@ Must improve:
 Exit criteria:
 
 - 70%+ first-match completion in closed-beta telemetry.
-- 60%+ tutorial completion.
+- 80%+ tutorial completion.
 - Less than 10% of first-match users hit support/help before first summon.
 - Median first completed match under target session length.
 
@@ -351,7 +351,7 @@ Must improve:
 
 Exit criteria:
 
-- D1 >= 40% in closed beta.
+- D1 >= 35% in closed beta.
 - D7 >= 20% in closed beta.
 - Median returning player plays 3+ matches per active day.
 - Feedback volume decreases for the same onboarding issues.

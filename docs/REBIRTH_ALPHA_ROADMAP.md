@@ -93,7 +93,7 @@ Scope:
 
 Acceptance:
 
-- Tutorial completion at or above 60% in beta telemetry.
+- Tutorial completion at or above 80% in beta telemetry.
 - First-match completion at or above 70%.
 - Less than 10% of first-match users open help before their first summon.
 - No tutorial step blocks a returning player from skipping quickly.
@@ -137,7 +137,7 @@ Scope:
 
 Acceptance:
 
-- D1 retention target: at least 40% in beta cohort.
+- D1 retention target: at least 35% in beta cohort.
 - D7 retention target: at least 20% in beta cohort.
 - Median returning user plays at least 3 matches per active day.
 - Reward grants are idempotent and covered by persistence tests.
