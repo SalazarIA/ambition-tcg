@@ -46,6 +46,17 @@ operator channel.
 
 Use a custom-format dump so restore can use `pg_restore` safely.
 
+Recommended operator dry-run:
+
+```bash
+REBIRTH_DATABASE_URL="$REBIRTH_DATABASE_URL" \
+REBIRTH_RESTORE_DATABASE_URL="$REBIRTH_RESTORE_DATABASE_URL" \
+python tools/ops/rebirth_backup_restore_drill.py
+```
+
+The dry-run prints redacted database fingerprints, prerequisite status and an
+evidence skeleton without executing `pg_restore`.
+
 ```bash
 mkdir -p /tmp/ambitionz-rebirth-backups
 pg_dump "$REBIRTH_DATABASE_URL" \
@@ -59,6 +70,22 @@ Expected result: command exits `0` and produces a non-empty `.dump` file.
 ## Restore Drill
 
 Run the drill against a disposable database, never directly over production.
+The helper refuses execution unless the restore target differs from the source
+and the disposable-target acknowledgement is present:
+
+```bash
+REBIRTH_DATABASE_URL="$REBIRTH_DATABASE_URL" \
+REBIRTH_RESTORE_DATABASE_URL="$REBIRTH_RESTORE_DATABASE_URL" \
+python tools/ops/rebirth_backup_restore_drill.py \
+  --execute \
+  --i-understand-restore-target-is-disposable \
+  --operator "$USER" \
+  --source-commit "$(git rev-parse HEAD)"
+```
+
+After `/health` and a signed-in support export pass against the disposable
+restore app, re-run or copy the output with `--health-check passed`,
+`--support-export-check passed` and a private `--evidence-ref`.
 
 ```bash
 createdb rebirth_restore_drill

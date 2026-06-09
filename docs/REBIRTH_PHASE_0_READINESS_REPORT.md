@@ -51,6 +51,8 @@ Current status: **blocked on external proof**.
    - `tools/ops/rebirth_error_tracking_smoke.py` can emit a Sentry/GlitchTip
      smoke event without printing the DSN and can produce the evidence snippet
      after operator confirmation.
+   - `tools/ops/rebirth_backup_restore_drill.py` can dry-run or execute the
+     PostgreSQL restore drill without printing database URLs.
 
 ## Files Changed
 
@@ -74,6 +76,7 @@ Current status: **blocked on external proof**.
 - `services/rebirth_product.py`
 - `templates/rebirth_product.html`
 - `tools/ops/rebirth_error_tracking_smoke.py`
+- `tools/ops/rebirth_backup_restore_drill.py`
 - `tests/rebirth/test_rebirth_ops_tools.py`
 
 ## Tests Executed
@@ -95,6 +98,7 @@ Current status: **blocked on external proof**.
 - `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only`
 - `.venv/bin/python tools/ops/rebirth_pre_external_gate.py --report-only --evidence docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 - `.venv/bin/python tools/ops/rebirth_error_tracking_smoke.py`
+- `.venv/bin/python tools/ops/rebirth_backup_restore_drill.py`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_ops_tools.py tests/rebirth/test_rebirth_product_shell.py -q`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_product_shell.py -q`
 - `git diff --check`
@@ -104,6 +108,7 @@ Key local results:
 - Full Rebirth test suite: `1272 passed, 5 skipped, 19 deselected`.
 - External evidence validation pass: `1274 passed, 5 skipped, 19 deselected`.
 - Error-tracking smoke pass: `1276 passed, 5 skipped, 19 deselected`.
+- Backup/restore drill pass: `1278 passed, 5 skipped, 19 deselected`.
 - Full navigation/auth E2E suite: `19 passed`.
 - Phase 0 focused tests: `12 passed`.
 - Visual screenshots: `RESULT=PASS`, no issues.
@@ -132,6 +137,9 @@ Coverage was not reduced. New regression coverage was added for:
 - error-tracking smoke evidence requires operator confirmation before the gate
   can pass.
 - dry-run error-tracking smoke does not fail the shell or print a DSN.
+- dry-run backup/restore drill does not execute restore or print database URLs.
+- backup/restore evidence requires schema, health and support-export checks
+  before it can pass the gate.
 
 ## Current Risks
 

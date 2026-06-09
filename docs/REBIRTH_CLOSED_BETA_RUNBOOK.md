@@ -68,7 +68,10 @@ Updated on 2026-06-02.
 - Backup/restore: run a real Postgres drill against a disposable restore
   database, compare `/health` plus a signed-in export, then set
   `REBIRTH_BACKUP_RESTORE_DRILL=true`, or provide a valid external evidence
-  JSON through `--evidence`.
+  JSON through `--evidence`. Use
+  `python tools/ops/rebirth_backup_restore_drill.py` for a redacted dry-run and
+  add `--execute --i-understand-restore-target-is-disposable` only when the
+  restore target is disposable.
 - Error tracking: set `SENTRY_DSN` for Sentry, GlitchTip or a compatible DSN.
   Keep `SENTRY_ENVIRONMENT=closed-beta` and a conservative
   `SENTRY_TRACES_SAMPLE_RATE` until traffic is understood. A valid external

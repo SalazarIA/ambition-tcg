@@ -744,6 +744,7 @@ def release_payload(gates=None, dashboard=None, content_report=None, live_balanc
                 "python3 tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-visual",
                 "python3 tools/ops/rebirth_pre_external_gate.py --report-only",
                 "python3 tools/ops/rebirth_pre_external_gate.py --report-only --evidence /secure/path/rebirth-external-gates.json",
+                "REBIRTH_DATABASE_URL=$REBIRTH_DATABASE_URL REBIRTH_RESTORE_DATABASE_URL=$REBIRTH_RESTORE_DATABASE_URL python3 tools/ops/rebirth_backup_restore_drill.py",
                 "SENTRY_DSN=$SENTRY_DSN python3 tools/ops/rebirth_error_tracking_smoke.py --send",
                 "node --check static/js/rebirth.js",
                 "node --check static/js/service-worker.js",

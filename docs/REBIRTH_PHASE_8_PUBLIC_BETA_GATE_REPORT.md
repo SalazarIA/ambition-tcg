@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1276 passed, 5 skipped, 19 deselected`. GitHub
+  `1278 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -40,6 +40,8 @@ The release dashboard now displays the evidence validity/errors and the
 operator command for passing a private evidence file.
 An error-tracking smoke command now exists for Sentry/GlitchTip target
 environment validation without printing `SENTRY_DSN`.
+A backup/restore drill command now exists for redacted dry-runs and guarded
+execution against disposable restore databases.
 
 ## Files Changed
 
@@ -48,12 +50,13 @@ environment validation without printing `SENTRY_DSN`.
 - `templates/rebirth_product.html`
 - `tools/ops/rebirth_pre_external_gate.py`
 - `tools/ops/rebirth_error_tracking_smoke.py`
+- `tools/ops/rebirth_backup_restore_drill.py`
 - `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json`
 
 ## Tests Executed
 
 No Phase 8-specific public-beta validation was run because the gate is blocked.
-The current local Rebirth suite passed with `1276 passed, 5 skipped,
+The current local Rebirth suite passed with `1278 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
