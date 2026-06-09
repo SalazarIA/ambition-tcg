@@ -8,6 +8,7 @@ from pathlib import Path
 from services.rebirth_beta_ops import external_gate_payload
 from services.rebirth_gate_evidence import current_legal_document_hashes, validate_external_gate_evidence
 from tools.ops.rebirth_backup_restore_drill import build_evidence_payload as build_backup_evidence_payload
+from tools.ops.rebirth_external_evidence_bundle import merge_evidence_blocks
 from tools.ops.rebirth_error_tracking_smoke import build_evidence_payload
 from tools.ops.rebirth_legal_review_evidence import build_evidence_payload as build_legal_evidence_payload
 from tools.ops import rebirth_phase_report_audit, rebirth_pre_external_gate
@@ -145,6 +146,156 @@ def test_legal_review_evidence_command_builds_valid_scope_block():
         "privacy",
         "terms",
     ]
+
+
+def test_external_evidence_bundle_command_merges_helper_outputs(tmp_path):
+    dump = tmp_path / "rebirth.dump"
+    dump.write_bytes(b"backup")
+    legal = {
+        "ok": True,
+        "evidence": build_legal_evidence_payload(
+            approved=True,
+            reviewer="Operator",
+            evidence_ref="private-legal-1",
+            scope=["terms", "privacy", "data_deletion", "billing_disabled"],
+            approved_at=_now_iso(),
+        ),
+    }
+    backup = {
+        "ok": True,
+        "evidence": build_backup_evidence_payload(
+            validated=True,
+            operator="Operator",
+            source_commit="abc123",
+            dump_path=dump,
+            restore_target="redacted-restore-db",
+            schema_check="passed",
+            health_check="passed",
+            support_export_check="passed",
+            evidence_ref="private-drill-1",
+            drill_at=_now_iso(),
+        ),
+    }
+    error = {
+        "ok": True,
+        "evidence": build_evidence_payload(
+            provider="glitchtip",
+            environment="closed-beta",
+            event_id="event-123",
+            confirmed_evidence_ref="private-ticket-123",
+            tested_at=_now_iso(),
+        ),
+    }
+    paths = []
+    for index, payload in enumerate((legal, backup, error)):
+        path = tmp_path / f"evidence-{index}.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        paths.append(path)
+    output = tmp_path / "rebirth-external-evidence.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/ops/rebirth_external_evidence_bundle.py",
+            *[str(path) for path in paths],
+            "--output",
+            str(output),
+        ],
+        cwd=os.getcwd(),
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    payload = json.loads(result.stdout)
+    written = json.loads(output.read_text(encoding="utf-8"))
+
+    assert result.returncode == 0
+    assert payload["ok"] is True
+    assert payload["validation"]["legal_review"]["valid"] is True
+    assert payload["validation"]["backup_restore"]["valid"] is True
+    assert payload["validation"]["error_tracking"]["valid"] is True
+    assert sorted(written) == ["backup_restore", "error_tracking", "legal_review"]
+
+
+def test_external_evidence_bundle_redacts_secret_like_values(tmp_path):
+    secret = {
+        "backup_restore": {
+            "validated": True,
+            "drill_at": _now_iso(),
+            "operator": "Operator",
+            "source_commit": "abc123",
+            "restore_target": "postgresql://user:password@example.invalid/db",
+            "dump_bytes": 42,
+            "schema_check": "passed",
+            "health_check": "passed",
+            "support_export_check": "passed",
+            "evidence_ref": "private-drill-1",
+        }
+    }
+    path = tmp_path / "secret.json"
+    output = tmp_path / "should-not-write.json"
+    path.write_text(json.dumps(secret), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "tools/ops/rebirth_external_evidence_bundle.py",
+            str(path),
+            "--output",
+            str(output),
+            "--report-only",
+        ],
+        cwd=os.getcwd(),
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["secret_like_value_detected"] is True
+    assert payload["evidence_redacted"] is True
+    assert payload["output"] is None
+    assert not output.exists()
+    assert "postgresql://" not in result.stdout
+    assert "password" not in result.stdout
+
+
+def test_external_evidence_bundle_preserves_example_marker():
+    report = validate_external_gate_evidence(
+        merge_evidence_blocks(
+            [
+                {
+                    "example": True,
+                    **_valid_external_evidence(),
+                }
+            ]
+        )
+    )
+
+    assert report["legal_review"]["valid"] is False
+    assert report["backup_restore"]["valid"] is False
+    assert report["error_tracking"]["valid"] is False
+    assert "example_evidence_file" in report["legal_review"]["errors"]
+    assert "example_evidence_file" in report["backup_restore"]["errors"]
+    assert "example_evidence_file" in report["error_tracking"]["errors"]
+
+
+def test_external_evidence_bundle_rejects_duplicate_blocks():
+    legal = build_legal_evidence_payload(
+        approved=True,
+        reviewer="Operator",
+        evidence_ref="private-legal-1",
+        scope=["terms", "privacy", "data_deletion", "billing_disabled"],
+        approved_at=_now_iso(),
+    )
+
+    try:
+        merge_evidence_blocks([legal, legal])
+    except ValueError as exc:
+        assert str(exc) == "duplicate_evidence_key:legal_review"
+    else:
+        raise AssertionError("duplicate legal evidence block was accepted")
 
 
 def test_phase_report_audit_covers_all_execution_plan_reports():

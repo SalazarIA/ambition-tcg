@@ -20,6 +20,10 @@ Updated on 2026-06-09.
   `python tools/ops/rebirth_pre_external_gate.py --evidence /secure/path/rebirth-external-gates.json`.
   Use `docs/REBIRTH_EXTERNAL_GATE_EVIDENCE.example.json` only as a template;
   the example file is intentionally rejected by the validator.
+  Helper outputs can be merged with
+  `python tools/ops/rebirth_external_evidence_bundle.py /secure/path/legal.json /secure/path/backup.json /secure/path/error.json --output /secure/path/rebirth-external-gates.json`.
+  The bundler validates the merged file and redacts output if it detects a
+  secret-like value.
 - Public beta KPIs are checked separately with
   `python tools/ops/rebirth_public_beta_gate.py --since <cohort-start-iso> --require-ready`.
 - The final Phase 8 gate composes external proof, phase reports and product KPIs with

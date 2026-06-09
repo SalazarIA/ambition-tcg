@@ -11,7 +11,7 @@ Current status: **blocked**.
 ## Gate Checklist
 
 - QA green: passed locally and on GitHub. Current local suite:
-  `1298 passed, 5 skipped, 19 deselected`. GitHub
+  `1302 passed, 5 skipped, 19 deselected`. GitHub
   `rebirth-closed-beta-qa` is green for the pushed branch according to the
   pre-external gate.
 - Error tracking active: blocked until `SENTRY_DSN` or compatible GlitchTip DSN
@@ -53,6 +53,9 @@ and the full required scope are supplied.
 Legal review evidence is now tied to SHA-256 hashes of the current Terms,
 Privacy and Data Deletion templates, so a copy change requires fresh review
 evidence.
+An external evidence bundler now merges legal, backup/restore and
+error-tracking helper outputs into one private evidence JSON and refuses to
+print or write the merged evidence when a secret-like value is detected.
 The release dashboard now displays the evidence validity/errors and the
 operator command for passing a private evidence file.
 An error-tracking smoke command now exists for Sentry/GlitchTip target
@@ -104,6 +107,7 @@ branch/SHA, with GitHub `actions: read` permission for workflow lookup.
 - `tools/ops/rebirth_pre_external_gate.py`
 - `tools/ops/rebirth_error_tracking_smoke.py`
 - `tools/ops/rebirth_backup_restore_drill.py`
+- `tools/ops/rebirth_external_evidence_bundle.py`
 - `tools/ops/rebirth_legal_review_evidence.py`
 - `tools/ops/rebirth_public_beta_gate.py`
 - `tools/ops/rebirth_release_readiness.py`
@@ -124,7 +128,7 @@ contract. The gate is expected to report `ready=false` until real production
 evidence and human telemetry exist.
 The final readiness composition is covered by
 `tests/rebirth/test_rebirth_release_readiness.py`.
-The current local Rebirth suite passed with `1298 passed, 5 skipped,
+The current local Rebirth suite passed with `1302 passed, 5 skipped,
 19 deselected`.
 The external pre-gate report was run with `--report-only` and returned
 `ok=false`.
@@ -147,6 +151,9 @@ records stay invalid and that a complete, private-reference-backed scope block
 passes validation.
 The legal evidence validator now rejects stale document hashes for reviewed
 Terms, Privacy and Data Deletion templates.
+The external evidence bundler contract now asserts successful helper-output
+merge, duplicate-block rejection and redaction when a secret-like value is
+detected.
 
 Current external gate states:
 
@@ -164,7 +171,9 @@ QA workflow keeps phase-report audit and release-readiness snapshot checks wired
 to the current branch/head SHA. Legal evidence helper coverage asserts that the
 Phase 8 legal gate still requires approval, reviewer, private evidence reference
 and the complete required scope. Legal evidence validation also rejects stale
-document hashes after legal-copy changes.
+document hashes after legal-copy changes. Evidence bundle coverage asserts that
+the final private evidence JSON can be assembled repeatably without printing
+secret-like values.
 
 ## Risks
 
