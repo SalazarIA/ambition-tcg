@@ -720,7 +720,7 @@ def balance_payload(simulation=None):
     return payload
 
 
-def release_payload(gates=None, dashboard=None, content_report=None, live_balance=None):
+def release_payload(gates=None, dashboard=None, content_report=None, live_balance=None, public_beta_gate=None):
     payload = page_payload(
         "release",
         "Higiene da Versão Candidata",
@@ -735,6 +735,7 @@ def release_payload(gates=None, dashboard=None, content_report=None, live_balanc
             "dashboard": dashboard,
             "content_pipeline": content_report or content_pipeline_report(),
             "live_balance": live_balance,
+            "public_beta_gate": public_beta_gate,
             "commands": [
                 "python3 -m py_compile app.py services/rebirth_engine.py services/rebirth_cards.py services/rebirth_bot.py services/rebirth_state.py services/rebirth_match_store.py services/rebirth_product.py services/rebirth_persistence.py services/rebirth_balance.py",
                 "python3 -m pytest -q",
@@ -744,6 +745,7 @@ def release_payload(gates=None, dashboard=None, content_report=None, live_balanc
                 "python3 tools/qa/qa_rebirth_visual_screenshots.py --output-dir /tmp/rebirth-visual",
                 "python3 tools/ops/rebirth_pre_external_gate.py --report-only",
                 "python3 tools/ops/rebirth_pre_external_gate.py --report-only --evidence /secure/path/rebirth-external-gates.json",
+                "python3 tools/ops/rebirth_public_beta_gate.py --require-ready",
                 "REBIRTH_DATABASE_URL=$REBIRTH_DATABASE_URL REBIRTH_RESTORE_DATABASE_URL=$REBIRTH_RESTORE_DATABASE_URL python3 tools/ops/rebirth_backup_restore_drill.py",
                 "SENTRY_DSN=$SENTRY_DSN python3 tools/ops/rebirth_error_tracking_smoke.py --send",
                 "node --check static/js/rebirth.js",

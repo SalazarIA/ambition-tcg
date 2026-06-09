@@ -1,6 +1,6 @@
 # Rebirth Phase 2 Report - Human Telemetry
 
-Updated: 2026-06-08
+Updated: 2026-06-09
 
 ## Status
 
@@ -31,12 +31,25 @@ Current status: **implemented locally, blocked on 500+ human matches**.
    - Added fusion count.
    - Added explicit terminal win/loss event counters.
 
+4. Public beta KPI gate evaluator was added.
+   - `services/rebirth_public_beta_gate.py` converts telemetry events into
+     explicit tutorial, first-match, D1, D7, crash/error, telemetry-coverage,
+     human-sample and balance checks.
+   - The evaluator is conservative: D1/D7 only count matured cohorts, crash
+     rate requires a minimum telemetry sample and balance cannot pass below
+     500 finished human matches.
+   - `tools/ops/rebirth_public_beta_gate.py --require-ready` gives operators a
+     repeatable JSON report against the active database.
+
 ## Files Changed
 
 - `app.py`
 - `services/rebirth_telemetry.py`
 - `services/rebirth_live_balance.py`
+- `services/rebirth_public_beta_gate.py`
+- `tools/ops/rebirth_public_beta_gate.py`
 - `tests/rebirth/test_rebirth_aaa_studio_foundations.py`
+- `tests/rebirth/test_rebirth_public_beta_gate.py`
 - `tests/rebirth/test_v73_telemetry_analyzer.py`
 
 ## Tests Executed
@@ -44,10 +57,11 @@ Current status: **implemented locally, blocked on 500+ human matches**.
 - `node --check static/js/rebirth.js`
 - `.venv/bin/python -m py_compile app.py services/rebirth_first_session.py services/rebirth_telemetry.py services/rebirth_live_balance.py`
 - `.venv/bin/python -m pytest tests/rebirth/test_rebirth_aaa_studio_foundations.py tests/rebirth/test_v73_telemetry_analyzer.py -q`
+- `.venv/bin/python -m pytest tests/rebirth/test_rebirth_public_beta_gate.py -q`
 - `.venv/bin/python -m pytest tests/rebirth -q`
 
 Focused result: `12 passed`.
-Full Rebirth suite: `1272 passed, 5 skipped, 19 deselected`.
+Full Rebirth suite: `1280 passed, 5 skipped, 19 deselected`.
 
 ## Coverage
 
@@ -66,8 +80,9 @@ Coverage was not reduced. New coverage asserts:
 - Abandon rate: implemented in live balance.
 - Card usage: implemented in live balance.
 - Deck usage: implemented in live balance.
-- Retention: dashboard has D1/D7 active-user cards, but real D1/D7 retention
-  requires production cohort data.
+- Retention: the public beta gate computes event-sourced D1/D7 rates from
+  matured user cohorts, but real D1/D7 retention still requires production
+  cohort data.
 
 ## Human Sample Gate
 
@@ -89,7 +104,9 @@ The system still requires 500+ human matches before major balance decisions.
 2. Collect 500+ human finished/abandoned matches.
 3. Export live telemetry through `/api/rebirth/balance/telemetry`.
 4. Run `tools/rebirth_telemetry_analyzer.py` against the production database.
-5. Only then consider large balance or content changes.
+5. Run `tools/ops/rebirth_public_beta_gate.py --require-ready` once cohorts
+   have matured.
+6. Only then consider large balance or content changes.
 
 ## Project Status
 

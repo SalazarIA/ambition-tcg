@@ -833,6 +833,26 @@
                     </div>
                 </section>
             {% endif %}
+            {% if page.public_beta_gate %}
+                <section class="rb-product-panel rb-product-wide rb-beta-dashboard" aria-label="Gate beta publico">
+                    <div class="rb-product-panel-head">
+                        <div>
+                            <span>{{ page.public_beta_gate.version }}</span>
+                            <h2>Gate Beta Público</h2>
+                        </div>
+                        <strong>{{ 'Pronto' if page.public_beta_gate.ready else 'Bloqueado' }}</strong>
+                    </div>
+                    <div class="rb-product-stats rb-product-stats-compact">
+                        {% for check in page.public_beta_gate.checks %}
+                            <article>
+                                <span>{{ check.label }}</span>
+                                <strong>{{ check.value }}</strong>
+                                <small>{{ check.state }} / {{ check.target }}</small>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
             {% if page.live_balance %}
                 <section class="rb-product-panel rb-product-wide rb-beta-dashboard" aria-label="Balanceamento com telemetria humana">
                     <div class="rb-product-panel-head">
