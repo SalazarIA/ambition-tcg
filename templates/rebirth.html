@@ -132,6 +132,10 @@
                 </div>
                 <div class="battlefield-layer battlefield-layer-board" data-parallax-depth="-3" aria-hidden="true"></div>
                 <div class="battlefield-layer battlefield-layer-foreground" data-parallax-depth="4" aria-hidden="true"></div>
+                <div class="rb-arena-table" aria-hidden="true">
+                    <span class="rb-arena-ring"></span>
+                    <span class="rb-arena-glow"></span>
+                </div>
                 <div class="rb-field-row rb-field-row-bot">
                     <span aria-hidden="true"></span>
                     <div id="bot-battlefield" class="rb-field-slots" aria-label="Monstros invocados pelo bot"></div>
@@ -245,6 +249,28 @@
 
             <!-- v55 Fase 4: containers das animações de assinatura. Ficam
                  ocultos por padrão; o JS injeta conteúdo + classes ativas. -->
+            <svg id="rebirth-target-arrow" class="rb-target-arrow" aria-hidden="true">
+                <defs>
+                    <marker id="rb-arrow-head" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+                        <path d="M1 1 L11 6 L1 11 Z"></path>
+                    </marker>
+                </defs>
+                <path class="rb-target-arrow__shadow" d=""></path>
+                <path class="rb-target-arrow__line" d="" marker-end="url(#rb-arrow-head)"></path>
+            </svg>
+            <div id="rebirth-float-layer" class="rb-float-layer" aria-hidden="true"></div>
+            <div id="rebirth-mulligan-overlay" class="rb-mulligan-overlay" hidden role="dialog" aria-modal="true" aria-label="Decisão de mão inicial">
+                <div class="rb-mulligan-sheet">
+                    <span class="rb-mulligan-kicker">Turno 1</span>
+                    <h2>Sua mão inicial</h2>
+                    <p>Você pode trocá-la uma única vez, antes da primeira ação.</p>
+                    <div class="rb-mulligan-cards" id="mulligan-cards"></div>
+                    <div class="rb-mulligan-actions">
+                        <button type="button" class="rb-button-secondary rb-secondary" id="mulligan-swap">Trocar mão</button>
+                        <button type="button" class="rb-button-primary rb-cta" id="mulligan-keep">Manter mão</button>
+                    </div>
+                </div>
+            </div>
             <div class="vfx-evolution-stage" id="rebirth-evolution-stage" aria-hidden="true"></div>
             <div class="vfx-finale-overlay" id="rebirth-finale-overlay" role="status" aria-live="polite" aria-hidden="true"></div>
             <div class="rb-boss-intro-overlay" id="rebirth-boss-intro" role="status" aria-live="polite" aria-hidden="true"></div>

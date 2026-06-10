@@ -74,7 +74,7 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v99_AAA_RULES_PASS")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v100_ARENA_FEEL")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -1700,12 +1700,21 @@ def api_rebirth_next_turn():
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
+        events_before = len(match.get("events") or [])
         dispatch_command(match, EndTurnCommand(turn=match.get("turn")))
+        # Eventos da fase do bot: o cliente encena invocações/ataques em
+        # sequência antes de aplicar o estado final (turno do bot visível).
+        bot_phase_events = [dict(event) for event in (match.get("events") or [])[events_before:]]
         repo = rebirth_repo() if user else None
         persist_match_if_owned(repo, user, match)
         campaign_reward = settle_campaign_victory(repo, user, match)
         record_match_telemetry(repo, user, match, "turn_ended")
-        return json_success(public_state(match), match.get("result"), campaign_reward=campaign_reward)
+        return json_success(
+            public_state(match),
+            match.get("result"),
+            campaign_reward=campaign_reward,
+            bot_phase_events=bot_phase_events,
+        )
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:

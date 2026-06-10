@@ -35,8 +35,21 @@ TRANSIENT_BROWSER_NETWORK_ERRORS = (
 # --- navigation ------------------------------------------------------------
 
 
+
+def dismiss_mulligan(page):
+    """A tela de decisão de mulligan abre no turno 1 — os fluxos E2E que
+    interagem com o board a dispensam mantendo a mão."""
+    keep = page.locator("#mulligan-keep")
+    try:
+        if keep.is_visible():
+            keep.click()
+            page.wait_for_selector("#rebirth-mulligan-overlay", state="hidden", timeout=4000)
+    except Exception:
+        pass
+
 def test_arena_page_renders_global_nav(page, live_server):
     page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
     nav = page.locator("[data-rebirth-global-nav]")
     nav.wait_for(state="visible", timeout=10_000)
 
@@ -83,6 +96,7 @@ def test_navbar_round_trip_keeps_layout_intact(page, live_server):
 
 def test_auth_modal_opens_with_login_and_register_forms(page, live_server):
     page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
     page.locator("[data-rebirth-global-nav]").wait_for(state="visible", timeout=10_000)
     # Wait for JS modules (rebirth_global.js binds the auth-open click handler
     # via event delegation) to finish loading. Without this the click can fire
@@ -128,6 +142,7 @@ def test_no_console_errors_on_arena_load(page, live_server):
     )
 
     page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
     page.locator("[data-rebirth-global-nav]").wait_for(state="visible", timeout=10_000)
     # Let any deferred init run.
     page.wait_for_timeout(750)
@@ -139,6 +154,7 @@ def test_mobile_arena_is_native_and_keeps_touch_targets_readable(mobile_page, li
     """The phone layout must not scale down desktop controls below touch size."""
     page = mobile_page
     page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
     page.locator("#player-battlefield .rb-field-slot-empty").first.wait_for(state="visible", timeout=10_000)
     measurements = page.evaluate(
         """() => {
@@ -174,6 +190,7 @@ def test_mobile_arena_is_native_and_keeps_touch_targets_readable(mobile_page, li
 def test_finale_overlay_does_not_block_new_match_action(page, live_server):
     """The fullscreen finale may decorate the result, but not trap the player."""
     page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
     page.locator("#rebirth-finale-overlay").wait_for(state="attached", timeout=10_000)
     page.evaluate(
         """() => {
@@ -193,6 +210,7 @@ def test_finale_overlay_does_not_block_new_match_action(page, live_server):
 def test_finale_reduced_motion_removes_entry_transitions(page, live_server):
     page.emulate_media(reduced_motion="reduce")
     page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
     styles = page.evaluate(
         """() => {
             const overlay = document.getElementById("rebirth-finale-overlay");
@@ -231,6 +249,7 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
     email = f"{username}@example.com"
 
     page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
     page.wait_for_load_state("networkidle")
     page.locator("[data-rebirth-global-nav] [data-rebirth-auth-open]").click()
     page.locator("[data-rebirth-auth-modal]").wait_for(state="visible", timeout=5_000)
