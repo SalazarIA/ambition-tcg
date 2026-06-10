@@ -14824,3 +14824,254 @@ button {
         50% { box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.36), 0 14px 24px rgba(0, 0, 0, 0.44), 0 0 28px 5px rgba(255, 194, 77, 0.4); }
     }
 }
+
+/* ==========================================================================
+   VISUAL UNITY (v101) — disciplina de balões + identidade única
+   ========================================================================== */
+
+/* Popup de ação vive no terço inferior; o banner de turno é dono do topo.
+   Mesmo nos raros casos simultâneos, não há sobreposição. */
+.rb-action-popup {
+    top: auto !important;
+    bottom: 30% !important;
+    transform: translate(-50%, 10px) scale(0.94);
+}
+
+/* Durante a mira, o chip de preview é a única voz sobre o alvo. */
+.is-choosing-attack #bot-battlefield .rb-risk-badge {
+    display: none !important;
+}
+
+/* ---------- Identidade única: todas as páginas vivem no mesmo mundo ---------- */
+/* O mesmo céu/ruínas/lua da arena (F24) atrás de home, campanha, coleção,
+   loja, deck builder, progressão, ranking e billing. */
+body.rb-home-page {
+    background: transparent;
+}
+
+body.rb-home-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+        url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 600' preserveAspectRatio='xMidYMax slice'%3E%3Cpolygon points='0,600 0,420 180,300 320,360 440,260 600,330 740,220 880,290 1020,200 1180,280 1320,210 1480,290 1620,230 1760,310 1920,260 1920,600' fill='%23000' opacity='0.62'/%3E%3C/svg%3E") bottom center / 100% auto no-repeat,
+        url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 600' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%231a0f06' opacity='0.78'%3E%3Crect x='1340' y='320' width='34' height='100'/%3E%3Crect x='1390' y='280' width='44' height='140'/%3E%3Cpolygon points='1412,210 1396,260 1428,260'/%3E%3Crect x='1450' y='340' width='28' height='80'/%3E%3Crect x='1490' y='300' width='30' height='120'/%3E%3C/g%3E%3C/svg%3E") bottom center / 100% auto no-repeat,
+        url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 500' preserveAspectRatio='xMidYMax slice'%3E%3Cpolygon points='0,500 0,340 240,200 420,280 600,160 780,240 940,140 1140,220 1320,150 1500,240 1700,180 1900,250 1920,230 1920,500' fill='%23291a0e' opacity='0.68'/%3E%3C/svg%3E") bottom center / 100% auto no-repeat,
+        radial-gradient(ellipse 220px 130px at 78% 38%, rgba(220, 180, 100, 0.18), rgba(196, 160, 80, 0.06) 35%, transparent 70%),
+        radial-gradient(circle 1.5px at 18% 12%, rgba(232, 212, 164, 0.65), transparent 2px),
+        radial-gradient(circle 2px at 47% 8%, rgba(232, 212, 164, 0.78), transparent 2.5px),
+        radial-gradient(circle 1.5px at 78% 14%, rgba(232, 212, 164, 0.6), transparent 2px),
+        radial-gradient(ellipse 100% 70% at 50% 100%, rgba(120, 60, 20, 0.22), transparent 65%),
+        radial-gradient(ellipse 90% 60% at 50% 0%, rgba(80, 50, 25, 0.16), transparent 60%),
+        linear-gradient(180deg, #1a0f06 0%, #0e0805 50%, #050304 100%);
+}
+
+/* Título de página: a MESMA voz tipográfica da arena. */
+body.rb-home-page .rb-product-hero h1 {
+    font-family: var(--rb-font-display);
+    background: linear-gradient(180deg, #ffe9b8 0%, #e9b651 55%, #9a6a23 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    filter: none;
+}
+
+body.rb-home-page .rb-product-kicker {
+    color: rgba(244, 173, 38, 0.78);
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+}
+
+/* Painel padrão do mundo: moldura dourada sobre madeira escura — a mesma
+   receita da mesa, do sheet de mulligan e dos retratos. */
+body.rb-home-page .rb-product-panel,
+body.rb-home-page .rb-product-card,
+body.rb-home-page .rb-collection-shelf,
+body.rb-home-page .rb-catalog-drawer,
+body.rb-home-page .rb-balance-lab,
+body.rb-home-page .rb-feedback-form,
+body.rb-home-page .rb-track {
+    border: 1px solid rgba(226, 180, 88, 0.34);
+    border-radius: 14px;
+    background:
+        radial-gradient(ellipse 120% 90% at 50% -30%, rgba(244, 173, 38, 0.07), transparent 55%),
+        linear-gradient(180deg, rgba(24, 17, 11, 0.94), rgba(8, 6, 5, 0.96));
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 244, 203, 0.07),
+        0 18px 44px rgba(0, 0, 0, 0.5);
+}
+
+body.rb-home-page .rb-cta,
+body.rb-home-page .rb-button-primary {
+    border: 2px solid rgba(255, 213, 122, 0.72);
+    border-radius: 10px;
+    background:
+        radial-gradient(ellipse 130% 170% at 50% -40%, rgba(255, 205, 96, 0.32), transparent 56%),
+        linear-gradient(180deg, #8a5a18 0%, #59370e 58%, #241405 100%);
+    color: #ffe9b8;
+    font-family: var(--rb-font-display);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.7);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), 0 12px 26px rgba(0, 0, 0, 0.5);
+}
+
+body.rb-home-page .rb-secondary,
+body.rb-home-page .rb-button-secondary {
+    border: 1px solid rgba(226, 180, 88, 0.46);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(26, 19, 12, 0.92), rgba(8, 6, 5, 0.94));
+    color: #ecd9ab;
+}
+
+/* ---------- Campanha: lista de texto vira trilha de encontros ---------- */
+body.rb-campaign-page .rb-campaign-path {
+    display: grid;
+    gap: 14px;
+}
+
+body.rb-campaign-page .rb-campaign-node {
+    position: relative;
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+    border: 1px solid rgba(226, 180, 88, 0.32);
+    border-left: 4px solid var(--node-accent, #f4ad26);
+    border-radius: 14px;
+    background:
+        radial-gradient(ellipse 60% 130% at 0% 50%, color-mix(in srgb, var(--node-accent, #f4ad26) 14%, transparent), transparent 60%),
+        linear-gradient(180deg, rgba(24, 17, 11, 0.94), rgba(8, 6, 5, 0.96));
+    box-shadow: inset 0 1px 0 rgba(255, 244, 203, 0.06), 0 14px 34px rgba(0, 0, 0, 0.46);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+body.rb-campaign-page .rb-campaign-node:hover:not(.is-locked) {
+    transform: translateY(-3px);
+    box-shadow: inset 0 1px 0 rgba(255, 244, 203, 0.08), 0 22px 44px rgba(0, 0, 0, 0.55), 0 0 22px color-mix(in srgb, var(--node-accent, #f4ad26) 30%, transparent);
+}
+
+body.rb-campaign-page .rb-campaign-silhouette {
+    position: relative;
+    width: 88px;
+    height: 88px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--node-accent, #f4ad26) 65%, transparent);
+    background:
+        radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--node-accent, #f4ad26) 28%, transparent), transparent 62%),
+        linear-gradient(180deg, rgba(30, 21, 12, 0.96), rgba(6, 5, 4, 0.98));
+    box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.7), 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+body.rb-campaign-page .rb-campaign-glyph {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    transform: rotate(45deg);
+    border: 2px solid color-mix(in srgb, var(--node-accent, #f4ad26) 75%, white 6%);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--node-accent, #f4ad26) 60%, black 25%), rgba(10, 7, 5, 0.95));
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+body.rb-campaign-page .rb-campaign-seal,
+body.rb-campaign-page .rb-campaign-lock {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 15px;
+    font-weight: 900;
+    border: 2px solid rgba(226, 180, 88, 0.7);
+    background: linear-gradient(180deg, #2a1d10, #0a0705);
+    color: #ffe9b8;
+}
+
+body.rb-campaign-page .rb-campaign-step {
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    color: color-mix(in srgb, var(--node-accent, #f4ad26) 80%, white 10%);
+    font-family: var(--rb-font-display);
+    font-size: 15px;
+    font-weight: 900;
+    opacity: 0.85;
+}
+
+body.rb-campaign-page .rb-campaign-copy h2 {
+    margin: 2px 0 4px;
+    font-family: var(--rb-font-display);
+    font-size: clamp(20px, 2.2vw, 28px);
+    color: #f5ead6;
+}
+
+body.rb-campaign-page .rb-campaign-status {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--node-accent, #f4ad26) 78%, white 8%);
+}
+
+body.rb-campaign-page .rb-campaign-node.is-locked {
+    filter: saturate(0.35) brightness(0.72);
+}
+
+body.rb-campaign-page .rb-campaign-node.is-next {
+    animation: rb-next-node 1.8s ease-in-out infinite;
+}
+
+@keyframes rb-next-node {
+    0%, 100% { box-shadow: inset 0 1px 0 rgba(255, 244, 203, 0.06), 0 14px 34px rgba(0, 0, 0, 0.46); }
+    50% { box-shadow: inset 0 1px 0 rgba(255, 244, 203, 0.06), 0 14px 34px rgba(0, 0, 0, 0.46), 0 0 26px color-mix(in srgb, var(--node-accent, #f4ad26) 38%, transparent); }
+}
+
+@media (max-width: 760px) {
+    body.rb-campaign-page .rb-campaign-node {
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 12px;
+        padding: 14px;
+    }
+
+    body.rb-campaign-page .rb-campaign-silhouette {
+        width: 60px;
+        height: 60px;
+    }
+
+    body.rb-campaign-page .rb-campaign-action {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---------- Clareza: quem pode agir AGORA brilha ---------- */
+#player-battlefield .rb-field-card.can-act {
+    box-shadow: 0 0 0 2px rgba(124, 229, 138, 0.55), 0 0 20px rgba(124, 229, 138, 0.28);
+    animation: rb-can-act 1.6s ease-in-out infinite;
+}
+
+@keyframes rb-can-act {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(124, 229, 138, 0.45), 0 0 16px rgba(124, 229, 138, 0.2); }
+    50% { box-shadow: 0 0 0 3px rgba(124, 229, 138, 0.75), 0 0 26px rgba(124, 229, 138, 0.4); }
+}
+
+/* Cartas jogáveis na mão: borda viva de mana; o que não dá pra pagar fica
+   visivelmente apagado (is-locked já reduz). */
+.rb-hand .rb-mini-card:not(.is-locked) {
+    box-shadow: 0 0 0 1px rgba(126, 200, 255, 0.35), 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.rb-hand .rb-mini-card.is-locked {
+    filter: saturate(0.4) brightness(0.66);
+}

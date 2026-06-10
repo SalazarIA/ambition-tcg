@@ -926,6 +926,7 @@
             const risk = options && options.risk ? options.risk : null;
             const riskClass = risk ? ` is-risk-${RebirthText.escape(risk.tone || "neutral")}` : "";
             const fusionClass = options && options.fusionSource ? " is-fusion-source" : "";
+            const canActClass = options && options.canAct ? " can-act" : "";
             const ability = this.abilitySummary(card);
             // F4: tooltip nativo com nome + habilidade pra quando o texto da
             // carta no slot for cortado pelo line-clamp.
@@ -937,7 +938,7 @@
                 ? `data-target-instance="${RebirthText.escape(card.instance_id)}"`
                 : `data-attacker-instance="${RebirthText.escape(card.instance_id)}"`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${riskClass}${fusionClass}${exhausted}${sick}${statusClass}" type="button" ${targetAttr}${riskAttrs} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} no campo ${side === "player" ? "do jogador" : "do bot"}">
+                <button class="${this.cardShellClasses(card, "rb-field-card rb-monster-card")}${selectedClass}${attackingClass}${targetableClass}${riskClass}${fusionClass}${exhausted}${sick}${canActClass}${statusClass}" type="button" ${targetAttr}${riskAttrs} data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${RebirthAssets.cssVars(card)}; --guard-scale: ${guardScale}" aria-label="${RebirthText.escape(card.name)} no campo ${side === "player" ? "do jogador" : "do bot"}">
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     ${RebirthStatus.miniBadge(statuses)}
                     ${RebirthKeywords.badges(card)}
@@ -1847,10 +1848,19 @@
             this.showTurnBanner("bot", "TURNO DO BOT");
         },
 
-        showActionPopup(lines, tone) {
+        suppressPopupsUntil: 0,
+
+        showActionPopup(lines, tone, options) {
             const layer = this.layer();
             const popup = layer && layer.querySelector(".rb-action-popup");
             if (!popup || !lines || !lines.length) return;
+            // Disciplina de balões: um canal por vez. Sem popup sobre o banner
+            // de turno, durante a cena do bot ou logo depois dela (a cena já
+            // narrou tudo com floats e lunges). A própria cena usa force.
+            if (!(options && options.force)) {
+                if (this.turnBannerTimer || BotTurnDirector.active) return;
+                if (Date.now() < this.suppressPopupsUntil) return;
+            }
             popup.dataset.tone = tone || "neutral";
             popup.innerHTML = lines
                 .filter(Boolean)
@@ -1950,6 +1960,9 @@
         actionResult(previousState, nextState) {
             const described = this.resultLines(previousState, nextState);
             if (!described) return;
+            // Balão central é reservado a momentos de herói (HP mudou).
+            const heroSwing = this.hpDrop(previousState, nextState, "player") + this.hpDrop(previousState, nextState, "bot");
+            if (heroSwing <= 0) return;
             const signature = [
                 nextState.match_id || "",
                 nextState.turn || "",
@@ -2095,7 +2108,7 @@
                     });
                 } else if (type === "CARD_PLAYED" && actor === "bot" && String(payload.type || "") === "SPELL") {
                     steps.push(async () => {
-                        RebirthGameFeel.showActionPopup([event.message || "Bot lançou uma magia"], "danger");
+                        RebirthGameFeel.showActionPopup([event.message || "Bot lançou uma magia"], "danger", { force: true });
                         await this.wait(620);
                     });
                 } else if (type === "MONSTER_SUMMONED" && actor === "bot") {
@@ -2175,6 +2188,13 @@
             this.skipRequested = false;
             const board = RebirthStore.elements["rebirth-board"];
             if (board) board.classList.add("is-bot-staging");
+            // Clareza: enquanto a cena roda, o botão de turno explica a espera.
+            const endTurn = document.getElementById("next-turn-button");
+            const endTurnLabel = endTurn ? endTurn.innerHTML : null;
+            if (endTurn) {
+                endTurn.innerHTML = '<i class="rb-action-loop"></i>Turno inimigo…';
+                endTurn.disabled = true;
+            }
             try {
                 for (const step of steps) {
                     if (this.skipRequested) break;
@@ -2183,6 +2203,10 @@
             } finally {
                 this.active = false;
                 if (board) board.classList.remove("is-bot-staging");
+                if (endTurn && endTurnLabel != null) {
+                    endTurn.innerHTML = endTurnLabel;
+                    endTurn.disabled = false;
+                }
             }
         },
 
@@ -2546,7 +2570,8 @@
             playerHost.innerHTML = playerSlots.map((card, slotIndex) => {
                 if (card) {
                     return RebirthMarkup.fieldCard(card, "player", card.instance_id === RebirthStore.selectedAttackerId, playerStatuses, {
-                        fusionSource: fusionMaterialIds.has(card.instance_id)
+                        fusionSource: fusionMaterialIds.has(card.instance_id),
+                        canAct: cardCanActNow(card) && state.phase === "choose" && !state.is_finished && !RebirthStore.pending
                     });
                 }
                 return RebirthMarkup.emptyFieldSlot(canSummonSelected ? "Invocar" : summonLockCopy, {
@@ -3763,10 +3788,6 @@
                 RebirthStore.reward = payload.match_reward || null;
                 RebirthStore.campaignReward = payload.campaign_reward || null;
                 this.applyState(payload.state);
-                RebirthGameFeel.showActionPopup(
-                    [`${RebirthGameFeel.shortName(selectedCard)} ${isMonster ? "invocada" : "resolvida"}`],
-                    isMonster ? "summon" : "neutral"
-                );
                 this.completeTutorialIfNeeded(payload.state);
             });
         },
@@ -3873,6 +3894,7 @@
                 // O turno do bot vira cena: invocações, ataques e dano em
                 // sequência sobre o DOM antigo; o estado final entra depois.
                 await BotTurnDirector.stage(payload.bot_phase_events);
+                RebirthGameFeel.suppressPopupsUntil = Date.now() + 900;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
             });
