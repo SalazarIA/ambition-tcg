@@ -232,6 +232,7 @@ LEGENDARY_DEFINITIONS = [
         "cost": 4,
         "attack": 6,
         "guard": 5,
+        "keywords": ["RUSH", "BURST"],
         "ability_key": "infernus_core",
         "ability_name": "Núcleo Infernus",
         "ability_text": "Ao sobreviver ao combate, consome 1 mana para receber +2 ATK permanente.",
@@ -254,6 +255,7 @@ LEGENDARY_DEFINITIONS = [
         "cost": 4,
         "attack": 4,
         "guard": 7,
+        "keywords": ["TAUNT", "SHIELD"],
         "ability_key": "aegis_sentinel",
         "ability_name": "Sentinela Aegis",
         "ability_text": "No fim do turno, se não agiu, recebe +2 GRD temporário até o próximo dano resolvido.",
@@ -276,6 +278,7 @@ LEGENDARY_DEFINITIONS = [
         "cost": 4,
         "attack": 5,
         "guard": 5,
+        "keywords": ["PIERCE", "EXECUTE"],
         "ability_key": "shadow_reaper",
         "ability_name": "Ceifador Sombrio",
         "ability_text": "Ao ser invocado, exaure por 1 turno a criatura inimiga de maior ATK.",
@@ -400,7 +403,9 @@ def _spell_card(offset, definition):
         "role": "Efeito instantâneo de pilha",
         "tier": 1,
         "rarity": "UNCOMMON",
-        "cost": min(2, cost),
+        # O custo da definição é honrado — antes um min(2, cost) silencioso
+        # transformava magias de custo 3 em custo 2 e desmentia a curva.
+        "cost": max(0, int(cost)),
         "attack": 0,
         "power": 0,
         "guard": 0,
@@ -431,7 +436,7 @@ def _trap_card(offset, definition):
         "role": "Gatilho oculto de combate",
         "tier": 1,
         "rarity": "UNCOMMON",
-        "cost": min(2, cost),
+        "cost": max(0, int(cost)),
         "attack": 0,
         "power": 0,
         "guard": 0,
@@ -468,6 +473,7 @@ def _legendary_card(definition):
         "guard": definition["guard"],
         "element": definition["element"],
         "evolution_id": None,
+        "keywords": list(definition.get("keywords") or []),
         "ability_key": definition["ability_key"],
         "ability_name": definition["ability_name"],
         "ability_text": definition["ability_text"],
@@ -553,6 +559,38 @@ CARD_BALANCE_OVERRIDES = {
 for _card_id, _override in CARD_BALANCE_OVERRIDES.items():
     if _card_id in CARD_CATALOG_DICT:
         CARD_CATALOG_DICT[_card_id].update(_override)
+
+# Keywords opt-in por carta: TAUNT/BURST/EXECUTE são fortes demais para spread
+# de família — entram em corpos tier-2 escolhidos (+ lendárias, definidas acima).
+CARD_KEYWORD_OVERRIDES = {
+    "card_051": ["SHIELD", "TAUNT"],    # Stonehide Bulwark — muralha de linha de frente
+    "card_059": ["SHIELD", "TAUNT"],    # Terrashield Ascetic — protetor tardio
+    "card_016": ["RUSH", "BURST"],      # Scorchscale Infernal — entrada explosiva
+    "card_076": ["PIERCE", "EXECUTE"],  # Voidkiss Executioner — o nome já era contrato
+}
+
+for _card_id, _keywords in CARD_KEYWORD_OVERRIDES.items():
+    if _card_id in CARD_CATALOG_DICT:
+        CARD_CATALOG_DICT[_card_id]["keywords"] = list(_keywords)
+
+# Sinergias K2 (condicionais de board/HP) agora avaliadas pela engine no clash.
+CARD_SYNERGY_OVERRIDES = {
+    "card_003": {"condition": "controls_family", "value": "FIRE", "effect": {"attack": 1}},
+    "card_007": {"condition": "low_hp", "value": 15, "effect": {"attack": 2}},
+    "card_022": {"condition": "controls_family", "value": "WATER", "effect": {"guard": 1}},
+    "card_026": {"condition": "field_count", "value": 2, "effect": {"attack": 1, "guard": 1}},
+    "card_042": {"condition": "controls_family", "value": "EARTH", "effect": {"guard": 2}},
+    "card_047": {"condition": "tier_2", "value": None, "effect": {"attack": 1, "guard": 1}},
+    "card_063": {"condition": "controls_family", "value": "SHADOW", "effect": {"attack": 1}},
+    "card_066": {"condition": "low_hp", "value": 12, "effect": {"attack": 2}},
+}
+
+from services.rebirth_keywords import synergy_label as _synergy_label  # noqa: E402
+
+for _card_id, _synergy in CARD_SYNERGY_OVERRIDES.items():
+    if _card_id in CARD_CATALOG_DICT:
+        CARD_CATALOG_DICT[_card_id]["synergy"] = dict(_synergy)
+        CARD_CATALOG_DICT[_card_id]["synergy_label"] = _synergy_label({"synergy": _synergy})
 
 CARD_BY_ID = CARD_CATALOG_DICT
 CARD_CATALOG = [deepcopy(card) for card in CARD_CATALOG_DICT.values()]

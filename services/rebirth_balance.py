@@ -296,7 +296,11 @@ def choose_ready_attacker(match):
     ready = [
         card
         for card in match["player"].get("battlefield", [])
-        if not card.get("exhausted") and not card.get("has_attacked") and not card.get("has_acted")
+        if not card.get("exhausted")
+        and not card.get("has_attacked")
+        and not card.get("has_acted")
+        # O jogador simulado respeita summoning sickness como um humano.
+        and not (card.get("just_summoned") and "RUSH" not in (card.get("keywords") or []))
     ]
     if not ready:
         return None
@@ -311,11 +315,33 @@ def choose_ready_attacker(match):
     )[-1]
 
 
-def choose_bot_target(match):
-    if not match["bot"].get("battlefield"):
+def choose_bot_target(match, attacker=None):
+    candidates = match["bot"].get("battlefield") or []
+    if not candidates:
+        return None
+    # Provocar obriga o alvo — o jogador simulado respeita TAUNT.
+    taunts = [card for card in candidates if "TAUNT" in (card.get("keywords") or [])]
+    pool = taunts or candidates
+    attack_value = int((attacker or {}).get("attack", (attacker or {}).get("power", 0)) or 0)
+    if attacker and not taunts:
+        # Targeting de jogador de verdade: remove a maior ameaça que o golpe
+        # MATA; sem kill disponível, vai de dano direto (chip no herói).
+        killable = [
+            card for card in pool
+            if int(card.get("current_guard", card.get("guard", 0)) or 0) <= max(1, attack_value - int(card.get("guard", 0) or 0) // 2)
+        ]
+        if killable:
+            return sorted(
+                killable,
+                key=lambda field_card: (
+                    -int(field_card.get("attack", field_card.get("power", 0)) or 0),
+                    int(field_card.get("current_guard", field_card.get("guard", 0)) or 0),
+                    field_card["name"],
+                ),
+            )[0]
         return None
     return sorted(
-        match["bot"]["battlefield"],
+        pool,
         key=lambda field_card: (
             int(field_card.get("current_guard", field_card.get("guard", 0)) or 0),
             -int(field_card.get("attack", field_card.get("power", 0)) or 0),
@@ -325,14 +351,18 @@ def choose_bot_target(match):
 
 
 def declare_best_attack(match, attacker):
-    target = choose_bot_target(match)
+    target = choose_bot_target(match, attacker)
     if target is None and int(match.get("turn", 1) or 1) == 1:
         return None
-    return declare_attack(
-        match,
-        attacker_instance_id=attacker["instance_id"],
-        target_instance_id=target["instance_id"] if target else None,
-    )
+    try:
+        return declare_attack(
+            match,
+            attacker_instance_id=attacker["instance_id"],
+            target_instance_id=target["instance_id"] if target else None,
+        )
+    except RebirthError:
+        # Alvo morreu na cadeia anterior / taunt apareceu: o turno segue.
+        return None
 
 
 def simulate_match(seed=None, max_turns=30, bot_profile_id=None, player_card_ids=None, bot_card_ids=None):
@@ -370,37 +400,69 @@ def simulate_match(seed=None, max_turns=30, bot_profile_id=None, player_card_ids
                 pass
             if match.get("is_finished"):
                 break
-        field_full = len(match["player"].get("battlefield", [])) >= FIELD_SLOT_COUNT
-        ready_attacker = choose_ready_attacker(match)
-        if field_full and ready_attacker:
-            declare_best_attack(match, ready_attacker)
-        else:
+        # Ataques primeiro: com summoning sickness, os corpos prontos batem
+        # antes de gastar mana — o mesmo loop de um jogador humano.
+        for _attack_round in range(FIELD_SLOT_COUNT):
+            pre_attacker = choose_ready_attacker(match)
+            if not pre_attacker or match.get("is_finished"):
+                break
+            declare_best_attack(match, pre_attacker)
+        if match.get("is_finished"):
+            break
+        # Desenvolvimento: gasta a mana do turno como um humano (até 3 jogadas),
+        # em vez de uma única carta por turno.
+        played_anything = False
+        for _play_round in range(FIELD_SLOT_COUNT):
             card = choose_tactical_player_card(match)
             if not card:
-                if ready_attacker:
-                    declare_best_attack(match, ready_attacker)
-                elif match.get("phase") in {"choose", "result"}:
-                    dead_turns += 1
-                    next_turn(match)
-                    turns += 1
-                    continue
-                else:
-                    break
-            else:
+                # Fallback anti-turno-morto: a reserva tática pode segurar
+                # demais; com slot e mana, baixar o monstro mais barato é
+                # estritamente melhor que passar.
+                energy = int(match["player"].get("energy", 0) or 0)
+                field_full = len(match["player"].get("battlefield", [])) >= FIELD_SLOT_COUNT
+                open_slot = not field_full
+                fallback = sorted(
+                    (
+                        hand_card
+                        for hand_card in match["player"].get("hand", [])
+                        if is_monster(hand_card) and card_cost(hand_card) <= energy
+                    ),
+                    key=lambda hand_card: (card_cost(hand_card), -int(hand_card.get("attack", 0) or 0)),
+                )
+                card = fallback[0] if (fallback and open_slot) else None
+            if not card:
+                break
+            try:
                 play_card(match, card_instance_id=card["instance_id"])
-                if not match.get("is_finished"):
-                    attacker = next(
-                        (
-                            field_card
-                            for field_card in match["player"].get("battlefield", [])
-                            if field_card.get("instance_id") == card["instance_id"]
-                            and not field_card.get("exhausted")
-                            and not field_card.get("has_attacked")
-                        ),
-                        None,
-                    )
-                    if attacker:
-                        declare_best_attack(match, attacker)
+                played_anything = True
+            except RebirthError:
+                break
+            if match.get("is_finished"):
+                break
+        if match.get("is_finished"):
+            break
+        # RUSH recém-invocado ainda pode bater neste turno.
+        rush_attacker = next(
+            (
+                field_card
+                for field_card in match["player"].get("battlefield", [])
+                if "RUSH" in (field_card.get("keywords") or [])
+                and not field_card.get("exhausted")
+                and not field_card.get("has_attacked")
+                and not field_card.get("has_acted")
+            ),
+            None,
+        )
+        if rush_attacker:
+            declare_best_attack(match, rush_attacker)
+            played_anything = True
+        if not played_anything and not choose_ready_attacker(match):
+            if match.get("phase") in {"choose", "result"}:
+                dead_turns += 1
+                next_turn(match)
+                turns += 1
+                continue
+            break
         clash = match.get("last_clash") or {}
         result = match.get("result") or {}
         played_cards = [

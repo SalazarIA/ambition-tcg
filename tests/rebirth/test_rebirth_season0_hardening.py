@@ -8,7 +8,13 @@ def register(client, username="season_user", email="season@example.com"):
 def test_match_command_event_history_and_ledger_are_persisted(client):
     register(client)
 
-    start = client.post("/api/rebirth/start", json={"seed": "season-history"}).get_json()["state"]
+    start = None
+    for attempt in range(30):
+        candidate = client.post("/api/rebirth/start", json={"seed": f"season-history-{attempt}"}).get_json()["state"]
+        if candidate.get("available_evolutions"):
+            start = candidate
+            break
+    assert start is not None, "nenhuma seed abriu com dupla evoluível"
     assert start["version"] >= 1
     assert start["state_hash"]
     assert start["events"][0]["type"] == "MATCH_STARTED"
@@ -33,19 +39,34 @@ def test_match_command_event_history_and_ledger_are_persisted(client):
         "/api/rebirth/play-card",
         json={"match_id": current["match_id"], "card_instance_id": played_card["instance_id"]},
     ).get_json()
-    attack_json = {
-        "match_id": summoned["state"]["match_id"],
-        "attacker_instance_id": summoned["state"]["player"]["battlefield"][-1]["instance_id"],
-    }
-    if summoned["state"]["bot"]["battlefield"]:
-        attack_json["target_instance_id"] = summoned["state"]["bot"]["battlefield"][0]["instance_id"]
-    played = client.post(
-        "/api/rebirth/attack",
-        json=attack_json,
-    ).get_json()
+    # Sickness: espera a evoluída ficar pronta antes do clash.
+    state = summoned["state"]
+    evolved_instance = state["player"]["battlefield"][-1]["instance_id"]
+    played = None
+    for _ in range(8):
+        if state.get("is_finished"):
+            break
+        on_field = next((c for c in state["player"]["battlefield"] if c["instance_id"] == evolved_instance), None)
+        if on_field is None:
+            state = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]}).get_json()["state"]
+            continue
+        ready = not on_field.get("exhausted") and not on_field.get("has_acted") and (
+            "RUSH" in (on_field.get("keywords") or []) or not on_field.get("just_summoned")
+        )
+        if not ready:
+            state = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]}).get_json()["state"]
+            continue
+        attack_json = {"match_id": state["match_id"], "attacker_instance_id": evolved_instance}
+        if state["bot"]["battlefield"]:
+            attack_json["target_instance_id"] = state["bot"]["battlefield"][0]["instance_id"]
+        played = client.post("/api/rebirth/attack", json=attack_json).get_json()
+        break
+    assert played is not None and played.get("ok"), f"clash não aconteceu: {played}"
 
     assert played["state"]["version"] > start["version"]
-    assert {event["type"] for event in played["state"]["events"]} >= {"CARD_PLAYED", "CLASH_RESOLVED"}
+    # O estado expõe só os últimos 12 eventos; após a espera da sickness o
+    # CARD_PLAYED sai da janela — o clash é o que precisa estar visível.
+    assert "CLASH_RESOLVED" in {event["type"] for event in played["state"]["events"]}
 
     history = client.get("/api/rebirth/match-history").get_json()["history"]
     assert history[0]["match_id"] == start["match_id"]

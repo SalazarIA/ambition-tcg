@@ -64,13 +64,29 @@ class SummonCardCommand(RebirthCommand):
     card_instance_id: Optional[str] = None
     card_id: Optional[str] = None
     field_slot: Optional[int] = None
+    target_instance_id: Optional[str] = None
 
     @property
     def command_type(self) -> str:
         return "PLAY_CARD"
 
     def as_payload(self) -> Dict[str, Any]:
-        return {"card_instance_id": self.card_instance_id, "card_id": self.card_id, "field_slot": self.field_slot}
+        return {
+            "card_instance_id": self.card_instance_id,
+            "card_id": self.card_id,
+            "field_slot": self.field_slot,
+            "target_instance_id": self.target_instance_id,
+        }
+
+
+@dataclass(frozen=True)
+class MulliganCommand(RebirthCommand):
+    @property
+    def command_type(self) -> str:
+        return "MULLIGAN"
+
+    def as_payload(self) -> Dict[str, Any]:
+        return {}
 
 
 @dataclass(frozen=True)
@@ -161,7 +177,10 @@ class CommandDispatcher:
                         card_instance_id=command.card_instance_id,
                         card_id=command.card_id,
                         field_slot=command.field_slot,
+                        target_instance_id=command.target_instance_id,
                     )
+                if isinstance(command, MulliganCommand):
+                    return rebirth_engine.mulligan(match)
                 if isinstance(command, DeclareAttackCommand):
                     return rebirth_engine.declare_attack(
                         match,

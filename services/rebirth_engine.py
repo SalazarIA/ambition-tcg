@@ -27,11 +27,60 @@ from services.rebirth_state import (
     create_match,
     current_turn_phase,
     draw_to_hand_size,
+    ensure_playable_opening_hand,
     field_slots,
     is_main_phase,
     remove_from_hand,
     set_turn_phase,
+    shuffle_deck,
 )
+
+GAMEPLAY_COMMAND_TYPES = {"PLAY_CARD", "DECLARE_ATTACK", "NEXT_TURN", "EVOLVE_DUPLICATE", "FUSE_FIELD_PAIR"}
+
+
+def mulligan_available(match):
+    if not match or match.get("is_finished") or match.get("mulligan_used"):
+        return False
+    if int(match.get("turn", 1) or 1) != 1 or match.get("phase") != PHASE_CHOOSE:
+        return False
+    for command in match.get("commands") or []:
+        if str(command.get("type") or command.get("command_type") or "") in GAMEPLAY_COMMAND_TYPES:
+            return False
+    return True
+
+
+def mulligan(match):
+    """Troca a mão inicial uma única vez, antes de qualquer ação do turno 1."""
+    _require_command_dispatch(match)
+    if not mulligan_available(match):
+        raise RebirthError("O mulligan só está disponível uma vez, antes da primeira ação.", "mulligan_unavailable")
+    player = match["player"]
+    returned = [card.get("id") for card in player.get("hand") or []]
+    player["deck"].extend(player.get("hand") or [])
+    player["hand"] = []
+    shuffle_deck(player, seed=match.get("game_seed"), owner="player", salt="mulligan")
+    draw_to_hand_size(player)
+    ensure_playable_opening_hand(player)
+    match["mulligan_used"] = True
+    append_command(match, "MULLIGAN", actor="player", payload={"returned_card_ids": returned})
+    new_hand = [card.get("id") for card in player.get("hand") or []]
+    message = "Mão inicial trocada no mulligan."
+    match["log"].append(f"Turno {match['turn']:02d}   {message}")
+    append_event(
+        match,
+        "HAND_MULLIGANED",
+        actor="player",
+        target_id="player",
+        owner_id="player",
+        payload={
+            "returned_card_ids": returned,
+            "drawn_card_ids": new_hand,
+            "cards": deepcopy(player.get("hand") or []),
+            "deck_instance_ids": [card.get("instance_id") for card in player.get("deck") or []],
+        },
+        message=message,
+    )
+    return match
 
 
 ENGINE_ABILITY_KEYS = set(CARD_ABILITY_KEYS.values())
@@ -64,6 +113,7 @@ def start_match(
     campaign_modifiers=None,
     campaign_presentation=None,
     campaign_advice=None,
+    shuffle=True,
 ):
     return create_match(
         seed=seed,
@@ -82,6 +132,7 @@ def start_match(
         campaign_modifiers=campaign_modifiers,
         campaign_presentation=campaign_presentation,
         campaign_advice=campaign_advice,
+        shuffle=shuffle,
     )
 
 
@@ -112,10 +163,29 @@ def ability_name(card):
     return str(card.get("ability_name") or card.get("name") or "Habilidade")
 
 
-def clash_attack(card, opponent_card, *, turn=1):
+def _synergy_bonuses(match, side_name, card):
+    """Bonus de sinergia K2 (condicional ao board/HP do dono). Determinístico."""
+    if not match or not card or not isinstance(card.get("synergy"), dict):
+        return 0, 0
+    from services.rebirth_keywords import synergy_active, synergy_bonus
+
+    side = match.get(side_name) or {}
+    owner_field = [c for c in (side.get("field") or []) if c]
+    if synergy_active(card, owner_field, owner_hp=int(side.get("hp", 30) or 30)):
+        bonus = synergy_bonus(card)
+        return int(bonus.get("attack", 0) or 0), int(bonus.get("guard", 0) or 0)
+    return 0, 0
+
+
+def clash_attack(card, opponent_card, *, turn=1, match=None, side_name=None):
     attack = card_attack(card)
     events = []
     key = ability_key(card)
+    if match and side_name:
+        synergy_attack, _synergy_guard = _synergy_bonuses(match, side_name, card)
+        if synergy_attack:
+            attack += synergy_attack
+            events.append(f"{card['name']} ativa sinergia para +{synergy_attack} de ataque.")
     if key == "high_guard" and card_guard(opponent_card) <= 3:
         attack += 1
         events.append(f"{card['name']} usou Guarda Alta para +1 de ataque no combate.")
@@ -144,8 +214,8 @@ def tie_priority(card, defender_wounded=False):
 
 
 def compare_clash(match, player_card, bot_card):
-    player_attack, player_events = clash_attack(player_card, bot_card, turn=match.get("turn", 1))
-    bot_attack, bot_events = clash_attack(bot_card, player_card, turn=match.get("turn", 1))
+    player_attack, player_events = clash_attack(player_card, bot_card, turn=match.get("turn", 1), match=match, side_name="player")
+    bot_attack, bot_events = clash_attack(bot_card, player_card, turn=match.get("turn", 1), match=match, side_name="bot")
     events = player_events + bot_events
 
     if player_attack > bot_attack:
@@ -168,9 +238,17 @@ def calculate_damage(attacker, defender, defender_wounded=False):
     return damage_details(attacker, defender, defender_wounded=defender_wounded)["amount"]
 
 
-def damage_details(attacker, defender, defender_wounded=False):
-    amount = max(1, card_attack(attacker) - card_guard(defender) // 2)
+def damage_details(attacker, defender, defender_wounded=False, *, match=None, attacker_side=None, defender_side=None):
+    attack_total = card_attack(attacker)
+    guard_total = card_guard(defender)
     events = []
+    if match and attacker_side:
+        synergy_attack, _ = _synergy_bonuses(match, attacker_side, attacker)
+        attack_total += synergy_attack
+    if match and defender_side:
+        _, synergy_guard = _synergy_bonuses(match, defender_side, defender)
+        guard_total += synergy_guard
+    amount = max(1, attack_total - guard_total // 2)
     attacker_key = ability_key(attacker)
     defender_key = ability_key(defender)
 
@@ -290,56 +368,9 @@ def finish_if_needed(match):
     return True
 
 
-def _future_cards_empty(side):
-    return not side.get("hand") and not side.get("deck")
-
-
-def finish_if_exhausted(match):
-    player_empty = _future_cards_empty(match["player"])
-    bot_empty = _future_cards_empty(match["bot"])
-    if not player_empty and not bot_empty:
-        return False
-
-    player_hp = int(match["player"]["hp"])
-    bot_hp = int(match["bot"]["hp"])
-    if player_hp > bot_hp:
-        winner = "player"
-        outcome = "Victory"
-        message = "O duelo chegou à exaustão. Você sobrevive com mais PV e vence."
-    elif bot_hp > player_hp:
-        winner = "bot"
-        outcome = "Defeat"
-        message = "O duelo chegou à exaustão. O bot sobrevive com mais PV e vence."
-    else:
-        winner = "clash"
-        outcome = "Clash"
-        message = "O duelo chegou à exaustão com PV iguais. A partida termina em clash final."
-
-    match["winner"] = winner
-    match["is_finished"] = True
-    match["phase"] = PHASE_FINISHED
-    set_turn_phase(match, TurnPhase.END_PHASE)
-    result = match.get("result") or {
-        "damage": {"player": 0, "bot": 0},
-        "ability_events": [],
-        "effective_attack": {"player": 0, "bot": 0},
-    }
-    result["outcome"] = outcome
-    result["winner"] = winner if winner in {"player", "bot"} else None
-    result["message"] = f"{result.get('message', '').strip()} {message}".strip()
-    result.setdefault("damage", {"player": 0, "bot": 0})
-    result.setdefault("ability_events", [])
-    result.setdefault("effective_attack", {"player": 0, "bot": 0})
-    match["result"] = result
-    match["log"].append(message)
-    append_event(
-        match,
-        "MATCH_FINISHED",
-        payload={"winner": winner, "player_hp": player_hp, "bot_hp": bot_hp, "reason": "exhaustion"},
-        message=message,
-    )
-    append_snapshot(match, "MATCH_EXHAUSTED")
-    return True
+# A regra antiga de "exaustão" (fim súbito por HP quando qualquer lado ficava
+# sem cartas) foi substituída por dano de fadiga incremental — ver
+# _apply_fatigue em next_turn.
 
 
 def _card_cost(card):
@@ -375,11 +406,30 @@ def _refresh_energy_for_turn(match):
         side["energy"] = side["max_energy"]
 
 
+def _restore_combat_modifiers(card):
+    # Modificadores "duration: combat" (traps de congelar/enfraquecer) eram
+    # aplicados e nunca revertidos — viravam debuff permanente. O ready do
+    # turno restaura o ataque base + bônus permanentes legítimos.
+    if "base_attack" not in card:
+        return
+    restored = int(card.get("base_attack", 0) or 0) + int(card.get("permanent_attack_bonus", 0) or 0)
+    card["attack"] = restored
+    card["power"] = restored
+
+
 def _ready_battlefield(side):
     for card in compact_battlefield(side):
+        _restore_combat_modifiers(card)
+        # O exhaust do Shadow Reaper dura "1 turno" de verdade: a carta marcada
+        # NAO e readiada aqui — o status expira depois que o bot agiu (fix do
+        # legendary morto: antes, o ready apagava o exhaust antes do ataque).
+        if "shadow_reaper_exhausted" in (card.get("statuses") or {}):
+            card["just_summoned"] = False
+            continue
         card["exhausted"] = False
         card["has_attacked"] = False
         card["has_acted"] = False
+        card["just_summoned"] = False
 
 
 def _prepare_summoned_monster(card):
@@ -389,6 +439,9 @@ def _prepare_summoned_monster(card):
     summoned["exhausted"] = False
     summoned["has_attacked"] = False
     summoned["has_acted"] = False
+    # Summoning sickness: monstros recem-invocados so atacam neste turno se
+    # tiverem RUSH (Investida) — exatamente o que o tooltip da keyword promete.
+    summoned["just_summoned"] = True
     return summoned
 
 
@@ -453,7 +506,28 @@ def _require_command_dispatch(match):
         raise RebirthError("Ação Rebirth deve ser processada pelo CommandDispatcher.", "dispatcher_required")
 
 
-def _resolve_spell_card(match, side_name, card):
+def _spell_effects_for_target(match, side_name, card, target_instance_id=None):
+    """Magias de dano podem mirar uma unidade inimiga em vez do herói."""
+    effects = deepcopy(card.get("stack_effects") or [])
+    if not target_instance_id:
+        return effects
+    opponent = _opponent_side(side_name)
+    _index, target = _find_battlefield_card(match[opponent], target_instance_id)
+    if target is None or _unit_hp(target) <= 0:
+        raise RebirthError("O alvo da magia não está no campo inimigo.", "invalid_target")
+    has_damage = False
+    for effect in effects:
+        if str(effect.get("type") or "").lower() == "damage" and str(effect.get("target") or "opponent").lower() in {"opponent", "enemy"}:
+            effect["type"] = "unit_damage"
+            effect["instance_id"] = target_instance_id
+            has_damage = True
+    if not has_damage:
+        raise RebirthError("Esta magia não pode mirar unidades.", "spell_cannot_target_unit")
+    return effects
+
+
+def _resolve_spell_card(match, side_name, card, target_instance_id=None):
+    spell_effects = _spell_effects_for_target(match, side_name, card, target_instance_id)
     cost = _spend_card_cost(match, side_name, card)
     effect_chain_id = new_effect_chain_id(match, "spell")
     turn_label = f"Turno {match['turn']:02d}"
@@ -470,13 +544,23 @@ def _resolve_spell_card(match, side_name, card):
     effect_events = resolve_effect_sequence(
         match,
         side_name,
-        card.get("stack_effects") or [],
+        spell_effects,
         effect_chain_id=effect_chain_id,
         parent_event_id=played_event["event_id"],
         root_event_id=played_event["root_event_id"],
         priority_level=PRIORITY_ACTIVE_SPELL,
         source_card=card,
     )
+    if target_instance_id:
+        for defeated in cleanup_defeated_units(
+            match,
+            effect_chain_id=effect_chain_id,
+            parent_event_id=played_event["event_id"],
+            root_event_id=played_event["root_event_id"],
+        ):
+            destroyed_message = f"{defeated['name']} foi destruído."
+            effect_events.append(destroyed_message)
+            match["log"].append(f"{turn_label}   {destroyed_message}")
     discard_bus = EffectBus(match, effect_chain_id=effect_chain_id)
     discard_bus.dispatch(
         "CARD_DISCARDED",
@@ -612,7 +696,7 @@ def _summon_monster_card(match, side_name, card, field_slot=None):
         opponent_side = "bot" if side_name == "player" else "player"
         opponent = match[opponent_side]
         actual = apply_turn_damage(match, opponent_side, burst_damage)
-        if actual > 0:
+        if burst_damage > 0:
             burst_msg = f"{summoned['name']} detona ao entrar — {actual} de dano direto."
             match["log"].append(f"{turn_label}   {burst_msg}")
             append_event(
@@ -621,7 +705,7 @@ def _summon_monster_card(match, side_name, card, field_slot=None):
                 actor=side_name,
                 source_card_id=summoned["id"],
                 target_id=opponent_side,
-                payload={"amount": actual, "keyword": "BURST"},
+                payload={"side": opponent_side, "amount": burst_damage, "applied": actual, "keyword": "BURST"},
                 message=burst_msg,
                 parent_event_id=summoned_event["event_id"],
                 root_event_id=summoned_event["root_event_id"],
@@ -697,6 +781,97 @@ def _bot_auto_summon(match):
     )
     bot_card = remove_from_hand(match["bot"], card_instance_id=chosen["instance_id"])
     return _summon_monster_card(match, "bot", bot_card)
+
+
+FATIGUE_TURN_HARD_CAP = 120
+
+
+def _apply_fatigue(match, *, effect_chain_id=None):
+    """Fadiga estilo TCG moderno: deck vazio = dano crescente por turno.
+
+    Substitui o antigo fim-súbito por exaustão (que encerrava a partida quando
+    QUALQUER lado ficava sem cartas, decidindo por HP — um jogador com board e
+    mão cheia podia perder porque o oponente esvaziou o próprio deck).
+    Retorna True se a partida terminou nesta checagem.
+    """
+    for side_name in ("player", "bot"):
+        side = match[side_name]
+        if side.get("deck") or len(side.get("hand") or []) >= 5:
+            continue
+        counter = int(side.get("fatigue", 0) or 0) + 1
+        side["fatigue"] = counter
+        # Fadiga ignora escudos: é desgaste, não golpe (e espelha o reducer).
+        hp_before = int(side.get("hp", 0) or 0)
+        side["hp"] = max(0, hp_before - counter)
+        applied = hp_before - side["hp"]
+        if applied:
+            side["wounded"] = True
+        message = f"{side['name']} sofre {applied} de dano de fadiga (deck vazio)."
+        match["log"].append(f"Turno {match['turn']:02d}   {message}")
+        append_event(
+            match,
+            "FATIGUE_DAMAGE",
+            actor="system",
+            target_id=side_name,
+            owner_id=side_name,
+            effect_chain_id=effect_chain_id,
+            payload={"side": side_name, "amount": applied, "fatigue": counter},
+            message=message,
+        )
+    if finish_if_needed(match):
+        return True
+    if int(match.get("turn", 1) or 1) >= FATIGUE_TURN_HARD_CAP:
+        # Trava de segurança contra partidas infinitas de cura mútua.
+        player_hp = int(match["player"]["hp"])
+        bot_hp = int(match["bot"]["hp"])
+        match["winner"] = "player" if player_hp > bot_hp else "bot" if bot_hp > player_hp else "clash"
+        match["is_finished"] = True
+        match["phase"] = PHASE_FINISHED
+        set_turn_phase(match, TurnPhase.END_PHASE)
+        message = "Limite de turnos atingido. O duelo encerra pela vida restante."
+        match["log"].append(message)
+        append_event(
+            match,
+            "MATCH_FINISHED",
+            payload={"winner": match["winner"], "player_hp": player_hp, "bot_hp": bot_hp, "reason": "turn_cap"},
+            message=message,
+        )
+        append_snapshot(match, "MATCH_TURN_CAP")
+        return True
+    return False
+
+
+def _bot_auto_summon_all(match, limit=None):
+    """O bot gasta a mana do turno: invoca enquanto houver slot+mana, com cap
+    por perfil (ver BOT_SUMMONS_BY_PROFILE)."""
+    if limit is None:
+        profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+        limit = BOT_SUMMONS_BY_PROFILE.get(profile_id, 2)
+    summoned = []
+    for _ in range(max(1, int(limit))):
+        card = _bot_auto_summon(match)
+        if not card:
+            break
+        summoned.append(card)
+        if match.get("is_finished"):
+            break
+    return summoned
+
+
+def _bot_rush_attacks(match, summoned_cards, *, effect_chain_id=None):
+    """Invocações com RUSH (Investida) atacam no mesmo turno do bot."""
+    from services.rebirth_keywords import has_keyword
+
+    for card in summoned_cards or []:
+        if match.get("is_finished"):
+            return
+        if not has_keyword(card, "RUSH"):
+            continue
+        _index, live_card = _find_battlefield_card(match["bot"], card.get("instance_id"))
+        if not live_card or live_card.get("has_acted") or live_card.get("exhausted"):
+            continue
+        live_card["just_summoned"] = False
+        _bot_auto_attack(match, effect_chain_id=effect_chain_id)
 
 
 def _side_has_ready_attackers(side):
@@ -775,10 +950,20 @@ def _bot_auto_play_support(match):
     if match.get("is_finished"):
         return None
     profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+    energy = int(match["bot"].get("energy", 0) or 0)
+    # Board primeiro: o suporte não pode consumir a mana da invocação do turno.
+    affordable_monsters = [
+        _card_cost(card)
+        for card in match["bot"].get("hand", [])
+        if is_monster(card) and _card_cost(card) <= energy
+    ]
+    support_budget = energy
+    if affordable_monsters and _battlefield_slots_available(match["bot"]) > 0:
+        support_budget = energy - min(affordable_monsters)
     affordable = [
         card
         for card in match["bot"].get("hand", [])
-        if (is_spell(card) or is_trap(card)) and _card_cost(card) <= int(match["bot"].get("energy", 0) or 0)
+        if (is_spell(card) or is_trap(card)) and _card_cost(card) <= support_budget
     ]
     scored = [(score, card) for card in affordable if (score := _bot_support_score(match, card, profile_id)) > 0]
     if not scored:
@@ -1012,12 +1197,53 @@ def _apply_trap_effect(match, owner_side, trap, owner_card, opponent_card):
     return messages + [event.get("message") for event in bus.flush() if event.get("message")]
 
 
-def _resolve_combat_traps(match, player_card, bot_card):
+def _trigger_side_traps(match, owner_side, owner_card, opponent_card):
+    """Dispara as traps armadas de owner_side contra o atacante adversario."""
     events = []
-    for owner_side, owner_card, opponent_card in (
-        ("player", player_card, bot_card),
-        ("bot", bot_card, player_card),
-    ):
+    side = match[owner_side]
+    remaining_traps = []
+    for trap in side.get("traps", []):
+        if not trap.get("armed", True) or trap.get("trigger_phase") != TurnPhase.COMBAT_PHASE.value:
+            remaining_traps.append(trap)
+            continue
+        triggered = deepcopy(trap)
+        triggered["armed"] = False
+        triggered["revealed"] = True
+        triggered["face_down"] = False
+        events.extend(_apply_trap_effect(match, owner_side, triggered, owner_card, opponent_card))
+        side.setdefault("discard", []).append(triggered)
+        append_event(
+            match,
+            "TRAP_TRIGGERED",
+            actor=owner_side,
+            payload={"card_id": trap["id"], "instance_id": trap.get("instance_id"), "effect": trap.get("trap_effect"), "card": deepcopy(triggered)},
+            message=events[-1] if events else f"{trap['name']} foi acionada.",
+        )
+    side["traps"] = remaining_traps
+    return events
+
+
+def _resolve_direct_attack_traps(match, defender_side, attacker_card):
+    """Ataque direto no heroi tambem revela as traps do defensor."""
+    if attacker_card:
+        _index, refreshed = _find_battlefield_card(match[_opponent_side(defender_side)], attacker_card.get("instance_id"))
+        attacker_card = refreshed or attacker_card
+    return _trigger_side_traps(match, defender_side, None, attacker_card)
+
+
+def _resolve_combat_traps(match, player_card, bot_card, attacking_side="player"):
+    """Traps disparam com contexto: apenas o lado ATACADO revela as suas.
+
+    Antes, qualquer combate revelava as traps dos dois lados ao mesmo tempo —
+    a sua propria trap punia o seu proprio ataque.
+    """
+    events = []
+    defender_side = _opponent_side(attacking_side)
+    pairs = (
+        (defender_side, player_card if defender_side == "player" else bot_card,
+         bot_card if defender_side == "player" else player_card),
+    )
+    for owner_side, owner_card, opponent_card in pairs:
         if owner_card:
             _owner_index, refreshed_owner = _find_battlefield_card(match[owner_side], owner_card.get("instance_id"))
             owner_card = refreshed_owner or owner_card
@@ -1051,14 +1277,16 @@ def _resolve_unanswered_attack(match, player_card, *, effect_chain_id=None, pare
     effect_chain_id = effect_chain_id or new_effect_chain_id(match, "combat")
     set_turn_phase(match, TurnPhase.COMBAT_PHASE)
     match["player"]["played_card"] = player_card
+    direct_events = _resolve_direct_attack_traps(match, "bot", player_card)
     damage = max(1, card_attack(player_card))
     damage = apply_turn_damage(match, "bot", damage)
+    _emit_lifesteal(match, "player", player_card, damage, direct_events)
     result = {
         "outcome": "Victory",
         "winner": "player",
         "damage": {"player": 0, "bot": damage},
         "message": f"{player_card['name']} ataca diretamente. Bot sofre {damage} de dano.",
-        "ability_events": [],
+        "ability_events": direct_events,
         "effective_attack": {"player": card_attack(player_card), "bot": 0},
     }
     match["result"] = result
@@ -1119,13 +1347,15 @@ def _resolve_unanswered_bot_attack(match, bot_card, *, effect_chain_id=None, par
     effect_chain_id = effect_chain_id or new_effect_chain_id(match, "bot-combat")
     set_turn_phase(match, TurnPhase.COMBAT_PHASE)
     match["bot"]["played_card"] = bot_card
+    direct_events = _resolve_direct_attack_traps(match, "player", bot_card)
     damage = apply_turn_damage(match, "player", max(1, card_attack(bot_card)))
+    _emit_lifesteal(match, "bot", bot_card, damage, direct_events)
     result = {
         "outcome": "Defeat",
         "winner": "bot",
         "damage": {"player": damage, "bot": 0},
         "message": f"{bot_card['name']} ataca diretamente. Você sofre {damage} de dano.",
-        "ability_events": [],
+        "ability_events": direct_events,
         "effective_attack": {"player": 0, "bot": card_attack(bot_card)},
     }
     match["result"] = result
@@ -1179,18 +1409,57 @@ def _resolve_unanswered_bot_attack(match, bot_card, *, effect_chain_id=None, par
     return result
 
 
+# Identidade de perfil + alavanca de dificuldade (calibrado no lab para a
+# faixa 40-60% de winrate do jogador por perfil): o agressivo bate duas vezes
+# mas desenvolve pouco; o oportunista monta board e escolhe um golpe certeiro;
+# o defensivo segura a linha.
+BOT_ATTACKS_PER_TURN = {
+    "novice": 1,
+    "defensive": 1,
+    "opportunist": 1,
+    "aggressive": 2,
+}
+
+BOT_SUMMONS_BY_PROFILE = {
+    "novice": 1,
+    "defensive": 2,
+    "opportunist": 2,
+    "aggressive": 1,
+}
+
+
+def _bot_auto_attack_all(match, *, effect_chain_id=None):
+    """O bot ataca com os monstros prontos até o orçamento do perfil."""
+    profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+    budget = BOT_ATTACKS_PER_TURN.get(profile_id, 2)
+    for _ in range(max(1, budget)):
+        if match.get("is_finished"):
+            return
+        if _bot_auto_attack(match, effect_chain_id=effect_chain_id) is None:
+            return
+
+
 def _bot_auto_attack(match, *, effect_chain_id=None):
     if match.get("is_finished"):
         return None
+    from services.rebirth_keywords import forces_target, has_taunt_on_side
+
+    player_field = compact_battlefield(match["player"])
+    # TAUNT vale para o bot também: com Provocar em campo, ele é obrigado a
+    # resolver as provocadoras antes de ataque direto ou alvos livres.
+    if has_taunt_on_side(player_field):
+        player_field = [card for card in player_field if forces_target(card)]
     decision = choose_bot_attack(
         compact_battlefield(match["bot"]),
-        compact_battlefield(match["player"]),
+        player_field,
         player_hp=match["player"].get("hp", 30),
         turn=match.get("turn", 1),
         player_wounded=match["player"].get("wounded", False),
         bot_wounded=match["bot"].get("wounded", False),
     )
     if not decision:
+        return None
+    if decision.get("outcome") == "direct" and has_taunt_on_side(compact_battlefield(match["player"])):
         return None
     profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
     if (
@@ -1283,6 +1552,130 @@ def _derive_clash_status_effects(winner, player_card, bot_card):
     return effects
 
 
+def _heal_side(match, side_name, amount):
+    side = match[side_name]
+    amount = max(0, int(amount or 0))
+    if not amount:
+        return 0
+    before = int(side.get("hp", 0) or 0)
+    side["hp"] = min(int(side.get("max_hp", before) or before), before + amount)
+    return side["hp"] - before
+
+
+def _emit_lifesteal(match, side_name, card, damage, ability_events):
+    """LIFESTEAL com evento espelhado para o replay reconstruir o HP."""
+    from services.rebirth_keywords import lifesteal_heal_amount
+
+    heal = lifesteal_heal_amount(card, damage)
+    if not heal:
+        return 0
+    healed = _heal_side(match, side_name, heal)
+    if not healed:
+        return 0
+    message = f"{card['name']} drena {healed} PV com Drenar."
+    ability_events.append(message)
+    append_event(
+        match,
+        "HEALTH_RECOVERED",
+        actor=side_name,
+        source_card_id=card.get("id"),
+        target_id=side_name,
+        owner_id=side_name,
+        payload={"side": side_name, "amount": healed, "keyword": "LIFESTEAL"},
+        message=message,
+    )
+    return healed
+
+
+def _apply_persistent_strike(match, *, winner_side, winner_card, loser_side, loser_card, damage, ability_events, hero_damage):
+    """Resolve o golpe vencedor em campo persistente com as keywords reais.
+
+    SHIELD (perdedor): ignora a primeira instância de dano recebida.
+    PIERCE (vencedor): TODO o excedente sobre a Guarda vaza para o HP do herói
+    (sem PIERCE, vale o Breakthrough universal capado em 2).
+    LIFESTEAL (vencedor): recupera HP igual ao dano causado.
+    EXECUTE (vencedor): destrói o alvo que sobreviver com Guarda <= 1.
+    Retorna o dano efetivamente aplicado à Guarda.
+    """
+    from services.rebirth_keywords import (
+        execute_kills,
+        has_keyword,
+        lifesteal_heal_amount,
+        shield_absorbs,
+    )
+
+    if shield_absorbs(loser_card):
+        loser_card["shield_consumed"] = True
+        message = f"{loser_card['name']} ignora o golpe com Escudo."
+        ability_events.append(message)
+        append_event(
+            match,
+            "SHIELD_KEYWORD_ABSORBED",
+            actor=loser_side,
+            source_card_id=loser_card.get("id"),
+            target_id=loser_card.get("instance_id"),
+            owner_id=loser_side,
+            payload={"side": loser_side, "instance_id": loser_card.get("instance_id"), "keyword": "SHIELD"},
+            message=message,
+        )
+        return 0
+
+    guard_before = max(0, int(loser_card.get("current_guard", loser_card.get("guard", 0)) or 0))
+    loser_card["current_guard"] = int(loser_card.get("current_guard", loser_card.get("guard", 0)) or 0) - damage
+    overflow = max(0, damage - guard_before)
+    if overflow:
+        if has_keyword(winner_card, "PIERCE"):
+            applied = apply_turn_damage(match, loser_side, overflow)
+            if applied:
+                hero_damage[loser_side] = applied
+                ability_events.append(f"Perfurar: {match[loser_side]['name']} sofre {applied} de dano excedente.")
+        else:
+            breakthrough = min(2, overflow)
+            applied = apply_turn_damage(match, loser_side, breakthrough)
+            if applied:
+                hero_damage[loser_side] = applied
+                ability_events.append(f"Breakthrough: {match[loser_side]['name']} sofre {applied} de dano excedente.")
+
+    heal = lifesteal_heal_amount(winner_card, damage)
+    if heal:
+        healed = _heal_side(match, winner_side, heal)
+        if healed:
+            message = f"{winner_card['name']} drena {healed} PV com Drenar."
+            ability_events.append(message)
+            append_event(
+                match,
+                "HEALTH_RECOVERED",
+                actor=winner_side,
+                source_card_id=winner_card.get("id"),
+                target_id=winner_side,
+                owner_id=winner_side,
+                payload={"side": winner_side, "amount": healed, "keyword": "LIFESTEAL"},
+                message=message,
+            )
+
+    survivor_guard = max(0, int(loser_card.get("current_guard", 0) or 0))
+    if survivor_guard and execute_kills(winner_card, {"guard": survivor_guard}):
+        loser_card["current_guard"] = 0
+        message = f"{winner_card['name']} executa {loser_card['name']} com Guarda baixa."
+        ability_events.append(message)
+        append_event(
+            match,
+            "UNIT_DAMAGE_RESOLVED",
+            actor=winner_side,
+            source_card_id=winner_card.get("id"),
+            target_id=loser_card.get("instance_id"),
+            owner_id=loser_side,
+            payload={
+                "side": loser_side,
+                "amount": survivor_guard,
+                "instance_id": loser_card.get("instance_id"),
+                "keyword": "EXECUTE",
+            },
+            message=message,
+        )
+    return damage
+
+
 def resolve_turn(
     match,
     player_card,
@@ -1295,7 +1688,7 @@ def resolve_turn(
     root_event_id=None,
 ):
     effect_chain_id = effect_chain_id or new_effect_chain_id(match, "combat")
-    trap_events = _resolve_combat_traps(match, player_card, bot_card)
+    trap_events = _resolve_combat_traps(match, player_card, bot_card, attacking_side=attacking_side)
     _player_index, refreshed_player_card = _find_battlefield_card(match["player"], player_card.get("instance_id"))
     _bot_index, refreshed_bot_card = _find_battlefield_card(match["bot"], bot_card.get("instance_id"))
     player_card = refreshed_player_card or player_card
@@ -1304,18 +1697,26 @@ def resolve_turn(
     ability_events = list(trap_events) + list(clash["events"])
     hero_damage = {"player": 0, "bot": 0}
     if winner == "player":
-        damage_payload = damage_details(player_card, bot_card, match["bot"].get("wounded", False))
+        damage_payload = damage_details(
+            player_card, bot_card, match["bot"].get("wounded", False),
+            match=match, attacker_side="player", defender_side="bot",
+        )
         damage = damage_payload["amount"]
         ability_events.extend(damage_payload["events"])
         if persistent_field:
-            guard_before = max(0, int(bot_card.get("current_guard", bot_card.get("guard", 0)) or 0))
-            bot_card["current_guard"] = int(bot_card.get("current_guard", bot_card.get("guard", 0)) or 0) - damage
-            breakthrough = min(2, max(0, damage - guard_before))
-            if breakthrough:
-                hero_damage["bot"] = apply_turn_damage(match, "bot", breakthrough)
-                ability_events.append(f"Breakthrough: Bot sofre {hero_damage['bot']} de dano excedente.")
+            damage = _apply_persistent_strike(
+                match,
+                winner_side="player",
+                winner_card=player_card,
+                loser_side="bot",
+                loser_card=bot_card,
+                damage=damage,
+                ability_events=ability_events,
+                hero_damage=hero_damage,
+            )
         else:
             damage = apply_turn_damage(match, "bot", damage)
+            _emit_lifesteal(match, "player", player_card, damage, ability_events)
         result = {
             "outcome": "Victory",
             "winner": "player",
@@ -1323,18 +1724,26 @@ def resolve_turn(
             "message": f"{player_card['name']} venceu {bot_card['name']}. {'Alvo perde' if persistent_field else 'Bot sofre'} {damage} de dano.",
         }
     elif winner == "bot":
-        damage_payload = damage_details(bot_card, player_card, match["player"].get("wounded", False))
+        damage_payload = damage_details(
+            bot_card, player_card, match["player"].get("wounded", False),
+            match=match, attacker_side="bot", defender_side="player",
+        )
         damage = damage_payload["amount"]
         ability_events.extend(damage_payload["events"])
         if persistent_field:
-            guard_before = max(0, int(player_card.get("current_guard", player_card.get("guard", 0)) or 0))
-            player_card["current_guard"] = int(player_card.get("current_guard", player_card.get("guard", 0)) or 0) - damage
-            breakthrough = min(2, max(0, damage - guard_before))
-            if breakthrough:
-                hero_damage["player"] = apply_turn_damage(match, "player", breakthrough)
-                ability_events.append(f"Breakthrough: Você sofre {hero_damage['player']} de dano excedente.")
+            damage = _apply_persistent_strike(
+                match,
+                winner_side="bot",
+                winner_card=bot_card,
+                loser_side="player",
+                loser_card=player_card,
+                damage=damage,
+                ability_events=ability_events,
+                hero_damage=hero_damage,
+            )
         else:
             damage = apply_turn_damage(match, "player", damage)
+            _emit_lifesteal(match, "bot", bot_card, damage, ability_events)
         result = {
             "outcome": "Defeat",
             "winner": "bot",
@@ -1569,9 +1978,16 @@ def _fusion_stats(material_a, material_b, resulting_card):
     resulting_card["breakthrough"] = True
     resulting_card["labs_fusion"] = True
     resulting_card["passives"] = sorted(set(list(resulting_card.get("passives") or []) + ["BREAKTHROUGH"]))
+    # A fusão agora concede PIERCE de verdade: TODO o excedente sobre a Guarda
+    # vaza para o HP (antes a flag "breakthrough" era cosmética — o teto de 2
+    # valia para qualquer atacante).
+    keywords = list(resulting_card.get("keywords") or [])
+    if "PIERCE" not in keywords:
+        keywords.append("PIERCE")
+    resulting_card["keywords"] = keywords
     resulting_card["ability_key"] = "breakthrough"
     resulting_card["ability_name"] = "BREAKTHROUGH"
-    resulting_card["ability_text"] = "Dano excedente atravessa a Guarda no prototipo Rebirth Labs."
+    resulting_card["ability_text"] = "Dano excedente sobre a Guarda atravessa direto para o HP inimigo."
     resulting_card["exhausted"] = False
     resulting_card["has_attacked"] = False
     resulting_card["has_acted"] = False
@@ -1730,13 +2146,16 @@ def evolve_bot_if_ready(match):
     return _evolve_side_duplicate(match, "bot", choice["card_id"])
 
 
-def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
+def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None, target_instance_id=None):
     _require_command_dispatch(match)
     if match.get("is_finished"):
         raise RebirthError("A partida já terminou.", "match_finished")
-    if match.get("phase") != PHASE_CHOOSE:
+    # Fase principal fluida: depois de um ataque (phase=result/END_PHASE) o
+    # jogador ainda pode desenvolver o board até encerrar o turno — com
+    # summoning sickness, "atacar e depois invocar" é a ordem natural.
+    if match.get("phase") not in {PHASE_CHOOSE, PHASE_RESULT}:
         raise RebirthError("Avance para o próximo turno antes de jogar outra carta.", "invalid_phase")
-    if not is_main_phase(match):
+    if not is_main_phase(match) and current_turn_phase(match) != TurnPhase.END_PHASE.value:
         raise RebirthError(f"Cartas só podem ser jogadas na fase principal. Fase atual: {current_turn_phase(match)}.", "invalid_phase")
     if not card_instance_id and not card_id:
         raise RebirthError("Informe card_instance_id ou card_id.", "missing_card")
@@ -1750,6 +2169,9 @@ def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
         _resolve_battlefield_slot(match["player"], field_slot)
     elif not is_spell(preview_card) and not is_trap(preview_card):
         raise RebirthError("Só é possível jogar cartas de monstro, magia e armadilha.", "invalid_card")
+    if target_instance_id and is_spell(preview_card):
+        # Valida o alvo antes de gastar mana/remover da mão.
+        _spell_effects_for_target(match, "player", preview_card, target_instance_id)
 
     cost = _card_cost(preview_card)
     current_energy = int(match["player"].get("energy", match["player"].get("max_energy", 0)) or 0)
@@ -1760,7 +2182,7 @@ def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
         match,
         "PLAY_CARD",
         actor="player",
-        payload={"card_instance_id": card_instance_id, "card_id": card_id, "field_slot": field_slot},
+        payload={"card_instance_id": card_instance_id, "card_id": card_id, "field_slot": field_slot, "target_instance_id": target_instance_id},
     )
 
     try:
@@ -1773,7 +2195,7 @@ def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
         raise RebirthError(str(exc), "invalid_card") from exc
 
     if is_spell(player_card):
-        return _resolve_spell_card(match, "player", player_card)
+        return _resolve_spell_card(match, "player", player_card, target_instance_id=target_instance_id)
     if is_trap(player_card):
         return _arm_trap_card(match, "player", player_card)
     if not is_monster(player_card):
@@ -1784,8 +2206,6 @@ def play_card(match, *, card_instance_id=None, card_id=None, field_slot=None):
     # in reaction to the player's summon. Keeping them turn-scoped means the
     # log no longer reads "You summoned X. Bot summoned Y." on the same turn,
     # and the player gets a real action loop instead of a same-turn answer.
-    if not match["is_finished"]:
-        finish_if_exhausted(match)
     return match
 
 
@@ -1805,6 +2225,12 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
         raise RebirthError("O atacante não está no seu campo.", "invalid_attacker")
     if attacker.get("exhausted") or attacker.get("has_attacked") or attacker.get("has_acted"):
         raise RebirthError("Este monstro já atacou neste turno.", "attacker_exhausted")
+    from services.rebirth_keywords import can_attack_this_turn
+    if not can_attack_this_turn(attacker, just_summoned=bool(attacker.get("just_summoned"))):
+        raise RebirthError(
+            "Monstros recém-invocados precisam de Investida para atacar neste turno.",
+            "summoning_sickness",
+        )
 
     target = None
     if target_instance_id:
@@ -1888,8 +2314,6 @@ def declare_attack(match, *, attacker_instance_id=None, target_instance_id=None)
             root_event_id=attack_event["root_event_id"],
         )
 
-    if not match["is_finished"]:
-        finish_if_exhausted(match)
     return result
 
 
@@ -1897,9 +2321,9 @@ def evolve_duplicate(match, card_id):
     _require_command_dispatch(match)
     if match.get("is_finished"):
         raise RebirthError("A partida já terminou.", "match_finished")
-    if match.get("phase") != PHASE_CHOOSE:
-        raise RebirthError("A evolução só está disponível antes de jogar uma carta.", "invalid_phase")
-    if not is_main_phase(match):
+    if match.get("phase") not in {PHASE_CHOOSE, PHASE_RESULT}:
+        raise RebirthError("A evolução só está disponível antes de encerrar o turno.", "invalid_phase")
+    if not is_main_phase(match) and current_turn_phase(match) != TurnPhase.END_PHASE.value:
         raise RebirthError(f"A evolução só está disponível na fase principal. Fase atual: {current_turn_phase(match)}.", "invalid_phase")
     if not card_id:
         raise RebirthError("Informe card_id.", "missing_card")
@@ -2008,29 +2432,48 @@ def next_turn(match):
                     "cards": deepcopy(drawn),
                 },
             )
+    if _apply_fatigue(match, effect_chain_id=effect_chain_id):
+        return match
     _ready_battlefield(match["player"])
     _ready_battlefield(match["bot"])
     append_event(match, "UNITS_READIED", actor="system", target_id="player", owner_id="player", effect_chain_id=effect_chain_id, payload={"side": "player"})
     append_event(match, "UNITS_READIED", actor="system", target_id="bot", owner_id="bot", effect_chain_id=effect_chain_id, payload={"side": "bot"})
-    expired_events = expire_statuses_for_trigger(match, "TURN_STARTED", {"effect_chain_id": effect_chain_id})
-    for event in expired_events:
-        match["log"].append(f"Turno {match['turn']:02d}   {event}")
     _refresh_energy_for_turn(match)
     append_event(
         match,
         "ENERGY_REFRESHED",
         actor="system",
         effect_chain_id=effect_chain_id,
-        payload={"turn": match.get("turn"), "energy": int(match["player"].get("energy", 0) or 0)},
+        payload={
+            "turn": match.get("turn"),
+            "energy": int(match["player"].get("energy", 0) or 0),
+            # Por lado: o energy_ramp da campanha dá tetos diferentes — o
+            # reducer antigo aplicava a energia do player nos dois lados e o
+            # replay de boss divergia.
+            "player_energy": int(match["player"].get("energy", 0) or 0),
+            "player_max_energy": int(match["player"].get("max_energy", 0) or 0),
+            "bot_energy": int(match["bot"].get("energy", 0) or 0),
+            "bot_max_energy": int(match["bot"].get("max_energy", 0) or 0),
+        },
     )
     evolve_bot_if_ready(match)
     _bot_auto_play_support(match)
     if match.get("is_finished"):
         return match
-    _bot_auto_attack(match, effect_chain_id=effect_chain_id)
+    _bot_auto_attack_all(match, effect_chain_id=effect_chain_id)
     if match.get("is_finished"):
         return match
-    _bot_auto_summon(match)
+    summoned_cards = _bot_auto_summon_all(match)
+    if match.get("is_finished"):
+        return match
+    _bot_rush_attacks(match, summoned_cards, effect_chain_id=effect_chain_id)
+    if match.get("is_finished"):
+        return match
+    # O exhaust do Shadow Reaper expira DEPOIS de o bot agir — antes deste fix
+    # ele era limpo antes do ataque do bot e a lendária não fazia nada.
+    expired_events = expire_statuses_for_trigger(match, "TURN_STARTED", {"effect_chain_id": effect_chain_id})
+    for event in expired_events:
+        match["log"].append(f"Turno {match['turn']:02d}   {event}")
     match["result"] = None
     match["last_clash"] = None
     match["phase"] = PHASE_CHOOSE
@@ -2047,5 +2490,4 @@ def next_turn(match):
         },
         message=match["log"][-1],
     )
-    finish_if_exhausted(match)
     return match

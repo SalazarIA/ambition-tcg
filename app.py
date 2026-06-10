@@ -16,6 +16,7 @@ from services.rebirth_dispatcher import (
     EndTurnCommand,
     EvolveDuplicateCommand,
     FuseFieldPairCommand,
+    MulliganCommand,
     SummonCardCommand,
     dispatch_command,
 )
@@ -356,21 +357,51 @@ def csrf_payload():
     return {"csrf": csrf_token()}
 
 
+_REPO_CACHE = {}
+_REPO_CACHE_LIMIT = 32
+
+
 def rebirth_repo():
+    """Repositório Rebirth com cache por destino.
+
+    Antes, CADA chamada construía um RebirthRepository novo — e, em Postgres,
+    um engine SQLAlchemy novo com pool próprio (conexão TCP/TLS por chamada,
+    várias vezes por request). O cache reusa o engine/pool pelo processo.
+    """
     database_url = app.config.get("REBIRTH_DATABASE_URL")
     retry_options = {
         "serialization_retry_attempts": app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"],
         "serialization_retry_backoff_seconds": app.config["REBIRTH_POSTGRES_RETRY_BACKOFF_SECONDS"],
     }
     if database_url:
-        return RebirthRepository(database_url=database_url, **retry_options)
-    if app.config.get("TESTING") or app.config.get("REBIRTH_ALLOW_SQLITE_TESTING"):
-        return RebirthRepository(app.config["REBIRTH_DB_PATH"], **retry_options)
-    raise RebirthPersistenceError(
-        "REBIRTH_DATABASE_URL e obrigatoria fora do ambiente de testes.",
-        "database_not_configured",
-        status=503,
-    )
+        cache_key = ("postgres", database_url, tuple(sorted(retry_options.items())))
+    elif app.config.get("TESTING") or app.config.get("REBIRTH_ALLOW_SQLITE_TESTING"):
+        cache_key = ("sqlite", app.config["REBIRTH_DB_PATH"], tuple(sorted(retry_options.items())))
+    else:
+        raise RebirthPersistenceError(
+            "REBIRTH_DATABASE_URL e obrigatoria fora do ambiente de testes.",
+            "database_not_configured",
+            status=503,
+        )
+    repo = _REPO_CACHE.get(cache_key)
+    if repo is None:
+        if database_url:
+            repo = RebirthRepository(database_url=database_url, **retry_options)
+        else:
+            repo = RebirthRepository(app.config["REBIRTH_DB_PATH"], **retry_options)
+        if len(_REPO_CACHE) >= _REPO_CACHE_LIMIT:
+            _REPO_CACHE.pop(next(iter(_REPO_CACHE)), None)
+        _REPO_CACHE[cache_key] = repo
+    return repo
+
+
+def int_arg(name, default, maximum):
+    """Query param inteiro com clamp — `?limit=abc` derrubava o endpoint com 500."""
+    try:
+        value = int(request.args.get(name, default))
+    except (TypeError, ValueError):
+        value = int(default)
+    return max(1, min(int(maximum), value))
 
 
 def guest_wallet_payload():
@@ -1283,7 +1314,10 @@ def api_rebirth_billing_webhook():
             try:
                 rebirth_repo().credit_billing_gems(user_id, package_id, sess["id"])
             except RebirthPersistenceError as err:
-                return (f"credit_failed: {err.code}", 200)
+                # 500 força o retry do Stripe: devolver 200 aqui descartava o
+                # evento com o cliente já cobrado e as gems não creditadas.
+                app.logger.error("billing webhook credit_failed: %s (session=%s)", err.code, sess.get("id"))
+                return (f"credit_failed: {err.code}", 500)
     return ("", 200)
 
 
@@ -1366,22 +1400,36 @@ def api_rebirth_start():
         if is_first_duel and requested_seed is None:
             requested_seed = "guided-first-match"
         engine_seed = f"user:{user['id']}:{requested_seed}" if user and requested_seed is not None else requested_seed
-        match = start_match(
-            seed=engine_seed,
-            player_card_ids=player_card_ids,
-            player_name=player_name,
-            bot_profile_id=bot_profile_id,
-            runtime_mode="singleplayer",
-            apply_reducers_inline=False,
-            first_duel=is_first_duel,
-        )
+
+        def build_match(seed_value):
+            return start_match(
+                seed=seed_value,
+                player_card_ids=player_card_ids,
+                player_name=player_name,
+                bot_profile_id=bot_profile_id,
+                runtime_mode="singleplayer",
+                apply_reducers_inline=False,
+                first_duel=is_first_duel,
+            )
+
+        match = build_match(engine_seed)
+        if engine_seed is not None:
+            try:
+                existing = MATCH_STORE.get(match["match_id"])
+            except RebirthError:
+                existing = None
+            if existing is not None:
+                # Seed reutilizada gerava o MESMO match_id e devolvia a partida
+                # antiga em vez de criar uma nova. Salga a seed na colisão.
+                match = build_match(f"{engine_seed}:retry:{secrets.token_hex(4)}")
         if user:
             match["owner_user_id"] = user["id"]
             match["seed"] = str(requested_seed or "")
         match = MATCH_STORE.save(match)
         remember_active_match(match, user=user)
-        if user:
-            repo.upsert_match_history(user["id"], match)
+        # A partida NÃO é persistida no start: cada visita ao /rebirth dispara
+        # um start automático e enchia o histórico de partidas-fantasma. O
+        # primeiro comando real (play/attack/next-turn) faz o primeiro upsert.
         record_match_telemetry(repo, user, match, "match_started", guest=not bool(user))
         state = public_state(match)
         return json_success(
@@ -1460,7 +1508,6 @@ def api_rebirth_campaign_start():
         match["seed"] = f"campaign:{node['id']}:{attempt}"
         match = MATCH_STORE.save(match)
         remember_active_match(match, user=user)
-        repo.upsert_match_history(user["id"], match)
         record_match_telemetry(
             repo,
             user,
@@ -1543,6 +1590,7 @@ def api_rebirth_play_card():
                     card_instance_id=payload.get("card_instance_id"),
                     card_id=payload.get("card_id"),
                     field_slot=payload.get("field_slot", payload.get("slot")),
+                    target_instance_id=payload.get("target_instance_id"),
                 ),
             )
         state = public_state(match)
@@ -1658,6 +1706,24 @@ def api_rebirth_next_turn():
         campaign_reward = settle_campaign_victory(repo, user, match)
         record_match_telemetry(repo, user, match, "turn_ended")
         return json_success(public_state(match), match.get("result"), campaign_reward=campaign_reward)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/mulligan")
+def api_rebirth_mulligan():
+    try:
+        payload = request_json(required=True)
+        user = current_user()
+        match = get_match(payload.get("match_id"), user=user)
+        ensure_match_access(match, user=user)
+        dispatch_command(match, MulliganCommand())
+        repo = rebirth_repo() if user else None
+        persist_match_if_owned(repo, user, match)
+        record_match_telemetry(repo, user, match, "hand_mulliganed")
+        return json_success(public_state(match), match.get("result"), mulliganed=True)
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -1982,7 +2048,7 @@ def api_rebirth_profile():
 def api_rebirth_match_history():
     try:
         user = require_user()
-        return json_payload(history=rebirth_repo().match_history(user["id"], limit=request.args.get("limit", 12)))
+        return json_payload(history=rebirth_repo().match_history(user["id"], limit=int_arg("limit", 12, 50)))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
 
@@ -1991,7 +2057,7 @@ def api_rebirth_match_history():
 def api_rebirth_match_events(match_id):
     try:
         user = require_user()
-        return json_payload(events=rebirth_repo().match_events(user["id"], match_id, limit=request.args.get("limit", 50)))
+        return json_payload(events=rebirth_repo().match_events(user["id"], match_id, limit=int_arg("limit", 50, 200)))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
 
@@ -2052,7 +2118,7 @@ def api_rebirth_resume():
 def api_rebirth_economy_ledger():
     try:
         user = require_user()
-        return json_payload(ledger=rebirth_repo().economy_ledger(user["id"], limit=request.args.get("limit", 30)))
+        return json_payload(ledger=rebirth_repo().economy_ledger(user["id"], limit=int_arg("limit", 30, 100)))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
 
@@ -2339,10 +2405,17 @@ def api_rebirth_support_feedback():
         severity = str(payload.get("severity") or "normal").strip().lower()[:24] or "normal"
         match_id = str(payload.get("match_id") or "").strip()[:120] or None
         if match_id and user:
+            # Partidas recém-iniciadas vivem só no MATCH_STORE até o primeiro
+            # comando (fix das partidas-fantasma); o feedback aceita as duas
+            # fontes antes de descartar o vínculo.
             try:
-                rebirth_repo().runtime_match_state(user["id"], match_id)
-            except RebirthPersistenceError:
-                match_id = None
+                live = MATCH_STORE.get(match_id)
+                ensure_match_access(live, user=user)
+            except RebirthError:
+                try:
+                    rebirth_repo().runtime_match_state(user["id"], match_id)
+                except RebirthPersistenceError:
+                    match_id = None
         feedback = {
             "category": category,
             "severity": severity,

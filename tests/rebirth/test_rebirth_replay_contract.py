@@ -45,7 +45,10 @@ def test_invalid_play_does_not_append_accepted_command_or_advance_version():
 
 def test_replay_rebuilds_final_canonical_state_from_commands():
     match = start_match(seed="replay-v63", bot_profile_id="defensive")
-    player_card = next(card for card in match["player"]["hand"] if card["id"] == "card_001")
+    player_card = next(
+        card for card in match["player"]["hand"]
+        if card.get("type") == "MONSTER" and int(card.get("cost", 9)) <= 2
+    )
 
     play_card(match, card_instance_id=player_card["instance_id"])
     next_turn(match)

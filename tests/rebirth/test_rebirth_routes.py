@@ -134,6 +134,10 @@ def test_authenticated_match_state_uses_single_repository(client):
 
     started = client.post("/api/rebirth/start", json={"seed": "routes-single-source"})
     state = started.get_json()["state"]
+    # O start não persiste mais (fix das partidas-fantasma); o primeiro
+    # comando real grava o snapshot no repositório.
+    first_action = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]})
+    assert first_action.status_code == 200
     persisted = client.get(f"/api/rebirth/match-state/{state['match_id']}")
 
     assert started.status_code == 200
@@ -152,7 +156,8 @@ def test_authenticated_match_state_uses_single_repository(client):
 
     assert resumed.status_code == 200
     assert resumed_state["match_id"] == state["match_id"]
-    assert resumed_state["turn"] == 2
+    # turno 3: o teste já gastou um next-turn para disparar o primeiro persist.
+    assert resumed_state["turn"] == 3
 
 
 def test_shop_survives_market_read_failure(client, monkeypatch):
@@ -204,7 +209,10 @@ def test_shop_route_is_server_rendered_with_native_nav(client):
 def test_play_card_api_blocks_first_turn_direct_damage_until_bot_responds(client):
     start = client.post("/api/rebirth/start", json={"seed": "routes-play"})
     state = start.get_json()["state"]
-    card = next(card for card in state["player"]["hand"] if card["id"] == "card_001")
+    card = next(
+        c for c in state["player"]["hand"]
+        if c.get("type") == "MONSTER" and int(c.get("cost", 9)) <= int(state["player"]["energy"])
+    )
 
     response = client.post(
         "/api/rebirth/play-card",
@@ -216,7 +224,7 @@ def test_play_card_api_blocks_first_turn_direct_damage_until_bot_responds(client
     assert payload["ok"] is True
     assert payload["state"]["phase"] == "choose"
     assert payload["state"]["result"]["outcome"] == "Summon"
-    assert payload["state"]["player"]["battlefield"][0]["id"] == "card_001"
+    assert payload["state"]["player"]["battlefield"][0]["id"] == card["id"]
     assert payload["state"]["last_clash"] is None
     assert payload["match_reward"] is None
 
@@ -232,9 +240,11 @@ def test_play_card_api_blocks_first_turn_direct_damage_until_bot_responds(client
     )
     attack_payload = attack.get_json()
 
-    assert attack.status_code == 409
+    # Com summoning sickness, o turno 1 é duplamente protegido: a invocação
+    # recém-chegada nem chega na regra de dano direto.
+    assert attack.status_code == 400
     assert attack_payload["ok"] is False
-    assert attack_payload["error"]["code"] == "first_turn_direct_attack_blocked"
+    assert attack_payload["error"]["code"] == "summoning_sickness"
 
     bot_turn = client.post("/api/rebirth/next-turn", json={"match_id": payload["state"]["match_id"]})
     after_bot = bot_turn.get_json()["state"]
@@ -253,7 +263,7 @@ def test_play_card_api_blocks_first_turn_direct_damage_until_bot_responds(client
     clash_payload = clash.get_json()
     assert clash.status_code == 200
     assert clash_payload["ok"] is True
-    assert clash_payload["state"]["last_clash"]["player_card"]["id"] == "card_001"
+    assert clash_payload["state"]["last_clash"]["player_card"]["id"] == card["id"]
     assert clash_payload["state"]["result"]["outcome"] in {"Victory", "Defeat", "Clash"}
     if not clash_payload["state"]["is_finished"]:
         assert clash_payload["match_reward"] is None
@@ -315,7 +325,10 @@ def test_client_error_telemetry_records_api_failure_metadata(client, flask_app):
 def test_play_card_api_accepts_explicit_monster_slot(client):
     start = client.post("/api/rebirth/start", json={"seed": "routes-play-slot"})
     state = start.get_json()["state"]
-    card = next(card for card in state["player"]["hand"] if card["id"] == "card_001")
+    card = next(
+        c for c in state["player"]["hand"]
+        if c.get("type") == "MONSTER" and int(c.get("cost", 9)) <= int(state["player"]["energy"])
+    )
 
     response = client.post(
         "/api/rebirth/play-card",
@@ -344,19 +357,29 @@ def test_combat_routes_reject_client_authored_status_fields(client, path, field)
 
 
 def test_evolve_api_combines_duplicate(client):
-    start = client.post("/api/rebirth/start", json={"seed": "routes-evolve"})
-    state = start.get_json()["state"]
+    # Com o shuffle real, procura deterministicamente uma mão de abertura que
+    # contenha uma dupla evoluível (o deck padrão tem vários pares).
+    state = None
+    evolution = None
+    for attempt in range(30):
+        start = client.post("/api/rebirth/start", json={"seed": f"routes-evolve-{attempt}"})
+        candidate = start.get_json()["state"]
+        if candidate.get("available_evolutions"):
+            state = candidate
+            evolution = candidate["available_evolutions"][0]
+            break
+    assert state is not None, "nenhuma seed de teste abriu com dupla evoluível"
 
     response = client.post(
         "/api/rebirth/evolve",
-        json={"match_id": state["match_id"], "card_id": "card_001"},
+        json={"match_id": state["match_id"], "card_id": evolution["card_id"]},
     )
     payload = response.get_json()
 
     assert response.status_code == 200
     assert payload["ok"] is True
-    assert payload["evolved"]["id"] == "card_011"
-    assert payload["state"]["player"]["hand"][0]["id"] == "card_011"
+    assert payload["evolved"]["id"] == evolution["evolution_id"]
+    assert payload["state"]["player"]["hand"][0]["id"] == evolution["evolution_id"]
 
 
 def test_next_turn_api_advances_after_result(client):

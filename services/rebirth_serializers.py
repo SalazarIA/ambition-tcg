@@ -38,6 +38,11 @@ RESOLUTION_PRIORITY_LABELS = {
 }
 FEEDBACK_EVENT_TYPES = {
     "DAMAGE_RESOLVED",
+    "UNIT_DAMAGE_RESOLVED",
+    "FATIGUE_DAMAGE",
+    "BURST_DAMAGE",
+    "REGEN_TICK",
+    "HAND_MULLIGANED",
     "SHIELD_APPLIED",
     "SHIELD_GRANTED",
     "SHIELD_BROKEN",
@@ -47,6 +52,19 @@ FEEDBACK_EVENT_TYPES = {
     "MONSTERS_FUSED",
     "STATUS_APPLIED",
 }
+
+GAMEPLAY_COMMAND_TYPES = {"PLAY_CARD", "DECLARE_ATTACK", "NEXT_TURN", "EVOLVE_DUPLICATE", "FUSE_FIELD_PAIR"}
+
+
+def mulligan_available(match):
+    if not match or match.get("is_finished") or match.get("mulligan_used"):
+        return False
+    if int(match.get("turn", 1) or 1) != 1 or match.get("phase") != "choose":
+        return False
+    for command in match.get("commands") or []:
+        if str(command.get("type") or command.get("command_type") or "") in GAMEPLAY_COMMAND_TYPES:
+            return False
+    return True
 
 
 def validate_card_contract(card):
@@ -175,6 +193,8 @@ def public_state(match):
         "winner": match.get("winner"),
         "is_finished": bool(match.get("is_finished")),
         "first_duel": bool(match.get("first_duel", False)),
+        "mulligan_available": mulligan_available(match),
+        "mulligan_used": bool(match.get("mulligan_used", False)),
         "replay_audio_muted_mode": bool(match.get("replay_audio_muted_mode", False)),
         "resolution_context": resolution_context(match),
         "checkpoint": deepcopy((match.get("checkpoints") or [None])[-1]),

@@ -72,7 +72,9 @@ def test_v74_energy_ramp_is_sustained_across_turns():
         seed="v74-ramp",
         bot_profile_id=node["bot_profile_id"],
         bot_card_ids=node["bot_deck_override"],
-        player_hp=node["player_hp"],
+        # HP alto só para o teste: o bot multi-invocação agora mata um jogador
+        # passivo antes do turno 6 — aqui medimos apenas o ramp de energia.
+        player_hp=500,
         bot_hp=node["bot_hp"],
         campaign_version=CAMPAIGN_VERSION,
         campaign_node=node["id"],

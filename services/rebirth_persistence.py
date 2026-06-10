@@ -455,6 +455,14 @@ class RebirthRepository:
         return connection
 
     def ensure_schema(self):
+        # Validar/criar schema custa round-trips; uma vez por instância basta
+        # (o repositório é cacheado por destino em app.rebirth_repo).
+        if getattr(self, "_schema_ready", False):
+            return
+        self._do_ensure_schema()
+        self._schema_ready = True
+
+    def _do_ensure_schema(self):
         if self.backend == "postgresql":
             status = validate_schema(self.engine)
             if not status.get("ok"):
@@ -2353,6 +2361,23 @@ class RebirthRepository:
             "recent_boosters": history,
         }
 
+    # Watermark de persistência por partida: eventos/comandos são append-only,
+    # então cada upsert só precisa inserir o delta — antes, TODA ação reenviava
+    # o histórico completo com INSERT OR IGNORE (O(n²) por partida).
+    _MATCH_PERSIST_WATERMARKS = {}
+    _MATCH_PERSIST_WATERMARK_LIMIT = 512
+
+    @classmethod
+    def _persist_watermark(cls, match_id):
+        return cls._MATCH_PERSIST_WATERMARKS.get(str(match_id)) or {"events": 0, "commands": 0}
+
+    @classmethod
+    def _set_persist_watermark(cls, match_id, events_count, commands_count):
+        marks = cls._MATCH_PERSIST_WATERMARKS
+        if len(marks) >= cls._MATCH_PERSIST_WATERMARK_LIMIT:
+            marks.pop(next(iter(marks)), None)
+        marks[str(match_id)] = {"events": int(events_count), "commands": int(commands_count)}
+
     @_retry_postgres_serialization_write
     def upsert_match_history(self, user_id, match):
         if not user_id or not match:
@@ -2365,6 +2390,11 @@ class RebirthRepository:
         public = public_state(match)
         status = "finished" if match.get("is_finished") else "active"
         bot_profile = match.get("bot_profile") or {}
+        watermark = self._persist_watermark(match.get("match_id"))
+        all_commands = match.get("commands", [])
+        all_events = match.get("events", [])
+        new_commands = all_commands[watermark["commands"]:]
+        new_events = all_events[watermark["events"]:]
         with self.connect() as db:
             db.execute(
                 """
@@ -2399,7 +2429,7 @@ class RebirthRepository:
                     match.get("campaign_attempt"),
                 ),
             )
-            for command in match.get("commands", []):
+            for command in new_commands:
                 db.execute(
                     """
                     INSERT OR IGNORE INTO match_commands
@@ -2416,7 +2446,7 @@ class RebirthRepository:
                         now,
                     ),
                 )
-            for event in match.get("events", []):
+            for event in new_events:
                 db.execute(
                     """
                     INSERT OR IGNORE INTO match_events
@@ -2433,6 +2463,7 @@ class RebirthRepository:
                         now,
                     ),
                 )
+        self._set_persist_watermark(match.get("match_id"), len(all_events), len(all_commands))
         # S3: aplica ELO se match terminou
         if match.get("is_finished"):
             try:

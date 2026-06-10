@@ -72,8 +72,9 @@ def test_real_player_journey_register_start_play_and_next_turn(client, flask_app
             "attacker_instance_id": after_play["player"]["battlefield"][0]["instance_id"],
         },
     )
-    assert blocked.status_code == 409
-    assert blocked.get_json()["error"]["code"] == "first_turn_direct_attack_blocked"
+    # Sickness protege o turno 1 antes mesmo da regra de dano direto.
+    assert blocked.status_code == 400
+    assert blocked.get_json()["error"]["code"] == "summoning_sickness"
 
     bot_turn = client.post("/api/rebirth/next-turn", json={"match_id": after_play["match_id"]})
     after_bot_turn = bot_turn.get_json()["state"]

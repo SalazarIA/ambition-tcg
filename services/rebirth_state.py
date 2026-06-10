@@ -5,7 +5,7 @@ import secrets
 
 from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION, REDUCER_VERSION, RULESET_VERSION
 from services.rebirth_contracts import FIELD_SLOT_COUNT, PHASE_CHOOSE
-from services.rebirth_cards import BOT_DECK, PLAYER_DECK, build_deck, catalog_payload
+from services.rebirth_cards import BOT_DECK, PLAYER_DECK, build_deck
 from services.rebirth_bot import choose_personality, personality_payload
 from services.rebirth_events import append_event, append_snapshot, ensure_event_contract
 
@@ -85,6 +85,7 @@ def field_slots(side):
         # A recorded attack always consumes its action, even when the mirrored
         # action-lock flag is absent from stored state.
         card["has_acted"] = bool(card.get("has_acted", card["has_attacked"]))
+        card["just_summoned"] = bool(card.get("just_summoned", False))
         raw = card.get("field_slot")
         index = int(raw) if isinstance(raw, int) or (isinstance(raw, str) and raw.isdigit()) else None
         if index is None or not (0 <= index < FIELD_SLOT_COUNT) or slots[index] is not None:
@@ -121,15 +122,67 @@ def draw_to_hand_size(player, hand_size=HAND_SIZE):
     return drawn
 
 
-def shuffle_deck_tail(player, *, seed, owner):
+def shuffle_deck(player, *, seed, owner, salt=""):
+    """Embaralha o deck inteiro de forma deterministica a partir da seed.
+
+    Todo deck (padrao ou loadout custom) passa por aqui ANTES da compra
+    inicial — a ordem do loadout nunca pode ser a ordem de compra, senao a
+    partida vira um script conhecido e exploravel.
+    """
     source = str(seed or "rebirth")
     side = str(owner or player.get("name") or "side")
+    extra = str(salt or "")
     player["deck"] = sorted(
         player.get("deck") or [],
         key=lambda card: hashlib.sha256(
-            f"{source}|{side}|{card.get('instance_id')}|{card.get('id')}".encode("utf-8")
+            f"{source}|{side}|{extra}|{card.get('instance_id')}|{card.get('id')}".encode("utf-8")
         ).hexdigest(),
     )
+    return player
+
+
+def shuffle_deck_tail(player, *, seed, owner):
+    # Compat: alguns chamadores antigos embaralham apos a compra inicial.
+    return shuffle_deck(player, seed=seed, owner=owner, salt="tail")
+
+
+PLAYABLE_OPENER_MAX_COST = 2
+
+
+def ensure_playable_opening_hand(player):
+    """Garante ao menos um monstro de custo <=2 na mao inicial.
+
+    Com o shuffle real a mao pode abrir sem jogada de turno 1; trocamos a
+    carta mais cara da mao pelo primeiro monstro barato do deck (ambos por
+    ordem deterministica) para preservar o contrato de abertura jogavel.
+    """
+    hand = player.get("hand") or []
+    deck = player.get("deck") or []
+    if any(
+        str(card.get("type") or card.get("card_type")) == "MONSTER"
+        and int(card.get("cost", 99) or 99) <= PLAYABLE_OPENER_MAX_COST
+        for card in hand
+    ):
+        return player
+    swap_in_index = next(
+        (
+            index
+            for index, card in enumerate(deck)
+            if str(card.get("type") or card.get("card_type")) == "MONSTER"
+            and int(card.get("cost", 99) or 99) <= PLAYABLE_OPENER_MAX_COST
+        ),
+        None,
+    )
+    if swap_in_index is None or not hand:
+        return player
+    swap_out_index = max(
+        range(len(hand)),
+        key=lambda index: (int(hand[index].get("cost", 0) or 0), index),
+    )
+    swap_in = deck.pop(swap_in_index)
+    swap_out = hand[swap_out_index]
+    hand[swap_out_index] = swap_in
+    deck.insert(swap_in_index, swap_out)
     return player
 
 
@@ -195,6 +248,7 @@ def create_match(
     campaign_modifiers=None,
     campaign_presentation=None,
     campaign_advice=None,
+    shuffle=True,
 ):
     # Resolve the seed ONCE so match_id, game_seed and bot personality all
     # derive from the same entropy. With seed=None we mint a fresh seed so two
@@ -211,12 +265,18 @@ def create_match(
     bot_deck_ids = list(bot_card_ids) if bot_card_ids else None
     player = create_player(player_name, "player", card_ids=deck_ids, starting_hp=player_hp or STARTING_HP)
     bot = create_player("Bot", "bot", card_ids=bot_deck_ids, starting_hp=bot_hp or STARTING_HP)
+    # Shuffle SEMPRE no caminho real (API), antes da compra, para os dois
+    # lados — deck custom nao-embaralhado era ordem de compra conhecida (bug
+    # critico de TCG). shuffle=False existe apenas para harnesses de teste
+    # roteirizados; nenhuma rota expõe esse flag.
+    if shuffle:
+        shuffle_deck(player, seed=game_seed, owner="player")
+        shuffle_deck(bot, seed=game_seed, owner="bot")
     draw_to_hand_size(player)
     draw_to_hand_size(bot)
-    if not player_card_ids:
-        shuffle_deck_tail(player, seed=game_seed, owner="player")
-    if not bot_card_ids:
-        shuffle_deck_tail(bot, seed=game_seed, owner="bot")
+    if shuffle:
+        ensure_playable_opening_hand(player)
+        ensure_playable_opening_hand(bot)
     if first_duel and not campaign_node:
         # Reduz HP do bot apenas — o jogador continua com a barra cheia para a
         # sensação de "ainda no controle".
@@ -235,6 +295,7 @@ def create_match(
         "player_name": player_name,
         "bot_profile_id": bot_profile["id"],
         "first_duel": bool(first_duel),
+        "shuffle": bool(shuffle),
     }
     if campaign_node:
         initial.update(
@@ -272,11 +333,13 @@ def create_match(
         "result": None,
         "winner": None,
         "is_finished": False,
+        "mulligan_used": False,
         "log": [
             "Turno 01   Duelo Rebirth iniciado.",
             "Turno 01   Escolha uma carta.",
         ],
-        "catalog": catalog_payload(),
+        # O catalogo NAO vive dentro do match: sao ~200KB deep-copiados que
+        # iam parar em cada snapshot persistido. O cliente usa /api/rebirth/catalog.
     }
     if campaign_node:
         match.update(

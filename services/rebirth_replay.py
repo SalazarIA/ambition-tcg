@@ -14,13 +14,21 @@ from services.rebirth_domain import (
     RULESET_VERSION,
     canonical_state_hash,
 )
-from services.rebirth_dispatcher import DeclareAttackCommand, EndTurnCommand, EvolveDuplicateCommand, FuseFieldPairCommand, SummonCardCommand, dispatch_command
+from services.rebirth_dispatcher import (
+    DeclareAttackCommand,
+    EndTurnCommand,
+    EvolveDuplicateCommand,
+    FuseFieldPairCommand,
+    MulliganCommand,
+    SummonCardCommand,
+    dispatch_command,
+)
 from services.rebirth_engine import start_match
 from services.rebirth_contracts import RebirthError
 from services.rebirth_profiler import current_profiler
 
 
-SUPPORTED_COMMANDS = {"PLAY_CARD", "DECLARE_ATTACK", "EVOLVE_DUPLICATE", "FUSE_FIELD_PAIR", "NEXT_TURN"}
+SUPPORTED_COMMANDS = {"PLAY_CARD", "DECLARE_ATTACK", "EVOLVE_DUPLICATE", "FUSE_FIELD_PAIR", "NEXT_TURN", "MULLIGAN"}
 
 
 def build_replay_envelope(match: Dict[str, Any], *, include_stream: bool = True) -> Dict[str, Any]:
@@ -35,6 +43,8 @@ def build_replay_envelope(match: Dict[str, Any], *, include_stream: bool = True)
         "bot_uses_default_deck": bot_uses_default_deck,
         "player_name": initial.get("player_name") or (match.get("player") or {}).get("name") or "Voc\u00ea",
         "bot_profile_id": initial.get("bot_profile_id") or (match.get("bot_profile") or {}).get("id"),
+        "first_duel": bool(initial.get("first_duel", False)),
+        "shuffle": bool(initial.get("shuffle", True)),
     }
     if initial.get("campaign_node"):
         initial_payload.update(
@@ -162,6 +172,8 @@ def replay_match(source: Dict[str, Any]) -> Dict[str, Any]:
         campaign_modifiers=initial.get("campaign_modifiers"),
         campaign_presentation=initial.get("campaign_presentation"),
         campaign_advice=initial.get("campaign_advice"),
+        first_duel=bool(initial.get("first_duel", False)),
+        shuffle=bool(initial.get("shuffle", True)),
     )
     match["seed"] = str(envelope.get("display_seed", "") or "")
 
@@ -185,8 +197,11 @@ def replay_match(source: Dict[str, Any]) -> Dict[str, Any]:
                             card_instance_id=payload.get("card_instance_id"),
                             card_id=payload.get("card_id"),
                             field_slot=payload.get("field_slot"),
+                            target_instance_id=payload.get("target_instance_id"),
                         ),
                     )
+                elif command_type == "MULLIGAN":
+                    dispatch_command(match, MulliganCommand())
                 elif command_type == "DECLARE_ATTACK":
                     dispatch_command(
                         match,

@@ -14,24 +14,33 @@ def _make_card(**overrides):
 
 
 def test_default_keywords_by_family():
-    """Cada família ganha seu keyword default; tier ≥ 2 ganha bônus (quando aplicável).
-
-    Calibração K2: TAUNT/BURST/EXECUTE removidos dos defaults pra preservar
-    balance dos testes v67/v71/v73/v74 — viram opt-in pra cartas lendárias.
-    """
-    assert kw.default_keywords_for("FIRE") == [kw.KEYWORD_RUSH]
+    """Keywords agora estão LIGADAS na engine, então o spread é escasso por
+    design: tier 1 é baseline limpo; tier 2+ carrega a keyword da família
+    (evolução/fusão = upgrade mecânico real). TAUNT/BURST/EXECUTE são opt-in
+    por carta (lendárias + overrides em rebirth_cards)."""
+    assert kw.default_keywords_for("FIRE") == []
     assert kw.default_keywords_for("FIRE", tier=2) == [kw.KEYWORD_RUSH]
-    assert kw.default_keywords_for("WATER") == [kw.KEYWORD_LIFESTEAL]
+    assert kw.default_keywords_for("WATER") == []
     assert kw.default_keywords_for("WATER", tier=2) == [kw.KEYWORD_LIFESTEAL, kw.KEYWORD_REGEN]
-    assert kw.default_keywords_for("EARTH") == [kw.KEYWORD_SHIELD]
-    assert kw.default_keywords_for("SHADOW") == [kw.KEYWORD_PIERCE]
+    assert kw.default_keywords_for("EARTH", tier=2) == [kw.KEYWORD_SHIELD]
+    assert kw.default_keywords_for("SHADOW", tier=2) == [kw.KEYWORD_PIERCE]
     assert kw.default_keywords_for("UNKNOWN") == []
+    assert kw.default_keywords_for("UNKNOWN", tier=2) == []
 
 
 def test_catalog_has_keywords_applied():
-    """Pelo menos 70% das cartas têm keywords (monstros + evoluções)."""
+    """Todas as evoluções (tier 2) e lendárias carregam keywords funcionais;
+    tier 1 fica limpo de propósito (keyword = recompensa de evolução)."""
+    tier2 = [c for c in CARD_CATALOG if c.get("type") == "MONSTER" and int(c.get("tier", 1)) >= 2]
+    assert tier2, "catálogo precisa de evoluções"
+    assert all(c.get("keywords") for c in tier2), "toda evolução deve ter keyword"
+    tier1 = [c for c in CARD_CATALOG if c.get("type") == "MONSTER" and int(c.get("tier", 1)) == 1 and c.get("rarity") != "LEGENDARY"]
+    assert all(not c.get("keywords") for c in tier1), "tier 1 é baseline sem keyword"
+    legendaries = [c for c in CARD_CATALOG if c.get("rarity") == "LEGENDARY"]
+    assert legendaries and all(c.get("keywords") for c in legendaries)
     with_kw = sum(1 for c in CARD_CATALOG if c.get("keywords"))
-    assert with_kw >= 70, f"Apenas {with_kw} cards com keywords (esperado ≥70)"
+    # tier2 (>=2) já inclui as lendárias (tier 3).
+    assert with_kw == len(tier2)
 
 
 def test_has_keyword_helper():

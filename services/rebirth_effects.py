@@ -597,6 +597,30 @@ def _dispatch_effect(
         )
         return
 
+    if effect_type == "unit_damage":
+        amount = max(0, int(effect.get("amount", 0) or 0))
+        instance_id = str(effect.get("instance_id") or "")
+        if amount <= 0 or not instance_id:
+            return
+        target_card = next((card for card in _field_cards(match, side_name) if card.get("instance_id") == instance_id), None)
+        target_name = (target_card or {}).get("name", "a unidade")
+        bus.dispatch(
+            "UNIT_DAMAGE_RESOLVED",
+            actor=owner_side,
+            source_card_id=source_card_id,
+            target_id=instance_id,
+            owner_id=side_name,
+            payload={"side": side_name, "amount": amount, "instance_id": instance_id},
+            message=f"{target_name} sofre {amount} de dano da magia.",
+            order=order,
+            priority_level=priority_level,
+            trigger_timestamp=order,
+            stable_entity_id=instance_id,
+            parent_event_id=parent_event_id,
+            root_event_id=root_event_id,
+        )
+        return
+
     if effect_type == "damage":
         amount = max(0, int(effect.get("amount", 0) or 0))
         if amount <= 0:

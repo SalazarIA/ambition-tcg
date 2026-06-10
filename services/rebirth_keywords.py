@@ -118,12 +118,19 @@ FAMILY_EVOLVED_BONUS_KEYWORD = {
 
 def default_keywords_for(family: str, *, tier: int = 1) -> List[str]:
     """Retorna a lista canônica de keywords pra uma carta da família
-    em determinado tier. Caller pode sobrescrever totalmente."""
+    em determinado tier. Caller pode sobrescrever totalmente.
+
+    Com as keywords LIGADAS de verdade na engine, o spread precisa ser
+    escasso: tier 1 é baseline limpo; tier 2+ carrega a keyword da família
+    (a evolução/fusão vira upgrade mecânico real, não só stats); TAUNT,
+    BURST e EXECUTE entram por carta específica/lendária.
+    """
+    if int(tier or 1) < 2:
+        return []
     base = list(FAMILY_DEFAULT_KEYWORDS.get(family, []))
-    if tier >= 2:
-        bonus = FAMILY_EVOLVED_BONUS_KEYWORD.get(family)
-        if bonus is not None and bonus not in base:
-            base.append(bonus)
+    bonus = FAMILY_EVOLVED_BONUS_KEYWORD.get(family)
+    if bonus is not None and bonus not in base:
+        base.append(bonus)
     return base
 
 

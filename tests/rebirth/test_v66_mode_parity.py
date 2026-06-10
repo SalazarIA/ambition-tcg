@@ -29,9 +29,17 @@ BASE_DECK = [
 ] + ["card_001", "card_021", "card_041", "card_061", "card_002"] * 6
 
 
+def _can_attack(card):
+    if card.get("exhausted") or card.get("has_attacked") or card.get("has_acted"):
+        return False
+    if card.get("just_summoned") and "RUSH" not in (card.get("keywords") or []):
+        return False
+    return True
+
+
 def _first_attacker(match):
     for card in match["player"].get("battlefield", []):
-        if not card.get("exhausted") and not card.get("has_attacked") and not card.get("has_acted"):
+        if _can_attack(card):
             return card
     return None
 
@@ -55,7 +63,8 @@ def _attack_first_target(match):
 def _scripted_match(seed, *, legend_id="legend_shadow_reaper", attack_legend=False):
     deck = list(BASE_DECK)
     deck[2] = legend_id
-    match = start_match(seed=seed, player_card_ids=deck, bot_profile_id="defensive")
+    # Cenário roteirizado: precisa da ordem exata do deck (shuffle=False).
+    match = start_match(seed=seed, player_card_ids=deck, bot_profile_id="defensive", shuffle=False)
     dispatch_command(match, SummonCardCommand(card_id="card_091"))
     dispatch_command(match, EndTurnCommand(turn=match["turn"]))
     dispatch_command(match, SummonCardCommand(card_id="card_001", field_slot=0))
@@ -70,7 +79,7 @@ def _scripted_match(seed, *, legend_id="legend_shadow_reaper", attack_legend=Fal
         if attack_legend:
             legend = next(card for card in match["player"]["battlefield"] if card["id"] == legend_id)
             target = (match["bot"].get("battlefield") or [None])[0]
-            if target:
+            if target and _can_attack(legend):
                 dispatch_command(
                     match,
                     DeclareAttackCommand(
@@ -131,7 +140,7 @@ def test_v66_event_log_mutation_points_to_event_and_reducer_divergence():
 
 
 def test_v66_hash_checkpoints_are_invalidated_and_finalized_per_command():
-    match = start_match(seed="v66-hash-checkpoint", player_card_ids=BASE_DECK)
+    match = start_match(seed="v66-hash-checkpoint", player_card_ids=BASE_DECK, shuffle=False)
     dispatch_command(match, SummonCardCommand(card_id="card_091"))
 
     assert match["_canonical_hash_dirty"] is False
@@ -146,7 +155,7 @@ def test_v66_hash_checkpoints_are_invalidated_and_finalized_per_command():
 
 
 def test_v66_snapshot_policy_boundaries_and_explicit_debug_capture():
-    match = start_match(seed="v66-snapshot-policy", player_card_ids=BASE_DECK)
+    match = start_match(seed="v66-snapshot-policy", player_card_ids=BASE_DECK, shuffle=False)
     initial_count = len(match["snapshots"])
     dispatch_command(match, SummonCardCommand(card_id="card_091"))
 
@@ -207,11 +216,11 @@ def test_v66_profiler_is_disabled_by_default():
 
 
 def test_v66_mutation_origin_tracking_is_debug_only():
-    match = start_match(seed="v66-mutation-origin", player_card_ids=BASE_DECK)
+    match = start_match(seed="v66-mutation-origin", player_card_ids=BASE_DECK, shuffle=False)
     dispatch_command(match, SummonCardCommand(card_id="card_091"))
     assert "_mutation_origins" not in match
 
-    tracked = start_match(seed="v66-mutation-origin-tracked", player_card_ids=BASE_DECK)
+    tracked = start_match(seed="v66-mutation-origin-tracked", player_card_ids=BASE_DECK, shuffle=False)
     tracked["_debug_mutation_tracking"] = True
     dispatch_command(tracked, SummonCardCommand(card_id="card_091"))
 

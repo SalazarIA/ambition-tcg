@@ -43,6 +43,16 @@ def first_hand_instance(match, card_id=None):
     raise AssertionError(f"card not found in hand: {card_id}")
 
 
+def seed_player_card(card_id, sequence=99):
+    """Setup compatível com o shuffle real: injeta a carta na mão ANTES do
+    snapshot base, então vale igualmente para o runtime e para o replay."""
+
+    def _setup(match):
+        match["player"]["hand"].insert(0, create_card_instance(card_id, "player", sequence))
+
+    return _setup
+
+
 def test_v64_spell_reconstructs_byte_equivalent_state():
     assert_reducer_equivalence(
         "v64-spell-equivalence",
@@ -54,6 +64,7 @@ def test_v64_monster_summon_reconstructs_byte_equivalent_state():
     assert_reducer_equivalence(
         "v64-summon-equivalence",
         lambda match: dispatch_command(match, SummonCardCommand(card_instance_id=first_hand_instance(match, "card_001"), field_slot=1)),
+        setup=seed_player_card("card_001"),
     )
 
 
@@ -62,7 +73,7 @@ def test_v64_turn_rollover_draw_energy_ready_and_bot_summon_are_reconstructable(
         dispatch_command(match, SummonCardCommand(card_instance_id=first_hand_instance(match, "card_001"), field_slot=0))
         dispatch_command(match, EndTurnCommand(turn=match["turn"]))
 
-    assert_reducer_equivalence("v64-turn-equivalence", actions)
+    assert_reducer_equivalence("v64-turn-equivalence", actions, setup=seed_player_card("card_001"))
 
 
 def test_v64_field_combat_damage_cleanup_reconstructs_byte_equivalent_state():
@@ -77,7 +88,7 @@ def test_v64_field_combat_damage_cleanup_reconstructs_byte_equivalent_state():
             ),
         )
 
-    assert_reducer_equivalence("v64-combat-equivalence", actions)
+    assert_reducer_equivalence("v64-combat-equivalence", actions, setup=seed_player_card("card_001"))
 
 
 def test_v64_trap_arm_reconstructs_byte_equivalent_state():
@@ -89,10 +100,17 @@ def test_v64_trap_arm_reconstructs_byte_equivalent_state():
 
 
 def test_v64_trap_interrupt_chain_reconstructs_byte_equivalent_state():
+    """Traps agora têm contexto: a interrupção vem da trap do BOT quando o
+    jogador ataca (a trap do atacante não pune o próprio ataque)."""
+
+    def setup(match):
+        match["player"]["hand"].insert(0, create_card_instance("card_001", "player", 99))
+        match["bot"]["hand"].insert(0, create_card_instance("card_093", "bot", 98))
+
     def actions(match):
-        dispatch_command(match, SummonCardCommand(card_instance_id=first_hand_instance(match, "card_091")))
-        dispatch_command(match, EndTurnCommand(turn=match["turn"]))
         dispatch_command(match, SummonCardCommand(card_instance_id=first_hand_instance(match, "card_001"), field_slot=0))
+        dispatch_command(match, EndTurnCommand(turn=match["turn"]))
+        assert match["bot"]["battlefield"], "bot precisa ter invocado no turno dele"
         dispatch_command(
             match,
             DeclareAttackCommand(
@@ -101,10 +119,10 @@ def test_v64_trap_interrupt_chain_reconstructs_byte_equivalent_state():
             ),
         )
 
-    assert_reducer_equivalence(
-        "v64-trap-interrupt-equivalence",
-        actions,
-        setup=lambda match: match["player"]["hand"].insert(0, create_card_instance("card_091", "player", 99)),
+    match, _ = assert_reducer_equivalence("v64-trap-interrupt-equivalence", actions, setup=setup)
+    assert any(
+        (event.get("type") or event.get("event_type")) == "TRAP_TRIGGERED" and event.get("actor") == "bot"
+        for event in match["events"]
     )
 
 
@@ -131,6 +149,7 @@ def test_v64_strict_match_rejects_direct_engine_bypass():
 
 def test_v64_strict_match_accepts_command_dispatcher_entrypoint():
     match = start_match(seed="v64-strict-dispatch")
+    match["player"]["hand"].insert(0, create_card_instance("card_001", "player", 99))
     match["_require_command_dispatcher"] = True
 
     dispatch_command(match, SummonCardCommand(card_instance_id=first_hand_instance(match, "card_001"), field_slot=0))
@@ -163,6 +182,7 @@ def test_v64_http_invalid_command_payload_returns_400(client):
 
 def test_v64_state_clone_and_reducer_replay_500_rounds_stays_bounded():
     match = start_match(seed="v64-load")
+    match["player"]["hand"].insert(0, create_card_instance("card_001", "player", 99))
     base = deepcopy(match)
     dispatch_command(match, SummonCardCommand(card_instance_id=first_hand_instance(match, "card_001"), field_slot=0))
     events = match["events"][len(base["events"]):]

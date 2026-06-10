@@ -385,6 +385,105 @@ def reduce_damage_resolved(state: Dict[str, Any], event: Dict[str, Any]) -> Dict
     return next_state
 
 
+def reduce_unit_damage_resolved(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    amount = max(0, int(payload.get("amount", 0) or 0))
+    instance_id = payload.get("instance_id") or event.get("target_id")
+    if amount:
+        for card in _matching_cards(next_state, instance_id):
+            card["current_guard"] = int(card.get("current_guard", card.get("guard", 0)) or 0) - amount
+    return next_state
+
+
+def reduce_burst_damage(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    if not side_name:
+        return next_state
+    side = next_state[side_name]
+    amount = max(0, int(payload.get("amount", 0) or 0))
+    if amount:
+        shield = _side_statuses(side).get("shield")
+        if shield:
+            absorbed = min(amount, max(0, int(shield.get("potency", shield.get("amount", 0)) or 0)))
+            amount -= absorbed
+            shield["potency"] = max(0, int(shield.get("potency", 0) or 0) - absorbed)
+            if shield["potency"] <= 0:
+                _side_statuses(side).pop("shield", None)
+        if amount:
+            side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
+            side["wounded"] = True
+    return next_state
+
+
+def reduce_regen_tick(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    new_guard = payload.get("new_guard")
+    for card in _matching_cards(next_state, event.get("target_id") or payload.get("instance_id")):
+        if new_guard is not None:
+            card["current_guard"] = int(new_guard)
+        else:
+            amount = max(0, int(payload.get("amount", 0) or 0))
+            card["current_guard"] = int(card.get("current_guard", card.get("guard", 0)) or 0) + amount
+    return next_state
+
+
+def reduce_shield_keyword_absorbed(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    for card in _matching_cards(next_state, event.get("target_id") or payload.get("instance_id")):
+        card["shield_consumed"] = True
+    return next_state
+
+
+def reduce_fatigue_damage(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    side_name = _side_name(event)
+    if not side_name:
+        return next_state
+    side = next_state[side_name]
+    amount = max(0, int(payload.get("amount", 0) or 0))
+    side["fatigue"] = max(int(side.get("fatigue", 0) or 0), int(payload.get("fatigue", 0) or 0))
+    if amount:
+        side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
+        side["wounded"] = True
+    return next_state
+
+
+def reduce_hand_mulliganed(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+    import hashlib
+
+    next_state = _copy_state(state)
+    payload = _payload(event)
+    cards = [deepcopy(card) for card in payload.get("cards", []) if isinstance(card, dict)]
+    side = next_state.get("player") or {}
+    if cards:
+        drawn_ids = {str(card.get("instance_id")) for card in cards}
+        merged = list(side.get("hand") or []) + list(side.get("deck") or [])
+        remaining = [card for card in merged if str(card.get("instance_id")) not in drawn_ids]
+        deck_order = [str(iid) for iid in payload.get("deck_instance_ids", []) if iid]
+        if deck_order:
+            # Ordem autoritativa do deck pós-mulligan gravada no evento.
+            position = {iid: index for index, iid in enumerate(deck_order)}
+            remaining.sort(key=lambda card: position.get(str(card.get("instance_id")), len(position)))
+        else:
+            # Fallback: mesma ordenação determinística de shuffle_deck(salt="mulligan").
+            seed = str(next_state.get("game_seed") or "rebirth")
+            remaining.sort(
+                key=lambda card: hashlib.sha256(
+                    f"{seed}|player|mulligan|{card.get('instance_id')}|{card.get('id')}".encode("utf-8")
+                ).hexdigest()
+            )
+        side["hand"] = cards
+        side["deck"] = remaining
+    next_state["mulligan_used"] = True
+    return next_state
+
+
 def reduce_health_recovered(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
     next_state = _copy_state(state)
     payload = _payload(event)
@@ -501,6 +600,7 @@ def reduce_monster_summoned(state: Dict[str, Any], event: Dict[str, Any]) -> Dic
     card["slot"] = slot + 1
     card["current_guard"] = int(card.get("current_guard", card.get("guard", 0)) or 0)
     card["max_guard"] = int(card.get("max_guard", card.get("guard", 0)) or 0)
+    card["just_summoned"] = bool(card.get("just_summoned", True))
     side = next_state[side_name]
     slots = _side_slots(side)
     slots[slot] = card
@@ -692,10 +792,19 @@ def reduce_units_readied(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[s
     side_name = _side_name(event)
     if side_name:
         for card in _side_slots(next_state[side_name]):
-            if isinstance(card, dict):
-                card["exhausted"] = False
-                card["has_attacked"] = False
-                card["has_acted"] = False
+            if not isinstance(card, dict):
+                continue
+            if "base_attack" in card:
+                restored = int(card.get("base_attack", 0) or 0) + int(card.get("permanent_attack_bonus", 0) or 0)
+                card["attack"] = restored
+                card["power"] = restored
+            card["just_summoned"] = False
+            if "shadow_reaper_exhausted" in (card.get("statuses") or {}):
+                # Mantém o exhaust do Shadow Reaper durante o turno do bot.
+                continue
+            card["exhausted"] = False
+            card["has_attacked"] = False
+            card["has_acted"] = False
         _sync_side_field(next_state[side_name])
     return next_state
 
@@ -703,9 +812,11 @@ def reduce_units_readied(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[s
 def reduce_energy_refreshed(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
     next_state = _copy_state(state)
     payload = _payload(event)
-    energy = int(payload.get("energy", 0) or 0)
+    fallback = int(payload.get("energy", 0) or 0)
     for side_name in ("player", "bot"):
-        next_state[side_name]["max_energy"] = energy
+        energy = int(payload.get(f"{side_name}_energy", fallback) or fallback)
+        max_energy = int(payload.get(f"{side_name}_max_energy", energy) or energy)
+        next_state[side_name]["max_energy"] = max_energy
         next_state[side_name]["energy"] = energy
     return next_state
 
@@ -957,6 +1068,25 @@ def apply_event_in_place(state: Dict[str, Any], event: Dict[str, Any]) -> Dict[s
             side["hp"] = min(int(side.get("max_hp", side.get("hp", 0)) or 0), int(side.get("hp", 0) or 0) + amount)
         return state
 
+    if event_type == "UNIT_DAMAGE_RESOLVED":
+        amount = max(0, int(payload.get("amount", 0) or 0))
+        instance_id = payload.get("instance_id") or event.get("target_id")
+        if amount:
+            for card in _matching_cards(state, instance_id):
+                card["current_guard"] = int(card.get("current_guard", card.get("guard", 0)) or 0) - amount
+        return state
+
+    if event_type == "FATIGUE_DAMAGE":
+        side_name = _side_name(event)
+        if side_name:
+            side = state[side_name]
+            amount = max(0, int(payload.get("amount", 0) or 0))
+            side["fatigue"] = max(int(side.get("fatigue", 0) or 0), int(payload.get("fatigue", 0) or 0))
+            if amount:
+                side["hp"] = max(0, int(side.get("hp", 0) or 0) - amount)
+                side["wounded"] = True
+        return state
+
     if event_type == "SHIELD_APPLIED":
         side_name = _side_name(event)
         if side_name:
@@ -1034,6 +1164,12 @@ REDUCER_REGISTRY: Dict[str, Reducer] = {
     "CARDS_DRAWN": reduce_cards_drawn,
     "CLASH_RESOLVED": reduce_clash_resolved,
     "DAMAGE_RESOLVED": reduce_damage_resolved,
+    "UNIT_DAMAGE_RESOLVED": reduce_unit_damage_resolved,
+    "FATIGUE_DAMAGE": reduce_fatigue_damage,
+    "HAND_MULLIGANED": reduce_hand_mulliganed,
+    "BURST_DAMAGE": reduce_burst_damage,
+    "REGEN_TICK": reduce_regen_tick,
+    "SHIELD_KEYWORD_ABSORBED": reduce_shield_keyword_absorbed,
     "ENERGY_REFRESHED": reduce_energy_refreshed,
     "HEALTH_RECOVERED": reduce_health_recovered,
     "MATCH_FINISHED": reduce_match_finished,

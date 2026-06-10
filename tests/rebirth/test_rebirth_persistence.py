@@ -12,30 +12,43 @@ def register(client, username="persist_user", email="persist@example.com"):
 
 
 def summon_and_attack(client, state, card=None):
-    if card is None:
-        energy = int(state["player"].get("energy", state["player"].get("max_energy", 1)) or 1)
-        card = next(
-            (c for c in state["player"]["hand"] if int(c.get("cost", 1) or 1) <= energy),
-            state["player"]["hand"][0],
+    """Produz um clash de verdade sob as regras novas: invoca, espera a
+    sickness passar e ataca; re-invoca se o bot limpar o campo."""
+    del card  # a mão embaralhada escolhe a melhor carta a cada tentativa
+    for _ in range(10):
+        if state.get("is_finished"):
+            break
+        ready = [
+            c for c in state["player"]["battlefield"]
+            if not c.get("exhausted") and not c.get("has_attacked") and not c.get("has_acted")
+            and ("RUSH" in (c.get("keywords") or []) or not c.get("just_summoned"))
+        ]
+        if ready:
+            attack_payload = {
+                "match_id": state["match_id"],
+                "attacker_instance_id": ready[-1]["instance_id"],
+            }
+            if state["bot"]["battlefield"]:
+                attack_payload["target_instance_id"] = state["bot"]["battlefield"][0]["instance_id"]
+            elif int(state.get("turn", 1) or 1) <= 1:
+                state = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]}).get_json()["state"]
+                continue
+            return client.post("/api/rebirth/attack", json=attack_payload)
+        energy = int(state["player"].get("energy", 0) or 0)
+        playable = next(
+            (c for c in state["player"]["hand"] if c.get("type") == "MONSTER" and int(c.get("cost", 9) or 9) <= energy),
+            None,
         )
-    summoned = client.post(
-        "/api/rebirth/play-card",
-        json={"match_id": state["match_id"], "card_instance_id": card["instance_id"]},
-    )
-    assert summoned.status_code == 200
-    after_summon = summoned.get_json()["state"]
-    if not after_summon["bot"]["battlefield"]:
-        after_summon = client.post(
-            "/api/rebirth/next-turn",
-            json={"match_id": after_summon["match_id"]},
-        ).get_json()["state"]
-    attack_payload = {
-        "match_id": after_summon["match_id"],
-        "attacker_instance_id": after_summon["player"]["battlefield"][-1]["instance_id"],
-    }
-    if after_summon["bot"]["battlefield"]:
-        attack_payload["target_instance_id"] = after_summon["bot"]["battlefield"][0]["instance_id"]
-    return client.post("/api/rebirth/attack", json=attack_payload)
+        if playable is not None and len(state["player"]["battlefield"]) < 3:
+            summoned = client.post(
+                "/api/rebirth/play-card",
+                json={"match_id": state["match_id"], "card_instance_id": playable["instance_id"]},
+            )
+            assert summoned.status_code == 200
+            state = summoned.get_json()["state"]
+            continue
+        state = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]}).get_json()["state"]
+    raise AssertionError("não conseguiu produzir um clash em 10 tentativas")
 
 
 def test_register_login_logout_and_session_are_persisted(client, flask_app):
@@ -88,7 +101,18 @@ def test_loadout_persists_and_start_match_uses_account_loadout(client):
     visible_ids = [card["id"] for card in state["player"]["hand"]]
 
     assert state["player"]["name"] == "deck_user"
-    assert visible_ids == card_ids[:5]
+    # O deck do loadout é embaralhado de verdade: a mão vem do loadout, mas
+    # NUNCA pode ser simplesmente as 5 primeiras cartas na ordem salva.
+    assert len(visible_ids) == 5
+    from collections import Counter
+    hand_counts = Counter(visible_ids)
+    deck_counts = Counter(card_ids)
+    assert all(deck_counts[card_id] >= count for card_id, count in hand_counts.items())
+    assert visible_ids != card_ids[:5], "mão não pode ser a ordem crua do loadout"
+    assert any(
+        card.get("type") == "MONSTER" and int(card.get("cost", 9)) <= 2
+        for card in state["player"]["hand"]
+    )
 
 
 def test_booster_mutates_collection_and_progression(client):

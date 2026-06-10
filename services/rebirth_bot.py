@@ -165,16 +165,20 @@ def _card_identity(card):
     return card.get("instance_id") or card.get("id") or id(card)
 
 
+def _can_act_now(card):
+    if card.get("exhausted") or card.get("has_attacked") or card.get("has_acted"):
+        return False
+    if card.get("just_summoned") and "RUSH" not in (card.get("keywords") or []):
+        return False
+    return True
+
+
 def _ready_board_cards(cards, excluded=None):
     excluded_key = _card_identity(excluded) if excluded else None
     return [
         card
         for card in cards or []
-        if card
-        and _card_identity(card) != excluded_key
-        and not card.get("exhausted")
-        and not card.get("has_attacked")
-        and not card.get("has_acted")
+        if card and _card_identity(card) != excluded_key and _can_act_now(card)
     ]
 
 
@@ -376,7 +380,7 @@ def tactical_utility_matrix(
     rows = []
     attackers = deterministic_move_order((bot_battlefield or [])[:FIELD_SLOT_COUNT])[:MCTS_BEAM_WIDTH]
     for attacker in attackers:
-        if not attacker or attacker.get("exhausted") or attacker.get("has_attacked") or attacker.get("has_acted"):
+        if not attacker or not _can_act_now(attacker):
             continue
         targets = deterministic_move_order((player_battlefield or [])[:FIELD_SLOT_COUNT])[:MCTS_BEAM_WIDTH] or [None]
         for target in targets:
@@ -460,12 +464,20 @@ def choose_bot_attack(bot_battlefield, player_battlefield, **context):
 
 
 def estimated_attack(card, opponent_card, turn=1):
+    # Espelha clash_attack do engine — os pontos cegos antigos (water_tide,
+    # fire_surge, earth_fortify) faziam o bot errar trocas contra ÁGUA/TERRA.
     attack = card_attack(card)
     key = ability_key(card)
     if key == "high_guard" and card_guard(opponent_card) <= 3:
         attack += 1
     elif key == "silent_pursuit" and int(turn or 1) <= 2:
         attack += 1
+    elif key == "fire_surge" and int(turn or 1) <= 2:
+        attack += 2
+    elif key == "water_tide" and int(turn or 1) >= 3:
+        attack += 2
+    elif key == "earth_fortify":
+        attack += min(2, max(0, card_guard(card) // 4))
     return attack
 
 
@@ -491,6 +503,14 @@ def estimated_damage(attacker, defender, defender_wounded=False):
         amount += 2
     elif attacker_key == "immovable":
         amount += 2
+    elif attacker_key == "fire_direct":
+        amount += 2
+    elif attacker_key == "fire_execute" and defender_wounded:
+        amount += 2
+    elif attacker_key == "shadow_decay":
+        amount += 1
+    elif attacker_key == "shadow_drain":
+        amount += 1
     if attacker_key == "fortress_hit":
         amount = max(3, amount)
 
@@ -498,9 +518,11 @@ def estimated_damage(attacker, defender, defender_wounded=False):
         "brace": 2,
         "immovable": 3,
         "fortress_hit": 4,
+        "water_guard": 2,
+        "earth_bulwark": 3,
     }
     reduction = reductions.get(defender_key, 0)
-    if defender_key == "bulwark" and card_attack(attacker) <= 4:
+    if defender_key in {"bulwark", "earth_counter"} and card_attack(attacker) <= 4:
         reduction = 3
     return max(1, amount - reduction) if reduction else amount
 
@@ -702,9 +724,9 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
         # somado ao MCTS deixava o perfil ler o jogador com precisão demais.
         "aggressive": 0.0,
         # Opportunist baixo demais fica predatório; alto demais alonga partidas
-        # e entrega vitórias grátis. 0.45 mantém a personalidade reativa sem
-        # estourar o spread de dificuldade entre perfis.
-        "opportunist": 0.45,
+        # e entrega vitórias grátis. 0.35 mantém a personalidade reativa sem
+        # estourar o spread de dificuldade entre perfis (recalibrado pós-keywords).
+        "opportunist": 0.35,
         # Novice nunca abre janela de counter — primeira partida não pode
         # punir o jogador com leituras avançadas.
         "novice": 0.0,
