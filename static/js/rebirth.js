@@ -825,7 +825,7 @@
             const ability = this.abilitySummary(card);
             const inlineStyle = `${RebirthAssets.cssVars(card)};${options && options.style ? options.style : ""}`;
             return `
-                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${inlineStyle}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
+                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-card-type="${RebirthText.escape(this.cardType(card))}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${inlineStyle}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${options && options.recommended ? '<span class="rb-recommendation-badge">MELHOR JOGADA</span>' : ""}

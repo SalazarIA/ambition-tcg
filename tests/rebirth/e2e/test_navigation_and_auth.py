@@ -257,11 +257,13 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
     page.locator("[data-rebirth-username]").wait_for(state="visible", timeout=10_000)
     assert page.locator("[data-rebirth-username]").inner_text() == username
     assert page.locator("#rebirth-tutorial").evaluate("node => getComputedStyle(node).pointerEvents") == "none"
-    page.locator("#player-hand [data-card-instance]:not([disabled])").first.wait_for(
-        state="visible",
-        timeout=10_000,
-    )
-    page.locator("#player-hand [data-card-instance]:not([disabled])").first.click()
+    # Com o shuffle real a primeira carta pode ser magia/trap; o fluxo deste
+    # teste é de invocação, então mira explicitamente um MONSTRO jogável.
+    monster_card = page.locator(
+        '#player-hand [data-card-instance][data-card-type="MONSTER"]:not([disabled])'
+    ).first
+    monster_card.wait_for(state="visible", timeout=10_000)
+    monster_card.click()
 
     play_button = page.locator("#play-button")
     assert "invocar" in play_button.inner_text().lower()
