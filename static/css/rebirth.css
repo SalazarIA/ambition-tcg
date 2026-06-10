@@ -14269,3 +14269,76 @@ button {
         min-height: 118px;
     }
 }
+
+/* ============================================================
+   AAA pass (v99): sickness visível, mulligan e correções mobile
+   ============================================================ */
+
+/* Monstro recém-invocado sem Investida: aguardando o próximo turno. */
+.rb-field-card.is-summoning-sick {
+    filter: saturate(0.55) brightness(0.82);
+}
+
+.rb-field-card.is-summoning-sick::after {
+    content: "Zzz";
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 6;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--rb-gold, #f4ad26);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+}
+
+.rb-mulligan-button {
+    margin-top: 6px;
+}
+
+/* Mobile: título do hero de produto estourava a viewport (ex.: onboarding
+   "Introdução/Tutorial Rebirth" abria 80px de overflow horizontal). */
+@media (max-width: 760px) {
+    .rb-product-hero h1 {
+        font-size: clamp(28px, 9vw, 42px);
+        line-height: 1.02;
+        overflow-wrap: anywhere;
+    }
+
+    .rb-product-hero,
+    .rb-product-page {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    /* Mão no mobile: garante que a primeira/última carta do leque não fique
+       cortada na borda e permite rolagem horizontal natural. */
+    .rb-mobile-native .rb-hand {
+        overflow-x: auto;
+        overflow-y: visible;
+        padding-left: 14px;
+        padding-right: 14px;
+        scrollbar-width: none;
+    }
+
+    .rb-mobile-native .rb-hand::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Nav global mais compacta: três faixas comiam ~20% da tela do duelo. */
+    [data-rebirth-global-nav] {
+        row-gap: 4px;
+    }
+
+    [data-rebirth-global-nav] a,
+    [data-rebirth-global-nav] button {
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+}
+
+/* O display das classes de botão não pode vencer o atributo hidden. */
+.rb-mulligan-button[hidden] {
+    display: none !important;
+}

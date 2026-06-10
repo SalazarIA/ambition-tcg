@@ -464,3 +464,82 @@ def test_legacy_routes_redirect_or_report_retired(client):
     assert arena.headers["Location"] == "/rebirth"
     assert legacy_api.status_code == 410
     assert legacy_api.get_json()["error"]["code"] == "legacy_disabled"
+
+
+def test_mulligan_api_swaps_opening_hand_once(client):
+    start = client.post("/api/rebirth/start", json={"seed": "routes-mulligan"})
+    state = start.get_json()["state"]
+    assert state["mulligan_available"] is True
+    before = [card["instance_id"] for card in state["player"]["hand"]]
+
+    response = client.post("/api/rebirth/mulligan", json={"match_id": state["match_id"]})
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    assert payload["mulliganed"] is True
+    after = [card["instance_id"] for card in payload["state"]["player"]["hand"]]
+    assert after != before
+    assert payload["state"]["mulligan_available"] is False
+
+    again = client.post("/api/rebirth/mulligan", json={"match_id": state["match_id"]})
+    assert again.status_code == 400
+    assert again.get_json()["error"]["code"] == "mulligan_unavailable"
+
+
+def test_play_card_api_casts_damage_spell_at_enemy_unit(client):
+    # Procura uma abertura com magia de dano (Fireball/ShadowDrain) na mão.
+    state = None
+    spell = None
+    for attempt in range(40):
+        candidate = client.post(
+            "/api/rebirth/start", json={"seed": f"routes-spell-target-{attempt}"}
+        ).get_json()["state"]
+        found = next(
+            (
+                card for card in candidate["player"]["hand"]
+                if card.get("type") == "SPELL"
+                and any(str(e.get("type")) == "damage" for e in card.get("stack_effects") or [])
+            ),
+            None,
+        )
+        if found:
+            state = candidate
+            spell = found
+            break
+    assert state is not None, "nenhuma seed abriu com magia de dano"
+
+    # Avança até o bot ter unidade em campo e o jogador ter mana para a magia.
+    for _ in range(6):
+        if state["bot"]["battlefield"] and int(state["player"]["energy"]) >= int(spell.get("cost", 2)):
+            break
+        state = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]}).get_json()["state"]
+    if not state["bot"]["battlefield"] or state.get("is_finished"):
+        return  # partida terminou cedo; o contrato unitário da engine cobre o efeito
+
+    spell_in_hand = next((c for c in state["player"]["hand"] if c["instance_id"] == spell["instance_id"]), None)
+    if spell_in_hand is None:
+        return
+    target = state["bot"]["battlefield"][0]
+    guard_before = int(target.get("current_guard") or target.get("guard") or 0)
+
+    response = client.post(
+        "/api/rebirth/play-card",
+        json={
+            "match_id": state["match_id"],
+            "card_instance_id": spell_in_hand["instance_id"],
+            "target_instance_id": target["instance_id"],
+        },
+    )
+    payload = response.get_json()
+    assert response.status_code == 200
+    assert payload["ok"] is True
+    after = next(
+        (c for c in payload["state"]["bot"]["battlefield"] if c["instance_id"] == target["instance_id"]),
+        None,
+    )
+    if after is not None:
+        assert int(after.get("current_guard") or 0) < guard_before
+    else:
+        # Unidade destruída pela magia: precisa estar no descarte do bot.
+        assert int(payload["state"]["bot"]["discard_count"]) >= 1
