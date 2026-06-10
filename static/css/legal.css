@@ -1,0 +1,40 @@
+/* Páginas legais (Termos/Privacidade/Exclusão) — folha mínima dedicada.
+   Substitui o style.css legado de 11k linhas que servia só a estas páginas. */
+:root {
+    color-scheme: dark;
+}
+
+body {
+    margin: 0;
+    padding: 32px 16px 64px;
+    background: #0b0e13;
+    color: #e8e3d8;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.6;
+}
+
+main, .legal-page, .container {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+h1, h2, h3 {
+    font-family: "Cinzel", Georgia, serif;
+    color: #f4ad26;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+a {
+    color: #58d6ff;
+}
+
+ul, ol {
+    padding-left: 22px;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid rgba(244, 173, 38, 0.25);
+    margin: 28px 0;
+}
