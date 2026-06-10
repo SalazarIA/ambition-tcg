@@ -284,8 +284,9 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
             "attacker_instance_id": after_summon["player"]["battlefield"][0]["instance_id"],
         },
     )
-    assert blocked.status == 409
-    assert blocked.json()["error"]["code"] == "first_turn_direct_attack_blocked"
+    # Sickness protege o turno 1 antes mesmo da regra de dano direto.
+    assert blocked.status == 400
+    assert blocked.json()["error"]["code"] == "summoning_sickness"
 
     with page.expect_response(lambda response: "/api/rebirth/next-turn" in response.url) as turn_info:
         page.locator("#next-turn-button").click()

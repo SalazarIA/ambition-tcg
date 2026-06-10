@@ -14342,3 +14342,18 @@ button {
 .rb-mulligan-button[hidden] {
     display: none !important;
 }
+
+/* Mobile: o mulligan não disputa o cluster inferior direito (colidia com o
+   "Nova partida"); vira chip flutuante no topo durante o turno 1. */
+@media (max-width: 760px) {
+    .rb-mobile-native .rb-mulligan-button {
+        position: fixed;
+        top: calc(var(--rb-mobile-nav-height, 96px) + 8px);
+        left: 10px;
+        z-index: 70;
+        width: auto;
+        min-width: 0;
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+}
