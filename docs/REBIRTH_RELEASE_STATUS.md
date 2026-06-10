@@ -190,10 +190,16 @@ Retired API groups return JSON `410 legacy_disabled`:
 Each match is a head-to-head duel with three persistent battlefield slots per side.
 The contract is:
 
+0. **Setup** — Both decks are shuffled deterministically from the match seed
+   (custom loadouts included) with a playable-opener guarantee; the player may
+   mulligan the opening hand once before the first action.
 1. **MAIN_PHASE / phase=choose** — Player may evolve duplicates, summon a
-   monster from hand (paying its mana cost), play a spell, arm a trap, evolve
-   duplicates from hand or fuse adjacent matching field monsters. Each action
-   is an authoritative command and a separate API call.
+   monster into a CHOSEN slot (paying its mana cost), play a spell (damage
+   spells may target an enemy unit), arm a trap or fuse adjacent matching
+   field monsters. Each action is an authoritative command and a separate API
+   call. Newly summoned monsters have summoning sickness unless they carry
+   RUSH; the main phase stays fluid (board development is allowed after
+   attacking, until the turn ends).
 2. **COMBAT_PHASE** — After summoning, the player declares an attack with their
    battlefield monster. Combat resolves through the rules engine, comparing
    `effective_attack` (base + abilities). If the defender's `current_guard`
@@ -205,6 +211,15 @@ The contract is:
 4. **Next turn** — Both players refill their energy to
    `min(10, max(2, turn))`, draw to hand size and any surviving monsters become
    ready again.
+
+Keywords are live engine mechanics: RUSH (attack on summon turn), BURST
+(direct damage on summon), LIFESTEAL (heal damage dealt), TAUNT (forced
+targeting for BOTH sides), SHIELD (ignore first damage instance), PIERCE
+(full overflow to hero — fusions grant it), REGEN (+1 guard per turn) and
+EXECUTE (destroy survivors at 1 guard). Tier-1 monsters are keyword-free by
+design; evolutions/fusions and legendaries carry them. Traps trigger only when
+their owner is attacked (including direct attacks). Empty decks tick growing
+fatigue damage instead of ending the match by sudden death.
 
 Monsters are persistent on the field until destroyed or consumed by fusion. The "destroyed monsters
 linger on the field" bug from earlier releases is fixed by clearing

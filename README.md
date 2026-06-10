@@ -20,6 +20,7 @@ collection and deck-building surfaces are part of the official product path.
 - Deterministic replay envelope, canonical state hash and compressed snapshots
 - Match history and economy ledger persisted for signed-in accounts
 - 103-card catalog, including three Legendary cards, with WebP art, stable ability keys and engine-backed effects
+- Real per-seed deck shuffling with playable-opener guarantee, one-time mulligan, summoning sickness with live keywords (RUSH/BURST/LIFESTEAL/TAUNT/SHIELD/PIERCE/REGEN/EXECUTE), context-aware traps, targeted damage spells and incremental fatigue instead of sudden-death exhaustion
 - Defensive, aggressive and opportunist bot profiles
 - Count-based loadout editor, match reward moments and deterministic Season 0 Balance Lab
 - Self-service support export/reset and token-protected admin grants
@@ -63,6 +64,7 @@ browser code renders returned state and sends player intent.
 - `POST /api/rebirth/play-card`
 - `POST /api/rebirth/attack`
 - `POST /api/rebirth/evolve`
+- `POST /api/rebirth/mulligan`
 - `POST /api/labs/fusion`
 - `POST /api/rebirth/next-turn`
 - `GET /api/rebirth/shell`

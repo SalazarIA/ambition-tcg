@@ -2390,6 +2390,15 @@ class RebirthRepository:
         public = public_state(match)
         status = "finished" if match.get("is_finished") else "active"
         bot_profile = match.get("bot_profile") or {}
+        # O runtime persistido carrega apenas o estado canônico: eventos e
+        # comandos já vivem nas tabelas match_events/match_commands (fonte de
+        # verdade do replay) e os snapshots por ação são deriváveis. Antes,
+        # cada ação reescrevia ~300-400KB de histórico embutido no snapshot.
+        runtime_slim = {
+            key: value
+            for key, value in match.items()
+            if key not in {"snapshots", "events", "commands"}
+        }
         watermark = self._persist_watermark(match.get("match_id"))
         all_commands = match.get("commands", [])
         all_events = match.get("events", [])
@@ -2423,7 +2432,7 @@ class RebirthRepository:
                     now,
                     canonical_state_hash(match),
                     json.dumps(public, sort_keys=True),
-                    json.dumps(match, sort_keys=True),
+                    json.dumps(runtime_slim, sort_keys=True),
                     match.get("campaign_version"),
                     match.get("campaign_node"),
                     match.get("campaign_attempt"),
@@ -2896,9 +2905,26 @@ class RebirthRepository:
                 "SELECT runtime_state_json FROM match_history WHERE user_id = ? AND match_id = ?",
                 (user_id, match_id),
             ).fetchone()
-        if not row:
-            raise RebirthPersistenceError("Historico da partida nao encontrado.", "missing_match", status=404)
-        return json.loads(row["runtime_state_json"])
+            if not row:
+                raise RebirthPersistenceError("Historico da partida nao encontrado.", "missing_match", status=404)
+            state = json.loads(row["runtime_state_json"])
+            # Runtime magro: eventos/comandos voltam das tabelas próprias.
+            # event_id deriva de len(events), então a rehidratação completa é
+            # obrigatória antes de aceitar novos comandos.
+            if not state.get("events"):
+                rows = db.execute(
+                    "SELECT event_json FROM match_events WHERE user_id = ? AND match_id = ? ORDER BY event_id ASC",
+                    (user_id, match_id),
+                ).fetchall()
+                state["events"] = [json.loads(item["event_json"]) for item in rows]
+            if not state.get("commands"):
+                rows = db.execute(
+                    "SELECT command_json FROM match_commands WHERE user_id = ? AND match_id = ? ORDER BY command_id ASC",
+                    (user_id, match_id),
+                ).fetchall()
+                state["commands"] = [json.loads(item["command_json"]) for item in rows]
+        state.setdefault("snapshots", [])
+        return state
 
     def economy_ledger(self, user_id, limit=30):
         self.ensure_schema()

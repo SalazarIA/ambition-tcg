@@ -543,3 +543,39 @@ def test_play_card_api_casts_damage_spell_at_enemy_unit(client):
     else:
         # Unidade destruída pela magia: precisa estar no descarte do bot.
         assert int(payload["state"]["bot"]["discard_count"]) >= 1
+
+
+def test_resume_after_store_eviction_keeps_event_log_consistent(client, flask_app):
+    """O runtime persistido é magro (sem eventos embutidos); a rehidratação
+    precisa devolver o log completo para que novos event_ids não colidam."""
+    import app as ambition_app
+    from services.rebirth_persistence import RebirthRepository
+
+    register = client.post(
+        "/api/rebirth/auth/register",
+        json={"username": "SlimRuntime", "email": "slim@example.com", "password": "senha-slim-123"},
+    )
+    assert register.status_code == 200
+
+    state = client.post("/api/rebirth/start", json={"seed": "routes-slim-runtime"}).get_json()["state"]
+    state = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]}).get_json()["state"]
+
+    repo = RebirthRepository(flask_app.config["REBIRTH_DB_PATH"])
+    user_id = repo.user_for_session_token = None  # noqa: F841 (clareza: lookup abaixo via API)
+    events_before = client.get(f"/api/rebirth/match-history/{state['match_id']}/events").get_json()["events"]
+    max_event_before = max(int(e["event_id"]) for e in events_before)
+
+    ambition_app.MATCH_STORE.clear()
+    resumed = client.post("/api/rebirth/resume", json={"match_id": state["match_id"]})
+    assert resumed.status_code == 200
+
+    after = client.post("/api/rebirth/next-turn", json={"match_id": state["match_id"]})
+    assert after.status_code == 200
+
+    events_after = client.get(
+        f"/api/rebirth/match-history/{state['match_id']}/events?limit=200"
+    ).get_json()["events"]
+    max_event_after = max(int(e["event_id"]) for e in events_after)
+    assert max_event_after > max_event_before, "novos eventos devem continuar a sequência, não colidir"
+    ids = [int(e["event_id"]) for e in events_after]
+    assert len(ids) == len(set(ids)), "event_ids duplicados após rehidratação"

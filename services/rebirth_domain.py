@@ -16,13 +16,13 @@ from typing import Any, Dict
 from services.rebirth_profiler import current_profiler
 
 
-ENGINE_VERSION = "rebirth_engine_v66"
-CARD_SET_VERSION = "rebirth_card_set_v66"
+ENGINE_VERSION = "rebirth_engine_v99"
+CARD_SET_VERSION = "rebirth_card_set_v99"
 REPLAY_FORMAT_VERSION = "rebirth_replay_v2"
 REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v66"
 SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v2"
-RULESET_VERSION = "rebirth_ruleset_v66"
-REDUCER_VERSION = "rebirth_reducer_v66"
+RULESET_VERSION = "rebirth_ruleset_v99"
+REDUCER_VERSION = "rebirth_reducer_v99"
 MAX_EFFECT_CHAIN_DEPTH = 8
 MAX_CAUSAL_CHAIN_DEPTH = 12
 MAX_INTERRUPT_DEPTH = 4

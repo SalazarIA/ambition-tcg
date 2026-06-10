@@ -7,6 +7,20 @@
       "runtimeArgs": ["app.py"],
       "port": 8080,
       "cwd": "/Users/lucassilverio/Desktop/Ambition"
+    },
+    {
+      "name": "rebirth-qa",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "REBIRTH_ALLOW_SQLITE_TESTING=true",
+        "REBIRTH_DB_PATH=/tmp/ambition_qa/preview.db",
+        "SECRET_KEY=qa-preview",
+        "PORT=8123",
+        "/Users/lucassilverio/Desktop/Ambition/.venv/bin/python",
+        "app.py"
+      ],
+      "port": 8123,
+      "cwd": "/Users/lucassilverio/Desktop/Ambition"
     }
   ]
 }
