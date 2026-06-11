@@ -13,3 +13,4 @@ sentry-sdk[flask]>=2.0.0,<3.0.0
 #                  → PYSEC-2026-142 (Brotli decompression DoS)
 requests>=2.33.0
 urllib3>=2.7.0
+Flask-Compress>=1.14,<2.0

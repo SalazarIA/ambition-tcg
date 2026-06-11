@@ -4,7 +4,8 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
-from flask import Flask, jsonify, make_response, redirect, render_template, request, send_from_directory, session
+from time import perf_counter
+from flask import g, Flask, jsonify, make_response, redirect, render_template, request, send_from_directory, session
 
 from services.rebirth_contracts import RebirthError
 from services.rebirth_async_competition import async_competition_payload, async_history_payload
@@ -63,6 +64,26 @@ from services.email_service import send_email
 
 
 app = Flask(__name__)
+# Perf v103: gzip/brotli nas respostas dinâmicas (estado de partida ~30KB de
+# JSON vira ~4KB no fio) e cache longo para estáticos — todos servidos com
+# query de versão (?v=REBIRTH_RELEASE_VERSION), ou seja, imutáveis por URL.
+try:
+    from flask_compress import Compress
+
+    app.config["COMPRESS_MIMETYPES"] = [
+        "application/json",
+        "text/html",
+        "text/css",
+        "application/javascript",
+        "text/javascript",
+        "image/svg+xml",
+        "application/manifest+json",
+    ]
+    app.config["COMPRESS_MIN_SIZE"] = 1024
+    Compress(app)
+except ImportError:  # ambiente sem a dependência segue funcional, sem gzip
+    pass
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 30
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "ambitionz-rebirth-dev")
 app.config["REBIRTH_DB_PATH"] = os.environ.get(
     "REBIRTH_DB_PATH",
@@ -74,7 +95,7 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v102_PLAYER_FIRST")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v103_PERF_STUDY")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -801,6 +822,23 @@ def protect_rebirth_mutations():
     if not expected or not supplied or not secrets.compare_digest(str(expected), str(supplied)):
         return json_error("O token CSRF do Rebirth é obrigatório.", "csrf_required", status=403)
     return None
+
+
+@app.before_request
+def _mark_request_start():
+    g._rb_request_t0 = perf_counter()
+
+
+@app.after_request
+def add_server_timing(response):
+    # Perf v103: Server-Timing expõe o custo do app por request no DevTools
+    # de qualquer jogador e em RUM — como um estúdio mede produção de verdade.
+    started = getattr(g, "_rb_request_t0", None)
+    if started is not None:
+        response.headers.setdefault(
+            "Server-Timing", f"app;dur={(perf_counter() - started) * 1000:.1f}"
+        )
+    return response
 
 
 @app.after_request

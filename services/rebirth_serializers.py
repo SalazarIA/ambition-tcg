@@ -97,11 +97,11 @@ def _strip_runtime_cards(cards):
 def side_payload(side, *, reveal_hand=True):
     field = _strip_runtime_cards(deepcopy(field_slots(side)))
     battlefield = _strip_runtime_cards(deepcopy(compact_battlefield(side)))
+    # Perf v103: valida o contrato apenas do que ENTRA no payload (mão,
+    # campo, traps, played). Deck e descarte inteiros eram ~35 validações
+    # extras por request para dados que viram só counts — a engine já os
+    # valida ao criar/mutar as cartas.
     for card in side.get("hand", []):
-        validate_card_contract(card)
-    for card in side.get("deck", []):
-        validate_card_contract(card)
-    for card in side.get("discard", []):
         validate_card_contract(card)
     for card in battlefield:
         validate_card_contract(card)
@@ -167,6 +167,25 @@ def resolution_context(match):
     return payload
 
 
+_PUBLIC_EVENT_HEAVY_KEYS = ("card", "cards")
+
+
+def _slim_public_event(event):
+    """Evento para o PAYLOAD público: sem cartas embutidas.
+
+    O front lê type/instance_id/message/resulting_*; cartas completas dentro
+    de payload (MONSTER_SUMMONED.card ~1.2KB, CARDS_DRAWN.cards ~1.7KB) só
+    importam para o replay — que lê das tabelas match_events, não daqui.
+    """
+    slim = dict(event)
+    payload = slim.get("payload")
+    if isinstance(payload, dict) and any(key in payload for key in _PUBLIC_EVENT_HEAVY_KEYS):
+        slim["payload"] = {
+            key: value for key, value in payload.items() if key not in _PUBLIC_EVENT_HEAVY_KEYS
+        }
+    return slim
+
+
 def public_state(match):
     validate_phase(match["phase"])
     player = side_payload(match["player"], reveal_hand=True)
@@ -184,8 +203,11 @@ def public_state(match):
         "turn_phase": match.get("turn_phase"),
         "player": player,
         "bot": bot,
-        "player_field": deepcopy(player["field"]),
-        "bot_field": deepcopy(bot["field"]),
+        # Perf v103: o front consome os slots no topo (player_field/bot_field);
+        # a cópia "field" dentro de cada lado era a MESMA lista 2x por lado
+        # (~6KB duplicados por resposta). pop = uma única cópia viaja.
+        "player_field": player.pop("field"),
+        "bot_field": bot.pop("field"),
         "bot_profile": deepcopy(match.get("bot_profile")),
         "available_evolutions": available_evolutions(match["player"]),
         "last_clash": deepcopy(match.get("last_clash")),
@@ -198,7 +220,7 @@ def public_state(match):
         "replay_audio_muted_mode": bool(match.get("replay_audio_muted_mode", False)),
         "resolution_context": resolution_context(match),
         "checkpoint": deepcopy((match.get("checkpoints") or [None])[-1]),
-        "events": deepcopy(match.get("events", [])[-12:]),
+        "events": [_slim_public_event(event) for event in match.get("events", [])[-12:]],
         "log": list(match.get("log", [])[-8:]),
     }
     if match.get("campaign_node"):
