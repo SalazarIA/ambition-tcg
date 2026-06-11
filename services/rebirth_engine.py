@@ -1416,14 +1416,18 @@ def _resolve_unanswered_bot_attack(match, bot_card, *, effect_chain_id=None, par
 BOT_ATTACKS_PER_TURN = {
     "novice": 1,
     "defensive": 1,
-    "opportunist": 1,
+    "opportunist": 2,
     "aggressive": 2,
 }
 
+# Ritmo de reposição (auditoria 2026-06-11): com 2 invocações/turno o bot
+# re-enchia o campo mais rápido do que um casual remove e o jogo virava muro
+# eterno. 1/turno abre o campo no mid game (defensive mantém 2: é a
+# identidade da muralha — e a policy dele quase não remove o board alheio).
 BOT_SUMMONS_BY_PROFILE = {
     "novice": 1,
-    "defensive": 2,
-    "opportunist": 2,
+    "defensive": 1,
+    "opportunist": 1,
     "aggressive": 1,
 }
 
@@ -1444,6 +1448,7 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
         return None
     from services.rebirth_keywords import forces_target, has_taunt_on_side
 
+    profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
     player_field = compact_battlefield(match["player"])
     # TAUNT vale para o bot também: com Provocar em campo, ele é obrigado a
     # resolver as provocadoras antes de ataque direto ou alvos livres.
@@ -1456,12 +1461,12 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
         turn=match.get("turn", 1),
         player_wounded=match["player"].get("wounded", False),
         bot_wounded=match["bot"].get("wounded", False),
+        profile_id=profile_id,
     )
     if not decision:
         return None
     if decision.get("outcome") == "direct" and has_taunt_on_side(compact_battlefield(match["player"])):
         return None
-    profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
     if (
         profile_id == "aggressive"
         and decision.get("outcome") == "direct"

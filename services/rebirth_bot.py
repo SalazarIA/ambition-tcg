@@ -363,6 +363,7 @@ def attack_utility_projection(
         "attacker_destroyed": attacker_destroyed,
         "target_destroyed": target_destroyed,
         "symmetric_suicide": symmetric_suicide,
+        "lethal_window": lethal_window,
         "remaining_damage": remaining_damage,
         "breakthrough_pressure": target_breakthrough,
     }
@@ -376,13 +377,18 @@ def tactical_utility_matrix(
     turn=1,
     player_wounded=False,
     bot_wounded=False,
+    direct_allowed=False,
 ):
     rows = []
     attackers = deterministic_move_order((bot_battlefield or [])[:FIELD_SLOT_COUNT])[:MCTS_BEAM_WIDTH]
     for attacker in attackers:
         if not attacker or not _can_act_now(attacker):
             continue
-        targets = deterministic_move_order((player_battlefield or [])[:FIELD_SLOT_COUNT])[:MCTS_BEAM_WIDTH] or [None]
+        targets = deterministic_move_order((player_battlefield or [])[:FIELD_SLOT_COUNT])[:MCTS_BEAM_WIDTH]
+        # Regra de alvo nova: direto no herói é sempre legal sem TAUNT — o
+        # ranking precisa enxergar a linha de face junto com os trades.
+        if direct_allowed or not targets:
+            targets = targets + [None]
         for target in targets:
             projection = attack_utility_projection(
                 attacker,
@@ -430,6 +436,84 @@ def beam_prune_moves(rows, width=MCTS_BEAM_WIDTH):
     )[: max(1, int(width or 1))]
 
 
+def profile_attack_policy(rows, profile_id, *, turn=1, player_battlefield=None):
+    """Personalidade de alvo por perfil + clemência de early game.
+
+    A utility crua maximiza trade — e como a regra só permite ataque direto
+    com o campo do jogador vazio, todo perfil deletava a invocação dele a
+    cada turno e o board nunca existia (auditoria olhos-de-jogador
+    2026-06-11: WR casual 0.175). A saída dentro da regra é o bot saber
+    BATER SEM MATAR (pressão: dano que o alvo sobrevive) e reservar remoção
+    para ameaças reais. Determinística (CI/replay-safe): só reordena/filtra
+    o ranking allowed; a janela letal segue passando por cima de tudo.
+    """
+    if not rows:
+        return None
+    lethal = next((row for row in rows if row.get("lethal_window") or row.get("reason") == "lethal_window"), None)
+    if lethal:
+        return lethal
+    field = [card for card in (player_battlefield or []) if card]
+    by_instance = {card.get("instance_id"): card for card in field}
+
+    def target_attack(row):
+        target = by_instance.get(row.get("target_instance_id")) or {}
+        return int(target.get("attack", target.get("power", 0)) or 0)
+
+    directs = [row for row in rows if row.get("outcome") == "direct"]
+    trades = [row for row in rows if row.get("outcome") != "direct"]
+    kills = [row for row in trades if row.get("target_destroyed")]
+    safe_kills = [row for row in kills if not row.get("attacker_destroyed")]
+    pressure = sorted(
+        (row for row in trades if not row.get("target_destroyed") and not row.get("attacker_destroyed")),
+        key=lambda row: (-int(row.get("damage_dealt", 0) or 0), str(row.get("attacker_instance_id") or "")),
+    )
+    # "ameaça grande" varia por temperamento: o caçador de face ignora
+    # médios (>=4); muralha e cirurgião removem a partir de ATK 3.
+    big_threshold = 4 if profile_id == "aggressive" else 3
+    big_kills = [row for row in safe_kills if target_attack(row) >= big_threshold]
+
+    if int(turn or 1) <= 2 and len(field) <= 1:
+        # Clemência: a primeira criatura do jogador sobrevive ao early game —
+        # a pressão vai no herói (ou em dano que o alvo aguenta); remoção, não.
+        if directs:
+            return directs[0]
+        return pressure[0] if pressure else None
+    if profile_id == "aggressive":
+        # Caçador de face: corrida no herói; remove só o que ameaça a corrida.
+        if big_kills and not directs:
+            return big_kills[0]
+        if directs:
+            return directs[0]
+        return pressure[0] if pressure else (safe_kills[0] if safe_kills else rows[0])
+    if profile_id == "opportunist":
+        # Cirurgião: mata ameaças grandes, senão pressiona herói no mid game.
+        if big_kills:
+            return big_kills[0]
+        if directs and int(turn or 1) >= 4:
+            return directs[0]
+        if pressure:
+            return pressure[0]
+        if safe_kills:
+            return safe_kills[0]
+        return directs[0] if directs else None
+    if profile_id == "novice":
+        # Sparring de campanha: bate devagar, nunca remove por iniciativa.
+        if pressure:
+            return pressure[0]
+        return directs[0] if directs else None
+    # defensive (default): remove ameaças grandes com segurança, segura a
+    # posição no early e abre linhas (trades/face) do turno 5 em diante.
+    if big_kills:
+        return big_kills[0]
+    if int(turn or 1) >= 5:
+        if safe_kills:
+            return safe_kills[0]
+        if pressure:
+            return pressure[0]
+        return directs[0] if directs else None
+    return pressure[0] if pressure else None
+
+
 class MCTSAgent:
     """Deterministic, CI-safe rollout facade for future full MCTS work."""
 
@@ -445,6 +529,7 @@ class MCTSAgent:
         return pruned[: self.budget]
 
     def choose_attack(self, bot_battlefield, player_battlefield, **context):
+        profile_id = context.pop("profile_id", None)
         profiler = current_profiler()
         if profiler:
             with profiler.timer("MCTS_simulation_cost", detail="choose_attack"):
@@ -456,7 +541,12 @@ class MCTSAgent:
         allowed = [row for row in ranked if row.get("allowed")]
         if not allowed:
             return None
-        return allowed[0]
+        return profile_attack_policy(
+            allowed,
+            profile_id,
+            turn=context.get("turn", 1),
+            player_battlefield=player_battlefield,
+        )
 
 
 def choose_bot_attack(bot_battlefield, player_battlefield, **context):

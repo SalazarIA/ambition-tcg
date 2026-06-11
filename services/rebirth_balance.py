@@ -812,3 +812,156 @@ def balance_flags(plays, match_uses, wins, damage, matches, dead_count, evolve_c
     if evolve_count >= matches * 0.5:
         flags.append("evolution-core")
     return flags
+
+
+# ---------------------------------------------------------------------------
+# Lab CASUAL (auditoria olhos-de-jogador, 2026-06-11)
+#
+# O lab tático acima joga otimizado (kill-targeting, reserva de mana,
+# evolução). Um humano casual não faz nada disso — e era a diferença entre o
+# WR 0.47 reportado e a impotência real vista em partidas de verdade. Este
+# simulador joga como um novato: monstros na ordem da mão, ataca o primeiro
+# alvo vivo (ou o herói), nunca lê trade. As metas de saúde do produto valem
+# para ELE: WR 0.40-0.60 e board presence >= 1.0.
+# ---------------------------------------------------------------------------
+
+def simulate_casual_match(seed=None, max_turns=30, bot_profile_id=None):
+    match = start_match(seed=seed, bot_profile_id=bot_profile_id)
+    turns = 0
+    board_samples = []
+    while not match.get("is_finished") and turns < max_turns:
+        # 1) ataca com todos os prontos, no alvo mais óbvio (primeiro slot vivo)
+        for _ in range(FIELD_SLOT_COUNT):
+            ready = next(
+                (
+                    card
+                    for card in match["player"].get("battlefield", [])
+                    if not card.get("exhausted")
+                    and not card.get("has_attacked")
+                    and not card.get("has_acted")
+                    and not (card.get("just_summoned") and "RUSH" not in (card.get("keywords") or []))
+                ),
+                None,
+            )
+            if not ready or match.get("is_finished"):
+                break
+            # Alvo de humano casual: a unidade mais machucada que ele vê
+            # (sem projeção de trade); com campo vazio, vai direto.
+            field = match["bot"].get("battlefield", []) or []
+            enemy = min(
+                field,
+                key=lambda c: int(c.get("current_guard", c.get("guard", 0)) or 0),
+            ) if field else None
+            try:
+                declare_attack(
+                    match,
+                    attacker_instance_id=ready["instance_id"],
+                    target_instance_id=(enemy or {}).get("instance_id"),
+                )
+            except RebirthError:
+                break
+        if match.get("is_finished"):
+            break
+        # 2) invoca até 2 monstros pagáveis, na ordem da mão (sem otimizar)
+        for _ in range(2):
+            energy = int(match["player"].get("energy", 0) or 0)
+            slot_free = len(match["player"].get("battlefield", [])) < FIELD_SLOT_COUNT
+            card = next(
+                (
+                    hand_card
+                    for hand_card in match["player"].get("hand", [])
+                    if is_monster(hand_card) and card_cost(hand_card) <= energy
+                ),
+                None,
+            )
+            if not card or not slot_free or match.get("is_finished"):
+                break
+            try:
+                play_card(match, card_instance_id=card["instance_id"])
+            except RebirthError:
+                break
+        if match.get("is_finished"):
+            break
+        # 2b) humano casual joga a magia que couber (o botão brilha, ele
+        # aperta) mirando a unidade inimiga mais machucada.
+        energy = int(match["player"].get("energy", 0) or 0)
+        spell = next(
+            (
+                hand_card
+                for hand_card in match["player"].get("hand", [])
+                if is_spell(hand_card) and card_cost(hand_card) <= energy
+            ),
+            None,
+        )
+        if spell:
+            bot_field = match["bot"].get("battlefield", []) or []
+            weakest = min(
+                bot_field,
+                key=lambda c: int(c.get("current_guard", c.get("guard", 0)) or 0),
+            ) if bot_field else None
+            try:
+                play_card(
+                    match,
+                    card_instance_id=spell["instance_id"],
+                    target_instance_id=(weakest or {}).get("instance_id"),
+                )
+            except RebirthError:
+                try:
+                    play_card(match, card_instance_id=spell["instance_id"])
+                except RebirthError:
+                    pass
+        if match.get("is_finished"):
+            break
+        # 3) presença de board no fim do MEU turno (antes do bot agir)
+        board_samples.append(len(match["player"].get("battlefield", [])))
+        turns += 1
+        next_turn(match)
+
+    return {
+        "winner": match.get("winner") or ("unfinished" if not match.get("is_finished") else "draw"),
+        "turns": turns,
+        "board_presence": round(sum(board_samples) / len(board_samples), 3) if board_samples else 0.0,
+        "final_player_units": len(match["player"].get("battlefield", [])),
+    }
+
+
+def simulate_casual_balance(matches=120, *, seed_prefix="casual"):
+    matches = max(1, min(int(matches or 120), 1000))
+    winners = Counter()
+    profile_winners = defaultdict(Counter)
+    profile_matches = Counter()
+    profile_presence = defaultdict(list)
+    total_turns = 0
+    presence = []
+    for index in range(matches):
+        profile_id = BOT_PERSONALITY_ORDER[index % len(BOT_PERSONALITY_ORDER)]
+        result = simulate_casual_match(seed=f"{seed_prefix}-{index}", bot_profile_id=profile_id)
+        winners[result["winner"]] += 1
+        profile_winners[profile_id][result["winner"]] += 1
+        profile_matches[profile_id] += 1
+        profile_presence[profile_id].append(result["board_presence"])
+        presence.append(result["board_presence"])
+        total_turns += result["turns"]
+    profile_results = []
+    for profile_id in BOT_PERSONALITY_ORDER:
+        count = profile_matches.get(profile_id, 0)
+        wins = profile_winners[profile_id]
+        samples = profile_presence.get(profile_id) or [0]
+        profile_results.append(
+            {
+                "profile_id": profile_id,
+                "player_win_rate": round(wins.get("player", 0) / count, 3) if count else 0,
+                "board_presence": round(sum(samples) / len(samples), 3),
+            }
+        )
+    return {
+        "matches": matches,
+        "summary": {
+            "player_win_rate": round(winners.get("player", 0) / matches, 3),
+            "bot_win_rate": round(winners.get("bot", 0) / matches, 3),
+            "unfinished_rate": round(winners.get("unfinished", 0) / matches, 3),
+            "average_turns": round(total_turns / matches, 2),
+            "board_presence": round(sum(presence) / len(presence), 3) if presence else 0.0,
+        },
+        "profile_results": profile_results,
+    }

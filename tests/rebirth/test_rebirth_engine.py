@@ -421,11 +421,16 @@ def test_trap_arms_face_down_and_triggers_only_when_owner_is_attacked():
     bot_card["has_attacked"] = False
     bot_card["has_acted"] = False
     # Garante que a heurística do bot enxergue uma troca vencedora e ataque.
+    # Pós-clemência (2026-06-11): o bot poupa a única unidade do jogador nos
+    # turnos 1-2 e a muralha só remove com segurança — o cenário roda no
+    # turno 6 com um alvo que ameaça (ATK 3) e um atacante que sobrevive.
+    match["turn"] = 6
     bot_card["attack"] = 7
     bot_card["power"] = 7
-    bot_card["current_guard"] = 4
+    bot_card["current_guard"] = 9
     player_card = next(card for card in match["player"]["battlefield"] if card)
     player_card["current_guard"] = 5
+    player_card["attack"] = player_card["power"] = 3
     _bot_auto_attack(match)
 
     assert not match["player"]["traps"]

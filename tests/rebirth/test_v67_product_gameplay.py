@@ -77,6 +77,10 @@ def test_v67_bot_turn_attacks_with_existing_ready_unit_before_reinforcing():
     attacker = _place(match, "bot", "card_002")
     attacker["attack"] = attacker["power"] = 10
     match["player"]["field"][0]["current_guard"] = 1
+    # Pós-clemência (2026-06-11): nos turnos 1-2 o bot poupa a única unidade
+    # do jogador; o contrato deste teste é "ataca antes de reforçar", então
+    # o cenário roda fora dessa janela.
+    match["turn"] = 4
 
     next_turn(match)
 
