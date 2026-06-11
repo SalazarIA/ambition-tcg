@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Jogar Ambitionz Rebirth</title>
+    <link rel="preload" as="image" href="{{ url_for('static', filename='img/heroes/sky_haven_knight.webp') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='img/heroes/bot_necropolis_warlord.webp') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='img/arena_bg/fates_reborn_landscape.webp') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#030405">
     <meta name="description" content="Jogue Ambitionz Rebirth: invoque monstros, escolha alvos e quebre a guarda em uma arena TCG persistente.">
@@ -343,13 +346,13 @@
             manifest: "{{ url_for('static', filename='assets/rebirth/manifest.json') }}"
         };
     </script>
-    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v={{ rebirth_release_version }}"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v={{ rebirth_release_version }}"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v={{ rebirth_release_version }}"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_boss_fx.js') }}?v={{ rebirth_release_version }}"></script>
-    <script src="{{ url_for('static', filename='js/rebirth_recap.js') }}?v={{ rebirth_release_version }}"></script>
-    <script src="{{ url_for('static', filename='js/rebirth.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/rebirth_audio.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/rebirth_ui.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/rebirth_fx.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/rebirth_boss_fx.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/rebirth_recap.js') }}?v={{ rebirth_release_version }}"></script>
+    <script defer src="{{ url_for('static', filename='js/rebirth.js') }}?v={{ rebirth_release_version }}"></script>
 </body>
 </html>

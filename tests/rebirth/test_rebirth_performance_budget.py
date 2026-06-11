@@ -23,7 +23,10 @@ def test_first_load_does_not_eagerly_download_the_card_library():
     service_worker = (PROJECT_ROOT / "static/js/service-worker.js").read_text(encoding="utf-8")
     arena_js = (PROJECT_ROOT / "static/js/rebirth.js").read_text(encoding="utf-8")
 
-    assert arena_template.count('rel="preload" as="image"') == 1
+    # v104: 4 preloads legítimos — dreadclaw (guiado) + 2 retratos de herói
+    # + paisagem da arena. São o above-the-fold imediato (antes eram
+    # backgrounds CSS descobertos tarde), NÃO a biblioteca de cartas.
+    assert arena_template.count('rel="preload" as="image"') == 4
     assert service_worker.count("/static/assets/rebirth/cards/") == 1
     assert "Object.values((manifest && manifest.cards) || {}).forEach" not in arena_js
     assert 'loading="lazy" decoding="async"' in arena_js
