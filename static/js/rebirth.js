@@ -3589,6 +3589,9 @@
             try {
                 await action();
             } catch (error) {
+                if (await this.tryResyncAfterNetworkError(error)) {
+                    return;
+                }
                 RebirthErrors.show(error.message || "A ação falhou.");
                 RebirthDom.setText("result-label", "Erro");
                 RebirthDom.setText("result-title", "Ação recusada.");
@@ -3601,6 +3604,27 @@
                     RebirthRenderer.buttons();
                 }
             }
+        },
+
+        async tryResyncAfterNetworkError(error) {
+            // Resiliência: se a conexão piscou no meio de um comando, o
+            // resume (leitura pura) ressincroniza o board com a verdade do
+            // servidor — tanto faz se o comando chegou lá ou não, o jogador
+            // vê o estado real e segue, em vez de um erro seco.
+            if (!error || error.code !== "network_error") return false;
+            const matchId = RebirthStore.state && RebirthStore.state.match_id;
+            if (!matchId || !RebirthConfig.endpoints.resume || RebirthStore.state.is_finished) return false;
+            try {
+                const payload = await RebirthApi.post(RebirthConfig.endpoints.resume, { match_id: matchId });
+                if (payload && payload.state) {
+                    this.applyState(payload.state);
+                    RebirthErrors.show("Conexão instável — duelo ressincronizado. Confira o board e siga.");
+                    return true;
+                }
+            } catch (_resyncError) {
+                // sem rede de verdade: cai no erro original
+            }
+            return false;
         },
 
         persistReconnectHint(state) {
