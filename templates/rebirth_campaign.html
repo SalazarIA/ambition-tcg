@@ -78,7 +78,9 @@
                         {% elif account.authenticated %}
                             <button class="rb-secondary" type="button" disabled>Bloqueado</button>
                         {% else %}
-                            <button class="rb-secondary" type="button" data-rebirth-auth-open>Entrar</button>
+                            {# Coerência de produto: a arena livre é aberta; a campanha
+                               guarda progresso e por isso pede conta — o botão DIZ isso. #}
+                            <button class="rb-secondary" type="button" data-rebirth-auth-open title="A campanha salva seu progresso entre sessões">Criar conta p/ jogar</button>
                         {% endif %}
                     </div>
                 </article>

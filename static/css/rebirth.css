@@ -14688,9 +14688,11 @@ button {
     color: #9af0a6;
 }
 
+/* Pulso por LUZ, não por geometria: scale infinito deixava o alvo
+   "instável" para qualquer automação/assistive tech e tremia o layout. */
 @keyframes rb-summon-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.025); }
+    0%, 100% { box-shadow: inset 0 0 30px rgba(124, 229, 138, 0.12), 0 0 18px rgba(124, 229, 138, 0.16); }
+    50% { box-shadow: inset 0 0 34px rgba(124, 229, 138, 0.2), 0 0 30px rgba(124, 229, 138, 0.34); }
 }
 
 /* ==========================================================================
@@ -15074,4 +15076,285 @@ body.rb-campaign-page .rb-campaign-node.is-next {
 
 .rb-hand .rb-mini-card.is-locked {
     filter: saturate(0.4) brightness(0.66);
+}
+
+/* ==========================================================================
+   PLAYER FIRST (v102) — faixas exclusivas, células honestas, FX contido
+   Origem: auditoria olhos-de-jogador 2026-06-11 (docs/REBIRTH_PLAYER_EYES_AUDIT.md)
+   ========================================================================== */
+
+/* ---------- Desktop: a célula tem o tamanho da carta ---------- */
+/* As cartas de campo (208px) transbordavam células de 153px e a fileira do
+   bot encostava na do jogador. Célula = carta + respiro + divisor central. */
+@media (min-width: 1180px) {
+    body.rb-game-page .rb-battle-zone {
+        grid-template-rows: minmax(216px, auto) 34px minmax(216px, auto) !important;
+        row-gap: 10px !important;
+    }
+
+    body.rb-game-page .rb-field-card,
+    body.rb-game-page .rb-field-slot-empty {
+        height: 208px !important;
+        min-height: 208px !important;
+    }
+
+    /* O meio da mesa é uma fronteira de verdade: traço rúnico dourado. */
+    body.rb-game-page .rb-field-vs {
+        position: relative;
+        display: grid;
+        place-items: center;
+        font-family: var(--rb-font-display);
+        color: rgba(244, 173, 38, 0.75);
+        letter-spacing: 0.3em;
+    }
+
+    body.rb-game-page .rb-field-vs::before,
+    body.rb-game-page .rb-field-vs::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        height: 2px;
+        width: calc(50% - 42px);
+        background: linear-gradient(90deg, transparent, rgba(226, 180, 88, 0.55), rgba(226, 180, 88, 0.18));
+    }
+
+    body.rb-game-page .rb-field-vs::before { left: 0; }
+    body.rb-game-page .rb-field-vs::after {
+        right: 0;
+        transform: scaleX(-1);
+    }
+}
+
+/* ---------- Cinemática de evolução/fusão: poder com modos ---------- */
+/* A runa explodia a 448px+ e, com qualquer falha, congelava cobrindo o
+   board. Tamanho contido; o cleanup garantido vive no JS (try/finally). */
+.vfx-evolution-stage .vfx-evolution-rune {
+    width: 220px;
+    height: 220px;
+    margin: -110px 0 0 -110px;
+}
+
+.vfx-evolution-stage .vfx-evolution-burst,
+.vfx-fusion-burst {
+    width: 320px;
+    height: 320px;
+}
+
+.vfx-evolution-stage.is-active .vfx-evolution-overlay {
+    opacity: 0.62;
+}
+
+/* ---------- Mobile: cada coisa na sua faixa ---------- */
+@media (max-width: 760px) {
+    /* Nav de jogo em UMA linha: selo + abas roláveis + entrar. O duelo é o
+       protagonista — identidade/XP/carteira ficam para as telas de produto. */
+    body.rb-game-page.rb-mobile-native {
+        --rb-mobile-nav-height: 78px;
+    }
+
+    body.rb-game-page.rb-mobile-native .rb-global-nav {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 8px;
+        min-height: 0;
+    }
+
+    body.rb-game-page.rb-mobile-native .rb-global-brand strong {
+        display: none;
+    }
+
+    body.rb-game-page.rb-mobile-native .rb-global-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        gap: 4px;
+        min-height: 0;
+    }
+
+    body.rb-game-page.rb-mobile-native .rb-global-tabs a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 7px 9px;
+        font-size: var(--fs-3xs);
+    }
+
+    /* Identidade + carteira seguem visíveis (contrato de produto); só a
+       barra de XP sai do duelo. Linha 2 fininha. */
+    body.rb-game-page.rb-mobile-native .rb-global-xp {
+        display: none;
+    }
+
+    body.rb-game-page.rb-mobile-native .rb-global-player {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 0;
+        padding: 2px 2px 0;
+    }
+
+    body.rb-game-page.rb-mobile-native .rb-global-identity,
+    body.rb-game-page.rb-mobile-native .rb-global-wallet {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--fs-3xs);
+        min-height: 0;
+    }
+
+    /* A barra de ação NÃO flutua mais sobre o campo: sticky fazia a mão
+       cobrir os 3 slots de invocação (toque morto — bug nº2 da auditoria). */
+    .rb-mobile-native .rb-mobile-action-bar {
+        position: static;
+        z-index: auto;
+    }
+
+    /* O conselheiro fala ACIMA da carta, nunca em cima dela. */
+    .rb-mobile-native .rb-recommendation-badge {
+        top: -16px;
+        bottom: auto;
+    }
+
+    /* Mão com transbordo visível: a borda direita esmaece convidando o
+       scroll (sem novos elementos, sem JS). */
+    .rb-mobile-native .rb-player-hand {
+        position: relative;
+    }
+
+    .rb-mobile-native .rb-player-hand::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 26px;
+        pointer-events: none;
+        background: linear-gradient(90deg, transparent, rgba(3, 4, 5, 0.85));
+    }
+}
+
+/* ---------- Nomes legíveis nas cartas de campo ---------- */
+.rb-field-card .rb-card-nameplate {
+    font-size: var(--fs-2xs);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Cerimônia de fim de partida (v102) ---------- */
+/* O overlay segue pointer-events: none (contrato); o painel de decisão é a
+   exceção clicável, como os botões do result panel. */
+.vfx-finale-overlay .vfx-finale-panel {
+    pointer-events: auto;
+    position: relative;
+    z-index: 3;
+    margin-top: 18px;
+    min-width: min(420px, 86vw);
+    padding: 18px 22px 20px;
+    border: 1px solid rgba(226, 180, 88, 0.4);
+    border-radius: 14px;
+    background:
+        radial-gradient(ellipse 120% 90% at 50% -30%, rgba(244, 173, 38, 0.08), transparent 55%),
+        linear-gradient(180deg, rgba(24, 17, 11, 0.96), rgba(8, 6, 5, 0.97));
+    box-shadow: inset 0 1px 0 rgba(255, 244, 203, 0.07), 0 24px 60px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 420ms ease 260ms, transform 420ms ease 260ms;
+}
+
+.vfx-finale-overlay.is-active .vfx-finale-panel {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.vfx-finale-overlay .vfx-finale-summary {
+    display: flex;
+    justify-content: center;
+    gap: 22px;
+    margin-bottom: 16px;
+}
+
+.vfx-finale-overlay .vfx-finale-summary span {
+    display: grid;
+    gap: 4px;
+    justify-items: center;
+    color: var(--rb-muted);
+    font-size: var(--fs-3xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.vfx-finale-overlay .vfx-finale-summary strong {
+    color: #f5ead6;
+    font-family: var(--rb-font-display);
+    font-size: var(--fs-lg);
+    letter-spacing: 0.02em;
+}
+
+.vfx-finale-overlay .vfx-finale-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.vfx-finale-overlay .vfx-finale-actions button {
+    min-height: 46px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+/* O texto-impacto assenta; o painel fica como dono da cena. */
+.vfx-finale-overlay.is-settled .vfx-finale-text,
+.vfx-finale-overlay.is-settled .vfx-finale-subtitle {
+    opacity: 0.25;
+}
+
+.vfx-finale-overlay.is-settled .vfx-finale-curtain {
+    opacity: 0.55;
+}
+
+@media (max-width: 760px) {
+    .vfx-finale-overlay .vfx-finale-summary {
+        gap: 14px;
+    }
+
+    .vfx-finale-overlay .vfx-finale-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* ---------- Booster: cartas viram uma a uma (v102) ---------- */
+.rb-booster-card.rb-booster-reveal {
+    animation: rb-booster-flip 560ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: var(--reveal-delay, 0ms);
+}
+
+@keyframes rb-booster-flip {
+    0% { opacity: 0; transform: perspective(900px) rotateY(88deg) scale(0.92); }
+    62% { opacity: 1; transform: perspective(900px) rotateY(-8deg) scale(1.02); }
+    100% { opacity: 1; transform: perspective(900px) rotateY(0deg) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rb-booster-card.rb-booster-reveal {
+        animation: none;
+    }
+}
+
+/* Durante a cena do bot, a cena É o feedback — o chip "Carregando" em cima
+   dela lia-se como travamento (auditoria v2). */
+.rb-game-board.is-pending.is-bot-staging .rb-loading {
+    display: none;
+}
+
+/* "Nova partida" no ticker só depois do fim: durante o duelo ele ficava
+   sobre a zona de alvos interceptando o clique de ataque (flagrante do
+   juiz v2) e era um misclick fatal a um dedo de distância. */
+#rebirth-board[data-winner=""] #result-panel [data-new-match] {
+    display: none;
 }

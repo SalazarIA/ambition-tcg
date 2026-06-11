@@ -198,6 +198,10 @@ def test_finale_overlay_does_not_block_new_match_action(page, live_server):
             overlay.innerHTML = '<div class="vfx-finale-curtain"></div><div class="vfx-finale-text">Vitoria</div>';
             overlay.classList.add("is-active", "is-victory");
             overlay.setAttribute("aria-hidden", "false");
+            // v102: o "Nova partida" do ticker só existe com a partida
+            // encerrada (em jogo ele interceptava o clique de ataque) —
+            // este cenário simula o fim de verdade.
+            document.getElementById("rebirth-board").dataset.winner = "bot";
         }"""
     )
 

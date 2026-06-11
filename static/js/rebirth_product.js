@@ -359,6 +359,12 @@
                             "</div>"
                         ].join("");
                         bindImageFallbacks(result);
+                        // O momento do booster: cada carta vira em sequência,
+                        // não um grid instantâneo.
+                        Array.prototype.forEach.call(result.querySelectorAll(".rb-booster-card"), function (cardNode, index) {
+                            cardNode.style.setProperty("--reveal-delay", (index * 120) + "ms");
+                            cardNode.classList.add("rb-booster-reveal");
+                        });
                         renderDeckSuggestions(payload.deck_suggestions || []);
                     })
                     .catch(function (error) {

@@ -1540,35 +1540,39 @@
             burst.className = "vfx-evolution-burst";
             stage.appendChild(burst);
 
-            // FASE 1: ativa overlay
-            stage.classList.add("is-active");
-            stage.setAttribute("aria-hidden", "false");
-            await wait(this.phase1Ms);
+            // A limpeza é inegociável: se qualquer fase falhar, o disco da
+            // runa NÃO pode ficar congelado cobrindo o board (auditoria).
+            try {
+                // FASE 1: ativa overlay
+                stage.classList.add("is-active");
+                stage.setAttribute("aria-hidden", "false");
+                await wait(this.phase1Ms);
 
-            // FASE 2: clones convergem para o centro
-            clones.forEach((clone) => clone.classList.add("is-converging"));
-            await wait(this.phase2Ms);
+                // FASE 2: clones convergem para o centro
+                clones.forEach((clone) => clone.classList.add("is-converging"));
+                await wait(this.phase2Ms);
 
-            // FASE 3: runa surge sobre os clones
-            stage.classList.add("is-rune-active");
-            await wait(this.phase3Ms);
+                // FASE 3: runa surge sobre os clones
+                stage.classList.add("is-rune-active");
+                await wait(this.phase3Ms);
 
-            // FASE 4: clones somem num clarão + burst gigante
-            clones.forEach((clone) => {
-                clone.classList.remove("is-converging");
-                clone.classList.add("is-vanishing");
-            });
-            stage.classList.add("is-burst-active");
-            // shake do board pra entregar o impacto
-            triggerScreenShake("heavy");
-            await wait(this.phase4Ms);
-
-            // Restaura iluminação: tira a classe de ativo, depois limpa DOM
-            stage.classList.remove("is-active", "is-rune-active", "is-burst-active");
-            stage.setAttribute("aria-hidden", "true");
-            // Aguarda overlay fade-out (transition 360ms) antes de purgar
-            await wait(360);
-            stage.innerHTML = "";
+                // FASE 4: clones somem num clarão + burst gigante
+                clones.forEach((clone) => {
+                    clone.classList.remove("is-converging");
+                    clone.classList.add("is-vanishing");
+                });
+                stage.classList.add("is-burst-active");
+                // shake do board pra entregar o impacto
+                triggerScreenShake("heavy");
+                await wait(this.phase4Ms);
+            } finally {
+                // Restaura iluminação: tira a classe de ativo, depois limpa DOM
+                stage.classList.remove("is-active", "is-rune-active", "is-burst-active");
+                stage.setAttribute("aria-hidden", "true");
+                // Aguarda overlay fade-out (transition 360ms) antes de purgar
+                await wait(360);
+                stage.innerHTML = "";
+            }
         },
     };
 
@@ -2061,11 +2065,20 @@
             const node = shell.firstElementChild;
             if (!node) return;
             node.classList.add("is-stage-enter");
+            // Só ocupa um ALTAR VAZIO: children[slot] segue a ordem visual,
+            // não o field_slot lógico — substituir às cegas roubava o lugar
+            // de outra carta viva até o próximo render (auditoria: cartas
+            // "sumindo" durante a cena do bot).
             const slotNode = host.children[slot];
-            if (slotNode) {
+            if (slotNode && slotNode.classList.contains("rb-field-slot-empty")) {
                 host.replaceChild(node, slotNode);
             } else {
-                host.appendChild(node);
+                const emptySlot = host.querySelector(".rb-field-slot-empty");
+                if (emptySlot) {
+                    host.replaceChild(node, emptySlot);
+                } else {
+                    host.appendChild(node);
+                }
             }
             RebirthAssets.bindFallbacks(node);
             if (window.RebirthAudioManager) {
@@ -2238,7 +2251,7 @@
             this.lastFiredKey = null;
             const overlay = document.getElementById("rebirth-finale-overlay");
             if (overlay) {
-                overlay.classList.remove("is-active", "is-victory", "is-defeat", "is-first-duel");
+                overlay.classList.remove("is-active", "is-victory", "is-defeat", "is-first-duel", "is-settled");
                 overlay.innerHTML = "";
                 overlay.setAttribute("aria-hidden", "true");
             }
@@ -2267,11 +2280,43 @@
             const sublineCopy = firstDuel && isVictory
                 ? '<div class="vfx-finale-subtitle">Você dominou seu primeiro duelo</div>'
                 : "";
+            // Cerimônia: o fim de partida tem resumo e próxima decisão, não
+            // só um texto que evapora (auditoria: derrota seca, sem CTA).
+            const state = RebirthStore.state || {};
+            const summaryRows = [];
+            if (state.turn) summaryRows.push(`<span>Turnos<strong>${RebirthText.escape(state.turn)}</strong></span>`);
+            if (state.player && state.player.hp != null) summaryRows.push(`<span>Seu HP<strong>${RebirthText.escape(state.player.hp)}</strong></span>`);
+            if (state.bot && state.bot.hp != null) summaryRows.push(`<span>HP do bot<strong>${RebirthText.escape(state.bot.hp)}</strong></span>`);
+            const reward = RebirthStore.campaignReward || RebirthStore.reward || null;
+            if (reward && (reward.xp || reward.gold)) {
+                const parts = [];
+                if (reward.xp) parts.push(`+${reward.xp} XP`);
+                if (reward.gold) parts.push(`+${reward.gold} Ouro`);
+                summaryRows.push(`<span>Recompensa<strong>${RebirthText.escape(parts.join(" · "))}</strong></span>`);
+            }
             overlay.innerHTML = `
                 <div class="vfx-finale-curtain"></div>
                 <div class="vfx-finale-text">${headline}</div>
                 ${sublineCopy}
+                <div class="vfx-finale-panel">
+                    <div class="vfx-finale-summary">${summaryRows.join("")}</div>
+                    <div class="vfx-finale-actions">
+                        <button type="button" class="rb-button-primary rb-cta" data-finale-rematch>Jogar de novo</button>
+                        <button type="button" class="rb-button-secondary rb-secondary" data-finale-close>Continuar</button>
+                    </div>
+                </div>
             `;
+            const rematch = overlay.querySelector("[data-finale-rematch]");
+            if (rematch) {
+                rematch.addEventListener("click", () => {
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                    RebirthFlow.startMatch({ forceNew: true });
+                });
+            }
+            const closeButton = overlay.querySelector("[data-finale-close]");
+            if (closeButton) {
+                closeButton.addEventListener("click", () => this.reset());
+            }
             nextFrame().then(() => {
                 if (overlay.isConnected !== false) overlay.classList.add("is-active");
             });
@@ -2291,12 +2336,12 @@
                 }
             }
 
-            // A mensagem permanece legivel sem cobrir a proxima decisao.
-            const fadeMs = firstDuel && isVictory ? 4300 : 2800;
+            // O texto-impacto assenta e o painel de decisão permanece até o
+            // jogador escolher (rematch/continuar ou nova partida externa).
+            const settleMs = firstDuel && isVictory ? 4300 : 2800;
             window.setTimeout(() => {
-                overlay.classList.remove("is-active");
-                overlay.setAttribute("aria-hidden", "true");
-            }, fadeMs);
+                overlay.classList.add("is-settled");
+            }, settleMs);
         },
     };
 
@@ -2637,35 +2682,17 @@
             // que já estava no slot mini). Quando o battlefield tem cards, o
             // overlay vira face-down (placeholder) em vez de duplicar o foco.
             const botField = (RebirthStore.state.bot && RebirthStore.state.bot.battlefield) || [];
-            if (botField.length > 0) {
-                host.className = "rb-bot-card rb-card-back";
+            if (botField.length > 0 || !card) {
+                // Verso de carta permanente lia-se como "carta oculta" e era
+                // o fantasma da auditoria. Com o campo do bot visível e a
+                // cena do turno narrando as jogadas, o overlay só existe
+                // quando tem informação real (a carta jogada, campo vazio).
+                host.className = "rb-bot-card rb-card-back is-empty";
                 host.removeAttribute("data-element");
                 host.removeAttribute("data-art-key");
                 host.removeAttribute("data-statuses");
                 host.removeAttribute("style");
-                host.innerHTML = "<span>Campo do bot</span>";
-                return;
-            }
-            if (!card) {
-                // F19 fix: no turno 1, sem carta jogada e sem battlefield, o
-                // overlay grande "Carta do bot" empurrava os slots e parecia
-                // um modal acidental. Esconde até o bot agir.
-                const turn = Number(RebirthStore.state.turn || 1);
-                if (turn <= 1) {
-                    host.className = "rb-bot-card rb-card-back is-empty";
-                    host.removeAttribute("data-element");
-                    host.removeAttribute("data-art-key");
-                    host.removeAttribute("data-statuses");
-                    host.removeAttribute("style");
-                    host.innerHTML = "";
-                    return;
-                }
-                host.className = "rb-bot-card rb-card-back";
-                host.removeAttribute("data-element");
-                host.removeAttribute("data-art-key");
-                host.removeAttribute("data-statuses");
-                host.removeAttribute("style");
-                host.innerHTML = "<span>Carta do bot</span>";
+                host.innerHTML = "";
                 return;
             }
             const statuses = (RebirthStore.state.bot && RebirthStore.state.bot.statuses) || {};
@@ -3893,10 +3920,17 @@
                 RebirthStore.selectedAttackerId = null;
                 // O turno do bot vira cena: invocações, ataques e dano em
                 // sequência sobre o DOM antigo; o estado final entra depois.
-                await BotTurnDirector.stage(payload.bot_phase_events);
-                RebirthGameFeel.suppressPopupsUntil = Date.now() + 900;
-                this.applyState(payload.state);
-                this.completeTutorialIfNeeded(payload.state);
+                // O estado do servidor SEMPRE entra, mesmo que a cena quebre
+                // — board velho pós-turno era o bug nº1 da auditoria.
+                try {
+                    await BotTurnDirector.stage(payload.bot_phase_events);
+                } catch (sceneError) {
+                    BotTurnDirector.active = false;
+                } finally {
+                    RebirthGameFeel.suppressPopupsUntil = Date.now() + 900;
+                    this.applyState(payload.state);
+                    this.completeTutorialIfNeeded(payload.state);
+                }
             });
         },
 
@@ -4113,12 +4147,21 @@
             if (playButton) {
                 playButton.addEventListener("click", () => {
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
-                    if (RebirthStore.firstFieldFusion()) {
-                        RebirthFlow.activateEvolutionOrFusion();
-                        return;
-                    }
+                    // Prioridade: a intenção EXPLÍCITA do jogador (carta ou
+                    // atacante selecionado) vem antes de qualquer automação.
+                    // A fusão sequestrava este clique quando havia par no
+                    // campo — o jogador pedia uma magia e ganhava runa
+                    // gigante (auditoria). Fusão tem botão próprio.
                     if (RebirthStore.selectedAttackerId) {
                         RebirthFlow.clashSelectedAttacker();
+                        return;
+                    }
+                    if (RebirthStore.selectedInstanceId) {
+                        RebirthFlow.playSelectedCard();
+                        return;
+                    }
+                    if (RebirthStore.firstFieldFusion()) {
+                        RebirthFlow.activateEvolutionOrFusion();
                         return;
                     }
                     RebirthFlow.playSelectedCard();
