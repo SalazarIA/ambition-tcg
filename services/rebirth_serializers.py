@@ -94,6 +94,26 @@ def _strip_runtime_cards(cards):
     return cards
 
 
+_GRAVEYARD_CARD_FIELDS = (
+    "id",
+    "instance_id",
+    "name",
+    "type",
+    "card_type",
+    "element",
+    "tier",
+    "attack",
+    "guard",
+    "cost",
+    "art_key",
+    "rarity",
+)
+
+
+def _graveyard_card(card):
+    return {key: card.get(key) for key in _GRAVEYARD_CARD_FIELDS if card.get(key) is not None}
+
+
 def side_payload(side, *, reveal_hand=True):
     field = _strip_runtime_cards(deepcopy(field_slots(side)))
     battlefield = _strip_runtime_cards(deepcopy(compact_battlefield(side)))
@@ -118,6 +138,9 @@ def side_payload(side, *, reveal_hand=True):
         "max_energy": int(side.get("max_energy", 0) or 0),
         "deck_count": len(side.get("deck", [])),
         "discard_count": len(side.get("discard", [])),
+        # YGO v104: o cemitério é informação pública dos dois lados — versão
+        # compacta (9 campos) para o overlay consultável, não a carta inteira.
+        "graveyard": [_graveyard_card(card) for card in side.get("discard", [])],
         "played_card": _strip_runtime_fields(deepcopy(side.get("played_card"))),
         "battlefield": battlefield,
         "field": field,

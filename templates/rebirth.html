@@ -67,8 +67,9 @@
                             <span>Mana <b id="player-energy">1</b>/<b id="player-max-energy">1</b></span>
                             <span id="hand-count" class="rb-hand-count">0 cartas</span>
                             <span id="player-deck-count">Baralho 0</span>
-                            <span id="player-discard-count">Descarte 0</span>
+                            <span id="player-discard-count" role="button" tabindex="0" title="Ver seu cemitério">Descarte 0</span>
                         </div>
+                        <div id="player-trap-zone" class="rb-trap-zone" aria-label="Suas armadilhas armadas"></div>
                         <div id="player-mana-coins" class="rb-mana-coins" aria-label="Mana do jogador"></div>
                     </div>
                 </div>
@@ -109,8 +110,9 @@
                         <div class="rb-zone-row" aria-label="Zonas do bot">
                             <span>Mana <b id="bot-energy">1</b>/<b id="bot-max-energy">1</b></span>
                             <span id="bot-deck-count">Baralho 0</span>
-                            <span id="bot-discard-count">Descarte 0</span>
+                            <span id="bot-discard-count" role="button" tabindex="0" title="Ver cemitério do oponente">Descarte 0</span>
                         </div>
+                        <div id="bot-trap-zone" class="rb-trap-zone" aria-label="Armadilhas viradas do bot"></div>
                         <div id="bot-mana-coins" class="rb-mana-coins" aria-label="Mana do bot"></div>
                     </div>
                     <div class="rb-bot-emblem rb-faction-emblem rb-faction-shadow" aria-hidden="true"></div>
@@ -204,6 +206,7 @@
                     <div>
                         <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>Encerrar turno</button>
                         <button class="rb-button-secondary rb-secondary rb-mulligan-button" type="button" id="mulligan-button" hidden title="Troca a mão inicial uma única vez, antes da primeira ação.">Trocar mão</button>
+                        <button class="rb-button-secondary rb-secondary" type="button" id="graveyard-button" title="Cartas destruídas dos dois lados — informação pública">Cemitério</button>
                         <small id="secondary-action-copy">Passe a vez para recarregar mana</small>
                     </div>
                 </section>
@@ -271,6 +274,20 @@
                     <div class="rb-mulligan-actions">
                         <button type="button" class="rb-button-secondary rb-secondary" id="mulligan-swap">Trocar mão</button>
                         <button type="button" class="rb-button-primary rb-cta" id="mulligan-keep">Manter mão</button>
+                    </div>
+                </div>
+            </div>
+            <div id="rebirth-graveyard-overlay" class="rb-graveyard-overlay" hidden role="dialog" aria-modal="true" aria-label="Cemitério">
+                <div class="rb-graveyard-sheet">
+                    <span class="rb-mulligan-kicker" id="graveyard-kicker">Cemitério</span>
+                    <h2 id="graveyard-title">Cartas destruídas</h2>
+                    <div class="rb-graveyard-tabs">
+                        <button type="button" class="rb-secondary" id="graveyard-tab-player">Seu cemitério</button>
+                        <button type="button" class="rb-secondary" id="graveyard-tab-bot">Oponente</button>
+                    </div>
+                    <div class="rb-graveyard-cards" id="graveyard-cards"></div>
+                    <div class="rb-mulligan-actions">
+                        <button type="button" class="rb-button-secondary rb-secondary" id="graveyard-close">Fechar</button>
                     </div>
                 </div>
             </div>

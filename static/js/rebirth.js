@@ -1853,6 +1853,7 @@
         },
 
         suppressPopupsUntil: 0,
+        lastBattleTurn: null,
 
         showActionPopup(lines, tone, options) {
             const layer = this.layer();
@@ -2477,8 +2478,8 @@
             }
             renderTurnPhase(state.turn_phase || state.phase);
             RebirthAssets.preloadState(state);
-            RebirthDom.setText("player-hp", state.player.hp);
-            RebirthDom.setText("bot-hp", state.bot.hp);
+            this.animateCounter("player-hp", state.player.hp);
+            this.animateCounter("bot-hp", state.bot.hp);
             RebirthDom.setText("player-energy", state.player.energy);
             RebirthDom.setText("player-max-energy", state.player.max_energy);
             RebirthDom.setText("bot-energy", state.bot.energy);
@@ -2487,6 +2488,7 @@
             RebirthDom.setText("player-discard-count", `Descarte ${state.player.discard_count || 0}`);
             RebirthDom.setText("bot-deck-count", `Baralho ${state.bot.deck_count || 0}`);
             RebirthDom.setText("bot-discard-count", `Descarte ${state.bot.discard_count || 0}`);
+            this.trapZones(state);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
             const bossName = state.campaign && state.campaign.presentation && state.campaign.presentation.name;
             const botName = bossName || (state.bot_profile && state.bot_profile.name) || "Bot";
@@ -2495,6 +2497,55 @@
             RebirthDom.setText("player-hero-name", (RebirthConfig.player.account && RebirthConfig.player.account.name) || "Sky");
             this.hpBars();
             this.manaCoins("player", state.player.energy, state.player.max_energy);
+        },
+
+        // LP counter estilo YGO: o HP rola até o valor novo em vez de teleportar.
+        counterTimers: {},
+        animateCounter(id, target) {
+            const el = RebirthDom.byId(id);
+            if (!el) return;
+            const goal = Number(target || 0);
+            const current = parseInt(el.textContent, 10);
+            if (!Number.isFinite(current) || current === goal || RebirthFeel.reducedMotion()) {
+                el.textContent = goal;
+                return;
+            }
+            if (this.counterTimers[id]) window.cancelAnimationFrame(this.counterTimers[id]);
+            const startedAt = performance.now();
+            const from = current;
+            const durationMs = 460;
+            const tick = (now) => {
+                const progress = Math.min(1, (now - startedAt) / durationMs);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(from + (goal - from) * eased);
+                if (progress < 1) {
+                    this.counterTimers[id] = window.requestAnimationFrame(tick);
+                } else {
+                    this.counterTimers[id] = null;
+                }
+            };
+            this.counterTimers[id] = window.requestAnimationFrame(tick);
+        },
+
+        // Zona de Magia & Trap (YGO): suas armadilhas SET com nome; as do
+        // oponente como cartas viradas — você vê o perigo, não o conteúdo.
+        trapZones(state) {
+            const mine = RebirthDom.byId("player-trap-zone");
+            if (mine) {
+                const traps = (state.player && state.player.traps) || [];
+                mine.innerHTML = traps
+                    .map((trap) => `<i class="rb-trap-chip is-mine" title="${RebirthText.escape(trap.name || "Armadilha")} — armada e pronta">${RebirthText.escape(trap.name || "Armadilha")}</i>`)
+                    .join("");
+                mine.hidden = traps.length === 0;
+            }
+            const theirs = RebirthDom.byId("bot-trap-zone");
+            if (theirs) {
+                const traps = (state.bot && state.bot.traps) || [];
+                theirs.innerHTML = traps
+                    .map(() => '<i class="rb-trap-chip is-set" title="Carta virada para baixo — pode ser uma armadilha">?</i>')
+                    .join("");
+                theirs.hidden = traps.length === 0;
+            }
             this.manaCoins("bot", state.bot.energy, state.bot.max_energy);
             this.battlefield();
             this.focusCard();
@@ -3351,6 +3402,79 @@
         }
     };
 
+    const RebirthGraveyard = {
+        // YGO v104: cemitério é zona pública consultável — clicar no contador
+        // de descarte abre as cartas destruídas dos dois lados.
+        overlay() {
+            return RebirthDom.byId("rebirth-graveyard-overlay");
+        },
+
+        cardChip(card) {
+            const element = cssToken(card.element || card.family || "vazio");
+            const type = String(card.type || card.card_type || "").toUpperCase();
+            const stats = type === "MONSTER"
+                ? `<span class="rb-grave-stats"><b>${RebirthText.escape(card.attack != null ? card.attack : "?")}</b> ATK · <b>${RebirthText.escape(card.guard != null ? card.guard : "?")}</b> GRD</span>`
+                : `<span class="rb-grave-stats">${RebirthText.escape(type === "SPELL" ? "Magia" : type === "TRAP" ? "Armadilha" : type || "Carta")}</span>`;
+            return `
+                <article class="rb-grave-card is-element-${element}">
+                    <strong>${RebirthText.escape(card.name || "?")}</strong>
+                    <small>${RebirthText.escape(card.element || "Vazio")} · T${RebirthText.escape(card.tier || 1)}</small>
+                    ${stats}
+                </article>
+            `;
+        },
+
+        open(sideName) {
+            const overlay = this.overlay();
+            const state = RebirthStore.state;
+            if (!overlay || !state) return;
+            const side = sideName === "bot" ? state.bot : state.player;
+            const cards = (side && side.graveyard) || [];
+            RebirthDom.setText("graveyard-kicker", sideName === "bot" ? "Cemitério do oponente" : "Seu cemitério");
+            RebirthDom.setText("graveyard-title", cards.length ? `${cards.length} carta${cards.length > 1 ? "s" : ""} destruída${cards.length > 1 ? "s" : ""}` : "Nada destruído ainda");
+            const host = RebirthDom.byId("graveyard-cards");
+            if (host) {
+                host.innerHTML = cards.length
+                    ? cards.slice().reverse().map((card) => this.cardChip(card)).join("")
+                    : '<p class="rb-grave-empty">As cartas destruídas dos dois lados aparecem aqui — informação pública, como manda um TCG.</p>';
+            }
+            const tabPlayer = RebirthDom.byId("graveyard-tab-player");
+            const tabBot = RebirthDom.byId("graveyard-tab-bot");
+            if (tabPlayer) tabPlayer.classList.toggle("is-active-tab", sideName !== "bot");
+            if (tabBot) tabBot.classList.toggle("is-active-tab", sideName === "bot");
+            overlay.hidden = false;
+        },
+
+        close() {
+            const overlay = this.overlay();
+            if (overlay) overlay.hidden = true;
+        },
+
+        bind() {
+            const gyButton = RebirthDom.byId("graveyard-button");
+            if (gyButton) gyButton.addEventListener("click", () => this.open("player"));
+            const playerCounter = RebirthDom.byId("player-discard-count");
+            const botCounter = RebirthDom.byId("bot-discard-count");
+            if (playerCounter) playerCounter.addEventListener("click", () => this.open("player"));
+            if (botCounter) botCounter.addEventListener("click", () => this.open("bot"));
+            const closeButton = RebirthDom.byId("graveyard-close");
+            if (closeButton) closeButton.addEventListener("click", () => this.close());
+            const tabPlayer = RebirthDom.byId("graveyard-tab-player");
+            const tabBot = RebirthDom.byId("graveyard-tab-bot");
+            if (tabPlayer) tabPlayer.addEventListener("click", () => this.open("player"));
+            if (tabBot) tabBot.addEventListener("click", () => this.open("bot"));
+            const overlay = this.overlay();
+            if (overlay) {
+                overlay.addEventListener("click", (event) => {
+                    if (event.target === overlay) this.close();
+                });
+            }
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") this.close();
+            });
+        }
+    };
+
     const RebirthMulligan = {
         dismissedFor: null,
 
@@ -3855,6 +3979,11 @@
                 RebirthRenderer.buttons();
                 return;
             }
+            // YGO: o primeiro ataque do turno anuncia a Fase de Batalha.
+            if (RebirthGameFeel.lastBattleTurn !== RebirthStore.state.turn) {
+                RebirthGameFeel.lastBattleTurn = RebirthStore.state.turn;
+                RebirthGameFeel.showTurnBanner("player", "FASE DE BATALHA!");
+            }
             const attacker = RebirthStore.fieldCard(RebirthStore.selectedAttackerId);
             if (attacker && !cardCanActNow(attacker)) {
                 RebirthErrors.show(
@@ -4211,6 +4340,7 @@
                 });
             }
             RebirthMulligan.bind();
+            RebirthGraveyard.bind();
             RebirthTargeting.bind();
             BotTurnDirector.bind();
 
