@@ -1681,6 +1681,74 @@ def _apply_persistent_strike(match, *, winner_side, winner_card, loser_side, los
     return damage
 
 
+def _resolve_decisive_strike(
+    match, *, winner_side, winner_card, loser_side, loser_card, persistent_field, ability_events, hero_damage
+):
+    """Victory/defeat damage application for resolve_turn.
+
+    Extracted verbatim from the two mirror branches (player-win / bot-win) so the
+    clash resolver reads as one path parametrised by side. Behaviour is identical
+    — the engine clash matrix + replay/parity tests lock it.
+    """
+    damage_payload = damage_details(
+        winner_card, loser_card, match[loser_side].get("wounded", False),
+        match=match, attacker_side=winner_side, defender_side=loser_side,
+    )
+    damage = damage_payload["amount"]
+    ability_events.extend(damage_payload["events"])
+    if persistent_field:
+        damage = _apply_persistent_strike(
+            match,
+            winner_side=winner_side,
+            winner_card=winner_card,
+            loser_side=loser_side,
+            loser_card=loser_card,
+            damage=damage,
+            ability_events=ability_events,
+            hero_damage=hero_damage,
+        )
+    else:
+        damage = apply_turn_damage(match, loser_side, damage)
+        _emit_lifesteal(match, winner_side, winner_card, damage, ability_events)
+    if winner_side == "player":
+        return {
+            "outcome": "Victory",
+            "winner": "player",
+            "damage": {"player": 0, "bot": damage},
+            "message": f"{winner_card['name']} venceu {loser_card['name']}. {'Alvo perde' if persistent_field else 'Bot sofre'} {damage} de dano.",
+        }
+    return {
+        "outcome": "Defeat",
+        "winner": "bot",
+        "damage": {"player": damage, "bot": 0},
+        "message": f"{winner_card['name']} derrotou {loser_card['name']}. {'Atacante perde' if persistent_field else 'Você sofre'} {damage} de dano.",
+    }
+
+
+def _resolve_clash_tie(match, player_card, bot_card, clash, *, persistent_field):
+    # Em combate no campo, um empate troca dano de Guarda entre as criaturas
+    # sem marcar dano direto nos herois.
+    clash_damage = {"player": 0, "bot": 0}
+    clash_message = f"{player_card['name']} e {bot_card['name']} travam lâminas."
+    if persistent_field:
+        player_guard_damage = max(1, clash["bot_attack"])
+        bot_guard_damage = max(1, clash["player_attack"])
+        player_card["current_guard"] = int(player_card.get("current_guard", player_card.get("guard", 0)) or 0) - player_guard_damage
+        bot_card["current_guard"] = int(bot_card.get("current_guard", bot_card.get("guard", 0)) or 0) - bot_guard_damage
+        clash_damage = {"player": player_guard_damage, "bot": bot_guard_damage}
+        clash_message += f" Ambos sofrem o golpe (você -{player_guard_damage} Guarda, bot -{bot_guard_damage} Guarda)."
+    else:
+        match["player"]["wounded"] = True
+        match["bot"]["wounded"] = True
+        clash_message += " Nenhum dano é causado."
+    return {
+        "outcome": "Clash",
+        "winner": None,
+        "damage": clash_damage,
+        "message": clash_message,
+    }
+
+
 def resolve_turn(
     match,
     player_card,
@@ -1702,81 +1770,19 @@ def resolve_turn(
     ability_events = list(trap_events) + list(clash["events"])
     hero_damage = {"player": 0, "bot": 0}
     if winner == "player":
-        damage_payload = damage_details(
-            player_card, bot_card, match["bot"].get("wounded", False),
-            match=match, attacker_side="player", defender_side="bot",
+        result = _resolve_decisive_strike(
+            match, winner_side="player", winner_card=player_card,
+            loser_side="bot", loser_card=bot_card,
+            persistent_field=persistent_field, ability_events=ability_events, hero_damage=hero_damage,
         )
-        damage = damage_payload["amount"]
-        ability_events.extend(damage_payload["events"])
-        if persistent_field:
-            damage = _apply_persistent_strike(
-                match,
-                winner_side="player",
-                winner_card=player_card,
-                loser_side="bot",
-                loser_card=bot_card,
-                damage=damage,
-                ability_events=ability_events,
-                hero_damage=hero_damage,
-            )
-        else:
-            damage = apply_turn_damage(match, "bot", damage)
-            _emit_lifesteal(match, "player", player_card, damage, ability_events)
-        result = {
-            "outcome": "Victory",
-            "winner": "player",
-            "damage": {"player": 0, "bot": damage},
-            "message": f"{player_card['name']} venceu {bot_card['name']}. {'Alvo perde' if persistent_field else 'Bot sofre'} {damage} de dano.",
-        }
     elif winner == "bot":
-        damage_payload = damage_details(
-            bot_card, player_card, match["player"].get("wounded", False),
-            match=match, attacker_side="bot", defender_side="player",
+        result = _resolve_decisive_strike(
+            match, winner_side="bot", winner_card=bot_card,
+            loser_side="player", loser_card=player_card,
+            persistent_field=persistent_field, ability_events=ability_events, hero_damage=hero_damage,
         )
-        damage = damage_payload["amount"]
-        ability_events.extend(damage_payload["events"])
-        if persistent_field:
-            damage = _apply_persistent_strike(
-                match,
-                winner_side="bot",
-                winner_card=bot_card,
-                loser_side="player",
-                loser_card=player_card,
-                damage=damage,
-                ability_events=ability_events,
-                hero_damage=hero_damage,
-            )
-        else:
-            damage = apply_turn_damage(match, "player", damage)
-            _emit_lifesteal(match, "bot", bot_card, damage, ability_events)
-        result = {
-            "outcome": "Defeat",
-            "winner": "bot",
-            "damage": {"player": damage, "bot": 0},
-            "message": f"{bot_card['name']} derrotou {player_card['name']}. {'Atacante perde' if persistent_field else 'Você sofre'} {damage} de dano.",
-        }
     else:
-        # Em combate no campo, um empate troca dano de Guarda entre as
-        # criaturas sem marcar dano direto nos herois.
-        clash_damage = {"player": 0, "bot": 0}
-        clash_message = f"{player_card['name']} e {bot_card['name']} travam lâminas."
-        if persistent_field:
-            player_guard_damage = max(1, clash["bot_attack"])
-            bot_guard_damage = max(1, clash["player_attack"])
-            player_card["current_guard"] = int(player_card.get("current_guard", player_card.get("guard", 0)) or 0) - player_guard_damage
-            bot_card["current_guard"] = int(bot_card.get("current_guard", bot_card.get("guard", 0)) or 0) - bot_guard_damage
-            clash_damage = {"player": player_guard_damage, "bot": bot_guard_damage}
-            clash_message += f" Ambos sofrem o golpe (você -{player_guard_damage} Guarda, bot -{bot_guard_damage} Guarda)."
-        else:
-            match["player"]["wounded"] = True
-            match["bot"]["wounded"] = True
-            clash_message += " Nenhum dano é causado."
-        result = {
-            "outcome": "Clash",
-            "winner": None,
-            "damage": clash_damage,
-            "message": clash_message,
-        }
+        result = _resolve_clash_tie(match, player_card, bot_card, clash, persistent_field=persistent_field)
 
     if persistent_field:
         result["hero_damage"] = hero_damage
