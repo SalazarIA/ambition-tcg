@@ -25,6 +25,7 @@ from services.rebirth_first_session import first_session_plan
 from services.rebirth_live_balance import live_balance_payload
 from services.rebirth_engine import start_match
 from services.rebirth_match_store import MATCH_STORE
+from services.rebirth_rate_limit import create_rate_limiter
 from services.rebirth_persistence import (
     RebirthPersistenceError,
     RebirthRepository,
@@ -127,8 +128,11 @@ app.config["REBIRTH_REQUIRE_EMAIL_VERIFICATION"] = os.environ.get("REBIRTH_REQUI
 REBIRTH_LABS_ENABLED = True
 app.config["REBIRTH_LABS_ENABLED"] = os.environ.get("REBIRTH_LABS_ENABLED", str(REBIRTH_LABS_ENABLED)).lower() == "true"
 REBIRTH_MATCHES = MATCH_STORE
-AUTH_RATE_LIMITS = {}
-AUTH_RATE_LIMIT_LOCK = threading.Lock()
+# Rate limiter with a pluggable backend (memory by default; Redis once the app
+# scales beyond -w 1, so the window is shared across workers). Auth and game
+# routes use separate namespaces but the same shared backend.
+AUTH_RATE_LIMITER = create_rate_limiter("rbauth")
+GAME_RATE_LIMITER = create_rate_limiter("rbgame")
 MATCH_TELEMETRY_CLOCKS = {}
 MATCH_TELEMETRY_LOCK = threading.Lock()
 _SCHEMA_BOOTSTRAP_LOCK = threading.Lock()
@@ -544,24 +548,10 @@ def enforce_auth_rate_limit(action, identifier="anonymous"):
     if limit <= 0 or window_seconds <= 0:
         return
 
-    now = time.time()
     remote_addr = request.remote_addr or "local"
     identity = str(identifier or "anonymous").strip().lower()
     keys = (f"{action}:ip:{remote_addr}", f"{action}:identity:{remote_addr}:{identity}")
-    blocked = False
-    with AUTH_RATE_LIMIT_LOCK:
-        buckets = {
-            key: [stamp for stamp in AUTH_RATE_LIMITS.get(key, []) if now - stamp < window_seconds]
-            for key in keys
-        }
-        blocked = any(len(attempts) >= limit for attempts in buckets.values())
-        if not blocked:
-            for key, attempts in buckets.items():
-                attempts.append(now)
-                AUTH_RATE_LIMITS[key] = attempts
-        else:
-            AUTH_RATE_LIMITS.update(buckets)
-    if blocked:
+    if AUTH_RATE_LIMITER.hit(keys, limit, window_seconds):
         raise RebirthPersistenceError("Muitas tentativas de acesso. Tente novamente mais tarde.", "rate_limited", status=429)
 
 

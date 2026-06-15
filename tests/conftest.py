@@ -25,11 +25,13 @@ def flask_app(tmp_path):
         SECRET_KEY="rebirth-test-secret",
     )
     ambition_app.REBIRTH_MATCHES.clear()
-    ambition_app.AUTH_RATE_LIMITS.clear()
+    ambition_app.AUTH_RATE_LIMITER.reset()
+    ambition_app.GAME_RATE_LIMITER.reset()
     ambition_app.MATCH_TELEMETRY_CLOCKS.clear()
     yield ambition_app.app
     ambition_app.REBIRTH_MATCHES.clear()
-    ambition_app.AUTH_RATE_LIMITS.clear()
+    ambition_app.AUTH_RATE_LIMITER.reset()
+    ambition_app.GAME_RATE_LIMITER.reset()
     ambition_app.MATCH_TELEMETRY_CLOCKS.clear()
 
 

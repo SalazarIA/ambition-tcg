@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from collections import OrderedDict
@@ -90,6 +91,57 @@ class RebirthMatchStore:
             return len(self._matches)
 
 
+class RedisMatchStore:
+    """Shared match cache backed by Redis (multi-worker safe).
+
+    Mirrors the :class:`RebirthMatchStore` interface used by the app. Matches
+    are JSON-serialised — the same round-trip the Postgres rehydration path
+    (``runtime_match_state``) already relies on, so no new serialisation
+    constraint is introduced. Redis handles TTL expiry natively; ``get`` slides
+    the TTL forward to match the in-memory store's behaviour.
+    """
+
+    def __init__(self, client, ttl_seconds=DEFAULT_MATCH_TTL_SECONDS, namespace="rbmatch"):
+        self.ttl_seconds = max(1, int(ttl_seconds))
+        self._r = client
+        self._ns = namespace
+
+    def _key(self, match_id):
+        return f"{self._ns}:{match_id}"
+
+    def save(self, match):
+        self._r.set(self._key(match["match_id"]), json.dumps(match), ex=self.ttl_seconds)
+        return match
+
+    def get(self, match_id):
+        key = self._key(str(match_id or ""))
+        raw = self._r.get(key)
+        if raw is None:
+            raise RebirthError("Partida não encontrada.", "missing_match")
+        self._r.expire(key, self.ttl_seconds)
+        return json.loads(raw)
+
+    def cleanup(self, now=None):
+        return 0  # Redis expires keys on its own
+
+    def clear(self):
+        keys = list(self._r.scan_iter(match=f"{self._ns}:*"))
+        if keys:
+            self._r.delete(*keys)
+
+    def raw(self):
+        out = {}
+        for key in self._r.scan_iter(match=f"{self._ns}:*"):
+            raw = self._r.get(key)
+            if raw is not None:
+                match = json.loads(raw)
+                out[str(match.get("match_id"))] = match
+        return out
+
+    def __len__(self):
+        return sum(1 for _ in self._r.scan_iter(match=f"{self._ns}:*"))
+
+
 def _worker_count():
     for name in ("WEB_CONCURRENCY", "GUNICORN_WORKERS"):
         try:
@@ -117,16 +169,27 @@ def create_match_store():
     cross-worker state split that the audit flagged.
     """
     backend = (os.environ.get("REBIRTH_MATCH_BACKEND") or "memory").strip().lower()
-    store = RebirthMatchStore(
-        ttl_seconds=_positive_int_env("REBIRTH_MATCH_TTL_SECONDS", DEFAULT_MATCH_TTL_SECONDS),
-        max_matches=_positive_int_env("REBIRTH_MAX_MATCHES", DEFAULT_MAX_MATCHES),
-    )
-    if backend not in ("memory", ""):
+    ttl = _positive_int_env("REBIRTH_MATCH_TTL_SECONDS", DEFAULT_MATCH_TTL_SECONDS)
+    if backend == "redis":
+        from services.rebirth_redis import redis_client_from_env
+
+        client = redis_client_from_env()
+        if client is not None:
+            logger.info("rebirth.match_store: using shared Redis backend")
+            return RedisMatchStore(client, ttl_seconds=ttl)
         logger.warning(
-            "REBIRTH_MATCH_BACKEND=%s requested but only 'memory' is implemented; "
-            "falling back to in-process store.",
+            "REBIRTH_MATCH_BACKEND=redis but Redis is unavailable; "
+            "falling back to the in-process store."
+        )
+    elif backend not in ("memory", ""):
+        logger.warning(
+            "REBIRTH_MATCH_BACKEND=%s is not implemented; using the in-process store.",
             backend,
         )
+    store = RebirthMatchStore(
+        ttl_seconds=ttl,
+        max_matches=_positive_int_env("REBIRTH_MAX_MATCHES", DEFAULT_MAX_MATCHES),
+    )
     if _worker_count() > 1 and backend in ("memory", ""):
         logger.warning(
             "Running %d workers with the in-process match store. Guest matches "
