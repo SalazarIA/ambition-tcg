@@ -133,6 +133,24 @@ REBIRTH_MATCHES = MATCH_STORE
 # routes use separate namespaces but the same shared backend.
 AUTH_RATE_LIMITER = create_rate_limiter("rbauth")
 GAME_RATE_LIMITER = create_rate_limiter("rbgame")
+# Per-endpoint game limits (requests / window / IP). Generous for a human (a
+# match is hundreds of actions over minutes) but caps abuse — e.g. mining match
+# seeds via /start or flooding telemetry. 0 disables a bucket; tune via env.
+GAME_RATE_LIMIT_WINDOW = max(1, int(os.environ.get("REBIRTH_GAME_RATE_LIMIT_SECONDS", "60")))
+GAME_RATE_LIMITS = {
+    "api_rebirth_start": int(os.environ.get("REBIRTH_START_RATE_LIMIT", "120")),
+    "api_rebirth_campaign_start": int(os.environ.get("REBIRTH_START_RATE_LIMIT", "120")),
+    "api_rebirth_booster_open": int(os.environ.get("REBIRTH_BOOSTER_RATE_LIMIT", "60")),
+    "api_rebirth_play_card": 600,
+    "api_rebirth_attack": 600,
+    "api_rebirth_next_turn": 600,
+    "api_rebirth_evolve": 600,
+    "api_rebirth_mulligan": 300,
+    "api_labs_fusion": 300,
+    "api_rebirth_resume": 300,
+    "api_rebirth_telemetry": int(os.environ.get("REBIRTH_TELEMETRY_RATE_LIMIT", "300")),
+    "api_rebirth_telemetry_beacon": int(os.environ.get("REBIRTH_TELEMETRY_RATE_LIMIT", "300")),
+}
 MATCH_TELEMETRY_CLOCKS = {}
 MATCH_TELEMETRY_LOCK = threading.Lock()
 _SCHEMA_BOOTSTRAP_LOCK = threading.Lock()
@@ -817,6 +835,19 @@ def protect_rebirth_mutations():
 @app.before_request
 def _mark_request_start():
     g._rb_request_t0 = perf_counter()
+
+
+@app.before_request
+def _enforce_game_rate_limit():
+    # Defense-in-depth on top of CSRF: cap per-IP request rate on the mutating
+    # game + telemetry endpoints so they can't be scraped or flooded.
+    limit = GAME_RATE_LIMITS.get(request.endpoint or "")
+    if not limit or limit <= 0:
+        return None
+    key = f"{request.endpoint}:{request.remote_addr or 'local'}"
+    if GAME_RATE_LIMITER.hit((key,), limit, GAME_RATE_LIMIT_WINDOW):
+        return json_error("Muitas requisições em sequência. Aguarde alguns segundos.", "rate_limited", status=429)
+    return None
 
 
 @app.after_request
