@@ -302,7 +302,10 @@
             {# F12: progresso da coleção em destaque (barra + 1 número grande),
                stats individuais como chips inline — não mais 4 boxes gigantes
                engolindo a primeira viewport antes das cartas. #}
-            {% set total_cards = page.cards|length if page.cards else 103 %}
+            {# Conta só as cartas obteníveis (as 3 lendárias são placeholders de
+               conteúdo futuro): a coleção fecha em 100/100 em vez de travar em
+               100/103 para sempre. #}
+            {% set total_cards = (page.cards | rejectattr('rarity', 'equalto', 'LEGENDARY') | list | length) if page.cards else 100 %}
             {% set unique_pct = (((page.summary.unique_owned or 0) * 100) // total_cards) if total_cards else 0 %}
             <section class="rb-collection-progress" aria-label="Progresso da coleção">
                 <div class="rb-collection-progress-head">

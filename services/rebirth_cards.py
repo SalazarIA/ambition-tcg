@@ -554,6 +554,11 @@ CARD_BALANCE_OVERRIDES = {
     # Mossback Brute: 6/4 com earth_shield por 2 mana segura board demais.
     # +1 mana alinha à curva real do stat-total (10 → cost 3 na fórmula).
     "card_045": {"cost": 3},
+    # NOTA (playtest 10k, 2026-06-15): card_084 "Bola de Fogo da Arena" aparecia
+    # com WR 0.86 ("dominant"), mas nerfá-la (3 mana / 2 dano) mal moveu o WR
+    # (0.82) e o macro seguiu 49/51 — é VIÉS DE SELEÇÃO (finalizador jogado em
+    # posição vencedora), não poder. Nenhum override aplicado. Ver
+    # docs/REBIRTH_PLAYTEST_FINDINGS.md.
 }
 
 for _card_id, _override in CARD_BALANCE_OVERRIDES.items():
