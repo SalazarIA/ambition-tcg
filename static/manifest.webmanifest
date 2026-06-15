@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Ambitionz Rebirth",
   "short_name": "Ambitionz",
-  "description": "A fast one-card monster duel. Combine duplicates, evolve monsters and win the clash.",
+  "description": "Duelo de monstros tático: invoque em três campos, evolua duplicatas, arme armadilhas e vença o confronto.",
   "start_url": "/rebirth?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -18,7 +18,7 @@
     "games",
     "strategy"
   ],
-  "lang": "en",
+  "lang": "pt-BR",
   "dir": "ltr",
   "prefer_related_applications": false,
   "icons": [
@@ -55,9 +55,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Play Rebirth",
-      "short_name": "Play",
-      "description": "Start a one-card Ambitionz Rebirth duel.",
+      "name": "Jogar Rebirth",
+      "short_name": "Jogar",
+      "description": "Comece um duelo de monstros do Ambitionz Rebirth.",
       "url": "/rebirth",
       "icons": [
         {
