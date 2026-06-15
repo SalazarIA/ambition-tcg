@@ -992,6 +992,20 @@ def _apply_trap_effect(match, owner_side, trap, owner_card, opponent_card):
     opponent_side = _opponent_side(owner_side)
     order = 100
     opponent_instance_id = (opponent_card or {}).get("instance_id")
+    # Per-effect dispatch lives in its own function; this entry owns only the
+    # bus/message setup and the final flush, so the effect catalogue can grow
+    # without inflating the resolver.
+    _dispatch_trap_effect(
+        effect, bus, match, owner_side, opponent_side, trap,
+        owner_card, opponent_card, opponent_instance_id, order, messages,
+    )
+    return messages + [event.get("message") for event in bus.flush() if event.get("message")]
+
+
+def _dispatch_trap_effect(
+    effect, bus, match, owner_side, opponent_side, trap,
+    owner_card, opponent_card, opponent_instance_id, order, messages,
+):
     if effect == "negate_attack":
         bus.dispatch(
             "STAT_MODIFIER_APPLIED",
@@ -1194,7 +1208,6 @@ def _apply_trap_effect(match, owner_side, trap, owner_card, opponent_card):
             chain_from_previous=True,
         )
         messages.append(f"{trap['name']} enfraquece o atacante.")
-    return messages + [event.get("message") for event in bus.flush() if event.get("message")]
 
 
 def _trigger_side_traps(match, owner_side, owner_card, opponent_card):
