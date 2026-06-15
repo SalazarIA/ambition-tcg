@@ -16,15 +16,50 @@ from services.rebirth_cards import (
 from services.rebirth_contracts import FIELD_SLOT_COUNT, RebirthError
 from services.rebirth_engine import (
     compare_clash,
-    declare_attack,
     damage_details,
-    evolve_duplicate,
-    next_turn,
-    play_card,
     start_match,
+)
+from services.rebirth_dispatcher import (
+    DeclareAttackCommand,
+    EndTurnCommand,
+    EvolveDuplicateCommand,
+    SummonCardCommand,
+    dispatch_command,
 )
 from services.rebirth_state import available_evolutions
 from services.rebirth_bot import ability_priority, choose_response
+
+
+# audit P1.3: the balance lab must exercise the SAME command dispatcher the HTTP
+# layer uses, not the engine directly. dispatch_command delegates to the same
+# engine functions and adds the command/event log, canonical state hash and
+# parity checkpoints — so match outcomes are identical while the simulation
+# gains production fidelity. These thin wrappers keep every call site unchanged.
+def play_card(match, card_instance_id=None, card_id=None, field_slot=None, target_instance_id=None):
+    return dispatch_command(
+        match,
+        SummonCardCommand(
+            card_instance_id=card_instance_id,
+            card_id=card_id,
+            field_slot=field_slot,
+            target_instance_id=target_instance_id,
+        ),
+    )
+
+
+def declare_attack(match, attacker_instance_id=None, target_instance_id=None):
+    return dispatch_command(
+        match,
+        DeclareAttackCommand(attacker_instance_id=attacker_instance_id, target_instance_id=target_instance_id),
+    )
+
+
+def next_turn(match):
+    return dispatch_command(match, EndTurnCommand())
+
+
+def evolve_duplicate(match, card_id):
+    return dispatch_command(match, EvolveDuplicateCommand(card_id=card_id))
 
 
 def choose_player_card(hand):
