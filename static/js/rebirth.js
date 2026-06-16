@@ -398,7 +398,12 @@
             const height = Math.max(1, viewport.height || window.innerHeight || RebirthConfig.boardHeight);
             const safe = this.safeInsets();
             const navHeight = this.globalNavHeight();
-            const nativeMobile = width <= 760;
+            // #1 tablet fix: o cockpit mobile (dirigido por .rb-mobile-native)
+            // cobre toda a faixa < 1180px. Antes era <= 760, deixando 761-1179
+            // (tablets) numa zona morta entre mobile e o desktop-cheio (>=1180):
+            // o board virava uma faixa estreita flutuante. Agora tablet usa o
+            // cockpit vertical até o layout desktop assumir em 1180px.
+            const nativeMobile = width < 1180;
             document.body.classList.toggle("rb-mobile-native", nativeMobile);
             document.documentElement.style.setProperty("--rb-mobile-nav-height", `${navHeight}px`);
             if (nativeMobile) {
@@ -431,7 +436,7 @@
         },
 
         isNativeMobile() {
-            return window.matchMedia("(max-width: 760px)").matches;
+            return window.matchMedia("(max-width: 1179px)").matches;
         },
 
         globalNavHeight() {

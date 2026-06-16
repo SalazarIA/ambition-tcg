@@ -10113,8 +10113,11 @@ button {
     pointer-events: none;
     background: rgba(0, 0, 0, 0.72);
     display: grid;
-    place-items: center;
-    padding: 24px;
+    /* #2 tutorial fix: balão ancora no rodapé (acima da mão) em vez do centro,
+       deixando o board visível enquanto o tutorial orienta. O spotlight (abaixo)
+       continua destacando o elemento certo via JS. */
+    place-items: end center;
+    padding: 24px 24px 28px;
 }
 
 .rb-tutorial-spotlight {
@@ -15599,4 +15602,19 @@ body.rb-game-page .rb-game-board .rb-hero-portrait {
     #graveyard-button {
         display: none;
     }
+}
+
+/* #3 perf: a coleção lista ~100 cartas num scroll muito longo (~30.000px no
+   mobile). content-visibility faz o navegador pular render/paint dos tiles fora
+   da viewport — sem mexer no DOM/markup. contain-intrinsic-size reserva a altura
+   estimada para o scroll ficar estável. */
+.rb-collection-shelf .rb-product-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 280px;
+}
+
+/* #4: o banner "Confirme seu email" é útil nas telas de produto (há espaço),
+   mas polui o cockpit apertado da arena. Esconde só na página de jogo. */
+body.rb-game-page .rb-verify-banner {
+    display: none;
 }
