@@ -3258,6 +3258,36 @@ button {
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
+/* v98 raridade: gema facetada no canto da arte + pílula de posse tingida pela
+   raridade. Cores sombrias: comum bronze, incomum teal-prata, raro azul,
+   lendária ouro/brasa (estas últimas prontas para conteúdo futuro). */
+.rb-product-card.is-rarity-common { --rb-rarity: #a78f66; --rb-rarity-soft: rgba(167, 143, 102, 0.55); }
+.rb-product-card.is-rarity-uncommon { --rb-rarity: #5cc0ab; --rb-rarity-soft: rgba(92, 192, 171, 0.60); }
+.rb-product-card.is-rarity-rare { --rb-rarity: #5b91da; --rb-rarity-soft: rgba(91, 145, 218, 0.60); }
+.rb-product-card.is-rarity-legendary { --rb-rarity: #f4ad26; --rb-rarity-soft: rgba(244, 173, 38, 0.66); }
+
+.rb-product-card[class*="is-rarity-"]::after {
+    content: "";
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    border-radius: 2px;
+    background: var(--rb-rarity, #c4a050);
+    box-shadow:
+        0 0 9px var(--rb-rarity-soft, rgba(196, 160, 80, 0.5)),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.55);
+    z-index: 3;
+}
+
+.rb-product-card[class*="is-rarity-"] span {
+    border-color: var(--rb-rarity-soft, rgba(196, 160, 80, 0.38));
+    color: var(--rb-rarity, #e8d4a4);
+}
+
 .rb-product-card-compact h2 {
     font-size: var(--fs-md);
 }
@@ -5269,6 +5299,12 @@ button {
     --element-core: #a15cff;
     --element-glow: rgba(161, 92, 255, 0.66);
     --element-soft: rgba(161, 92, 255, 0.2);
+}
+
+/* v98 raridade na arena: comum ganha anel bronze sutil (antes era neutro),
+   para a raridade ler no board, não só no incomum dourado. */
+.rb-tcg-card.is-rarity-common {
+    --rarity-ring: linear-gradient(135deg, rgba(178, 152, 106, 0.5) 0%, rgba(120, 100, 70, 0.14) 46%, rgba(0, 0, 0, 0.3) 100%);
 }
 
 .rb-tcg-card.is-premium-rarity {

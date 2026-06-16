@@ -390,7 +390,7 @@
                         </div>
                         <div class="rb-product-card-grid rb-product-card-grid-shelf">
                             {% for card in section.cards %}
-                                <article class="rb-product-card rb-product-card-compact">
+                                <article class="rb-product-card rb-product-card-compact is-rarity-{{ (card.rarity or 'COMMON')|lower }}">
                                     <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
                                     <div>
                                         <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
@@ -408,7 +408,7 @@
                     <summary>Ver catálogo completo de {{ page.cards|length }} cartas</summary>
                     <section class="rb-product-card-grid rb-product-card-grid-compact" aria-label="Catálogo completo Rebirth">
                         {% for card in page.cards %}
-                            <article class="rb-product-card rb-product-card-compact">
+                            <article class="rb-product-card rb-product-card-compact is-rarity-{{ (card.rarity or 'COMMON')|lower }}">
                                 <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
                                 <div>
                                     <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
