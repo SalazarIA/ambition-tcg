@@ -3318,7 +3318,7 @@ button {
    mobile, XP e carteira são ruído — escondê-los devolve altura pro
    tabuleiro. Continuam visíveis nas outras rotas (coleção/loja/recompensas)
    onde fazem sentido. A nav vira brand + abas roláveis + ação. */
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     .rb-game-page .rb-global-nav {
         grid-template-columns: auto 1fr auto;
         gap: 8px;
@@ -8107,7 +8107,7 @@ button {
 }
 
 /* v58: native touch layout. Mobile no longer shrinks the desktop canvas. */
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     body.rb-game-page.rb-mobile-native {
         --rb-touch-target-min: 44px;
         --rb-touch-target-comfort: 48px;
@@ -8487,7 +8487,7 @@ button {
     }
 }
 
-@media (max-width: 760px) and (orientation: landscape) {
+@media (max-width: 1179px) and (orientation: landscape) {
     .rb-mobile-native .rb-game-viewport {
         padding-top: calc(var(--rb-mobile-nav-height, 70px) + var(--rb-safe-top) + 8px);
     }
@@ -8722,7 +8722,7 @@ button {
     100% { opacity: 0; transform: translateY(-28px) scale(1.04); }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     body.rb-game-page.rb-mobile-native {
         --rb-mobile-nav-height: 92px;
         width: 100%;
@@ -9927,7 +9927,7 @@ button {
     to { opacity: 0.36; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     .rb-mobile-native .rb-damage-number {
         min-width: 32px;
         padding: 4px 6px;
@@ -9951,7 +9951,7 @@ button {
 
 /* v76: mobile readability pass. Keep the arena playable while giving nav
    labels, economy chips and hand cards enough room to breathe. */
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     body.rb-game-page.rb-mobile-native {
         --rb-mobile-nav-height: 154px;
     }
@@ -10203,7 +10203,7 @@ button {
     font-weight: 900;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     .rb-tutorial-balloon {
         max-width: calc(100vw - 32px);
         padding: 18px 20px 18px;
@@ -13763,7 +13763,7 @@ button {
 
 /* v97 MOBILE_WEB_FIX: mobile web repair. The Fates rewrite hides the desktop chrome, but the
    phone web layout still depends on a compact global nav and touch dock. */
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     body.rb-game-page.rb-mobile-native .rb-global-nav {
         display: grid !important;
     }
@@ -14348,7 +14348,7 @@ button {
 
 /* Mobile: o mulligan não disputa o cluster inferior direito (colidia com o
    "Nova partida"); vira chip flutuante no topo durante o turno 1. */
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     .rb-mobile-native .rb-mulligan-button {
         position: fixed;
         top: calc(var(--rb-mobile-nav-height, 96px) + 8px);
@@ -14574,7 +14574,7 @@ button {
 }
 
 /* No mobile o botão pequeno some — a tela de decisão assume o mulligan. */
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     .rb-mobile-native .rb-mulligan-button {
         display: none !important;
     }
@@ -15148,7 +15148,7 @@ body.rb-campaign-page .rb-campaign-node.is-next {
 }
 
 /* ---------- Mobile: cada coisa na sua faixa ---------- */
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     /* Nav de jogo em UMA linha: selo + abas roláveis + entrar. O duelo é o
        protagonista — identidade/XP/carteira ficam para as telas de produto. */
     body.rb-game-page.rb-mobile-native {
@@ -15320,7 +15320,7 @@ body.rb-campaign-page .rb-campaign-node.is-next {
     opacity: 0.55;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     .vfx-finale-overlay .vfx-finale-summary {
         gap: 14px;
     }
@@ -15506,7 +15506,7 @@ body.rb-campaign-page .rb-campaign-node.is-next {
     50% { box-shadow: 0 0 12px 1px rgba(168, 130, 220, 0.4); }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1179px) {
     .rb-graveyard-cards {
         grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
     }
