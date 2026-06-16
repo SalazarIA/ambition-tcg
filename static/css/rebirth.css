@@ -3161,9 +3161,30 @@ button {
     margin-top: 14px;
 }
 
+/* v98 IDENTIDADE: moldura de carta sombria cinematográfica (Master Duel/Diablo).
+   Base escura com filete dourado + bisel, arte emoldurada com vinheta, nome em
+   serifa épica gravada, habilidade em fita com filete e statline em ouro. */
 .rb-product-card {
+    position: relative;
     overflow: hidden;
     min-width: 0;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #17130c 0%, #0c0a07 58%, #070503 100%);
+    border: 1px solid rgba(196, 160, 80, 0.30);
+    box-shadow:
+        0 10px 26px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 226, 160, 0.10),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.55);
+    transition: transform 160ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.rb-product-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(222, 186, 108, 0.58);
+    box-shadow:
+        0 16px 36px rgba(0, 0, 0, 0.62),
+        0 0 24px rgba(196, 160, 80, 0.20),
+        inset 0 1px 0 rgba(255, 226, 160, 0.16);
 }
 
 .rb-product-card img {
@@ -3171,29 +3192,70 @@ button {
     width: 100%;
     aspect-ratio: 3 / 4;
     object-fit: contain;
-    background: #101317;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(64, 46, 22, 0.55), rgba(0, 0, 0, 0) 64%),
+        #07090c;
+    border-bottom: 1px solid rgba(196, 160, 80, 0.28);
+    box-shadow: inset 0 -42px 52px rgba(0, 0, 0, 0.62);
 }
 
 .rb-product-card div {
-    padding: 14px;
+    position: relative;
+    padding: 12px 14px 14px;
+}
+
+.rb-product-card span {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 2px 9px;
+    border: 1px solid rgba(196, 160, 80, 0.38);
+    border-radius: 999px;
+    background: rgba(20, 14, 8, 0.82);
+    color: #e8d4a4;
+    font-size: var(--fs-3xs);
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
 }
 
 .rb-product-card h2 {
+    margin: 2px 0 0;
+    font-family: var(--rb-font-epic);
     font-size: var(--fs-md);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff3d2;
+    text-transform: uppercase;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.82);
+}
+
+.rb-product-card p {
+    margin: 5px 0 0;
+    color: rgba(222, 212, 190, 0.60);
+    font-size: var(--fs-3xs);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.rb-product-card small {
+    display: block;
+    margin-top: 9px;
+    padding: 8px 10px;
+    border-left: 2px solid rgba(196, 160, 80, 0.52);
+    background: rgba(0, 0, 0, 0.34);
+    color: rgba(232, 224, 204, 0.82);
+    font-size: var(--fs-2xs);
+    line-height: 1.4;
 }
 
 .rb-product-card strong {
     display: block;
     margin-top: 10px;
     color: var(--rb-gold);
-}
-
-.rb-product-card small {
-    display: block;
-    margin-top: 8px;
-    color: var(--rb-muted);
-    font-size: var(--fs-2xs);
-    line-height: 1.35;
+    font-family: var(--rb-font-epic);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
 .rb-product-card-compact h2 {
