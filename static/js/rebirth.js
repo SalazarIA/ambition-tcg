@@ -858,10 +858,10 @@
                         <strong>${RebirthText.escape(ability.name)}</strong>
                         <p>${RebirthText.escape(ability.copy)}</p>
                     </div>
-                    <div class="rb-card-statline rb-mini-stats rb-card-hud-layer">
+                    ${this.cardType(card) === "MONSTER" ? `<div class="rb-card-statline rb-mini-stats rb-card-hud-layer">
                         <span class="rb-card-stat is-atk"><b>${RebirthText.escape(card.attack || card.power)}</b><small>ATK</small></span>
                         <span class="rb-card-stat is-guard"><b>${RebirthText.escape(card.guard || 0)}</b><small>GUARD</small></span>
-                    </div>
+                    </div>` : ""}
                 </button>
             `;
         },

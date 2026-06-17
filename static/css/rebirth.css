@@ -15637,13 +15637,19 @@ body.rb-campaign-page .rb-campaign-node.is-next {
        z-index com o grid 1fr/1fr do HUD. */
     body.rb-game-page .rb-zone-row {
         display: flex !important;
-        gap: 10px;
+        gap: 6px;
         justify-content: center;
         position: absolute !important;
         top: -28px;
         left: 50%;
         transform: translateX(-50%);
+        /* v105: dimensiona pelo conteúdo e fica acima da moldura (overflow do
+           retrato) — antes os rótulos clipavam em ~113px e viravam "MAN BAR DES". */
+        width: max-content;
+        max-width: min(94vw, 360px);
         white-space: nowrap;
+        overflow: visible;
+        z-index: 9;
         pointer-events: none;
     }
 
