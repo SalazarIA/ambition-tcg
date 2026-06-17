@@ -145,3 +145,22 @@ motor muda comportamento de combate). O K3 não piora cadeias (Fortaleza pior=14
 
 Macro otimizado: 0,503/0,497 → ~0,46/0,54 (defesa ficou mais forte; **justo por
 espelho**; re-centra com tuning de deck/IA agressiva futuro). Casual: saudável.
+
+## Fechamento — juiz visual (Playwright sem force + leitura de screenshots)
+
+O juiz visual **pegou bugs que asserts de DOM perderiam**: as keywords novas
+estavam sincronizadas só no backend. Sem a sincronia de frontend, os badges
+renderizariam "THORNS"/"ENTRENCH" crus, sem cor nem tooltip. Corrigido:
+
+- `static/js/rebirth.js` (arena) — LABELS + TOOLTIPS de THORNS/ENTRENCH.
+- `static/js/rebirth_deck_builder.js` — KEYWORD_LABELS.
+- `static/css/rebirth.css` — cores `.rb-kw-thorns` / `.rb-kw-entrench`.
+- `templates/rebirth_deck_builder.html` — opções de filtro (Espinhos/Entrincheirar).
+- Glossário da coleção (`rebirth_product.py`) já itera `KEYWORD_LABELS` → auto-sync.
+
+Confirmação por screenshot (`/rebirth/deck-builder`, filtro por keyword):
+- THORNS → 2 cartas; ENTRENCH → 3 cartas; **0 erros de console**.
+- Stonehide Bulwark: badges **ESCUDO / PROVOCAR / ESPINHOS** (verde-musgo).
+- Ironbark Warden: badges **ESCUDO / ENTRINCHEIRAR** (cor pedra).
+- Superfícies arena/shop/collection/campaign/mobile: 0 console/página/rede,
+  sem overflow horizontal.

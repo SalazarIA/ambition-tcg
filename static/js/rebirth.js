@@ -472,6 +472,8 @@
             PIERCE:    "Perfurar",
             REGEN:     "Regenerar",
             EXECUTE:   "Executar",
+            THORNS:    "Espinhos",
+            ENTRENCH:  "Entrincheirar",
         },
         TOOLTIPS: {
             RUSH:      "Pode atacar no turno em que é invocado.",
@@ -482,6 +484,8 @@
             PIERCE:    "Dano excedente sobre Guarda vai direto pro HP.",
             REGEN:     "Restaura 1 de Guarda no início do turno do dono.",
             EXECUTE:   "Mata instantaneamente alvos com Guarda ≤ 1.",
+            THORNS:    "Quem ataca esta carta sofre 2 de dano na Guarda.",
+            ENTRENCH:  "Se não atacou no turno anterior, ganha +1 de Guarda permanente.",
         },
         badges(card) {
             const kws = (card && card.keywords) || [];

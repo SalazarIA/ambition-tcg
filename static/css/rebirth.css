@@ -10512,6 +10512,8 @@ button {
 .rb-kw-pierce    { color: #c43030; }
 .rb-kw-regen     { color: #6ad29a; }
 .rb-kw-execute   { color: #a85cff; }
+.rb-kw-thorns    { color: #6f8f4a; }
+.rb-kw-entrench  { color: #9a8456; }
 
 /* Em field cards (cards no board), badges menores */
 .rb-field-card .rb-keyword-badge {
