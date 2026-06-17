@@ -16,12 +16,15 @@ from typing import Any, Dict
 from services.rebirth_profiler import current_profiler
 
 
-ENGINE_VERSION = "rebirth_engine_v99"
-CARD_SET_VERSION = "rebirth_card_set_v99"
+# v100 (K3 Fortaleza): combate ganhou THORNS/ENTRENCH e o card set ganhou o
+# arquétipo defensivo com win-condition (sinergia total_guard). Reducers e
+# formato de replay/snapshot não mudaram → mantêm a versão anterior.
+ENGINE_VERSION = "rebirth_engine_v100"
+CARD_SET_VERSION = "rebirth_card_set_v100"
 REPLAY_FORMAT_VERSION = "rebirth_replay_v2"
 REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v66"
 SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v2"
-RULESET_VERSION = "rebirth_ruleset_v99"
+RULESET_VERSION = "rebirth_ruleset_v100"
 REDUCER_VERSION = "rebirth_reducer_v99"
 MAX_EFFECT_CHAIN_DEPTH = 8
 MAX_CAUSAL_CHAIN_DEPTH = 12

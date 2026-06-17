@@ -568,10 +568,15 @@ for _card_id, _override in CARD_BALANCE_OVERRIDES.items():
 # Keywords opt-in por carta: TAUNT/BURST/EXECUTE são fortes demais para spread
 # de família — entram em corpos tier-2 escolhidos (+ lendárias, definidas acima).
 CARD_KEYWORD_OVERRIDES = {
-    "card_051": ["SHIELD", "TAUNT"],    # Stonehide Bulwark — muralha de linha de frente
-    "card_059": ["SHIELD", "TAUNT"],    # Terrashield Ascetic — protetor tardio
-    "card_016": ["RUSH", "BURST"],      # Scorchscale Infernal — entrada explosiva
-    "card_076": ["PIERCE", "EXECUTE"],  # Voidkiss Executioner — o nome já era contrato
+    # TAUNT + THORNS juntos: o alvo é FORÇADO e atacá-lo dói. Sem isso, taunt
+    # protegia o thorns e a punição nunca acontecia (achado da Onda 2).
+    "card_051": ["SHIELD", "TAUNT", "THORNS"],     # Stonehide Bulwark — muralha espinhada e provocadora
+    "card_056": ["SHIELD", "THORNS"],              # Bramblehorn Paragon — corpo espinhado
+    "card_058": ["SHIELD", "ENTRENCH"],            # Ironbark Warden — cresce protegido atrás da muralha
+    "card_059": ["SHIELD", "TAUNT", "ENTRENCH"],   # Terrashield Ascetic — muralha que provoca e cresce
+    "card_060": ["SHIELD", "ENTRENCH"],            # Boulderwake Primordial — capstone da Fortaleza
+    "card_016": ["RUSH", "BURST"],                 # Scorchscale Infernal — entrada explosiva
+    "card_076": ["PIERCE", "EXECUTE"],             # Voidkiss Executioner — o nome já era contrato
 }
 
 for _card_id, _keywords in CARD_KEYWORD_OVERRIDES.items():
@@ -588,6 +593,16 @@ CARD_SYNERGY_OVERRIDES = {
     "card_047": {"condition": "tier_2", "value": None, "effect": {"attack": 1, "guard": 1}},
     "card_063": {"condition": "controls_family", "value": "SHADOW", "effect": {"attack": 1}},
     "card_066": {"condition": "low_hp", "value": 12, "effect": {"attack": 2}},
+    # K3 Fortaleza — win-condition: a muralha CONTRA-ATACA quando a Guarda
+    # somada do board atinge o limiar. Dá payoff a defender (o "fix real" dos
+    # findings) sem buffar stat a stat. Ancorada em corpos EARTH, inclusive na
+    # Granite Pactbearer (carta nominalmente fraca no cluster 0.37-0.42).
+    # Threshold 6 (não 8): alcançável num board EARTH dedicado de 2 corpos, mas
+    # quase nunca num deck genérico de 1 EARTH — o payoff fica restrito a quem
+    # constrói a Fortaleza, sem perturbar o macro 50/50 (validado no lab).
+    "card_044": {"condition": "total_guard", "value": 6, "effect": {"attack": 2}},
+    "card_050": {"condition": "total_guard", "value": 6, "effect": {"attack": 3}},
+    "card_060": {"condition": "total_guard", "value": 6, "effect": {"attack": 3, "guard": 1}},
 }
 
 from services.rebirth_keywords import synergy_label as _synergy_label  # noqa: E402

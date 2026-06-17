@@ -8,6 +8,8 @@ linha), não os números. Inclui hooks puros e prova de integração no engine r
 from __future__ import annotations
 
 from services import rebirth_keywords as kw
+from services.rebirth_cards import get_card
+from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION, RULESET_VERSION
 from services.rebirth_engine import (
     _bot_auto_summon,
     create_card_instance,
@@ -169,6 +171,40 @@ def test_entrench_grows_guard_when_holding_the_line():
     assert grown["instance_id"] == bf["instance_id"]
     assert grown["max_guard"] == 5
     assert grown["current_guard"] == 5
+
+
+# ──────────────────── arquétipo no catálogo (Onda 2) ────────────────────
+
+def test_fortress_keyword_kit_on_earth_cards():
+    # TAUNT + THORNS na mesma muralha: o alvo forçado pune quem o ataca.
+    assert {kw.KEYWORD_TAUNT, kw.KEYWORD_THORNS} <= set(get_card("card_051")["keywords"])  # Stonehide Bulwark
+    assert kw.KEYWORD_THORNS in get_card("card_056")["keywords"]      # Bramblehorn Paragon
+    assert kw.KEYWORD_ENTRENCH in get_card("card_058")["keywords"]    # Ironbark Warden
+    assert {kw.KEYWORD_TAUNT, kw.KEYWORD_ENTRENCH} <= set(get_card("card_059")["keywords"])  # Terrashield Ascetic
+    assert kw.KEYWORD_ENTRENCH in get_card("card_060")["keywords"]    # Boulderwake Primordial
+    # SHIELD preservado (identidade EARTH) em toda a linha de muralhas.
+    for cid in ("card_051", "card_056", "card_058", "card_059", "card_060"):
+        assert kw.KEYWORD_SHIELD in get_card(cid)["keywords"]
+
+
+def test_fortress_wincon_synergy_anchors():
+    for cid in ("card_044", "card_050", "card_060"):
+        syn = get_card(cid).get("synergy") or {}
+        assert syn.get("condition") == "total_guard", f"{cid} deve ancorar a win-con de Fortaleza"
+        assert syn.get("effect", {}).get("attack", 0) >= 2
+
+
+def test_fortress_kit_keeps_tier1_keyword_clean():
+    """A win-con de tier-1 (Granite Pactbearer/Boulderwake Colossus) vem por
+    SINERGIA, não por keyword — preserva a regra 'tier-1 limpo de keyword'."""
+    assert not get_card("card_044").get("keywords")
+    assert not get_card("card_050").get("keywords")
+
+
+def test_engine_version_bumped_to_v100():
+    assert ENGINE_VERSION.endswith("v100")
+    assert CARD_SET_VERSION.endswith("v100")
+    assert RULESET_VERSION.endswith("v100")
 
 
 def test_entrench_does_not_grow_after_attacking():
