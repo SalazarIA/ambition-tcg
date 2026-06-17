@@ -160,3 +160,9 @@ def mobile_page(live_server):
     on the mobile UA/breakpoints. Avoids a useless desktop-variant skip.
     """
     yield from _playwright_page(MOBILE_VIEWPORT)
+
+
+@pytest.fixture
+def desktop_page(live_server):
+    """Desktop-only page for responsive matrices that resize the viewport."""
+    yield from _playwright_page(DESKTOP_VIEWPORT)

@@ -15696,28 +15696,57 @@ body.rb-game-page .rb-game-board .rb-hero-portrait {
     pointer-events: none;
 }
 
-/* O botão Cemitério não participa da pilha calibrada de comando do desktop
-   (os translateY fixos colidiam play/encerrar) — ancora logo abaixo dela. */
-@media (min-width: 1180px) {
-    body.rb-game-page #graveyard-button {
-        position: absolute;
-        left: 50%;
-        bottom: -54px;
-        transform: translateX(-50%);
-        width: max-content;
-        z-index: 24;
-    }
-}
-
-/* Os dois grupos de comando NÃO se cruzam mais (eram translateY fixos com
-   ~33px de sobreposição — o hit do clique dependia de ordem de pintura). */
-@media (min-width: 1180px) {
-    body.rb-game-page .rb-actions-row > div:nth-child(1) {
-        transform: translateY(-124px) !important;
+/* v106: a célula "actions" é a única dona dos comandos no desktop. Regras
+   históricas ainda tentavam reposicionar os grupos sobre hero-r e deixavam
+   o Cemitério absoluto abaixo da viewport em telas altas. */
+@media (min-width: 1180px) and (min-height: 680px) {
+    body.rb-game-page .rb-hud-player,
+    body.rb-game-page .rb-hud-bot {
+        height: clamp(340px, 56vh, 520px) !important;
     }
 
+    body.rb-game-page .rb-actions-row {
+        grid-area: actions !important;
+        display: flex !important;
+        flex-direction: column;
+        align-self: end;
+        justify-self: stretch;
+        justify-content: flex-end;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0;
+        pointer-events: auto;
+    }
+
+    body.rb-game-page .rb-actions-row > div,
+    body.rb-game-page .rb-actions-row > div:nth-child(1),
     body.rb-game-page .rb-actions-row > div:nth-child(2) {
-        transform: translateY(2px) !important;
+        grid-area: auto !important;
+        position: relative !important;
+        inset: auto !important;
+        display: flex !important;
+        flex-direction: column;
+        align-self: auto !important;
+        justify-self: auto !important;
+        gap: 8px;
+        width: 100% !important;
+        min-width: 0;
+        margin: 0 !important;
+        transform: none !important;
+    }
+
+    body.rb-game-page #play-button.rb-button-primary,
+    body.rb-game-page #next-turn-button.rb-button-secondary,
+    body.rb-game-page #graveyard-button.rb-button-secondary {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    body.rb-game-page #graveyard-button {
+        position: static !important;
+        inset: auto !important;
+        transform: none !important;
     }
 }
 
@@ -15725,7 +15754,7 @@ body.rb-game-page .rb-game-board .rb-hero-portrait {
    Este bloco precisa vir DEPOIS das âncoras desktop acima: além de compactar
    os botões, neutraliza os translateY e o cemitério absoluto que empurravam
    controles para fora da viewport mesmo com a nova célula "actions". */
-@media (min-width: 1180px) and (max-height: 920px) {
+@media (min-width: 1180px) and (min-height: 680px) and (max-height: 920px) {
     body.rb-game-page .rb-actions-row {
         flex-direction: row !important;
         flex-wrap: nowrap;
@@ -15756,6 +15785,34 @@ body.rb-game-page .rb-game-board .rb-hero-portrait {
         left: auto;
         bottom: auto;
         transform: none;
+    }
+}
+
+/* Fallback para janelas desktop extremamente baixas, abaixo do contrato do
+   grid FATES (680px). Mantém os comandos longe dos retratos e da mão. */
+@media (min-width: 1180px) and (max-height: 679px) {
+    body.rb-game-page .rb-actions-row > div:nth-child(1) {
+        left: calc(50% + 900px) !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: 108px !important;
+    }
+
+    body.rb-game-page .rb-actions-row > div:nth-child(2) {
+        left: calc(50% + 1100px) !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: 108px !important;
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+        transform: none !important;
+    }
+
+    body.rb-game-page #graveyard-button {
+        position: relative !important;
+        inset: auto !important;
+        transform: none !important;
     }
 }
 

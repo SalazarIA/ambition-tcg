@@ -184,11 +184,21 @@ def test_mobile_arena_is_native_and_keeps_touch_targets_readable(mobile_page, li
     assert measurements["slotHeight"] >= 112
 
 
-def test_low_height_desktop_actions_stay_visible_and_separate(page, live_server):
-    """Laptop-height desktop controls must not overlap the hero or leave the viewport."""
+def test_desktop_actions_stay_visible_and_separate(desktop_page, live_server):
+    """Desktop controls must not overlap the bot HP orb or leave the viewport."""
+    page = desktop_page
     for viewport in (
+        {"width": 1366, "height": 650},
+        {"width": 1180, "height": 679},
+        {"width": 1920, "height": 679},
+        {"width": 1280, "height": 720},
+        {"width": 1366, "height": 768},
         {"width": 1470, "height": 860},
         {"width": 1710, "height": 900},
+        {"width": 1440, "height": 920},
+        {"width": 1440, "height": 921},
+        {"width": 1440, "height": 1080},
+        {"width": 1920, "height": 1200},
     ):
         page.set_viewport_size(viewport)
         page.goto(f"{live_server}/rebirth")
@@ -213,26 +223,43 @@ def test_low_height_desktop_actions_stay_visible_and_separate(page, live_server)
                     b.bottom <= a.top
                 );
                 const hero = rect(".rb-hud-bot");
+                const health = rect(".rb-hud-bot .rb-hud-health");
+                const hand = rect("#player-hand");
                 const buttons = [
                     rect("#play-button"),
                     rect("#next-turn-button"),
                     rect("#graveyard-button"),
                 ];
                 return {
-                    viewportHeight: window.innerHeight,
+                    viewport: {
+                        width: window.innerWidth,
+                        height: window.innerHeight,
+                    },
                     hero,
+                    health,
+                    hand,
                     buttons,
                     heroOverlaps: buttons.map((button) => overlaps(hero, button)),
+                    healthOverlaps: buttons.map((button) => overlaps(health, button)),
+                    handOverlaps: buttons.map((button) => overlaps(hand, button)),
+                    buttonOverlaps: [
+                        overlaps(buttons[0], buttons[1]),
+                        overlaps(buttons[0], buttons[2]),
+                        overlaps(buttons[1], buttons[2]),
+                    ],
                 };
             }"""
         )
 
-        assert all(button["top"] >= 0 for button in measurements["buttons"])
-        assert all(
-            button["bottom"] <= measurements["viewportHeight"]
-            for button in measurements["buttons"]
-        )
+        for button in measurements["buttons"]:
+            assert button["top"] >= 0
+            assert button["left"] >= 0
+            assert button["right"] <= measurements["viewport"]["width"]
+            assert button["bottom"] <= measurements["viewport"]["height"]
         assert measurements["heroOverlaps"] == [False, False, False]
+        assert measurements["healthOverlaps"] == [False, False, False]
+        assert measurements["handOverlaps"] == [False, False, False]
+        assert measurements["buttonOverlaps"] == [False, False, False]
 
 
 # --- signature / shop regression guards -----------------------------------
@@ -345,6 +372,7 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
         play_button.click()
     after_summon = play_info.value.json()["state"]
     assert after_summon["turn"] == 1
+    assert after_summon["bot"]["hp"] == FIRST_DUEL_BOT_HP
     assert after_summon["bot"]["battlefield"] == []
 
     assert "atacar" in play_button.inner_text().lower()
@@ -368,6 +396,5 @@ def test_authenticated_first_turn_blocks_direct_damage_until_bot_responds(page, 
         page.locator("#next-turn-button").click()
     after_bot = turn_info.value.json()["state"]
     assert after_bot["turn"] == 2
-    assert after_bot["bot"]["hp"] == FIRST_DUEL_BOT_HP
     assert after_bot["bot"]["battlefield"]
     page.locator("#bot-battlefield [data-target-instance]").first.wait_for(state="visible", timeout=10_000)
