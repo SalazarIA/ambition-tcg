@@ -105,15 +105,24 @@ KEYWORD_COLORS = {
 # Defaults por família — usado por _monster_card quando keywords não
 # está sobrescrito pra carta específica.
 FAMILY_DEFAULT_KEYWORDS = {
-    # K2 balance: keywords que ALTERAM target selection ou geram dano direto
-    # (TAUNT, BURST) viram opt-in lendário pra não desestabilizar o meta
-    # quando aplicados em 20+ cards default. Sobram keywords passivos/sutis.
+    # Keywords passivas/sutis por família (tier 2+ base).
     "FIRE":    [KEYWORD_RUSH],
     "WATER":   [KEYWORD_LIFESTEAL],
     "EARTH":   [KEYWORD_SHIELD],
     "SHADOW":  [KEYWORD_PIERCE],
     "ARCANO":  [],
     "OCULTO":  [],
+}
+
+# K3 re-centro do meta: keywords que a família carrega JÁ NO TIER 1 (identidade
+# que não é recompensa de evolução). FIRE = "dano direto / queimadura" → carrega
+# BURST (reach) em todos os tiers: é a tecnologia anti-sustain que faltava à
+# agressão. Sem isso, controle EARTH+WATER out-healava o campo inteiro
+# (round-robin ~0.79). Com BURST=2 em FIRE o eixo AGGRO↔CONTROLE re-centra
+# (controle 0.81→0.65) mantendo o macro misto 50/50 e o casual saudável.
+# Reverte o nerf v74 (que era do meta antigo, pré-dominância de controle).
+FAMILY_TIER1_KEYWORDS = {
+    "FIRE": [KEYWORD_BURST],
 }
 
 # Evolved cards (tier 2+) ganham 1 keyword extra agressiva.
@@ -136,14 +145,16 @@ def default_keywords_for(family: str, *, tier: int = 1) -> List[str]:
     """Retorna a lista canônica de keywords pra uma carta da família
     em determinado tier. Caller pode sobrescrever totalmente.
 
-    Com as keywords LIGADAS de verdade na engine, o spread precisa ser
-    escasso: tier 1 é baseline limpo; tier 2+ carrega a keyword da família
-    (a evolução/fusão vira upgrade mecânico real, não só stats); TAUNT,
-    BURST e EXECUTE entram por carta específica/lendária.
+    Spread escasso por design: tier 1 é baseline limpo, EXCETO as keywords de
+    identidade do tier 1 (FAMILY_TIER1_KEYWORDS — hoje só FIRE/BURST como reach).
+    Tier 2+ acumula a keyword de família (evolução = upgrade mecânico real);
+    TAUNT e EXECUTE seguem opt-in por carta específica/lendária.
     """
+    tier1 = list(FAMILY_TIER1_KEYWORDS.get(family, []))
     if int(tier or 1) < 2:
-        return []
-    base = list(FAMILY_DEFAULT_KEYWORDS.get(family, []))
+        return tier1
+    # Tier 1 keyword sobe pro tier 2+ (dedup preservando ordem) + base + bônus.
+    base = list(dict.fromkeys(tier1 + list(FAMILY_DEFAULT_KEYWORDS.get(family, []))))
     bonus = FAMILY_EVOLVED_BONUS_KEYWORD.get(family)
     if bonus is not None and bonus not in base:
         base.append(bonus)
@@ -171,11 +182,13 @@ def can_attack_this_turn(card: Dict[str, Any], *, just_summoned: bool) -> bool:
 def on_summon_burst(card: Dict[str, Any]) -> int:
     """BURST: dano direto ao oponente ao invocar.
 
-    Calibrado em 1 após v74 balance tests apontarem que valores ≥2
-    quebram o teto de dominance ratio (>0.7). Pode subir após sinergias
-    K2 trazerem counter-play.
+    K3 re-centro: subido de 1 → 2. O nerf v74 (que capava em 1) era do meta
+    antigo; com controle EARTH+WATER dominando o campo por out-heal (~0.79), a
+    agressão precisava de reach que furasse a cura. BURST=2 em FIRE re-centra o
+    eixo AGGRO↔CONTROLE (0.81→0.65) com macro misto 50/50 e casual saudável
+    (medido no lab; ver docs/REBIRTH_DEPTH_WAVES.md).
     """
-    return 1 if has_keyword(card, KEYWORD_BURST) else 0
+    return 2 if has_keyword(card, KEYWORD_BURST) else 0
 
 
 def lifesteal_heal_amount(card: Dict[str, Any], damage_dealt: int) -> int:

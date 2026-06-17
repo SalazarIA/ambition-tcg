@@ -177,7 +177,10 @@ def test_v67_gameplay_health_exposes_pacing_and_retention_signals():
 
 
 def test_v71_gameplay_health_avoids_one_sided_dominance_and_stalls():
-    summary = simulate_balance(matches=30)["summary"]
+    # 120 partidas (não 30): a 30 o erro padrão é ~9pp e o guard ficava flaky —
+    # com BURST=2 (re-centro) o macro real é 0.500 (simulate_balance(200)), mas
+    # 30 amostras chegavam a 0.37 por ruído. 120 dá EP ~4.6pp (guard confiável).
+    summary = simulate_balance(matches=120)["summary"]
 
     assert 0.4 <= summary["player_win_rate"] <= 0.7
     assert summary["bot_win_rate"] >= 0.2

@@ -16,15 +16,16 @@ from typing import Any, Dict
 from services.rebirth_profiler import current_profiler
 
 
-# v100 (K3 Fortaleza): combate ganhou THORNS/ENTRENCH e o card set ganhou o
-# arquétipo defensivo com win-condition (sinergia total_guard). Reducers e
-# formato de replay/snapshot não mudaram → mantêm a versão anterior.
-ENGINE_VERSION = "rebirth_engine_v100"
-CARD_SET_VERSION = "rebirth_card_set_v100"
+# v100 (K3 Fortaleza): THORNS/ENTRENCH + arquétipo defensivo (total_guard).
+# v101 (re-centro do meta): FIRE carrega BURST (reach) em todos os tiers e
+# BURST subiu 1→2 — counter anti-sustain que re-centra AGGRO↔CONTROLE. Muda
+# card set + combate; reducers e formato de replay/snapshot seguem inalterados.
+ENGINE_VERSION = "rebirth_engine_v101"
+CARD_SET_VERSION = "rebirth_card_set_v101"
 REPLAY_FORMAT_VERSION = "rebirth_replay_v2"
 REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v66"
 SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v2"
-RULESET_VERSION = "rebirth_ruleset_v100"
+RULESET_VERSION = "rebirth_ruleset_v101"
 REDUCER_VERSION = "rebirth_reducer_v99"
 MAX_EFFECT_CHAIN_DEPTH = 8
 MAX_CAUSAL_CHAIN_DEPTH = 12

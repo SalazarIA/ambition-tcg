@@ -18,8 +18,10 @@ def test_default_keywords_by_family():
     design: tier 1 é baseline limpo; tier 2+ carrega a keyword da família
     (evolução/fusão = upgrade mecânico real). TAUNT/BURST/EXECUTE são opt-in
     por carta (lendárias + overrides em rebirth_cards)."""
-    assert kw.default_keywords_for("FIRE") == []
-    assert kw.default_keywords_for("FIRE", tier=2) == [kw.KEYWORD_RUSH]
+    # K3 re-centro: FIRE carrega BURST (reach) em todos os tiers — identidade
+    # anti-sustain, não recompensa de evolução.
+    assert kw.default_keywords_for("FIRE") == [kw.KEYWORD_BURST]
+    assert kw.default_keywords_for("FIRE", tier=2) == [kw.KEYWORD_BURST, kw.KEYWORD_RUSH]
     assert kw.default_keywords_for("WATER") == []
     assert kw.default_keywords_for("WATER", tier=2) == [kw.KEYWORD_LIFESTEAL, kw.KEYWORD_REGEN]
     assert kw.default_keywords_for("EARTH", tier=2) == [kw.KEYWORD_SHIELD]
@@ -34,13 +36,18 @@ def test_catalog_has_keywords_applied():
     tier2 = [c for c in CARD_CATALOG if c.get("type") == "MONSTER" and int(c.get("tier", 1)) >= 2]
     assert tier2, "catálogo precisa de evoluções"
     assert all(c.get("keywords") for c in tier2), "toda evolução deve ter keyword"
+    # K3 re-centro: tier 1 é baseline limpo EXCETO FIRE, que carrega BURST
+    # (reach) como identidade anti-sustain em todos os tiers.
     tier1 = [c for c in CARD_CATALOG if c.get("type") == "MONSTER" and int(c.get("tier", 1)) == 1 and c.get("rarity") != "LEGENDARY"]
-    assert all(not c.get("keywords") for c in tier1), "tier 1 é baseline sem keyword"
+    tier1_fire = [c for c in tier1 if c.get("family") == "FIRE"]
+    tier1_rest = [c for c in tier1 if c.get("family") != "FIRE"]
+    assert tier1_fire and all("BURST" in (c.get("keywords") or []) for c in tier1_fire), "FIRE tier 1 carrega BURST"
+    assert all(not c.get("keywords") for c in tier1_rest), "tier 1 não-FIRE é baseline sem keyword"
     legendaries = [c for c in CARD_CATALOG if c.get("rarity") == "LEGENDARY"]
     assert legendaries and all(c.get("keywords") for c in legendaries)
     with_kw = sum(1 for c in CARD_CATALOG if c.get("keywords"))
-    # tier2 (>=2) já inclui as lendárias (tier 3).
-    assert with_kw == len(tier2)
+    # tier2 (>=2) já inclui as lendárias (tier 3); + as FIRE tier 1 com BURST.
+    assert with_kw == len(tier2) + len(tier1_fire)
 
 
 def test_has_keyword_helper():
@@ -65,7 +72,8 @@ def test_rush_allows_attack_when_just_summoned():
 def test_burst_returns_damage_on_summon():
     burst = _make_card(keywords=[kw.KEYWORD_BURST])
     no_burst = _make_card(keywords=[])
-    assert kw.on_summon_burst(burst) == 1
+    # K3 re-centro: BURST subiu de 1 → 2 (reach anti-sustain da família FIRE).
+    assert kw.on_summon_burst(burst) == 2
     assert kw.on_summon_burst(no_burst) == 0
 
 

@@ -112,7 +112,9 @@ def test_compare_power_returns_expected_winner():
 
 def test_play_card_summons_monster_to_persistent_battlefield():
     match = start_match(seed="summon")
-    card = create_card_instance("card_002", "player", 1)
+    # card_021 (WATER, custo 1, sem keyword): isola o summon do BURST que a
+    # família FIRE passou a carregar no re-centro do meta.
+    card = create_card_instance("card_021", "player", 1)
     match["player"]["hand"] = [card]
     match["bot"]["hand"] = [create_card_instance("card_041", "bot", 1)]
 
@@ -123,9 +125,9 @@ def test_play_card_summons_monster_to_persistent_battlefield():
     assert match["result"]["outcome"] == "Summon"
     assert match["player"]["hp"] == 30
     assert match["bot"]["hp"] == 30
-    # T1 começa com 2 mana (v55); card_002 custa 1 → resta 1.
+    # T1 começa com 2 mana (v55); card_021 custa 1 → resta 1.
     assert match["player"]["energy"] == 1
-    assert match["player"]["played_card"]["id"] == "card_002"
+    assert match["player"]["played_card"]["id"] == "card_021"
     assert match["player"]["battlefield"][0]["instance_id"] == card["instance_id"]
     assert match["player"]["battlefield"][0]["current_guard"] == card["guard"]
     assert match["player"]["battlefield"][0]["has_acted"] is False
@@ -170,7 +172,8 @@ def test_play_card_fills_slots_in_order_and_blocks_when_battlefield_full():
 
 def test_first_turn_direct_damage_is_blocked_until_bot_responds():
     match = start_match(seed="direct-turn-one")
-    card = create_card_instance("card_001", "player", 1)
+    # card_041 (EARTH, sem BURST) isola a regra de turno 1 do dano de summon.
+    card = create_card_instance("card_041", "player", 1)
     match["player"]["hand"] = [card]
     match["bot"]["hand"] = []
 
@@ -190,7 +193,8 @@ def test_first_turn_direct_damage_is_blocked_until_bot_responds():
 
 def test_equal_power_field_clash_trades_guard_without_wounding_sides():
     match = start_match(seed="tie")
-    player_card = create_card_instance("card_002", "player", 1)
+    # card_061 (SHADOW, ATK 5, sem BURST) empata o 5/5 sem confundir o HP.
+    player_card = create_card_instance("card_061", "player", 1)
     match["player"]["hand"] = [player_card]
 
     match["bot"]["hand"] = [
@@ -248,7 +252,9 @@ def test_equal_power_field_clash_trades_guard_without_wounding_sides():
 
 def test_guard_trade_does_not_unlock_wounded_tiebreak_for_later_clash():
     match = start_match(seed="guard-trade-does-not-wound")
-    player_card = create_card_instance("card_002", "player", 1)
+    # card_061 (SHADOW, sem BURST): o dano de summon do FIRE feriria o bot e
+    # confundiria o teste de tiebreak por "ferido".
+    player_card = create_card_instance("card_061", "player", 1)
     match["player"]["hand"] = [player_card]
     match["bot"]["hand"] = [create_card_instance("card_022", "bot", 1)]
 

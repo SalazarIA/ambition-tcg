@@ -221,10 +221,11 @@ def test_bot_projection_respects_thorns():
     assert proj_t["utility"] < proj_p["utility"]
 
 
-def test_engine_version_bumped_to_v100():
-    assert ENGINE_VERSION.endswith("v100")
-    assert CARD_SET_VERSION.endswith("v100")
-    assert RULESET_VERSION.endswith("v100")
+def test_engine_version_bumped_for_k3():
+    # v100 (Fortaleza) → v101 (re-centro: FIRE/BURST). Mantém >= v100.
+    for ver in (ENGINE_VERSION, CARD_SET_VERSION, RULESET_VERSION):
+        n = int("".join(ch for ch in ver.split("_v")[-1] if ch.isdigit()))
+        assert n >= 100
 
 
 def test_dead_turn_metric_counts_development_as_meaningful():

@@ -164,3 +164,32 @@ Confirmação por screenshot (`/rebirth/deck-builder`, filtro por keyword):
 - Ironbark Warden: badges **ESCUDO / ENTRINCHEIRAR** (cor pedra).
 - Superfícies arena/shop/collection/campaign/mobile: 0 console/página/rede,
   sem overflow horizontal.
+
+## Re-centro do meta (pós-deploy K3) — branch `feat/macro-recenter`
+
+Investigação do "watch-item" (macro otimizado 0,48/0,52). Diagnóstico medido:
+
+1. **K3 é balance-neutro** (contrafactual: Fortaleza-vs-campo 0,804 COM kit = 0,804
+   SEM kit). O drift do lab era ruído (simulate_balance 200 = 0,500).
+2. **Problema pré-existente isolado**: controle **EARTH+WATER domina o campo**
+   (round-robin ~0,81). A fonte é o **sustain WATER** (WATER puro vence o campo
+   0,79, mais que o combo), não as muralhas (EARTH puro 0,69). Controle ganha
+   por **out-heal** — fica intocado (HP final mediano 23/30). Até um deck REACH
+   (PIERCE/EXECUTE) perde 0,29.
+
+**Decisão (do dono): buffar agressão**, não nerfar design deliberado. Lever
+medido: a família FIRE ("dano direto") passa a carregar **BURST em todos os
+tiers** e **BURST 1→2** — a reach anti-sustain que faltava.
+
+Resultado (round-robin + 3 gates):
+- Controle vs campo **0,81 → 0,645**; eixo AGGRO↔CONTROLE justo (0,53/0,47).
+- **Macro-neutro**: simulate_balance(200) **0,500**; controlled(400) 0,480;
+  casual(150) 0,593 (saudável).
+- Reverte o nerf v74 (que era do meta antigo, pré-dominância de controle).
+- Versões → **v101** (card set + ruleset).
+
+Caveat honesto: um deck "midrange" incoerente (SHADOW+WATER+FIRE splash) colapsa
+no lab — provável fraqueza de deck-building, e o macro de decks reais segue
+saudável. **Esta branch NÃO foi deployada**: por ser reversão de design
+deliberado medida só no lab (IA), pede revisão + idealmente telemetria humana
+antes do merge — conforme a filosofia de balance.
