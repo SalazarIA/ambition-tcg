@@ -12477,7 +12477,7 @@ button {
         grid-template-areas:
             "hero-l turn hero-r"
             "hero-l arena hero-r"
-            "hand hand hand";
+            "hand hand actions";
         grid-template-columns: clamp(280px, 22vw, 360px) minmax(0, 1fr) clamp(280px, 22vw, 360px);
         grid-template-rows: clamp(60px, 8vh, 80px) minmax(360px, 1fr) clamp(200px, 26vh, 280px);
         gap: 12px 16px;
@@ -12499,12 +12499,29 @@ button {
     }
 
     .rb-hud,
-    .rb-mobile-action-bar,
-    .rb-actions-row {
+    .rb-mobile-action-bar {
         display: contents !important;
         width: auto !important;
         height: auto !important;
         pointer-events: none;
+    }
+
+    /* v105: ações ganham célula própria do grid (canto inf-direito, abaixo do
+       herói bot). Antes eram display:contents e auto-posicionavam SOBRE o
+       hero-r, fazendo o orb de HP "30" colidir com "ENCERRAR TURNO" em telas
+       de pouca altura (laptop ~768-820px). */
+    .rb-actions-row {
+        grid-area: actions;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-self: end;
+        gap: 8px;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0;
+        pointer-events: auto;
+        z-index: 5;
     }
 
     .rb-card-stage,
@@ -12525,7 +12542,9 @@ button {
     .rb-hud-player,
     .rb-hud-bot {
         width: min(100%, 300px) !important;
-        height: 520px !important;
+        /* v105: altura responde à tela — antes 520px fixo empurrava o orb de HP
+           pra dentro da área de ações em laptops/MacBook de pouca altura. */
+        height: clamp(340px, 56vh, 520px) !important;
         max-height: 100%;
         display: grid !important;
         grid-template: 1fr / 1fr !important;
@@ -15665,6 +15684,23 @@ body.rb-campaign-page .rb-campaign-node.is-next {
 
     body.rb-game-page .rb-trap-zone {
         justify-content: center;
+    }
+
+}
+
+/* v105: telas de POUCA ALTURA (laptops/MacBook com a barra do navegador) —
+   compacta os botões de ação pra a pilha caber na faixa inferior sem subir
+   sobre o orb de HP do herói. A área própria no grid já tirou o overlap do
+   "ENCERRAR TURNO"; isto cobre o "INVOCAR" nas alturas ≤880px. */
+@media (min-width: 1180px) and (max-height: 880px) {
+    body.rb-game-page #play-button.rb-button-primary,
+    body.rb-game-page #next-turn-button.rb-button-secondary,
+    body.rb-game-page #graveyard-button.rb-button-secondary {
+        height: clamp(38px, 5vh, 64px) !important;
+        min-width: 0 !important;
+    }
+    body.rb-game-page .rb-actions-row {
+        gap: 4px !important;
     }
 }
 
