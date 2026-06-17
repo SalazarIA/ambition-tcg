@@ -1797,6 +1797,43 @@ def resolve_turn(
     else:
         result = _resolve_clash_tie(match, player_card, bot_card, clash, persistent_field=persistent_field)
 
+    # K3 Fortaleza — THORNS (Espinhos): a unidade atacada reflete dano à Guarda
+    # do atacante. Dispara quando o atacante vence ou empata; se o atacante já
+    # perdeu o combate não há agressão a punir. Ataca o problema-raiz dos
+    # findings: investir em agressão contra a muralha precisa custar caro.
+    if persistent_field:
+        from services.rebirth_keywords import thorns_reflect as _thorns_reflect
+        _defender_card = bot_card if attacking_side == "player" else player_card
+        _attacker_card = player_card if attacking_side == "player" else bot_card
+        _attacker_lost = bool(result.get("winner")) and result.get("winner") != attacking_side
+        _thorns = _thorns_reflect(_defender_card)
+        if _thorns and _attacker_card and not _attacker_lost:
+            _guard_before = int(_attacker_card.get("current_guard", _attacker_card.get("guard", 0)) or 0)
+            if _guard_before > 0:
+                _reflected = min(_thorns, _guard_before)
+                _attacker_card["current_guard"] = _guard_before - _thorns
+                _msg = f"{_defender_card['name']} reflete {_reflected} de dano com Espinhos."
+                ability_events.append(_msg)
+                append_event(
+                    match,
+                    "THORNS_REFLECTED",
+                    actor=attacking_side,
+                    source_card_id=_defender_card.get("id"),
+                    target_id=_attacker_card.get("instance_id"),
+                    owner_id=attacking_side,
+                    effect_chain_id=effect_chain_id,
+                    parent_event_id=parent_event_id,
+                    root_event_id=root_event_id,
+                    payload={
+                        "amount": _reflected,
+                        "keyword": "THORNS",
+                        "attacker_instance_id": _attacker_card.get("instance_id"),
+                        "defender_instance_id": _defender_card.get("instance_id"),
+                        "new_guard": _attacker_card["current_guard"],
+                    },
+                    message=_msg,
+                )
+
     if persistent_field:
         result["hero_damage"] = hero_damage
 
@@ -2399,11 +2436,32 @@ def next_turn(match):
     match["turn"] += 1
     set_turn_phase(match, TurnPhase.DRAW_PHASE)
 
-    # K2: REGEN — restaura 1 de Guarda no início do turno pra cartas que portam.
-    # Aplicado em ambos os lados; não pode exceder max_guard original da carta.
-    from services.rebirth_keywords import regen_amount as _regen_amt
+    # K2/K3: ticks de início de turno — ENTRENCH (cresce Guarda por defender) e
+    # REGEN (restaura Guarda). Aplicado em ambos os lados.
+    from services.rebirth_keywords import regen_amount as _regen_amt, entrench_growth as _entrench_amt
     for _side_name in ("player", "bot"):
         for _card in compact_battlefield(match[_side_name]):
+            # K3 Fortaleza — ENTRENCH: segurou a linha (não atacou no turno que
+            # terminou) → +Guarda permanente. has_attacked ainda reflete o turno
+            # anterior aqui (o ready só reseta adiante), então o gate é exato.
+            _grow = _entrench_amt(_card)
+            if _grow and not _card.get("has_attacked"):
+                _old_max = int(_card.get("max_guard", _card.get("guard", 0)) or 0)
+                _card["max_guard"] = _old_max + _grow
+                _card["current_guard"] = int(_card.get("current_guard", _old_max) or 0) + _grow
+                _emsg = f"{_card['name']} se entrincheira (+{_grow} de Guarda)."
+                match["log"].append(f"Turno {match['turn']:02d}   {_emsg}")
+                append_event(
+                    match,
+                    "ENTRENCH_TICK",
+                    actor=_side_name,
+                    source_card_id=_card.get("id"),
+                    target_id=_card.get("instance_id"),
+                    owner_id=_side_name,
+                    payload={"amount": _grow, "keyword": "ENTRENCH", "new_max_guard": _card["max_guard"], "new_guard": _card["current_guard"]},
+                    message=_emsg,
+                )
+            # K2: REGEN — restaura Guarda no início do turno (não excede max_guard).
             _heal = _regen_amt(_card)
             if not _heal:
                 continue

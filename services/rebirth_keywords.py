@@ -50,6 +50,10 @@ KEYWORD_SHIELD = "SHIELD"
 KEYWORD_PIERCE = "PIERCE"
 KEYWORD_REGEN = "REGEN"
 KEYWORD_EXECUTE = "EXECUTE"
+# K3 Fortaleza — keywords de payoff defensivo (mudam o INCENTIVO de defender,
+# não os números). THORNS pune agressão; ENTRENCH recompensa segurar a linha.
+KEYWORD_THORNS = "THORNS"
+KEYWORD_ENTRENCH = "ENTRENCH"
 
 ALL_KEYWORDS = (
     KEYWORD_RUSH,
@@ -60,7 +64,15 @@ ALL_KEYWORDS = (
     KEYWORD_PIERCE,
     KEYWORD_REGEN,
     KEYWORD_EXECUTE,
+    KEYWORD_THORNS,
+    KEYWORD_ENTRENCH,
 )
+
+# Quanto THORNS reflete por golpe (fixo, como BURST=1 — previsível pro balance;
+# pode virar opt-in por carta depois). ENTRENCH cresce 1 de Guarda por turno
+# defendido (auto-limitado pelo ritmo curto da partida).
+THORNS_REFLECT_AMOUNT = 2
+ENTRENCH_GROWTH_AMOUNT = 1
 
 # Descrições em pt-BR pra UI tooltip + listagem.
 KEYWORD_LABELS = {
@@ -72,6 +84,8 @@ KEYWORD_LABELS = {
     KEYWORD_PIERCE:    ("Perfurar",   "Dano excedente sobre Guarda vai direto pro HP."),
     KEYWORD_REGEN:     ("Regenerar",  "Restaura 1 de Guarda no início do turno do dono."),
     KEYWORD_EXECUTE:   ("Executar",   "Mata instantaneamente alvos com Guarda ≤ 1."),
+    KEYWORD_THORNS:    ("Espinhos",   "Quem ataca esta carta sofre 2 de dano na Guarda."),
+    KEYWORD_ENTRENCH:  ("Entrincheirar", "Se não atacou no turno anterior, ganha +1 de Guarda permanente."),
 }
 
 # Cor (CSS var --rb-gold/cyan/etc) usada pra colorir badge na UI.
@@ -84,6 +98,8 @@ KEYWORD_COLORS = {
     KEYWORD_PIERCE:    "#c43030",  # vermelho perfuração
     KEYWORD_REGEN:     "#6ad29a",  # verde claro recuperação
     KEYWORD_EXECUTE:   "#a85cff",  # roxo execute
+    KEYWORD_THORNS:    "#6f8f4a",  # verde-musgo espinho
+    KEYWORD_ENTRENCH:  "#9a8456",  # terra/pedra muralha
 }
 
 # Defaults por família — usado por _monster_card quando keywords não
@@ -206,6 +222,34 @@ def execute_kills(card: Dict[str, Any], target: Optional[Dict[str, Any]]) -> boo
     return int(target.get("guard", 99) or 99) <= 1
 
 
+def thorns_reflect(card: Dict[str, Any]) -> int:
+    """THORNS: dano refletido à Guarda de quem ataca esta carta.
+
+    Pune agressão contra a muralha — atacar uma fortaleza custa caro mesmo
+    quando o ataque vence o combate. Engine aplica à current_guard do atacante.
+    """
+    return THORNS_REFLECT_AMOUNT if has_keyword(card, KEYWORD_THORNS) else 0
+
+
+def entrench_growth(card: Dict[str, Any]) -> int:
+    """ENTRENCH: Guarda permanente ganha por segurar a linha (não atacar).
+
+    Engine consulta no início do turno do dono e só aplica se a carta NÃO
+    atacou no turno anterior (caller cuida do gate `has_attacked`).
+    """
+    return ENTRENCH_GROWTH_AMOUNT if has_keyword(card, KEYWORD_ENTRENCH) else 0
+
+
+def total_field_guard(owner_field: List[Dict[str, Any]], *, exclude_instance_id: Optional[str] = None) -> int:
+    """Soma a Guarda atual do board do dono — base da win-condition de Fortaleza."""
+    total = 0
+    for c in (owner_field or []):
+        if exclude_instance_id is not None and c.get("instance_id") == exclude_instance_id:
+            continue
+        total += max(0, int(c.get("current_guard", c.get("guard", 0)) or 0))
+    return total
+
+
 # ─────────────────────────────────────────────────────────────────────
 # K2: Sinergias condicionais
 # ─────────────────────────────────────────────────────────────────────
@@ -246,6 +290,12 @@ def synergy_active(card: Dict[str, Any], owner_field: List[Dict[str, Any]],
     if condition == "tier_2":
         # Ativo se controla ao menos 1 carta tier ≥ 2.
         return any(int(c.get("tier", 1) or 1) >= 2 for c in (owner_field or []))
+    if condition == "total_guard":
+        # Win-condition de Fortaleza: a muralha contra-ataca quando a Guarda
+        # somada do board atinge o limiar. Recompensa segurar a linha.
+        threshold = int(value or 8)
+        return total_field_guard(owner_field, exclude_instance_id=card.get("instance_id")) + \
+            max(0, int(card.get("current_guard", card.get("guard", 0)) or 0)) >= threshold
     return False
 
 
@@ -283,4 +333,6 @@ def synergy_label(card: Dict[str, Any]) -> Optional[str]:
         return f"Se você tem {value}+ monstros: {bonus}."
     if condition == "tier_2":
         return f"Se controla aliado evoluído: {bonus}."
+    if condition == "total_guard":
+        return f"Se sua Guarda total ≥ {value}: {bonus}."
     return None
