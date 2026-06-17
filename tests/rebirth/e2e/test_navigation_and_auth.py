@@ -184,6 +184,57 @@ def test_mobile_arena_is_native_and_keeps_touch_targets_readable(mobile_page, li
     assert measurements["slotHeight"] >= 112
 
 
+def test_low_height_desktop_actions_stay_visible_and_separate(page, live_server):
+    """Laptop-height desktop controls must not overlap the hero or leave the viewport."""
+    for viewport in (
+        {"width": 1470, "height": 860},
+        {"width": 1710, "height": 900},
+    ):
+        page.set_viewport_size(viewport)
+        page.goto(f"{live_server}/rebirth")
+        dismiss_mulligan(page)
+        page.locator("#play-button").wait_for(state="visible", timeout=10_000)
+
+        measurements = page.evaluate(
+            """() => {
+                const rect = (selector) => {
+                    const bounds = document.querySelector(selector).getBoundingClientRect();
+                    return {
+                        top: bounds.top,
+                        right: bounds.right,
+                        bottom: bounds.bottom,
+                        left: bounds.left,
+                    };
+                };
+                const overlaps = (a, b) => !(
+                    a.right <= b.left ||
+                    b.right <= a.left ||
+                    a.bottom <= b.top ||
+                    b.bottom <= a.top
+                );
+                const hero = rect(".rb-hud-bot");
+                const buttons = [
+                    rect("#play-button"),
+                    rect("#next-turn-button"),
+                    rect("#graveyard-button"),
+                ];
+                return {
+                    viewportHeight: window.innerHeight,
+                    hero,
+                    buttons,
+                    heroOverlaps: buttons.map((button) => overlaps(hero, button)),
+                };
+            }"""
+        )
+
+        assert all(button["top"] >= 0 for button in measurements["buttons"])
+        assert all(
+            button["bottom"] <= measurements["viewportHeight"]
+            for button in measurements["buttons"]
+        )
+        assert measurements["heroOverlaps"] == [False, False, False]
+
+
 # --- signature / shop regression guards -----------------------------------
 
 

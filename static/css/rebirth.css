@@ -15688,22 +15688,6 @@ body.rb-campaign-page .rb-campaign-node.is-next {
 
 }
 
-/* v105: telas de POUCA ALTURA (laptops/MacBook com a barra do navegador) —
-   compacta os botões de ação pra a pilha caber na faixa inferior sem subir
-   sobre o orb de HP do herói. A área própria no grid já tirou o overlap do
-   "ENCERRAR TURNO"; isto cobre o "INVOCAR" nas alturas ≤880px. */
-@media (min-width: 1180px) and (max-height: 880px) {
-    body.rb-game-page #play-button.rb-button-primary,
-    body.rb-game-page #next-turn-button.rb-button-secondary,
-    body.rb-game-page #graveyard-button.rb-button-secondary {
-        height: clamp(38px, 5vh, 64px) !important;
-        min-width: 0 !important;
-    }
-    body.rb-game-page .rb-actions-row {
-        gap: 4px !important;
-    }
-}
-
 /* O selo "A" sobre o retrato é decorativo durante o duelo — como link ele
    roubava cliques dos contadores e mandava o jogador pra home no meio da
    partida. A nav inteira continua aí para navegar. */
@@ -15734,6 +15718,44 @@ body.rb-game-page .rb-game-board .rb-hero-portrait {
 
     body.rb-game-page .rb-actions-row > div:nth-child(2) {
         transform: translateY(2px) !important;
+    }
+}
+
+/* v105: telas de POUCA ALTURA (laptops/MacBook com a barra do navegador).
+   Este bloco precisa vir DEPOIS das âncoras desktop acima: além de compactar
+   os botões, neutraliza os translateY e o cemitério absoluto que empurravam
+   controles para fora da viewport mesmo com a nova célula "actions". */
+@media (min-width: 1180px) and (max-height: 920px) {
+    body.rb-game-page .rb-actions-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+        justify-content: stretch;
+        gap: 8px !important;
+    }
+
+    body.rb-game-page .rb-actions-row > div,
+    body.rb-game-page .rb-actions-row > div:nth-child(1),
+    body.rb-game-page .rb-actions-row > div:nth-child(2) {
+        flex: 1 1 0;
+        min-width: 0;
+        transform: none !important;
+    }
+
+    body.rb-game-page #play-button.rb-button-primary,
+    body.rb-game-page #next-turn-button.rb-button-secondary,
+    body.rb-game-page #graveyard-button.rb-button-secondary {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: clamp(36px, 4.6vh, 60px) !important;
+    }
+
+    body.rb-game-page #graveyard-button {
+        position: static;
+        left: auto;
+        bottom: auto;
+        transform: none;
     }
 }
 
