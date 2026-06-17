@@ -188,8 +188,25 @@ Resultado (round-robin + 3 gates):
 - Reverte o nerf v74 (que era do meta antigo, pré-dominância de controle).
 - Versões → **v101** (card set + ruleset).
 
-Caveat honesto: um deck "midrange" incoerente (SHADOW+WATER+FIRE splash) colapsa
-no lab — provável fraqueza de deck-building, e o macro de decks reais segue
-saudável. **Esta branch NÃO foi deployada**: por ser reversão de design
-deliberado medida só no lab (IA), pede revisão + idealmente telemetria humana
-antes do merge — conforme a filosofia de balance.
+### Midrange — diagnóstico estrutural (item de telemetria, NÃO bloqueante)
+
+O midrange colapsa no lab (~0,25 vs campo) e isso **não é deck-building**:
+builds coerentes (SHADOW-reach, SHADOW-WATER value) também colapsam. A causa é
+**estrutural** — perde pro controle por causa das **muralhas EARTH** (TAUNT/
+SHIELD/guarda alta) que o SHADOW não fura, não pelo sustain WATER.
+
+Caminhos testados e **rejeitados** (medidos):
+- Buffar SHADOW (lifesteal/burst) dá nicho ao midrange MAS **vaza pro AGGRO**
+  (que splasha SHADOW) e quebra o eixo (aggro→0,65) — power-creep.
+- Trim de WATER (lifesteal teto 2 + water_heal −1): **não move** MID-vs-FORT
+  (0,23) — os dois decks compartilham WATER, então o corte é simétrico; o que
+  decide é a muralha EARTH.
+
+Consertar o midrange exigiria **nerfar as muralhas EARTH** (desfazer a Fortaleza
+do K3) ou um rebalance profundo — que, pela filosofia, é **telemetria humana**,
+não tuning de IA. Fica registrado como projeto futuro, **não bloqueia** o ganho
+do BURST=2 (que era fraco pré-K3 de qualquer forma: 0,32).
+
+**Decisão (dono): deploy do BURST=2 sem o trim de WATER** — ganho líquido limpo
+(controle deixou de ser opressivo, eixo justo, macro-neutro, sem nerf de design
+deliberado). Branch `feat/macro-recenter` mergeada para `main` (deploy Render).
