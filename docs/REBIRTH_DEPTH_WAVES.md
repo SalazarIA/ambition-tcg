@@ -70,8 +70,30 @@ Achados medidos:
 Versões bumpadas: ENGINE/CARD_SET/RULESET → v100 (reducers/replay-format
 inalterados → mantêm versão). Paridade e replay verdes (45/45).
 
+## Onda 3 — Camada de respostas ✅
+
+**Achado:** a camada de respostas **já existe e é madura** — 10 traps reativos
+(`opponent_attacks` / `owner_attacked`) num bus com `PRIORITY_INTERRUPT`
+(negate, reflect, freeze, weaken, drain, shield, cleanse, heal…). No lab
+disparam ~3/partida (TRAP_TRIGGERED 162 em 50 partidas). O catálogo é travado em
+exatamente 100 cartas, então não se adicionam traps novos sem restruturar.
+
+Logo, em vez de reconstruir um stack, a onda **amarra a represália ao
+arquétipo**: o trap `reflect_damage` ("Espinhos Espelhados") agora escala com a
+Guarda do board do controlador (`3 + min(3, guarda_total//6)`), unindo o tema
+THORNS à camada de respostas. Archetype-gated (board de pouca Guarda mantém 3).
+
+**Fairness provado por espelho** (mesmo deck dos dois lados):
+- Fortaleza espelhada: **0,475** (justo).
+- Agressão espelhada: 0,608 (vantagem do 1º a jogar).
+
+O kit é justo. O drift do lab controlado (player ~0,46–0,48) é **artefato de
+atribuição de deck** (o perfil "defensive" do bot recebe decks EARTH-heavy que
+aproveitam a defesa mais forte) + o fato real de que **defender ficou mais
+forte** — a ser re-centrado na Onda 4 (melhorar a agressão/lethal do bot).
+
 ## Próximas ondas
 
-- **Onda 3** — respostas: aprofundar traps reativos (sobre o motor existente).
-- **Onda 4** — IA do bot: punir board aberto / fechar lethal; revalidar o macro.
+- **Onda 4** — IA do bot: punir board aberto / fechar lethal; **re-centrar o
+  macro** (a defesa ficou mais forte; a agressão precisa competir).
 - **Onda 5** — ritmo: reduzir `dead_turn_rate` e capar cadeias (19→~15).

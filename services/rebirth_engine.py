@@ -1021,19 +1021,25 @@ def _dispatch_trap_effect(
         )
         messages.append(f"{trap['name']} anula o ataque de {opponent_card['name']}.")
     elif effect == "reflect_damage":
+        # K3 Fortaleza: a represália do trap de espinhos escala com a muralha —
+        # quanto mais Guarda no board do controlador, mais a punição dói.
+        # Archetype-gated: deck genérico (board de pouca Guarda) mantém os 3 base.
+        from services.rebirth_keywords import total_field_guard as _tfg
+        _wall = _tfg([c for c in (match[owner_side].get("field") or []) if c])
+        _reflect = 3 + min(3, _wall // 6)
         bus.dispatch(
             "DAMAGE_RESOLVED",
             actor=owner_side,
             source_card_id=trap.get("id"),
             target_id=opponent_side,
             owner_id=owner_side,
-            payload={"side": opponent_side, "amount": 3},
-            message=f"{match[opponent_side]['name']} sofre 3 de dano da pilha.",
+            payload={"side": opponent_side, "amount": _reflect},
+            message=f"{match[opponent_side]['name']} sofre {_reflect} de dano da pilha.",
             order=order,
             priority_level=PRIORITY_INTERRUPT,
             stable_entity_id=opponent_side,
         )
-        messages.append(f"{trap['name']} reflete 3 de dano.")
+        messages.append(f"{trap['name']} reflete {_reflect} de dano.")
     elif effect == "burn_attacker":
         bus.dispatch(
             "STATUS_APPLIED",
