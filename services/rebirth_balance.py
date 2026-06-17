@@ -400,6 +400,16 @@ def declare_best_attack(match, attacker):
         return None
 
 
+# Eventos que tornam um turno "vivo" (jogada relevante). Invocar/evoluir contam
+# como desenvolvimento de board — antes só ataque/dano/trap/destruição contavam,
+# o que inflava o dead_turn_rate ~2.7x (a maioria dos "mortos" eram turnos de
+# invocação). Ver docs/REBIRTH_DEPTH_WAVES.md (Onda 5).
+MEANINGFUL_TURN_EVENTS = frozenset({
+    "ATTACK_DECLARED", "DAMAGE_RESOLVED", "TRAP_TRIGGERED", "UNIT_DESTROYED",
+    "MONSTER_SUMMONED", "CARD_SUMMONED", "CARD_EVOLVED",
+})
+
+
 def simulate_match(seed=None, max_turns=30, bot_profile_id=None, player_card_ids=None, bot_card_ids=None):
     match = start_match(
         seed=seed,
@@ -527,7 +537,7 @@ def simulate_match(seed=None, max_turns=30, bot_profile_id=None, player_card_ids
             event.get("event_type") or event.get("type")
             for event in (match.get("events") or [])[turn_event_start:]
         }
-        if not turn_event_types.intersection({"ATTACK_DECLARED", "DAMAGE_RESOLVED", "TRAP_TRIGGERED", "UNIT_DESTROYED"}):
+        if not turn_event_types.intersection(MEANINGFUL_TURN_EVENTS):
             dead_turns += 1
         turns += 1
         if not match.get("is_finished"):

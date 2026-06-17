@@ -115,7 +115,33 @@ deck genérico), mas melhora a decisão real contra decks de Fortaleza.
 > (gap pré-existente); impacto baixo (o combate real aplica a sinergia de toda
 > forma) — fica como tarefa de polish de IA.
 
-## Onda 5 — ritmo & legibilidade (próxima)
+## Onda 5 — ritmo & legibilidade ✅
 
-- Reduzir `dead_turn_rate` (baseline 0,476; hoje ~0,477) e capar
-  `max_chain_events` (19→~15).
+**Achado 1 — `dead_turn_rate` era artefato de medição.** A detecção de turno
+morto no lab ignorava invocação/evolução: um turno em que você desenvolve o
+board (invoca, sem poder atacar por sickness) era contado como "morto".
+Corrigido (`MEANINGFUL_TURN_EVENTS` inclui MONSTER_SUMMONED/CARD_SUMMONED/
+CARD_EVOLVED): **0,476 → 0,173**. ~87% dos "mortos" eram turnos de
+desenvolvimento. Metade da preocupação dos findings era a métrica, não o jogo.
+
+**Achado 2 — ENTRENCH não causa "muro eterno".** Fortaleza espelhada (40 turnos
+máx): `stalemate_frequency 0,000`, avg 9,2 turnos, pior cadeia 14. A win-con
+(muralha contra-ataca + THORNS) faz a partida resolver — **sem necessidade de
+cap em ENTRENCH**. O design evita o stall por construção.
+
+**Cap de cadeia (`max_chain_events` 19):** mantido como item de telemetria
+humana, **não** ajustado às cegas (guia dos próprios findings: capar a cadeia no
+motor muda comportamento de combate). O K3 não piora cadeias (Fortaleza pior=14
+< 19 genérico).
+
+## Resumo das 4 frentes
+
+| Frente | Estado | Evidência |
+|---|---|---|
+| #1 Arquétipos/win-con | ✅ Fortaleza viável | mirror justo 0,475; Fort-vs-Aggro 0,77 |
+| #2 Respostas | ✅ já madura + tie-in | traps ~3/partida; reflect escala c/ muralha |
+| #3 IA do bot | ✅ casual resolvido | 0,72 → 0,567; bot respeita THORNS |
+| #4 Ritmo/legibilidade | ✅ métrica corrigida | dead_turn 0,476 → 0,173; 0 stalls |
+
+Macro otimizado: 0,503/0,497 → ~0,46/0,54 (defesa ficou mais forte; **justo por
+espelho**; re-centra com tuning de deck/IA agressiva futuro). Casual: saudável.

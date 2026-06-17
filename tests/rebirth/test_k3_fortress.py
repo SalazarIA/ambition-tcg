@@ -227,6 +227,14 @@ def test_engine_version_bumped_to_v100():
     assert RULESET_VERSION.endswith("v100")
 
 
+def test_dead_turn_metric_counts_development_as_meaningful():
+    """Onda 5 (legibilidade): invocar/evoluir desenvolvem o board e contam como
+    jogada relevante — antes inflavam o dead_turn_rate ~2.7x."""
+    from services.rebirth_balance import MEANINGFUL_TURN_EVENTS
+    assert {"MONSTER_SUMMONED", "CARD_SUMMONED", "CARD_EVOLVED"} <= MEANINGFUL_TURN_EVENTS
+    assert "ATTACK_DECLARED" in MEANINGFUL_TURN_EVENTS
+
+
 def test_entrench_does_not_grow_after_attacking():
     """Se a carta atacou no turno anterior, não há entrincheiramento."""
     match = start_match(seed="k3-entrench-attacked")
