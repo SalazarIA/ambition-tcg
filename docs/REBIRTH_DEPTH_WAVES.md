@@ -92,8 +92,30 @@ atribuição de deck** (o perfil "defensive" do bot recebe decks EARTH-heavy que
 aproveitam a defesa mais forte) + o fato real de que **defender ficou mais
 forte** — a ser re-centrado na Onda 4 (melhorar a agressão/lethal do bot).
 
-## Próximas ondas
+## Onda 4 — IA do bot ✅
 
-- **Onda 4** — IA do bot: punir board aberto / fechar lethal; **re-centrar o
-  macro** (a defesa ficou mais forte; a agressão precisa competir).
-- **Onda 5** — ritmo: reduzir `dead_turn_rate` e capar cadeias (19→~15).
+**A frente inverteu (medido).** O problema dos findings — "casual ganha 0,72
+porque o bot perde pra agressão" — **já foi resolvido pelo trabalho de
+profundidade**: o jogador casual agressivo caiu de **0,72 → 0,567** (o bot
+agora defende bem contra agressão ingênua, via Fortaleza). O otimizado ficou
+0,463/0,537 (bot levemente forte).
+
+**Knobs de win-rate pioram** (medido): `defensive summon 1→2` estoura
+(casual_player 0,567→0,433, otim_player 0,463→0,357) — com a Fortaleza o bot
+defensivo já é forte; o knob antigo super-corrige. **Nenhum knob alterado.**
+Para PvE, casual ~0,57 (ganha confortável, sem trivializar) + otimizado ~0,46
+(jogador habilidoso é desafiado) é uma curva de dificuldade saudável.
+
+**Ajuste de qualidade de decisão** (não de win-rate): o bot agora **respeita
+THORNS** na projeção de troca (`attack_utility_projection`) — para de jogar
+corpos em muralhas espinhadas sem lethal. Macro-neutro no lab (situação rara em
+deck genérico), mas melhora a decisão real contra decks de Fortaleza.
+
+> Item menor conhecido: `estimated_attack` do bot não espelha a sinergia K2
+> (gap pré-existente); impacto baixo (o combate real aplica a sinergia de toda
+> forma) — fica como tarefa de polish de IA.
+
+## Onda 5 — ritmo & legibilidade (próxima)
+
+- Reduzir `dead_turn_rate` (baseline 0,476; hoje ~0,477) e capar
+  `max_chain_events` (19→~15).

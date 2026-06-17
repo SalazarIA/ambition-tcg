@@ -8,6 +8,7 @@ linha), não os números. Inclui hooks puros e prova de integração no engine r
 from __future__ import annotations
 
 from services import rebirth_keywords as kw
+from services.rebirth_bot import attack_utility_projection
 from services.rebirth_cards import get_card
 from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION, RULESET_VERSION
 from services.rebirth_engine import (
@@ -199,6 +200,25 @@ def test_fortress_kit_keeps_tier1_keyword_clean():
     SINERGIA, não por keyword — preserva a regra 'tier-1 limpo de keyword'."""
     assert not get_card("card_044").get("keywords")
     assert not get_card("card_050").get("keywords")
+
+
+def test_bot_projection_respects_thorns():
+    """A IA do bot (Onda 4) sabe que atacar uma muralha espinhada custa Guarda
+    ao atacante — evita jogar corpos em THORNS sem lethal."""
+    attacker = {"instance_id": "a", "attack": 5, "power": 5, "guard": 2,
+                "current_guard": 2, "tier": 1, "keywords": []}
+    thorns_wall = {"instance_id": "w", "attack": 1, "power": 1, "guard": 4,
+                   "current_guard": 4, "tier": 1, "keywords": [kw.KEYWORD_THORNS]}
+    plain_wall = {"instance_id": "p", "attack": 1, "power": 1, "guard": 4,
+                  "current_guard": 4, "tier": 1, "keywords": []}
+    proj_t = attack_utility_projection(attacker, thorns_wall, bot_battlefield=[attacker],
+                                       player_battlefield=[thorns_wall], turn=3)
+    proj_p = attack_utility_projection(attacker, plain_wall, bot_battlefield=[attacker],
+                                       player_battlefield=[plain_wall], turn=3)
+    # Atacante (Guarda 2) vence o clash mas morre pros 2 de Espinhos só no caso THORNS.
+    assert proj_t["attacker_destroyed"] is True
+    assert proj_p["attacker_destroyed"] is False
+    assert proj_t["utility"] < proj_p["utility"]
 
 
 def test_engine_version_bumped_to_v100():

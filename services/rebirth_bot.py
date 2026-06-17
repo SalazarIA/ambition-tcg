@@ -297,6 +297,13 @@ def attack_utility_projection(
         attacker_guard_after -= max(1, player_attack)
         target_guard_after -= max(1, bot_attack)
 
+    # K3: THORNS — atacar uma muralha espinhada reflete Guarda ao atacante.
+    # Espelha o engine (dispara quando o atacante vence/empata, não quando
+    # perde), pra o bot parar de jogar corpos em espinhos sem lethal.
+    from services.rebirth_keywords import thorns_reflect as _bot_thorns_reflect
+    if projection["outcome"] != "loss":
+        attacker_guard_after -= _bot_thorns_reflect(target)
+
     attacker_destroyed = attacker_guard_after <= 0
     target_destroyed = target_guard_after <= 0
     target_value = card_utility_value(target) if target_destroyed else max(1, bot_attack) + threat_score(target) // 3
