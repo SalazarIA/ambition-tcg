@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Terms of Use - Ambitionz</title>
+    <title>Termos de Uso (Terms of Use) - Ambitionz</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Termos de Uso da beta do Ambitionz Rebirth.">
     <meta name="theme-color" content="#05050B">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ambitionz">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,79 +21,81 @@
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Terms of Use</h1>
-                <p>Ambitionz beta terms</p>
+                <h1>Termos de Uso (Terms of Use)</h1>
+                <p>Regras para participar da beta do Ambitionz</p>
             </div>
 
-            <a href="{{ url_for('privacy') }}" class="btn btn-secondary small-btn">Privacy</a>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Back</a>
+            <a href="{{ url_for('privacy') }}" class="btn btn-secondary small-btn">Privacidade</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Voltar</a>
         </header>
 
         <section class="deck-status legal-text">
-            <h2>1. Beta Status</h2>
-            <p>Ambitionz is currently in beta. Features, game balance, cards, rewards, progression, rankings, missions, visuals and user data may change during development.</p>
+            <p><strong>Vigência: 17 de junho de 2026.</strong></p>
 
-            <h2>2. Official Website</h2>
-            <p>The official Ambitionz website is <strong>https://ambition-tcg.onrender.com</strong>.</p>
+            <h2>1. Aceitação</h2>
+            <p>Ao criar uma conta ou usar o Ambitionz Rebirth, você concorda com estes Termos de Uso e com a Política de Privacidade. Se não concordar, não crie uma conta nem continue usando o serviço.</p>
 
-            <h2>3. Account Responsibility</h2>
-            <p>Users are responsible for keeping their login information secure. Accounts may be limited, reset or removed during beta testing when required for stability, abuse prevention, security or balance.</p>
+            <h2>2. Estado beta</h2>
+            <p>O Ambitionz está em beta. Funcionalidades, cartas, balanceamento, recompensas, progressão, rankings, missões, visuais e dados de teste podem mudar. Bugs, conteúdo incompleto e interrupções temporárias são esperados nesta fase.</p>
 
-            <h2>4. Fair Play</h2>
-            <p>Do not exploit bugs, automate gameplay, attack the service, abuse matchmaking, manipulate progression, reverse engineer restricted systems or attempt to access admin-only areas.</p>
+            <h2>3. Elegibilidade e conta</h2>
+            <p>O jogador deve confirmar que atende à idade mínima aplicável para participar da beta. É responsável por fornecer informações corretas, proteger suas credenciais e pelas ações realizadas em sua sessão. Não compartilhe senha nem tente usar a conta de outra pessoa.</p>
 
-            <h2>5. Beta Testing</h2>
-            <p>Players participating in beta testing understand that the game may contain bugs, incomplete features, temporary content, balance issues and service interruptions.</p>
+            <h2>4. Email e segurança</h2>
+            <p>O serviço pode solicitar verificação do email para proteger coleção, nível e recompensas. Contas podem ser limitadas, suspensas, reinicializadas ou removidas quando necessário para segurança, prevenção de abuso, estabilidade ou cumprimento destes termos.</p>
 
-            <h2>6. Progression and Virtual Items</h2>
-            <p>Cards, boosters, coins, XP, levels, cosmetics, rankings and other virtual progression systems are part of the beta environment and may be changed, rebalanced, reset or removed.</p>
+            <h2>5. Jogo limpo e uso aceitável</h2>
+            <p>Não explore falhas, automatize jogadas, ataque o serviço, abuse do matchmaking, manipule progressão, tente contornar controles de acesso, faça engenharia reversa de sistemas restritos ou acesse áreas administrativas. Também são proibidos conteúdo ilegal ou abusivo, spam, links maliciosos e instruções destinadas a prejudicar o serviço ou outros jogadores.</p>
 
-            <h2>7. Availability</h2>
-            <p>Ambitionz may be unavailable during maintenance, deployment, infrastructure limits, bug fixes or beta operations. The service is provided as-is during beta.</p>
+            <h2>6. Feedback</h2>
+            <p>Relatos de bugs, balanceamento e sugestões podem ser enviados pelo <a href="{{ url_for('feedback') }}" class="text-link">canal de suporte</a>. Ao enviar feedback, você autoriza o Ambitionz a analisá-lo e usá-lo para melhorar o jogo, sem obrigação de implementar a sugestão ou remunerar o envio.</p>
 
-            <h2>8. Feedback</h2>
-            <p>Players may submit bug reports, balance feedback and suggestions through <strong>https://ambition-tcg.onrender.com/feedback</strong>. Submitted feedback may be used to improve the game.</p>
+            <h2>7. Progressão e itens virtuais</h2>
+            <p>Cartas, boosters, Ouro, Gemas, XP, níveis, cosméticos, rankings e demais itens virtuais integram o ambiente beta, não representam propriedade física, não têm valor em dinheiro e podem ser corrigidos, rebalanceados, reinicializados ou removidos.</p>
 
-            <h2>9. Acceptable Use</h2>
-            <p>Users must not submit abusive content, illegal content, spam, malicious links, exploit instructions or content intended to harm the service or other players.</p>
+            <h2>8. Pagamentos durante a beta</h2>
+            <p>Checkout com dinheiro real e pagamentos Stripe permanecem desativados durante a beta fechada. Qualquer ativação futura exige termos comerciais, política de reembolso, revisão jurídica, declarações da loja e controles operacionais atualizados antes da oferta ao jogador.</p>
 
-            <h2>10. Privacy</h2>
-            <p>Use of Ambitionz is also governed by the Privacy Policy available at <strong>https://ambition-tcg.onrender.com/privacy</strong>.</p>
+            <h2>9. Disponibilidade e alterações</h2>
+            <p>O serviço pode ficar indisponível por manutenção, implantação, limites de infraestrutura, incidentes ou correções. Não há garantia de disponibilidade contínua, preservação permanente do progresso de teste ou compatibilidade com toda combinação de aparelho e navegador.</p>
 
-            <h2>11. Payments During Beta</h2>
-            <p>Real-money checkout and live Stripe payments remain disabled during closed beta unless compliance, backup/restore and release gates are explicitly approved. Free beta boosters and virtual balances have no cash value.</p>
+            <h2>10. Privacidade e exclusão</h2>
+            <p>O tratamento de dados segue a <a href="{{ url_for('privacy') }}" class="text-link">Política de Privacidade</a>. O jogador pode exportar dados ou excluir permanentemente a conta pela área de suporte autenticada; as instruções públicas estão em <a href="{{ url_for('data_deletion') }}" class="text-link">Exclusão de Dados</a>.</p>
 
-            <h2>12. Data Deletion</h2>
-            <p>Users may request account and data deletion through the available beta support channel or the Rebirth self-service support tools.</p>
-            <p><a href="{{ url_for('data_deletion') }}" class="text-link">Data deletion request</a></p>
+            <h2>11. Encerramento</h2>
+            <p>Você pode parar de usar o serviço a qualquer momento e solicitar a exclusão da conta. O Ambitionz pode encerrar ou restringir acesso por violação destes termos, risco à segurança, exigência legal ou encerramento da beta.</p>
 
-            <h2>13. Changes to Terms</h2>
-            <p>These terms may be updated as Ambitionz moves through beta testing, closed testing and future public release.</p>
+            <h2>12. Propriedade intelectual</h2>
+            <p>Nome, identidade visual, software, textos, regras apresentadas, personagens, cartas e demais conteúdos do Ambitionz pertencem aos respectivos titulares. Estes termos concedem apenas uma licença pessoal, limitada, revogável e não transferível para participar da beta.</p>
+
+            <h2>13. Limitação da beta</h2>
+            <p>Na extensão permitida pela legislação aplicável, o serviço beta é fornecido no estado em que se encontra para testes. Nada nestes termos exclui direitos obrigatórios do consumidor ou responsabilidade que não possa ser legalmente limitada.</p>
+
+            <h2>14. Contato e mudanças</h2>
+            <p>O responsável pelo projeto é <strong>Lucas Silvério, desenvolvedor do Ambitionz</strong>. Dúvidas podem ser enviadas pelo <a href="{{ url_for('rebirth_support') }}" class="text-link">Suporte Rebirth</a>. Alterações materiais nestes termos exigem nova data de vigência e nova revisão antes de ampliar a distribuição.</p>
         </section>
 
-        
         <footer class="public-support-footer-v147">
             <div>
-                <strong>Ambitionz Beta Support</strong>
-                <span>Closed testing resources, legal pages and feedback channel.</span>
+                <strong>Suporte da Beta Ambitionz</strong>
+                <span>Recursos de teste, páginas legais e canal de feedback.</span>
             </div>
 
             <nav>
-                <a href="{{ url_for('closed_test') }}">Closed Test</a>
-                <a href="{{ url_for('first_session') }}">First Session</a>
+                <a href="{{ url_for('closed_test') }}">Teste Fechado</a>
+                <a href="{{ url_for('first_session') }}">Primeira Sessão</a>
                 <a href="{{ url_for('feedback') }}">Feedback</a>
-                <a href="{{ url_for('privacy') }}">Privacy</a>
-                <a href="{{ url_for('terms') }}">Terms</a>
-                <a href="{{ url_for('data_deletion') }}">Data Deletion</a>
+                <a href="{{ url_for('privacy') }}">Privacidade</a>
+                <a href="{{ url_for('terms') }}">Termos</a>
+                <a href="{{ url_for('data_deletion') }}">Exclusão de Dados</a>
             </nav>
         </footer>
 
-
         <nav class="mobile-bottom-nav">
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('terms') }}" class="active">Terms</a>
-            <a href="{{ url_for('privacy') }}">Privacy</a>
-            <a href="{{ url_for('feedback') }}">Support</a>
+            <a href="{{ url_for('index') }}">Início</a>
+            <a href="{{ url_for('terms') }}" class="active">Termos</a>
+            <a href="{{ url_for('privacy') }}">Privacidade</a>
+            <a href="{{ url_for('feedback') }}">Suporte</a>
         </nav>
     </main>
 

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -181,7 +182,9 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const CACHE_NAME = "v106_ARENA_ACTIONS";' in service_worker
+    assert 'const ASSET_VERSION = "v106_ARENA_ACTIONS";' in service_worker
+    assert 'const CACHE_NAME = `ambitionz-rebirth-shell-${ASSET_VERSION}`;' in service_worker
+    assert "return `${path}?v=${ASSET_VERSION}`;" in service_worker
     assert '"version": "v98_CORE_LOOP_STABILIZATION"' in asset_manifest
     assert 'REBIRTH_ART_VERSION = "v98_CORE_LOOP_STABILIZATION"' in art_contract
     assert "REBIRTH_CACHE_RE" in service_worker
@@ -200,6 +203,7 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     assert "/static/assets/rebirth/audio/evolution_burst.wav" in service_worker
     assert "/static/assets/rebirth/audio/click_metallic.wav" in service_worker
     assert "CORE_ASSET_SET.has(`${url.pathname}${url.search}`)" in service_worker
+    assert "FALLBACK_WEBP_ART_RE" not in service_worker
     assert "function pruneActiveCache()" in service_worker
     assert "pruneActiveCache()" in service_worker
     assert "/rebirth/collection" not in service_worker
@@ -224,6 +228,76 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     assert "dreadclaw.svg" not in service_worker
     assert 'self.addEventListener("activate"' in service_worker
     assert "self.skipWaiting();" in service_worker
+    assert "event.waitUntil(networkUpdate.catch" in service_worker
+    assert 'response.type !== "basic"' in service_worker
+
+
+def test_rebirth_manifest_has_installable_pt_br_metadata_and_real_icons():
+    manifest = json.loads(read("static/manifest.webmanifest"))
+
+    assert manifest["id"] == "/"
+    assert manifest["start_url"].startswith("/rebirth")
+    assert manifest["scope"] == "/"
+    assert manifest["lang"] == "pt-BR"
+    assert manifest["display"] == "standalone"
+    assert manifest["orientation"] == "portrait-primary"
+    assert manifest["prefer_related_applications"] is False
+
+    icons = manifest["icons"]
+    assert any(icon.get("sizes") == "192x192" and icon.get("purpose") == "any" for icon in icons)
+    assert any(icon.get("sizes") == "512x512" and icon.get("purpose") == "any" for icon in icons)
+    assert any(icon.get("sizes") == "192x192" and icon.get("purpose") == "maskable" for icon in icons)
+    assert any(icon.get("sizes") == "512x512" and icon.get("purpose") == "maskable" for icon in icons)
+    assert any(icon.get("sizes") == "any" and icon.get("type") == "image/svg+xml" for icon in icons)
+    for icon in icons:
+        assert icon["src"].startswith("/static/")
+        assert (PROJECT_ROOT / icon["src"].lstrip("/")).is_file()
+
+    shortcut = manifest["shortcuts"][0]
+    assert shortcut["url"] == "/rebirth"
+    assert shortcut["short_name"] == "Jogar"
+    assert shortcut["icons"][0]["sizes"] == "any"
+    assert shortcut["icons"][0]["type"] == "image/svg+xml"
+
+
+def test_public_legal_pages_are_current_pt_br_and_match_account_controls():
+    privacy = read("templates/privacy.html")
+    terms = read("templates/terms.html")
+    deletion = read("templates/data_deletion.html")
+
+    for document in (privacy, terms, deletion):
+        assert '<html lang="pt-BR">' in document
+        assert "Vigência: 17 de junho de 2026." in document
+        assert "Lucas Silvério" in document
+        assert "rebirth_support" in document
+
+    for token in (
+        "Política de Privacidade (Privacy Policy)",
+        "Render",
+        "Sentry ou GlitchTip",
+        "não vende dados pessoais",
+        "Retenção",
+        "LGPD",
+    ):
+        assert token in privacy
+
+    for token in (
+        "Termos de Uso (Terms of Use)",
+        "idade mínima aplicável",
+        "pagamentos Stripe permanecem desativados",
+        "Exclusão de Dados",
+    ):
+        assert token in terms
+
+    for token in (
+        "Exclusão de Dados (Data Deletion)",
+        "Excluir Minha Conta",
+        "DELETE REBIRTH",
+        "executada imediatamente",
+        "Registros técnicos que podem permanecer",
+        "Google Play Console",
+    ):
+        assert token in deletion
 
 
 def test_rebirth_combat_guidance_stays_in_pt_br():

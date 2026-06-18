@@ -397,7 +397,6 @@
             const width = Math.max(1, viewport.width || window.innerWidth || RebirthConfig.boardWidth);
             const height = Math.max(1, viewport.height || window.innerHeight || RebirthConfig.boardHeight);
             const safe = this.safeInsets();
-            const navHeight = this.globalNavHeight();
             // #1 tablet fix: o cockpit mobile (dirigido por .rb-mobile-native)
             // cobre toda a faixa < 1180px. Antes era <= 760, deixando 761-1179
             // (tablets) numa zona morta entre mobile e o desktop-cheio (>=1180):
@@ -405,7 +404,14 @@
             // cockpit vertical até o layout desktop assumir em 1180px.
             const nativeMobile = width < 1180;
             document.body.classList.toggle("rb-mobile-native", nativeMobile);
+            // A classe acima muda a navegação de desktop para duas faixas no
+            // mobile; meça somente depois dessa troca para obter a altura real.
+            const navHeight = this.globalNavHeight();
             document.documentElement.style.setProperty("--rb-mobile-nav-height", `${navHeight}px`);
+            // O cockpit mobile declara a variável no próprio body. Sem
+            // sincronizá-la aqui, esse valor local vence o valor medido no
+            // :root e o HUD começa por baixo da navegação fixa.
+            document.body.style.setProperty("--rb-mobile-nav-height", `${navHeight}px`);
             if (nativeMobile) {
                 document.documentElement.style.setProperty("--rb-board-width", "100%");
                 document.documentElement.style.setProperty("--rb-board-height", "auto");
@@ -2215,7 +2221,7 @@
             const endTurn = document.getElementById("next-turn-button");
             const endTurnLabel = endTurn ? endTurn.innerHTML : null;
             if (endTurn) {
-                endTurn.innerHTML = '<i class="rb-action-loop"></i>Turno inimigo…';
+                endTurn.innerHTML = '<i class="rb-action-loop" aria-hidden="true"></i><span>Turno inimigo…</span>';
                 endTurn.disabled = true;
             }
             try {
@@ -3274,23 +3280,23 @@
                 const btn = RebirthStore.elements["play-button"];
                 if (state.is_finished) {
                     actionState = "finished";
-                    btn.innerHTML = '<i class="rb-action-sword"></i>Encerrado';
+                    btn.innerHTML = '<i class="rb-action-sword" aria-hidden="true"></i><span>Encerrado</span>';
                     btn.disabled = true;
                     btn.title = "A partida foi encerrada.";
                 } else if (state.phase === "result") {
                     actionState = "resolved";
-                    btn.innerHTML = '<i class="rb-action-sword"></i>Resolvido';
+                    btn.innerHTML = '<i class="rb-action-sword" aria-hidden="true"></i><span>Combate resolvido</span>';
                     btn.disabled = true;
                     btn.title = "Combate resolvido. Avance para o próximo turno.";
                 } else if (fieldFusion) {
                     actionState = "fusion";
-                    btn.innerHTML = '<i class="rb-action-loop"></i>Fundir';
+                    btn.innerHTML = '<i class="rb-action-loop" aria-hidden="true"></i><span>Fundir</span>';
                     btn.disabled = !canChoose;
                     btn.title = `Fundir ${fieldFusion.sourceName} x2 em uma forma evoluida.`;
                     actionCopyOverride = `Funda ${fieldFusion.sourceName} x2.`;
                 } else if (selectedAttacker) {
                     actionState = attackRisk && attackRisk.tone ? `attack-${attackRisk.tone}` : "attack";
-                    btn.innerHTML = '<i class="rb-action-sword"></i>Atacar';
+                    btn.innerHTML = '<i class="rb-action-sword" aria-hidden="true"></i><span>Atacar</span>';
                     btn.disabled = !canChoose || !attackerReady || directLocked;
                     btn.title = directLocked
                         ? "Dano direto bloqueado no primeiro turno. Encerre o turno para o bot responder."
@@ -3309,7 +3315,7 @@
                                 ? "no-slot"
                                 : "play-card"
                         : "choose-card";
-                    btn.innerHTML = `<i class="rb-action-sword"></i>${isMonster ? "Invocar" : "Jogar"}${selected ? ` ${cost}` : ""}`;
+                    btn.innerHTML = `<i class="rb-action-sword" aria-hidden="true"></i><span>${isMonster ? "Invocar" : "Jogar"}${selected ? ` ${cost}` : ""}</span>`;
                     btn.disabled = !canChoose || !RebirthStore.selectedInstanceId || !canPay || noOpenSlot;
                     if (!RebirthStore.selectedInstanceId) {
                         btn.title = "Escolha uma carta da mão primeiro.";
@@ -3387,17 +3393,17 @@
             }
             if (nextButton) {
                 if (state.phase === "result") {
-                    nextButton.innerHTML = '<i class="rb-action-loop"></i>Próximo turno';
+                    nextButton.innerHTML = '<i class="rb-action-loop" aria-hidden="true"></i><span>Próximo turno</span>';
                     nextButton.disabled = !canNext;
                     nextButton.title = "Avance para preparar o próximo turno.";
                     RebirthDom.setText("secondary-action-copy", "Prepare seu campo");
                 } else if (state.is_finished) {
-                    nextButton.innerHTML = '<i class="rb-action-loop"></i>Encerrado';
+                    nextButton.innerHTML = '<i class="rb-action-loop" aria-hidden="true"></i><span>Encerrado</span>';
                     nextButton.disabled = true;
                     nextButton.title = "A partida foi encerrada.";
                     RebirthDom.setText("secondary-action-copy", "Inicie uma nova partida");
                 } else {
-                    nextButton.innerHTML = '<i class="rb-action-loop"></i>Encerrar turno';
+                    nextButton.innerHTML = '<i class="rb-action-loop" aria-hidden="true"></i><span>Encerrar turno</span>';
                     nextButton.disabled = !canNext;
                     nextButton.title = deadEnd
                         ? "Sem ações disponíveis — encerre o turno."
@@ -3495,7 +3501,7 @@
             const overlay = this.overlay();
             if (!overlay) return;
             if (!state || !state.mulligan_available || state.is_finished) {
-                overlay.hidden = true;
+                this.hide();
                 return;
             }
             // Primeiro duelo guiado: o tutorial conduz a mão — sem decisão de
@@ -3510,11 +3516,13 @@
                 RebirthAssets.bindFallbacks(host);
             }
             overlay.hidden = false;
+            document.body.classList.add("rb-mulligan-open");
         },
 
         hide() {
             const overlay = this.overlay();
             if (overlay) overlay.hidden = true;
+            document.body.classList.remove("rb-mulligan-open");
         },
 
         keep() {

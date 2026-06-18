@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Data Deletion - Ambitionz</title>
+    <title>Exclusão de Dados (Data Deletion) - Ambitionz</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Instruções públicas para excluir uma conta Ambitionz Rebirth e os dados associados.">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ambitionz">
@@ -20,105 +21,79 @@
     <main class="wide-page mobile-wide-page">
         <header class="top-bar mobile-top-bar">
             <div>
-                <h1>Data Deletion</h1>
-                <p>Account and personal data removal request</p>
+                <h1>Exclusão de Dados (Data Deletion)</h1>
+                <p>Exclusão permanente da conta e dos dados associados</p>
             </div>
 
-            <a href="{{ url_for('privacy') }}" class="btn btn-secondary small-btn">Privacy</a>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Home</a>
+            <a href="{{ url_for('privacy') }}" class="btn btn-secondary small-btn">Privacidade</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary small-btn">Início</a>
         </header>
 
         <section class="data-deletion-hero-v139">
             <div>
-                <span class="progression-kicker">User Data Control</span>
-                <h2>Request deletion of your Ambitionz account data.</h2>
-                <p>
-                    Ambitionz is currently in beta. Users may request removal of account-related
-                    data used for login, gameplay progression, deck data, collection data, match
-                    records, feedback and operational beta testing.
-                </p>
+                <span class="progression-kicker">Controle dos seus dados</span>
+                <h2>Exclua sua conta Ambitionz Rebirth pelo aplicativo ou pelo navegador.</h2>
+                <p>Este caminho público atende jogadores que desejam iniciar a exclusão fora do aplicativo instalado. A autenticação é necessária para impedir que outra pessoa apague a sua conta.</p>
             </div>
         </section>
 
         <section class="deck-status legal-text">
-            <h2>1. How to request deletion</h2>
-            <p>
-                To request account or data deletion, contact the Ambitionz project administrator
-                through the available beta support or feedback channel.
-            </p>
+            <p><strong>Vigência: 17 de junho de 2026.</strong></p>
 
-            <p>
-                Signed-in Rebirth players can also open <strong>/rebirth/support</strong> to export
-                their account data, reset beta progress or request permanent deletion from the
-                self-service support surface.
-            </p>
-
-            <p>
-                You may also submit a request through the feedback page and include the title:
-                <strong>Account Data Deletion Request</strong>.
-            </p>
+            <h2>1. Exclusão self-service</h2>
+            <ol>
+                <li>Abra <a href="{{ url_for('rebirth_support') }}" class="text-link">Suporte Rebirth</a> no aplicativo ou em qualquer navegador.</li>
+                <li>Entre na conta que deseja excluir.</li>
+                <li>Selecione <strong>Excluir Minha Conta</strong>.</li>
+                <li>Digite <strong>DELETE REBIRTH</strong> e confirme a ação.</li>
+            </ol>
+            <p>A exclusão self-service é executada imediatamente após a confirmação, encerra a sessão e não pode ser desfeita.</p>
 
             <div class="progression-action-row">
-                <a href="{{ url_for('feedback') }}" class="btn">Open Feedback</a>
-                <a href="{{ url_for('privacy') }}" class="btn btn-secondary">Privacy Notice</a>
+                <a href="{{ url_for('rebirth_support') }}" class="btn">Abrir Suporte Rebirth</a>
+                <a href="{{ url_for('privacy') }}" class="btn btn-secondary">Política de Privacidade</a>
             </div>
 
-            <h2>2. Information to include</h2>
-            <p>
-                Include the email address or username associated with the account so the project
-                administrator can identify the correct records.
-            </p>
+            <h2>2. Se você não consegue entrar</h2>
+            <p>Abra o mesmo <a href="{{ url_for('feedback') }}" class="text-link">canal de suporte</a> e envie um feedback com o assunto <strong>Solicitação de Exclusão de Conta</strong>. Informe o email ou nome de jogador da conta. A equipe solicitará apenas as informações necessárias para confirmar a titularidade antes de processar o pedido assistido.</p>
 
-            <h2>3. Data covered by deletion</h2>
-            <p>
-                Deletion may include account profile data, login-related records, progression,
-                deck and collection data, match records, feedback records and operational test logs
-                associated with the account.
-            </p>
+            <h2>3. Dados excluídos</h2>
+            <p>A exclusão remove a conta, credenciais e sessões, coleção, baralhos, campanha, progressão, recompensas, boosters, conquistas, carteira e extratos virtuais, ofertas de mercado, histórico, comandos e eventos de partidas vinculados diretamente ao usuário.</p>
 
-            <h2>4. Data that may be retained temporarily</h2>
-            <p>
-                Some operational records may be retained for a limited time if required for security,
-                abuse prevention, debugging, legal compliance or platform review obligations.
-            </p>
+            <h2>4. Registros técnicos que podem permanecer</h2>
+            <p>O registro mínimo de que uma exclusão ocorreu, telemetria e feedback podem ser mantidos com o vínculo relacional da conta removido quando necessários para segurança, prevenção de abuso, integridade, diagnóstico ou obrigação legal. O texto enviado voluntariamente em feedback e identificadores técnicos já presentes nesses registros podem permanecer durante esse período. Backups temporários expiram conforme o ciclo operacional aplicável e não são usados para reativar a conta.</p>
 
-            <h2>5. LGPD request review</h2>
-            <p>
-                Requests related to access, correction, export, review or deletion are handled through
-                the support channel and reviewed against account ownership, security and legal-retention
-                requirements.
-            </p>
+            <h2>5. Reiniciar não é excluir</h2>
+            <p><strong>Reiniciar progresso</strong> apaga ou recompõe dados de jogo, mas mantém a conta. Para exercer o direito de exclusão, use especificamente <strong>Excluir Minha Conta</strong> ou faça a solicitação assistida descrita acima.</p>
 
-            <h2>6. Beta reset notice</h2>
-            <p>
-                Because Ambitionz is in beta, test accounts, progression, rewards, matches and logs
-                may also be reset as part of normal development and balancing operations.
-            </p>
+            <h2>6. Exportação e direitos LGPD</h2>
+            <p>Antes de excluir, o jogador autenticado pode usar <strong>Exportar Dados</strong> na área de suporte. Pedidos de acesso, correção, informação, oposição ou revisão também podem ser enviados pelo mesmo canal e serão tratados após verificação de titularidade.</p>
+
+            <h2>7. Responsável</h2>
+            <p>O responsável pelo projeto é <strong>Lucas Silvério, desenvolvedor do Ambitionz</strong>. A página pública desta solicitação é <strong>/data-deletion</strong> e deve ser informada no campo de exclusão de conta do Google Play Console.</p>
         </section>
 
-        
         <footer class="public-support-footer-v147">
             <div>
-                <strong>Ambitionz Beta Support</strong>
-                <span>Closed testing resources, legal pages and feedback channel.</span>
+                <strong>Suporte da Beta Ambitionz</strong>
+                <span>Recursos de teste, páginas legais e canal de feedback.</span>
             </div>
 
             <nav>
-                <a href="{{ url_for('closed_test') }}">Closed Test</a>
-                <a href="{{ url_for('first_session') }}">First Session</a>
+                <a href="{{ url_for('closed_test') }}">Teste Fechado</a>
+                <a href="{{ url_for('first_session') }}">Primeira Sessão</a>
                 <a href="{{ url_for('feedback') }}">Feedback</a>
-                <a href="{{ url_for('privacy') }}">Privacy</a>
-                <a href="{{ url_for('terms') }}">Terms</a>
-                <a href="{{ url_for('data_deletion') }}">Data Deletion</a>
+                <a href="{{ url_for('privacy') }}">Privacidade</a>
+                <a href="{{ url_for('terms') }}">Termos</a>
+                <a href="{{ url_for('data_deletion') }}">Exclusão de Dados</a>
             </nav>
         </footer>
 
-
         <nav class="mobile-bottom-nav">
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('privacy') }}">Privacy</a>
-            <a href="{{ url_for('terms') }}">Terms</a>
-            <a href="{{ url_for('feedback') }}">Feedback</a>
+            <a href="{{ url_for('index') }}">Início</a>
+            <a href="{{ url_for('privacy') }}">Privacidade</a>
+            <a href="{{ url_for('terms') }}">Termos</a>
+            <a href="{{ url_for('feedback') }}">Suporte</a>
         </nav>
     </main>
 

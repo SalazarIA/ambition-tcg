@@ -184,6 +184,94 @@ def test_mobile_arena_is_native_and_keeps_touch_targets_readable(mobile_page, li
     assert measurements["slotHeight"] >= 112
 
 
+def test_mobile_arena_clears_fixed_nav_and_keeps_action_labels_visible(mobile_page, live_server):
+    """The fixed product nav must not cover the HUD or the primary commands."""
+    page = mobile_page
+    page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
+    page.locator("#play-button span").wait_for(state="visible", timeout=10_000)
+
+    measurements = page.evaluate(
+        """() => {
+            const rect = (selector) => {
+                const bounds = document.querySelector(selector).getBoundingClientRect();
+                return {
+                    top: bounds.top,
+                    right: bounds.right,
+                    bottom: bounds.bottom,
+                    left: bounds.left,
+                    width: bounds.width,
+                    height: bounds.height,
+                };
+            };
+            return {
+                viewportWidth: window.innerWidth,
+                documentWidth: document.documentElement.scrollWidth,
+                nav: rect("[data-rebirth-global-nav]"),
+                board: rect("#rebirth-board"),
+                playLabel: rect("#play-button span"),
+                endLabel: rect("#next-turn-button span"),
+                playText: document.querySelector("#play-button span").textContent.trim(),
+                endText: document.querySelector("#next-turn-button span").textContent.trim(),
+            };
+        }"""
+    )
+
+    assert measurements["board"]["top"] >= measurements["nav"]["bottom"]
+    assert measurements["playLabel"]["width"] > 0
+    assert measurements["playLabel"]["height"] >= 12
+    assert measurements["endLabel"]["width"] > 0
+    assert measurements["endLabel"]["height"] >= 12
+    assert measurements["playText"].startswith(("Invocar", "Jogar"))
+    assert measurements["endText"] == "Encerrar turno"
+    assert measurements["documentWidth"] <= measurements["viewportWidth"]
+
+
+def test_landscape_mulligan_keeps_first_action_inside_safe_viewport(mobile_page, live_server):
+    """Rotation must not put the initial keep/swap decision off-screen."""
+    page = mobile_page
+    page.set_viewport_size({"width": 844, "height": 390})
+    page.goto(f"{live_server}/rebirth")
+    overlay = page.locator("#rebirth-mulligan-overlay")
+    overlay.wait_for(state="visible", timeout=10_000)
+
+    measurements = page.evaluate(
+        """() => {
+            const rect = (selector) => {
+                const bounds = document.querySelector(selector).getBoundingClientRect();
+                return {
+                    top: bounds.top,
+                    right: bounds.right,
+                    bottom: bounds.bottom,
+                    left: bounds.left,
+                    width: bounds.width,
+                    height: bounds.height,
+                };
+            };
+            return {
+                viewport: {width: window.innerWidth, height: window.innerHeight},
+                nav: rect("[data-rebirth-global-nav]"),
+                overlay: rect("#rebirth-mulligan-overlay"),
+                swap: rect("#mulligan-swap"),
+                keep: rect("#mulligan-keep"),
+                documentWidth: document.documentElement.scrollWidth,
+            };
+        }"""
+    )
+
+    assert measurements["overlay"]["top"] >= measurements["nav"]["bottom"]
+    for action in (measurements["swap"], measurements["keep"]):
+        assert action["top"] >= measurements["overlay"]["top"]
+        assert action["bottom"] <= measurements["viewport"]["height"]
+        assert action["height"] >= 48
+        assert action["left"] >= 0
+        assert action["right"] <= measurements["viewport"]["width"]
+    assert measurements["documentWidth"] <= measurements["viewport"]["width"]
+
+    page.locator("#mulligan-keep").click()
+    overlay.wait_for(state="hidden", timeout=4_000)
+
+
 def test_desktop_actions_stay_visible_and_separate(desktop_page, live_server):
     """Desktop controls must not overlap the bot HP orb or leave the viewport."""
     page = desktop_page

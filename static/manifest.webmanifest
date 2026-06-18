@@ -48,7 +48,7 @@
     },
     {
       "src": "/static/icons/icon.svg",
-      "sizes": "1024x1024",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     }
@@ -62,7 +62,8 @@
       "icons": [
         {
           "src": "/static/icons/icon.svg",
-          "sizes": "1024x1024"
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     }

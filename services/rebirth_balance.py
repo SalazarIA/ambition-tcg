@@ -760,6 +760,7 @@ def _simulate_balance_core(matches=40, *, seed_prefix="balance", max_turns=30):
                     matches,
                     dead_cards.get(card_id, 0),
                     evolution_usage.get(card_id, 0),
+                    card=card,
                 ),
             }
         )
@@ -841,7 +842,24 @@ def simulate_controlled_balance(matches=1000, *, seed_prefix="controlled-balance
     )
 
 
-def balance_flags(plays, match_uses, wins, damage, matches, dead_count, evolve_count):
+CONTEXTUAL_FINISHER_ACTIONS = frozenset({"fireball"})
+
+
+def _has_selection_biased_win_rate(card):
+    """Finalizadores que o lab só joga depois de abrir janela de lethal."""
+    if not is_spell(card or {}):
+        return False
+    action = str((card or {}).get("action") or "").strip().lower()
+    effects = (card or {}).get("stack_effects") or []
+    deals_direct_damage = any(
+        str(effect.get("type") or "").lower() == "damage"
+        and str(effect.get("target") or "opponent").lower() in {"opponent", "enemy"}
+        for effect in effects
+    )
+    return action in CONTEXTUAL_FINISHER_ACTIONS and deals_direct_damage
+
+
+def balance_flags(plays, match_uses, wins, damage, matches, dead_count, evolve_count, *, card=None):
     flags = []
     if not plays:
         flags.append("unused")
@@ -849,7 +867,7 @@ def balance_flags(plays, match_uses, wins, damage, matches, dead_count, evolve_c
         win_rate = wins / max(1, match_uses)
         avg_damage = damage / plays
         if win_rate >= 0.78 and avg_damage >= 1.5:
-            flags.append("dominant")
+            flags.append("selection-biased-win-rate" if _has_selection_biased_win_rate(card) else "dominant")
         if win_rate <= 0.2 and avg_damage <= 0.75:
             flags.append("low-impact")
     if dead_count >= matches * 0.4:

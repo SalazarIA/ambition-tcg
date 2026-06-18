@@ -200,11 +200,11 @@
 
                 <section class="rb-actions rb-actions-row" aria-label="Ações principais">
                     <div>
-                        <button class="rb-button-primary rb-cta" type="button" id="play-button"><i class="rb-action-sword"></i>Invocar</button>
+                        <button class="rb-button-primary rb-cta" type="button" id="play-button"><i class="rb-action-sword" aria-hidden="true"></i><span>Invocar</span></button>
                         <small id="primary-action-copy">Gaste mana para jogar</small>
                     </div>
                     <div>
-                        <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop"></i>Encerrar turno</button>
+                        <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop" aria-hidden="true"></i><span>Encerrar turno</span></button>
                         <button class="rb-button-secondary rb-secondary rb-mulligan-button" type="button" id="mulligan-button" hidden title="Troca a mão inicial uma única vez, antes da primeira ação.">Trocar mão</button>
                         <button class="rb-button-secondary rb-secondary" type="button" id="graveyard-button" title="Cartas destruídas dos dois lados — informação pública">Cemitério</button>
                         <small id="secondary-action-copy">Passe a vez para recarregar mana</small>
@@ -227,7 +227,7 @@
                             <span id="chain-label">Sem efeitos pendentes</span>
                             <span id="interrupt-label">Sem reação ativa</span>
                         </div>
-                        <div id="tactics-strip" class="rb-tactics-strip" aria-label="Leitura tática"></div>
+                        <div id="tactics-strip" class="rb-tactics-strip" aria-label="Análise tática"></div>
                     </div>
                     <div id="reward-panel" class="rb-reward-panel" aria-live="polite"></div>
                     <div id="ability-events" class="rb-ability-events" aria-live="polite"></div>
@@ -265,11 +265,11 @@
                 <path class="rb-target-arrow__line" d="" marker-end="url(#rb-arrow-head)"></path>
             </svg>
             <div id="rebirth-float-layer" class="rb-float-layer" aria-hidden="true"></div>
-            <div id="rebirth-mulligan-overlay" class="rb-mulligan-overlay" hidden role="dialog" aria-modal="true" aria-label="Decisão de mão inicial">
+            <div id="rebirth-mulligan-overlay" class="rb-mulligan-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="rebirth-mulligan-title" aria-describedby="rebirth-mulligan-copy">
                 <div class="rb-mulligan-sheet">
                     <span class="rb-mulligan-kicker">Turno 1</span>
-                    <h2>Sua mão inicial</h2>
-                    <p>Você pode trocá-la uma única vez, antes da primeira ação.</p>
+                    <h2 id="rebirth-mulligan-title">Sua mão inicial</h2>
+                    <p id="rebirth-mulligan-copy">Você pode trocá-la uma única vez, antes da primeira ação.</p>
                     <div class="rb-mulligan-cards" id="mulligan-cards"></div>
                     <div class="rb-mulligan-actions">
                         <button type="button" class="rb-button-secondary rb-secondary" id="mulligan-swap">Trocar mão</button>

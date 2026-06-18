@@ -1,8 +1,9 @@
-const CACHE_NAME = "v106_ARENA_ACTIONS";
+const ASSET_VERSION = "v106_ARENA_ACTIONS";
+const CACHE_NAME = `ambitionz-rebirth-shell-${ASSET_VERSION}`;
 const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL|CAMPAIGN(?:_V\d+|_ERA)?|RELEASE_POLISH|EMAIL_VERIFY|ART_FOUNDATION|ART_PERSONALITY|FULLSCREEN|DOC_REBIRTH|DOC_LAYOUT|DOC_POLISH|LAUNCH|KEYWORDS|DECK_BUILDER|BATTLEFIELD|ARENA_ZEN|FATES_REBORN|FATES_FIX|NO_TABLE|GAME_FEEL_PASS|CORE_LOOP_STABILIZATION|MOBILE_WEB_FIX|AAA_RULES_PASS|ARENA_FEEL|VISUAL_UNITY|PLAYER_FIRST|PERF_STUDY|YGO_POLISH|ARENA_ACTIONS)(?:$|-))/i;
 
 function stableAsset(path) {
-    return `${path}?v=${CACHE_NAME}`;
+    return `${path}?v=${ASSET_VERSION}`;
 }
 
 // Keep authentication, wallet, profile and loadout HTML network-owned. Only
@@ -15,7 +16,6 @@ function stableAsset(path) {
 // transactions and must never be served from cache.
 const PLAYER_STATE_API_DENY_RE = /^\/api\/(?:rebirth\/)?(?:wallet|profile|market|auth|loadout)(?:\/|$)/;
 const DYNAMIC_REBIRTH_API_DENY_RE = /^\/api\/rebirth\/(?:session|progression|collection|match-history|economy-ledger|onboarding|tutorial)(?:\/|$)/;
-const FALLBACK_WEBP_ART_RE = /^\/static\/assets\/rebirth\/cards\/dreadclaw-art\.webp$/;
 const CORE_ASSETS = [
     "/manifest.webmanifest",
     "/static/manifest.webmanifest",
@@ -52,7 +52,7 @@ function isCacheableAppShellRequest(url) {
     if (url.origin !== self.location.origin) {
         return false;
     }
-    return CORE_ASSET_SET.has(`${url.pathname}${url.search}`) || FALLBACK_WEBP_ART_RE.test(url.pathname);
+    return CORE_ASSET_SET.has(`${url.pathname}${url.search}`);
 }
 
 function pruneActiveCache() {
@@ -138,19 +138,30 @@ self.addEventListener("fetch", function (event) {
         return;
     }
 
-    event.respondWith(
-        caches.open(CACHE_NAME).then(function (cache) {
-            return cache.match(event.request).then(function (cached) {
-                const network = fetch(event.request).then(function (response) {
-                    if (response && response.ok) {
-                        cache.put(event.request, response.clone()).then(function () {
-                            return trimRuntimeCache(cache);
-                        });
-                    }
-                    return response;
-                });
-                return cached || network;
+    const cachePromise = caches.open(CACHE_NAME);
+    const networkUpdate = cachePromise.then(function (cache) {
+        return fetch(event.request).then(function (response) {
+            if (!response || !response.ok || response.type !== "basic") {
+                return response;
+            }
+            return cache.put(event.request, response.clone()).then(function () {
+                return trimRuntimeCache(cache);
+            }).then(function () {
+                return response;
             });
+        });
+    });
+
+    // A resposta em cache pode voltar imediatamente, mas a atualização precisa
+    // manter o worker vivo para não deixar assets antigos após uma nova versão.
+    event.waitUntil(networkUpdate.catch(function () {
+        return undefined;
+    }));
+    event.respondWith(
+        cachePromise.then(function (cache) {
+            return cache.match(event.request);
+        }).then(function (cached) {
+            return cached || networkUpdate;
         })
     );
 });
