@@ -7,8 +7,8 @@ Google Play Closed Testing.
 com.ambitionzgame.app
 
 ## Version
-versionName: 1.0.0-beta.1
-versionCode: 1
+versionName: 1.0.0-beta.2
+versionCode: 2
 
 ## Release Artifact
 android/app/build/outputs/bundle/release/app-release.aab

@@ -20,13 +20,14 @@ from services.rebirth_profiler import current_profiler
 # v101 (re-centro do meta): FIRE carrega BURST (reach) em todos os tiers e
 # BURST subiu 1→2 — counter anti-sustain que re-centra AGGRO↔CONTROLE. Muda
 # card set + combate; reducers e formato de replay/snapshot seguem inalterados.
-ENGINE_VERSION = "rebirth_engine_v101"
-CARD_SET_VERSION = "rebirth_card_set_v101"
+# v102: busca multi-ataque por dificuldade + Ruptura midrange anti-muralha.
+ENGINE_VERSION = "rebirth_engine_v102"
+CARD_SET_VERSION = "rebirth_card_set_v102"
 REPLAY_FORMAT_VERSION = "rebirth_replay_v2"
 REPLAY_SCHEMA_VERSION = "rebirth_replay_schema_v66"
 SNAPSHOT_FORMAT_VERSION = "rebirth_snapshot_v2"
-RULESET_VERSION = "rebirth_ruleset_v101"
-REDUCER_VERSION = "rebirth_reducer_v99"
+RULESET_VERSION = "rebirth_ruleset_v102"
+REDUCER_VERSION = "rebirth_reducer_v100"
 MAX_EFFECT_CHAIN_DEPTH = 8
 MAX_CAUSAL_CHAIN_DEPTH = 12
 MAX_INTERRUPT_DEPTH = 4
@@ -74,6 +75,11 @@ CANONICAL_CARD_FIELDS = (
     "effect_chain_id",
 )
 
+CANONICAL_TRUE_CARD_FLAGS = (
+    "shield_consumed",
+    "just_summoned",
+)
+
 
 def canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -100,6 +106,12 @@ def canonical_card(card: Any) -> Any:
         for field in CANONICAL_CARD_FIELDS
         if field in card
     }
+    # Legacy states may omit these flags; omission and False have identical
+    # gameplay semantics. Persist only the active state so old snapshots stay
+    # compatible while True participates in canonical hashing.
+    for field in CANONICAL_TRUE_CARD_FLAGS:
+        if bool(card.get(field, False)):
+            payload[field] = True
     if "statuses" in card:
         payload["statuses"] = _stable_value(card.get("statuses") or {})
     if "status_effects" in card:
@@ -163,6 +175,7 @@ def canonical_state(match: Dict[str, Any]) -> Dict[str, Any]:
         "player": canonical_side(match.get("player") or {}),
         "bot": canonical_side(match.get("bot") or {}),
         "bot_profile_id": (match.get("bot_profile") or {}).get("id"),
+        "bot_difficulty_id": (match.get("bot_difficulty") or {}).get("id"),
         "result": _canonical_result(match.get("result")),
         "last_clash": _canonical_result(match.get("last_clash")),
     }

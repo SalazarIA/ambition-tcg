@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from math import ceil, isfinite
 from statistics import fmean
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -40,6 +41,71 @@ def _rate(part: int, total: int) -> Optional[float]:
     if total <= 0:
         return None
     return round(part / total, 3)
+
+
+def _number(value: Any) -> Optional[float]:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if isfinite(number) else None
+
+
+def _decision_regret(payload: Dict[str, Any]) -> Optional[float]:
+    regret = _number(payload.get("regret"))
+    if regret is not None:
+        return max(0.0, regret)
+    chosen_score = _number(payload.get("chosen_score"))
+    best_score = _number(payload.get("best_score"))
+    if chosen_score is None or best_score is None:
+        return None
+    return max(0.0, best_score - chosen_score)
+
+
+def _decision_summary(events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    regrets = sorted(
+        regret
+        for event in events
+        if (regret := _decision_regret(_payload(event))) is not None
+    )
+    elapsed = [
+        value
+        for event in events
+        if (value := _number(_payload(event).get("decision_elapsed_ms"))) is not None and value >= 0
+    ]
+    suboptimal_count = sum(1 for regret in regrets if regret > 0)
+    p95_index = max(0, ceil(len(regrets) * 0.95) - 1) if regrets else None
+    return {
+        "decision_count": len(events),
+        "scored_decision_count": len(regrets),
+        "average_regret": round(fmean(regrets), 4) if regrets else None,
+        "regret_p95": round(regrets[p95_index], 4) if p95_index is not None else None,
+        "max_regret": round(regrets[-1], 4) if regrets else None,
+        "suboptimal_decision_count": suboptimal_count,
+        "suboptimal_decision_rate": _rate(suboptimal_count, len(regrets)),
+        "average_decision_elapsed_ms": round(fmean(elapsed), 2) if elapsed else None,
+    }
+
+
+def _decision_breakdown(
+    events: List[Dict[str, Any]],
+    *,
+    field: str,
+    aliases: tuple[str, ...] = (),
+) -> List[Dict[str, Any]]:
+    grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for event in events:
+        payload = _payload(event)
+        value = payload.get(field)
+        if value is None:
+            value = next((payload.get(alias) for alias in aliases if payload.get(alias) is not None), None)
+        grouped[str(value or "unknown")].append(event)
+    return [
+        {field: label, **_decision_summary(items)}
+        for label, items in sorted(grouped.items())
+    ]
 
 
 def _profile_summary(label: str, events: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -81,9 +147,40 @@ def _profile_summary(label: str, events: List[Dict[str, Any]]) -> Dict[str, Any]
     }
 
 
+def _outcome_count(
+    events: List[Dict[str, Any]],
+    terminal: List[Dict[str, Any]],
+    *,
+    event_type: str,
+    winner: str,
+) -> int:
+    terminal_match_ids = {
+        str(_payload(event).get("match_id") or "").strip()
+        for event in terminal
+        if str(_payload(event).get("match_id") or "").strip()
+    }
+    count = sum(
+        1
+        for event in terminal
+        if event.get("event_type") == "match_finished" and _payload(event).get("winner") == winner
+    )
+    legacy_match_ids = set()
+    for event in events:
+        if event.get("event_type") != event_type:
+            continue
+        match_id = str(_payload(event).get("match_id") or "").strip()
+        if match_id:
+            if match_id in terminal_match_ids or match_id in legacy_match_ids:
+                continue
+            legacy_match_ids.add(match_id)
+        count += 1
+    return count
+
+
 def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Optional[str] = None) -> Dict[str, Any]:
     events = list(events or [])
     terminal = _terminal_events(events)
+    decision_events = [event for event in events if event.get("event_type") == "decision_made"]
     profile_events: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     cohort_counts = Counter()
     card_play_counts = Counter()
@@ -91,8 +188,6 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
     deck_counts = Counter()
     evolution_counts = Counter()
     fusion_count = 0
-    win_events = 0
-    loss_events = 0
     release_counts = Counter()
 
     for event in events:
@@ -112,16 +207,13 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
             evolution_counts[str(payload["card_id"])] += 1
         if event.get("event_type") == "field_pair_fused":
             fusion_count += 1
-        if event.get("event_type") == "match_won":
-            win_events += 1
-        if event.get("event_type") == "match_lost":
-            loss_events += 1
-
     for event in terminal:
         profile = _payload(event).get("bot_profile_id") or "unknown"
         profile_events[str(profile)].append(event)
 
     overall = _profile_summary("overall", terminal)
+    win_events = _outcome_count(events, terminal, event_type="match_won", winner="player")
+    loss_events = _outcome_count(events, terminal, event_type="match_lost", winner="bot")
     by_profile = [_profile_summary(profile, items) for profile, items in sorted(profile_events.items())]
     readiness_state = "ready" if overall["matches_finished"] >= HUMAN_MATCH_TARGET else "insufficient_sample"
     flags = list(overall["flags"])
@@ -129,6 +221,17 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
         flags.append("needs_human_telemetry")
     if not card_play_counts:
         flags.append("needs_card_play_samples")
+    decisions = {
+        **_decision_summary(decision_events),
+        "by_actor": _decision_breakdown(decision_events, field="actor"),
+        "by_action_type": _decision_breakdown(decision_events, field="action_type"),
+        "by_profile": _decision_breakdown(
+            decision_events,
+            field="profile",
+            aliases=("profile_id", "bot_profile_id"),
+        ),
+        "by_difficulty": _decision_breakdown(decision_events, field="difficulty"),
+    }
     return {
         "version": LIVE_BALANCE_VERSION,
         "release_version": release_version,
@@ -159,6 +262,7 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
             for card_id, count in evolution_counts.most_common(12)
         ],
         "fusion_count": fusion_count,
+        "decisions": decisions,
         "flags": flags,
     }
 
@@ -171,6 +275,25 @@ def live_balance_payload(
     release_version: Optional[str] = None,
 ) -> Dict[str, Any]:
     events = repo.query_telemetry_events(limit=limit, since=since)
+    try:
+        terminal_events = repo.query_telemetry_events(
+            event_types=("match_finished", "match_abandoned"),
+            limit=None,
+            since=since,
+        )
+    except TypeError:
+        # Compatibility with lightweight repositories that predate event-type
+        # filtering. They still receive the original bounded query above.
+        terminal_events = []
+    if terminal_events:
+        by_id = {event.get("id"): event for event in events}
+        for event in terminal_events:
+            by_id[event.get("id")] = event
+        events = sorted(
+            by_id.values(),
+            key=lambda event: int(event.get("id", 0) or 0),
+            reverse=True,
+        )
     report = live_balance_report(events, release_version=release_version)
     report["since"] = since
     return report

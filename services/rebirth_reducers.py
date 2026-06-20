@@ -1170,6 +1170,7 @@ REDUCER_REGISTRY: Dict[str, Reducer] = {
     "BURST_DAMAGE": reduce_burst_damage,
     "REGEN_TICK": reduce_regen_tick,
     "SHIELD_KEYWORD_ABSORBED": reduce_shield_keyword_absorbed,
+    "SHIELD_KEYWORD_BROKEN": reduce_shield_keyword_absorbed,
     "ENERGY_REFRESHED": reduce_energy_refreshed,
     "HEALTH_RECOVERED": reduce_health_recovered,
     "MATCH_FINISHED": reduce_match_finished,

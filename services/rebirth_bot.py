@@ -2,6 +2,15 @@ from copy import deepcopy
 import hashlib
 
 from services.rebirth_cards import is_monster
+from services.rebirth_combat_rules import (
+    ability_key as shared_ability_key,
+    card_attack as shared_card_attack,
+    card_guard as shared_card_guard,
+    damage_details as shared_damage_details,
+    effective_attack as shared_effective_attack,
+    overflow_hero_damage as shared_overflow_hero_damage,
+    tie_priority as shared_tie_priority,
+)
 from services.rebirth_contracts import FIELD_SLOT_COUNT
 from services.rebirth_profiler import current_profiler
 
@@ -12,6 +21,33 @@ MCTS_ROLLOUT_DEPTH_LIMIT = 4
 MCTS_BEAM_WIDTH = 6
 MCTS_SIMULATION_BUDGET = 48
 CI_SAFE_SIMULATION_CEILING = 24
+
+BOT_DIFFICULTIES = {
+    "easy": {
+        "id": "easy",
+        "name": "Fácil",
+        "depth": 1,
+        "beam_width": 3,
+        "budget": 6,
+        "mistake_window": 2,
+    },
+    "normal": {
+        "id": "normal",
+        "name": "Normal",
+        "depth": 2,
+        "beam_width": 6,
+        "budget": 16,
+        "mistake_window": 0,
+    },
+    "hard": {
+        "id": "hard",
+        "name": "Difícil",
+        "depth": 3,
+        "beam_width": 8,
+        "budget": 24,
+        "mistake_window": 0,
+    },
+}
 
 BOT_PERSONALITIES = {
     "defensive": {
@@ -77,11 +113,11 @@ ABILITY_PRIORITIES = {
 
 
 def card_attack(card):
-    return int(card.get("attack", card.get("power", 0)) or 0)
+    return shared_card_attack(card)
 
 
 def card_guard(card):
-    return int(card.get("guard", 0) or 0)
+    return shared_card_guard(card)
 
 
 def ability_priority(card):
@@ -89,7 +125,7 @@ def ability_priority(card):
 
 
 def ability_key(card):
-    return str(card.get("ability_key") or "")
+    return shared_ability_key(card)
 
 
 def card_tier(card):
@@ -190,6 +226,16 @@ def _combat_context(context):
     }
 
 
+def _response_context(context):
+    return {
+        **_combat_context(context),
+        "bot_battlefield": context.get("bot_battlefield") or [],
+        "player_battlefield": context.get("player_battlefield") or [],
+        "bot_hp": int(context.get("bot_hp", 30) or 0),
+        "player_hp": int(context.get("player_hp", 30) or 0),
+    }
+
+
 def remaining_damage_vector(bot_battlefield, *, excluded_attacker=None):
     cards = _ready_board_cards(bot_battlefield, excluded=excluded_attacker)
     return {
@@ -256,6 +302,7 @@ def attack_utility_projection(
     *,
     bot_battlefield=None,
     player_battlefield=None,
+    bot_hp=30,
     player_hp=30,
     turn=1,
     player_wounded=False,
@@ -275,24 +322,69 @@ def attack_utility_projection(
             "outcome": "direct",
             "damage_dealt": direct_damage,
             "damage_taken": 0,
+            "hero_damage": {"player": direct_damage, "bot": 0},
             "attacker_destroyed": False,
             "target_destroyed": False,
             "symmetric_suicide": False,
             "lethal_window": lethal_window,
             "remaining_damage": remaining_damage,
+            "attacker_guard_after": current_guard(attacker),
+            "target_guard_after": None,
+            "player_hp_after": max(0, int(player_hp or 0) - direct_damage),
+            "bot_hp_after": max(0, int(bot_hp or 0)),
         }
 
     combat = _combat_context({"turn": turn, "player_wounded": player_wounded, "bot_wounded": bot_wounded})
-    projection = response_projection(attacker, target, **combat)
-    bot_attack = estimated_attack(attacker, target, turn=combat["turn"])
-    player_attack = estimated_attack(target, attacker, turn=combat["turn"])
+    projection = response_projection(
+        attacker,
+        target,
+        bot_battlefield=bot_battlefield,
+        player_battlefield=player_battlefield,
+        bot_hp=bot_hp,
+        player_hp=player_hp,
+        **combat,
+    )
+    bot_attack = estimated_attack(
+        attacker,
+        target,
+        turn=combat["turn"],
+        owner_field=bot_battlefield,
+        owner_hp=bot_hp,
+    )
+    player_attack = estimated_attack(
+        target,
+        attacker,
+        turn=combat["turn"],
+        owner_field=player_battlefield,
+        owner_hp=player_hp,
+    )
     attacker_guard_after = current_guard(attacker)
     target_guard_after = current_guard(target)
+    hero_damage = {"player": 0, "bot": 0}
+    from services.rebirth_keywords import shield_absorbs, sunder_active
+
+    shield_will_break = projection["outcome"] == "win" and shield_absorbs(target)
+    sunder_break = shield_will_break and sunder_active(attacker, bot_battlefield or [], target)
 
     if projection["outcome"] == "win":
-        target_guard_after -= max(1, projection["damage_dealt"])
+        if shield_will_break and not sunder_break:
+            projection = {**projection, "damage_dealt": 0}
+        else:
+            guard_damage = max(1, projection["damage_dealt"])
+            hero_damage["player"] = shared_overflow_hero_damage(
+                attacker,
+                guard_damage,
+                target_guard_after,
+            )
+            target_guard_after -= guard_damage
     elif projection["outcome"] == "loss":
-        attacker_guard_after -= max(1, projection["damage_taken"])
+        guard_damage = max(1, projection["damage_taken"])
+        hero_damage["bot"] = shared_overflow_hero_damage(
+            target,
+            guard_damage,
+            attacker_guard_after,
+        )
+        attacker_guard_after -= guard_damage
     else:
         attacker_guard_after -= max(1, player_attack)
         target_guard_after -= max(1, bot_attack)
@@ -314,10 +406,17 @@ def attack_utility_projection(
         if card and (_card_identity(card) != _card_identity(target) or not target_destroyed)
     ]
     remaining_damage = remaining_damage_vector(bot_battlefield or [attacker], excluded_attacker=attacker)
-    lethal_window = not remaining_player_cards and remaining_damage["total"] >= int(player_hp or 0)
+    player_hp_after = max(0, int(player_hp or 0) - hero_damage["player"])
+    bot_hp_after = max(0, int(bot_hp or 0) - hero_damage["bot"])
+    immediate_lethal = int(player_hp or 0) > 0 and player_hp_after <= 0
+    lethal_window = immediate_lethal or (
+        not remaining_player_cards
+        and remaining_damage["total"] >= player_hp_after
+    )
+    self_lethal = int(bot_hp or 0) > 0 and bot_hp_after <= 0
     symmetric_suicide = projection["outcome"] == "tie" and attacker_destroyed and target_destroyed
     high_tier_suicide = symmetric_suicide and card_tier(attacker) >= 2
-    allowed = not high_tier_suicide or lethal_window
+    allowed = (not high_tier_suicide or lethal_window) and not self_lethal
     utility = (
         target_value
         + projection["damage_dealt"] * 5
@@ -332,6 +431,8 @@ def attack_utility_projection(
         utility -= 12000
         allowed = False
     if high_tier_suicide and not lethal_window:
+        utility -= 100000
+    if self_lethal:
         utility -= 100000
 
     # v69: bônus/penalidade por Breakthrough threat. defender_guard_pool é a pool de
@@ -355,6 +456,7 @@ def attack_utility_projection(
 
     reason = (
         "lethal_window" if lethal_window
+        else "avoid_self_lethal" if self_lethal
         else "avoid_future_lethal" if future_lethal_risk
         else "refuse_high_tier_suicide" if not allowed
         else breakthrough_reason or "trade_value"
@@ -367,12 +469,19 @@ def attack_utility_projection(
         "outcome": projection["outcome"],
         "damage_dealt": projection["damage_dealt"],
         "damage_taken": projection["damage_taken"],
+        "hero_damage": hero_damage,
         "attacker_destroyed": attacker_destroyed,
         "target_destroyed": target_destroyed,
         "symmetric_suicide": symmetric_suicide,
         "lethal_window": lethal_window,
         "remaining_damage": remaining_damage,
         "breakthrough_pressure": target_breakthrough,
+        "attacker_guard_after": attacker_guard_after,
+        "target_guard_after": target_guard_after,
+        "shield_consumed": shield_will_break,
+        "shield_broken_by_sunder": sunder_break,
+        "player_hp_after": player_hp_after,
+        "bot_hp_after": bot_hp_after,
     }
 
 
@@ -380,6 +489,7 @@ def tactical_utility_matrix(
     bot_battlefield,
     player_battlefield,
     *,
+    bot_hp=30,
     player_hp=30,
     turn=1,
     player_wounded=False,
@@ -402,6 +512,7 @@ def tactical_utility_matrix(
                 target,
                 bot_battlefield=bot_battlefield,
                 player_battlefield=player_battlefield,
+                bot_hp=bot_hp,
                 player_hp=player_hp,
                 turn=turn,
                 player_wounded=player_wounded,
@@ -521,22 +632,210 @@ def profile_attack_policy(rows, profile_id, *, turn=1, player_battlefield=None):
     return pressure[0] if pressure else None
 
 
-class MCTSAgent:
-    """Deterministic, CI-safe rollout facade for future full MCTS work."""
+def normalize_difficulty(difficulty_id=None):
+    difficulty_id = str(difficulty_id or "normal").strip().lower()
+    return difficulty_id if difficulty_id in BOT_DIFFICULTIES else "normal"
 
-    def __init__(self, *, budget=MCTS_SIMULATION_BUDGET, depth_limit=MCTS_ROLLOUT_DEPTH_LIMIT, beam_width=MCTS_BEAM_WIDTH):
-        self.budget = min(int(budget or 0), CI_SAFE_SIMULATION_CEILING)
-        self.depth_limit = max(1, min(int(depth_limit or 1), MCTS_ROLLOUT_DEPTH_LIMIT))
-        self.beam_width = max(1, min(int(beam_width or 1), MCTS_BEAM_WIDTH))
+
+def difficulty_payload(difficulty_id=None):
+    return deepcopy(BOT_DIFFICULTIES[normalize_difficulty(difficulty_id)])
+
+
+def _project_attack_state(bot_battlefield, player_battlefield, bot_hp, player_hp, row):
+    bot_after = deepcopy([card for card in (bot_battlefield or []) if card])
+    player_after = deepcopy([card for card in (player_battlefield or []) if card])
+    attacker = next(
+        (card for card in bot_after if card.get("instance_id") == row.get("attacker_instance_id")),
+        None,
+    )
+    if attacker:
+        attacker["has_attacked"] = True
+        attacker["has_acted"] = True
+        attacker["exhausted"] = True
+        if row.get("attacker_guard_after") is not None:
+            attacker["current_guard"] = int(row["attacker_guard_after"])
+    if row.get("outcome") == "direct":
+        player_hp = max(0, int(player_hp or 0) - int(row.get("damage_dealt", 0) or 0))
+    else:
+        target = next(
+            (card for card in player_after if card.get("instance_id") == row.get("target_instance_id")),
+            None,
+        )
+        if target and row.get("target_guard_after") is not None:
+            target["current_guard"] = int(row["target_guard_after"])
+        if target and row.get("shield_consumed"):
+            target["shield_consumed"] = True
+        hero_damage = row.get("hero_damage") or {}
+        player_hp = max(0, int(player_hp or 0) - int(hero_damage.get("player", 0) or 0))
+        bot_hp = max(0, int(bot_hp or 0) - int(hero_damage.get("bot", 0) or 0))
+    bot_after = [card for card in bot_after if current_guard(card) > 0]
+    player_after = [card for card in player_after if current_guard(card) > 0]
+    return bot_after, player_after, bot_hp, player_hp
+
+
+def _position_utility(bot_battlefield, player_battlefield, player_hp):
+    bot_value = sum(card_utility_value(card) + current_guard(card) * 2 for card in bot_battlefield or [])
+    player_value = sum(card_utility_value(card) + current_guard(card) * 2 for card in player_battlefield or [])
+    hero_pressure = max(0, 30 - int(player_hp or 0)) * 8
+    return bot_value - player_value + hero_pressure
+
+
+def search_attack_sequences(
+    bot_battlefield,
+    player_battlefield,
+    *,
+    bot_hp=30,
+    player_hp=30,
+    turn=1,
+    player_wounded=False,
+    bot_wounded=False,
+    direct_allowed=False,
+    depth=2,
+    beam_width=6,
+    budget=16,
+):
+    """Deterministic beam search over complete multi-attack sequences."""
+    depth = max(1, min(int(depth or 1), MCTS_ROLLOUT_DEPTH_LIMIT))
+    beam_width = max(1, min(int(beam_width or 1), 12))
+    budget = max(1, min(int(budget or 1), CI_SAFE_SIMULATION_CEILING))
+    nodes = [
+        {
+            "bot": deepcopy(bot_battlefield or []),
+            "player": deepcopy(player_battlefield or []),
+            "bot_hp": int(bot_hp or 0),
+            "player_hp": int(player_hp or 0),
+            "score": 0.0,
+            "path": [],
+        }
+    ]
+    completed = []
+    expansions = 0
+    for ply in range(depth):
+        next_nodes = []
+        for node in nodes:
+            rows = tactical_utility_matrix(
+                node["bot"],
+                node["player"],
+                bot_hp=node["bot_hp"],
+                player_hp=node["player_hp"],
+                turn=turn,
+                player_wounded=player_wounded,
+                bot_wounded=bot_wounded,
+                direct_allowed=direct_allowed,
+            )
+            allowed = [row for row in beam_prune_moves(rows, width=beam_width) if row.get("allowed")]
+            if not allowed:
+                completed.append(node)
+                continue
+            for row in allowed:
+                expansions += 1
+                bot_after, player_after, bot_hp_after, player_hp_after = _project_attack_state(
+                    node["bot"],
+                    node["player"],
+                    node["bot_hp"],
+                    node["player_hp"],
+                    row,
+                )
+                path = node["path"] + [row]
+                discount = 0.82 ** ply
+                score = (
+                    float(node["score"])
+                    + float(row.get("utility", 0) or 0) * discount
+                    + _position_utility(bot_after, player_after, player_hp_after) * 0.08
+                )
+                next_nodes.append(
+                    {
+                        "bot": bot_after,
+                        "player": player_after,
+                        "bot_hp": bot_hp_after,
+                        "player_hp": player_hp_after,
+                        "score": score,
+                        "path": path,
+                    }
+                )
+                if expansions >= budget:
+                    break
+            if expansions >= budget:
+                break
+        if not next_nodes:
+            break
+        nodes = sorted(
+            next_nodes,
+            key=lambda node: (
+                -float(node["score"]),
+                str((node["path"][0] if node["path"] else {}).get("attacker_instance_id") or ""),
+                str((node["path"][0] if node["path"] else {}).get("target_instance_id") or ""),
+            ),
+        )[:beam_width]
+        if expansions >= budget:
+            break
+    completed.extend(nodes)
+    best_by_root = {}
+    for node in completed:
+        if not node["path"]:
+            continue
+        first = node["path"][0]
+        key = (first.get("attacker_instance_id"), first.get("target_instance_id"))
+        existing = best_by_root.get(key)
+        if existing is None or float(node["score"]) > float(existing["search_score"]):
+            best_by_root[key] = {
+                **first,
+                "search_score": round(float(node["score"]), 4),
+                "search_depth": len(node["path"]),
+                "principal_variation": [
+                    {
+                        "attacker_instance_id": step.get("attacker_instance_id"),
+                        "target_instance_id": step.get("target_instance_id"),
+                        "outcome": step.get("outcome"),
+                    }
+                    for step in node["path"]
+                ],
+            }
+    return sorted(
+        best_by_root.values(),
+        key=lambda row: (
+            -float(row.get("search_score", row.get("utility", 0)) or 0),
+            str(row.get("attacker_instance_id") or ""),
+            str(row.get("target_instance_id") or ""),
+        ),
+    )
+
+
+class MCTSAgent:
+    """Deterministic, CI-safe beam-search agent."""
+
+    def __init__(
+        self,
+        *,
+        difficulty_id="normal",
+        budget=None,
+        depth_limit=None,
+        beam_width=None,
+    ):
+        difficulty = difficulty_payload(difficulty_id)
+        self.difficulty_id = difficulty["id"]
+        self.budget = min(int(budget or difficulty["budget"]), CI_SAFE_SIMULATION_CEILING)
+        self.depth_limit = max(
+            1,
+            min(int(depth_limit or difficulty["depth"]), MCTS_ROLLOUT_DEPTH_LIMIT),
+        )
+        self.beam_width = max(1, min(int(beam_width or difficulty["beam_width"]), 12))
+        self.mistake_window = int(difficulty.get("mistake_window", 0) or 0)
         self.max_simulation_time_ms = MAX_SIMULATION_TIME_MS
 
     def rank_attacks(self, bot_battlefield, player_battlefield, **context):
-        matrix = tactical_utility_matrix(bot_battlefield, player_battlefield, **context)
-        pruned = beam_prune_moves(matrix, width=self.beam_width)
-        return pruned[: self.budget]
+        return search_attack_sequences(
+            bot_battlefield,
+            player_battlefield,
+            depth=self.depth_limit,
+            beam_width=self.beam_width,
+            budget=self.budget,
+            **context,
+        )
 
     def choose_attack(self, bot_battlefield, player_battlefield, **context):
         profile_id = context.pop("profile_id", None)
+        match_id = context.pop("match_id", None)
         profiler = current_profiler()
         if profiler:
             with profiler.timer("MCTS_simulation_cost", detail="choose_attack"):
@@ -548,99 +847,152 @@ class MCTSAgent:
         allowed = [row for row in ranked if row.get("allowed")]
         if not allowed:
             return None
-        return profile_attack_policy(
+        choice = profile_attack_policy(
             allowed,
             profile_id,
             turn=context.get("turn", 1),
             player_battlefield=player_battlefield,
         )
+        if (
+            choice
+            and self.mistake_window
+            and len(allowed) > 1
+            and not choice.get("lethal_window")
+        ):
+            source = f"{match_id}|{context.get('turn', 1)}|{profile_id}|{choice.get('attacker_instance_id')}"
+            roll = int(hashlib.sha256(source.encode("utf-8")).hexdigest()[:4], 16)
+            if roll % (self.mistake_window + 1) == 0:
+                alternatives = [row for row in allowed if row is not choice]
+                if alternatives:
+                    choice = alternatives[0]
+        if not choice:
+            return None
+        return {
+            **choice,
+            "legal_action_count": len(allowed),
+            "best_search_score": float(allowed[0].get("search_score", allowed[0].get("utility", 0)) or 0),
+            "chosen_search_score": float(choice.get("search_score", choice.get("utility", 0)) or 0),
+            "difficulty_id": self.difficulty_id,
+        }
 
 
 def choose_bot_attack(bot_battlefield, player_battlefield, **context):
-    return MCTSAgent().choose_attack(bot_battlefield, player_battlefield, **context)
+    difficulty_id = context.pop("difficulty_id", "normal")
+    return MCTSAgent(difficulty_id=difficulty_id).choose_attack(
+        bot_battlefield,
+        player_battlefield,
+        **context,
+    )
 
 
-def estimated_attack(card, opponent_card, turn=1):
-    # Espelha clash_attack do engine — os pontos cegos antigos (water_tide,
-    # fire_surge, earth_fortify) faziam o bot errar trocas contra ÁGUA/TERRA.
-    attack = card_attack(card)
-    key = ability_key(card)
-    if key == "high_guard" and card_guard(opponent_card) <= 3:
-        attack += 1
-    elif key == "silent_pursuit" and int(turn or 1) <= 2:
-        attack += 1
-    elif key == "fire_surge" and int(turn or 1) <= 2:
-        attack += 2
-    elif key == "water_tide" and int(turn or 1) >= 3:
-        attack += 2
-    elif key == "earth_fortify":
-        attack += min(2, max(0, card_guard(card) // 4))
+def estimated_attack(card, opponent_card, turn=1, *, owner_field=None, owner_hp=30):
+    attack, _events = shared_effective_attack(
+        card,
+        opponent_card,
+        turn=turn,
+        owner_field=owner_field,
+        owner_hp=owner_hp,
+    )
     return attack
 
 
 def tie_priority(card, defender_wounded=False):
-    return 2 if ability_key(card) in {"fade_cut", "bleed_mark"} and defender_wounded else 0
+    return shared_tie_priority(card, defender_wounded)
 
 
-def estimated_damage(attacker, defender, defender_wounded=False):
-    amount = max(1, card_attack(attacker) - card_guard(defender) // 2)
-    attacker_key = ability_key(attacker)
-    defender_key = ability_key(defender)
-    if attacker_key == "rending_strike" and defender_wounded:
-        amount += 2
-    elif attacker_key == "apex_rend" and defender_wounded:
-        amount += 3
-    elif attacker_key == "molten_bite":
-        amount += 1
-    elif attacker_key == "inferno_bite":
-        amount += 3
-    elif attacker_key == "bleed_mark":
-        amount += 1
-    elif attacker_key == "storm_dive" and card_guard(defender) <= 3:
-        amount += 2
-    elif attacker_key == "immovable":
-        amount += 2
-    elif attacker_key == "fire_direct":
-        amount += 2
-    elif attacker_key == "fire_execute" and defender_wounded:
-        amount += 2
-    elif attacker_key == "shadow_decay":
-        amount += 1
-    elif attacker_key == "shadow_drain":
-        amount += 1
-    if attacker_key == "fortress_hit":
-        amount = max(3, amount)
-
-    reductions = {
-        "brace": 2,
-        "immovable": 3,
-        "fortress_hit": 4,
-        "water_guard": 2,
-        "earth_bulwark": 3,
-    }
-    reduction = reductions.get(defender_key, 0)
-    if defender_key in {"bulwark", "earth_counter"} and card_attack(attacker) <= 4:
-        reduction = 3
-    return max(1, amount - reduction) if reduction else amount
+def estimated_damage(
+    attacker,
+    defender,
+    defender_wounded=False,
+    *,
+    attacker_field=None,
+    defender_field=None,
+    attacker_hp=30,
+    defender_hp=30,
+):
+    return shared_damage_details(
+        attacker,
+        defender,
+        defender_wounded=defender_wounded,
+        attacker_field=attacker_field,
+        defender_field=defender_field,
+        attacker_hp=attacker_hp,
+        defender_hp=defender_hp,
+    )["amount"]
 
 
-def response_projection(card, player_card, *, turn=1, player_wounded=False, bot_wounded=False):
-    bot_attack = estimated_attack(card, player_card, turn=turn)
-    player_attack = estimated_attack(player_card, card, turn=turn)
+def response_projection(
+    card,
+    player_card,
+    *,
+    turn=1,
+    player_wounded=False,
+    bot_wounded=False,
+    bot_battlefield=None,
+    player_battlefield=None,
+    bot_hp=30,
+    player_hp=30,
+):
+    bot_attack = estimated_attack(
+        card,
+        player_card,
+        turn=turn,
+        owner_field=bot_battlefield,
+        owner_hp=bot_hp,
+    )
+    player_attack = estimated_attack(
+        player_card,
+        card,
+        turn=turn,
+        owner_field=player_battlefield,
+        owner_hp=player_hp,
+    )
     if bot_attack > player_attack:
-        damage = estimated_damage(card, player_card, defender_wounded=player_wounded)
+        damage = estimated_damage(
+            card,
+            player_card,
+            defender_wounded=player_wounded,
+            attacker_field=bot_battlefield,
+            defender_field=player_battlefield,
+            attacker_hp=bot_hp,
+            defender_hp=player_hp,
+        )
         return {"outcome": "win", "damage_dealt": damage, "damage_taken": 0}
     if player_attack > bot_attack:
-        damage = estimated_damage(player_card, card, defender_wounded=bot_wounded)
+        damage = estimated_damage(
+            player_card,
+            card,
+            defender_wounded=bot_wounded,
+            attacker_field=player_battlefield,
+            defender_field=bot_battlefield,
+            attacker_hp=player_hp,
+            defender_hp=bot_hp,
+        )
         return {"outcome": "loss", "damage_dealt": 0, "damage_taken": damage}
 
     bot_priority = tie_priority(card, defender_wounded=player_wounded)
     player_priority = tie_priority(player_card, defender_wounded=bot_wounded)
     if bot_priority > player_priority:
-        damage = estimated_damage(card, player_card, defender_wounded=player_wounded)
+        damage = estimated_damage(
+            card,
+            player_card,
+            defender_wounded=player_wounded,
+            attacker_field=bot_battlefield,
+            defender_field=player_battlefield,
+            attacker_hp=bot_hp,
+            defender_hp=player_hp,
+        )
         return {"outcome": "win", "damage_dealt": damage, "damage_taken": 0}
     if player_priority > bot_priority:
-        damage = estimated_damage(player_card, card, defender_wounded=bot_wounded)
+        damage = estimated_damage(
+            player_card,
+            card,
+            defender_wounded=bot_wounded,
+            attacker_field=player_battlefield,
+            defender_field=bot_battlefield,
+            attacker_hp=player_hp,
+            defender_hp=bot_hp,
+        )
         return {"outcome": "loss", "damage_dealt": 0, "damage_taken": damage}
     return {"outcome": "tie", "damage_dealt": 0, "damage_taken": 0}
 
@@ -666,12 +1018,13 @@ def winning_cards(bot_hand, player_card, **context):
     return [
         card
         for card in bot_hand
-        if response_projection(card, player_card, **_combat_context(context))["outcome"] == "win"
+        if response_projection(card, player_card, **_response_context(context))["outcome"] == "win"
         and attack_utility_projection(
             card,
             player_card,
             bot_battlefield=context.get("bot_battlefield") or bot_hand,
             player_battlefield=context.get("player_battlefield") or [player_card],
+            bot_hp=context.get("bot_hp", 30),
             player_hp=context.get("player_hp", 30),
             **_combat_context(context),
         )["allowed"]
@@ -681,12 +1034,13 @@ def winning_cards(bot_hand, player_card, **context):
 def choose_defensive(bot_hand, player_card, **context):
     def key(card):
         combat_context = _combat_context(context)
-        projection = response_projection(card, player_card, **combat_context)
+        projection = response_projection(card, player_card, **_response_context(context))
         utility = attack_utility_projection(
             card,
             player_card,
             bot_battlefield=context.get("bot_battlefield") or bot_hand,
             player_battlefield=context.get("player_battlefield") or [player_card],
+            bot_hp=context.get("bot_hp", 30),
             player_hp=context.get("player_hp", 30),
             **combat_context,
         )
@@ -709,12 +1063,13 @@ def choose_defensive(bot_hand, player_card, **context):
 def choose_aggressive(bot_hand, player_card, **context):
     def key(card):
         combat_context = _combat_context(context)
-        projection = response_projection(card, player_card, **combat_context)
+        projection = response_projection(card, player_card, **_response_context(context))
         utility = attack_utility_projection(
             card,
             player_card,
             bot_battlefield=context.get("bot_battlefield") or bot_hand,
             player_battlefield=context.get("player_battlefield") or [player_card],
+            bot_hp=context.get("bot_hp", 30),
             player_hp=context.get("player_hp", 30),
             **combat_context,
         )
@@ -739,12 +1094,13 @@ def choose_aggressive(bot_hand, player_card, **context):
 def choose_opportunist(bot_hand, player_card, **context):
     def key(card):
         combat_context = _combat_context(context)
-        projection = response_projection(card, player_card, **combat_context)
+        projection = response_projection(card, player_card, **_response_context(context))
         utility = attack_utility_projection(
             card,
             player_card,
             bot_battlefield=context.get("bot_battlefield") or bot_hand,
             player_battlefield=context.get("player_battlefield") or [player_card],
+            bot_hp=context.get("bot_hp", 30),
             player_hp=context.get("player_hp", 30),
             **combat_context,
         )
@@ -785,12 +1141,13 @@ def choose_novice(bot_hand, player_card, **context):
 def choose_projected_counter(bot_hand, player_card, **context):
     def key(card):
         combat_context = _combat_context(context)
-        projection = response_projection(card, player_card, **combat_context)
+        projection = response_projection(card, player_card, **_response_context(context))
         utility = attack_utility_projection(
             card,
             player_card,
             bot_battlefield=context.get("bot_battlefield") or bot_hand,
             player_battlefield=context.get("player_battlefield") or [player_card],
+            bot_hp=context.get("bot_hp", 30),
             player_hp=context.get("player_hp", 30),
             **combat_context,
         )
@@ -812,7 +1169,7 @@ def choose_projected_counter(bot_hand, player_card, **context):
     return sorted(bot_hand, key=key)[-1]
 
 
-def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
+def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None, difficulty_id="normal"):
     if not match_id:
         return False
     rates = {
@@ -838,13 +1195,18 @@ def counter_window(profile_id, bot_hand, player_card, turn=1, match_id=None):
         ]
     )
     roll = int(hashlib.sha256(source.encode("utf-8")).hexdigest()[:4], 16) / 0xFFFF
-    return roll < rates.get(profile_id, 0.3)
+    difficulty_multiplier = {"easy": 0.55, "normal": 1.0, "hard": 1.25}.get(
+        normalize_difficulty(difficulty_id),
+        1.0,
+    )
+    return roll < min(1.0, rates.get(profile_id, 0.3) * difficulty_multiplier)
 
 
 def bot_decision_payload(
     bot_hand,
     player_card,
     profile_id=None,
+    difficulty_id="normal",
     *,
     turn=1,
     player_wounded=False,
@@ -852,10 +1214,12 @@ def bot_decision_payload(
     match_id=None,
     bot_battlefield=None,
     player_battlefield=None,
+    bot_hp=30,
     player_hp=30,
 ):
     return {
         "profile_id": normalize_personality(profile_id),
+        "difficulty_id": normalize_difficulty(difficulty_id),
         "bot_hand": [deepcopy(card) for card in bot_hand if is_monster(card)],
         "player_card": deepcopy(player_card),
         "context": {
@@ -865,6 +1229,7 @@ def bot_decision_payload(
             "match_id": match_id,
             "bot_battlefield": [deepcopy(card) for card in (bot_battlefield or []) if is_monster(card)],
             "player_battlefield": [deepcopy(card) for card in (player_battlefield or []) if is_monster(card)],
+            "bot_hp": int(bot_hp or 0),
             "player_hp": int(player_hp or 0),
         },
     }
@@ -873,10 +1238,16 @@ def bot_decision_payload(
 def resolve_bot_decision_payload(payload):
     payload = deepcopy(payload or {})
     profile_id = normalize_personality(payload.get("profile_id"))
+    difficulty_id = normalize_difficulty(payload.get("difficulty_id"))
     bot_hand = [card for card in payload.get("bot_hand", []) if is_monster(card)]
     player_card = payload.get("player_card")
     if not bot_hand:
-        return {"profile_id": profile_id, "decision": None, "mode": "payload"}
+        return {
+            "profile_id": profile_id,
+            "difficulty_id": difficulty_id,
+            "decision": None,
+            "mode": "payload",
+        }
 
     context = payload.get("context") or {}
     decision_context = {
@@ -885,13 +1256,21 @@ def resolve_bot_decision_payload(payload):
         "bot_wounded": bool(context.get("bot_wounded", False)),
         "bot_battlefield": [card for card in context.get("bot_battlefield", []) if is_monster(card)] or bot_hand,
         "player_battlefield": [card for card in context.get("player_battlefield", []) if is_monster(card)] or ([player_card] if player_card else []),
+        "bot_hp": int(context.get("bot_hp", 30) or 0),
         "player_hp": int(context.get("player_hp", 30) or 0),
     }
     match_id = context.get("match_id")
     if profile_id == "novice":
         # novice ignora counter window e simplesmente joga sua menor carta
         choice = choose_novice(bot_hand, player_card, **decision_context)
-    elif counter_window(profile_id, bot_hand, player_card, turn=decision_context["turn"], match_id=match_id):
+    elif counter_window(
+        profile_id,
+        bot_hand,
+        player_card,
+        turn=decision_context["turn"],
+        match_id=match_id,
+        difficulty_id=difficulty_id,
+    ):
         choice = choose_projected_counter(bot_hand, player_card, **decision_context)
     elif profile_id == "aggressive":
         choice = choose_aggressive(bot_hand, player_card, **decision_context)
@@ -899,8 +1278,15 @@ def resolve_bot_decision_payload(payload):
         choice = choose_opportunist(bot_hand, player_card, **decision_context)
     else:
         choice = choose_defensive(bot_hand, player_card, **decision_context)
+    if difficulty_id == "easy" and profile_id != "novice" and len(bot_hand) > 1:
+        source = f"{match_id}|{decision_context['turn']}|{profile_id}|summon"
+        if int(hashlib.sha256(source.encode("utf-8")).hexdigest()[:4], 16) % 4 == 0:
+            weaker = sorted(bot_hand, key=lambda card: (card_utility_value(card), card.get("name") or ""))[0]
+            if weaker.get("instance_id") != choice.get("instance_id"):
+                choice = weaker
     return {
         "profile_id": profile_id,
+        "difficulty_id": difficulty_id,
         "decision": deepcopy(choice),
         "decision_card_id": choice.get("id"),
         "decision_instance_id": choice.get("instance_id"),
@@ -916,6 +1302,7 @@ def choose_response(
     bot_hand,
     player_card,
     profile_id=None,
+    difficulty_id="normal",
     *,
     turn=1,
     player_wounded=False,
@@ -923,18 +1310,21 @@ def choose_response(
     match_id=None,
     bot_battlefield=None,
     player_battlefield=None,
+    bot_hp=30,
     player_hp=30,
 ):
     payload = bot_decision_payload(
         bot_hand,
         player_card,
         profile_id,
+        difficulty_id,
         turn=turn,
         player_wounded=player_wounded,
         bot_wounded=bot_wounded,
         match_id=match_id,
         bot_battlefield=bot_battlefield,
         player_battlefield=player_battlefield,
+        bot_hp=bot_hp,
         player_hp=player_hp,
     )
     return resolve_bot_decision_payload(payload)["decision"]

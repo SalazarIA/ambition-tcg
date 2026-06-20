@@ -43,6 +43,7 @@ def build_replay_envelope(match: Dict[str, Any], *, include_stream: bool = True)
         "bot_uses_default_deck": bot_uses_default_deck,
         "player_name": initial.get("player_name") or (match.get("player") or {}).get("name") or "Voc\u00ea",
         "bot_profile_id": initial.get("bot_profile_id") or (match.get("bot_profile") or {}).get("id"),
+        "bot_difficulty_id": initial.get("bot_difficulty_id") or (match.get("bot_difficulty") or {}).get("id"),
         "first_duel": bool(initial.get("first_duel", False)),
         "shuffle": bool(initial.get("shuffle", True)),
     }
@@ -161,6 +162,7 @@ def replay_match(source: Dict[str, Any]) -> Dict[str, Any]:
         player_card_ids=initial.get("player_card_ids") or None,
         player_name=initial.get("player_name") or "Voc\u00ea",
         bot_profile_id=initial.get("bot_profile_id"),
+        bot_difficulty_id=initial.get("bot_difficulty_id"),
         runtime_mode="replay",
         apply_reducers_inline=True,
         bot_card_ids=initial.get("bot_card_ids") or None,

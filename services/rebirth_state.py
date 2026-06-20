@@ -6,7 +6,7 @@ import secrets
 from services.rebirth_domain import CARD_SET_VERSION, ENGINE_VERSION, REDUCER_VERSION, RULESET_VERSION
 from services.rebirth_contracts import FIELD_SLOT_COUNT, PHASE_CHOOSE
 from services.rebirth_cards import BOT_DECK, PLAYER_DECK, build_deck
-from services.rebirth_bot import choose_personality, personality_payload
+from services.rebirth_bot import choose_personality, difficulty_payload, personality_payload
 from services.rebirth_events import append_event, append_snapshot, ensure_event_contract
 
 
@@ -236,6 +236,7 @@ def create_match(
     player_card_ids=None,
     player_name="Você",
     bot_profile_id=None,
+    bot_difficulty_id=None,
     runtime_mode="singleplayer",
     apply_reducers_inline=None,
     first_duel=False,
@@ -283,6 +284,7 @@ def create_match(
         bot["hp"] = FIRST_DUEL_BOT_HP
         bot["max_hp"] = FIRST_DUEL_BOT_HP
     bot_profile = personality_payload(bot_profile_id or choose_personality(seed=game_seed, match_id=match_id))
+    bot_difficulty = difficulty_payload(bot_difficulty_id or ("easy" if first_duel else "normal"))
     modifiers = normalize_campaign_modifiers(campaign_modifiers) if campaign_node else []
     if modifiers:
         apply_campaign_opening_modifiers(player, bot, modifiers)
@@ -294,6 +296,7 @@ def create_match(
         "bot_uses_default_deck": not bool(bot_card_ids),
         "player_name": player_name,
         "bot_profile_id": bot_profile["id"],
+        "bot_difficulty_id": bot_difficulty["id"],
         "first_duel": bool(first_duel),
         "shuffle": bool(shuffle),
     }
@@ -329,6 +332,7 @@ def create_match(
         "player": player,
         "bot": bot,
         "bot_profile": bot_profile,
+        "bot_difficulty": bot_difficulty,
         "last_clash": None,
         "result": None,
         "winner": None,
@@ -360,6 +364,7 @@ def create_match(
             "card_set_version": CARD_SET_VERSION,
             "player_name": player_name,
             "bot_profile_id": bot_profile["id"],
+            "bot_difficulty_id": bot_difficulty["id"],
             "player_deck_count": len(player["deck"]) + len(player["hand"]),
             "bot_deck_count": len(bot["deck"]) + len(bot["hand"]),
         }

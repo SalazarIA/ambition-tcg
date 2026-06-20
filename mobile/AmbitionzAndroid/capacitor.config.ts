@@ -4,12 +4,11 @@ const config: CapacitorConfig = {
   appId: 'com.ambitionzgame.app',
   appName: 'Ambitionz',
   webDir: 'www',
-  bundledWebRuntime: false,
   server: {
     url: 'https://ambitionzgame.com',
     cleartext: false
   },
-  appendUserAgent: 'AmbitionzAndroid/1.0.0-beta.1',
+  appendUserAgent: 'AmbitionzAndroid/1.0.0-beta.2',
   android: {
     allowMixedContent: false,
     captureInput: true,

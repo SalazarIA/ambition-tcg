@@ -7,10 +7,10 @@ Package:
 com.ambitionzgame.app
 
 Version:
-1.0.0-beta.1
+1.0.0-beta.2
 
 Version Code:
-1
+2
 
 Required Play Console URLs:
 - Website: https://ambitionzgame.com
@@ -23,6 +23,8 @@ android/app/build/outputs/bundle/release/app-release.aab
 
 Security:
 Do not commit key.properties or .jks files.
+Backups and device transfer are disabled for app-local WebView data.
+Cleartext traffic is disabled.
 
 Recommended Play Console track:
 Closed testing first.

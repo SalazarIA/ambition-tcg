@@ -1,7 +1,7 @@
 # Rebirth — Play Internal Testing Readiness
 
-Data da auditoria: 17 de junho de 2026  
-Branch observada: `fix/arena-cache-overlap`  
+Data da reauditoria: 18 de junho de 2026<br>
+Branch observada: `main` (working tree com alterações não commitadas)<br>
 Escopo: PWA, cache/versionamento, páginas legais, headers e preparação documental para teste interno. Android, credenciais, Play Console e deploy foram somente inspecionados ou listados como gates; não foram alterados.
 
 ## Resultado executivo
@@ -17,7 +17,7 @@ Escopo: PWA, cache/versionamento, páginas legais, headers e preparação docume
 
 ## PWA e cache
 
-- `ASSET_VERSION` permanece alinhada ao runtime web: `v106_ARENA_ACTIONS`.
+- `ASSET_VERSION` permanece alinhada ao runtime web: `v107_LOGIC_SEARCH`.
 - O nome físico do Cache Storage agora é `ambitionz-rebirth-shell-${ASSET_VERSION}`. Isso evita usar uma versão genérica como namespace global da origem e mantém a limpeza dos caches Rebirth legados.
 - Apenas URLs exatas de `CORE_ASSETS` podem entrar no cache. Query strings arbitrárias não criam variações sobrepostas do mesmo asset.
 - Autenticação, carteira, perfil, mercado, loadout, progressão, tutorial, demais APIs e toda navegação HTML continuam network-only para não servir estado de outro jogador.
@@ -86,10 +86,11 @@ Para contas pessoais criadas depois de 13 de novembro de 2023, o requisito de 12
 
 ```text
 node --check static/js/service-worker.js
-.venv/bin/python -m pytest <contratos focados> -q
+node --check static/js/pwa.js
+.venv/bin/python -m pytest tests/rebirth/test_rebirth_security_headers.py tests/rebirth/test_rebirth_frontend_contract.py tests/rebirth/test_rebirth_product_shell.py tests/rebirth/test_rebirth_season0_hardening.py tests/rebirth/test_rebirth_ops_tools.py -q
 ```
 
-Resultado final: `51 passed`. A inspeção no navegador local validou `/privacy` → `/data-deletion` → `/terms` em viewport mobile e desktop, com títulos e conteúdo significativos, navegação funcional e nenhum warning/error de console.
+Resultado da reauditoria automatizada: `54 passed`. A auditoria anterior também registrou inspeção no navegador local de `/privacy` → `/data-deletion` → `/terms` em viewport mobile e desktop, com títulos e conteúdo significativos, navegação funcional e nenhum warning/error de console.
 
 ## Fontes oficiais consultadas
 

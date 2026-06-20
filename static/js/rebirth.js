@@ -480,6 +480,7 @@
             EXECUTE:   "Executar",
             THORNS:    "Espinhos",
             ENTRENCH:  "Entrincheirar",
+            SUNDER:    "Ruptura",
         },
         TOOLTIPS: {
             RUSH:      "Pode atacar no turno em que é invocado.",
@@ -492,6 +493,7 @@
             EXECUTE:   "Mata instantaneamente alvos com Guarda ≤ 1.",
             THORNS:    "Quem ataca esta carta sofre 2 de dano na Guarda.",
             ENTRENCH:  "Se não atacou no turno anterior, ganha +1 de Guarda permanente.",
+            SUNDER:    "Com aliado de outra família, ganha +2 Ataque contra Provocar/Escudo e rompe Escudo.",
         },
         badges(card) {
             const kws = (card && card.keywords) || [];

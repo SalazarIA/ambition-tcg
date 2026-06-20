@@ -1,11 +1,14 @@
 # Ambitionz — Release Notes
 
-## 1.0.0-beta.1
+## 1.0.0-beta.2
 
-First Android closed testing release.
+Android closed-testing refresh.
 
 Includes:
 - Android app wrapper for Ambitionz
+- Updated Ambitionz launcher and splash artwork
+- Android backup and cleartext-network hardening
+- Correct package identity checks
 - Login and registration
 - Training mode
 - Deck builder

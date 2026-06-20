@@ -54,6 +54,7 @@ KEYWORD_EXECUTE = "EXECUTE"
 # não os números). THORNS pune agressão; ENTRENCH recompensa segurar a linha.
 KEYWORD_THORNS = "THORNS"
 KEYWORD_ENTRENCH = "ENTRENCH"
+KEYWORD_SUNDER = "SUNDER"
 
 ALL_KEYWORDS = (
     KEYWORD_RUSH,
@@ -66,6 +67,7 @@ ALL_KEYWORDS = (
     KEYWORD_EXECUTE,
     KEYWORD_THORNS,
     KEYWORD_ENTRENCH,
+    KEYWORD_SUNDER,
 )
 
 # Quanto THORNS reflete por golpe (fixo, como BURST=1 — previsível pro balance;
@@ -86,6 +88,7 @@ KEYWORD_LABELS = {
     KEYWORD_EXECUTE:   ("Executar",   "Mata instantaneamente alvos com Guarda ≤ 1."),
     KEYWORD_THORNS:    ("Espinhos",   "Quem ataca esta carta sofre 2 de dano na Guarda."),
     KEYWORD_ENTRENCH:  ("Entrincheirar", "Se não atacou no turno anterior, ganha +1 de Guarda permanente."),
+    KEYWORD_SUNDER:    ("Ruptura", "Com aliado de outra família, ganha +2 Ataque contra Provocar/Escudo e rompe Escudo."),
 }
 
 # Cor (CSS var --rb-gold/cyan/etc) usada pra colorir badge na UI.
@@ -100,6 +103,7 @@ KEYWORD_COLORS = {
     KEYWORD_EXECUTE:   "#a85cff",  # roxo execute
     KEYWORD_THORNS:    "#6f8f4a",  # verde-musgo espinho
     KEYWORD_ENTRENCH:  "#9a8456",  # terra/pedra muralha
+    KEYWORD_SUNDER:    "#b66cff",  # violeta de ruptura midrange
 }
 
 # Defaults por família — usado por _monster_card quando keywords não
@@ -251,6 +255,29 @@ def entrench_growth(card: Dict[str, Any]) -> int:
     atacou no turno anterior (caller cuida do gate `has_attacked`).
     """
     return ENTRENCH_GROWTH_AMOUNT if has_keyword(card, KEYWORD_ENTRENCH) else 0
+
+
+SUNDER_ATTACK_BONUS = 2
+
+
+def sunder_active(
+    card: Optional[Dict[str, Any]],
+    owner_field: Optional[List[Dict[str, Any]]],
+    defender: Optional[Dict[str, Any]],
+) -> bool:
+    """Ruptura: ferramenta midrange anti-muralha, condicionada a board misto."""
+    if not card or not defender or not has_keyword(card, KEYWORD_SUNDER):
+        return False
+    if not (forces_target(defender) or shield_absorbs(defender)):
+        return False
+    family = str(card.get("family") or "").upper()
+    return any(
+        ally
+        and ally.get("instance_id") != card.get("instance_id")
+        and str(ally.get("family") or "").upper()
+        and str(ally.get("family") or "").upper() != family
+        for ally in (owner_field or [])
+    )
 
 
 def total_field_guard(owner_field: List[Dict[str, Any]], *, exclude_instance_id: Optional[str] = None) -> int:

@@ -163,6 +163,8 @@ def test_record_match_telemetry_includes_bot_profile_id(client):
         ],
     }
     record_match_telemetry(repo, None, match, "match_finished")
+    record_match_telemetry(repo, None, match, "match_finished")
+    record_match_telemetry(repo, None, match, "match_won")
 
     finished = repo.query_telemetry_events(event_types=("match_finished",), limit=1)
     assert finished, "expected match_finished event to be persisted"
@@ -178,3 +180,7 @@ def test_record_match_telemetry_includes_bot_profile_id(client):
     won = repo.query_telemetry_events(event_types=("match_won",), limit=1)
     assert won, "expected terminal victory event to be persisted"
     assert won[0]["payload"]["match_id"] == "telemetry-profile"
+    terminal = repo.query_telemetry_events(event_types=("match_finished", "match_won"))
+    matching = [event for event in terminal if event["payload"].get("match_id") == "telemetry-profile"]
+    assert [event["event_type"] for event in matching].count("match_finished") == 1
+    assert [event["event_type"] for event in matching].count("match_won") == 1

@@ -29,6 +29,7 @@ def _initial_match_from_envelope(envelope: Dict[str, Any]) -> Dict[str, Any]:
         player_card_ids=initial.get("player_card_ids") or None,
         player_name=initial.get("player_name") or "Você",
         bot_profile_id=initial.get("bot_profile_id"),
+        bot_difficulty_id=initial.get("bot_difficulty_id"),
         runtime_mode=DETERMINISTIC_RUNTIME_MODE,
         apply_reducers_inline=True,
         bot_card_ids=initial.get("bot_card_ids") or None,

@@ -2,8 +2,8 @@
 
 ## Before Upload
 - [ ] Confirm app-release.aab exists.
-- [ ] Confirm versionCode is 1.
-- [ ] Confirm versionName is 1.0.0-beta.1.
+- [ ] Confirm versionCode is 2.
+- [ ] Confirm versionName is 1.0.0-beta.2.
 - [ ] Confirm package is com.ambitionzgame.app.
 - [ ] Confirm Privacy Policy URL works.
 - [ ] Confirm Terms URL works.

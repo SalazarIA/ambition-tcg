@@ -3,6 +3,14 @@ import hashlib
 
 from services.rebirth_bot import ability_priority, choose_bot_attack, choose_response
 from services.rebirth_cards import CARD_ABILITY_KEYS, create_card_instance, get_card, is_monster, is_spell, is_trap
+from services.rebirth_combat_rules import (
+    ability_key as shared_ability_key,
+    card_attack as shared_card_attack,
+    card_guard as shared_card_guard,
+    damage_details as shared_damage_details,
+    effective_attack as shared_effective_attack,
+    tie_priority as shared_tie_priority,
+)
 from services.rebirth_contracts import PHASE_CHOOSE, PHASE_FINISHED, PHASE_RESULT, RebirthError
 from services.rebirth_effects import (
     EffectBus,
@@ -101,6 +109,7 @@ def start_match(
     player_card_ids=None,
     player_name="Você",
     bot_profile_id=None,
+    bot_difficulty_id=None,
     runtime_mode="singleplayer",
     apply_reducers_inline=None,
     first_duel=False,
@@ -120,6 +129,7 @@ def start_match(
         player_card_ids=player_card_ids,
         player_name=player_name,
         bot_profile_id=bot_profile_id,
+        bot_difficulty_id=bot_difficulty_id,
         runtime_mode=runtime_mode,
         apply_reducers_inline=apply_reducers_inline,
         first_duel=first_duel,
@@ -148,15 +158,15 @@ def compare_power(player_card, bot_card):
 
 
 def card_attack(card):
-    return max(0, int(card.get("attack", card.get("power", 0)) or 0) + int(card.get("attack_adjustment", 0) or 0))
+    return shared_card_attack(card)
 
 
 def card_guard(card):
-    return max(0, int(card.get("guard", 0) or 0) + int(card.get("guard_adjustment", 0) or 0))
+    return shared_card_guard(card)
 
 
 def ability_key(card):
-    return str(card.get("ability_key") or "").strip()
+    return shared_ability_key(card)
 
 
 def ability_name(card):
@@ -178,39 +188,23 @@ def _synergy_bonuses(match, side_name, card):
 
 
 def clash_attack(card, opponent_card, *, turn=1, match=None, side_name=None):
-    attack = card_attack(card)
-    events = []
-    key = ability_key(card)
+    owner_field = None
+    owner_hp = 30
     if match and side_name:
-        synergy_attack, _synergy_guard = _synergy_bonuses(match, side_name, card)
-        if synergy_attack:
-            attack += synergy_attack
-            events.append(f"{card['name']} ativa sinergia para +{synergy_attack} de ataque.")
-    if key == "high_guard" and card_guard(opponent_card) <= 3:
-        attack += 1
-        events.append(f"{card['name']} usou Guarda Alta para +1 de ataque no combate.")
-    elif key == "silent_pursuit" and int(turn or 1) <= 2:
-        attack += 1
-        events.append(f"{card['name']} usou Perseguição Silenciosa para +1 de ataque inicial.")
-    elif key == "fire_surge" and int(turn or 1) <= 2:
-        attack += 2
-        events.append(f"{card['name']} avançou para +2 de ataque inicial.")
-    elif key == "water_tide" and int(turn or 1) >= 3:
-        attack += 2
-        events.append(f"{card['name']} surfou a maré crescente para +2 de ataque.")
-    elif key == "earth_fortify":
-        bonus = min(2, max(0, card_guard(card) // 4))
-        if bonus:
-            attack += bonus
-            events.append(f"{card['name']} converteu guarda em +{bonus} de ataque.")
-    return attack, events
+        side = match.get(side_name) or {}
+        owner_field = [candidate for candidate in (side.get("field") or []) if candidate]
+        owner_hp = int(side.get("hp", 30) or 30)
+    return shared_effective_attack(
+        card,
+        opponent_card,
+        turn=turn,
+        owner_field=owner_field,
+        owner_hp=owner_hp,
+    )
 
 
 def tie_priority(card, defender_wounded=False):
-    key = ability_key(card)
-    if key in {"fade_cut", "bleed_mark", "shadow_mark", "fire_execute"} and defender_wounded:
-        return 2
-    return 0
+    return shared_tie_priority(card, defender_wounded)
 
 
 def compare_clash(match, player_card, bot_card):
@@ -239,80 +233,27 @@ def calculate_damage(attacker, defender, defender_wounded=False):
 
 
 def damage_details(attacker, defender, defender_wounded=False, *, match=None, attacker_side=None, defender_side=None):
-    attack_total = card_attack(attacker)
-    guard_total = card_guard(defender)
-    events = []
+    attacker_field = None
+    defender_field = None
+    attacker_hp = 30
+    defender_hp = 30
     if match and attacker_side:
-        synergy_attack, _ = _synergy_bonuses(match, attacker_side, attacker)
-        attack_total += synergy_attack
+        side = match.get(attacker_side) or {}
+        attacker_field = [candidate for candidate in (side.get("field") or []) if candidate]
+        attacker_hp = int(side.get("hp", 30) or 30)
     if match and defender_side:
-        _, synergy_guard = _synergy_bonuses(match, defender_side, defender)
-        guard_total += synergy_guard
-    amount = max(1, attack_total - guard_total // 2)
-    attacker_key = ability_key(attacker)
-    defender_key = ability_key(defender)
-
-    if attacker_key == "rending_strike" and defender_wounded:
-        amount += 2
-        events.append(f"{attacker['name']} explorou a ferida para +2 de dano.")
-    elif attacker_key == "apex_rend" and defender_wounded:
-        amount += 3
-        events.append(f"{attacker['name']} rasgou a ferida antiga para +3 de dano.")
-    elif attacker_key == "molten_bite":
-        amount += 1
-        events.append(f"{attacker['name']} adicionou +1 de dano com Molten Bite.")
-    elif attacker_key == "inferno_bite":
-        amount += 3
-        events.append(f"{attacker['name']} adicionou +3 de dano com Inferno Bite.")
-    elif attacker_key == "bleed_mark":
-        amount += 1
-        events.append(f"{attacker['name']} marcou o alvo para +1 de dano.")
-    elif attacker_key == "storm_dive" and card_guard(defender) <= 3:
-        amount += 2
-        events.append(f"{attacker['name']} atravessou a guarda baixa para +2 de dano.")
-    elif attacker_key == "immovable":
-        amount += 2
-        events.append(f"{attacker['name']} transformou guarda em +2 de contra-dano.")
-    elif attacker_key == "fire_direct":
-        amount += 2
-        events.append(f"{attacker['name']} causou +2 de dano direto de fogo.")
-    elif attacker_key == "fire_execute" and defender_wounded:
-        # v69: nerf de +3 → +2. Coalheart Runner (custo 1) tinha 124 procs em
-        # 60 partidas trivializando finishes; reduzir o pico mantém a identidade
-        # de execute mas elimina o swing barato. tie_priority continua dando o
-        # desempate em alvos feridos, então o "papel" da carta permanece.
-        amount += 2
-        events.append(f"{attacker['name']} finalizou o alvo ferido para +2 de dano.")
-    elif attacker_key == "shadow_decay":
-        amount += 1
-        events.append(f"{attacker['name']} abriu uma ferida de deterioração para +1 de dano.")
-    elif attacker_key == "shadow_drain":
-        amount += 1
-        events.append(f"{attacker['name']} drenou +1 de dano pelas sombras.")
-
-    if attacker_key == "fortress_hit":
-        before_minimum = amount
-        amount = max(3, amount)
-        if amount > before_minimum:
-            events.append(f"{attacker['name']} garantiu 3 de dano com Fortress Hit.")
-
-    reductions = {
-        "brace": 2,
-        "immovable": 3,
-        "fortress_hit": 4,
-        "water_guard": 2,
-        "earth_bulwark": 3,
-    }
-    reduction = reductions.get(defender_key, 0)
-    if defender_key in {"bulwark", "earth_counter"} and card_attack(attacker) <= 4:
-        reduction = 3
-    if reduction:
-        before_reduction = amount
-        amount = max(1, amount - reduction)
-        if amount < before_reduction:
-            events.append(f"{defender['name']} reduziu o dano recebido em {before_reduction - amount}.")
-
-    return {"amount": amount, "events": events}
+        side = match.get(defender_side) or {}
+        defender_field = [candidate for candidate in (side.get("field") or []) if candidate]
+        defender_hp = int(side.get("hp", 30) or 30)
+    return shared_damage_details(
+        attacker,
+        defender,
+        defender_wounded=defender_wounded,
+        attacker_field=attacker_field,
+        defender_field=defender_field,
+        attacker_hp=attacker_hp,
+        defender_hp=defender_hp,
+    )
 
 
 def apply_turn_damage(match, loser, amount):
@@ -741,6 +682,7 @@ def _bot_auto_summon(match):
     if not affordable:
         return None
     profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+    difficulty_id = (match.get("bot_difficulty") or {}).get("id") or "normal"
     player_card = match["player"].get("played_card") or (compact_battlefield(match["player"])[0] if compact_battlefield(match["player"]) else None)
     chosen = None
     if player_card:
@@ -748,6 +690,7 @@ def _bot_auto_summon(match):
             affordable,
             player_card,
             profile_id=profile_id,
+            difficulty_id=difficulty_id,
             turn=match.get("turn", 1),
             player_wounded=match["player"].get("wounded", False),
             bot_wounded=match["bot"].get("wounded", False),
@@ -1468,6 +1411,7 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
     from services.rebirth_keywords import forces_target, has_taunt_on_side
 
     profile_id = (match.get("bot_profile") or {}).get("id") or "defensive"
+    difficulty_id = (match.get("bot_difficulty") or {}).get("id") or "normal"
     player_field = compact_battlefield(match["player"])
     # TAUNT vale para o bot também: com Provocar em campo, ele é obrigado a
     # resolver as provocadoras antes de ataque direto ou alvos livres.
@@ -1481,6 +1425,8 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
         player_wounded=match["player"].get("wounded", False),
         bot_wounded=match["bot"].get("wounded", False),
         profile_id=profile_id,
+        difficulty_id=difficulty_id,
+        match_id=match.get("match_id"),
     )
     if not decision:
         return None
@@ -1512,6 +1458,13 @@ def _bot_auto_attack(match, *, effect_chain_id=None):
             "attacker_instance_id": attacker.get("instance_id"),
             "target_instance_id": (target or {}).get("instance_id"),
             "automated": True,
+            "profile_id": profile_id,
+            "difficulty_id": difficulty_id,
+            "legal_action_count": int(decision.get("legal_action_count", 0) or 0),
+            "chosen_score": decision.get("chosen_search_score"),
+            "best_score": decision.get("best_search_score"),
+            "search_depth": int(decision.get("search_depth", 1) or 1),
+            "principal_variation": deepcopy(decision.get("principal_variation") or []),
         },
         message=f"{attacker['name']} inicia o ataque do bot.",
     )
@@ -1626,7 +1579,28 @@ def _apply_persistent_strike(match, *, winner_side, winner_card, loser_side, los
         has_keyword,
         lifesteal_heal_amount,
         shield_absorbs,
+        sunder_active,
     )
+
+    winner_field = [card for card in (match[winner_side].get("field") or []) if card]
+    if shield_absorbs(loser_card) and sunder_active(winner_card, winner_field, loser_card):
+        loser_card["shield_consumed"] = True
+        message = f"{winner_card['name']} rompe o Escudo de {loser_card['name']} com Ruptura."
+        ability_events.append(message)
+        append_event(
+            match,
+            "SHIELD_KEYWORD_BROKEN",
+            actor=winner_side,
+            source_card_id=winner_card.get("id"),
+            target_id=loser_card.get("instance_id"),
+            owner_id=loser_side,
+            payload={
+                "side": loser_side,
+                "instance_id": loser_card.get("instance_id"),
+                "keyword": "SUNDER",
+            },
+            message=message,
+        )
 
     if shield_absorbs(loser_card):
         loser_card["shield_consumed"] = True

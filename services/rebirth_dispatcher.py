@@ -164,6 +164,11 @@ class CommandDispatcher:
         if not isinstance(command, RebirthCommand):
             raise RebirthError("Comando Rebirth inválido.", "invalid_command")
         previous_depth = int(match.get("_command_dispatch_depth", 0) or 0)
+        invariant_baseline = None
+        if previous_depth == 0 and match.get("_validate_invariants_after_command"):
+            from services.rebirth_invariants import capture_card_baseline
+
+            invariant_baseline = capture_card_baseline(match)
         command_event_start = len(match.get("events", []) or [])
         match["_command_dispatch_depth"] = previous_depth + 1
         _tag_runtime_mutation(match, f"command:{command.command_type}")
@@ -222,6 +227,10 @@ class CommandDispatcher:
                     from services.rebirth_parity import DeterministicParityRunner
 
                     DeterministicParityRunner().verify(match)
+                if match.get("_validate_invariants_after_command"):
+                    from services.rebirth_invariants import validate_rebirth_state
+
+                    validate_rebirth_state(match, baseline=invariant_baseline).raise_if_invalid()
             return result
         finally:
             match["_command_dispatch_depth"] = max(0, int(match.get("_command_dispatch_depth", 1) or 1) - 1)

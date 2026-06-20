@@ -179,10 +179,14 @@ def test_mobile_web_arena_reclaims_hidden_nav_space_after_fates_rewrite():
 
 def test_rebirth_service_worker_caches_active_reference_assets():
     service_worker = read("static/js/service-worker.js")
+    app_runtime = read("app.py")
+    internal_testing_readiness = read("docs/REBIRTH_PLAY_INTERNAL_TEST_READINESS.md")
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const ASSET_VERSION = "v106_ARENA_ACTIONS";' in service_worker
+    assert 'const ASSET_VERSION = "v107_LOGIC_SEARCH";' in service_worker
+    assert 'REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v107_LOGIC_SEARCH")' in app_runtime
+    assert "`ASSET_VERSION` permanece alinhada ao runtime web: `v107_LOGIC_SEARCH`." in internal_testing_readiness
     assert 'const CACHE_NAME = `ambitionz-rebirth-shell-${ASSET_VERSION}`;' in service_worker
     assert "return `${path}?v=${ASSET_VERSION}`;" in service_worker
     assert '"version": "v98_CORE_LOOP_STABILIZATION"' in asset_manifest

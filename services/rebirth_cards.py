@@ -577,6 +577,10 @@ CARD_KEYWORD_OVERRIDES = {
     "card_060": ["SHIELD", "ENTRENCH"],            # Boulderwake Primordial — capstone da Fortaleza
     "card_016": ["RUSH", "BURST"],                 # Scorchscale Infernal — entrada explosiva
     "card_076": ["PIERCE", "EXECUTE"],             # Voidkiss Executioner — o nome já era contrato
+    # Midrange misto: Ruptura só liga com aliado de outra família e alvo muralha.
+    "card_073": ["PIERCE", "SUNDER"],               # Nightchain Archmage
+    "card_077": ["PIERCE", "SUNDER"],               # Cryptsong Harvester
+    "card_079": ["PIERCE", "SUNDER"],               # Blackthorn Lich
 }
 
 for _card_id, _keywords in CARD_KEYWORD_OVERRIDES.items():

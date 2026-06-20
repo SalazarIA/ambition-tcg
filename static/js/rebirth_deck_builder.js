@@ -19,7 +19,7 @@
         RUSH: "Investida", BURST: "Detonação", LIFESTEAL: "Drenar",
         TAUNT: "Provocar", SHIELD: "Escudo", PIERCE: "Perfurar",
         REGEN: "Regenerar", EXECUTE: "Executar",
-        THORNS: "Espinhos", ENTRENCH: "Entrincheirar",
+        THORNS: "Espinhos", ENTRENCH: "Entrincheirar", SUNDER: "Ruptura",
     };
 
     function csrfFetch(url, opts) {

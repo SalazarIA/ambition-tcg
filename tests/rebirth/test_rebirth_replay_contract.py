@@ -20,6 +20,21 @@ def test_canonical_hash_ignores_match_identity_and_tracks_semantics():
     assert canonical_state_hash(match) != canonical_state_hash(clone)
 
 
+@pytest.mark.parametrize("flag", ["shield_consumed", "just_summoned"])
+def test_canonical_hash_tracks_active_card_flags_with_legacy_false_compatibility(flag):
+    match = start_match(seed=f"canonical-{flag}")
+    explicit_false = deepcopy(match)
+    explicit_false["player"]["hand"][0][flag] = False
+
+    assert canonical_state_hash(explicit_false) == canonical_state_hash(match)
+
+    active = deepcopy(match)
+    active["player"]["hand"][0][flag] = True
+
+    assert canonical_state(active)["player"]["hand"][0][flag] is True
+    assert canonical_state_hash(active) != canonical_state_hash(match)
+
+
 def test_snapshots_store_compressed_canonical_state():
     match = start_match(seed="snapshot-v64")
     snapshot = match["snapshots"][-1]
@@ -65,6 +80,54 @@ def test_replay_rebuilds_final_canonical_state_from_commands():
     assert canonical_state_hash(replayed) == canonical_state_hash(match)
     assert verification["ok"] is True
     assert verification["command_count"] == 3
+
+
+def test_replay_preserves_just_summoned_in_canonical_state():
+    match = start_match(
+        seed="replay-just-summoned",
+        player_card_ids=["card_001"] * 30,
+        bot_card_ids=["card_084"] * 30,
+        shuffle=False,
+    )
+
+    play_card(match, card_instance_id=match["player"]["hand"][0]["instance_id"])
+
+    envelope = build_replay_envelope(match)
+    replayed = replay_match(envelope)
+
+    assert match["player"]["battlefield"][0]["just_summoned"] is True
+    assert replayed["player"]["battlefield"][0]["just_summoned"] is True
+    assert canonical_state_hash(replayed) == canonical_state_hash(match)
+    assert verify_replay(envelope)["ok"] is True
+
+
+def test_replay_preserves_consumed_shield_in_canonical_state():
+    match = start_match(
+        seed="replay-shield-consumed",
+        player_card_ids=["card_008"] * 30,
+        bot_card_ids=["card_051"] * 30,
+        bot_profile_id="defensive",
+        shuffle=False,
+    )
+    play_card(match, card_instance_id=match["player"]["hand"][0]["instance_id"])
+    next_turn(match)
+    next_turn(match)
+    defender = match["bot"]["battlefield"][0]
+
+    declare_attack(
+        match,
+        attacker_instance_id=match["player"]["battlefield"][0]["instance_id"],
+        target_instance_id=defender["instance_id"],
+    )
+
+    envelope = build_replay_envelope(match)
+    replayed = replay_match(envelope)
+    replayed_defender = replayed["bot"]["battlefield"][0]
+
+    assert defender["shield_consumed"] is True
+    assert replayed_defender["shield_consumed"] is True
+    assert canonical_state_hash(replayed) == canonical_state_hash(match)
+    assert verify_replay(envelope)["ok"] is True
 
 
 def test_effect_bus_emits_reducer_backed_spell_events():

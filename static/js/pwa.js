@@ -5,6 +5,9 @@
         return;
     }
 
+    const wasControlledAtStartup = Boolean(navigator.serviceWorker.controller);
+    let reloadingForUpdate = false;
+
     function showUpdatePrompt(registration) {
         if (!registration || !registration.waiting || document.querySelector("[data-rebirth-update]")) {
             return;
@@ -43,6 +46,10 @@
     });
 
     navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (!wasControlledAtStartup || reloadingForUpdate || !navigator.serviceWorker.controller) {
+            return;
+        }
+        reloadingForUpdate = true;
         window.location.reload();
     });
 })();

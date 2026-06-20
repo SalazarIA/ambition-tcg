@@ -15,6 +15,14 @@ Required Play Console links:
 - Support: https://ambitionzgame.com/feedback
 
 Before release build:
+- Run `npm ci` and `npm run cap:sync`.
+- Run `cd android && ./gradlew test lint assembleDebug bundleRelease`.
+- Confirm `versionCode 2` and `versionName 1.0.0-beta.2`.
+- Confirm package `com.ambitionzgame.app`.
+- Confirm merged permissions are limited to `INTERNET`, `VIBRATE` and AndroidX's signature permission.
+- Confirm backup/data extraction remain disabled.
+- Confirm launcher, round icon, adaptive foreground, splash and Play icon use
+  the gold/dark Rebirth artwork sourced from `static/icons/icon-512.png`.
 - Test login.
 - Test registration.
 - Test training match.
@@ -26,6 +34,3 @@ Before release build:
 - Test Android back button behavior.
 - Test portrait layout.
 - Test slow network behavior.
-
-Later block:
-V1.31 should configure icons, splash, versionCode, versionName and signing.

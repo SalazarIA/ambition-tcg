@@ -12,7 +12,7 @@ Package:
 com.ambitionzgame.app
 
 Commands:
-npm install
+npm ci
 npm run cap:sync
 npm run cap:open
 npm run cap:doctor

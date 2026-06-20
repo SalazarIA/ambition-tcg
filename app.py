@@ -1,7 +1,10 @@
 import os
+import hashlib
+import json
 import secrets
 import threading
 import time
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 
 from time import perf_counter
@@ -9,7 +12,9 @@ from flask import g, Flask, jsonify, make_response, redirect, render_template, r
 
 from services.rebirth_contracts import RebirthError
 from services.rebirth_async_competition import async_competition_payload, async_history_payload
+from services.rebirth_actions import canonical_action, legal_actions
 from services.rebirth_balance import simulate_balance
+from services.rebirth_bot import attack_utility_projection, tactical_utility_matrix
 from services.rebirth_campaign import CAMPAIGN_VERSION, campaign_payload, get_node, is_unlocked
 from services.rebirth_content_pipeline import content_pipeline_report
 from services.rebirth_dispatcher import (
@@ -56,8 +61,10 @@ from services.rebirth_product import (
     validate_loadout,
 )
 from services.rebirth_serializers import public_state
+from services.rebirth_reducers import reduce_event
 from services.rebirth_telemetry import (
     REBIRTH_CLIENT_TELEMETRY_EVENTS,
+    build_decision_telemetry_payload,
     build_match_telemetry_payload,
     client_telemetry_payload as build_client_telemetry_payload,
 )
@@ -96,7 +103,10 @@ app.config["REBIRTH_REQUIRE_CSRF"] = os.environ.get("REBIRTH_REQUIRE_CSRF", "tru
 app.config["REBIRTH_AUTH_RATE_LIMIT"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT", "20"))
 app.config["REBIRTH_AUTH_RATE_LIMIT_SECONDS"] = int(os.environ.get("REBIRTH_AUTH_RATE_LIMIT_SECONDS", "300"))
 app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTERNAL_LAB", "false") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v106_ARENA_ACTIONS")
+# Telemetria de decisão é observacional e roda no caminho quente de cada jogada
+# do jogador: pode ser desligada por ambiente sem afetar a jogabilidade.
+app.config["REBIRTH_ENABLE_DECISION_TELEMETRY"] = os.environ.get("REBIRTH_ENABLE_DECISION_TELEMETRY", "true") == "true"
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v107_LOGIC_SEARCH")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -152,6 +162,8 @@ GAME_RATE_LIMITS = {
     "api_rebirth_telemetry_beacon": int(os.environ.get("REBIRTH_TELEMETRY_RATE_LIMIT", "300")),
 }
 MATCH_TELEMETRY_CLOCKS = {}
+MATCH_TERMINAL_TELEMETRY = set()
+MATCH_ABANDON_TELEMETRY = set()
 MATCH_TELEMETRY_LOCK = threading.Lock()
 _SCHEMA_BOOTSTRAP_LOCK = threading.Lock()
 _SCHEMA_BOOTSTRAP_DONE = False
@@ -629,8 +641,23 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
         return
     elapsed_ms = None
     total_elapsed_ms = None
+    reserved_terminal = False
+    reserved_abandon = False
     now = time.monotonic()
     with MATCH_TELEMETRY_LOCK:
+        if event_type == "match_abandoned":
+            if match_id in MATCH_ABANDON_TELEMETRY:
+                return
+            MATCH_ABANDON_TELEMETRY.add(match_id)
+            reserved_abandon = True
+        terminal_recorded = match_id in MATCH_TERMINAL_TELEMETRY
+        if terminal_recorded and event_type in {"match_finished", "match_won", "match_lost", "match_drawn"}:
+            if reserved_abandon:
+                MATCH_ABANDON_TELEMETRY.discard(match_id)
+            return
+        if match.get("is_finished") and not terminal_recorded:
+            MATCH_TERMINAL_TELEMETRY.add(match_id)
+            reserved_terminal = True
         timing = MATCH_TELEMETRY_CLOCKS.get(match_id)
         if event_type == "match_started" or not isinstance(timing, dict):
             timing = {"started_at": now, "last_at": now}
@@ -653,9 +680,9 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
     try:
         telemetry_repo = repo or rebirth_repo()
         telemetry_repo.record_telemetry_event(event_type, payload, user_id=(user or {}).get("id"))
-        if match.get("is_finished") and event_type != "match_finished":
-            telemetry_repo.record_telemetry_event("match_finished", payload, user_id=(user or {}).get("id"))
-        if match.get("is_finished"):
+        if match.get("is_finished") and reserved_terminal:
+            if event_type != "match_finished":
+                telemetry_repo.record_telemetry_event("match_finished", payload, user_id=(user or {}).get("id"))
             outcome_event = None
             if match.get("winner") == "player":
                 outcome_event = "match_won"
@@ -666,7 +693,179 @@ def record_match_telemetry(repo, user, match, event_type, **extra):
             if outcome_event and event_type != outcome_event:
                 telemetry_repo.record_telemetry_event(outcome_event, payload, user_id=(user or {}).get("id"))
     except Exception:
+        with MATCH_TELEMETRY_LOCK:
+            if reserved_terminal:
+                MATCH_TERMINAL_TELEMETRY.discard(match_id)
+            if reserved_abandon:
+                MATCH_ABANDON_TELEMETRY.discard(match_id)
         app.logger.exception("rebirth.telemetry write failed for %s", event_type)
+
+
+def _decision_action_id(action):
+    payload = action.get("payload") or {}
+    identity = (
+        payload.get("attacker_instance_id")
+        or payload.get("card_instance_id")
+        or payload.get("card_id")
+        or action.get("type")
+    )
+    target = payload.get("target_instance_id")
+    return f"{action.get('type')}:{identity}" + (f"->{target}" if target else "")
+
+
+def _decision_action_score(match, action):
+    if action.get("type") != "attack":
+        return None
+    payload = action.get("payload") or {}
+    player_field = [
+        card for card in ((match["player"].get("field") or match["player"].get("battlefield") or [])) if card
+    ]
+    bot_field = [
+        card for card in ((match["bot"].get("field") or match["bot"].get("battlefield") or [])) if card
+    ]
+    attacker = next(
+        (card for card in player_field if card.get("instance_id") == payload.get("attacker_instance_id")),
+        None,
+    )
+    target = next(
+        (card for card in bot_field if card.get("instance_id") == payload.get("target_instance_id")),
+        None,
+    )
+    if not attacker:
+        return None
+    projection = attack_utility_projection(
+        attacker,
+        target,
+        bot_battlefield=player_field,
+        player_battlefield=bot_field,
+        player_hp=match["bot"].get("hp", 30),
+        turn=match.get("turn", 1),
+        player_wounded=match["bot"].get("wounded", False),
+        bot_wounded=match["player"].get("wounded", False),
+    )
+    return float(projection.get("utility", 0) or 0)
+
+
+def decision_telemetry_snapshot(match, action):
+    """Capture legal options before mutation for human decision-quality telemetry."""
+    normalized = canonical_action(action["type"], **(action.get("payload") or {}))
+    # verify=False de propósito: a telemetria só conta/perfila as opções e NÃO
+    # pode reexecutar o dispatcher. Com verify=True, simular o candidato
+    # `end_turn` rodava a fase inteira do bot (choose_response fantasma) a cada
+    # jogada do jogador — custo e efeito colateral observável. A enumeração de
+    # _candidate_actions já filtra energia, slots, taunt e elegibilidade de ataque.
+    options = legal_actions(match, verify=False)
+    scored = [
+        (candidate, _decision_action_score(match, candidate))
+        for candidate in options
+        if candidate.get("type") == normalized.get("type")
+    ]
+    scored = [(candidate, score) for candidate, score in scored if score is not None]
+    chosen_score = _decision_action_score(match, normalized)
+    best_action = max(scored, key=lambda item: item[1]) if scored else (None, None)
+    encoded = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return build_decision_telemetry_payload(
+        actor="human",
+        action_type=normalized["type"],
+        legal_action_count=len(options),
+        chosen_action_id=_decision_action_id(normalized),
+        chosen_action_fingerprint=hashlib.sha256(encoded.encode("utf-8")).hexdigest()[:24],
+        best_action_id=_decision_action_id(best_action[0]) if best_action[0] else None,
+        chosen_score=chosen_score,
+        best_score=best_action[1],
+        turn=match.get("turn"),
+        profile_id=(match.get("bot_profile") or {}).get("id"),
+        difficulty=(match.get("bot_difficulty") or {}).get("id"),
+    )
+
+
+def safe_decision_snapshot(match, action):
+    """Telemetria observacional: nunca pode bloquear nem derrubar a jogada.
+
+    Roda atrás de flag de ambiente e isola qualquer falha — uma exceção aqui
+    jamais deve impedir o dispatch real da ação do jogador.
+    """
+    if not app.config.get("REBIRTH_ENABLE_DECISION_TELEMETRY", True):
+        return None
+    try:
+        return decision_telemetry_snapshot(match, action)
+    except Exception:
+        app.logger.exception("rebirth.decision telemetry snapshot failed")
+        return None
+
+
+def record_decision_metrics(repo, user, match, decision_metrics):
+    """Emite o evento decision_made apenas quando há métricas válidas."""
+    if not decision_metrics:
+        return
+    record_match_telemetry(repo, user, match, "decision_made", **decision_metrics)
+
+
+def _bot_legal_attack_count(match):
+    """Count validated bot attack candidates before beam pruning."""
+    from services.rebirth_keywords import forces_target, has_taunt_on_side
+
+    bot_field = [
+        card for card in ((match.get("bot") or {}).get("field") or (match.get("bot") or {}).get("battlefield") or [])
+        if card
+    ]
+    player_field = [
+        card
+        for card in (
+            (match.get("player") or {}).get("field")
+            or (match.get("player") or {}).get("battlefield")
+            or []
+        )
+        if card
+    ]
+    if has_taunt_on_side(player_field):
+        player_field = [card for card in player_field if forces_target(card)]
+    rows = tactical_utility_matrix(
+        bot_field,
+        player_field,
+        player_hp=(match.get("player") or {}).get("hp", 30),
+        turn=match.get("turn", 1),
+        player_wounded=(match.get("player") or {}).get("wounded", False),
+        bot_wounded=(match.get("bot") or {}).get("wounded", False),
+    )
+    return sum(1 for row in rows if row.get("allowed"))
+
+
+def bot_decision_telemetry_payloads(match_before, events):
+    """Rebuild pre-decision states so bot counts are not post-pruning."""
+    shadow = deepcopy(match_before)
+    decisions = []
+    for event in events:
+        event_payload = event.get("payload") or {}
+        if event.get("event_type") == "ATTACK_DECLARED" and event_payload.get("automated"):
+            try:
+                legal_action_count = _bot_legal_attack_count(shadow) if shadow is not None else None
+            except Exception:
+                legal_action_count = None
+            if legal_action_count is None:
+                legal_action_count = event_payload.get("legal_action_count")
+            decisions.append(
+                build_decision_telemetry_payload(
+                    actor="bot",
+                    action_type="attack",
+                    legal_action_count=legal_action_count,
+                    chosen_action_id=(
+                        f"attack:{event_payload.get('attacker_instance_id')}"
+                        f"->{event_payload.get('target_instance_id') or 'hero'}"
+                    ),
+                    chosen_score=event_payload.get("chosen_score"),
+                    best_score=event_payload.get("best_score"),
+                    turn=shadow.get("turn"),
+                    profile_id=event_payload.get("profile_id"),
+                    difficulty=event_payload.get("difficulty_id"),
+                )
+            )
+        if shadow is not None:
+            try:
+                shadow = reduce_event(shadow, event)
+            except Exception:
+                shadow = None
+    return decisions
 
 
 def require_internal_lab_access():
@@ -696,6 +895,7 @@ def start_memory_rebirth_match(payload):
         player_card_ids=player_card_ids,
         player_name="Você",
         bot_profile_id=bot_profile_id,
+        bot_difficulty_id="easy" if is_first_duel else payload.get("difficulty"),
         runtime_mode="singleplayer",
         apply_reducers_inline=False,
         first_duel=is_first_duel,
@@ -1466,6 +1666,7 @@ def api_rebirth_start():
                 player_card_ids=player_card_ids,
                 player_name=player_name,
                 bot_profile_id=bot_profile_id,
+                bot_difficulty_id="easy" if is_first_duel else payload.get("difficulty"),
                 runtime_mode="singleplayer",
                 apply_reducers_inline=False,
                 first_duel=is_first_duel,
@@ -1542,6 +1743,7 @@ def api_rebirth_campaign_start():
             player_card_ids=repo.loadout_card_ids(user["id"]),
             player_name=user["username"],
             bot_profile_id=node["bot_profile_id"],
+            bot_difficulty_id=node["bot_difficulty_id"],
             runtime_mode="singleplayer",
             apply_reducers_inline=False,
             first_duel=False,
@@ -1635,6 +1837,14 @@ def api_rebirth_play_card():
         repo = rebirth_repo() if user else None
         ensure_match_access(match, user=user)
         if payload.get("attacker_instance_id"):
+            decision_metrics = safe_decision_snapshot(
+                match,
+                canonical_action(
+                    "attack",
+                    attacker_instance_id=payload.get("attacker_instance_id"),
+                    target_instance_id=payload.get("target_instance_id"),
+                ),
+            )
             dispatch_command(
                 match,
                 DeclareAttackCommand(
@@ -1643,6 +1853,16 @@ def api_rebirth_play_card():
                 ),
             )
         else:
+            decision_metrics = safe_decision_snapshot(
+                match,
+                canonical_action(
+                    "play_card",
+                    card_instance_id=payload.get("card_instance_id"),
+                    card_id=payload.get("card_id"),
+                    field_slot=payload.get("field_slot", payload.get("slot")),
+                    target_instance_id=payload.get("target_instance_id"),
+                ),
+            )
             dispatch_command(
                 match,
                 SummonCardCommand(
@@ -1663,6 +1883,7 @@ def api_rebirth_play_card():
                 reward = clash_reward_payload_from_progress(before, progress, state)
             repo.upsert_match_history(user["id"], match)
             campaign_reward = settle_campaign_victory(repo, user, match)
+        record_decision_metrics(repo, user, match, decision_metrics)
         record_match_telemetry(
             repo,
             user,
@@ -1694,6 +1915,14 @@ def api_rebirth_attack():
         match = get_match(payload.get("match_id"), user=user)
         repo = rebirth_repo() if user else None
         ensure_match_access(match, user=user)
+        decision_metrics = safe_decision_snapshot(
+            match,
+            canonical_action(
+                "attack",
+                attacker_instance_id=payload.get("attacker_instance_id"),
+                target_instance_id=payload.get("target_instance_id"),
+            ),
+        )
         dispatch_command(
             match,
             DeclareAttackCommand(
@@ -1712,6 +1941,7 @@ def api_rebirth_attack():
                 reward = clash_reward_payload_from_progress(before, progress, state)
             repo.upsert_match_history(user["id"], match)
             campaign_reward = settle_campaign_victory(repo, user, match)
+        record_decision_metrics(repo, user, match, decision_metrics)
         record_match_telemetry(
             repo,
             user,
@@ -1740,10 +1970,15 @@ def api_rebirth_evolve():
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
+        decision_metrics = safe_decision_snapshot(
+            match,
+            canonical_action("evolve", card_id=payload.get("card_id")),
+        )
         evolved = dispatch_command(match, EvolveDuplicateCommand(card_id=payload.get("card_id")))
         repo = rebirth_repo() if user else None
         persist_match_if_owned(repo, user, match)
         campaign_reward = settle_campaign_victory(repo, user, match)
+        record_decision_metrics(repo, user, match, decision_metrics)
         record_match_telemetry(repo, user, match, "card_evolved", card_id=payload.get("card_id"))
         return json_success(public_state(match), match.get("result"), evolved=evolved, campaign_reward=campaign_reward)
     except RebirthPersistenceError as error:
@@ -1759,6 +1994,11 @@ def api_rebirth_next_turn():
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
+        decision_metrics = safe_decision_snapshot(
+            match,
+            canonical_action("end_turn", turn=match.get("turn")),
+        )
+        match_before_bot_turn = deepcopy(match)
         events_before = len(match.get("events") or [])
         dispatch_command(match, EndTurnCommand(turn=match.get("turn")))
         # Eventos da fase do bot: o cliente encena invocações/ataques em
@@ -1767,6 +2007,9 @@ def api_rebirth_next_turn():
         repo = rebirth_repo() if user else None
         persist_match_if_owned(repo, user, match)
         campaign_reward = settle_campaign_victory(repo, user, match)
+        for bot_decision in bot_decision_telemetry_payloads(match_before_bot_turn, bot_phase_events):
+            record_match_telemetry(repo, user, match, "decision_made", **bot_decision)
+        record_decision_metrics(repo, user, match, decision_metrics)
         record_match_telemetry(repo, user, match, "turn_ended")
         return json_success(
             public_state(match),
@@ -1787,9 +2030,11 @@ def api_rebirth_mulligan():
         user = current_user()
         match = get_match(payload.get("match_id"), user=user)
         ensure_match_access(match, user=user)
+        decision_metrics = safe_decision_snapshot(match, canonical_action("mulligan"))
         dispatch_command(match, MulliganCommand())
         repo = rebirth_repo() if user else None
         persist_match_if_owned(repo, user, match)
+        record_decision_metrics(repo, user, match, decision_metrics)
         record_match_telemetry(repo, user, match, "hand_mulliganed")
         return json_success(public_state(match), match.get("result"), mulliganed=True)
     except RebirthPersistenceError as error:

@@ -289,7 +289,7 @@ def test_guest_match_actions_record_product_telemetry_without_false_reward(clien
             "SELECT event_type, event_json FROM telemetry_events ORDER BY id"
         ).fetchall()
     event_types = [row["event_type"] for row in rows]
-    assert event_types == ["match_started", "card_played", "match_abandoned"]
+    assert event_types == ["match_started", "decision_made", "card_played", "match_abandoned"]
     telemetry = json.loads(rows[-1]["event_json"])
     assert telemetry["match_id"] == state["match_id"]
     assert "decision_elapsed_ms" in telemetry
