@@ -53,3 +53,31 @@ Versões:
 - ruleset: `rebirth_ruleset_v102`;
 - reducer: `rebirth_reducer_v100`;
 - frontend/cache: `v107_LOGIC_SEARCH`.
+
+## Sanity de balance independente (revisão pós-merge, 2026-06-20)
+
+Reexecução de `simulate_balance(30)` e `simulate_casual_balance(30)` na
+revisão, contra o reportado acima:
+
+| Métrica | Reportado | Revisão |
+|---|---|---|
+| Casual — player WR | 56,7% | 53,3% |
+| Casual — board presence | 1,899 | 1,842 |
+| Casual — inacabadas | 0% | 0% |
+| Otimizado — player WR | 46,7% | 36,7% |
+| Otimizado — dead-turn | 15,7% | 15,4% |
+| Otimizado — stalemate | 0% | 0% |
+| Otimizado — max chain | 16 | 17 |
+
+A estrutura do meta reproduz (sem stalemate, sem inacabadas; dead-turn e
+cadeias batem). O WR otimizado cai puxado pelo bot `opportunist`, que tem
+player WR **0,10 no otimizado vs 0,50 no casual** — o mesmo bot (em `normal`)
+perde para o jogador casual mas vence o simulador "otimizado". Jogar
+"perfeito" perdendo mais que jogar de novato é assinatura de **artefato de
+medição do simulador** (cf. commit `047867a`, dead_turn era artefato), não
+carta dominante nem bot forte demais para o jogador real.
+
+Dificuldade default de produção: `easy` na 1ª partida, `normal` depois — o
+lab também roda `normal`. Decisão: **não re-tunar no lab**; baseline
+registrado e a telemetria `decision_made` (regret por perfil/dificuldade) de
+produção é o árbitro real.
