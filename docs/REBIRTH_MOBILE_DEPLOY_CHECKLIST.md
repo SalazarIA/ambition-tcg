@@ -1,6 +1,7 @@
 # Rebirth — Checklist de Deploy Mobile (Top10 #9)
 
-Data: 2026-06-19 · Escopo: Web (PWA) + Android (existente) + iOS (a criar)
+Data: 2026-06-19 · Validação Android atualizada em 2026-06-20 · Escopo: Web
+(PWA) + Android (existente) + iOS (a criar)
 
 ## Estado atual (verificado)
 
@@ -61,7 +62,7 @@ WebView **é** a origem do site — cookies são first-party:
   `static/icons/icon-512.png` (Rebirth gold/dark). O foreground usa a safe zone
   central 66/108 e o splash preserva o footprint anterior sobre `#070711`.
 
-## 5. Auditoria Android (2026-06-19)
+## 5. Auditoria Android (2026-06-19; smoke em 2026-06-20)
 
 - `compileSdk` / `targetSdk`: 36; `minSdk`: 24.
 - Google Play exige API 35+ para novos apps/updates desde 31/08/2025; API 36
@@ -104,8 +105,24 @@ WebView **é** a origem do site — cookies são first-party:
 - Manifest mesclado e `aapt`: pacote `com.ambitionzgame.app`, `versionCode 2`,
   `versionName 1.0.0-beta.2`, min API 24, target/compile API 36, backup e
   cleartext desativados.
-- Teste instrumentado compilado, mas não executado: `adb devices -l` não
-  encontrou device/emulador conectado.
+- AVD `Pixel_7` iniciado com Android 17/API 37 no Android Emulator 36.5.11.0.
+- `assembleDebugAndroidTest`: ok; o `app-debug.apk` reconstruído manteve
+  exatamente o SHA-256 do artefato beta.2 listado acima.
+- APK beta.2 instalado via `adb`; `dumpsys package` confirmou
+  `com.ambitionzgame.app`, `versionCode 2` e `versionName 1.0.0-beta.2`.
+- Teste instrumentado executado contra o APK instalado:
+  `AppIdentityInstrumentedTest.targetContextUsesCanonicalPackage` passou
+  (`OK (1 test)`, 1,601 s).
+- Smoke via `adb`/UI tree/screenshot: cold launch de `.MainActivity`, home
+  Rebirth renderizada pelo WebView remoto, rolagem respondendo e árvore
+  acessível com navegação e CTA `ENTRAR / CADASTRAR`.
+- O CTA abriu o diálogo `Entrar / Cadastrar` com campos de login/cadastro; o
+  fechamento retornou à home. Ao fim, o processo permaneceu vivo e o crash
+  buffer estava vazio, sem `FATAL EXCEPTION` ou ANR do app.
+- Na primeira passagem, o AVD sob pressão de memória exibiu um ANR do System UI
+  e o Play Store encerrou o app ao atualizar o WebView (`installPackageLI`,
+  versão 145 → 149.0.7827.91). O smoke foi repetido após a atualização e ficou
+  estável.
 - Nenhum upload foi realizado.
 
 ## 6. Risco estrutural: wrapper de WebView remoto
@@ -126,5 +143,5 @@ O app é um wrapper do site remoto. Implicações a decidir antes de publicar:
 - [ ] appId/appName decididos com o owner
 - [ ] Screenshots/textos Play Store + App Store refeitos para o Rebirth
 - [ ] Decisão sobre offline/wrapper documentada
-- [ ] APK debug instalado e smoke testado em device/emulador
+- [x] APK debug instalado e smoke testado em device/emulador
 - [x] AAB Android `versionCode 2` reconstruído e validado antes de upload

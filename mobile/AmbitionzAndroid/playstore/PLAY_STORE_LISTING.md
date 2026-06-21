@@ -4,30 +4,27 @@
 Ambitionz
 
 ## Short Description
-Fast tactical card duels built around risk, elements and ambition.
+Duelo tático de monstros com decks, evoluções, armadilhas e progressão.
 
 ## Full Description
-Ambitionz is a tactical online card game built around fast duels, elemental strategy, hidden intent and calculated risk.
+Ambitionz Rebirth é um jogo tático de cartas online com partidas rápidas contra bots, construção de baralho e progressão persistente.
 
-Build your 30-card beta deck, enter quick matches, earn XP and coins, complete missions, open boosters and improve your collection. Every duel pushes your account forward.
+Monte um baralho de 30 cartas com monstros, magias e armadilhas. Invoque unidades em três campos, evolua duplicatas e escolha os melhores ataques para vencer cada confronto.
 
-Core features:
-- Fast tactical card battles
-- Elemental card identities
-- Sigils and strategic roles
-- Hidden intent system
-- Training mode
-- Progression with XP and coins
-- Missions
-- Booster shop
-- Deck builder
-- Ranking and match history
-- Beta feedback channel
+Recursos da beta:
 
-Ambitionz is currently in beta. Cards, balance, rewards, ranking, progression and features may change during testing.
+- Arena tática contra bots
+- Campanha para um jogador com dez encontros
+- Coleção e editor de baralhos de 30 cartas
+- Evoluções de monstros, magias e armadilhas
+- Boosters gratuitos durante a beta
+- XP, recompensas, perfil e ranking
+- Feedback, exportação e exclusão de conta dentro do serviço
+
+O Ambitionz está em beta. Cartas, balanceamento, recompensas, progressão, ranking e recursos podem mudar. Compras com dinheiro real estão desativadas nesta fase.
 
 ## Category
-Game / Card
+Jogo / Cartas
 
 ## Website
 https://ambitionzgame.com
@@ -39,4 +36,7 @@ https://ambitionzgame.com/privacy
 https://ambitionzgame.com/terms
 
 ## Support
-https://ambitionzgame.com/feedback
+https://ambitionzgame.com/rebirth/support
+
+## Account Deletion
+https://ambitionzgame.com/data-deletion

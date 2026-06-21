@@ -1,22 +1,29 @@
-You are invited to test Ambitionz on Android.
+You are invited to test Ambitionz 1.0.0-beta.2 on Android.
+
+Join through the Google Play internal-test opt-in link using the same Google account that received the invitation.
 
 Please test:
+
 1. Open the app.
-2. Create an account.
-3. Play one training match.
-4. Check post-match rewards.
-5. Open missions.
-6. Open booster shop.
-7. Edit your deck if possible.
-8. Check profile and ranking.
-9. Submit feedback inside the app.
+2. Confirm Support shows v107_LOGIC_SEARCH.
+3. Create an account, sign out and sign in again.
+4. Finish one Arena clash against the bot.
+5. Check post-match XP, rewards and saved progress.
+6. Complete an available campaign encounter.
+7. Edit a 30-card deck.
+8. Open one free beta booster.
+9. Check profile and ranking.
+10. Close and reopen the app.
+11. Submit feedback inside the app.
 
 Report bugs through:
-https://ambitionzgame.com/feedback
+https://ambitionzgame.com/rebirth/support
 
 When reporting, include:
+
 - What happened
 - What you expected
 - Which page you were on
 - Your device model
+- Android version
 - Screenshot if possible
