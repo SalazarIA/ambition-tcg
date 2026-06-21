@@ -142,3 +142,13 @@ Regra transversal: **toda mudança mantém a suíte rápida verde, o determinism
 - Infra de deploy, Render, CI de build (exceto adicionar o **lab-gate** de gameplay, que é lógica).
 - Re-tuning cego de números com base no lab — proibido por política; só com telemetria de produção.
 - Multiplayer/PvP em tempo real — é outra trilha (arquitetura), não este roadmap de lógica de partida single.
+
+## 7. Status de execução (2026-06-21)
+
+**Onda 1 — entregue** (commits `e49dc57`): I1 lab-gate (`dominant_cards` + `simulate_balance` no CI) e decisão por arquétipo; I2 gradiente de erro do bot (easy 33% / normal 14% / hard 0%); I3 invariantes/replay/determinismo das mecânicas v107.
+
+**Onda 2 — entregue:** I4 eixos próprios — WATER `high_hp` (inevitabilidade, cards 039/040), SHADOW `low_hp` (atrito, card 080), ao lado do EARTH `total_guard`. I5 keyword **SIEGE/Cerco** (ignora metade da mitigação de Guarda; capstones FIRE 018/020) — counter à Fortaleza sem nerf. I6 auditoria de cobertura (`keyword_coverage`, `family_synergy_coverage`) com testes-gate. Lab-gate confirmou: nenhuma carta dominante após as adições.
+
+**Onda 3 — re-escopada e entregue:** ao ler o código, I7 e I8 **já estavam majoritariamente implementados** — 10 traps reativas disparam na interrupt chain (`opponent_attacks`/`owner_attacked`) e spells miram unidade via `_spell_effects_for_target`. Em vez de reinventar, a Onda 3 aplicou a **régua industrial** (invariantes + replay + determinismo) a esses caminhos (`test_rebirth_reactive_interaction.py`).
+
+**Gap real descoberto (backlog):** o **bot não arma nem usa traps** — a interação reativa é assimétrica (só o jogador humano tem acesso às 10 traps). Dar ao bot a capacidade de armar/valorizar traps na busca é o próximo passo de profundidade reativa (alto risco: timing na interrupt chain + determinismo da busca). Candidato a uma onda própria.
