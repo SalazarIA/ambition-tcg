@@ -581,6 +581,10 @@ CARD_KEYWORD_OVERRIDES = {
     "card_073": ["PIERCE", "SUNDER"],               # Nightchain Archmage
     "card_077": ["PIERCE", "SUNDER"],               # Cryptsong Harvester
     "card_079": ["PIERCE", "SUNDER"],               # Blackthorn Lich
+    # I5 — Cerco anti-Fortaleza em capstones FIRE (o anti-sustain natural):
+    # perfura muralhas, dando ao aggro uma resposta ao stall EARTH.
+    "card_018": ["BURST", "SIEGE"],                 # Emberhorn Warlord
+    "card_020": ["RUSH", "BURST", "SIEGE"],         # Volcanic Avatar
 }
 
 for _card_id, _keywords in CARD_KEYWORD_OVERRIDES.items():
@@ -607,6 +611,12 @@ CARD_SYNERGY_OVERRIDES = {
     "card_044": {"condition": "total_guard", "value": 6, "effect": {"attack": 2}},
     "card_050": {"condition": "total_guard", "value": 6, "effect": {"attack": 3}},
     "card_060": {"condition": "total_guard", "value": 6, "effect": {"attack": 3, "guard": 1}},
+    # I4 — eixos próprios para WATER e SHADOW (quebrar a hegemonia EARTH sem
+    # nerf). WATER = inevitabilidade: capstones que fecham com vida alta (a cura
+    # vira pressão). SHADOW = atrito: o dreno recompensa apanhar e sobreviver.
+    "card_039": {"condition": "high_hp", "value": 24, "effect": {"attack": 2}},
+    "card_040": {"condition": "high_hp", "value": 24, "effect": {"attack": 2, "guard": 1}},
+    "card_080": {"condition": "low_hp", "value": 14, "effect": {"attack": 2}},
 }
 
 from services.rebirth_keywords import synergy_label as _synergy_label  # noqa: E402
@@ -624,6 +634,29 @@ SPELL_CARDS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card["ty
 TRAP_CARDS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card["type"] == "TRAP"]
 LEGENDARY_CARDS = [deepcopy(card) for card in CARD_CATALOG_DICT.values() if card.get("rarity") == "LEGENDARY"]
 CARD_ABILITY_KEYS = {card_id: card["ability_key"] for card_id, card in CARD_CATALOG_DICT.items()}
+
+
+def keyword_coverage():
+    """I6: mapa keyword -> card_ids que a carregam. Base da auditoria de cobertura."""
+    coverage: dict = {}
+    for card in CARD_CATALOG_DICT.values():
+        for keyword in card.get("keywords") or []:
+            coverage.setdefault(str(keyword), []).append(card.get("id"))
+    return {keyword: sorted(ids) for keyword, ids in coverage.items()}
+
+
+def family_synergy_coverage():
+    """I6: mapa família monstro -> condições de sinergia (eixos de vitória) presentes."""
+    coverage: dict = {}
+    for card in CARD_CATALOG_DICT.values():
+        synergy = card.get("synergy")
+        if not isinstance(synergy, dict) or not synergy.get("condition"):
+            continue
+        family = str(card.get("family") or "").upper()
+        if family in {"", "SPELL", "TRAP"}:
+            continue
+        coverage.setdefault(family, set()).add(str(synergy["condition"]))
+    return {family: sorted(conditions) for family, conditions in coverage.items()}
 
 PLAYER_DECK = [
     # v97: preserve the tutorial opener pair while seeding more duplicate

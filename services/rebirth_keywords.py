@@ -55,6 +55,10 @@ KEYWORD_EXECUTE = "EXECUTE"
 KEYWORD_THORNS = "THORNS"
 KEYWORD_ENTRENCH = "ENTRENCH"
 KEYWORD_SUNDER = "SUNDER"
+# I5 — counter estrutural à Fortaleza: ignora metade da mitigação de Guarda do
+# alvo (anti-muralha incondicional, complementar ao SUNDER condicional). Pune
+# decks que dependem só de empilhar Guarda, sem nerfar EARTH contra o resto.
+KEYWORD_SIEGE = "SIEGE"
 
 ALL_KEYWORDS = (
     KEYWORD_RUSH,
@@ -68,6 +72,7 @@ ALL_KEYWORDS = (
     KEYWORD_THORNS,
     KEYWORD_ENTRENCH,
     KEYWORD_SUNDER,
+    KEYWORD_SIEGE,
 )
 
 # Quanto THORNS reflete por golpe (fixo, como BURST=1 — previsível pro balance;
@@ -89,6 +94,7 @@ KEYWORD_LABELS = {
     KEYWORD_THORNS:    ("Espinhos",   "Quem ataca esta carta sofre 2 de dano na Guarda."),
     KEYWORD_ENTRENCH:  ("Entrincheirar", "Se não atacou no turno anterior, ganha +1 de Guarda permanente."),
     KEYWORD_SUNDER:    ("Ruptura", "Com aliado de outra família, ganha +2 Ataque contra Provocar/Escudo e rompe Escudo."),
+    KEYWORD_SIEGE:     ("Cerco", "Ignora metade da Guarda do alvo no cálculo de dano — perfura muralhas."),
 }
 
 # Cor (CSS var --rb-gold/cyan/etc) usada pra colorir badge na UI.
@@ -104,6 +110,7 @@ KEYWORD_COLORS = {
     KEYWORD_THORNS:    "#6f8f4a",  # verde-musgo espinho
     KEYWORD_ENTRENCH:  "#9a8456",  # terra/pedra muralha
     KEYWORD_SUNDER:    "#b66cff",  # violeta de ruptura midrange
+    KEYWORD_SIEGE:     "#d2691e",  # ocre-ferrugem de cerco
 }
 
 # Defaults por família — usado por _monster_card quando keywords não
@@ -324,6 +331,11 @@ def synergy_active(card: Dict[str, Any], owner_field: List[Dict[str, Any]],
     if condition == "low_hp":
         threshold = int(value or 10)
         return int(owner_hp or 0) <= threshold
+    if condition == "high_hp":
+        # Win-condition de inevitabilidade (WATER): com a vida alta que a cura
+        # sustenta, fecha o jogo. Espelho do low_hp do atrito SHADOW.
+        threshold = int(value or 24)
+        return int(owner_hp or 0) >= threshold
     if condition == "field_count":
         threshold = int(value or 2)
         return len([c for c in (owner_field or []) if c.get("instance_id") != card.get("instance_id")]) >= threshold
@@ -369,6 +381,8 @@ def synergy_label(card: Dict[str, Any]) -> Optional[str]:
         return f"Se você controla outro {str(value or '').title()}: {bonus}."
     if condition == "low_hp":
         return f"Se seu HP ≤ {value}: {bonus}."
+    if condition == "high_hp":
+        return f"Se seu HP ≥ {value}: {bonus}."
     if condition == "field_count":
         return f"Se você tem {value}+ monstros: {bonus}."
     if condition == "tier_2":

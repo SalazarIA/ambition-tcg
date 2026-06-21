@@ -481,6 +481,7 @@
             THORNS:    "Espinhos",
             ENTRENCH:  "Entrincheirar",
             SUNDER:    "Ruptura",
+            SIEGE:     "Cerco",
         },
         TOOLTIPS: {
             RUSH:      "Pode atacar no turno em que é invocado.",
@@ -494,6 +495,7 @@
             THORNS:    "Quem ataca esta carta sofre 2 de dano na Guarda.",
             ENTRENCH:  "Se não atacou no turno anterior, ganha +1 de Guarda permanente.",
             SUNDER:    "Com aliado de outra família, ganha +2 Ataque contra Provocar/Escudo e rompe Escudo.",
+            SIEGE:     "Ignora metade da Guarda do alvo no cálculo de dano — perfura muralhas.",
         },
         badges(card) {
             const kws = (card && card.keywords) || [];

@@ -133,8 +133,15 @@ def damage_details(
     _, synergy_guard = synergy_bonuses(defender, defender_field, owner_hp=defender_hp)
     attack_total += synergy_attack
     guard_total += synergy_guard
-    amount = max(1, attack_total - guard_total // 2)
+    from services.rebirth_keywords import KEYWORD_SIEGE, has_keyword
+
     events: List[str] = []
+    # I5 SIEGE/Cerco: ignora metade da mitigação de Guarda — perfura muralhas
+    # sem nerfar EARTH contra alvos de Guarda baixa.
+    siege = has_keyword(attacker, KEYWORD_SIEGE)
+    amount = max(1, attack_total - guard_total // (4 if siege else 2))
+    if siege and guard_total >= 6:
+        events.append(f"{attacker['name']} cerca a muralha e ignora parte da Guarda.")
     attacker_key = ability_key(attacker)
     defender_key = ability_key(defender)
 
