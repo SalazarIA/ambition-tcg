@@ -206,3 +206,23 @@ def round_robin(
         "initiative": initiative_report(matchups),
         "matchups": matchups,
     }
+
+
+def dominant_cards(balance_report: Mapping[str, Any]) -> list[Dict[str, Any]]:
+    """Cartas marcadas como ``dominant`` pelo lab — base do gate de balance de CI.
+
+    O gate é simples e duro: se o laboratório tático sinaliza qualquer carta
+    como dominante (win-rate e dano acima do teto saudável), a build não passa.
+    """
+    flagged: list[Dict[str, Any]] = []
+    for stat in (balance_report or {}).get("card_stats") or []:
+        if "dominant" in (stat.get("flags") or []):
+            flagged.append(
+                {
+                    "card_id": stat.get("card_id"),
+                    "name": stat.get("name"),
+                    "win_rate": stat.get("win_rate"),
+                    "avg_damage": stat.get("avg_damage"),
+                }
+            )
+    return flagged

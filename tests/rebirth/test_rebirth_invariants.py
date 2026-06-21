@@ -144,3 +144,19 @@ def test_fuzzing_is_reproducible_for_the_same_seed():
 
     assert first.command_types == second.command_types
     assert first.final_report.canonical_hash == second.final_report.canonical_hash
+
+
+@pytest.mark.parametrize("seed", ["sunder-fuzz-0", "sunder-fuzz-1"])
+def test_midrange_sunder_vs_fortress_fuzz_holds_invariants(seed):
+    """I3: decks midrange-Ruptura contra muralhas-Escudo passam pelo caminho
+    público sem violar invariantes nem divergir no replay."""
+    player_deck = (["card_073", "card_077", "card_079"] * 6 + ["card_001", "card_021"] * 6)[:30]
+    bot_deck = ["card_051", "card_059"] * 15
+    result = run_deterministic_command_fuzz(
+        seed,
+        max_commands=16,
+        match_kwargs={"player_card_ids": player_deck, "bot_card_ids": bot_deck},
+    )
+
+    assert result.ok, [violation.code for violation in result.final_report.violations]
+    assert result.replay and result.replay["ok"] is True

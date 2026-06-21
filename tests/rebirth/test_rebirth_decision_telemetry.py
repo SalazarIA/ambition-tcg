@@ -258,3 +258,24 @@ def test_live_balance_deduplicates_terminal_outcomes_and_keeps_legacy_events():
 
     assert report["overall"]["matches_finished"] == 1
     assert report["terminal_events"]["wins"] == 2
+
+
+# --- Onda 1 / I1: decisão por arquétipo (observabilidade de balance) ---
+
+
+def test_decision_payload_carries_archetype():
+    payload = build_decision_made_payload(actor="human", action_type="attack", archetype=" EARTH ")
+    assert payload["archetype"] == "EARTH"
+
+
+def test_live_balance_breaks_down_decisions_by_archetype():
+    events = [
+        _decision_event(1, actor="human", action_type="attack", archetype="EARTH", chosen_score=2, best_score=5),
+        _decision_event(2, actor="human", action_type="attack", archetype="EARTH", chosen_score=5, best_score=5),
+        _decision_event(3, actor="bot", action_type="attack", archetype="FIRE", chosen_score=1, best_score=4),
+    ]
+    report = live_balance_report(events)
+    by_archetype = {row["archetype"]: row for row in report["decisions"]["by_archetype"]}
+    assert set(by_archetype) == {"EARTH", "FIRE"}
+    assert by_archetype["EARTH"]["decision_count"] == 2
+    assert by_archetype["FIRE"]["decision_count"] == 1

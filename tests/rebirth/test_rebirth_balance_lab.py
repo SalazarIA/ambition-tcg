@@ -1,5 +1,6 @@
 from services.rebirth_balance_lab import (
     decision_regret,
+    dominant_cards,
     initiative_report,
     paired_matchup,
     round_robin,
@@ -70,3 +71,28 @@ def test_regret_helpers_report_meaningful_mistakes():
     assert summary["decision_count"] == 2
     assert summary["meaningful_regret_count"] == 1
     assert summary["average_regret"] == 1.75
+
+
+# --- Onda 1 / I1: gate de balance (detector de cartas dominantes) ---
+
+
+def test_dominant_cards_detector_flags_only_dominant():
+    report = {
+        "card_stats": [
+            {"card_id": "card_x", "name": "X", "flags": ["dominant"], "win_rate": 0.9, "avg_damage": 3.0},
+            {"card_id": "card_y", "name": "Y", "flags": ["evolution-core"], "win_rate": 0.5, "avg_damage": 1.0},
+            {"card_id": "card_z", "name": "Z", "flags": []},
+        ]
+    }
+    flagged = dominant_cards(report)
+    assert [card["card_id"] for card in flagged] == ["card_x"]
+    assert dominant_cards({}) == []
+
+
+def test_balance_lab_gate_has_no_dominant_cards():
+    """Gate de CI: a build atual não pode ter nenhuma carta dominante no lab."""
+    from services.rebirth_balance import simulate_balance
+
+    report = simulate_balance(matches=12)
+    flagged = dominant_cards(report)
+    assert flagged == [], f"cartas dominantes detectadas pelo lab-gate: {flagged}"

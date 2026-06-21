@@ -15,6 +15,7 @@ from services.rebirth_async_competition import async_competition_payload, async_
 from services.rebirth_actions import canonical_action, legal_actions
 from services.rebirth_balance import simulate_balance
 from services.rebirth_bot import attack_utility_projection, tactical_utility_matrix
+from services.rebirth_cards import dominant_family
 from services.rebirth_campaign import CAMPAIGN_VERSION, campaign_payload, get_node, is_unlocked
 from services.rebirth_content_pipeline import content_pipeline_report
 from services.rebirth_dispatcher import (
@@ -776,6 +777,17 @@ def decision_telemetry_snapshot(match, action):
         turn=match.get("turn"),
         profile_id=(match.get("bot_profile") or {}).get("id"),
         difficulty=(match.get("bot_difficulty") or {}).get("id"),
+        archetype=dominant_family(
+            [
+                card
+                for card in (
+                    (match.get("player") or {}).get("field")
+                    or (match.get("player") or {}).get("battlefield")
+                    or []
+                )
+                if card
+            ]
+        ),
     )
 
 
@@ -858,6 +870,17 @@ def bot_decision_telemetry_payloads(match_before, events):
                     turn=shadow.get("turn"),
                     profile_id=event_payload.get("profile_id"),
                     difficulty=event_payload.get("difficulty_id"),
+                    archetype=dominant_family(
+                        [
+                            card
+                            for card in (
+                                (shadow.get("bot") or {}).get("field")
+                                or (shadow.get("bot") or {}).get("battlefield")
+                                or []
+                            )
+                            if card
+                        ]
+                    ),
                 )
             )
         if shadow is not None:

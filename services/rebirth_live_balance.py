@@ -231,6 +231,7 @@ def live_balance_report(events: Iterable[Dict[str, Any]], *, release_version: Op
             aliases=("profile_id", "bot_profile_id"),
         ),
         "by_difficulty": _decision_breakdown(decision_events, field="difficulty"),
+        "by_archetype": _decision_breakdown(decision_events, field="archetype"),
     }
     return {
         "version": LIVE_BALANCE_VERSION,

@@ -37,7 +37,11 @@ BOT_DIFFICULTIES = {
         "depth": 2,
         "beam_width": 6,
         "budget": 16,
-        "mistake_window": 0,
+        # I2 (honestidade das dificuldades): normal erra raramente (~1/7 das
+        # escolhas com alternativa, nunca em lethal) para ter perfil de erro
+        # próprio, não apenas menos profundidade que hard. easy=2 (~1/3),
+        # normal=6 (~1/7), hard=0 (impecável) formam um gradiente honesto.
+        "mistake_window": 6,
     },
     "hard": {
         "id": "hard",

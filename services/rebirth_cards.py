@@ -718,6 +718,25 @@ def is_trap(card_or_id):
     return card_type(card_or_id) == "TRAP"
 
 
+def dominant_family(field):
+    """Família monstro predominante entre as cartas vivas no campo (None se vazio).
+
+    Usada para rotular a decisão por arquétipo na telemetria de balance.
+    """
+    from collections import Counter
+
+    counts: Counter = Counter()
+    for card in field or []:
+        if not isinstance(card, dict):
+            continue
+        family = str(card.get("family") or "").upper()
+        if family and family not in {"SPELL", "TRAP"}:
+            counts[family] += 1
+    if not counts:
+        return None
+    return counts.most_common(1)[0][0]
+
+
 def cards_by_type(card_ids):
     counts = {"MONSTER": 0, "SPELL": 0, "TRAP": 0}
     for card_id in card_ids:

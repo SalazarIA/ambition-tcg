@@ -188,3 +188,87 @@ def test_catalog_midrange_capstones_carry_sunder():
     assert KEYWORD_SUNDER in get_card("card_073")["keywords"]
     assert KEYWORD_SUNDER in get_card("card_077")["keywords"]
     assert KEYWORD_SUNDER in get_card("card_079")["keywords"]
+
+
+# --- Onda 1 / I3: robustez das mecânicas v107 (invariantes + determinismo) ---
+
+
+def test_sunder_combat_preserves_state_invariants():
+    """A quebra de Escudo por Ruptura não pode corromper o estado canônico."""
+    from services.rebirth_invariants import capture_card_baseline, validate_rebirth_state
+
+    match, attacker, wall = _script_sunder_match(mixed_board=True)
+    baseline = capture_card_baseline(match)
+    declare_attack(
+        match,
+        attacker_instance_id=attacker["instance_id"],
+        target_instance_id=wall["instance_id"],
+    )
+    # check_replay fica de fora: o cenário é montado direto no campo (sem
+    # eventos de invocação), então não é reconstruível por replay — mas as
+    # invariantes estruturais e de conservação valem após o combate.
+    report = validate_rebirth_state(match, baseline=baseline)
+    assert report.ok, [violation.code for violation in report.violations]
+    assert any(event["event_type"] == "SHIELD_KEYWORD_BROKEN" for event in match["events"])
+
+
+def test_multi_attack_search_is_deterministic():
+    """Mesma entrada → mesma principal variation e scores (replay-safe)."""
+    bot = [
+        _unit("a", attack=7, guard=5, slot=0),
+        _unit("b", attack=6, guard=5, slot=1),
+    ]
+    player = [
+        _unit("x", attack=2, guard=2, slot=0),
+        _unit("y", attack=2, guard=2, slot=1),
+    ]
+    context = dict(player_hp=30, turn=5, profile_id="aggressive", match_id="determinism")
+    first = MCTSAgent(difficulty_id="hard").choose_attack(deepcopy(bot), deepcopy(player), **context)
+    second = MCTSAgent(difficulty_id="hard").choose_attack(deepcopy(bot), deepcopy(player), **context)
+    assert first is not None and second is not None
+    assert first["principal_variation"] == second["principal_variation"]
+    assert first["chosen_search_score"] == second["chosen_search_score"]
+    assert first["best_search_score"] == second["best_search_score"]
+
+
+# --- Onda 1 / I2: honestidade das dificuldades (perfil de erro, não só profundidade) ---
+
+
+def _attack_choices(difficulty, *, samples=63):
+    """Sequência determinística de escolhas (atacante, alvo) por seed de partida.
+
+    Cenário com 1 atacante e 2 alvos: a busca é idêntica em todas as
+    dificuldades (profundidade/beam não mudam com tão poucas opções), então a
+    única fonte de divergência é o `mistake_window` da dificuldade.
+    """
+    bot = [_unit("atk", attack=5, guard=5, slot=0)]
+    player = [
+        _unit("weak", attack=1, guard=2, slot=0),
+        _unit("tough", attack=4, guard=6, slot=1),
+    ]
+    choices = []
+    for index in range(samples):
+        decision = MCTSAgent(difficulty_id=difficulty).choose_attack(
+            deepcopy(bot),
+            deepcopy(player),
+            player_hp=30,
+            turn=3,
+            profile_id="aggressive",
+            match_id=f"regret-{index}",
+        )
+        choices.append(
+            (decision["attacker_instance_id"], decision.get("target_instance_id")) if decision else None
+        )
+    return choices
+
+
+def test_difficulty_mistake_profile_orders_easy_normal_hard():
+    # hard (mistake_window=0) é a política pura — serve de baseline impecável.
+    baseline = _attack_choices("hard")
+    easy = _attack_choices("easy")
+    normal = _attack_choices("normal")
+    easy_deviation = sum(1 for choice, ref in zip(easy, baseline) if choice != ref)
+    normal_deviation = sum(1 for choice, ref in zip(normal, baseline) if choice != ref)
+    # normal tem perfil de erro próprio (≠ hard), e easy erra mais que normal.
+    assert normal_deviation > 0
+    assert easy_deviation > normal_deviation

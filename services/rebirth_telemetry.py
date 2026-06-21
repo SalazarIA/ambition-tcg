@@ -78,6 +78,7 @@ def build_decision_telemetry_payload(
     profile_id: Any = None,
     bot_profile_id: Any = None,
     difficulty: Any = None,
+    archetype: Any = None,
 ) -> Dict[str, Any]:
     """Build the allowlisted, non-sensitive payload for ``decision_made``."""
     source = decision if isinstance(decision, dict) else {}
@@ -121,6 +122,7 @@ def build_decision_telemetry_payload(
         "turn": _clean_nonnegative_int(supplied(turn, "turn")),
         "profile": _clean_decision_token(profile_value, limit=80),
         "difficulty": _clean_decision_token(supplied(difficulty, "difficulty"), limit=80),
+        "archetype": _clean_decision_token(supplied(archetype, "archetype"), limit=40),
     }
     return {key: value for key, value in payload.items() if value is not None}
 
