@@ -2,11 +2,12 @@
 
 Target: **Internal testing**, release `beta.2`, runtime `v107_LOGIC_SEARCH`.
 
-No upload was performed during the June 20, 2026 audit.
+No upload was performed during the June 21, 2026 audit.
 
-## Verified Read-Only
+## A. Verified in the Repository and Production
 
 - [x] `app-release.aab` exists.
+- [x] AAB SHA-256 is `4beae3778a59d074fdbab9d7d1b9ca56df8901f79e2fa67730995310c77a297b`.
 - [x] Candidate source configuration uses `versionCode 2`.
 - [x] Candidate source configuration uses `versionName 1.0.0-beta.2`.
 - [x] Candidate package is `com.ambitionzgame.app`.
@@ -17,70 +18,106 @@ No upload was performed during the June 20, 2026 audit.
 - [x] Privacy, terms, support, and account-deletion pages load over HTTPS.
 - [x] Production support exposes `v107_LOGIC_SEARCH`.
 - [x] Current Rebirth screenshots are `1080x1920` RGB PNGs without alpha.
+- [x] Current feature graphic is `1024x500` RGB PNG without alpha.
+- [x] Current Play icon is `512x512` RGBA PNG and below 1,024 KB.
+- [x] Listing avoids PvP, offline play, exact card-count, and real-money-purchase claims.
+- [x] Release notes cover Onda 1–3 and fit the 500-character pt-BR limit.
 
-## Blocking Before Upload
+## B. Owner/Console Confirmation Before Upload
 
-- [ ] Confirm in Play Console that `versionCode 2` has never been uploaded.
-- [ ] Confirm the Play app package is or will permanently be `com.ambitionzgame.app`.
-- [ ] Re-export the feature graphic as JPEG or 24-bit PNG without alpha.
-- [ ] Re-export/verify the Play icon as a 32-bit PNG with alpha.
-- [ ] Run the candidate on at least one supported Android device or emulator.
-- [ ] Confirm install, launch, registration, login, clash completion, persistence, and feedback.
-- [ ] Confirm Play's 16 KB compatibility validation passes.
+- [ ] Confirm the selected Play app already owns, or will permanently use, `com.ambitionzgame.app`.
+- [ ] Confirm `versionCode 2` has never been uploaded to that Play app.
+- [ ] Confirm the uploader has release permission and the intended Play App Signing setup.
+- [ ] Confirm the tester owner/list and feedback owner.
 
-## Play Console Setup
-- [ ] Create app in Play Console.
+Do not upload until the package and version code are confirmed. The package becomes fixed on first artifact upload.
+
+## C. Store-Listing Asset Approval
+
+- [x] Feature graphic replaced with current dark/gold Rebirth art.
+- [x] Feature graphic exported as `1024x500` 24-bit PNG without alpha.
+- [x] Play icon exported as `512x512` 32-bit PNG with alpha.
+- [ ] Owner approves feature-graphic crop and text legibility in the Play preview.
+- [ ] Owner approves the icon's rounded silhouette and small wordmark at small sizes.
+- [x] Keep the six current screenshots; upload in the order from `PLAY_SCREENSHOT_GUIDE.md`.
+- [ ] Add alt text for every screenshot and the feature graphic.
+
+No technical format blocker remains. Play Console image validation and final visual approval are still required.
+
+## D. Play Console App Setup
+
+- [ ] Select the existing app or create it only after section B is complete.
 - [ ] App name: Ambitionz.
 - [ ] Default language: Portuguese (Brazil), matching the current production UI.
 - [ ] App/game: Game.
 - [ ] Free/paid: Free.
-- [ ] App access includes reusable review credentials and English instructions.
+- [ ] Category: Card.
+- [ ] Contact email and website added.
+- [ ] Privacy policy added.
+- [x] Public account-deletion page responds over HTTPS.
+- [ ] Account-deletion URL entered in Data safety when that form becomes required.
+- [ ] Main store listing completed with the validated assets.
 - [ ] Ads declaration completed accurately.
 - [ ] Target audience and content completed accurately.
 - [ ] Content rating questionnaire completed.
-- [ ] Sensitive-permission declarations completed if the uploaded AAB requests any.
-- [ ] Privacy policy added.
-- [ ] Account deletion URL added.
-- [ ] Store listing completed.
-- [ ] Internal testing track selected.
-- [ ] Tester emails/list added.
-- [ ] Feedback channel set to `https://ambitionzgame.com/rebirth/support`.
+- [ ] App access includes reusable credentials and English instructions that work globally without OTP/2FA blockers.
+- [ ] Any declaration requested from the uploaded AAB completed accurately.
+- [ ] Data safety left deferred only if the app is exclusively active on Internal testing.
+
+## E. Create and Validate the Release
+
+- [ ] Open **Testing > Internal testing**.
+- [ ] Create release `beta.2`.
 - [ ] app-release.aab uploaded.
-- [ ] Release notes added.
-- [ ] Play validation errors and warnings resolved.
-- [ ] Release submitted for review.
-- [ ] Opt-in link shared only after the internal release is available.
+- [ ] Upload result confirms package `com.ambitionzgame.app`, `versionCode 2`, and target API 36.
+- [ ] pt-BR release notes added from `COPY_PASTE_RELEASE_NOTES.txt`.
+- [ ] Play's 16 KB compatibility result passes.
+- [ ] Device catalog and supported-device changes reviewed.
+- [ ] All blocking errors, policy issues, and required declarations resolved.
+- [ ] Pre-launch report reviewed if generated.
+- [ ] Release reviewed and rollout to Internal testing started.
+- [ ] Changes sent for review if the Console requests review.
+
+## F. Configure and Invite Testers
+
+- [ ] Tester list contains at most 100 Google accounts.
+- [ ] Feedback URL is `https://ambitionzgame.com/rebirth/support`.
+- [ ] Internal release shows as available before the invite is sent.
+- [ ] Opt-in link and `COPY_PASTE_TESTER_INVITE.txt` sent to testers.
+- [ ] Testers instructed to use the same invited account for opt-in and Play Store installation.
+- [ ] Testers instructed not to sideload an APK for this distribution test.
+- [ ] Tester matrix records account, device, Android version, install/update status, and checklist result.
+
+## G. Minimum Acceptance Before Expanding the List
+
+- [ ] Install/update from Google Play succeeds on at least one supported Android device.
+- [ ] Cold launch reaches Rebirth without browser chrome.
+- [ ] Registration, login, logout, and session restoration pass.
+- [ ] One Arena clash and one campaign encounter complete.
+- [ ] XP, rewards, history, deck, collection, and booster state persist after reopen.
+- [ ] Android Back, portrait layout, interrupted network, and recovery pass.
+- [ ] In-app feedback reaches the support flow.
+- [ ] Export and permanent deletion pass with a disposable account.
+- [ ] Directed Onda 2–3 checks attempted or marked “cards unavailable”.
 
 ## Internal Testing Rules
 
-- [ ] Keep the internal tester list at 100 accounts or fewer.
-- [ ] Testers use the same invited Google account for opt-in and Play Store installation.
-- [ ] Do not apply the 12-testers/14-days closed-test rule to this internal release.
-- [ ] If any closed, open, or production track becomes active, complete Data safety before proceeding.
+- [x] The 12-testers/14-days rule belongs to qualifying closed testing for production access, not to this internal release.
+- [ ] If any closed, open, or production track becomes active, complete and approve Data safety before proceeding.
+- [ ] Do not share the internal opt-in link publicly.
 
 ## Required URLs
-Website:
-https://ambitionzgame.com
 
-Privacy:
-https://ambitionzgame.com/privacy
-
-Terms:
-https://ambitionzgame.com/terms
-
-Support:
-https://ambitionzgame.com/rebirth/support
-
-Account deletion:
-https://ambitionzgame.com/data-deletion
+- Website: `https://ambitionzgame.com`
+- Privacy: `https://ambitionzgame.com/privacy`
+- Terms: `https://ambitionzgame.com/terms`
+- Support: `https://ambitionzgame.com/rebirth/support`
+- Account deletion: `https://ambitionzgame.com/data-deletion`
 
 ## Artifact
-Upload:
-mobile/AmbitionzAndroid/android/app/build/outputs/bundle/release/app-release.aab
 
-Do not upload:
+Upload only:
 
-- .jks file
-- key.properties
-- source code
-- an icon or feature graphic that fails Play's image-format validation
+`mobile/AmbitionzAndroid/android/app/build/outputs/bundle/release/app-release.aab`
+
+Never upload `.jks`, `key.properties`, or source code.

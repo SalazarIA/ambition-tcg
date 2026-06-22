@@ -15910,6 +15910,10 @@ body.rb-game-page .rb-verify-banner {
 }
 
 @media (max-width: 1179px) and (orientation: landscape) and (max-height: 520px) {
+    .rb-mobile-native .rb-player-hand {
+        z-index: 4;
+    }
+
     .rb-mobile-native .rb-mulligan-sheet {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(144px, 180px);

@@ -2,11 +2,14 @@
 
 ## 1.0.0-beta.2
 
-Ambitionz beta.2 now loads the Rebirth v107 experience.
+Ambitionz beta.2 atualiza a experiência Rebirth v107:
 
-- Tactical bot clashes and a 10-encounter campaign
-- 30-card collection and deck building
-- Free beta boosters, rewards, profile and ranking
-- In-app feedback plus account export and deletion
+- Dificuldades do bot mais distintas e decisões de combate mais consistentes
+- Novas identidades para Água e Sombra, com Cerco contra defesas de Guarda
+- Armadilhas reativas e magias com alvo em unidades
+- Campanha de 10 encontros, decks de 30 cartas e progressão salva
+- Feedback no app, exportação e exclusão de conta
 
-Testing focus: installation, sign-in, full match completion, saved progression, navigation, and recovery from slow or interrupted connections.
+Foco do teste: instalação, login, partida completa, persistência, navegação e reconexão.
+
+O texto acima tem menos de 500 caracteres e deve ser colado no campo de release notes em `pt-BR`.

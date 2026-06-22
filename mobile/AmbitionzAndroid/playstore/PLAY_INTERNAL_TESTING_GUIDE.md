@@ -16,7 +16,7 @@
 
 `mobile/AmbitionzAndroid/android/app/build/outputs/bundle/release/app-release.aab`
 
-Read-only audit on June 20, 2026:
+Artifact audit from June 20, 2026; hash and file presence rechecked on June 21, 2026:
 
 - SHA-256: `4beae3778a59d074fdbab9d7d1b9ca56df8901f79e2fa67730995310c77a297b`
 - JAR signature verification: passed
@@ -45,6 +45,14 @@ No upload was performed during this audit.
 14. Close and reopen the app; confirm login and progression persistence.
 15. With a disposable account, verify export and account deletion separately.
 
+## Onda 1–3 Coverage
+
+- **Onda 1 — observability, bot honesty, determinism:** complete at least two matches and report invalid actions, impossible bot information, frozen turns, mismatched rewards, or result/replay inconsistencies.
+- **Onda 2 — archetype diversity:** when the required cards are available, exercise WATER at high HP, SHADOW at low HP, and SIEGE/Cerco against a Guard-heavy defender.
+- **Onda 3 — reactive interaction:** arm a trap and verify it triggers only when its owner is attacked; cast a unit-targeted spell; if the bot arms a face-down card, verify the interrupt resolves without blocking the turn.
+
+The card-specific scenarios are directed coverage, not a prerequisite for every tester account. Record “cards unavailable” instead of fabricating state.
+
 ## Pass Criteria
 
 The internal beta passes when:
@@ -60,6 +68,7 @@ The internal beta passes when:
 
 ## Known Gates
 
-- Play icon and feature graphic still need format validation/re-export before use.
+- The concurrently updated Play icon and feature graphic now meet the documented dimensions, color-mode, alpha, and file-size requirements.
+- Final owner approval is still needed for feature-graphic crop/text legibility and icon readability at small sizes; Play Console validation is authoritative.
 - Production still contains some “beta fechada” wording even though this package targets internal testing.
 - Play Console access, package ownership, `versionCode` availability, declarations, review status, and the tester opt-in link were not verified.

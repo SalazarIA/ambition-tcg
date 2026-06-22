@@ -272,6 +272,43 @@ def test_landscape_mulligan_keeps_first_action_inside_safe_viewport(mobile_page,
     overlay.wait_for(state="hidden", timeout=4_000)
 
 
+def test_landscape_hand_card_center_selects_the_card_not_the_altar(mobile_page, live_server):
+    """The battlefield must not win hit-testing over the landscape hand."""
+    page = mobile_page
+    page.set_viewport_size({"width": 844, "height": 390})
+    page.goto(f"{live_server}/rebirth")
+    dismiss_mulligan(page)
+
+    candidate = page.locator(
+        "#player-hand [data-card-instance]:not(.is-selected):not([disabled])"
+    ).first
+    candidate.wait_for(state="visible", timeout=10_000)
+    target_id = candidate.get_attribute("data-card-instance")
+    assert target_id
+    target = page.locator(f'#player-hand [data-card-instance="{target_id}"]')
+    target.scroll_into_view_if_needed()
+    bounds = target.bounding_box()
+    assert bounds is not None
+    center = {
+        "x": bounds["x"] + bounds["width"] / 2,
+        "y": bounds["y"] + bounds["height"] / 2,
+    }
+
+    hit_card_id = page.evaluate(
+        """({x, y}) => {
+            const hit = document.elementFromPoint(x, y);
+            const card = hit && hit.closest("[data-card-instance]");
+            return card && card.getAttribute("data-card-instance");
+        }""",
+        center,
+    )
+    assert hit_card_id == target_id
+
+    page.mouse.click(center["x"], center["y"])
+    assert target.get_attribute("aria-pressed") == "true"
+    assert "is-selected" in (target.get_attribute("class") or "").split()
+
+
 def test_desktop_actions_stay_visible_and_separate(desktop_page, live_server):
     """Desktop controls must not overlap the bot HP orb or leave the viewport."""
     page = desktop_page

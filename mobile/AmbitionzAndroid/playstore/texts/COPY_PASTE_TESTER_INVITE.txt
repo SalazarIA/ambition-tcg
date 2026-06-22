@@ -1,29 +1,29 @@
-You are invited to test Ambitionz 1.0.0-beta.2 on Android.
+Você foi convidado para testar o Ambitionz 1.0.0-beta.2 no Android.
 
-Join through the Google Play internal-test opt-in link using the same Google account that received the invitation.
+Abra o link de adesão ao teste interno com a mesma Conta Google adicionada à lista de testers. Aceite participar e instale ou atualize o app pela Google Play; não use APK manual nesta rodada.
 
-Please test:
+Checklist principal:
 
-1. Open the app.
-2. Confirm Support shows v107_LOGIC_SEARCH.
-3. Create an account, sign out and sign in again.
-4. Finish one Arena clash against the bot.
-5. Check post-match XP, rewards and saved progress.
-6. Complete an available campaign encounter.
-7. Edit a 30-card deck.
-8. Open one free beta booster.
-9. Check profile and ranking.
-10. Close and reopen the app.
-11. Submit feedback inside the app.
+1. Abra o app e confirme v107_LOGIC_SEARCH em Suporte.
+2. Crie uma conta, saia e entre novamente.
+3. Termine um duelo da Arena e um encontro da campanha.
+4. Confira XP, recompensas, histórico e progresso salvo.
+5. Salve um deck de 30 cartas e abra um booster gratuito.
+6. Feche e reabra o app.
+7. Teste o botão Voltar e uma interrupção de rede.
+8. Envie feedback dentro do app.
 
-Report bugs through:
+Se as cartas estiverem disponíveis, teste também Cerco contra Guarda, uma armadilha reativa e uma magia com alvo.
+
+Use uma conta descartável para testar exportação ou exclusão permanente.
+
+Reporte bugs em:
 https://ambitionzgame.com/rebirth/support
 
-When reporting, include:
+Inclua:
 
-- What happened
-- What you expected
-- Which page you were on
-- Your device model
-- Android version
-- Screenshot if possible
+- o que aconteceu e o que era esperado;
+- página e ação anterior;
+- modelo do aparelho e versão do Android;
+- confirmação de instalação pela Google Play;
+- captura de tela, se possível.

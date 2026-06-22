@@ -7,16 +7,18 @@ Ambitionz
 Duelo tático de monstros com decks, evoluções, armadilhas e progressão.
 
 ## Full Description
-Ambitionz Rebirth é um jogo tático de cartas online com partidas rápidas contra bots, construção de baralho e progressão persistente.
+Ambitionz Rebirth é um jogo tático de cartas online com duelos contra bots, construção de baralho e progressão persistente.
 
-Monte um baralho de 30 cartas com monstros, magias e armadilhas. Invoque unidades em três campos, evolua duplicatas e escolha os melhores ataques para vencer cada confronto.
+Monte um baralho de 30 cartas com monstros, magias e armadilhas. Invoque unidades em três campos, combine dois monstros básicos iguais para criar uma evolução e escolha os melhores ataques para vencer cada confronto.
 
 Recursos da beta:
 
 - Arena tática contra bots
 - Campanha para um jogador com dez encontros
 - Coleção e editor de baralhos de 30 cartas
-- Evoluções de monstros, magias e armadilhas
+- Evoluções de monstros por duplicata
+- Magias com alvo e armadilhas que reagem a ataques
+- Famílias com estilos próprios de cura, atrito, defesa e Cerco
 - Boosters gratuitos durante a beta
 - XP, recompensas, perfil e ranking
 - Feedback, exportação e exclusão de conta dentro do serviço
