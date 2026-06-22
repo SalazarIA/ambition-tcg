@@ -53,8 +53,21 @@ def test_round_robin_is_deterministic_and_serializable():
     )
     assert report["deck_count"] == 3
     assert set(report["matrix"]) == {"Aggro", "Control", "Mid"}
-    assert len(report["matchups"]) == 6
+    assert len(report["matchups"]) == 3  # C(3,2) cruzados — sem espelhos inflando
+    assert report["matrix"]["Aggro"]["Aggro"] is None  # diagonal não medida
     assert report["standings"][0]["deck"] == "Aggro"
+
+
+def test_round_robin_excludes_mirror_inflation():
+    # 'low' vence 'high' em todas as orientações no fake (id menor vence).
+    report = round_robin({"low": ["a"], "high": ["z"]}, seeds=3, simulator=_fake_simulator)
+    assert len(report["matchups"]) == 1  # 1 matchup cruzado, zero espelhos
+    assert report["matrix"]["low"]["low"] is None
+    assert report["matrix"]["high"]["high"] is None
+    win_rates = {row["deck"]: row["win_rate"] for row in report["standings"]}
+    # sem o espelho de 100%, o WR reflete só o confronto real.
+    assert win_rates["low"] == 1.0
+    assert win_rates["high"] == 0.0
 
 
 def test_regret_helpers_report_meaningful_mistakes():

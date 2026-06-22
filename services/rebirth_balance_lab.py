@@ -166,8 +166,14 @@ def round_robin(
     matchups = []
     aggregate = defaultdict(lambda: {"wins": 0, "games": 0})
     matrix: Dict[str, Dict[str, float]] = {name: {} for name in names}
+    # Espelhos (deck vs ele mesmo) não medem força relativa: como os dois lados
+    # têm o mesmo nome, paired_matchup credita TODAS as vitórias à mesma chave
+    # (diagonal ~100%) e isso inflaria os standings. O round-robin agrega só
+    # matchups cruzados; a diagonal da matriz fica explicitamente não medida.
+    for name in names:
+        matrix[name][name] = None
     for left_index, left in enumerate(names):
-        for right in names[left_index:]:
+        for right in names[left_index + 1:]:
             report = paired_matchup(
                 decks[left],
                 decks[right],
@@ -185,9 +191,8 @@ def round_robin(
             matrix[right][left] = rates[right]
             aggregate[left]["wins"] += report["deck_wins"].get(left, 0)
             aggregate[left]["games"] += report["game_count"]
-            if right != left:
-                aggregate[right]["wins"] += report["deck_wins"].get(right, 0)
-                aggregate[right]["games"] += report["game_count"]
+            aggregate[right]["wins"] += report["deck_wins"].get(right, 0)
+            aggregate[right]["games"] += report["game_count"]
     standings = [
         {
             "deck": name,
