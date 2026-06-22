@@ -2512,7 +2512,14 @@
             const bossName = state.campaign && state.campaign.presentation && state.campaign.presentation.name;
             const botName = bossName || (state.bot_profile && state.bot_profile.name) || "Bot";
             RebirthDom.setText("bot-profile-label", botName);
-            RebirthDom.setText("bot-hero-name", botName);
+            // Mostra a dificuldade do bot (e marca a 1ª partida como introdução):
+            // assim a vitória inicial fácil não vende a impressão de um jogo mole.
+            const botDifficultyName = (state.bot_difficulty && state.bot_difficulty.name) || "";
+            const introNote = state.first_duel ? " (1ª partida)" : "";
+            RebirthDom.setText(
+                "bot-hero-name",
+                botDifficultyName ? `${botName} · ${botDifficultyName}${introNote}` : botName
+            );
             RebirthDom.setText("player-hero-name", (RebirthConfig.player.account && RebirthConfig.player.account.name) || "Sky");
             this.hpBars();
             this.manaCoins("player", state.player.energy, state.player.max_energy);
@@ -3075,6 +3082,17 @@
             const events = (result && result.ability_events) || [];
             const feedback = ((RebirthStore.state && RebirthStore.state.resolution_context && RebirthStore.state.resolution_context.feedback) || []);
             if (!result) {
+                // A narração rica do combate já está no log (ex.: "X derrotou Y,
+                // Cerco furou 3, Breakthrough: você sofre 2"). Mostramos a última
+                // troca em vez de rótulos vagos como "Dano resolvido" — o jogador
+                // precisa saber O QUE aconteceu, não só QUE aconteceu.
+                const log = (RebirthStore.state && RebirthStore.state.log) || [];
+                const isSystemLine = (line) => /^turno\s+\d/i.test(String(line).trim()) || /escolha uma carta/i.test(line);
+                const story = log.filter((line) => line && !isSystemLine(line)).slice(-1)[0];
+                if (story) {
+                    host.innerHTML = '<span class="rb-ability-chip rb-ability-story">' + RebirthText.escape(story).replace(/\.\s+(?=\S)/g, ".<br>") + "</span>";
+                    return;
+                }
                 const labels = {
                     DAMAGE_RESOLVED: "Dano resolvido",
                     SHIELD_APPLIED: "Escudo",
@@ -3092,7 +3110,12 @@
                 return;
             }
             if (!events.length) {
-                host.innerHTML = '<span class="rb-ability-chip is-muted">Combate básico</span>';
+                // Mesmo sem habilidades especiais, narramos a troca
+                // (result.message) em vez de um rótulo vago como "Combate básico".
+                const summary = String((result && result.message) || "").trim();
+                host.innerHTML = summary
+                    ? '<span class="rb-ability-chip rb-ability-story">' + RebirthText.escape(summary).replace(/\.\s+(?=\S)/g, ".<br>") + "</span>"
+                    : '<span class="rb-ability-chip is-muted">Combate básico</span>';
                 return;
             }
             const narrated = String(result.message || "").toLowerCase();
