@@ -2904,7 +2904,7 @@
             const result = state.result;
             const panel = RebirthStore.elements["result-panel"];
             if (panel) {
-                panel.classList.remove("is-victory", "is-defeat", "is-clash", "is-first-duel", "is-idle");
+                panel.classList.remove("is-victory", "is-defeat", "is-clash", "is-first-duel", "is-idle", "is-final");
             }
             this.abilityEvents(result);
             this.rewardPanel();
@@ -2917,6 +2917,7 @@
                     ? window.RebirthHotfixUI.resultLine(state)
                     : "";
                 if (panel) {
+                    panel.classList.add("is-final");
                     panel.classList.add(tied ? "is-clash" : won ? "is-victory" : "is-defeat");
                     if (firstDuel && won) panel.classList.add("is-first-duel");
                 }
@@ -3407,6 +3408,26 @@
                 && !evolutionAvailable
                 && !selected
                 && !selectedAttacker;
+            // Dica de passo: quando nada está selecionado no SEU turno, diz
+            // claramente o que dá pra fazer agora (invocar, atacar, evoluir ou
+            // encerrar) — em vez do genérico "Escolha uma carta primeiro".
+            if (canChoose && !selected && !selectedAttacker && !RebirthStore.pending && !state.is_finished) {
+                let stepHint;
+                if (deadEnd) {
+                    stepHint = "Sem jogadas neste turno — encerre para o bot agir.";
+                } else if (readyAttacker && handHasPlayable) {
+                    stepHint = "Sua vez: invoque uma carta da mão ou toque num monstro pronto para atacar.";
+                } else if (readyAttacker) {
+                    stepHint = "Sua vez: toque num monstro do seu campo para atacar.";
+                } else if (handHasPlayable) {
+                    stepHint = "Sua vez: toque numa carta da mão para invocar ou lançar.";
+                } else if (evolutionAvailable) {
+                    stepHint = "Você pode evoluir ou fundir um monstro, ou encerrar o turno.";
+                } else {
+                    stepHint = "Encerre o turno para recarregar a mana.";
+                }
+                RebirthDom.setText("primary-action-copy", stepHint);
+            }
             const nextButton = RebirthStore.elements["next-turn-button"];
             if (nextButton) {
                 nextButton.classList.toggle("is-cta-pulse", deadEnd);

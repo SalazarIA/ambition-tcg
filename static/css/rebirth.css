@@ -16016,7 +16016,7 @@ body.rb-game-page .rb-verify-banner {
    narração migra para um log discreto no canto inferior-esquerdo. Restrito a
    telas largas — o mobile tem o seu próprio layout. */
 @media (min-width: 1024px) and (min-height: 640px) {
-.rb-result-panel:not(.is-victory):not(.is-defeat) {
+.rb-result-panel:not(.is-final) {
     opacity: 0 !important;
     pointer-events: none !important;
     width: 0 !important;
@@ -16082,5 +16082,23 @@ body.rb-game-page .rb-verify-banner {
 .rb-turn-log #turn-log li:first-child {
     color: #f6ecd2;
     font-weight: 700;
+}
+
+/* "O que fazer agora": a dica de passo (sob Invocar) e o lembrete de encerrar
+   turno voltam a aparecer no desktop. O layout minimalista as escondia, mas
+   aqui há espaço e elas orientam o jogador. A dica principal fica dourada. */
+.rb-actions-row > div small {
+    display: block !important;
+    max-width: 230px;
+    margin-top: 5px;
+    text-align: center;
+    font-size: var(--fs-sm);
+    line-height: 1.3;
+    color: #d8cdb4;
+}
+
+#primary-action-copy {
+    color: #f4d98c !important;
+    font-weight: 600;
 }
 }  /* @media desktop */
