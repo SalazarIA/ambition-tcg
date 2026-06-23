@@ -31,6 +31,18 @@ BOT_DIFFICULTIES = {
         "budget": 6,
         "mistake_window": 2,
     },
+    "casual": {
+        "id": "casual",
+        "name": "Casual",
+        "depth": 2,
+        "beam_width": 4,
+        "budget": 11,
+        # Onboarding: meio-termo entre easy e normal. Erra ~1/5 das escolhas com
+        # alternativa (easy ~1/3, normal ~1/7) e busca um pouco menos fundo que o
+        # normal. Dá ao jogador novo a chance de aprender — sem ganhar de graça
+        # (easy) nem perder sempre (normal cru). Rampa de dificuldade.
+        "mistake_window": 4,
+    },
     "normal": {
         "id": "normal",
         "name": "Normal",

@@ -906,6 +906,23 @@ def internal_balance_matches(default=24):
     return max(1, min(requested, limit))
 
 
+def onboarding_difficulty(is_first_duel, progress, requested_difficulty=None):
+    """Rampa de dificuldade pra suavizar o onboarding: easy → casual → normal.
+
+    Evita o salto de 'mole' (tutorial, easy) direto para 'perde sempre' (normal
+    cru). Visitante e jogador novo (< 4 partidas) jogam no casual; a escolha
+    explícita do jogador é sempre respeitada.
+    """
+    if requested_difficulty:
+        return requested_difficulty
+    if is_first_duel:
+        return "easy"
+    games = 0
+    if progress:
+        games = int(progress.get("wins", 0) or 0) + int(progress.get("losses", 0) or 0)
+    return "casual" if games < 4 else "normal"
+
+
 def start_memory_rebirth_match(payload):
     is_first_duel = bool(payload.get("tutorial"))
     player_card_ids = DEFAULT_LOADOUT if is_first_duel else None
@@ -918,7 +935,7 @@ def start_memory_rebirth_match(payload):
         player_card_ids=player_card_ids,
         player_name="Você",
         bot_profile_id=bot_profile_id,
-        bot_difficulty_id="easy" if is_first_duel else payload.get("difficulty"),
+        bot_difficulty_id=onboarding_difficulty(is_first_duel, None, payload.get("difficulty")),
         runtime_mode="singleplayer",
         apply_reducers_inline=False,
         first_duel=is_first_duel,
@@ -1689,7 +1706,7 @@ def api_rebirth_start():
                 player_card_ids=player_card_ids,
                 player_name=player_name,
                 bot_profile_id=bot_profile_id,
-                bot_difficulty_id="easy" if is_first_duel else payload.get("difficulty"),
+                bot_difficulty_id=onboarding_difficulty(is_first_duel, progress, payload.get("difficulty")),
                 runtime_mode="singleplayer",
                 apply_reducers_inline=False,
                 first_duel=is_first_duel,

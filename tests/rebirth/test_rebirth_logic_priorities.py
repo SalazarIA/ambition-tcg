@@ -272,3 +272,25 @@ def test_difficulty_mistake_profile_orders_easy_normal_hard():
     # normal tem perfil de erro próprio (≠ hard), e easy erra mais que normal.
     assert normal_deviation > 0
     assert easy_deviation > normal_deviation
+
+
+def test_casual_difficulty_sits_between_easy_and_normal():
+    from services.rebirth_bot import BOT_DIFFICULTIES
+
+    easy = BOT_DIFFICULTIES["easy"]
+    casual = BOT_DIFFICULTIES["casual"]
+    normal = BOT_DIFFICULTIES["normal"]
+    # Mais erro que normal, menos que easy (mistake_window maior = menos erro).
+    assert easy["mistake_window"] < casual["mistake_window"] < normal["mistake_window"]
+    # Busca entre os dois.
+    assert easy["budget"] < casual["budget"] < normal["budget"]
+
+
+def test_onboarding_difficulty_ramp():
+    from app import onboarding_difficulty
+
+    assert onboarding_difficulty(True, None) == "easy"  # tutorial
+    assert onboarding_difficulty(False, None) == "casual"  # visitante
+    assert onboarding_difficulty(False, {"wins": 1, "losses": 1}) == "casual"  # novo
+    assert onboarding_difficulty(False, {"wins": 3, "losses": 2}) == "normal"  # já rodou
+    assert onboarding_difficulty(False, None, "hard") == "hard"  # escolha explícita respeitada
