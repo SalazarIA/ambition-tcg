@@ -1263,12 +1263,16 @@
     };
 
     const RebirthCombatMotion = {
-        impactMs: 108,
-        hitPauseMs: 52,
-        shatterMs: 210,
-        dissolveMs: 320,
-        returnHoldMs: 64,
-        settleMs: 76,
+        // Fluidez: durações enxutas (~35% mais rápidas) — cada ataque do bot
+        // encena em ~190ms (era ~300), então o turno multi-ataque deixa de
+        // arrastar. Mantém o impacto/feel; quem tem prefers-reduced-motion
+        // continua no caminho instantâneo (wait 80).
+        impactMs: 72,
+        hitPauseMs: 34,
+        shatterMs: 150,
+        dissolveMs: 220,
+        returnHoldMs: 40,
+        settleMs: 48,
 
         attacker(attackerId) {
             const host = RebirthStore.elements["player-battlefield"];
@@ -2125,7 +2129,11 @@
         },
 
         wait(ms) {
-            return this.skipRequested ? Promise.resolve() : wait(ms);
+            // Fluidez: encenação do turno ~38% mais rápida, num ponto só — o
+            // turno multi-ação do bot deixa de arrastar. A narração fica no
+            // painel (persistente), então legibilidade não depende do tempo de
+            // animação. skipRequested continua pulando tudo.
+            return this.skipRequested ? Promise.resolve() : wait(Math.round(ms * 0.62));
         },
 
         script(events) {
@@ -2358,7 +2366,7 @@
 
             // O texto-impacto assenta e o painel de decisão permanece até o
             // jogador escolher (rematch/continuar ou nova partida externa).
-            const settleMs = firstDuel && isVictory ? 4300 : 2800;
+            const settleMs = firstDuel && isVictory ? 2600 : 1600;
             window.setTimeout(() => {
                 overlay.classList.add("is-settled");
             }, settleMs);
