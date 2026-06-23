@@ -16009,3 +16009,78 @@ body.rb-game-page .rb-verify-banner {
         font-size: 16px;
     }
 }
+
+/* ── Painel de resultado + log de combate (só desktop) ────────────────────
+   O balão flutuante saía no meio do tabuleiro, sobre o retrato. Aqui ele some
+   durante a partida e reaparece no fim (vitória/derrota) com os botões; a
+   narração migra para um log discreto no canto inferior-esquerdo. Restrito a
+   telas largas — o mobile tem o seu próprio layout. */
+@media (min-width: 1024px) and (min-height: 640px) {
+.rb-result-panel:not(.is-victory):not(.is-defeat) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Log de combate discreto (substitui o balão de feedback): ancorado no canto
+   inferior-esquerdo, FORA do tabuleiro (position: fixed, robusto ao layout
+   com scale), narrando as últimas trocas sem cobrir cartas nem o retrato. */
+.rb-turn-log {
+    position: fixed !important;
+    left: 14px !important;
+    bottom: 16px !important;
+    top: auto !important;
+    right: auto !important;
+    width: 234px !important;
+    height: auto !important;
+    max-height: 172px !important;
+    z-index: 45 !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 11px !important;
+    border: 1px solid rgba(255, 220, 150, 0.20);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(18, 13, 8, 0.80), rgba(9, 6, 4, 0.88));
+    opacity: 0.92;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.rb-turn-log .rb-log-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--fs-xs);
+    opacity: 0.62;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.rb-turn-log #turn-log {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+}
+
+.rb-turn-log #turn-log li {
+    font-size: var(--fs-xs);
+    line-height: 1.32;
+    color: #e7dcc4;
+    text-transform: none;
+}
+
+.rb-turn-log #turn-log li:first-child {
+    color: #f6ecd2;
+    font-weight: 700;
+}
+}  /* @media desktop */

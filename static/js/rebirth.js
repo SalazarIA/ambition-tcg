@@ -3118,12 +3118,10 @@
                 return;
             }
             if (!events.length) {
-                // Mesmo sem habilidades especiais, narramos a troca
-                // (result.message) em vez de um rótulo vago como "Combate básico".
-                const summary = String((result && result.message) || "").trim();
-                host.innerHTML = summary
-                    ? '<span class="rb-ability-chip rb-ability-story">' + RebirthText.escape(summary).replace(/\.\s+(?=\S)/g, ".<br>") + "</span>"
-                    : '<span class="rb-ability-chip is-muted">Combate básico</span>';
+                // O painel de resultado (result-copy) já narra a troca quando há
+                // result; não repetimos aqui — era esse card extra que inflava o
+                // balão sobre o retrato.
+                host.innerHTML = "";
                 return;
             }
             const narrated = String(result.message || "").toLowerCase();
