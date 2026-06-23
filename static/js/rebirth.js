@@ -3544,6 +3544,58 @@
         }
     };
 
+    // Guia de mecânicas: glossário acessível (desktop e mobile) das keywords,
+    // reaproveitando RebirthKeywords.LABELS/TOOLTIPS. No desktop o tooltip de
+    // hover já existe, mas no toque (celular) não — este painel cobre os dois.
+    const RebirthGlossary = {
+        overlay() {
+            return RebirthDom.byId("rebirth-glossary-overlay");
+        },
+
+        populate() {
+            const host = RebirthDom.byId("glossary-list");
+            if (!host || host.dataset.ready === "1") return;
+            const order = ["RUSH", "BURST", "LIFESTEAL", "TAUNT", "SHIELD", "PIERCE", "REGEN", "EXECUTE", "THORNS", "ENTRENCH", "SUNDER", "SIEGE"];
+            host.innerHTML = order.map((k) => {
+                const label = RebirthKeywords.LABELS[k] || k;
+                const tip = RebirthKeywords.TOOLTIPS[k] || "";
+                return `<div class="rb-glossary-row">
+                        <span class="rb-keyword-badge rb-kw-${k.toLowerCase()}">${RebirthText.escape(label)}</span>
+                        <p>${RebirthText.escape(tip)}</p>
+                    </div>`;
+            }).join("");
+            host.dataset.ready = "1";
+        },
+
+        open() {
+            const overlay = this.overlay();
+            if (!overlay) return;
+            this.populate();
+            overlay.hidden = false;
+        },
+
+        close() {
+            const overlay = this.overlay();
+            if (overlay) overlay.hidden = true;
+        },
+
+        bind() {
+            const button = RebirthDom.byId("glossary-button");
+            if (button) button.addEventListener("click", () => this.open());
+            const closeButton = RebirthDom.byId("glossary-close");
+            if (closeButton) closeButton.addEventListener("click", () => this.close());
+            const overlay = this.overlay();
+            if (overlay) {
+                overlay.addEventListener("click", (event) => {
+                    if (event.target === overlay) this.close();
+                });
+            }
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") this.close();
+            });
+        }
+    };
+
     const RebirthMulligan = {
         dismissedFor: null,
 
@@ -4412,6 +4464,7 @@
             }
             RebirthMulligan.bind();
             RebirthGraveyard.bind();
+            RebirthGlossary.bind();
             RebirthTargeting.bind();
             BotTurnDirector.bind();
 

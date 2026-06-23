@@ -207,6 +207,7 @@
                         <button class="rb-button-secondary rb-secondary rb-action-combine" type="button" id="next-turn-button"><i class="rb-action-loop" aria-hidden="true"></i><span>Encerrar turno</span></button>
                         <button class="rb-button-secondary rb-secondary rb-mulligan-button" type="button" id="mulligan-button" hidden title="Troca a mão inicial uma única vez, antes da primeira ação.">Trocar mão</button>
                         <button class="rb-button-secondary rb-secondary" type="button" id="graveyard-button" title="Cartas destruídas dos dois lados — informação pública">Cemitério</button>
+                        <button class="rb-button-secondary rb-secondary" type="button" id="glossary-button" title="O que cada palavra-chave faz (Investida, Detonação, Drenar…)">Mecânicas</button>
                         <small id="secondary-action-copy">Passe a vez para recarregar mana</small>
                     </div>
                 </section>
@@ -288,6 +289,16 @@
                     <div class="rb-graveyard-cards" id="graveyard-cards"></div>
                     <div class="rb-mulligan-actions">
                         <button type="button" class="rb-button-secondary rb-secondary" id="graveyard-close">Fechar</button>
+                    </div>
+                </div>
+            </div>
+            <div id="rebirth-glossary-overlay" class="rb-graveyard-overlay rb-glossary-overlay" hidden role="dialog" aria-modal="true" aria-label="Guia de mecânicas">
+                <div class="rb-graveyard-sheet">
+                    <span class="rb-mulligan-kicker">Guia rápido</span>
+                    <h2>O que cada mecânica faz</h2>
+                    <div class="rb-glossary-list" id="glossary-list"></div>
+                    <div class="rb-mulligan-actions">
+                        <button type="button" class="rb-button-secondary rb-secondary" id="glossary-close">Fechar</button>
                     </div>
                 </div>
             </div>
