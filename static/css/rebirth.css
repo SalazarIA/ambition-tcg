@@ -15241,6 +15241,18 @@ body.rb-campaign-page .rb-campaign-node.is-next {
         row-gap: 10px !important;
     }
 
+    /* O VS é ocultado por outra regra (display:none). Sem ele, o auto-placement
+       do grid jogava a fileira do jogador para a faixa do meio (34px) em vez da
+       3ª linha — as cartas se sobrepunham ~74px. Fixar as linhas mantém o bot
+       no topo e o jogador embaixo, com o meio como respiro/fronteira. */
+    body.rb-game-page .rb-field-row-bot {
+        grid-row: 1 !important;
+    }
+
+    body.rb-game-page .rb-field-row-player {
+        grid-row: 3 !important;
+    }
+
     body.rb-game-page .rb-field-card,
     body.rb-game-page .rb-field-slot-empty {
         height: 208px !important;
