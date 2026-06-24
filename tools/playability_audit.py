@@ -9,12 +9,22 @@ produto atual (rebirth_*). Sem dependências de módulos removidos.
 Uso: python tools/playability_audit.py   (exit 0 = OK, 1 = falha)
 """
 
+import os
 from pathlib import Path
 import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+# Ferramenta autônoma: sem DATABASE_URL configurado, o app recusa subir. Como é
+# uma auditoria de superfície (não toca dados reais), liga o modo SQLite de teste
+# por conta própria — respeitando env já definido (setdefault) para quem aponta
+# a um Postgres real.
+os.environ.setdefault("REBIRTH_ALLOW_SQLITE_TESTING", "true")
+os.environ.setdefault("REBIRTH_DB_PATH", str(PROJECT_ROOT / "instance" / "playability-audit.db"))
+os.environ.setdefault("REBIRTH_REQUIRE_CSRF", "false")
+os.environ.setdefault("SECRET_KEY", "playability-audit")
 
 from app import app
 

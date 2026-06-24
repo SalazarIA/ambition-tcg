@@ -16558,3 +16558,10 @@ body.rb-game-page .rb-game-board .rb-hero-portrait.rb-hero-player {
     z-index: 1;
     opacity: 0.55;
 }
+
+/* Fim de partida não pode PRENDER o jogador: com vencedor definido, a action bar
+   (fixa no mobile) deixa de interceptar cliques, liberando o CTA de "Nova
+   partida" e os botões do finale. (e2e: finale não pode bloquear new-match.) */
+body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-action-bar {
+    pointer-events: none;
+}

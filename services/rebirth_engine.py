@@ -633,6 +633,16 @@ def _summon_monster_card(match, side_name, card, field_slot=None):
     # K1: BURST keyword — dano direto ao oponente ao invocar.
     from services.rebirth_keywords import on_summon_burst
     burst_damage = on_summon_burst(summoned)
+    # Onboarding: o turno 1 do PRIMEIRO DUELO é "protegido" (o bot só responde no
+    # próximo turno). O bloqueio de ATAQUE direto no turno 1 já existe; o BURST
+    # (dano de entrada) furava essa proteção, deixando a primeira partida
+    # inconsistente e o teste de onboarding flaky por seed. Suprimimos o dano de
+    # face do BURST só nesse turno protegido do tutorial — sem tocar o balance
+    # geral (BURST segue normal fora do primeiro duelo). O furo geral (turno 1 de
+    # partidas normais) fica como decisão de balance por telemetria.
+    if burst_damage > 0 and match.get("first_duel") and int(match.get("turn", 1) or 1) == 1:
+        match["log"].append(f"{turn_label}   {summoned['name']} segura a explosão no turno protegido.")
+        burst_damage = 0
     if burst_damage > 0:
         opponent_side = "bot" if side_name == "player" else "player"
         opponent = match[opponent_side]
