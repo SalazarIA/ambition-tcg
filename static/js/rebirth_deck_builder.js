@@ -213,6 +213,60 @@
         ));
     }
 
+    // 2.2 — Guia de arquétipos: traduz a regra (elementos + keywords) em estilos
+    // de jogador. Clicar aplica o filtro de elemento no catálogo (guia -> ação).
+    const ARCHETYPES = [
+        {name: "Aggro Fogo", el: "Fogo", kws: "Investida · Detonação · Executar",
+         copy: "Pressão imediata: bate cedo e fecha antes do oponente estabilizar. Curva baixa, muito monstro."},
+        {name: "Controle Terra", el: "Terra", kws: "Provocar · Escudo · Entrincheirar",
+         copy: "Muralhas e Guarda alta seguram os primeiros turnos; você vence no longo jogo."},
+        {name: "Sustento Água", el: "Água", kws: "Drenar · Regenerar",
+         copy: "Recupera vida e troca com vantagem; cansa o aggro e fecha tarde."},
+        {name: "Sombra Pierce", el: "Sombra", kws: "Perfurar · Drenar",
+         copy: "Dano que vaza a Guarda: contorna muralhas e drena enquanto avança."},
+        {name: "Arcano Alpha", el: "Arcano", kws: "Detonação · Perfurar",
+         copy: "Alpha strike: combina dano de entrada e perfuração pra picos explosivos."},
+    ];
+
+    function applyArchetype(a) {
+        if (!a) return;
+        const sel = document.querySelector('[data-filter="element"]');
+        if (sel) sel.value = a.el;
+        state.filters.element = a.el;
+        renderCatalog();
+        closeArchetypes();
+    }
+
+    function populateArchetypes() {
+        const host = document.getElementById("archetype-grid");
+        if (!host || host.dataset.ready === "1") return;
+        host.innerHTML = ARCHETYPES.map((a, i) => (
+            '<button type="button" class="rb-archetype-card" data-archetype="' + i + '">' +
+            '<strong>' + escapeHtml(a.name) + '</strong>' +
+            '<span class="rb-archetype-el">' + escapeHtml(a.el) + '</span>' +
+            '<small class="rb-archetype-kws">' + escapeHtml(a.kws) + '</small>' +
+            '<p>' + escapeHtml(a.copy) + '</p>' +
+            '<span class="rb-archetype-cta">Filtrar por ' + escapeHtml(a.el) + ' →</span>' +
+            '</button>'
+        )).join("");
+        host.querySelectorAll("[data-archetype]").forEach((btn) => {
+            btn.addEventListener("click", () => applyArchetype(ARCHETYPES[Number(btn.dataset.archetype)]));
+        });
+        host.dataset.ready = "1";
+    }
+
+    function openArchetypes() {
+        const o = document.getElementById("rebirth-archetypes-overlay");
+        if (!o) return;
+        populateArchetypes();
+        o.hidden = false;
+    }
+
+    function closeArchetypes() {
+        const o = document.getElementById("rebirth-archetypes-overlay");
+        if (o) o.hidden = true;
+    }
+
     function bind() {
         els.catalogGrid = document.querySelector("[data-catalog-grid]");
         els.catalogCount = document.querySelector("[data-catalog-count]");
@@ -227,6 +281,13 @@
                 renderCatalog();
             });
         });
+        const archOpen = document.querySelector("[data-archetypes-open]");
+        if (archOpen) archOpen.addEventListener("click", openArchetypes);
+        const archClose = document.querySelector("[data-archetypes-close]");
+        if (archClose) archClose.addEventListener("click", closeArchetypes);
+        const archOverlay = document.getElementById("rebirth-archetypes-overlay");
+        if (archOverlay) archOverlay.addEventListener("click", (e) => { if (e.target === archOverlay) closeArchetypes(); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeArchetypes(); });
         if (els.catalogGrid) {
             els.catalogGrid.addEventListener("click", (e) => {
                 const btn = e.target.closest("[data-card-id]");

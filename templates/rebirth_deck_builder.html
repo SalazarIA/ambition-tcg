@@ -70,6 +70,7 @@
                 <option value="ENTRENCH">Entrincheirar</option>
                 <option value="SUNDER">Ruptura</option>
             </select>
+            <button type="button" class="rb-button-secondary rb-secondary rb-deck-archetypes-btn" data-archetypes-open title="Estilos de deck e como montar cada um">Guia de arquétipos</button>
         </section>
 
         <section class="rb-deck-workspace">
@@ -119,6 +120,18 @@
             </div>
         </section>
         {% endif %}
+
+        <div id="rebirth-archetypes-overlay" class="rb-graveyard-overlay rb-archetypes-overlay" hidden role="dialog" aria-modal="true" aria-label="Guia de arquétipos">
+            <div class="rb-graveyard-sheet">
+                <span class="rb-mulligan-kicker">Como montar</span>
+                <h2>Arquétipos do Rebirth</h2>
+                <p class="rb-archetype-hint">Escolha um estilo — clicar filtra o catálogo pelo elemento dele pra você montar em volta.</p>
+                <div class="rb-archetype-grid" id="archetype-grid"></div>
+                <div class="rb-mulligan-actions">
+                    <button type="button" class="rb-button-secondary rb-secondary" data-archetypes-close>Fechar</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>

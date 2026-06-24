@@ -16629,3 +16629,47 @@ body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-a
         font-size: 16px !important;
     }
 }
+
+/* 2.2 — Guia de arquétipos no deck builder (estilos de deck em linguagem de jogador). */
+.rb-deck-archetypes-btn { white-space: nowrap; }
+.rb-archetype-hint {
+    margin: 2px 0 14px;
+    color: rgba(232, 212, 164, 0.75);
+    font-size: 13px;
+    text-align: center;
+}
+.rb-archetype-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    max-width: 780px;
+    margin: 0 auto;
+}
+.rb-archetype-card {
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    text-align: left;
+    padding: 14px 16px;
+    border: 1px solid var(--rb-line);
+    border-radius: var(--rb-cut-soft);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.18));
+    color: var(--rb-fates-ivory, #e8d4a4);
+    cursor: pointer;
+    transition: border-color 140ms ease, transform 140ms ease, background 140ms ease;
+}
+.rb-archetype-card:hover,
+.rb-archetype-card:focus-visible {
+    border-color: rgba(244, 173, 38, 0.7);
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(244, 173, 38, 0.1), rgba(0, 0, 0, 0.2));
+}
+.rb-archetype-card strong { font-family: var(--rb-font-display); font-size: 16px; }
+.rb-archetype-el {
+    justify-self: start;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(244, 173, 38, 0.95);
+}
+.rb-archetype-kws { color: rgba(232, 212, 164, 0.7); font-size: 12px; }
+.rb-archetype-card p { margin: 4px 0 0; font-size: 13px; line-height: 1.4; opacity: 0.92; }
+.rb-archetype-cta { margin-top: 6px; font-size: 12px; font-weight: 700; color: rgba(244, 173, 38, 0.95); }
