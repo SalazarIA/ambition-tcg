@@ -16565,3 +16565,67 @@ body.rb-game-page .rb-game-board .rb-hero-portrait.rb-hero-player {
 body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-action-bar {
     pointer-events: none;
 }
+
+/* ===========================================================================
+   v120 — REWORK VISUAL DA ARENA (bloco consolidado; último vence as camadas)
+   Objetivos do dono: mão menor (estava ~= carta de campo), campo/slots maiores
+   e simétricos, stats sempre visíveis no campo ("a força sumia"), usar o espaço
+   vertical livre. Tudo escopado em body.rb-game-page + desktop.
+   =========================================================================== */
+@media (min-width: 1180px) and (min-height: 680px) {
+    /* 1) Rebalanceia as linhas do board: turno + mão mais baixos → arena ganha
+          altura pra cartas de campo maiores. */
+    body.rb-game-page .rb-game-board {
+        grid-template-rows: clamp(54px, 7vh, 72px) minmax(400px, 1fr) clamp(150px, 18vh, 196px) !important;
+    }
+
+    /* 2) MÃO menor (clavailable menor que a carta de campo). */
+    body.rb-game-page .rb-hand .rb-mini-card {
+        width: 130px !important;
+        min-width: 130px !important;
+        flex-basis: 130px !important;
+        height: 182px !important;
+    }
+
+    /* 3) ARENA dominante + simétrica: zona ampla, duas fileiras idênticas. */
+    body.rb-game-page .rb-battle-zone {
+        max-width: clamp(900px, 60vw, 1160px) !important;
+        height: min(100%, 620px) !important;
+        /* min baixo p/ caber em laptops curtos (1fr cresce nas telas altas). */
+        grid-template-rows: minmax(180px, 1fr) clamp(18px, 2.6vh, 30px) minmax(180px, 1fr) !important;
+        row-gap: 12px !important;
+    }
+    body.rb-game-page .rb-field-slots {
+        grid-template-columns: repeat(3, minmax(176px, 1fr)) !important;
+        gap: clamp(18px, 2vw, 38px) !important;
+    }
+
+    /* 4) Cartas de campo MAIORES e slots = carta (simetria). Altura é HEIGHT-AWARE
+          (min(vw, vh)) p/ não estourar na mão em telas curtas (ex.: 1366×768). */
+    body.rb-game-page .rb-field-card,
+    body.rb-game-page .rb-field-slots.has-active-cards .rb-field-card {
+        width: clamp(170px, 10.2vw, 206px) !important;
+        height: clamp(196px, min(14.4vw, 26vh), 288px) !important;
+        min-width: clamp(170px, 10.2vw, 206px) !important;
+        min-height: 0 !important;
+    }
+    body.rb-game-page .rb-field-slot-empty {
+        max-width: clamp(182px, 10.8vw, 218px) !important;
+        height: clamp(150px, min(14.4vw, 26vh), 288px) !important;
+        min-height: 0 !important;
+    }
+
+    /* 5) STATS sempre visíveis e legíveis na carta de campo (a "força" sumia). */
+    body.rb-game-page .rb-field-card .rb-card-statline {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    body.rb-game-page .rb-field-card .rb-card-stat {
+        display: grid !important;
+        visibility: visible !important;
+    }
+    body.rb-game-page .rb-field-card .rb-card-stat b {
+        font-size: 16px !important;
+    }
+}
