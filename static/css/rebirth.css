@@ -15823,8 +15823,11 @@ body.rb-game-page .rb-game-board .rb-hero-portrait {
         justify-self: center !important;
         padding: 8px 0 !important;
     }
-    body.rb-game-page .rb-hud-player { align-self: end !important; }
-    body.rb-game-page .rb-hud-bot { align-self: start !important; }
+    /* v118: heróis centralizados na vertical -> espelho esquerda/direita.
+       Antes player=end / bot=start deixava o bot colado no topo (308px acima do
+       centro) e o player quase no meio (37px abaixo) — assimétrico. */
+    body.rb-game-page .rb-hud-player { align-self: center !important; }
+    body.rb-game-page .rb-hud-bot { align-self: center !important; }
 
     body.rb-game-page .rb-hero-portrait {
         position: relative !important;
