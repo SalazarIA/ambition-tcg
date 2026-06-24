@@ -3596,6 +3596,113 @@
         }
     };
 
+    // P1.3 — Foto de perfil (MVP): clicar no círculo do herói abre um seletor de
+    // avatares-preset. A escolha é aplicada na hora (inline !important vence o
+    // background do CSS) e salva em localStorage (por dispositivo). Conta/upload
+    // ficam para a fase 2 (exige schema + storage — decisão de produto).
+    const RebirthAvatar = {
+        STORAGE_KEY: "rb_player_avatar",
+        PRESETS: [
+            { id: "sky", label: "Cavaleiro de Sky", url: "/static/img/heroes/sky_haven_knight.webp" },
+            { id: "warlord", label: "Senhor da Necrópole", url: "/static/img/heroes/bot_necropolis_warlord.webp" },
+            { id: "c3", label: "Arte 3", url: "/static/img/cards/baralho/3.webp" },
+            { id: "c12", label: "Arte 12", url: "/static/img/cards/baralho/12.webp" },
+            { id: "c21", label: "Arte 21", url: "/static/img/cards/baralho/21.webp" },
+            { id: "c34", label: "Arte 34", url: "/static/img/cards/baralho/34.webp" },
+            { id: "c45", label: "Arte 45", url: "/static/img/cards/baralho/45.webp" },
+            { id: "c58", label: "Arte 58", url: "/static/img/cards/baralho/58.webp" },
+            { id: "c67", label: "Arte 67", url: "/static/img/cards/baralho/67.webp" },
+            { id: "c88", label: "Arte 88", url: "/static/img/cards/baralho/88.webp" },
+        ],
+
+        saved() {
+            try { return window.localStorage.getItem(this.STORAGE_KEY) || ""; } catch (e) { return ""; }
+        },
+
+        artEl() { return document.querySelector(".rb-hero-player .rb-hero-art"); },
+
+        apply(url) {
+            const el = this.artEl();
+            if (!el || !url) return;
+            const grad = "linear-gradient(180deg, rgba(255, 236, 172, 0.05), rgba(0, 0, 0, 0.3))";
+            el.style.setProperty("background-image", grad + ', url("' + url + '")', "important");
+            el.style.setProperty("background-size", "cover", "important");
+            el.style.setProperty("background-position", "center 26%", "important");
+        },
+
+        applySaved() {
+            const url = this.saved();
+            if (url) this.apply(url);
+        },
+
+        select(url) {
+            try { window.localStorage.setItem(this.STORAGE_KEY, url); } catch (e) {}
+            this.apply(url);
+            this.markActive(url);
+        },
+
+        markActive(url) {
+            document.querySelectorAll("#avatar-grid [data-avatar-url]").forEach((btn) => {
+                btn.classList.toggle("is-active", btn.getAttribute("data-avatar-url") === url);
+            });
+        },
+
+        overlay() { return RebirthDom.byId("rebirth-avatar-overlay"); },
+
+        populate() {
+            const host = RebirthDom.byId("avatar-grid");
+            if (!host || host.dataset.ready === "1") return;
+            const current = this.saved();
+            host.innerHTML = this.PRESETS.map((p) => (
+                '<button type="button" class="rb-avatar-option' + (p.url === current ? " is-active" : "") +
+                '" data-avatar-url="' + p.url + '" title="' + RebirthText.escape(p.label) + '" aria-label="' + RebirthText.escape(p.label) + '">' +
+                '<span class="rb-avatar-thumb" style="background-image:url(\'' + p.url + '\')"></span></button>'
+            )).join("");
+            host.querySelectorAll("[data-avatar-url]").forEach((btn) => {
+                btn.addEventListener("click", () => this.select(btn.getAttribute("data-avatar-url")));
+            });
+            host.dataset.ready = "1";
+        },
+
+        open() {
+            const overlay = this.overlay();
+            if (!overlay) return;
+            this.populate();
+            overlay.hidden = false;
+        },
+
+        close() {
+            const overlay = this.overlay();
+            if (overlay) overlay.hidden = true;
+        },
+
+        bind() {
+            const portrait = document.querySelector(".rb-hero-portrait.rb-hero-player");
+            if (portrait) {
+                portrait.setAttribute("title", "Trocar foto de perfil");
+                portrait.removeAttribute("aria-hidden");
+                portrait.setAttribute("role", "button");
+                portrait.setAttribute("tabindex", "0");
+                portrait.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); this.open(); }
+                });
+                portrait.addEventListener("click", () => this.open());
+            }
+            const closeButton = RebirthDom.byId("avatar-close");
+            if (closeButton) closeButton.addEventListener("click", () => this.close());
+            const overlay = this.overlay();
+            if (overlay) {
+                overlay.addEventListener("click", (event) => {
+                    if (event.target === overlay) this.close();
+                });
+            }
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") this.close();
+            });
+            this.applySaved();
+        },
+    };
+
     const RebirthMulligan = {
         dismissedFor: null,
 
@@ -4465,6 +4572,7 @@
             RebirthMulligan.bind();
             RebirthGraveyard.bind();
             RebirthGlossary.bind();
+            RebirthAvatar.bind();
             RebirthTargeting.bind();
             BotTurnDirector.bind();
 
