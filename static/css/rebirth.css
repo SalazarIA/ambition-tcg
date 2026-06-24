@@ -16517,3 +16517,41 @@ body.rb-game-page .rb-game-board .rb-hero-portrait.rb-hero-player {
         z-index: 6;
     }
 }
+
+/* P2.3 — Leque de pacotes na LOJA: o herói do booster era um único verso com
+   muito espaço morto ao redor. Dois pseudo-pacotes atrás (no pai, pois o pack
+   tem overflow:hidden) formam um leque mais atrativo. */
+.rb-shop-gacha .rb-booster-art {
+    position: relative;
+    justify-content: center;
+    padding: 8px 34px 0;
+}
+.rb-shop-gacha .rb-booster-pack {
+    z-index: 3;
+}
+.rb-shop-gacha .rb-booster-art::before,
+.rb-shop-gacha .rb-booster-art::after {
+    content: "";
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    width: 118px;
+    height: 168px;
+    border: 1.5px solid rgba(244, 173, 38, 0.3);
+    border-radius: var(--rb-cut-soft);
+    background: linear-gradient(180deg, #19110a 0%, #06070a 100%);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+.rb-shop-gacha .rb-booster-art::before {
+    transform: translateX(-50%) rotate(-10deg);
+    transform-origin: bottom center;
+    z-index: 2;
+    opacity: 0.72;
+}
+.rb-shop-gacha .rb-booster-art::after {
+    transform: translateX(-50%) rotate(10deg);
+    transform-origin: bottom center;
+    z-index: 1;
+    opacity: 0.55;
+}
