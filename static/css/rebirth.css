@@ -16493,3 +16493,27 @@ body.rb-game-page .rb-game-board .rb-hero-portrait.rb-hero-player {
     pointer-events: auto !important;
     cursor: pointer;
 }
+
+/* P2.2 — Linha conectora da CAMPANHA: liga as silhuetas dos nós numa "jornada".
+   A coluna da silhueta é fixa (centro ~68px), então a linha vai atrás das
+   silhuetas (z entre o fundo do card e a silhueta) e some sob cada card. */
+@media (min-width: 760px) {
+    body.rb-campaign-page .rb-campaign-path {
+        position: relative;
+    }
+    body.rb-campaign-page .rb-campaign-path::before {
+        content: "";
+        position: absolute;
+        left: 68px;
+        margin-left: -1px;
+        top: 78px;
+        bottom: 80px;
+        width: 2px;
+        background: linear-gradient(180deg, rgba(244, 173, 38, 0.5), rgba(244, 173, 38, 0.16));
+        z-index: 5;
+        pointer-events: none;
+    }
+    body.rb-campaign-page .rb-campaign-silhouette {
+        z-index: 6;
+    }
+}
