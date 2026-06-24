@@ -15443,9 +15443,12 @@ body.rb-campaign-page .rb-campaign-node.is-next {
     display: grid;
     gap: 4px;
     justify-items: center;
-    color: var(--rb-muted);
-    font-size: var(--fs-3xs);
-    letter-spacing: 0.14em;
+    /* v117: rótulos do resumo de vitória mais legíveis (eram --rb-muted+--fs-3xs,
+       quase ilegíveis no momento de maior celebração). */
+    color: rgba(236, 222, 190, 0.82);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
@@ -15471,7 +15474,9 @@ body.rb-campaign-page .rb-campaign-node.is-next {
 /* O texto-impacto assenta; o painel fica como dono da cena. */
 .vfx-finale-overlay.is-settled .vfx-finale-text,
 .vfx-finale-overlay.is-settled .vfx-finale-subtitle {
-    opacity: 0.25;
+    /* v117: mantém o título "Vitória/Derrota" mais presente ao assentar
+       (antes 0.25 — quase sumia; o painel continua dono da cena). */
+    opacity: 0.4;
 }
 
 .vfx-finale-overlay.is-settled .vfx-finale-curtain {
