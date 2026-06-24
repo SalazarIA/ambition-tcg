@@ -16442,3 +16442,54 @@ body.rb-game-page .rb-verify-banner {
         gap: 5px;
     }
 }
+
+/* P1.3 — Seletor de foto de perfil (avatares-preset). Reaproveita
+   .rb-graveyard-overlay/.rb-graveyard-sheet; só estiliza a grade de opções. */
+.rb-avatar-hint {
+    margin: 2px 0 14px;
+    color: rgba(232, 212, 164, 0.72);
+    font-size: 13px;
+    text-align: center;
+}
+.rb-avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+    gap: 14px;
+    max-width: 460px;
+    margin: 0 auto;
+}
+.rb-avatar-option {
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    border-radius: 50%;
+    line-height: 0;
+}
+.rb-avatar-option .rb-avatar-thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center 26%;
+    background-color: #0b0a09;
+    box-shadow: 0 0 0 2px rgba(196, 160, 80, 0.5), 0 4px 12px rgba(0, 0, 0, 0.55);
+    transition: transform 130ms ease, box-shadow 130ms ease;
+}
+.rb-avatar-option:hover .rb-avatar-thumb,
+.rb-avatar-option:focus-visible .rb-avatar-thumb {
+    transform: scale(1.07);
+    box-shadow: 0 0 0 2px rgba(255, 216, 130, 0.9), 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+.rb-avatar-option.is-active .rb-avatar-thumb {
+    box-shadow: 0 0 0 3px rgba(255, 216, 130, 1), 0 0 18px rgba(196, 160, 80, 0.55), 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* Reabilita o clique no retrato do JOGADOR para abrir o seletor de foto.
+   O retrato tinha pointer-events:none (fix antigo do emblema-link que roubava
+   cliques); o emblema agora é display:none, então liberar é seguro. */
+body.rb-game-page .rb-game-board .rb-hero-portrait.rb-hero-player {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
