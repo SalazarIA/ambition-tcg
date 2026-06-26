@@ -16673,3 +16673,27 @@ body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-a
 .rb-archetype-kws { color: rgba(232, 212, 164, 0.7); font-size: 12px; }
 .rb-archetype-card p { margin: 4px 0 0; font-size: 13px; line-height: 1.4; opacity: 0.92; }
 .rb-archetype-cta { margin-top: 6px; font-size: 12px; font-weight: 700; color: rgba(244, 173, 38, 0.95); }
+
+/* P1 — Painel de replays/ghosts no ranking (surfacing da competição assíncrona). */
+.rb-async-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+}
+.rb-async-row {
+    display: grid;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--rb-line);
+    border-left: 3px solid var(--rb-muted);
+    border-radius: var(--rb-cut-soft);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.18));
+}
+.rb-async-row.is-player { border-left-color: rgba(116, 198, 122, 0.9); }
+.rb-async-row.is-bot { border-left-color: rgba(214, 90, 80, 0.9); }
+.rb-async-meta { display: flex; align-items: center; gap: 8px; }
+.rb-async-meta strong { font-family: var(--rb-font-display); }
+.rb-async-verified { font-size: 11px; color: rgba(116, 198, 122, 0.95); font-weight: 700; }
+.rb-async-unverified { font-size: 11px; color: rgba(232, 212, 164, 0.55); }
+.rb-async-copy { justify-self: start; font-size: 12px; cursor: pointer; }

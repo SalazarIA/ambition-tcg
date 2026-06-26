@@ -1,21 +1,21 @@
 # Rebirth — Play Internal Testing Readiness
 
-Data da reauditoria: 21 de junho de 2026<br>
-Branch observada: `codex/play-internal-final`<br>
-Escopo autorizado: `mobile/AmbitionzAndroid/playstore/*.md`, `mobile/AmbitionzAndroid/playstore/texts/**` e este relatório. Código, Android build, imagens, Play Console e produção foram somente inspecionados; não houve alteração, build, upload ou deploy por esta auditoria.
+Data da reauditoria: 24 de junho de 2026<br>
+Branch observada: `main`<br>
+Escopo autorizado: `mobile/AmbitionzAndroid/playstore/*.md`, `mobile/AmbitionzAndroid/playstore/texts/**` e este relatório. Android build, Play Console, produção e credenciais foram somente inspecionados; não houve upload, publicação ou deploy por esta auditoria.
 
 ## Resultado executivo
 
 | Área | Estado | Evidência |
 |---|---|---|
-| Produção Rebirth | Operacional com divergências | `ambitionzgame.com` entrega Arena, campanha, coleção, deck builder, loja, recompensas, ranking, perfil e suporte; o suporte expõe `v121_DECK_ARCHETYPES`. |
+| Produção Rebirth | Operacional com divergências | `ambitionzgame.com` entrega Arena, campanha, coleção, deck builder, loja, recompensas, ranking, perfil e suporte; o suporte expõe `v122_GHOST_SURFACING`. |
 | Android beta.2 | Candidato encontrado | AAB de 3,3 MB presente, assinatura verificada, pacote `com.ambitionzgame.app`, `versionName 1.0.0-beta.2`, candidato `versionCode 2` e servidor canônico incorporado. |
 | Ondas 1–3 | Refletidas sem sobrepromessa | Release notes registram dificuldade/consistência do bot, Água/Sombra/Cerco e interação reativa; listing descreve somente recursos visíveis e não promete PvP, offline ou quantidade exata de cartas. |
-| Textos Play | Prontos para copy/paste | Listing, release notes, convite, instruções e checklists descrevem Internal testing e Rebirth v107; release notes pt-BR têm 464 caracteres. |
+| Textos Play | Prontos para copy/paste | Listing, release notes, convite, instruções e checklists descrevem Internal testing e Rebirth v121; release notes pt-BR têm 464 caracteres sem a quebra final do arquivo. |
 | Screenshots Play | Alinhados ao Rebirth | Seis PNGs atuais em `1080x1920`, RGB e sem alpha; as capturas antigas com training/250 cartas não estão mais no conjunto atual. |
 | Ícone e feature graphic | Formato corrigido; aprovação visual pendente | Atualização concorrente de 21/06 deixou feature graphic em RGB `1024x500` e ícone em RGBA `512x512`, ambos abaixo do limite; crop/legibilidade ainda dependem do owner e do Console. |
 | Privacidade/Termos/Exclusão | Públicas com copy inconsistente | URLs respondem por HTTPS e a exclusão é encontrável, mas produção ainda usa “beta fechada”/“Teste Fechado” em partes do conteúdo. |
-| Headers/cache | Parcial | CSP, `nosniff`, `DENY`, Referrer Policy, Permissions Policy e cookie `Secure` confirmados; HSTS não foi observado e o service worker é servido com cache público de 30 dias. |
+| Headers/cache | Parcial | CSP, `nosniff`, `DENY`, Referrer Policy, Permissions Policy e cookie `Secure` confirmados em auditoria anterior; HSTS não foi observado. O contrato local do service worker agora exige `Cache-Control: no-cache`. |
 | Play Console | Não verificado | Package ownership, histórico de `versionCode`, app signing, declarações, track, testers, review e relatórios dependem da conta. Nenhum upload foi feito. |
 
 ## Identidade do candidato Android
@@ -64,7 +64,7 @@ Correções aplicadas à ficha:
 
 ## Produção `ambitionzgame.com`
 
-Auditoria HTTP reexecutada em 21 de junho de 2026:
+Auditoria HTTP reexecutada em 21 de junho de 2026 e documentação reconciliada em 24 de junho de 2026:
 
 - `/` promove Ambitionz Rebirth, duelos, coleção, loja e progressão.
 - `/rebirth` carrega a Arena contra bot.
@@ -74,7 +74,7 @@ Auditoria HTTP reexecutada em 21 de junho de 2026:
 - `/rebirth/progression`, `/rebirth/ranking` e `/rebirth/profile` carregam.
 - `/feedback` redireciona para `/rebirth/support`; os textos Play agora usam a URL canônica direta.
 - `/privacy`, `/terms` e `/data-deletion` respondem `HTTP 200` em HTTPS.
-- A página de suporte mostra `Versão v121_DECK_ARCHETYPES`.
+- A página de suporte mostra `Versão v122_GHOST_SURFACING`.
 
 ### Divergências encontradas
 
@@ -83,7 +83,7 @@ Auditoria HTTP reexecutada em 21 de junho de 2026:
 
 ## PWA, cache e headers
 
-- `ASSET_VERSION` permanece alinhada ao runtime web: `v121_DECK_ARCHETYPES`.
+- `ASSET_VERSION` permanece alinhada ao runtime web: `v122_GHOST_SURFACING`.
 - O nome físico do Cache Storage é `ambitionz-rebirth-shell-${ASSET_VERSION}`.
 - Apenas URLs exatas de `CORE_ASSETS` podem entrar no cache.
 - Autenticação, carteira, perfil, mercado, loadout, progressão, tutorial, demais APIs e navegação HTML são network-only.
@@ -101,7 +101,7 @@ Produção confirmou:
 Lacunas de produção:
 
 - `Strict-Transport-Security` não apareceu nas respostas auditadas.
-- `/static/js/service-worker.js` respondeu com `Cache-Control: public, max-age=2592000`, não com `no-cache`. Isso contradiz o contrato documental anterior e pode atrasar a percepção de uma troca de runtime.
+- A rota local `/service-worker.js` é coberta por teste e deve responder `Cache-Control: no-cache` e `Service-Worker-Allowed: /`. Se produção divergir após deploy, isso deve ser tratado como bloqueio de cache-bust.
 
 ## Privacidade e exclusão
 
@@ -135,7 +135,7 @@ Fluxo documentado:
 - A página pública atual de target API informa API 35 como mínimo para novos apps e updates desde 31 de agosto de 2025. O wrapper móvel já declara API 36.
 - Desde 1º de novembro de 2025, apps novos/updates que miram Android 15+ devem suportar páginas de memória de 16 KB em dispositivos 64-bit. O AAB observado não contém `.so`, mas o resultado do Play Console é definitivo.
 - Nome, descrição curta e descrição completa têm limites de 30, 80 e 4.000 caracteres.
-- Release notes aceitam até 500 caracteres Unicode por idioma; o texto pt-BR preparado tem 464.
+- Release notes aceitam até 500 caracteres Unicode por idioma; o texto pt-BR preparado tem 464 caracteres sem a quebra final do arquivo.
 - Ícone: PNG 32-bit com alpha, `512x512`, até 1.024 KB.
 - Feature graphic: JPEG ou PNG 24-bit sem alpha, `1024x500`.
 - Screenshots: JPEG ou PNG 24-bit sem alpha; para jogos, pelo menos três capturas `9:16` em `1080x1920` atendem a recomendação de elegibilidade.
@@ -186,17 +186,17 @@ Não resta bloqueio técnico conhecido de formato. A validação final é a do P
 
 - [x] Branch e escopo autorizados confirmados.
 - [x] AAB beta.2 encontrado e assinatura verificada sem rebuild.
-- [x] Domínio, runtime v107 e páginas públicas auditados em produção.
+- [x] Domínio, runtime v121 e páginas públicas auditados/reconciliados.
 - [x] Textos/checklists migrados de closed/training legado para Internal/Rebirth.
 - [x] Listing e release notes auditados contra Onda 1–3 e produção.
 - [x] Evolução corrigida para monstros por duplicata; promessa de partida rápida removida.
-- [x] Release notes pt-BR validadas com 464/500 caracteres.
+- [x] Release notes pt-BR validadas com 464/500 caracteres sem a quebra final do arquivo.
 - [x] Claims textuais de 250 cartas removidos do escopo editável.
 - [x] Screenshots atuais validados em leitura como Rebirth, RGB e `1080x1920`.
 - [x] Formato de ícone e feature graphic corrigido por atualização concorrente.
 - [ ] Obter aprovação visual final do owner e validação do Play Console para os dois assets.
 - [ ] Normalizar em produção “beta fechada” versus Internal testing.
-- [ ] Resolver ou aceitar formalmente HSTS ausente e cache de 30 dias no service worker.
+- [ ] Resolver ou aceitar formalmente HSTS ausente; revalidar em produção que `/service-worker.js` mantém `Cache-Control: no-cache`.
 - [ ] Confirmar `versionCode 2` e package no Play Console.
 - [ ] Completar declarações, reviewer access e lista de até 100 testers.
 - [ ] Fazer upload e revisar o relatório do Play Console.
@@ -220,4 +220,4 @@ Nenhum item desmarcado foi executado por esta auditoria.
 
 ## Decisão
 
-O AAB móvel beta.2 está pronto para ser apresentado ao Play Console como candidato de Internal testing, sujeito à confirmação de package e `versionCode 2` e às validações do upload. Listing, release notes e instruções agora estão coerentes com as Ondas 1–3 e com produção, sem promessas de PvP, offline, duração curta ou contagem exata de cartas. Screenshots, ícone e feature graphic atendem aos formatos documentados; os dois últimos ainda exigem aprovação visual do owner e validação no Console. As divergências de copy “Teste Fechado”, catálogo 100/103, HSTS e cache do service worker seguem registradas para os owners responsáveis.
+O AAB móvel beta.2 está pronto para ser apresentado ao Play Console como candidato de Internal testing, sujeito à confirmação de package e `versionCode 2` e às validações do upload. Listing, release notes e instruções agora estão coerentes com as Ondas 1–3 e com produção, sem promessas de PvP, offline, duração curta ou contagem exata de cartas. Screenshots, ícone e feature graphic atendem aos formatos documentados; os dois últimos ainda exigem aprovação visual do owner e validação no Console. As divergências de copy “Teste Fechado”, catálogo 100/103, HSTS e confirmação do cache `no-cache` em produção para `/service-worker.js` seguem registradas para os owners responsáveis.
