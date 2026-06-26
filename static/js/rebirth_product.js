@@ -931,6 +931,39 @@
 
     window.initiateMobilePurchase = initiateMobilePurchase;
 
+    // Crafting (pó): desmanchar duplicata / criar carta no catálogo da coleção.
+    function bindCrafting() {
+        document.addEventListener("click", function (event) {
+            var disBtn = event.target.closest("[data-craft-disenchant]");
+            var creBtn = event.target.closest("[data-craft-create]");
+            if (!disBtn && !creBtn) return;
+            var btn = disBtn || creBtn;
+            var card = btn.closest("[data-card-id]");
+            if (!card || btn.disabled) return;
+            var cardId = card.getAttribute("data-card-id");
+            var url = disBtn ? "/api/rebirth/craft/disenchant" : "/api/rebirth/craft/create";
+            var prev = btn.textContent;
+            btn.disabled = true;
+            postJson(url, { card_id: cardId }).then(function (body) {
+                var c = body.craft || {};
+                document.querySelectorAll("[data-dust-balance]").forEach(function (el) { el.textContent = c.dust; });
+                var ownedEl = card.querySelector("[data-card-owned]");
+                if (ownedEl) {
+                    if (typeof c.copies === "number") {
+                        ownedEl.textContent = "x" + c.copies;
+                    } else {
+                        var cur = parseInt((ownedEl.textContent || "x0").replace(/[^0-9]/g, ""), 10) || 0;
+                        ownedEl.textContent = "x" + (disBtn ? Math.max(0, cur - 1) : cur + 1);
+                    }
+                }
+                btn.disabled = false;
+            }).catch(function () {
+                btn.textContent = "✗";
+                window.setTimeout(function () { btn.textContent = prev; btn.disabled = false; }, 1400);
+            });
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         bindImageFallbacks(document);
         bindPasswordChange();
@@ -943,5 +976,6 @@
         bindBalance();
         bindSupport();
         bindFeedback();
+        bindCrafting();
     });
 }());

@@ -16697,3 +16697,8 @@ body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-a
 .rb-async-verified { font-size: 11px; color: rgba(116, 198, 122, 0.95); font-weight: 700; }
 .rb-async-unverified { font-size: 11px; color: rgba(232, 212, 164, 0.55); }
 .rb-async-copy { justify-self: start; font-size: 12px; cursor: pointer; }
+
+/* #3 — Controles de crafting (forja) no catálogo da coleção. */
+.rb-craft-controls { display: flex; gap: 6px; margin-top: 6px; }
+.rb-craft-btn { font-size: 11px; padding: 4px 8px; cursor: pointer; }
+.rb-craft-btn[disabled] { opacity: 0.5; cursor: default; }

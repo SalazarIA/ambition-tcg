@@ -405,17 +405,23 @@
                     </section>
                 {% endfor %}
                 <details class="rb-catalog-drawer">
-                    <summary>Ver catálogo completo de {{ page.cards|length }} cartas</summary>
+                    <summary>Ver catálogo completo de {{ page.cards|length }} cartas{% if page.account and page.account.authenticated %} · Forja: <b data-dust-balance>{{ crafting_dust }}</b> pó{% endif %}</summary>
                     <section class="rb-product-card-grid rb-product-card-grid-compact" aria-label="Catálogo completo Rebirth">
                         {% for card in page.cards %}
-                            <article class="rb-product-card rb-product-card-compact is-rarity-{{ (card.rarity or 'COMMON')|lower }}">
+                            <article class="rb-product-card rb-product-card-compact is-rarity-{{ (card.rarity or 'COMMON')|lower }}" data-card-id="{{ card.id }}" data-rarity="{{ card.rarity }}">
                                 <img src="{{ card.art if card.art.startswith('/') else '/' ~ card.art }}" alt="Arte de {{ card.name }}">
                                 <div>
-                                    <span>{{ card.unlock_state }} x{{ card.owned_count }}</span>
+                                    <span>{{ card.unlock_state }} <b data-card-owned>x{{ card.owned_count }}</b></span>
                                     <h2>{{ card.name }}</h2>
                                     <p>{{ card.role }} - {{ card.element }} - Nível {{ card.tier }}</p>
                                     <small>{{ card.ability_name }} - {{ card.ability_text }}</small>
                                     <strong>{{ card.stat_line }}</strong>
+                                    {% if page.account and page.account.authenticated and card.rarity in ['COMMON', 'UNCOMMON'] %}
+                                    <div class="rb-craft-controls" data-craft-controls>
+                                        <button type="button" class="rb-secondary rb-craft-btn" data-craft-disenchant>Desmanchar</button>
+                                        <button type="button" class="rb-secondary rb-craft-btn" data-craft-create>Criar</button>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </article>
                         {% endfor %}

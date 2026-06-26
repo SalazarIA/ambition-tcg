@@ -1206,6 +1206,7 @@ def rebirth_collection():
             collection_counts=collection_counts,
             loadout_card_ids=loadout_ids,
         ),
+        crafting_dust=(repo.get_dust(user["id"]) if user else 0),
     )
 
 
