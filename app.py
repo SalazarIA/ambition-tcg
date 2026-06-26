@@ -2485,6 +2485,31 @@ def api_rebirth_progression_claim_daily():
         return json_from_persistence_error(error)
 
 
+# === Crafting (pó) — desmanchar duplicata -> pó; criar carta <- pó (Comum/Incomum) ===
+@app.post("/api/rebirth/craft/disenchant")
+def api_rebirth_craft_disenchant():
+    try:
+        user = require_user()
+        card_id = (request.get_json(silent=True) or {}).get("card_id")
+        if not card_id:
+            return json_error("card_id é obrigatório.", "missing_card_id", status=400)
+        return json_payload(craft=rebirth_repo().disenchant_card(user["id"], str(card_id)))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
+@app.post("/api/rebirth/craft/create")
+def api_rebirth_craft_create():
+    try:
+        user = require_user()
+        card_id = (request.get_json(silent=True) or {}).get("card_id")
+        if not card_id:
+            return json_error("card_id é obrigatório.", "missing_card_id", status=400)
+        return json_payload(craft=rebirth_repo().craft_card(user["id"], str(card_id)))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+
+
 @app.get("/api/rebirth/desktop")
 def api_rebirth_desktop():
     return json_payload(desktop=desktop_payload())

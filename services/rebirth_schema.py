@@ -9,13 +9,14 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 SCHEMA_MIGRATION_LOCK_KEY = 735194302771
 REQUIRED_TABLES = {
     "rebirth_schema_migrations",
     "users",
     "user_sessions",
     "user_collection",
+    "crafting_dust",
     "user_loadout",
     "user_progress",
     "reward_claims",
@@ -555,6 +556,19 @@ VALUES (11, 'user_decks')
 ON CONFLICT (version) DO NOTHING;
 """
 
+MIGRATION_012 = """
+CREATE TABLE IF NOT EXISTS crafting_dust (
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount INTEGER NOT NULL DEFAULT 0 CHECK (amount >= 0),
+    updated_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (user_id)
+);
+
+INSERT INTO rebirth_schema_migrations(version, name)
+VALUES (12, 'crafting_dust')
+ON CONFLICT (version) DO NOTHING;
+"""
+
 MIGRATIONS = (
     MIGRATION_001,
     MIGRATION_002,
@@ -567,6 +581,7 @@ MIGRATIONS = (
     MIGRATION_009,
     MIGRATION_010,
     MIGRATION_011,
+    MIGRATION_012,
 )
 
 

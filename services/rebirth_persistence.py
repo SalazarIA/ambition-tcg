@@ -760,6 +760,16 @@ class RebirthRepository:
             )
             db.execute(
                 """
+                CREATE TABLE IF NOT EXISTS crafting_dust (
+                    user_id INTEGER NOT NULL PRIMARY KEY,
+                    amount INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+                """
+            )
+            db.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_user_decks_user
                     ON user_decks(user_id, updated_at DESC);
                 """
@@ -1731,6 +1741,118 @@ class RebirthRepository:
                     metadata={"card_id": card["id"], "name": card.get("name")},
                     now=now,
                 )
+
+    # --- Crafting (pó / DUST) — só Comum e Incomum (lendárias são placeholders).
+    # Razão 8:1 (criar:desmanchar), anti-exploit; só desmancha duplicata (cópia
+    # acima de locked_copies). Fonte da verdade = crafting_dust; auditoria no
+    # economy_ledger (resource="dust"). Aditivo, escopado.
+    DISENCHANT_DUST = {"COMMON": 5, "UNCOMMON": 20}
+    CRAFT_COST_DUST = {"COMMON": 40, "UNCOMMON": 100}
+
+    def _card_rarity(self, card_id):
+        from services.rebirth_cards import get_card
+        card = get_card(card_id)
+        return (card or {}).get("rarity"), card
+
+    def get_dust(self, user_id):
+        self.ensure_schema()
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT amount FROM crafting_dust WHERE user_id = ?", (user_id,)
+            ).fetchone()
+        return int((row["amount"] if row else 0) or 0)
+
+    @_retry_postgres_serialization_write
+    def disenchant_card(self, user_id, card_id):
+        self.ensure_schema()
+        rarity, _card = self._card_rarity(card_id)
+        rate = self.DISENCHANT_DUST.get(rarity)
+        if rate is None:
+            raise RebirthPersistenceError(
+                "Esta carta não pode ser desmanchada.", "card_not_disenchantable", status=400
+            )
+        now = utc_now()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT copies, locked_copies FROM user_collection WHERE user_id = ? AND card_id = ?",
+                (user_id, card_id),
+            ).fetchone()
+            copies = int((row["copies"] if row else 0) or 0)
+            locked = int((row["locked_copies"] if row else 0) or 0)
+            if copies - locked < 1:
+                db.execute("ROLLBACK")
+                raise RebirthPersistenceError(
+                    "Sem cópias extras desta carta para desmanchar.", "no_spare_copies", status=409
+                )
+            db.execute(
+                "UPDATE user_collection SET copies = copies - 1, updated_at = ? WHERE user_id = ? AND card_id = ?",
+                (now, user_id, card_id),
+            )
+            db.execute(
+                """
+                INSERT INTO crafting_dust (user_id, amount, updated_at) VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    amount = crafting_dust.amount + excluded.amount,
+                    updated_at = excluded.updated_at
+                """,
+                (user_id, rate, now),
+            )
+            self._record_ledger_entry(
+                db, user_id, resource="dust", delta=rate, reason="disenchant",
+                reference_type="card", reference_id=card_id,
+                metadata={"card_id": card_id, "rarity": rarity}, now=now,
+            )
+            new_dust = int(
+                db.execute("SELECT amount FROM crafting_dust WHERE user_id = ?", (user_id,)).fetchone()["amount"]
+            )
+        return {"card_id": card_id, "dust": new_dust, "gained": rate, "copies": copies - 1}
+
+    @_retry_postgres_serialization_write
+    def craft_card(self, user_id, card_id):
+        self.ensure_schema()
+        rarity, card = self._card_rarity(card_id)
+        cost = self.CRAFT_COST_DUST.get(rarity)
+        if cost is None:
+            raise RebirthPersistenceError(
+                "Esta carta não pode ser criada.", "card_not_craftable", status=400
+            )
+        now = utc_now()
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT amount FROM crafting_dust WHERE user_id = ?", (user_id,)
+            ).fetchone()
+            dust = int((row["amount"] if row else 0) or 0)
+            if dust < cost:
+                db.execute("ROLLBACK")
+                raise RebirthPersistenceError(
+                    "Pó insuficiente para criar esta carta.", "insufficient_dust", status=409
+                )
+            db.execute(
+                "UPDATE crafting_dust SET amount = amount - ?, updated_at = ? WHERE user_id = ?",
+                (cost, now, user_id),
+            )
+            db.execute(
+                """
+                INSERT INTO user_collection (user_id, card_id, copies, updated_at) VALUES (?, ?, 1, ?)
+                ON CONFLICT(user_id, card_id) DO UPDATE SET
+                    copies = user_collection.copies + 1,
+                    updated_at = excluded.updated_at
+                """,
+                (user_id, card_id, now),
+            )
+            self._record_ledger_entry(
+                db, user_id, resource="dust", delta=-cost, reason="craft",
+                reference_type="card", reference_id=card_id,
+                metadata={"card_id": card_id, "rarity": rarity}, now=now,
+            )
+            self._record_ledger_entry(
+                db, user_id, resource=f"card:{card_id}", delta=1, reason="card_crafted",
+                reference_type="collection", reference_id=card_id,
+                metadata={"card_id": card_id, "name": (card or {}).get("name")}, now=now,
+            )
+        return {"card_id": card_id, "dust": dust - cost, "spent": cost}
 
     @_retry_postgres_serialization_write
     def record_booster(self, user_id, booster, seed):
