@@ -1854,6 +1854,80 @@ class RebirthRepository:
             )
         return {"card_id": card_id, "dust": dust - cost, "spent": cost}
 
+    # --- Season (temporada) — gatilho MANUAL via tools/ops/rebirth_season_reset.py.
+    # Recompensa por faixa de ELO + soft-reset (1500 + (elo-1500)//2) + bump de
+    # ranking_season. Idempotente por (usuário, season) no economy_ledger.
+    SEASON_TIERS = (
+        (1800, "Lendário", 400, 100),
+        (1600, "Ouro", 200, 50),
+        (1400, "Prata", 100, 20),
+        (0, "Bronze", 50, 0),
+    )
+
+    def season_tier(self, elo):
+        elo = int(elo or 1500)
+        for floor, name, gold, dust in self.SEASON_TIERS:
+            if elo >= floor:
+                return {"tier": name, "gold": gold, "dust": dust, "min_elo": floor}
+        return {"tier": "Bronze", "gold": 50, "dust": 0, "min_elo": 0}
+
+    @staticmethod
+    def _soft_reset_elo(elo):
+        return 1500 + (int(elo or 1500) - 1500) // 2
+
+    def close_season(self):
+        """Fecha a temporada de TODOS os usuários: concede recompensa por faixa,
+        soft-reseta o ELO e bumpa ranking_season. Idempotente por (user, season)."""
+        self.ensure_schema()
+        now = utc_now()
+        summary = {"rewarded": 0, "skipped": 0, "by_tier": {}}
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            users = db.execute("SELECT id, ranking_elo, ranking_season FROM users").fetchall()
+            for u in users:
+                uid = u["id"]
+                elo = int(u["ranking_elo"] or 1500)
+                season = int(u["ranking_season"] or 1)
+                ref = f"season:{season}"
+                already = db.execute(
+                    "SELECT 1 FROM economy_ledger WHERE user_id = ? AND resource = 'season' AND reference_id = ?",
+                    (uid, ref),
+                ).fetchone()
+                if already:
+                    summary["skipped"] += 1
+                    continue
+                tier = self.season_tier(elo)
+                if tier["gold"]:
+                    self._record_wallet_entry(
+                        db, uid, currency="GOLD", entry_type="CREDIT", amount=tier["gold"],
+                        source="SEASON_REWARD", reference_id=ref, now=now,
+                    )
+                if tier["dust"]:
+                    db.execute(
+                        """
+                        INSERT INTO crafting_dust (user_id, amount, updated_at) VALUES (?, ?, ?)
+                        ON CONFLICT(user_id) DO UPDATE SET
+                            amount = crafting_dust.amount + excluded.amount,
+                            updated_at = excluded.updated_at
+                        """,
+                        (uid, tier["dust"], now),
+                    )
+                new_elo = self._soft_reset_elo(elo)
+                db.execute(
+                    "UPDATE users SET ranking_elo = ?, ranking_season = ? WHERE id = ?",
+                    (new_elo, season + 1, uid),
+                )
+                self._record_ledger_entry(
+                    db, uid, resource="season", delta=1, reason="season_reward",
+                    reference_type="season", reference_id=ref,
+                    metadata={"tier": tier["tier"], "gold": tier["gold"], "dust": tier["dust"],
+                              "elo_before": elo, "elo_after": new_elo, "season": season},
+                    now=now,
+                )
+                summary["rewarded"] += 1
+                summary["by_tier"][tier["tier"]] = summary["by_tier"].get(tier["tier"], 0) + 1
+        return summary
+
     @_retry_postgres_serialization_write
     def record_booster(self, user_id, booster, seed):
         self.ensure_schema()

@@ -27,6 +27,9 @@
                 <span>Sua posição</span>
                 <h2>#{{ me.position or '—' }} · {{ me.elo }} ELO</h2>
                 <p>{{ me.total }} jogadores ranqueados nesta temporada.</p>
+                {% if me_tier %}
+                <p class="rb-season-tier">Faixa <b>{{ me_tier.tier }}</b> · recompensa de fim de temporada: <b>+{{ me_tier.gold }}</b> ouro{% if me_tier.dust %} · <b>+{{ me_tier.dust }}</b> pó{% endif %}.</p>
+                {% endif %}
             </section>
         {% elif not account.authenticated %}
             <section class="rb-product-panel rb-ranking-login" aria-label="Entrar para participar">

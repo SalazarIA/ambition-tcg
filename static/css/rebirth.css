@@ -16702,3 +16702,7 @@ body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-a
 .rb-craft-controls { display: flex; gap: 6px; margin-top: 6px; }
 .rb-craft-btn { font-size: 11px; padding: 4px 8px; cursor: pointer; }
 .rb-craft-btn[disabled] { opacity: 0.5; cursor: default; }
+
+/* #2 — Faixa de temporada no ranking. */
+.rb-season-tier { color: rgba(232, 212, 164, 0.85); font-size: 13px; margin-top: 6px; }
+.rb-season-tier b { color: rgba(244, 173, 38, 0.95); }

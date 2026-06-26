@@ -107,7 +107,7 @@ app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTER
 # Telemetria de decisão é observacional e roda no caminho quente de cada jogada
 # do jogador: pode ser desligada por ambiente sem afetar a jogabilidade.
 app.config["REBIRTH_ENABLE_DECISION_TELEMETRY"] = os.environ.get("REBIRTH_ENABLE_DECISION_TELEMETRY", "true") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v123_CRAFTING")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v124_SEASON")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -1332,11 +1332,13 @@ def rebirth_ranking_page():
     repo = rebirth_repo()
     top = repo.get_ranking_top(limit=20)
     me = repo.get_user_ranking(user["id"]) if user else None
+    me_tier = repo.season_tier(me.get("elo")) if me else None
     return render_template(
         "rebirth_ranking.html",
         account=account_payload(user),
         top=top,
         me=me,
+        me_tier=me_tier,
     )
 
 
