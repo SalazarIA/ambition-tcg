@@ -184,9 +184,9 @@ def test_rebirth_service_worker_caches_active_reference_assets():
     asset_manifest = read("static/assets/rebirth/manifest.json")
     art_contract = read("services/rebirth_art.py")
 
-    assert 'const ASSET_VERSION = "v122_GHOST_SURFACING";' in service_worker
-    assert 'REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v122_GHOST_SURFACING")' in app_runtime
-    assert "`ASSET_VERSION` permanece alinhada ao runtime web: `v122_GHOST_SURFACING`." in internal_testing_readiness
+    assert 'const ASSET_VERSION = "v123_CRAFTING";' in service_worker
+    assert 'REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v123_CRAFTING")' in app_runtime
+    assert "`ASSET_VERSION` permanece alinhada ao runtime web: `v123_CRAFTING`." in internal_testing_readiness
     assert 'const CACHE_NAME = `ambitionz-rebirth-shell-${ASSET_VERSION}`;' in service_worker
     assert "return `${path}?v=${ASSET_VERSION}`;" in service_worker
     assert '"version": "v98_CORE_LOOP_STABILIZATION"' in asset_manifest
