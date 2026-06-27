@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Novidades - Ambitionz Rebirth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0805">
+    <meta name="description" content="Novidades e patch notes do Ambitionz Rebirth — o que mudou no jogo.">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+</head>
+<body class="rb-page rb-home-page rb-product-page rb-novidades-page">
+    {% include "_rebirth_global_nav.html" %}
+    <main class="rb-home-shell rb-product-shell rb-novidades-shell">
+        <section class="rb-product-hero" aria-label="Novidades Ambitionz">
+            <div>
+                <span class="rb-product-kicker">Atualização {{ notes.latest }}</span>
+                <h1>Novidades</h1>
+                <p>O que mudou no Ambitionz Rebirth — as atualizações mais recentes do jogo.</p>
+            </div>
+            <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Jogar agora <i aria-hidden="true"></i></a>
+        </section>
+
+        <section class="rb-patchnotes" aria-label="Histórico de atualizações">
+            {% for entry in notes.entries %}
+            <article class="rb-patch-entry">
+                <header class="rb-patch-head">
+                    <span class="rb-patch-version">{{ entry.version }}</span>
+                    <h2>{{ entry.title }}</h2>
+                    <span class="rb-patch-tag">{{ entry.tag }}</span>
+                    <span class="rb-patch-date">{{ entry.date }}</span>
+                </header>
+                <ul class="rb-patch-items">
+                    {% for item in entry["items"] %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </article>
+            {% endfor %}
+        </section>
+    </main>
+
+    <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            wallet: "{{ url_for('api_rebirth_wallet') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+</body>
+</html>
