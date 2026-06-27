@@ -646,6 +646,32 @@
         }, duration);
     }
 
+    // Polish AV: clarão/anel no altar quando uma criatura é invocada (jogador e
+    // bot). Vai na CAMADA DE FLOATS (#rebirth-float-layer), igual aos números de
+    // dano — assim sobrevive ao re-render do tabuleiro (que troca o innerHTML) e
+    // não é clipado/encoberto pelas camadas internas da carta. Some sozinho.
+    function spawnSummonRing(node) {
+        if (!node) return;
+        const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (reducedMotion) return;
+        const layer = RebirthDom.byId("rebirth-float-layer");
+        const board = RebirthStore.elements["rebirth-board"];
+        if (!layer || !board) return;
+        const rect = node.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const scale = (RebirthCombatMotion && RebirthCombatMotion.boardScale) ? RebirthCombatMotion.boardScale() : 1;
+        const boardRect = board.getBoundingClientRect();
+        const ring = document.createElement("span");
+        ring.className = "rb-summon-ring";
+        ring.setAttribute("aria-hidden", "true");
+        ring.style.left = `${Math.round((rect.left + rect.width / 2 - boardRect.left) / scale)}px`;
+        ring.style.top = `${Math.round((rect.top + rect.height / 2 - boardRect.top) / scale)}px`;
+        layer.appendChild(ring);
+        window.setTimeout(() => {
+            if (ring.parentNode) ring.parentNode.removeChild(ring);
+        }, 660);
+    }
+
     const RebirthAssets = {
         manifest: null,
         seen: new Set(),
@@ -2105,9 +2131,10 @@
                 }
             }
             RebirthAssets.bindFallbacks(node);
-            if (window.RebirthAudioManager) {
-                window.RebirthAudioManager.observeEvents([{ type: "MONSTER_SUMMONED", payload: {} }], { hitPauseMs: 0, replayAudioMutedMode: false });
-            }
+            // O som de invocação agora vem pelo pipeline unificado (state.events
+            // → audioEvents → MONSTER_SUMMONED), pra jogador e bot. Aqui só o
+            // clarão visual no altar do bot.
+            spawnSummonRing(node);
         },
 
         lunge(attackerNode, targetNode) {
@@ -2711,6 +2738,24 @@
                     reason: canSummonSelected ? `Invocar ${selectedHandCard.name} no slot ${slotIndex + 1}` : summonLockCopy
                 });
             }).join("");
+            // Polish AV: a carta recém-invocada do jogador ganha entrada + anel
+            // (o bot já tem via injectSummon). Diff por instance-id: anima só o
+            // que é novo, nunca reanima o que já está em campo, e fica quieto no
+            // primeiro render (carga inicial / reentrada de partida).
+            (function () {
+                const prev = RebirthStore._prevPlayerFieldIds;
+                const currentIds = playerCards.map((c) => c.instance_id).filter(Boolean);
+                if (prev) {
+                    currentIds.forEach((id) => {
+                        if (prev.has(id)) return;
+                        const node = playerHost.querySelector(`[data-attacker-instance="${escapeSelectorValue(id)}"]`);
+                        if (!node) return;
+                        node.classList.add("is-stage-enter");
+                        spawnSummonRing(node);
+                    });
+                }
+                RebirthStore._prevPlayerFieldIds = new Set(currentIds);
+            })();
             // v92: o slot vazio vira altar visual; a razão fica em aria/title.
             botHost.innerHTML = botSlots.map((card, index) => {
                 if (card) {

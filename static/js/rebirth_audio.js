@@ -6,7 +6,8 @@
         heavy: "impact_heavy.wav",
         shield: "shield_shatter.wav",
         evolution: "evolution_burst.wav",
-        click: "click_metallic.wav"
+        click: "click_metallic.wav",
+        summon: "summon_place.wav"
     };
     const EVENT_AUDIO = {
         DAMAGE_RESOLVED: "heavy",
@@ -15,6 +16,7 @@
         MONSTER_DESTROYED: "heavy",
         MONSTERS_FUSED: "evolution",
         EVOLUTION_COMPLETED: "evolution",
+        MONSTER_SUMMONED: "summon",
         UI_CLICK_CONFIRMED: "click"
     };
 
@@ -191,6 +193,7 @@
 
         eventVolume(event, soundKey) {
             if (soundKey === "click") return 0.22;
+            if (soundKey === "summon") return 0.3;
             if (soundKey === "evolution") return 0.62;
             if (soundKey === "shield") return 0.38;
             const payload = event && event.payload ? event.payload : {};

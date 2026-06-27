@@ -1,4 +1,4 @@
-const ASSET_VERSION = "v125_NOVIDADES";
+const ASSET_VERSION = "v126_AV_POLISH";
 const CACHE_NAME = `ambitionz-rebirth-shell-${ASSET_VERSION}`;
 const REBIRTH_CACHE_RE = /^(?:ambitionz-rebirth(?:[-_].*)?|rebirth(?:[-_].*)?|v\d+_(?:COMBAT_REWORK|EVENT_AUDIO|PRODUCT_FLOW|PRODUCT_READINESS|FIRST_DUEL|CAMPAIGN(?:_V\d+|_ERA)?|RELEASE_POLISH|EMAIL_VERIFY|ART_FOUNDATION|ART_PERSONALITY|FULLSCREEN|DOC_REBIRTH|DOC_LAYOUT|DOC_POLISH|LAUNCH|KEYWORDS|DECK_BUILDER|BATTLEFIELD|ARENA_ZEN|FATES_REBORN|FATES_FIX|NO_TABLE|GAME_FEEL_PASS|CORE_LOOP_STABILIZATION|MOBILE_WEB_FIX|AAA_RULES_PASS|ARENA_FEEL|VISUAL_UNITY|PLAYER_FIRST|PERF_STUDY|YGO_POLISH|ARENA_ACTIONS)(?:$|-))/i;
 
@@ -34,6 +34,7 @@ const CORE_ASSETS = [
     "/static/assets/rebirth/audio/shield_shatter.wav",
     "/static/assets/rebirth/audio/evolution_burst.wav",
     "/static/assets/rebirth/audio/click_metallic.wav",
+    "/static/assets/rebirth/audio/summon_place.wav",
     "/static/assets/rebirth/cards/dreadclaw-art.webp",
     "/static/assets/rebirth/ui/bot-card-back.png",
     "/static/assets/rebirth/ui/bot-emblem.png",

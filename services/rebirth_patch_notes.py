@@ -10,6 +10,27 @@ from typing import Any, Dict, List
 
 PATCH_NOTES: List[Dict[str, Any]] = [
     {
+        "version": "v126",
+        "date": "Jun 2026",
+        "title": "Polish de invocação",
+        "tag": "Feel",
+        "items": [
+            "Invocar uma criatura agora tem som dedicado (jogador e bot).",
+            "Clarão/anel de energia no altar no momento da invocação.",
+            "A sua carta recém-invocada entra em cena com animação, igual à do bot.",
+        ],
+    },
+    {
+        "version": "v125",
+        "date": "Jun 2026",
+        "title": "Novidades / Patch Notes",
+        "tag": "Live-ops",
+        "items": [
+            "Esta página: o histórico de atualizações do jogo em um só lugar.",
+            "Novo atalho “Novidades” na barra de navegação.",
+        ],
+    },
+    {
         "version": "v124",
         "date": "Jun 2026",
         "title": "Temporada ranqueada",

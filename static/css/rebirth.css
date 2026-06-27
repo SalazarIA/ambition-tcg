@@ -16737,3 +16737,29 @@ body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-a
 @media (max-width: 640px) {
     .rb-patch-date { margin-left: 0; flex-basis: 100%; }
 }
+
+/* Polish AV — anel/clarão de invocação no altar (jogador e bot). Vive na camada
+   de floats (#rebirth-float-layer); left/top são setados inline por
+   spawnSummonRing() em coordenadas do tabuleiro. Some sozinho em ~660ms. */
+.rb-summon-ring {
+    position: absolute;
+    width: 88px;
+    height: 88px;
+    margin: 0;
+    transform: translate(-50%, -50%) scale(0.35);
+    border-radius: 50%;
+    border: 3px solid rgba(244, 173, 38, 0.95);
+    box-shadow: 0 0 22px 6px rgba(244, 173, 38, 0.5), inset 0 0 14px rgba(244, 173, 38, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 30;
+    animation: rb-summon-ring 600ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@keyframes rb-summon-ring {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.35); }
+    22% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.2); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .rb-summon-ring { display: none; }
+}
