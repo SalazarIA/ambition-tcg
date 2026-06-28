@@ -30,6 +30,7 @@
                 {% if me_tier %}
                 <p class="rb-season-tier">Faixa <b>{{ me_tier.tier }}</b> · recompensa de fim de temporada: <b>+{{ me_tier.gold }}</b> ouro{% if me_tier.dust %} · <b>+{{ me_tier.dust }}</b> pó{% endif %}.</p>
                 {% endif %}
+                <a class="rb-button-primary rb-cta rb-ranked-cta" href="{{ url_for('rebirth') }}?ranked=1">Partida ranqueada (PvP)</a>
             </section>
         {% elif not account.authenticated %}
             <section class="rb-product-panel rb-ranking-login" aria-label="Entrar para participar">
@@ -45,6 +46,7 @@
                 <span>#</span>
                 <span>Jogador</span>
                 <span>ELO</span>
+                <span></span>
             </header>
             {% if top %}
                 {% for row in top %}
@@ -52,6 +54,11 @@
                         <span class="rb-ranking-rank">{{ row.rank }}</span>
                         <span class="rb-ranking-name">{{ row.username }}</span>
                         <span class="rb-ranking-elo">{{ row.elo }}</span>
+                        {% if account.authenticated and row.username != account.username %}
+                        <a class="rb-pvp-challenge" href="{{ url_for('rebirth') }}?opponent={{ row.username | urlencode }}" title="Duelar contra o deck de {{ row.username }}">Desafiar</a>
+                        {% else %}
+                        <span></span>
+                        {% endif %}
                     </article>
                 {% endfor %}
             {% else %}

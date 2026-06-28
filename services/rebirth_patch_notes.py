@@ -10,6 +10,17 @@ from typing import Any, Dict, List
 
 PATCH_NOTES: List[Dict[str, Any]] = [
     {
+        "version": "v129",
+        "date": "Jun 2026",
+        "title": "PvP assíncrono",
+        "tag": "Competitivo",
+        "items": [
+            "Desafie o deck de outro jogador direto do Ranking (botão “Desafiar”).",
+            "O duelo é resolvido no servidor e o ELO dos dois lados é ajustado.",
+            "Primeiro passo rumo ao PvP completo.",
+        ],
+    },
+    {
         "version": "v128",
         "date": "Jun 2026",
         "title": "Mais atalhos + feedback de mana",

@@ -4123,7 +4123,9 @@
             await this.request(async () => {
                 const campaignNode = String(new URLSearchParams(window.location.search).get("campaign") || "").trim();
                 const inCampaign = Boolean(campaignNode);
-                RebirthStore.guidedFirstMatch = !inCampaign && RebirthCoach.shouldGuideFirstMatch();
+                const pvpOpponent = String(new URLSearchParams(window.location.search).get("opponent") || "").trim();
+                const rankedMatch = new URLSearchParams(window.location.search).get("ranked") === "1";
+                RebirthStore.guidedFirstMatch = !inCampaign && !pvpOpponent && !rankedMatch && RebirthCoach.shouldGuideFirstMatch();
                 RebirthStore.tutorialCompletionSent = false;
                 if (options.forceNew) {
                     try {
@@ -4131,7 +4133,7 @@
                         window.localStorage.removeItem("rebirth.lastMatchFinished");
                     } catch (err) {}
                 }
-                if (!inCampaign) {
+                if (!inCampaign && !pvpOpponent && !rankedMatch) {
                     const resumed = await this.maybeResumeMatch(options);
                     if (resumed && resumed.state) {
                         RebirthStore.abandonmentSentForMatch = null;
@@ -4146,7 +4148,10 @@
                 const endpoint = inCampaign ? RebirthConfig.endpoints.campaignStart : RebirthConfig.endpoints.start;
                 const requestPayload = inCampaign
                     ? { node_id: campaignNode }
-                    : { tutorial: RebirthStore.guidedFirstMatch };
+                    : (pvpOpponent ? { opponent: pvpOpponent } : (rankedMatch ? { ranked: true } : { tutorial: RebirthStore.guidedFirstMatch }));
+                if (pvpOpponent || rankedMatch) {
+                    try { window.history.replaceState({}, "", "/rebirth"); } catch (err) {}
+                }
                 const payload = await RebirthApi.post(endpoint, requestPayload);
                 RebirthStore.abandonmentSentForMatch = null;
                 RebirthStore.selectedInstanceId = null;

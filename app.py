@@ -107,7 +107,7 @@ app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTER
 # Telemetria de decisão é observacional e roda no caminho quente de cada jogada
 # do jogador: pode ser desligada por ambiente sem afetar a jogabilidade.
 app.config["REBIRTH_ENABLE_DECISION_TELEMETRY"] = os.environ.get("REBIRTH_ENABLE_DECISION_TELEMETRY", "true") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v128_HOTKEYS")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v129_PVP_ASYNC")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -1697,11 +1697,44 @@ def api_rebirth_start():
         # auto-detect mora lá. Mantemos esta rota agnostica para preservar
         # contratos de testes que passam seeds custom sem o flag.
         is_first_duel = bool(payload.get("tutorial"))
+        # PvP assíncrono: payload.opponent = username; o "bot" pilota o deck do
+        # oponente real e o ELO é calculado/aplicado contra o ELO dele.
+        opponent_name = payload.get("opponent")
+        opponent_name = opponent_name.strip() if isinstance(opponent_name, str) else ""
+        pvp_meta = None
+        pvp_bot_card_ids = None
         if user:
             progress = repo.progression(user["id"])
             player_card_ids = repo.loadout_card_ids(user["id"])
             player_name = user["username"]
-            if is_first_duel:
+            if opponent_name:
+                opp = repo.get_user_by_username(opponent_name)
+                if opp and int(opp["id"]) != int(user["id"]):
+                    pvp_bot_card_ids = repo.loadout_card_ids(opp["id"])
+                    pvp_meta = {
+                        "opponent_id": int(opp["id"]),
+                        "opponent_name": opp["username"],
+                        "opponent_elo": int(opp.get("ranking_elo") or 1500),
+                    }
+                    bot_profile_id = "opportunist"
+                    is_first_duel = False
+            # Matchmaking ranqueado: sem oponente nomeado, escolhe um jogador real
+            # com ELO próximo (fila assíncrona). Cai pra PvE se o jogador está só.
+            if not pvp_meta and payload.get("ranked"):
+                my_elo = int((repo.get_user_ranking(user["id"]) or {}).get("elo") or 1500)
+                opp = repo.find_pvp_opponent(user["id"], elo=my_elo)
+                if opp:
+                    pvp_bot_card_ids = repo.loadout_card_ids(opp["id"])
+                    pvp_meta = {
+                        "opponent_id": int(opp["id"]),
+                        "opponent_name": opp["username"],
+                        "opponent_elo": int(opp.get("ranking_elo") or 1500),
+                    }
+                    bot_profile_id = "opportunist"
+                    is_first_duel = False
+            if pvp_meta:
+                pass
+            elif is_first_duel:
                 player_card_ids = DEFAULT_LOADOUT
                 bot_profile_id = "novice"
             elif progress and int(progress.get("clashes", 0) or 0) < 3:
@@ -1724,6 +1757,7 @@ def api_rebirth_start():
                 runtime_mode="singleplayer",
                 apply_reducers_inline=False,
                 first_duel=is_first_duel,
+                bot_card_ids=pvp_bot_card_ids,
             )
 
         match = build_match(engine_seed)
@@ -1739,6 +1773,12 @@ def api_rebirth_start():
         if user:
             match["owner_user_id"] = user["id"]
             match["seed"] = str(requested_seed or "")
+            if pvp_meta:
+                match["pvp"] = pvp_meta
+                try:
+                    match["bot"]["name"] = pvp_meta["opponent_name"]
+                except (KeyError, TypeError):
+                    pass
         match = MATCH_STORE.save(match)
         remember_active_match(match, user=user)
         # A partida NÃO é persistida no start: cada visita ao /rebirth dispara

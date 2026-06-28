@@ -1141,6 +1141,37 @@ class RebirthRepository:
         user["email_verified"] = bool(user.get("email_verified"))
         return user
 
+    def get_user_by_username(self, username):
+        """Resolve um usuário pelo nome (case-insensitive). Usado pelo PvP
+        assíncrono para desafiar o deck de outro jogador."""
+        if not username:
+            return None
+        self.ensure_schema()
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT id, username, ranking_elo FROM users WHERE LOWER(username) = LOWER(?)",
+                (str(username).strip(),),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def find_pvp_opponent(self, user_id, *, elo=None, span=200):
+        """Matchmaking assíncrono: escolhe um oponente real (≠ o próprio) com
+        ELO próximo. Sem candidato na faixa, pega o mais próximo. None se o
+        jogador está sozinho na base."""
+        self.ensure_schema()
+        ref = int(elo if elo is not None else 1500)
+        with self.connect() as db:
+            rows = db.execute(
+                "SELECT id, username, ranking_elo FROM users WHERE id != ? ORDER BY ABS(COALESCE(ranking_elo,1500) - ?) ASC LIMIT 20",
+                (user_id, ref),
+            ).fetchall()
+        if not rows:
+            return None
+        near = [dict(r) for r in rows if abs(int(r["ranking_elo"] or 1500) - ref) <= span]
+        pool = near or [dict(r) for r in rows]
+        import random as _random
+        return _random.choice(pool)
+
     @_retry_postgres_serialization_write
     def verify_email_token(self, token):
         """Mark a user's email verified from a verification token.
@@ -2707,6 +2738,11 @@ class RebirthRepository:
                 bot_elo = max(bot_elo, 1500 + 50 * node_order)
             except (ValueError, IndexError):
                 pass
+        # PvP assíncrono: o "bot" é o deck de um jogador real, então o ELO é
+        # calculado contra o ELO REAL do oponente (não o perfil do bot).
+        pvp = match.get("pvp") or {}
+        if pvp.get("opponent_elo") is not None:
+            bot_elo = int(pvp.get("opponent_elo") or 1500)
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             current = db.execute(
@@ -2754,7 +2790,46 @@ class RebirthRepository:
                 ),
             )
             db.execute("COMMIT")
-            return new_elo
+        # Espelho PvP: aplica o resultado inverso ao oponente real (fora do
+        # bloco de conexão do desafiante). Idempotente via referência ":opp".
+        if pvp.get("opponent_id"):
+            try:
+                self._apply_pvp_mirror(int(pvp["opponent_id"]), current_elo, winner, match_id)
+            except Exception:
+                pass
+        return new_elo
+
+    def _apply_pvp_mirror(self, opponent_id, challenger_elo, winner, match_id):
+        """Aplica o delta de ELO espelhado ao OPONENTE de um PvP assíncrono (ele
+        vence se o desafiante perdeu). Idempotente via reference_id '<match>:opp'."""
+        if not opponent_id or winner not in ("player", "bot"):
+            return
+        ref = (match_id or "") + ":opp"
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT ranking_elo FROM users WHERE id = ?", (opponent_id,)).fetchone()
+            if not row:
+                db.execute("ROLLBACK")
+                return
+            already = db.execute(
+                "SELECT 1 FROM economy_ledger WHERE user_id = ? AND resource = 'elo' AND reference_type = 'match' AND reference_id = ?",
+                (opponent_id, ref),
+            ).fetchone()
+            if already:
+                db.execute("ROLLBACK")
+                return
+            opp_elo = int(row["ranking_elo"] or 1500)
+            opp_score = 1.0 if winner == "bot" else 0.0
+            expected = 1.0 / (1.0 + 10 ** ((challenger_elo - opp_elo) / 400.0))
+            delta = int(round(self.ELO_K_FACTOR * (opp_score - expected)))
+            new_elo = max(0, opp_elo + delta)
+            db.execute("UPDATE users SET ranking_elo = ? WHERE id = ?", (new_elo, opponent_id))
+            db.execute(
+                "INSERT INTO economy_ledger (user_id, resource, delta, balance_after, reason, reference_type, reference_id, metadata_json, created_at) VALUES (?, 'elo', ?, ?, ?, 'match', ?, ?, ?)",
+                (opponent_id, delta, new_elo, "pvp_async_" + ("win" if opp_score else "loss"), ref,
+                 json.dumps({"challenger_elo": challenger_elo, "expected": round(expected, 3), "score": opp_score}), utc_now()),
+            )
+            db.execute("COMMIT")
 
     def get_user_ranking(self, user_id):
         """Retorna ELO atual + posição no leaderboard."""

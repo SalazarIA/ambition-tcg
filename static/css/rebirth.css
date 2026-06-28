@@ -10365,7 +10365,7 @@ button {
 
 .rb-ranking-head {
     display: grid;
-    grid-template-columns: 60px 1fr 100px;
+    grid-template-columns: 60px 1fr 100px 88px;
     gap: 12px;
     padding: 6px 8px 10px;
     border-bottom: 1px solid rgba(196, 160, 80, 0.32);
@@ -10378,7 +10378,7 @@ button {
 
 .rb-ranking-row {
     display: grid;
-    grid-template-columns: 60px 1fr 100px;
+    grid-template-columns: 60px 1fr 100px 88px;
     gap: 12px;
     padding: 10px 8px;
     align-items: center;
@@ -16785,3 +16785,19 @@ body.rb-card-dragging .rb-field-slot-empty.is-summon-target {
 @media (prefers-reduced-motion: reduce) {
     .rb-mana-coins.is-mana-spending .rb-mana-coin.is-spent { animation: none; }
 }
+
+/* PvP assíncrono: botão "Desafiar" nas linhas do ranking. */
+.rb-pvp-challenge {
+    justify-self: end;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: rgba(12, 8, 5, 0.92);
+    background: rgba(244, 173, 38, 0.92);
+    border: 1px solid rgba(244, 173, 38, 0.5);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.rb-pvp-challenge:hover { background: rgba(244, 173, 38, 1); }

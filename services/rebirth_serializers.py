@@ -239,6 +239,7 @@ def public_state(match):
         "result": deepcopy(match.get("result")),
         "winner": match.get("winner"),
         "is_finished": bool(match.get("is_finished")),
+        "pvp": ({"opponent_name": (match.get("pvp") or {}).get("opponent_name")} if match.get("pvp") else None),
         "first_duel": bool(match.get("first_duel", False)),
         "mulligan_available": mulligan_available(match),
         "mulligan_used": bool(match.get("mulligan_used", False)),
