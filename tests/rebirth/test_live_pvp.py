@@ -24,6 +24,43 @@ def _uid(repo, name):
     return u["id"] if isinstance(u, dict) else u
 
 
+def test_reconnect_returns_existing_match(flask_app):
+    _reset()
+    live.join(901, "rc1", list(DEFAULT_LOADOUT), 1500)
+    lid = live.join(902, "rc2", list(DEFAULT_LOADOUT), 1500)["live_id"]
+    # rejoin (ex.: recarregou a aba) -> devolve a MESMA partida, sem refilar
+    again = live.join(901, "rc1", list(DEFAULT_LOADOUT), 1500)
+    assert again["status"] == "matched" and again["live_id"] == lid
+
+
+def test_turn_timeout_auto_ends(flask_app):
+    _reset()
+    live.join(701, "to1", list(DEFAULT_LOADOUT), 1500)
+    lid = live.join(702, "to2", list(DEFAULT_LOADOUT), 1500)["live_id"]
+    session = live._LIVE[lid]
+    assert session["active_user"] == 701
+    session["turn_started_at"] = live._now() - (live._TURN_TIMEOUT + 5)  # turno estourou
+    live.view(lid, 702)                       # poll do oponente dispara o _tick
+    assert session["active_user"] == 702      # turno auto-encerrou -> passou a vez
+    assert session["skips"].get(701) == 1
+
+
+def test_abandon_forfeits_and_settles_elo(flask_app):
+    _reset()
+    repo = _repo(flask_app)
+    a = _uid(repo, "afk_live"); b = _uid(repo, "stay_live")
+    live.join(a, "afk_live", list(DEFAULT_LOADOUT), 1500)
+    lid = live.join(b, "stay_live", list(DEFAULT_LOADOUT), 1500)["live_id"]
+    session = live._LIVE[lid]
+    session["skips"][a] = live._MAX_SKIPS - 1                 # já no limite
+    session["turn_started_at"] = live._now() - (live._TURN_TIMEOUT + 5)
+    live.view(lid, b, repo)                                   # poll do presente -> W.O.
+    assert session["match"]["is_finished"] is True
+    assert session["winner_user"] == b                       # quem ficou vence
+    assert repo.get_user_ranking(b)["elo"] > 1500
+    assert repo.get_user_ranking(a)["elo"] < 1500
+
+
 def test_join_queues_then_matches(flask_app):
     _reset()
     r1 = live.join(101, "u1", list(DEFAULT_LOADOUT), 1500)

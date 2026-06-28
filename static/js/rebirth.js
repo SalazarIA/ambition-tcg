@@ -5248,10 +5248,13 @@
             if (!view || !view.state) return;
             this.yourTurn = Boolean(view.your_turn);
             this.opponent = view.opponent || null;
+            this.finished = Boolean(view.finished);
+            if (typeof view.turn_seconds_left === "number") this.secondsLeft = view.turn_seconds_left;
             RebirthFlow.applyState(view.state);
-            this._renderLock(view);
+            this._renderBanner();
             if (view.finished) {
                 this._stopPolling();
+                this._stopClock();
                 RebirthStore.liveMode = null;
             }
         },
@@ -5261,12 +5264,28 @@
             this.poll = window.setInterval(() => {
                 if (this.id && !this.yourTurn && !RebirthStore.pending) this.refresh();
             }, 1600);
+            this._startClock();
         },
         _stopPolling() { if (this.poll) { window.clearInterval(this.poll); this.poll = null; } },
 
-        _renderLock(view) {
+        _startClock() {
+            this._stopClock();
+            // Relógio de turno: no SEU turno o contador desce localmente (não há
+            // poll) e, ao zerar, um refresh() deixa o servidor auto-encerrar.
+            this.clock = window.setInterval(() => {
+                if (!this.id || this.finished) return;
+                if (this.yourTurn) {
+                    this.secondsLeft = Math.max(0, (this.secondsLeft || 0) - 1);
+                    this._renderBanner();
+                    if (this.secondsLeft <= 0) this.refresh();
+                }
+            }, 1000);
+        },
+        _stopClock() { if (this.clock) { window.clearInterval(this.clock); this.clock = null; } },
+
+        _renderBanner() {
             const board = RebirthStore.elements["rebirth-board"];
-            if (board) board.dataset.liveLock = (this.yourTurn || (view && view.finished)) ? "" : "1";
+            if (board) board.dataset.liveLock = (this.yourTurn || this.finished) ? "" : "1";
             let banner = document.getElementById("rb-live-banner");
             if (!banner) {
                 banner = document.createElement("div");
@@ -5274,13 +5293,15 @@
                 banner.className = "rb-live-banner";
                 document.body.appendChild(banner);
             }
-            if (view && view.finished) {
+            if (this.finished) {
                 banner.textContent = "Partida ao vivo encerrada";
                 banner.dataset.turn = "done";
-            } else {
-                banner.textContent = (this.yourTurn ? "Sua vez" : "Vez do oponente") + " · vs " + (this.opponent || "oponente");
-                banner.dataset.turn = this.yourTurn ? "you" : "opp";
+                return;
             }
+            const s = Math.max(0, this.secondsLeft || 0);
+            const clock = " · " + Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
+            banner.textContent = (this.yourTurn ? "Sua vez" : "Vez do oponente") + " · vs " + (this.opponent || "oponente") + clock;
+            banner.dataset.turn = this.yourTurn ? "you" : "opp";
         },
 
         _overlay(title, sub) {

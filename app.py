@@ -107,7 +107,7 @@ app.config["REBIRTH_ENABLE_INTERNAL_LAB"] = os.environ.get("REBIRTH_ENABLE_INTER
 # Telemetria de decisão é observacional e roda no caminho quente de cada jogada
 # do jogador: pode ser desligada por ambiente sem afetar a jogabilidade.
 app.config["REBIRTH_ENABLE_DECISION_TELEMETRY"] = os.environ.get("REBIRTH_ENABLE_DECISION_TELEMETRY", "true") == "true"
-REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v131_PVP_POLISH")
+REBIRTH_RELEASE_VERSION = os.environ.get("REBIRTH_RELEASE_VERSION", "v132_PVP_ROBUST")
 app.config["REBIRTH_RELEASE_VERSION"] = REBIRTH_RELEASE_VERSION
 app.config["REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT"] = max(1, min(40, int(os.environ.get("REBIRTH_BALANCE_INTERACTIVE_MATCH_LIMIT", "24"))))
 app.config["REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS"] = min(3, max(1, int(os.environ.get("REBIRTH_POSTGRES_SERIALIZATION_ATTEMPTS", "3"))))
@@ -2142,7 +2142,7 @@ def api_rebirth_pvp_live_state():
         user = current_user(required=True)
         if not user:
             return json_error("Sessão necessária.", "auth_required", 401)
-        return json_payload(**live_pvp.view(request.args.get("live_id"), user["id"]))
+        return json_payload(**live_pvp.view(request.args.get("live_id"), user["id"], rebirth_repo()))
     except RebirthError as error:
         return json_from_rebirth_error(error)
 

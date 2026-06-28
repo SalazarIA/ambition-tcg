@@ -33,6 +33,8 @@ _QUEUE: List[Dict[str, Any]] = []          # jogadores aguardando par
 _LIVE: Dict[str, Dict[str, Any]] = {}      # live_id -> sessão
 _USER_LIVE: Dict[int, str] = {}            # user_id -> live_id atual
 _QUEUE_TTL = 90                            # s: descarta espera fantasma
+_TURN_TIMEOUT = 45.0                        # s sem ação -> auto-encerra o turno
+_MAX_SKIPS = 3                             # turnos auto-pulados seguidos -> W.O.
 
 
 def _now() -> float:
@@ -93,6 +95,8 @@ def _create_match(first: Dict[str, Any], second: Dict[str, Any]) -> Dict[str, An
         "match": match,
         "created": _now(),
         "settled": False,
+        "turn_started_at": _now(),
+        "skips": {},
     }
     _LIVE[live_id] = session
     _USER_LIVE[first["user_id"]] = live_id
@@ -114,11 +118,13 @@ def _require_turn(session: Dict[str, Any], user_id: int) -> None:
         raise RebirthError("Aguarde o turno do oponente.", "not_your_turn")
 
 
-def view(live_id: str, user_id: int) -> Dict[str, Any]:
+def view(live_id: str, user_id: int, repo=None) -> Dict[str, Any]:
     """Estado pela PERSPECTIVA do jogador: o ativo vê o match normal; o que
-    aguarda vê com os lados trocados (a própria mão revelada)."""
+    aguarda vê com os lados trocados (a própria mão revelada). Cada acesso roda
+    o _tick (enforcement de timeout/abandono)."""
     with _LOCK:
         session = _require(live_id, user_id)
+        _tick(session, repo)
         match = session["match"]
         if session["active_user"] == user_id:
             state = public_state(match)
@@ -130,6 +136,7 @@ def view(live_id: str, user_id: int) -> Dict[str, Any]:
         # pro HUD mostrar o username em vez do rótulo do bot — correto mesmo após
         # as trocas de lado.
         state["pvp"] = {"opponent_name": session["names"].get(_other(session, user_id))}
+        seconds_left = max(0, int(_TURN_TIMEOUT - (_now() - float(session.get("turn_started_at") or _now()))))
         return {
             "live_id": live_id,
             "state": state,
@@ -137,6 +144,7 @@ def view(live_id: str, user_id: int) -> Dict[str, Any]:
             "opponent": session["names"].get(_other(session, user_id)),
             "finished": bool(match.get("is_finished")),
             "winner_user": session.get("winner_user"),
+            "turn_seconds_left": seconds_left,
         }
 
 
@@ -144,46 +152,81 @@ def play_card(live_id, user_id, *, card_instance_id=None, card_id=None, field_sl
     with _LOCK:
         session = _require(live_id, user_id)
         _require_turn(session, user_id)
+        session["skips"][user_id] = 0
         dispatch_command(session["match"], SummonCardCommand(
             card_instance_id=card_instance_id, card_id=card_id, field_slot=field_slot, target_instance_id=target_instance_id))
         _maybe_settle(session, repo)
-        return view(live_id, user_id)
+        return view(live_id, user_id, repo)
 
 
 def attack(live_id, user_id, *, attacker_instance_id=None, target_instance_id=None, repo=None):
     with _LOCK:
         session = _require(live_id, user_id)
         _require_turn(session, user_id)
+        session["skips"][user_id] = 0
         dispatch_command(session["match"], DeclareAttackCommand(
             attacker_instance_id=attacker_instance_id, target_instance_id=target_instance_id))
         _maybe_settle(session, repo)
-        return view(live_id, user_id)
+        return view(live_id, user_id, repo)
 
 
 def evolve(live_id, user_id, *, card_id=None, repo=None):
     with _LOCK:
         session = _require(live_id, user_id)
         _require_turn(session, user_id)
+        session["skips"][user_id] = 0
         dispatch_command(session["match"], EvolveDuplicateCommand(card_id=card_id))
         _maybe_settle(session, repo)
-        return view(live_id, user_id)
+        return view(live_id, user_id, repo)
+
+
+def _handoff(session: Dict[str, Any], ended_user: int) -> None:
+    """Passa a vez: o outro humano assume o slot 'player' e o relógio reinicia."""
+    match = session["match"]
+    match["player"], match["bot"] = match["bot"], match["player"]
+    session["active_user"] = _other(session, ended_user)
+    session["turn_started_at"] = _now()
+
+
+def _end_turn_internal(session: Dict[str, Any], repo) -> None:
+    match = session["match"]
+    ended = session["active_user"]
+    dispatch_command(match, EndTurnCommand(turn=match.get("turn")))
+    if match.get("is_finished"):
+        _maybe_settle(session, repo)
+    else:
+        _handoff(session, ended)
+
+
+def _tick(session: Dict[str, Any], repo=None) -> None:
+    """Enforcement preguiçoso de timeout (chamado em todo acesso à sessão). Se o
+    ativo estourou o tempo do turno, auto-encerra; após _MAX_SKIPS turnos
+    auto-pulados seguidos, ele perde por W.O. (oponente vence + ELO). Resolve
+    abandono/aba fechada sem thread nem infra: o poll do oponente dispara."""
+    match = session["match"]
+    if match.get("is_finished") or session.get("settled"):
+        return
+    if (_now() - float(session.get("turn_started_at") or _now())) <= _TURN_TIMEOUT:
+        return
+    active = session["active_user"]
+    session["skips"][active] = int(session["skips"].get(active, 0)) + 1
+    if session["skips"][active] >= _MAX_SKIPS:
+        match["is_finished"] = True
+        match["winner"] = "bot"          # ativo (slot player) abandonou -> oponente vence
+        _maybe_settle(session, repo)
+        return
+    _end_turn_internal(session, repo)
 
 
 def end_turn(live_id, user_id, repo=None) -> Dict[str, Any]:
-    """Encerra o turno do jogador ativo: next_turn() (sem IA em pvp_sync), troca
-    os lados e passa a vez. Se a partida acabou, liquida o ELO dos dois."""
+    """Encerra o turno do jogador ativo (sem IA em pvp_sync) e passa a vez; se a
+    partida acabou, liquida o ELO dos dois."""
     with _LOCK:
         session = _require(live_id, user_id)
         _require_turn(session, user_id)
-        match = session["match"]
-        dispatch_command(match, EndTurnCommand(turn=match.get("turn")))
-        if match.get("is_finished"):
-            _maybe_settle(session, repo)
-        else:
-            # Troca os lados: o outro humano assume o slot "player".
-            match["player"], match["bot"] = match["bot"], match["player"]
-            session["active_user"] = _other(session, user_id)
-        return view(live_id, user_id)
+        session["skips"][user_id] = 0       # ação voluntária: jogador presente
+        _end_turn_internal(session, repo)
+        return view(live_id, user_id, repo)
 
 
 def _maybe_settle(session: Dict[str, Any], repo) -> None:

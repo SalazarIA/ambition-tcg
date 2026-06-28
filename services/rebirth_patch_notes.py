@@ -10,6 +10,17 @@ from typing import Any, Dict, List
 
 PATCH_NOTES: List[Dict[str, Any]] = [
     {
+        "version": "v132",
+        "date": "Jun 2026",
+        "title": "PvP ao vivo mais robusto",
+        "tag": "Competitivo",
+        "items": [
+            "Cronômetro de turno: se o oponente travar, o turno passa sozinho.",
+            "Abandono vira W.O. — quem fica leva a vitória (e o ELO).",
+            "Recarregou a página? Você volta direto pra partida em andamento.",
+        ],
+    },
+    {
         "version": "v131",
         "date": "Jun 2026",
         "title": "Polish do PvP",
