@@ -10,6 +10,19 @@ from typing import Any, Dict, List
 
 PATCH_NOTES: List[Dict[str, Any]] = [
     {
+        "version": "v127",
+        "date": "Jun 2026",
+        "title": "Atalhos de jogada",
+        "tag": "Controles",
+        "items": [
+            "Duplo-clique numa carta da mão invoca/joga direto.",
+            "Arraste a carta da mão e solte no altar pra invocar naquele slot.",
+            "Espaço ou Enter encerram o turno.",
+            "Clique numa área vazia do tabuleiro pra cancelar a seleção.",
+            "Correção: o botão Fundir agora aparece quando a fusão está pronta.",
+        ],
+    },
+    {
         "version": "v126",
         "date": "Jun 2026",
         "title": "Polish de invocação",

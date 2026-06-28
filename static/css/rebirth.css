@@ -16763,3 +16763,11 @@ body.rb-game-page .rb-game-board[data-winner]:not([data-winner=""]) .rb-mobile-a
 @media (prefers-reduced-motion: reduce) {
     .rb-summon-ring { display: none; }
 }
+
+/* Atalho drag-and-drop: durante o arraste de uma carta da mão, destaca os
+   altares válidos pra deixar claro onde soltar. */
+body.rb-card-dragging .rb-field-slot-empty.is-summon-target {
+    outline: 2px dashed rgba(244, 173, 38, 0.85);
+    outline-offset: -4px;
+    background: rgba(244, 173, 38, 0.1);
+}

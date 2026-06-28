@@ -876,8 +876,12 @@
             const statusClass = RebirthStatus.className(statuses);
             const ability = this.abilitySummary(card);
             const inlineStyle = `${RebirthAssets.cssVars(card)};${options && options.style ? options.style : ""}`;
+            // Atalho: cartas da mão são arrastáveis (só quando não bloqueadas) pra
+            // invocar soltando no altar. Outras listas (ex.: cemitério) não passam
+            // draggable, então seguem só clicáveis.
+            const dragAttr = options && options.draggable && !locked ? ` draggable="true"` : "";
             return `
-                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button" data-card-instance="${RebirthText.escape(card.instance_id)}" data-card-type="${RebirthText.escape(this.cardType(card))}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${inlineStyle}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
+                <button class="${this.cardShellClasses(card, "rb-mini-card")}${selected}${recommended}${locked}${statusClass}" type="button"${dragAttr} data-card-instance="${RebirthText.escape(card.instance_id)}" data-card-type="${RebirthText.escape(this.cardType(card))}" data-art-key="${RebirthText.escape(card.art_key || card.id)}" style="${inlineStyle}" aria-pressed="${selected ? "true" : "false"}" aria-label="${lockedReason ? RebirthText.escape(lockedReason) + ". " : ""}Selecionar ${RebirthText.escape(card.name)}, ataque ${RebirthText.escape(card.attack)}, guarda ${RebirthText.escape(card.guard)}" ${disabled}>
                     <span class="rb-card-frame-layer" aria-hidden="true"></span>
                     <b class="rb-card-cost">${RebirthText.escape(this.cardCost(card))}</b>
                     ${options && options.recommended ? '<span class="rb-recommendation-badge">MELHOR JOGADA</span>' : ""}
@@ -2848,7 +2852,12 @@
             button.disabled = !canUse || RebirthStore.pending;
             button.dataset.cardId = canEvolve ? evolution.card_id : "";
             button.dataset.mode = canFuse ? "fusion" : "evolution";
-            button.hidden = canFuse;
+            // BUG: era `button.hidden = canFuse`, que escondia o botão JUSTAMENTE
+            // quando a fusão estava pronta — o jogador via "Fusão pronta" no
+            // painel mas não tinha onde clicar (a fusão é disparada por este
+            // botão → activateEvolutionOrFusion). Mostra sempre que há fusão OU
+            // evolução; o painel cuida do estado vazio via .is-empty.
+            button.hidden = !canUse;
             button.textContent = canFuse ? "Fundir" : "Evoluir";
 
             if (!canUse) {
@@ -2906,6 +2915,7 @@
                     recommended: recommended && card.instance_id === recommended.instance_id,
                     statuses: card.instance_id === RebirthStore.selectedInstanceId ? RebirthStore.state.player.statuses : null,
                     style: fanStyle,
+                    draggable: true,
                     locked: !canChoose || energy < RebirthMarkup.cardCost(card) || (RebirthMarkup.isMonster(card) && !hasOpenSlot),
                     lockedReason: !canChoose
                         ? "Ação indisponível fora da sua fase principal"
@@ -3367,7 +3377,15 @@
                     btn.innerHTML = '<i class="rb-action-sword" aria-hidden="true"></i><span>Combate resolvido</span>';
                     btn.disabled = true;
                     btn.title = "Combate resolvido. Avance para o próximo turno.";
-                } else if (fieldFusion) {
+                } else if (fieldFusion && !selected && !selectedAttacker) {
+                    // O play-button só mostra "Fundir" quando NADA está
+                    // selecionado — que é exatamente quando o clique de fato
+                    // funde (o handler prioriza carta/atacante selecionado antes
+                    // da fusão). Antes o label dizia "Fundir" mesmo com um
+                    // atacante selecionado (o que sobra após invocar o 2º
+                    // monstro), e clicar atacava em vez de fundir → "não
+                    // consegui fazer". Pra fundir: clique no vazio pra
+                    // desmarcar e o botão vira "Fundir".
                     actionState = "fusion";
                     btn.innerHTML = '<i class="rb-action-loop" aria-hidden="true"></i><span>Fundir</span>';
                     btn.disabled = !canChoose;
@@ -4239,6 +4257,13 @@
                 RebirthStore.campaignReward = payload.campaign_reward || null;
                 this.applyState(payload.state);
                 this.completeTutorialIfNeeded(payload.state);
+                // Se a invocação formou um par de fusão, desmarca o monstro recém
+                // -invocado pra que o botão de ação mostre "Fundir" na hora — sem
+                // o jogador precisar adivinhar que tem que desmarcar antes.
+                if (RebirthStore.firstFieldFusion()) {
+                    RebirthStore.selectedAttackerId = null;
+                    RebirthRenderer.buttons();
+                }
             });
         },
 
@@ -4633,15 +4658,56 @@
 
             const hand = RebirthStore.elements["player-hand"];
             if (hand) {
+                // 1 clique seleciona; 2 cliques na MESMA carta (<340ms) = jogar
+                // direto (monstro vai pro primeiro altar livre; magia segue o
+                // caminho do botão Jogar). Detecção por timing no próprio click —
+                // robusta ao re-render da mão (um listener `dblclick` perdia o
+                // alvo porque o 1º clique troca o nó da carta).
                 hand.addEventListener("click", (event) => {
                     const button = event.target.closest("[data-card-instance]");
                     if (!button || button.disabled || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") return;
-                    RebirthStore.selectedInstanceId = button.getAttribute("data-card-instance");
+                    const instanceId = button.getAttribute("data-card-instance");
+                    const now = Date.now();
+                    if (instanceId === RebirthStore._lastHandClickId && (now - (RebirthStore._lastHandClickAt || 0)) < 340) {
+                        RebirthStore._lastHandClickId = null;
+                        RebirthStore._lastHandClickAt = 0;
+                        RebirthStore.selectedInstanceId = instanceId;
+                        RebirthStore.selectedAttackerId = null;
+                        if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                        RebirthFlow.playSelectedCard({});
+                        return;
+                    }
+                    RebirthStore._lastHandClickId = instanceId;
+                    RebirthStore._lastHandClickAt = now;
+                    RebirthStore.selectedInstanceId = instanceId;
                     RebirthStore.selectedAttackerId = null;
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     RebirthErrors.clear();
                     RebirthRenderer.render();
                     RebirthGameFeel.selectionPulse();
+                });
+                // Atalho: arrastar a carta e soltar num altar = invocar naquele
+                // slot. NÃO re-renderiza a mão no dragstart (removeria o nó
+                // arrastado e abortaria o drag); só acende os altares via
+                // battlefield().
+                hand.addEventListener("dragstart", (event) => {
+                    const button = event.target.closest("[data-card-instance]");
+                    if (!button || button.disabled || RebirthStore.pending || !RebirthStore.state || RebirthStore.state.phase !== "choose") {
+                        if (event.preventDefault) event.preventDefault();
+                        return;
+                    }
+                    RebirthStore.selectedInstanceId = button.getAttribute("data-card-instance");
+                    RebirthStore.selectedAttackerId = null;
+                    if (event.dataTransfer) {
+                        event.dataTransfer.effectAllowed = "move";
+                        try { event.dataTransfer.setData("text/plain", RebirthStore.selectedInstanceId); } catch (_e) {}
+                    }
+                    document.body.classList.add("rb-card-dragging");
+                    RebirthErrors.clear();
+                    RebirthRenderer.battlefield();
+                });
+                hand.addEventListener("dragend", () => {
+                    document.body.classList.remove("rb-card-dragging");
                 });
             }
 
@@ -4666,6 +4732,23 @@
                     RebirthRenderer.render();
                     RebirthGameFeel.selectionPulse();
                 });
+                // Drag-and-drop: permitir soltar a carta arrastada num altar.
+                playerField.addEventListener("dragover", (event) => {
+                    const slot = event.target.closest("[data-summon-action]");
+                    if (slot && !slot.disabled) {
+                        event.preventDefault();
+                        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+                    }
+                });
+                playerField.addEventListener("drop", (event) => {
+                    document.body.classList.remove("rb-card-dragging");
+                    const slot = event.target.closest("[data-summon-action]");
+                    if (!slot || slot.disabled || !RebirthStore.selectedInstanceId || !RebirthStore.state || RebirthStore.state.is_finished) return;
+                    event.preventDefault();
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                    const chosenSlot = Number(slot.getAttribute("data-summon-slot"));
+                    RebirthFlow.playSelectedCard(Number.isInteger(chosenSlot) ? { fieldSlot: chosenSlot } : {});
+                });
             }
 
             const botField = RebirthStore.elements["bot-battlefield"];
@@ -4683,6 +4766,45 @@
                         return;
                     }
                     RebirthFlow.attackTarget(target ? target.getAttribute("data-target-instance") : null);
+                });
+            }
+
+            // Atalho de teclado: Espaço/Enter encerram o turno — só quando o foco
+            // NÃO está num controle (botão/link/campo), pra não conflitar com a
+            // ativação nativa nem com digitação, e nunca com overlay aberto.
+            document.addEventListener("keydown", (event) => {
+                if (event.key !== " " && event.key !== "Enter" && event.code !== "Space") return;
+                const el = event.target;
+                const tag = (el && el.tagName) || "";
+                if (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(tag) || (el && el.isContentEditable)) return;
+                if (document.body.classList.contains("rb-mulligan-open")) return;
+                // Bloqueia só por overlay REALMENTE visível (getClientRects). Não
+                // basta checar [hidden]: o finale-overlay fica no DOM sempre, sem
+                // atributo hidden (usa aria-hidden + CSS) — checar só !hidden
+                // travava o atalho permanentemente.
+                const overlays = document.querySelectorAll('[id$="-overlay"], [data-rebirth-auth-modal]');
+                for (let i = 0; i < overlays.length; i += 1) {
+                    if (!overlays[i].hidden && overlays[i].getClientRects().length) return;
+                }
+                if (!RebirthStore.state || RebirthStore.pending || RebirthStore.state.is_finished) return;
+                if (RebirthStore.state.phase !== "choose" && RebirthStore.state.phase !== "result") return;
+                if (!document.querySelector(".rb-game-board")) return;
+                event.preventDefault();
+                if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                RebirthFlow.nextTurn();
+            });
+
+            // Atalho: clicar numa área vazia do tabuleiro cancela a seleção atual
+            // (carta na mão ou atacante) — reduz "clique preso" depois de desistir.
+            const boardEl = RebirthStore.elements["rebirth-board"];
+            if (boardEl) {
+                boardEl.addEventListener("click", (event) => {
+                    if (event.target.closest("[data-card-instance], [data-attacker-instance], [data-target-instance], [data-summon-action], [data-direct-attack], button, a")) return;
+                    if (!RebirthStore.selectedInstanceId && !RebirthStore.selectedAttackerId) return;
+                    RebirthStore.selectedInstanceId = null;
+                    RebirthStore.selectedAttackerId = null;
+                    RebirthErrors.clear();
+                    RebirthRenderer.render();
                 });
             }
         },
