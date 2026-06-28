@@ -4212,6 +4212,11 @@
         },
 
         async activateEvolutionOrFusion() {
+            if (RebirthStore.liveMode) {
+                const ev = RebirthStore.firstEvolution();
+                await RebirthLive.act({ action: "evolve", card_id: ev ? ev.card_id : null });
+                return;
+            }
             const fusion = RebirthStore.firstFieldFusion();
             if (fusion) {
                 await this.fuseFieldPair(fusion);
@@ -4222,6 +4227,18 @@
 
         async playSelectedCard(options) {
             options = options || {};
+            if (RebirthStore.liveMode) {
+                const sel = RebirthStore.selectedInstanceId;
+                if (!sel) return;
+                RebirthStore.selectedInstanceId = null;
+                await RebirthLive.act({
+                    action: "play",
+                    card_instance_id: sel,
+                    field_slot: (Number.isInteger(options.fieldSlot) ? options.fieldSlot : null),
+                    target_instance_id: options.targetInstanceId || null,
+                });
+                return;
+            }
             if (!RebirthStore.selectedInstanceId || !RebirthStore.state) return;
             if (RebirthStore.state.is_finished || RebirthStore.state.phase !== "choose") {
                 RebirthErrors.show("Cartas só podem ser jogadas na sua fase principal.");
@@ -4278,6 +4295,14 @@
         },
 
         async attackTarget(targetInstanceId) {
+            if (RebirthStore.liveMode) {
+                const attackerId = RebirthStore.selectedAttackerId;
+                if (!attackerId) return;
+                RebirthStore.selectedAttackerId = null;
+                if (window.RebirthTargeting && RebirthTargeting.deactivate) RebirthTargeting.deactivate();
+                await RebirthLive.act({ action: "attack", attacker_instance_id: attackerId, target_instance_id: targetInstanceId || null });
+                return;
+            }
             if (!RebirthStore.selectedAttackerId || !RebirthStore.state || !RebirthStore.fieldCard(RebirthStore.selectedAttackerId)) {
                 RebirthStore.selectedAttackerId = null;
                 RebirthErrors.show("Selecione um monstro pronto no seu campo primeiro.");
@@ -4373,6 +4398,10 @@
 
         async nextTurn() {
             if (!RebirthStore.state) return;
+            if (RebirthStore.liveMode) {
+                await RebirthLive.act({ action: "end_turn" });
+                return;
+            }
             await this.request(async () => {
                 RebirthGameFeel.previewBotTurn();
                 const payload = await RebirthApi.post(RebirthConfig.endpoints.nextTurn, {
@@ -5141,6 +5170,116 @@
         }
     };
 
+    // Passo 3 — cliente de PvP ao vivo (polling). Reusa o renderer e os handlers
+    // existentes; só troca o transporte (endpoints /pvp/live/*) quando liveMode
+    // está ligado, e roda um loop de polling pra refletir as jogadas do oponente.
+    const RebirthLive = {
+        id: null,
+        poll: null,
+        yourTurn: false,
+        opponent: null,
+
+        async start() {
+            this._overlay("Procurando oponente…", "Você entrou na fila de PvP ao vivo. Abra a fila em outro dispositivo/conta para parear.");
+            try {
+                let res = await RebirthApi.post("/api/rebirth/pvp/live/join", {});
+                let tries = 0;
+                while (res && res.status === "waiting" && tries < 150) {
+                    await new Promise((r) => window.setTimeout(r, 2000));
+                    res = await RebirthApi.post("/api/rebirth/pvp/live/join", {});
+                    tries += 1;
+                }
+                if (!res || res.status !== "matched" || !res.live_id) {
+                    this._overlay("Sem oponente agora", "Ninguém na fila ao vivo. Tente de novo em instantes ou jogue uma partida ranqueada (assíncrona).");
+                    return;
+                }
+                this.id = res.live_id;
+                RebirthStore.liveMode = this.id;
+                this._hideOverlay();
+                await this.refresh();
+                this._startPolling();
+            } catch (_e) {
+                this._overlay("Erro ao entrar", "Não foi possível entrar no PvP ao vivo. Recarregue a página.");
+            }
+        },
+
+        async refresh() {
+            if (!this.id) return;
+            try {
+                const r = await fetch("/api/rebirth/pvp/live/state?live_id=" + encodeURIComponent(this.id), { credentials: "same-origin", headers: { Accept: "application/json" } });
+                if (!r.ok) return;
+                this._apply(await r.json());
+            } catch (_e) {}
+        },
+
+        async act(body) {
+            if (!this.id) return;
+            if (!this.yourTurn) { RebirthErrors.show("Aguarde o turno do oponente."); return; }
+            body.live_id = this.id;
+            try {
+                this._apply(await RebirthApi.post("/api/rebirth/pvp/live/command", body));
+            } catch (error) {
+                if (error && error.message) RebirthErrors.show(error.message);
+                await this.refresh();
+            }
+        },
+
+        _apply(view) {
+            if (!view || !view.state) return;
+            this.yourTurn = Boolean(view.your_turn);
+            this.opponent = view.opponent || null;
+            RebirthFlow.applyState(view.state);
+            this._renderLock(view);
+            if (view.finished) {
+                this._stopPolling();
+                RebirthStore.liveMode = null;
+            }
+        },
+
+        _startPolling() {
+            this._stopPolling();
+            this.poll = window.setInterval(() => {
+                if (this.id && !this.yourTurn && !RebirthStore.pending) this.refresh();
+            }, 1600);
+        },
+        _stopPolling() { if (this.poll) { window.clearInterval(this.poll); this.poll = null; } },
+
+        _renderLock(view) {
+            const board = RebirthStore.elements["rebirth-board"];
+            if (board) board.dataset.liveLock = (this.yourTurn || (view && view.finished)) ? "" : "1";
+            let banner = document.getElementById("rb-live-banner");
+            if (!banner) {
+                banner = document.createElement("div");
+                banner.id = "rb-live-banner";
+                banner.className = "rb-live-banner";
+                document.body.appendChild(banner);
+            }
+            if (view && view.finished) {
+                banner.textContent = "Partida ao vivo encerrada";
+                banner.dataset.turn = "done";
+            } else {
+                banner.textContent = (this.yourTurn ? "Sua vez" : "Vez do oponente") + " · vs " + (this.opponent || "oponente");
+                banner.dataset.turn = this.yourTurn ? "you" : "opp";
+            }
+        },
+
+        _overlay(title, sub) {
+            let o = document.getElementById("rb-live-overlay");
+            if (!o) {
+                o = document.createElement("div");
+                o.id = "rb-live-overlay";
+                o.className = "rb-live-overlay";
+                document.body.appendChild(o);
+            }
+            o.innerHTML = '<div class="rb-live-card"><div class="rb-live-spin" aria-hidden="true"></div><h2></h2><p></p></div>';
+            o.querySelector("h2").textContent = title;
+            o.querySelector("p").textContent = sub;
+            o.hidden = false;
+        },
+        _hideOverlay() { const o = document.getElementById("rb-live-overlay"); if (o) o.hidden = true; }
+    };
+    window.RebirthLive = RebirthLive;
+
     function init() {
         if ("scrollRestoration" in window.history) {
             window.history.scrollRestoration = "manual";
@@ -5151,8 +5290,14 @@
         RebirthAssets.preload();
         RebirthInput.bind();
         RebirthHandTilt.init();
-        RebirthTutorial.init();
-        RebirthFlow.startMatch();
+        const liveParam = new URLSearchParams(window.location.search).get("live") === "1";
+        if (liveParam) {
+            // PvP ao vivo não usa o tutorial de PvE (cobria o tabuleiro/banner).
+            RebirthLive.start();
+        } else {
+            RebirthTutorial.init();
+            RebirthFlow.startMatch();
+        }
     }
 
     // S1: expor pra integração com flow — chamado após state inicial chegar

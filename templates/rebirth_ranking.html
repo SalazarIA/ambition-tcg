@@ -31,6 +31,7 @@
                 <p class="rb-season-tier">Faixa <b>{{ me_tier.tier }}</b> · recompensa de fim de temporada: <b>+{{ me_tier.gold }}</b> ouro{% if me_tier.dust %} · <b>+{{ me_tier.dust }}</b> pó{% endif %}.</p>
                 {% endif %}
                 <a class="rb-button-primary rb-cta rb-ranked-cta" href="{{ url_for('rebirth') }}?ranked=1">Partida ranqueada (PvP)</a>
+                <a class="rb-button-secondary rb-secondary rb-live-cta" href="{{ url_for('rebirth') }}?live=1">Jogar ao vivo (PvP)</a>
             </section>
         {% elif not account.authenticated %}
             <section class="rb-product-panel rb-ranking-login" aria-label="Entrar para participar">

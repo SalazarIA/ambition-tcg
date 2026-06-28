@@ -16801,3 +16801,55 @@ body.rb-card-dragging .rb-field-slot-empty.is-summon-target {
     cursor: pointer;
 }
 .rb-pvp-challenge:hover { background: rgba(244, 173, 38, 1); }
+
+/* Passo 3 — cliente de PvP ao vivo: overlay de fila, banner de turno, lock. */
+.rb-live-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 6, 4, 0.86);
+}
+.rb-live-overlay[hidden] { display: none; }
+.rb-live-card {
+    text-align: center;
+    max-width: 420px;
+    padding: 28px 30px;
+    border: 1px solid rgba(244, 173, 38, 0.4);
+    border-radius: var(--rb-cut-soft);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.3));
+}
+.rb-live-card h2 { font-family: var(--rb-font-display); margin: 12px 0 6px; }
+.rb-live-card p { color: rgba(232, 212, 164, 0.8); font-size: 14px; line-height: 1.5; }
+.rb-live-spin {
+    width: 36px;
+    height: 36px;
+    margin: 0 auto;
+    border-radius: 50%;
+    border: 3px solid rgba(244, 173, 38, 0.22);
+    border-top-color: rgba(244, 173, 38, 0.95);
+    animation: rb-live-spin 0.9s linear infinite;
+}
+@keyframes rb-live-spin { to { transform: rotate(360deg); } }
+.rb-live-banner {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9998;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid rgba(244, 173, 38, 0.5);
+    color: #fff4d2;
+    pointer-events: none;
+}
+.rb-live-banner[data-turn="you"] { background: rgba(116, 198, 122, 0.24); border-color: rgba(116, 198, 122, 0.7); }
+.rb-live-banner[data-turn="opp"] { background: rgba(214, 90, 80, 0.24); border-color: rgba(214, 90, 80, 0.7); }
+.rb-live-banner[data-turn="done"] { background: rgba(244, 173, 38, 0.24); }
+.rb-game-board[data-live-lock="1"] .rb-player-hand,
+.rb-game-board[data-live-lock="1"] .rb-battle-zone { opacity: 0.62; filter: saturate(0.85); }
+@media (prefers-reduced-motion: reduce) { .rb-live-spin { animation: none; } }
