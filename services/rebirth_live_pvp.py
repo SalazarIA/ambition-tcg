@@ -59,10 +59,13 @@ def join(user_id: int, username: str, deck: List[str], elo: int) -> Dict[str, An
         _prune_queue()
         # remove entradas antigas do próprio usuário na fila
         _QUEUE[:] = [w for w in _QUEUE if w["user_id"] != user_id]
-        opponent = next((w for w in _QUEUE if w["user_id"] != user_id), None)
-        if not opponent:
+        # Matchmaking: pareia com o jogador na fila de ELO MAIS PRÓXIMO (não só o
+        # primeiro), pra duelos mais equilibrados.
+        candidates = [w for w in _QUEUE if w["user_id"] != user_id]
+        if not candidates:
             _QUEUE.append({"user_id": user_id, "username": username, "deck": list(deck), "elo": int(elo), "ts": _now()})
             return {"status": "waiting"}
+        opponent = min(candidates, key=lambda w: abs(int(w.get("elo", 1500)) - int(elo)))
         _QUEUE.remove(opponent)
         return _create_match(opponent, {"user_id": user_id, "username": username, "deck": list(deck), "elo": int(elo)})
 
@@ -123,6 +126,10 @@ def view(live_id: str, user_id: int) -> Dict[str, Any]:
             mirror = deepcopy(match)
             mirror["player"], mirror["bot"] = mirror["bot"], mirror["player"]
             state = public_state(mirror)
+        # Nome do oponente pela perspectiva deste jogador (sempre o OUTRO humano),
+        # pro HUD mostrar o username em vez do rótulo do bot — correto mesmo após
+        # as trocas de lado.
+        state["pvp"] = {"opponent_name": session["names"].get(_other(session, user_id))}
         return {
             "live_id": live_id,
             "state": state,

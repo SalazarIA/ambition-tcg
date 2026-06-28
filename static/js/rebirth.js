@@ -2549,7 +2549,8 @@
             this.trapZones(state);
             RebirthDom.setText("turn-number", String(state.turn).padStart(2, "0"));
             const bossName = state.campaign && state.campaign.presentation && state.campaign.presentation.name;
-            const botName = bossName || (state.bot_profile && state.bot_profile.name) || "Bot";
+            const pvpName = state.pvp && state.pvp.opponent_name;
+            const botName = bossName || pvpName || (state.bot_profile && state.bot_profile.name) || "Bot";
             RebirthDom.setText("bot-profile-label", botName);
             // Mostra a dificuldade do bot (e marca a 1ª partida como introdução):
             // assim a vitória inicial fácil não vende a impressão de um jogo mole.
@@ -5179,14 +5180,33 @@
         yourTurn: false,
         opponent: null,
 
+        async _join() {
+            const r = await fetch("/api/rebirth/pvp/live/join", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Rebirth-CSRF": window.REBIRTH_CSRF || "" },
+                credentials: "same-origin",
+                body: "{}"
+            });
+            if (r.status === 401) return { auth: false };
+            try { return await r.json(); } catch (_e) { return null; }
+        },
+
         async start() {
             this._overlay("Procurando oponente…", "Você entrou na fila de PvP ao vivo. Abra a fila em outro dispositivo/conta para parear.");
             try {
-                let res = await RebirthApi.post("/api/rebirth/pvp/live/join", {});
+                let res = await this._join();
+                if (res && res.auth === false) {
+                    this._overlay("Entre na sua conta", "O PvP ao vivo é para jogadores logados. Entre ou crie sua conta e tente de novo.");
+                    return;
+                }
                 let tries = 0;
                 while (res && res.status === "waiting" && tries < 150) {
                     await new Promise((r) => window.setTimeout(r, 2000));
-                    res = await RebirthApi.post("/api/rebirth/pvp/live/join", {});
+                    res = await this._join();
+                    if (res && res.auth === false) {
+                        this._overlay("Entre na sua conta", "O PvP ao vivo é para jogadores logados. Entre ou crie sua conta e tente de novo.");
+                        return;
+                    }
                     tries += 1;
                 }
                 if (!res || res.status !== "matched" || !res.live_id) {

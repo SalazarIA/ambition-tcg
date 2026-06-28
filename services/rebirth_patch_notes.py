@@ -10,6 +10,17 @@ from typing import Any, Dict, List
 
 PATCH_NOTES: List[Dict[str, Any]] = [
     {
+        "version": "v131",
+        "date": "Jun 2026",
+        "title": "Polish do PvP",
+        "tag": "Competitivo",
+        "items": [
+            "No PvP, o nome do oponente aparece no lugar do rótulo de bot.",
+            "A fila ao vivo pareia por ELO mais próximo, pra duelos equilibrados.",
+            "Mensagem clara de “entre na sua conta” ao tentar jogar ao vivo sem login.",
+        ],
+    },
+    {
         "version": "v130",
         "date": "Jun 2026",
         "title": "PvP ao vivo",
