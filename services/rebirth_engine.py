@@ -2528,19 +2528,23 @@ def next_turn(match):
             "bot_max_energy": int(match["bot"].get("max_energy", 0) or 0),
         },
     )
-    evolve_bot_if_ready(match)
-    _bot_auto_play_support(match)
-    if match.get("is_finished"):
-        return match
-    _bot_auto_attack_all(match, effect_chain_id=effect_chain_id)
-    if match.get("is_finished"):
-        return match
-    summoned_cards = _bot_auto_summon_all(match)
-    if match.get("is_finished"):
-        return match
-    _bot_rush_attacks(match, summoned_cards, effect_chain_id=effect_chain_id)
-    if match.get("is_finished"):
-        return match
+    # PvP ao vivo (pvp_sync): a "vez do bot" é controlada por um humano, então a
+    # IA NÃO joga. O resto do start-of-turn (draw/ready/energia/fase) é igual; o
+    # orquestrador (rebirth_live_pvp) troca os lados pra o outro jogador assumir.
+    if match.get("_runtime_mode") != "pvp_sync":
+        evolve_bot_if_ready(match)
+        _bot_auto_play_support(match)
+        if match.get("is_finished"):
+            return match
+        _bot_auto_attack_all(match, effect_chain_id=effect_chain_id)
+        if match.get("is_finished"):
+            return match
+        summoned_cards = _bot_auto_summon_all(match)
+        if match.get("is_finished"):
+            return match
+        _bot_rush_attacks(match, summoned_cards, effect_chain_id=effect_chain_id)
+        if match.get("is_finished"):
+            return match
     # O exhaust do Shadow Reaper expira DEPOIS de o bot agir — antes deste fix
     # ele era limpo antes do ataque do bot e a lendária não fazia nada.
     expired_events = expire_statuses_for_trigger(match, "TURN_STARTED", {"effect_chain_id": effect_chain_id})

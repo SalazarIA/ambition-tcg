@@ -2117,6 +2117,70 @@ def api_rebirth_next_turn():
         return json_from_rebirth_error(error)
 
 
+# === Passo 3: PvP ao vivo (dois humanos, por polling, sem infra nova) ===
+@app.post("/api/rebirth/pvp/live/join")
+def api_rebirth_pvp_live_join():
+    import services.rebirth_live_pvp as live_pvp
+    try:
+        user = current_user(required=True)
+        if not user:
+            return json_error("Entre na sua conta para jogar PvP ao vivo.", "auth_required", 401)
+        repo = rebirth_repo()
+        deck = repo.loadout_card_ids(user["id"])
+        elo = int((repo.get_user_ranking(user["id"]) or {}).get("elo") or 1500)
+        return json_payload(**live_pvp.join(user["id"], user["username"], deck, elo))
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.get("/api/rebirth/pvp/live/state")
+def api_rebirth_pvp_live_state():
+    import services.rebirth_live_pvp as live_pvp
+    try:
+        user = current_user(required=True)
+        if not user:
+            return json_error("Sessão necessária.", "auth_required", 401)
+        return json_payload(**live_pvp.view(request.args.get("live_id"), user["id"]))
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/pvp/live/command")
+def api_rebirth_pvp_live_command():
+    import services.rebirth_live_pvp as live_pvp
+    try:
+        payload = request_json(required=True)
+        user = current_user(required=True)
+        if not user:
+            return json_error("Sessão necessária.", "auth_required", 401)
+        live_id = payload.get("live_id")
+        action = str(payload.get("action") or "")
+        repo = rebirth_repo()
+        if action == "play":
+            res = live_pvp.play_card(live_id, user["id"], card_instance_id=payload.get("card_instance_id"),
+                                     card_id=payload.get("card_id"), field_slot=payload.get("field_slot"),
+                                     target_instance_id=payload.get("target_instance_id"), repo=repo)
+        elif action == "attack":
+            res = live_pvp.attack(live_id, user["id"], attacker_instance_id=payload.get("attacker_instance_id"),
+                                  target_instance_id=payload.get("target_instance_id"), repo=repo)
+        elif action == "evolve":
+            res = live_pvp.evolve(live_id, user["id"], card_id=payload.get("card_id"), repo=repo)
+        elif action == "end_turn":
+            res = live_pvp.end_turn(live_id, user["id"], repo=repo)
+        elif action == "leave":
+            live_pvp.leave(user["id"])
+            res = {"left": True}
+        else:
+            return json_error("Ação inválida.", "invalid_action", 400)
+        return json_payload(**res)
+    except RebirthPersistenceError as error:
+        return json_from_persistence_error(error)
+    except RebirthError as error:
+        return json_from_rebirth_error(error)
+
+
 @app.post("/api/rebirth/mulligan")
 def api_rebirth_mulligan():
     try:
