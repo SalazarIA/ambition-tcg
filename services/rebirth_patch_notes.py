@@ -10,6 +10,18 @@ from typing import Any, Dict, List
 
 PATCH_NOTES: List[Dict[str, Any]] = [
     {
+        "version": "v128",
+        "date": "Jun 2026",
+        "title": "Mais atalhos + feedback de mana",
+        "tag": "Controles",
+        "items": [
+            "Teclas 1–9 selecionam a carta da mão pela posição.",
+            "ESC cancela a seleção atual.",
+            "Duplo-clique na sua criatura ataca o herói inimigo quando o caminho está livre.",
+            "A mana agora pisca ao ser gasta — o consumo não passa mais despercebido.",
+        ],
+    },
+    {
         "version": "v127",
         "date": "Jun 2026",
         "title": "Atalhos de jogada",

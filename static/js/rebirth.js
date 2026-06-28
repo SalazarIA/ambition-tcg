@@ -2645,6 +2645,7 @@
             const available = Math.max(0, Math.min(total, Number(energy || 0)));
             const previousAvailable = host.dataset.available == null ? null : Number(host.dataset.available);
             const gainedMana = previousAvailable != null && available > previousAvailable;
+            const spentMana = previousAvailable != null && available < previousAvailable;
             host.dataset.available = String(available);
             host.dataset.max = String(total);
             host.innerHTML = Array.from({ length: total }).map((_, index) => {
@@ -2653,6 +2654,10 @@
             }).join("");
             if (gainedMana) {
                 restartClass(host, "is-mana-gaining");
+            } else if (spentMana) {
+                // Feedback ao GASTAR mana (antes só havia o de ganhar): pulso curto
+                // nos pips pra o gasto não passar despercebido.
+                restartClass(host, "is-mana-spending");
             }
         },
 
@@ -4725,12 +4730,30 @@
                     }
                     const button = event.target.closest("[data-attacker-instance]");
                     if (!button || !RebirthStore.state || RebirthStore.state.is_finished) return;
+                    const attackerId = button.getAttribute("data-attacker-instance");
+                    const nowTs = Date.now();
+                    const isDouble = attackerId === RebirthStore._lastFieldClickId && (nowTs - (RebirthStore._lastFieldClickAt || 0)) < 340;
+                    RebirthStore._lastFieldClickId = attackerId;
+                    RebirthStore._lastFieldClickAt = nowTs;
                     RebirthStore.selectedInstanceId = null;
-                    RebirthStore.selectedAttackerId = button.getAttribute("data-attacker-instance");
+                    RebirthStore.selectedAttackerId = attackerId;
                     if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
                     RebirthErrors.clear();
                     RebirthRenderer.render();
                     RebirthGameFeel.selectionPulse();
+                    // Atalho: duplo-clique na sua unidade = atacar o herói inimigo,
+                    // mas só com a face ABERTA (campo do bot vazio e fora do turno
+                    // 1) e a unidade apta — pra não jogá-la contra um bloqueador
+                    // sem querer. Com bloqueador, o 2º clique só mantém a seleção.
+                    if (isDouble) {
+                        const st = RebirthStore.state;
+                        const faceOpen = RebirthStore.fieldCards("bot").length === 0 && Number(st.turn || 1) !== 1;
+                        if (faceOpen && cardCanActNow(RebirthStore.fieldCard(attackerId))) {
+                            RebirthStore._lastFieldClickId = null;
+                            RebirthStore._lastFieldClickAt = 0;
+                            RebirthFlow.clashSelectedAttacker();
+                        }
+                    }
                 });
                 // Drag-and-drop: permitir soltar a carta arrastada num altar.
                 playerField.addEventListener("dragover", (event) => {
@@ -4773,25 +4796,58 @@
             // NÃO está num controle (botão/link/campo), pra não conflitar com a
             // ativação nativa nem com digitação, e nunca com overlay aberto.
             document.addEventListener("keydown", (event) => {
-                if (event.key !== " " && event.key !== "Enter" && event.code !== "Space") return;
                 const el = event.target;
                 const tag = (el && el.tagName) || "";
-                if (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(tag) || (el && el.isContentEditable)) return;
-                if (document.body.classList.contains("rb-mulligan-open")) return;
-                // Bloqueia só por overlay REALMENTE visível (getClientRects). Não
-                // basta checar [hidden]: o finale-overlay fica no DOM sempre, sem
-                // atributo hidden (usa aria-hidden + CSS) — checar só !hidden
-                // travava o atalho permanentemente.
-                const overlays = document.querySelectorAll('[id$="-overlay"], [data-rebirth-auth-modal]');
-                for (let i = 0; i < overlays.length; i += 1) {
-                    if (!overlays[i].hidden && overlays[i].getClientRects().length) return;
+                // Nunca interfere quando o jogador está digitando.
+                if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (el && el.isContentEditable)) return;
+                // Overlay REALMENTE visível? (getClientRects, não só [hidden]: o
+                // finale-overlay fica no DOM sempre, sem atributo hidden.)
+                let overlayOpen = document.body.classList.contains("rb-mulligan-open");
+                if (!overlayOpen) {
+                    const ovs = document.querySelectorAll('[id$="-overlay"], [data-rebirth-auth-modal]');
+                    for (let i = 0; i < ovs.length; i += 1) {
+                        if (!ovs[i].hidden && ovs[i].getClientRects().length) { overlayOpen = true; break; }
+                    }
                 }
-                if (!RebirthStore.state || RebirthStore.pending || RebirthStore.state.is_finished) return;
-                if (RebirthStore.state.phase !== "choose" && RebirthStore.state.phase !== "result") return;
-                if (!document.querySelector(".rb-game-board")) return;
-                event.preventDefault();
-                if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
-                RebirthFlow.nextTurn();
+                const state = RebirthStore.state;
+                const inMatch = Boolean(state && !RebirthStore.pending && document.querySelector(".rb-game-board"));
+
+                // ESC: cancela a seleção atual (carta/atacante). Overlays cuidam
+                // do próprio ESC; aqui é só desmarcar.
+                if (event.key === "Escape") {
+                    if (!overlayOpen && (RebirthStore.selectedInstanceId || RebirthStore.selectedAttackerId)) {
+                        RebirthStore.selectedInstanceId = null;
+                        RebirthStore.selectedAttackerId = null;
+                        RebirthErrors.clear();
+                        RebirthRenderer.render();
+                    }
+                    return;
+                }
+                if (overlayOpen || !inMatch || state.is_finished) return;
+
+                // Espaço/Enter: encerrar turno (sem roubar foco de botão/link).
+                if (event.key === " " || event.key === "Enter" || event.code === "Space") {
+                    if (/^(BUTTON|A)$/.test(tag)) return;
+                    if (state.phase !== "choose" && state.phase !== "result") return;
+                    event.preventDefault();
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                    RebirthFlow.nextTurn();
+                    return;
+                }
+
+                // Teclas 1–9: seleciona a carta da mão por posição.
+                if (/^[1-9]$/.test(event.key) && state.phase === "choose") {
+                    const cards = document.querySelectorAll("#player-hand [data-card-instance]");
+                    const card = cards[Number(event.key) - 1];
+                    if (!card || card.disabled) return;
+                    event.preventDefault();
+                    RebirthStore.selectedInstanceId = card.getAttribute("data-card-instance");
+                    RebirthStore.selectedAttackerId = null;
+                    if (window.RebirthAudioManager) window.RebirthAudioManager.uiClickConfirmed();
+                    RebirthErrors.clear();
+                    RebirthRenderer.render();
+                    RebirthGameFeel.selectionPulse();
+                }
             });
 
             // Atalho: clicar numa área vazia do tabuleiro cancela a seleção atual

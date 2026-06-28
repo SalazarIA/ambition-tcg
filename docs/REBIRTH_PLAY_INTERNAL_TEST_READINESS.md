@@ -8,7 +8,7 @@ Escopo autorizado: `mobile/AmbitionzAndroid/playstore/*.md`, `mobile/AmbitionzAn
 
 | Área | Estado | Evidência |
 |---|---|---|
-| Produção Rebirth | Operacional com divergências | `ambitionzgame.com` entrega Arena, campanha, coleção, deck builder, loja, recompensas, ranking, perfil e suporte; o suporte expõe `v127_QOL_SHORTCUTS`. |
+| Produção Rebirth | Operacional com divergências | `ambitionzgame.com` entrega Arena, campanha, coleção, deck builder, loja, recompensas, ranking, perfil e suporte; o suporte expõe `v128_HOTKEYS`. |
 | Android beta.2 | Candidato encontrado | AAB de 3,3 MB presente, assinatura verificada, pacote `com.ambitionzgame.app`, `versionName 1.0.0-beta.2`, candidato `versionCode 2` e servidor canônico incorporado. |
 | Ondas 1–3 | Refletidas sem sobrepromessa | Release notes registram dificuldade/consistência do bot, Água/Sombra/Cerco e interação reativa; listing descreve somente recursos visíveis e não promete PvP, offline ou quantidade exata de cartas. |
 | Textos Play | Prontos para copy/paste | Listing, release notes, convite, instruções e checklists descrevem Internal testing e Rebirth v121; release notes pt-BR têm 464 caracteres sem a quebra final do arquivo. |
@@ -74,7 +74,7 @@ Auditoria HTTP reexecutada em 21 de junho de 2026 e documentação reconciliada 
 - `/rebirth/progression`, `/rebirth/ranking` e `/rebirth/profile` carregam.
 - `/feedback` redireciona para `/rebirth/support`; os textos Play agora usam a URL canônica direta.
 - `/privacy`, `/terms` e `/data-deletion` respondem `HTTP 200` em HTTPS.
-- A página de suporte mostra `Versão v127_QOL_SHORTCUTS`.
+- A página de suporte mostra `Versão v128_HOTKEYS`.
 
 ### Divergências encontradas
 
@@ -83,7 +83,7 @@ Auditoria HTTP reexecutada em 21 de junho de 2026 e documentação reconciliada 
 
 ## PWA, cache e headers
 
-- `ASSET_VERSION` permanece alinhada ao runtime web: `v127_QOL_SHORTCUTS`.
+- `ASSET_VERSION` permanece alinhada ao runtime web: `v128_HOTKEYS`.
 - O nome físico do Cache Storage é `ambitionz-rebirth-shell-${ASSET_VERSION}`.
 - Apenas URLs exatas de `CORE_ASSETS` podem entrar no cache.
 - Autenticação, carteira, perfil, mercado, loadout, progressão, tutorial, demais APIs e navegação HTML são network-only.
