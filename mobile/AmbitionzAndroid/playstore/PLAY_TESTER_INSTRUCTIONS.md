@@ -1,6 +1,6 @@
 # Ambitionz — Tester Instructions
 
-Obrigado por testar o Ambitionz `1.0.0-beta.2` no runtime Rebirth `v107_LOGIC_SEARCH`.
+Obrigado por testar o Ambitionz `1.0.0-beta.2` no runtime Rebirth `v131_PVP_POLISH`.
 
 ## Antes de instalar
 
@@ -12,7 +12,7 @@ Obrigado por testar o Ambitionz `1.0.0-beta.2` no runtime Rebirth `v107_LOGIC_SE
 ## Checklist principal
 
 1. Abra o app e confirme que ele entra no Ambitionz Rebirth sem barra de navegador.
-2. Em Suporte, confirme a versão `v107_LOGIC_SEARCH`.
+2. Em Suporte, confirme a versão `v131_PVP_POLISH`.
 3. Crie uma conta, saia e entre novamente.
 4. Inicie e conclua um duelo da Arena contra o bot.
 5. Confira XP, recompensas e histórico após a partida.
@@ -20,16 +20,18 @@ Obrigado por testar o Ambitionz `1.0.0-beta.2` no runtime Rebirth `v107_LOGIC_SE
 7. Abra a coleção e salve um baralho válido de 30 cartas.
 8. Abra um booster gratuito da beta e confirme a atualização da coleção.
 9. Confira perfil, ranking e valores de carteira/recompensas.
-10. Feche e reabra o app para confirmar sessão e progresso salvos.
-11. Ative modo avião ou interrompa a rede durante uma navegação; depois reconecte e confirme a recuperação sem perda de progresso.
-12. Teste o botão Voltar do Android e a interface em retrato.
-13. Envie um feedback dentro do app.
+10. Se houver uma segunda conta convidada disponível, entre na fila PvP experimental e registre se encontrou partida, expirou ou concluiu duelo.
+11. Feche e reabra o app para confirmar sessão e progresso salvos.
+12. Ative modo avião ou interrompa a rede durante uma navegação; depois reconecte e confirme a recuperação sem perda de progresso.
+13. Teste o botão Voltar do Android e a interface em retrato.
+14. Envie um feedback dentro do app.
 
-## Validação dirigida das Ondas 1–3
+## Validação dirigida das Ondas 1–3 e PvP experimental
 
 - **Onda 1:** conclua partidas sem ação inválida, travamento ou divergência de resultado; reporte decisões do bot que pareçam impossíveis ou incoerentes.
 - **Onda 2:** quando as cartas estiverem disponíveis, teste Água com vida alta, Sombra com vida baixa e uma unidade com **Cerco** contra defesa de Guarda.
 - **Onda 3:** arme uma armadilha e confirme que ela reage quando o dono é atacado; use uma magia com alvo em uma unidade. Se o bot armar uma carta virada, confirme que a resolução não trava a partida.
+- **PvP:** com duas contas convidadas, tente entrar na fila ao mesmo tempo e reporte pareamento, nome do oponente, início de duelo, abandono, timeout ou erro.
 
 Esses cenários complementam o checklist principal. A rodada não falha se a conta ainda não tiver as cartas específicas, mas isso deve ser informado no feedback.
 

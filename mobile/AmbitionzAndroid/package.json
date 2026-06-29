@@ -2,7 +2,7 @@
   "name": "ambitionz-android",
   "version": "1.0.0-beta.2",
   "private": true,
-  "description": "Ambitionz Android wrapper for closed testing.",
+  "description": "Ambitionz Rebirth Android wrapper for Google Play Internal testing.",
   "scripts": {
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android",

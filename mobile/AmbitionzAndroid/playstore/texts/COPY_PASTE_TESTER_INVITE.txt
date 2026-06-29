@@ -4,14 +4,15 @@ Abra o link de adesão ao teste interno com a mesma Conta Google adicionada à l
 
 Checklist principal:
 
-1. Abra o app e confirme v107_LOGIC_SEARCH em Suporte.
+1. Abra o app e confirme v131_PVP_POLISH em Suporte.
 2. Crie uma conta, saia e entre novamente.
 3. Termine um duelo da Arena e um encontro da campanha.
 4. Confira XP, recompensas, histórico e progresso salvo.
 5. Salve um deck de 30 cartas e abra um booster gratuito.
 6. Feche e reabra o app.
 7. Teste o botão Voltar e uma interrupção de rede.
-8. Envie feedback dentro do app.
+8. Se houver segunda conta convidada, teste a fila PvP experimental.
+9. Envie feedback dentro do app.
 
 Se as cartas estiverem disponíveis, teste também Cerco contra Guarda, uma armadilha reativa e uma magia com alvo.
 

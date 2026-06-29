@@ -1,12 +1,13 @@
 # Ambitionz Android
 
-Android wrapper for Ambitionz closed testing.
+Android wrapper for Ambitionz Rebirth beta.2 on Google Play Internal testing.
 
 Official URLs:
 - Website: https://ambitionzgame.com
 - Privacy: https://ambitionzgame.com/privacy
 - Terms: https://ambitionzgame.com/terms
-- Support/Feedback: https://ambitionzgame.com/feedback
+- Support/Feedback: https://ambitionzgame.com/rebirth/support
+- Account deletion: https://ambitionzgame.com/data-deletion
 
 Package:
 com.ambitionzgame.app

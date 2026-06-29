@@ -16,7 +16,7 @@ Expected behavior:
 - App opens with Ambitionz name.
 - Splash appears briefly.
 - App loads https://ambitionzgame.com.
-- Login, training, deck builder, shop, feedback and profile should work.
+- Login, Rebirth Arena duel, campaign, deck builder, shop, feedback and profile should work.
 - Android back button should return within WebView navigation when possible.
 
 Known requirement:

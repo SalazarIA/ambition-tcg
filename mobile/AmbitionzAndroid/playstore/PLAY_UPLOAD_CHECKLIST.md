@@ -1,8 +1,8 @@
 # Ambitionz — Google Play Upload Checklist
 
-Target: **Internal testing**, release `beta.2`, runtime `v107_LOGIC_SEARCH`.
+Target: **Internal testing**, release `beta.2`, runtime `v131_PVP_POLISH`.
 
-No upload was performed during the June 21, 2026 audit.
+No upload was performed during the June 28, 2026 audit.
 
 ## A. Verified in the Repository and Production
 
@@ -16,12 +16,12 @@ No upload was performed during the June 21, 2026 audit.
 - [x] AAB signature verification passes.
 - [x] No native `.so` libraries were observed in the AAB.
 - [x] Privacy, terms, support, and account-deletion pages load over HTTPS.
-- [x] Production support exposes `v107_LOGIC_SEARCH`.
+- [x] Production support exposes `v131_PVP_POLISH`.
 - [x] Current Rebirth screenshots are `1080x1920` RGB PNGs without alpha.
 - [x] Current feature graphic is `1024x500` RGB PNG without alpha.
 - [x] Current Play icon is `512x512` RGBA PNG and below 1,024 KB.
-- [x] Listing avoids PvP, offline play, exact card-count, and real-money-purchase claims.
-- [x] Release notes cover Onda 1–3 and fit the 500-character pt-BR limit.
+- [x] Listing describes PvP only as experimental and avoids offline play, exact card-count, and real-money-purchase claims.
+- [x] Release notes cover Onda 1–3 plus experimental PvP and fit the 500-character pt-BR limit.
 
 ## B. Owner/Console Confirmation Before Upload
 
@@ -87,6 +87,7 @@ No technical format blocker remains. Play Console image validation and final vis
 - [ ] Testers instructed to use the same invited account for opt-in and Play Store installation.
 - [ ] Testers instructed not to sideload an APK for this distribution test.
 - [ ] Tester matrix records account, device, Android version, install/update status, and checklist result.
+- [ ] If two invited accounts are available, testers attempt PvP queue/duel and record timeout or completion.
 
 ## G. Minimum Acceptance Before Expanding the List
 

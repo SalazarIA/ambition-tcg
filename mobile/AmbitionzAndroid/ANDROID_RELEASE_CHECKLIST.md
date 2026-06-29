@@ -1,7 +1,7 @@
 # Ambitionz Android Release Checklist
 
 Current target:
-Closed testing on Google Play.
+Internal testing on Google Play.
 
 App identity:
 - App name: Ambitionz
@@ -12,7 +12,8 @@ Required Play Console links:
 - Website: https://ambitionzgame.com
 - Privacy Policy: https://ambitionzgame.com/privacy
 - Terms: https://ambitionzgame.com/terms
-- Support: https://ambitionzgame.com/feedback
+- Support: https://ambitionzgame.com/rebirth/support
+- Account deletion: https://ambitionzgame.com/data-deletion
 
 Before release build:
 - Run `npm ci` and `npm run cap:sync`.
@@ -25,12 +26,13 @@ Before release build:
   the gold/dark Rebirth artwork sourced from `static/icons/icon-512.png`.
 - Test login.
 - Test registration.
-- Test training match.
+- Test one Rebirth Arena duel.
 - Test post-match rewards.
-- Test missions.
+- Test one campaign encounter.
 - Test booster shop.
 - Test deck builder.
 - Test feedback form.
+- Test export and permanent deletion with a disposable account.
 - Test Android back button behavior.
 - Test portrait layout.
 - Test slow network behavior.

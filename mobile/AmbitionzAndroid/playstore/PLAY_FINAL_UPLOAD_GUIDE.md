@@ -1,6 +1,6 @@
 # Ambitionz — Final Internal Testing Upload Guide
 
-This guide prepares the `beta.2` / `v107_LOGIC_SEARCH` candidate for Google Play Internal testing. The June 21, 2026 audit did not upload or publish anything.
+This guide prepares the `beta.2` / `v131_PVP_POLISH` candidate for Google Play Internal testing. The June 28, 2026 audit did not upload or publish anything.
 
 ## 1. Files to Prepare
 

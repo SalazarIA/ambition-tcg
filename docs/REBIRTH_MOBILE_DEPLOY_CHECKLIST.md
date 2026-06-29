@@ -52,11 +52,15 @@ WebView **é** a origem do site — cookies são first-party:
   deve permanecer estável para atualizações da listagem existente.
 - O nome de exibição permanece **Ambitionz**.
 
-## 4. Assets de loja (defasados — refazer para o Rebirth atual)
+## 4. Assets de loja
 
-- Play Store: screenshots/textos ainda descrevem o Ambitionz antigo. Refazer com
-  o duelo de 3 campos atual, em pt-BR (e en se internacionalizar).
-- App Store: criar screenshots + descrição próprios (mesma narrativa).
+- Play Store: pacote atual em `mobile/AmbitionzAndroid/playstore/` já descreve
+  o Rebirth e o alvo **Internal testing**, com screenshots `1080x1920`, ícone
+  `512x512` e feature graphic `1024x500`; aprovação visual do owner e validação
+  do Play Console ainda são definitivas.
+- App Store: criar screenshots + descrição próprios antes de TestFlight/App
+  Store (mesma narrativa, sem prometer PvP, offline ou quantidade exata de
+  cartas).
 - Ícones/splash Android: launcher, round icon, adaptive foreground, splash e
   ícone Play regenerados deterministicamente a partir de
   `static/icons/icon-512.png` (Rebirth gold/dark). O foreground usa a safe zone
@@ -141,7 +145,8 @@ O app é um wrapper do site remoto. Implicações a decidir antes de publicar:
 - [ ] Bundle id + signing definidos; build no TestFlight
 - [ ] Login + partida + resgate validados no device (cookies/CSRF)
 - [ ] appId/appName decididos com o owner
-- [ ] Screenshots/textos Play Store + App Store refeitos para o Rebirth
+- [x] Screenshots/textos Play Store refeitos para o Rebirth/Internal testing
+- [ ] Screenshots/textos App Store refeitos para o Rebirth
 - [ ] Decisão sobre offline/wrapper documentada
 - [x] APK debug instalado e smoke testado em device/emulador
 - [x] AAB Android `versionCode 2` reconstruído e validado antes de upload
