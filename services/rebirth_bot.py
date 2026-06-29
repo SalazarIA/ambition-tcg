@@ -852,6 +852,10 @@ class MCTSAgent:
     def choose_attack(self, bot_battlefield, player_battlefield, **context):
         profile_id = context.pop("profile_id", None)
         match_id = context.pop("match_id", None)
+
+        def decision_score(row):
+            return float(row.get("search_score", row.get("utility", 0)) or 0)
+
         profiler = current_profiler()
         if profiler:
             with profiler.timer("MCTS_simulation_cost", detail="choose_attack"):
@@ -869,6 +873,7 @@ class MCTSAgent:
             turn=context.get("turn", 1),
             player_battlefield=player_battlefield,
         )
+        policy_choice = choice
         if (
             choice
             and self.mistake_window
@@ -878,16 +883,28 @@ class MCTSAgent:
             source = f"{match_id}|{context.get('turn', 1)}|{profile_id}|{choice.get('attacker_instance_id')}"
             roll = int(hashlib.sha256(source.encode("utf-8")).hexdigest()[:4], 16)
             if roll % (self.mistake_window + 1) == 0:
-                alternatives = [row for row in allowed if row is not choice]
+                policy_score = decision_score(choice)
+                alternatives = [
+                    row
+                    for row in allowed
+                    if row is not choice and decision_score(row) < policy_score
+                ]
                 if alternatives:
                     choice = alternatives[0]
         if not choice:
             return None
+        policy_score = decision_score(policy_choice or choice)
+        chosen_score = decision_score(choice)
         return {
             **choice,
             "legal_action_count": len(allowed),
-            "best_search_score": float(allowed[0].get("search_score", allowed[0].get("utility", 0)) or 0),
-            "chosen_search_score": float(choice.get("search_score", choice.get("utility", 0)) or 0),
+            # "Best" is the clean personality policy before difficulty mistakes.
+            # Raw search can intentionally disagree with personality mercy/pressure
+            # rules, so telemetry regret must compare against this policy baseline.
+            "best_search_score": policy_score,
+            "raw_best_search_score": decision_score(allowed[0]),
+            "chosen_search_score": chosen_score,
+            "mistake_regret": max(0.0, round(policy_score - chosen_score, 6)),
             "difficulty_id": self.difficulty_id,
         }
 

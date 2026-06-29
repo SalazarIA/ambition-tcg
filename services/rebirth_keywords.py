@@ -94,7 +94,7 @@ KEYWORD_LABELS = {
     KEYWORD_THORNS:    ("Espinhos",   "Quem ataca esta carta sofre 2 de dano na Guarda."),
     KEYWORD_ENTRENCH:  ("Entrincheirar", "Se não atacou no turno anterior, ganha +1 de Guarda permanente."),
     KEYWORD_SUNDER:    ("Ruptura", "Com aliado de outra família, ganha +2 Ataque contra Provocar/Escudo e rompe Escudo."),
-    KEYWORD_SIEGE:     ("Cerco", "Ignora metade da Guarda do alvo no cálculo de dano — perfura muralhas."),
+    KEYWORD_SIEGE:     ("Cerco", "Ignora metade da mitigação de Guarda do alvo no cálculo de dano — perfura muralhas."),
 }
 
 # Cor (CSS var --rb-gold/cyan/etc) usada pra colorir badge na UI.

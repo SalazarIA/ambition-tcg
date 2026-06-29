@@ -7,8 +7,11 @@ from services.rebirth_bot import (
     estimated_attack,
 )
 from services.rebirth_cards import create_card_instance, get_card
+from services.rebirth_combat_rules import damage_details
 from services.rebirth_engine import declare_attack, start_match
 from services.rebirth_keywords import (
+    KEYWORD_LABELS,
+    KEYWORD_SIEGE,
     KEYWORD_SUNDER,
     SUNDER_ATTACK_BONUS,
     sunder_active,
@@ -234,8 +237,8 @@ def test_multi_attack_search_is_deterministic():
 # --- Onda 1 / I2: honestidade das dificuldades (perfil de erro, não só profundidade) ---
 
 
-def _attack_choices(difficulty, *, samples=63):
-    """Sequência determinística de escolhas (atacante, alvo) por seed de partida.
+def _attack_decision_stats(difficulty, *, samples=63):
+    """Sequência determinística de escolhas e regret por seed de partida.
 
     Cenário com 1 atacante e 2 alvos: a busca é idêntica em todas as
     dificuldades (profundidade/beam não mudam com tão poucas opções), então a
@@ -246,32 +249,63 @@ def _attack_choices(difficulty, *, samples=63):
         _unit("weak", attack=1, guard=2, slot=0),
         _unit("tough", attack=4, guard=6, slot=1),
     ]
-    choices = []
+    decisions = []
     for index in range(samples):
         decision = MCTSAgent(difficulty_id=difficulty).choose_attack(
             deepcopy(bot),
             deepcopy(player),
             player_hp=30,
-            turn=3,
-            profile_id="aggressive",
+            turn=5,
+            profile_id="defensive",
             match_id=f"regret-{index}",
         )
-        choices.append(
-            (decision["attacker_instance_id"], decision.get("target_instance_id")) if decision else None
+        regret = (
+            max(0.0, float(decision["best_search_score"]) - float(decision["chosen_search_score"]))
+            if decision
+            else 0.0
         )
-    return choices
+        decisions.append(
+            {
+                "choice": (
+                    (decision["attacker_instance_id"], decision.get("target_instance_id"))
+                    if decision
+                    else None
+                ),
+                "regret": regret,
+            }
+        )
+    return decisions
 
 
 def test_difficulty_mistake_profile_orders_easy_normal_hard():
     # hard (mistake_window=0) é a política pura — serve de baseline impecável.
-    baseline = _attack_choices("hard")
-    easy = _attack_choices("easy")
-    normal = _attack_choices("normal")
-    easy_deviation = sum(1 for choice, ref in zip(easy, baseline) if choice != ref)
-    normal_deviation = sum(1 for choice, ref in zip(normal, baseline) if choice != ref)
-    # normal tem perfil de erro próprio (≠ hard), e easy erra mais que normal.
-    assert normal_deviation > 0
-    assert easy_deviation > normal_deviation
+    baseline = _attack_decision_stats("hard")
+    easy = _attack_decision_stats("easy")
+    normal = _attack_decision_stats("normal")
+    hard = _attack_decision_stats("hard")
+
+    def errors(rows):
+        return sum(1 for row, ref in zip(rows, baseline) if row["choice"] != ref["choice"])
+
+    def regret(rows):
+        return sum(row["regret"] for row in rows)
+
+    # normal tem perfil de erro/regret próprio (≠ hard), e easy erra mais.
+    assert errors(easy) > errors(normal) > errors(hard)
+    assert regret(easy) > regret(normal) > regret(hard)
+
+
+def test_siege_tooltip_matches_guard_mitigation_effect():
+    attacker_plain = _unit("plain", attack=6, guard=4, keywords=[])
+    attacker_siege = _unit("siege", attack=6, guard=4, keywords=[KEYWORD_SIEGE])
+    wall = _unit("wall", attack=2, guard=10, family="EARTH")
+
+    plain = damage_details(attacker_plain, wall)["amount"]
+    siege = damage_details(attacker_siege, wall)["amount"]
+
+    assert plain == 1  # 6 - 10//2
+    assert siege == 4  # 6 - 10//4: metade da mitigação normal de Guarda.
+    assert "mitigação de Guarda" in KEYWORD_LABELS[KEYWORD_SIEGE][1]
 
 
 def test_casual_difficulty_sits_between_easy_and_normal():
