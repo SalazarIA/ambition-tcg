@@ -11,6 +11,8 @@ next_turn SEM refatorar o core determinístico.
 """
 from __future__ import annotations
 
+import logging
+import os
 import secrets
 import threading
 import time
@@ -28,6 +30,8 @@ from services.rebirth_dispatcher import (
 from services.rebirth_contracts import RebirthError
 from services.rebirth_serializers import public_state
 
+logger = logging.getLogger(__name__)
+
 _LOCK = threading.RLock()
 _QUEUE: List[Dict[str, Any]] = []          # jogadores aguardando par
 _LIVE: Dict[str, Dict[str, Any]] = {}      # live_id -> sessão
@@ -35,6 +39,41 @@ _USER_LIVE: Dict[int, str] = {}            # user_id -> live_id atual
 _QUEUE_TTL = 90                            # s: descarta espera fantasma
 _TURN_TIMEOUT = 45.0                        # s sem ação -> auto-encerra o turno
 _MAX_SKIPS = 3                             # turnos auto-pulados seguidos -> W.O.
+
+# audit 30/06: partidas finalizadas nunca saíam de _LIVE (vazamento de memória
+# sem teto, ao contrário de RebirthMatchStore). _LIVE_RETENTION_SECONDS dá
+# tempo de um último poll ver o resultado final antes de remover a sessão;
+# _LIVE_MAX_SESSIONS é o teto duro (mesma ordem de grandeza do MATCH_STORE).
+_LIVE_RETENTION_SECONDS = 120
+_LIVE_MAX_SESSIONS = 512
+# Se NINGUÉM (nenhum dos dois lados) faz uma única requisição por esse tempo,
+# o _tick lazy (que só roda dentro de view()) nunca dispara — a partida fica
+# pendurada pra sempre. _prune_live varre todas as sessões periodicamente e
+# anula (sem vencedor, sem ELO) as que ninguém mais está olhando.
+_BOTH_ABANDONED_SECONDS = _TURN_TIMEOUT * (_MAX_SKIPS + 2)
+_PRUNE_INTERVAL = 10.0
+_last_prune = 0.0
+
+
+def _worker_count() -> int:
+    for name in ("WEB_CONCURRENCY", "GUNICORN_WORKERS"):
+        try:
+            value = int(os.environ.get(name, "") or 0)
+        except (TypeError, ValueError):
+            value = 0
+        if value:
+            return value
+    return 1
+
+
+if _worker_count() > 1:
+    logger.warning(
+        "rebirth_live_pvp: %d workers detected but the live-PvP queue/match "
+        "state is in-process memory only (no Redis backend). Live PvP join/"
+        "state/command will split across workers and break silently — keep "
+        "this module single-worker until it gets a shared backend.",
+        _worker_count(),
+    )
 
 
 def _now() -> float:
@@ -51,9 +90,56 @@ def _prune_queue() -> None:
     _QUEUE[:] = [w for w in _QUEUE if w["ts"] >= cutoff]
 
 
-def join(user_id: int, username: str, deck: List[str], elo: int) -> Dict[str, Any]:
+def _drop_session(live_id: str, session: Dict[str, Any]) -> None:
+    _LIVE.pop(live_id, None)
+    for uid in session.get("users", ()):
+        if _USER_LIVE.get(uid) == live_id:
+            _USER_LIVE.pop(uid, None)
+
+
+def _trim_live_locked() -> None:
+    if len(_LIVE) <= _LIVE_MAX_SESSIONS:
+        return
+    # remove as mais antigas primeiro, priorizando as já finalizadas
+    ordered = sorted(
+        _LIVE.items(),
+        key=lambda kv: (not kv[1]["match"].get("is_finished"), kv[1].get("created", 0)),
+    )
+    while len(_LIVE) > _LIVE_MAX_SESSIONS and ordered:
+        live_id, session = ordered.pop(0)
+        _drop_session(live_id, session)
+
+
+def _prune_live(repo=None) -> None:
+    """Varredura periódica (throttled) de TODAS as sessões: libera partidas
+    finalizadas há tempo suficiente e anula (sem vencedor/ELO) partidas onde
+    nenhum dos dois lados fez uma requisição nos últimos _BOTH_ABANDONED_SECONDS
+    — caso em que o _tick lazy (só roda dentro de view()) nunca dispararia."""
+    global _last_prune
+    now = _now()
+    if now - _last_prune < _PRUNE_INTERVAL:
+        return
+    _last_prune = now
+    for live_id, session in list(_LIVE.items()):
+        match = session["match"]
+        if match.get("is_finished"):
+            settled_at = float(session.get("settled_at") or session.get("created") or now)
+            if session.get("settled") and (now - settled_at) >= _LIVE_RETENTION_SECONDS:
+                _drop_session(live_id, session)
+            continue
+        last_seen = float(session.get("last_seen") or session.get("turn_started_at") or session.get("created") or now)
+        if (now - last_seen) >= _BOTH_ABANDONED_SECONDS:
+            match["is_finished"] = True
+            match["winner"] = None  # ninguém apareceu: anula, sem W.O. unilateral e sem ELO
+            _maybe_settle(session, repo)
+            _drop_session(live_id, session)  # ninguém está olhando — pode sumir na hora
+    _trim_live_locked()
+
+
+def join(user_id: int, username: str, deck: List[str], elo: int, repo=None) -> Dict[str, Any]:
     """Entra na fila de PvP ao vivo. Pareia com quem estiver esperando."""
     with _LOCK:
+        _prune_live(repo)
         # Já está numa partida ao vivo viva? devolve ela (reconexão simples).
         existing = _USER_LIVE.get(user_id)
         if existing and existing in _LIVE:
@@ -96,6 +182,7 @@ def _create_match(first: Dict[str, Any], second: Dict[str, Any]) -> Dict[str, An
         "created": _now(),
         "settled": False,
         "turn_started_at": _now(),
+        "last_seen": _now(),
         "skips": {},
     }
     _LIVE[live_id] = session
@@ -123,7 +210,9 @@ def view(live_id: str, user_id: int, repo=None) -> Dict[str, Any]:
     aguarda vê com os lados trocados (a própria mão revelada). Cada acesso roda
     o _tick (enforcement de timeout/abandono)."""
     with _LOCK:
+        _prune_live(repo)
         session = _require(live_id, user_id)
+        session["last_seen"] = _now()
         _tick(session, repo)
         match = session["match"]
         if session["active_user"] == user_id:
@@ -240,6 +329,7 @@ def _settle(session: Dict[str, Any], repo) -> None:
     if session.get("settled"):
         return
     session["settled"] = True
+    session["settled_at"] = _now()
     match = session["match"]
     winner_slot = match.get("winner")
     player_owner = session["active_user"]            # dono atual do slot "player"
@@ -264,10 +354,23 @@ def _settle(session: Dict[str, Any], repo) -> None:
             pass
 
 
-def leave(user_id: int) -> None:
-    """Sai da fila (e libera o ponteiro de partida se terminada)."""
+def leave(user_id: int, repo=None) -> None:
+    """Sai da fila; se estiver numa partida ao vivo em andamento, desiste na
+    hora (W.O. imediato pro oponente) em vez de fazer o oponente esperar o
+    timeout de turno (até _TURN_TIMEOUT * _MAX_SKIPS segundos). Chamado pelo
+    frontend ao fechar/trocar de aba (pagehide/visibilitychange) e pela ação
+    explícita "leave"."""
     with _LOCK:
         _QUEUE[:] = [w for w in _QUEUE if w["user_id"] != user_id]
         live_id = _USER_LIVE.get(user_id)
-        if live_id and live_id in _LIVE and _LIVE[live_id]["match"].get("is_finished"):
-            _USER_LIVE.pop(user_id, None)
+        if not live_id or live_id not in _LIVE:
+            return
+        session = _LIVE[live_id]
+        match = session["match"]
+        if not match.get("is_finished"):
+            other = _other(session, user_id)
+            # quem desiste perde, não importa de quem é a vez no momento
+            match["is_finished"] = True
+            match["winner"] = "player" if session["active_user"] == other else "bot"
+            _maybe_settle(session, repo)
+        _USER_LIVE.pop(user_id, None)

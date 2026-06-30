@@ -495,7 +495,7 @@
             THORNS:    "Quem ataca esta carta sofre 2 de dano na Guarda.",
             ENTRENCH:  "Se não atacou no turno anterior, ganha +1 de Guarda permanente.",
             SUNDER:    "Com aliado de outra família, ganha +2 Ataque contra Provocar/Escudo e rompe Escudo.",
-            SIEGE:     "Ignora metade da Guarda do alvo no cálculo de dano — perfura muralhas.",
+            SIEGE:     "Ignora metade da mitigação de Guarda do alvo no cálculo de dano — perfura muralhas.",
         },
         badges(card) {
             const kws = (card && card.keywords) || [];
@@ -4214,8 +4214,13 @@
 
         async activateEvolutionOrFusion() {
             if (RebirthStore.liveMode) {
-                const ev = RebirthStore.firstEvolution();
-                await RebirthLive.act({ action: "evolve", card_id: ev ? ev.card_id : null });
+                // audit 30/06: ações de PvP ao vivo desviavam de request() e não
+                // travavam RebirthStore.pending — clique duplo/rede lenta podia
+                // disparar dois comandos antes do primeiro resolver.
+                await this.request(async () => {
+                    const ev = RebirthStore.firstEvolution();
+                    await RebirthLive.act({ action: "evolve", card_id: ev ? ev.card_id : null });
+                });
                 return;
             }
             const fusion = RebirthStore.firstFieldFusion();
@@ -4232,11 +4237,13 @@
                 const sel = RebirthStore.selectedInstanceId;
                 if (!sel) return;
                 RebirthStore.selectedInstanceId = null;
-                await RebirthLive.act({
-                    action: "play",
-                    card_instance_id: sel,
-                    field_slot: (Number.isInteger(options.fieldSlot) ? options.fieldSlot : null),
-                    target_instance_id: options.targetInstanceId || null,
+                await this.request(async () => {
+                    await RebirthLive.act({
+                        action: "play",
+                        card_instance_id: sel,
+                        field_slot: (Number.isInteger(options.fieldSlot) ? options.fieldSlot : null),
+                        target_instance_id: options.targetInstanceId || null,
+                    });
                 });
                 return;
             }
@@ -4301,7 +4308,9 @@
                 if (!attackerId) return;
                 RebirthStore.selectedAttackerId = null;
                 if (window.RebirthTargeting && RebirthTargeting.deactivate) RebirthTargeting.deactivate();
-                await RebirthLive.act({ action: "attack", attacker_instance_id: attackerId, target_instance_id: targetInstanceId || null });
+                await this.request(async () => {
+                    await RebirthLive.act({ action: "attack", attacker_instance_id: attackerId, target_instance_id: targetInstanceId || null });
+                });
                 return;
             }
             if (!RebirthStore.selectedAttackerId || !RebirthStore.state || !RebirthStore.fieldCard(RebirthStore.selectedAttackerId)) {
@@ -4400,7 +4409,9 @@
         async nextTurn() {
             if (!RebirthStore.state) return;
             if (RebirthStore.liveMode) {
-                await RebirthLive.act({ action: "end_turn" });
+                await this.request(async () => {
+                    await RebirthLive.act({ action: "end_turn" });
+                });
                 return;
             }
             await this.request(async () => {
@@ -5179,6 +5190,38 @@
         poll: null,
         yourTurn: false,
         opponent: null,
+        _unloadBound: false,
+
+        // audit 30/06: fechar a aba nunca chamava "leave" — o backend só tinha
+        // a ação, ninguém a disparava. O oponente ficava esperando até 3
+        // turnos de timeout (~135s) pra ganhar por W.O. Só "pagehide" (fechar/
+        // navegar pra fora), não "visibilitychange": alt-tab/minimizar não deve
+        // desistir a partida na hora. Espelha o pagehide de telemetria
+        // (RebirthInput.bind): sendBeacon primeiro (sobrevive à navegação),
+        // fallback fetch keepalive.
+        _bindUnload() {
+            if (this._unloadBound) return;
+            this._unloadBound = true;
+            window.addEventListener("pagehide", () => {
+                if (!this.id || this.finished) return;
+                const body = JSON.stringify({ live_id: this.id, csrf: window.REBIRTH_CSRF || "" });
+                if (navigator.sendBeacon) {
+                    try {
+                        const blob = new Blob([body], { type: "application/json" });
+                        if (navigator.sendBeacon("/api/rebirth/pvp/live/leave-beacon", blob)) return;
+                    } catch (_err) {
+                        // cai pro fallback abaixo
+                    }
+                }
+                window.fetch("/api/rebirth/pvp/live/leave-beacon", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    keepalive: true,
+                    headers: { "Content-Type": "application/json" },
+                    body
+                }).catch(() => {});
+            });
+        },
 
         async _join() {
             const r = await fetch("/api/rebirth/pvp/live/join", {
@@ -5216,6 +5259,7 @@
                 this.id = res.live_id;
                 RebirthStore.liveMode = this.id;
                 this._hideOverlay();
+                this._bindUnload();
                 await this.refresh();
                 this._startPolling();
             } catch (_e) {

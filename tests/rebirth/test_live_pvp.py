@@ -11,6 +11,7 @@ def _reset():
     live._QUEUE.clear()
     live._LIVE.clear()
     live._USER_LIVE.clear()
+    live._last_prune = 0.0
 
 
 def _repo(flask_app):
@@ -117,3 +118,82 @@ def test_finish_settles_symmetric_elo(flask_app):
     before = repo.get_user_ranking(w)["elo"]
     live._maybe_settle(session, repo)
     assert repo.get_user_ranking(w)["elo"] == before
+
+
+def test_leave_forfeits_immediately_instead_of_waiting_timeout(flask_app):
+    # audit 30/06: fechar a aba não liberava o oponente — leave() só limpava
+    # a fila e nunca desistia de fato de uma partida em andamento.
+    _reset()
+    repo = _repo(flask_app)
+    quitter = _uid(repo, "quitter_live")
+    stays = _uid(repo, "stays_live")
+    live.join(quitter, "quitter_live", list(DEFAULT_LOADOUT), 1500)
+    lid = live.join(stays, "stays_live", list(DEFAULT_LOADOUT), 1500)["live_id"]
+    session = live._LIVE[lid]
+    assert session["active_user"] == quitter           # quitter detém o slot 'player'
+    live.leave(quitter, repo=repo)
+    assert session["match"]["is_finished"] is True
+    assert session["winner_user"] == stays              # quem ficou vence na hora
+    assert repo.get_user_ranking(stays)["elo"] > 1500
+    assert repo.get_user_ranking(quitter)["elo"] < 1500
+    assert live._USER_LIVE.get(quitter) is None          # quitter livre pra entrar em outra fila
+    # idempotente: sair de novo não duplica liquidação
+    elo_before = repo.get_user_ranking(stays)["elo"]
+    live.leave(quitter, repo=repo)
+    assert repo.get_user_ranking(stays)["elo"] == elo_before
+
+
+def test_leave_while_waiting_opponents_turn_still_forfeits(flask_app):
+    _reset()
+    repo = _repo(flask_app)
+    quitter = _uid(repo, "quitter2_live")
+    stays = _uid(repo, "stays2_live")
+    live.join(quitter, "quitter2_live", list(DEFAULT_LOADOUT), 1500)
+    lid = live.join(stays, "stays2_live", list(DEFAULT_LOADOUT), 1500)["live_id"]
+    session = live._LIVE[lid]
+    live.end_turn(lid, quitter)                          # passa a vez -> agora é a vez de 'stays'
+    assert session["active_user"] == stays
+    live.leave(quitter, repo=repo)                        # quitter desiste fora do seu turno
+    assert session["match"]["is_finished"] is True
+    assert session["winner_user"] == stays
+
+
+def test_prune_live_removes_settled_match_after_retention(flask_app):
+    _reset()
+    repo = _repo(flask_app)
+    w = _uid(repo, "prune_winner")
+    l = _uid(repo, "prune_loser")
+    live.join(w, "prune_winner", list(DEFAULT_LOADOUT), 1500)
+    lid = live.join(l, "prune_loser", list(DEFAULT_LOADOUT), 1500)["live_id"]
+    session = live._LIVE[lid]
+    session["match"]["is_finished"] = True
+    session["match"]["winner"] = "player"
+    live._maybe_settle(session, repo)
+    assert lid in live._LIVE                             # ainda visível logo após liquidar
+    session["settled_at"] = live._now() - (live._LIVE_RETENTION_SECONDS + 5)
+    live._last_prune = 0.0                                # destrava o throttle pro teste
+    live._prune_live(repo)
+    assert lid not in live._LIVE
+    assert live._USER_LIVE.get(w) is None
+    assert live._USER_LIVE.get(l) is None
+
+
+def test_prune_live_voids_match_when_both_sides_vanish(flask_app):
+    # audit 30/06: se os DOIS lados sumirem, o _tick lazy (só roda dentro de
+    # view()) nunca dispara — a partida ficava pendurada pra sempre em _LIVE,
+    # sem vencedor e sem liquidar ELO.
+    _reset()
+    repo = _repo(flask_app)
+    a = _uid(repo, "vanish_a")
+    b = _uid(repo, "vanish_b")
+    live.join(a, "vanish_a", list(DEFAULT_LOADOUT), 1500)
+    lid = live.join(b, "vanish_b", list(DEFAULT_LOADOUT), 1500)["live_id"]
+    session = live._LIVE[lid]
+    session["last_seen"] = live._now() - (live._BOTH_ABANDONED_SECONDS + 5)
+    live._last_prune = 0.0
+    live._prune_live(repo)
+    assert lid not in live._LIVE                         # removida na hora, ninguém olhando
+    assert live._USER_LIVE.get(a) is None
+    assert live._USER_LIVE.get(b) is None
+    assert repo.get_user_ranking(a)["elo"] == 1500        # ninguém ganha/perde ELO
+    assert repo.get_user_ranking(b)["elo"] == 1500

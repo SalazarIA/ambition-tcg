@@ -1,6 +1,6 @@
 # Ambitionz — Google Play Upload Checklist
 
-Target: **Internal testing**, release `beta.2`, runtime `v131_PVP_POLISH`.
+Target: **Internal testing**, release `beta.2`, runtime `v132_PVP_ROBUST`.
 
 No upload was performed during the June 28, 2026 audit.
 
@@ -16,7 +16,7 @@ No upload was performed during the June 28, 2026 audit.
 - [x] AAB signature verification passes.
 - [x] No native `.so` libraries were observed in the AAB.
 - [x] Privacy, terms, support, and account-deletion pages load over HTTPS.
-- [x] Production support exposes `v131_PVP_POLISH`.
+- [x] Production support exposes `v132_PVP_ROBUST`.
 - [x] Current Rebirth screenshots are `1080x1920` RGB PNGs without alpha.
 - [x] Current feature graphic is `1024x500` RGB PNG without alpha.
 - [x] Current Play icon is `512x512` RGBA PNG and below 1,024 KB.

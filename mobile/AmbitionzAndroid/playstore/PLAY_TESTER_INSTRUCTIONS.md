@@ -1,6 +1,6 @@
 # Ambitionz — Tester Instructions
 
-Obrigado por testar o Ambitionz `1.0.0-beta.2` no runtime Rebirth `v131_PVP_POLISH`.
+Obrigado por testar o Ambitionz `1.0.0-beta.2` no runtime Rebirth `v132_PVP_ROBUST`.
 
 ## Antes de instalar
 
@@ -12,7 +12,7 @@ Obrigado por testar o Ambitionz `1.0.0-beta.2` no runtime Rebirth `v131_PVP_POLI
 ## Checklist principal
 
 1. Abra o app e confirme que ele entra no Ambitionz Rebirth sem barra de navegador.
-2. Em Suporte, confirme a versão `v131_PVP_POLISH`.
+2. Em Suporte, confirme a versão `v132_PVP_ROBUST`.
 3. Crie uma conta, saia e entre novamente.
 4. Inicie e conclua um duelo da Arena contra o bot.
 5. Confira XP, recompensas e histórico após a partida.

@@ -618,9 +618,9 @@
                     data-rebirth-claim-daily
                     data-daily-state="{{ page.daily.state }}"
                     {{ 'disabled' if page.daily.state != 'ready' else '' }}
-                >{{ 'Resgatado' if page.daily.state == 'claimed' else 'Resgatar diário' if page.daily.state == 'ready' else 'Jogue uma partida' }}</button>
+                >{{ 'Resgatado' if page.daily.state == 'claimed' else 'Resgatar bônus' if page.daily.state == 'ready' else 'Jogue uma partida' }}</button>
                 <div class="rb-product-result" data-rebirth-progression-result aria-live="polite">
-                    {{ 'Recompensa diária resgatada.' if page.daily.state == 'claimed' else 'Recompensa diária pronta.' if page.daily.state == 'ready' else 'Jogue uma partida para desbloquear a recompensa diária.' }}
+                    {{ 'Bônus de primeiro clash resgatado.' if page.daily.state == 'claimed' else 'Bônus de primeiro clash pronto.' if page.daily.state == 'ready' else 'Jogue uma partida para desbloquear o bônus de primeiro clash.' }}
                 </div>
             </section>
             <section class="rb-product-panel rb-product-wide rb-beta-loop-panel" aria-label="Loop de retenção beta">

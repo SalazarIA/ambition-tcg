@@ -80,8 +80,8 @@ ACHIEVEMENTS = [
     },
     {
         "key": "daily_claimed",
-        "name": "Centelha Diária",
-        "copy": "Resgate a recompensa diária do primeiro clash.",
+        "name": "Primeira Centelha",
+        "copy": "Resgate o bônus único do seu primeiro clash.",
     },
     {
         "key": "tutorial_complete",
@@ -2390,7 +2390,7 @@ class RebirthRepository:
     def claim_daily_reward(self, user_id):
         progress = self.progression(user_id)
         if not progress or progress["clashes"] < 1:
-            raise RebirthPersistenceError("Jogue pelo menos um clash antes de resgatar a recompensa diária.", "reward_locked", 409)
+            raise RebirthPersistenceError("Jogue pelo menos um clash antes de resgatar o bônus de primeiro clash.", "reward_locked", 409)
         reward_key = "daily_first_clash"
         now = utc_now()
         already_claimed = False
@@ -2440,7 +2440,7 @@ class RebirthRepository:
                 )
                 self._unlock_achievements(db, user_id, ["daily_claimed"], now)
         if already_claimed:
-            raise RebirthPersistenceError("A recompensa diária já foi resgatada.", "reward_already_claimed", 409)
+            raise RebirthPersistenceError("O bônus de primeiro clash já foi resgatado.", "reward_already_claimed", 409)
         return {"reward_key": reward_key, "xp": 25, "progression": self.progression(user_id)}
 
     @_retry_postgres_serialization_write

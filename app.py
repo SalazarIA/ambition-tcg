@@ -161,6 +161,15 @@ GAME_RATE_LIMITS = {
     "api_rebirth_resume": 300,
     "api_rebirth_telemetry": int(os.environ.get("REBIRTH_TELEMETRY_RATE_LIMIT", "300")),
     "api_rebirth_telemetry_beacon": int(os.environ.get("REBIRTH_TELEMETRY_RATE_LIMIT", "300")),
+    # audit 30/06: rotas novas (PvP ao vivo, crafting, mercado) não tinham
+    # nenhuma entrada aqui — só CSRF + auth genéricos, sem throttle dedicado.
+    "api_rebirth_pvp_live_join": 120,
+    "api_rebirth_pvp_live_state": 400,   # polling ~1.6s/jogador em partida ativa
+    "api_rebirth_pvp_live_command": 600,  # mesma ordem dos outros comandos de combate
+    "api_rebirth_pvp_live_leave_beacon": 60,
+    "api_rebirth_craft_disenchant": 120,
+    "api_rebirth_craft_create": 120,
+    "api_rebirth_market_buy": 120,
 }
 MATCH_TELEMETRY_CLOCKS = {}
 MATCH_TERMINAL_TELEMETRY = set()
@@ -366,7 +375,7 @@ def match_reward_payload(before, after, state):
             "state": daily_state,
             "ready": daily_state == "ready",
         },
-        "next_goal": "Resgate sua recompensa diária." if daily_state == "ready" else "Abra Cartas para ajustar seu baralho." if level >= 3 else "Jogue o próximo clash guiado.",
+        "next_goal": "Resgate seu bônus de primeiro clash." if daily_state == "ready" else "Abra Cartas para ajustar seu baralho." if level >= 3 else "Jogue o próximo clash guiado.",
         "message": f"{outcome_label}: +{xp_delta} XP salvos na sua conta Rebirth.",
         "recap": post_match_recap(state),
     }
@@ -1042,7 +1051,7 @@ REBIRTH_CSRF_PROTECTED_PREFIXES = ("/api/rebirth/", "/api/labs/")
 # Endpoints intended for navigator.sendBeacon, which cannot attach custom
 # headers — CSRF token travels in the request body instead. The endpoint
 # verifies the token manually before mutating anything.
-REBIRTH_CSRF_BODY_PATHS = frozenset({"/api/rebirth/telemetry/beacon"})
+REBIRTH_CSRF_BODY_PATHS = frozenset({"/api/rebirth/telemetry/beacon", "/api/rebirth/pvp/live/leave-beacon"})
 # S4 fix: Stripe webhook é POST server-to-server (Stripe → nosso backend).
 # Não tem sessão, não tem cookie, não pode mandar X-Rebirth-CSRF. A
 # autenticidade é verificada por Stripe-Signature (HMAC com whsec_).
@@ -2143,7 +2152,7 @@ def api_rebirth_pvp_live_join():
         repo = rebirth_repo()
         deck = repo.loadout_card_ids(user["id"])
         elo = int((repo.get_user_ranking(user["id"]) or {}).get("elo") or 1500)
-        return json_payload(**live_pvp.join(user["id"], user["username"], deck, elo))
+        return json_payload(**live_pvp.join(user["id"], user["username"], deck, elo, repo=repo))
     except RebirthPersistenceError as error:
         return json_from_persistence_error(error)
     except RebirthError as error:
@@ -2185,7 +2194,7 @@ def api_rebirth_pvp_live_command():
         elif action == "end_turn":
             res = live_pvp.end_turn(live_id, user["id"], repo=repo)
         elif action == "leave":
-            live_pvp.leave(user["id"])
+            live_pvp.leave(user["id"], repo=repo)
             res = {"left": True}
         else:
             return json_error("Ação inválida.", "invalid_action", 400)
@@ -2194,6 +2203,30 @@ def api_rebirth_pvp_live_command():
         return json_from_persistence_error(error)
     except RebirthError as error:
         return json_from_rebirth_error(error)
+
+
+@app.post("/api/rebirth/pvp/live/leave-beacon")
+def api_rebirth_pvp_live_leave_beacon():
+    # audit 30/06: o frontend nunca chamava "leave" ao fechar a aba, então o
+    # oponente esperava até 3 turnos de timeout (~135s) pra ganhar por W.O.
+    # Espelha telemetry/beacon: navigator.sendBeacon não manda headers
+    # customizados, então o CSRF viaja no corpo e é verificado aqui.
+    if app.config.get("REBIRTH_REQUIRE_CSRF", True):
+        body_csrf = (request.get_json(silent=True) or {}).get("csrf") if request.is_json else None
+        if not body_csrf:
+            try:
+                body_csrf = request.form.get("csrf") if request.form else None
+            except Exception:
+                body_csrf = None
+        expected = session.get("rebirth_csrf_token")
+        if not expected or not body_csrf or not secrets.compare_digest(str(expected), str(body_csrf)):
+            return json_error("O token CSRF do Rebirth é obrigatório.", "csrf_required", status=403)
+    user = current_user()
+    if not user:
+        return json_payload(left=False)
+    import services.rebirth_live_pvp as live_pvp
+    live_pvp.leave(user["id"], repo=rebirth_repo())
+    return json_payload(left=True)
 
 
 @app.post("/api/rebirth/mulligan")

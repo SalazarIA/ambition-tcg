@@ -175,12 +175,14 @@ def product_shell_payload(account=None):
         "Ambitionz Rebirth",
         "Uma plataforma TCG de fantasia sombria para duelar, colecionar e abrir pacotes.",
     )
+    catalog_count = len(catalog_payload())
     payload.update(
         {
             "account": account,
+            "catalog_count": catalog_count,
             "status": [
                 {"label": "Modo", "value": "Clash TCG"},
-                {"label": "Cartas", "value": f"{len(catalog_payload())} no catálogo"},
+                {"label": "Cartas", "value": f"{catalog_count} no catálogo"},
                 {"label": "Economia", "value": "Ouro + Gemas"},
             ],
             "blocks": [

@@ -4,7 +4,7 @@
 
 - Track: Google Play **Internal testing**
 - Release label: `beta.2`
-- Web runtime: `v131_PVP_POLISH`
+- Web runtime: `v132_PVP_ROBUST`
 - Package: `com.ambitionzgame.app`
 - Candidate `versionName`: `1.0.0-beta.2`
 - Candidate `versionCode`: `2`
@@ -31,7 +31,7 @@ No upload was performed during this audit.
 
 1. Join the internal test with the invited Google account and install from Google Play.
 2. Confirm the app launches into Ambitionz Rebirth without browser chrome.
-3. Confirm the support page reports `v131_PVP_POLISH`.
+3. Confirm the support page reports `v132_PVP_ROBUST`.
 4. Create an account, sign out, and sign back in.
 5. Start and finish a Rebirth clash against the bot.
 6. Confirm post-match XP, rewards, match history, and saved progression.
