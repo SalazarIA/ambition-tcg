@@ -64,3 +64,37 @@ def test_find_pvp_opponent_excludes_self(flask_app):
     opp = repo.find_pvp_opponent(a, elo=1500)
     assert opp is not None
     assert opp["id"] != a
+
+
+def test_bot_match_does_not_move_ranking_elo(flask_app):
+    # Mudança de produto: só PvP real mexe no ranking. Partida comum contra
+    # o computador (arena/ranqueada sem oponente disponível) não tem
+    # match.pvp, então apply_match_elo deve ser um no-op.
+    repo = _repo(flask_app)
+    a = _user(repo, "ivan")
+    bot_match = {
+        "match_id": "bot1",
+        "is_finished": True,
+        "winner": "player",
+        "bot_profile": {"id": "defensive"},
+    }
+    result = repo.apply_match_elo(a, bot_match)
+    assert result is None
+    assert repo.get_user_ranking(a)["elo"] == 1500
+
+
+def test_campaign_match_does_not_move_ranking_elo(flask_app):
+    # Campanha tem progressão própria (record_campaign_victory); não deve
+    # tocar o ranking ELO, mesmo vencendo um chefe.
+    repo = _repo(flask_app)
+    a = _user(repo, "judy")
+    campaign_match = {
+        "match_id": "camp1",
+        "is_finished": True,
+        "winner": "player",
+        "bot_profile": {"id": "aggressive"},
+        "campaign_node": "node_05",
+    }
+    result = repo.apply_match_elo(a, campaign_match)
+    assert result is None
+    assert repo.get_user_ranking(a)["elo"] == 1500

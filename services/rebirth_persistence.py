@@ -2710,39 +2710,26 @@ class RebirthRepository:
         return self.match_history(user_id, limit=1)[0]
 
     # === S3: ranking ELO ===
-    BOT_ELO_BY_PROFILE = {
-        "aggressive": 1450,
-        "opportunist": 1500,
-        "defensive": 1550,
-    }
     ELO_K_FACTOR = 32
 
     def apply_match_elo(self, user_id, match):
-        """Aplica delta de ELO ao usuário pós-match. Idempotente via match_id
-        (tabela ledger). Retorna o novo ELO."""
+        """Aplica delta de ELO ao usuário pós-match. Só pra PvP real (desafio
+        assíncrono, ranqueada com oponente real ou PvP ao vivo) — identificado
+        por match.pvp.opponent_elo. Partidas contra o computador (arena, modo
+        ranqueado sem oponente disponível, campanha) NÃO mexem no ranking;
+        campanha tem sua própria progressão (record_campaign_victory).
+        Idempotente via match_id (tabela ledger). Retorna o novo ELO."""
         if not user_id or not match or not match.get("is_finished"):
             return None
         winner = match.get("winner")
         if winner not in ("player", "bot"):
             return None
+        pvp = match.get("pvp") or {}
+        if pvp.get("opponent_elo") is None:
+            return None
+        bot_elo = int(pvp.get("opponent_elo") or 1500)
         self.ensure_schema()
         match_id = match.get("match_id")
-        bot_profile = match.get("bot_profile") or {}
-        bot_profile_id = bot_profile.get("id") or "opportunist"
-        bot_elo = self.BOT_ELO_BY_PROFILE.get(bot_profile_id, 1500)
-        # Campaign bosses ganham ELO bumped (1500 + 50*node_order)
-        node_id = match.get("campaign_node")
-        if node_id:
-            try:
-                node_order = int(str(node_id).split("_")[-1])
-                bot_elo = max(bot_elo, 1500 + 50 * node_order)
-            except (ValueError, IndexError):
-                pass
-        # PvP assíncrono: o "bot" é o deck de um jogador real, então o ELO é
-        # calculado contra o ELO REAL do oponente (não o perfil do bot).
-        pvp = match.get("pvp") or {}
-        if pvp.get("opponent_elo") is not None:
-            bot_elo = int(pvp.get("opponent_elo") or 1500)
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             current = db.execute(

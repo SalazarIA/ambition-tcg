@@ -17,7 +17,7 @@
             <div>
                 <span class="rb-product-kicker">Temporada {{ (me.season if me else 1) }}</span>
                 <h1>Ranking</h1>
-                <p>Cada partida ranqueada ajusta seu ELO. Vença bots fortes pra escalar mais rápido.</p>
+                <p>Seu ELO só muda em PvP real — desafie outro jogador, entre na fila ranqueada ou jogue ao vivo. Partidas contra o computador não afetam o ranking.</p>
             </div>
             <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth') }}"><span>A</span> Jogar agora <i aria-hidden="true"></i></a>
         </section>
@@ -37,7 +37,7 @@
             <section class="rb-product-panel rb-ranking-login" aria-label="Entrar para participar">
                 <span>Participe</span>
                 <h2>Entre para entrar no ranking</h2>
-                <p>O ELO começa em 1500. Cada vitória ou derrota ajusta o seu rating.</p>
+                <p>O ELO começa em 1500. Vitórias e derrotas em PvP real (desafio, ranqueada ou ao vivo) ajustam seu rating.</p>
                 <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
             </section>
         {% endif %}
