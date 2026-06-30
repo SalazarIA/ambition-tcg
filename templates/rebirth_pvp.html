@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>PvP - Ambitionz Rebirth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0805">
+    <meta name="description" content="PvP do Ambitionz Rebirth — duelo ao vivo contra outro jogador ou partida ranqueada por ELO.">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rebirth.css') }}?v={{ rebirth_release_version }}">
+</head>
+<body class="rb-page rb-home-page rb-product-page rb-pvp-page">
+    {% include "_rebirth_global_nav.html" %}
+    <main class="rb-home-shell rb-product-shell rb-pvp-shell">
+        <section class="rb-product-hero" aria-label="PvP Ambitionz">
+            <div>
+                <span class="rb-product-kicker">Competitivo</span>
+                <h1>PvP</h1>
+                <p>Enfrente outros jogadores: <b>ao vivo</b> (dois humanos, em tempo real) ou em <b>partida ranqueada</b> por ELO.</p>
+            </div>
+            <a class="rb-cta rb-cta-wide" href="{{ url_for('rebirth_ranking_page') }}"><span>R</span> Ver ranking <i aria-hidden="true"></i></a>
+        </section>
+
+        {% if account.authenticated and me %}
+            <section class="rb-product-panel rb-pvp-me" aria-label="Sua posição">
+                <span>Seu rating</span>
+                <h2>{{ me.elo }} ELO · #{{ me.position or '—' }}</h2>
+                {% if me_tier %}
+                <p class="rb-season-tier">Faixa <b>{{ me_tier.tier }}</b> · temporada {{ me.season }}.</p>
+                {% endif %}
+            </section>
+
+            <section class="rb-pvp-modes" aria-label="Modos de PvP">
+                <article class="rb-product-panel rb-pvp-mode rb-pvp-mode-live">
+                    <span>Tempo real</span>
+                    <h2>Jogar ao vivo</h2>
+                    <p>Entra na fila e é pareado com outro jogador por ELO. A partida acontece ao vivo, turno a turno, com cronômetro.</p>
+                    <a class="rb-button-primary rb-cta rb-live-cta" href="{{ url_for('rebirth') }}?live=1">Jogar ao vivo (PvP)</a>
+                    <small class="rb-pvp-note">Precisa de outro jogador na fila ao mesmo tempo. Se você ficar aguardando, é porque ninguém mais está na fila agora.</small>
+                </article>
+                <article class="rb-product-panel rb-pvp-mode rb-pvp-mode-ranked">
+                    <span>Assíncrono</span>
+                    <h2>Partida ranqueada</h2>
+                    <p>Duela contra o deck de um jogador real (ghost verificável). Disponível a qualquer hora — sem esperar fila — e ajusta seu ELO.</p>
+                    <a class="rb-button-secondary rb-secondary rb-ranked-cta" href="{{ url_for('rebirth') }}?ranked=1">Partida ranqueada (PvP)</a>
+                    <small class="rb-pvp-note">Sempre disponível. O resultado vale ELO e gera um replay compartilhável.</small>
+                </article>
+            </section>
+        {% elif not account.authenticated %}
+            <section class="rb-product-panel rb-pvp-login" aria-label="Entrar para jogar PvP">
+                <span>Participe</span>
+                <h2>Entre para jogar PvP</h2>
+                <p>O ELO começa em 1500. Cada vitória ou derrota ajusta o seu rating.</p>
+                <button class="rb-button-primary rb-cta" type="button" data-rebirth-auth-open>Entrar / Cadastrar</button>
+            </section>
+        {% endif %}
+    </main>
+
+    <script>
+        window.REBIRTH_CSRF = "{{ csrf_token() }}";
+        window.REBIRTH_AUTH_ENDPOINTS = {
+            register: "{{ url_for('api_rebirth_auth_register') }}",
+            login: "{{ url_for('api_rebirth_auth_login') }}",
+            logout: "{{ url_for('api_rebirth_auth_logout') }}",
+            wallet: "{{ url_for('api_rebirth_wallet') }}"
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}?v={{ rebirth_release_version }}"></script>
+    <script src="{{ url_for('static', filename='js/rebirth_global.js') }}?v={{ rebirth_release_version }}"></script>
+</body>
+</html>

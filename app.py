@@ -1140,6 +1140,7 @@ def sitemap_xml():
         "/",
         "/rebirth",
         "/rebirth/campaign",
+        "/rebirth/pvp",
         "/rebirth/collection",
         "/rebirth/shop",
         "/rebirth/billing",
@@ -1337,6 +1338,20 @@ def rebirth_ranking_page():
         "rebirth_ranking.html",
         account=account_payload(user),
         top=top,
+        me=me,
+        me_tier=me_tier,
+    )
+
+
+@app.get("/rebirth/pvp")
+def rebirth_pvp_page():
+    user = current_user()
+    repo = rebirth_repo()
+    me = repo.get_user_ranking(user["id"]) if user else None
+    me_tier = repo.season_tier(me.get("elo")) if me else None
+    return render_template(
+        "rebirth_pvp.html",
+        account=account_payload(user),
         me=me,
         me_tier=me_tier,
     )

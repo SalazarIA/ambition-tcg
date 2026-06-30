@@ -42,6 +42,27 @@ def test_ranking_page_renders(client):
     assert b"Temporada" in res.data
 
 
+def test_pvp_page_renders_for_anonymous(client):
+    res = client.get("/rebirth/pvp")
+    assert res.status_code == 200
+    body = res.get_data(as_text=True)
+    # Aba na navbar sempre presente; anônimo vê o convite de login.
+    assert 'href="/rebirth/pvp"' in body
+    assert "Entre para jogar PvP" in body
+
+
+def test_pvp_page_shows_entry_points_when_authenticated(client):
+    client.post(
+        "/api/rebirth/auth/register",
+        json={"username": "pvp_user", "email": "pvp-user@example.com", "password": "password123"},
+    )
+    body = client.get("/rebirth/pvp").get_data(as_text=True)
+    # Logado: entrada ao vivo + ranqueada disponíveis no hub.
+    assert "?live=1" in body
+    assert "?ranked=1" in body
+    assert "Jogar ao vivo (PvP)" in body
+
+
 def test_ranking_top_api_anonymous(client):
     res = client.get("/api/rebirth/ranking/top")
     assert res.status_code == 200
