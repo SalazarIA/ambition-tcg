@@ -1,6 +1,6 @@
 # Ambitionz — Final Internal Testing Upload Guide
 
-This guide prepares the `beta.2` / `v133_AUDIT_FIXES` candidate for Google Play Internal testing. The June 28, 2026 audit did not upload or publish anything.
+This guide prepares the `beta.2` / `v134_CARD_NAME_WRAP` candidate for Google Play Internal testing. The June 28, 2026 audit did not upload or publish anything.
 
 ## 1. Files to Prepare
 

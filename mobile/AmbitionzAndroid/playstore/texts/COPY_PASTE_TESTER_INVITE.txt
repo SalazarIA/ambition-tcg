@@ -4,7 +4,7 @@ Abra o link de adesão ao teste interno com a mesma Conta Google adicionada à l
 
 Checklist principal:
 
-1. Abra o app e confirme v133_AUDIT_FIXES em Suporte.
+1. Abra o app e confirme v134_CARD_NAME_WRAP em Suporte.
 2. Crie uma conta, saia e entre novamente.
 3. Termine um duelo da Arena e um encontro da campanha.
 4. Confira XP, recompensas, histórico e progresso salvo.
